@@ -39,7 +39,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.site_id && (deepAccess(bid, 'mediaTypes.video.context') != 'adpod'));
+    return !!(bid.params && bid.params.site_id && (deepAccess(bid, 'mediaTypes.video.context') !== 'adpod'));
   },
 
   /**
@@ -55,7 +55,7 @@ export const spec = {
     if (validBidRequests.length > 0) {
       validBidRequests.forEach(bidRequest => {
         if (!bidRequest.mediaTypes) return;
-        if (bidRequest.mediaTypes.banner && ((bidRequest.mediaTypes.banner.sizes && bidRequest.mediaTypes.banner.sizes.length != 0) ||
+        if (bidRequest.mediaTypes.banner && ((bidRequest.mediaTypes.banner.sizes && bidRequest.mediaTypes.banner.sizes.length !== 0) ||
           (bidRequest.sizes))) {
           requests.push(buildBannerRequest(bidRequest, bidderRequest));
         } else if (bidRequest.mediaTypes.native) {
@@ -85,11 +85,11 @@ export const spec = {
       return [];
     }
 
-    if (getMediaTypeOfResponse(bidRequest) == BANNER) {
+    if (getMediaTypeOfResponse(bidRequest) === BANNER) {
       bidResponses = buildBannerResponse(bidRequest, bidResponse);
-    } else if (getMediaTypeOfResponse(bidRequest) == NATIVE) {
+    } else if (getMediaTypeOfResponse(bidRequest) === NATIVE) {
       bidResponses = buildNativeResponse(bidRequest, bidResponse);
-    } else if (getMediaTypeOfResponse(bidRequest) == VIDEO) {
+    } else if (getMediaTypeOfResponse(bidRequest) === VIDEO) {
       bidResponses = buildVideoResponse(bidRequest, bidResponse);
     }
     return bidResponses;
@@ -233,7 +233,7 @@ function buildVideoRequest(bidRequest, bidderRequest) {
   };
 
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
-  if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES;
+  if (context === 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES;
 
   var imp = [];
   var deals = [];
@@ -241,7 +241,7 @@ function buildVideoRequest(bidRequest, bidderRequest) {
     deals = bidRequest.params.deals;
   }
 
-  if (context != 'adpod') {
+  if (context !== 'adpod') {
     imp.push({
       id: bidRequest.bidId,
       video: video,
@@ -282,9 +282,9 @@ function getVideoAdUnitSize(bidRequest) {
 
 /* Get mediatype of the adunit from request */
 function getMediaTypeOfResponse(bidRequest) {
-  if (bidRequest.requestedMediaType == BANNER) return BANNER;
-  else if (bidRequest.requestedMediaType == NATIVE) return NATIVE;
-  else if (bidRequest.requestedMediaType == VIDEO) return VIDEO;
+  if (bidRequest.requestedMediaType === BANNER) return BANNER;
+  else if (bidRequest.requestedMediaType === NATIVE) return NATIVE;
+  else if (bidRequest.requestedMediaType === VIDEO) return VIDEO;
   else return '';
 }
 
@@ -341,8 +341,8 @@ function generateNativeImgObj(obj, type, id) {
   const bidSizes = obj.sizes;
 
   var typeId;
-  if (type == 'icon') typeId = 1;
-  else if (type == 'image') typeId = 3;
+  if (type === 'icon') typeId = 1;
+  else if (type === 'image') typeId = 3;
 
   if (isArray(bidSizes)) {
     if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
@@ -396,7 +396,7 @@ function generateNativeDataObj(obj, type, id) {
   const data = {
     type: typeId
   };
-  if (typeId == 2 && obj.len) {
+  if (typeId === 2 && obj.len) {
     data.len = parseInt(obj.len);
   }
   return {
@@ -558,8 +558,8 @@ function setTargeting(query) {
 /* Get image type with respect to the id */
 function getAssetImageType(id, assets) {
   for (var i = 0; i < assets.length; i++) {
-    if (assets[i].id == id) {
-      if (assets[i].img.type == 1) { return 'icon'; } else if (assets[i].img.type == 3) { return 'image'; }
+    if (assets[i].id === id) {
+      if (assets[i].img.type === 1) { return 'icon'; } else if (assets[i].img.type === 3) { return 'image'; }
     }
   }
   return '';
@@ -568,8 +568,8 @@ function getAssetImageType(id, assets) {
 /* Get type of data asset with respect to the id */
 function getAssetDataType(id, assets) {
   for (var i = 0; i < assets.length; i++) {
-    if (assets[i].id == id) {
-      if (assets[i].data.type == 1) { return 'sponsored'; } else if (assets[i].data.type == 2) { return 'desc'; } else if (assets[i].data.type == 12) { return 'cta'; }
+    if (assets[i].id === id) {
+      if (assets[i].data.type === 1) { return 'sponsored'; } else if (assets[i].data.type === 2) { return 'desc'; } else if (assets[i].data.type === 12) { return 'cta'; }
     }
   }
   return '';

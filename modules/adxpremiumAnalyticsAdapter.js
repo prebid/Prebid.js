@@ -179,7 +179,7 @@ function bidTimeout(args) {
   args.forEach(bid => {
     const pulledRequestId = bidMapper[bid.bidId];
     const eventIndex = bidRequestsMapper[pulledRequestId];
-    if (eventIndex !== undefined && completeObject.events[eventIndex] && usedRequestIds.indexOf(pulledRequestId) == -1) {
+    if (eventIndex !== undefined && completeObject.events[eventIndex] && usedRequestIds.indexOf(pulledRequestId) === -1) {
       // mark as timeouted
       const tempEventIndex = timeoutObject.events.push(completeObject.events[eventIndex]) - 1;
       timeoutObject.events[tempEventIndex]['type'] = 'TIMEOUT';
@@ -211,7 +211,7 @@ function deviceType() {
 
 function clearSlot(elementId) {
   if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
-  if (elementIds.length == 0 && !requestSent && !timeoutBased) {
+  if (elementIds.length === 0 && !requestSent && !timeoutBased) {
     requestSent = true;
     sendEvent(completeObject);
     logInfo('AdxPremium Analytics - Everything ready');
