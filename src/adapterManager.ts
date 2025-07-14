@@ -746,7 +746,7 @@ const adapterManager = {
                     const supportedMediaTypes = getSupportedMediaTypes(bidderCode);
                     // Have kept old code to support backward compatibilitiy.
                     // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
-                    if (bidAdapter.constructor.prototype != Object.prototype) {
+                    if (bidAdapter.constructor.prototype !== Object.prototype) {
                         newAdapter = new bidAdapter.constructor();
                         newAdapter.setBidderCode(alias);
                     } else {

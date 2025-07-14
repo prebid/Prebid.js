@@ -488,7 +488,7 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
 export const fetchData = async (publisherId, profileId, type) => {
     try {
       const endpoint = CONSTANTS.ENDPOINTS[type];
-      const baseURL = (type == 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
+      const baseURL = (type === 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
       const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
       const response = await fetch(url);
 

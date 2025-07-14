@@ -264,7 +264,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
             wb = true;
             for (const [key, value] of entries(wl[bid.bidder])) {
               const params = bid?.params || {};
-              wb = wb && (key in params) && params[key] == value;
+              wb = wb && (key in params) && params[key] === value;
             }
           }
           if (wb && !isEmpty(relevadList)) {

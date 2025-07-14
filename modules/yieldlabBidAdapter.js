@@ -173,9 +173,9 @@ export const spec = {
         return;
       }
 
-      const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
-        return bidRequest.params.adslotId == bidResponse.id;
-      });
+        const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
+          return bidRequest.params.adslotId === bidResponse.id;
+        });
 
       if (matchedBid) {
         const adUnitSize = bidRequest.sizes.length === 2 && !isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0];
