@@ -591,6 +591,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "theads",
+      "aliasOf": "admixer",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
       "gvlid": 1210,
