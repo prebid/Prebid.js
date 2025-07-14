@@ -56,7 +56,7 @@ function updateFeedbackData(req) {
       if (tokens[info?.bidId]) {
         feedbackArray.push({
           feedback_token: tokens[info.bidId],
-          loss: info.bidderCpm == info.highestBidCpm ? 0 : 102,
+          loss: info.bidderCpm === info.highestBidCpm ? 0 : 102,
           price: info.highestBidCpm
         });
 
