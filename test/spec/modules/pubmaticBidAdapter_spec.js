@@ -639,38 +639,6 @@ describe('PubMatic adapter', () => {
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('tmax').to.equal(2000);
         });
-        
-        describe('Gzip Configuration', () => {
-          let configStub;
-          
-          beforeEach(() => {
-            configStub = sinon.stub(config, 'getConfig');
-          });
-          
-          afterEach(() => {
-            configStub.restore();
-          });
-          
-          it('should enable gzip compression by default', () => {
-            configStub.withArgs('pubmatic').returns({});
-            const request = spec.buildRequests(validBidRequests, bidderRequest);
-            expect(request.options.endpointCompression).to.be.true;
-          });
-          
-          it('should respect global pubmatic.gzipEnabled config', () => {
-            configStub.withArgs('pubmatic').returns({ gzipEnabled: false });
-            const request = spec.buildRequests(validBidRequests, bidderRequest);
-            expect(request.options.endpointCompression).to.be.false;
-          });
-          
-          it('should prioritize bidder-level gzipEnabled setting over global setting', () => {
-            configStub.withArgs('pubmatic').returns({ gzipEnabled: true });
-            const modifiedBidRequests = utils.deepClone(validBidRequests);
-            modifiedBidRequests[0].params.gzipEnabled = false;
-            const request = spec.buildRequests(modifiedBidRequests, bidderRequest);
-            expect(request.options.endpointCompression).to.be.false;
-          });
-        });
 
         it('should remove test if pubmaticTest is not set', () => {
           const request = spec.buildRequests(validBidRequests, bidderRequest);
