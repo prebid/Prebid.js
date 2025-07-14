@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { Renderer, executeRenderer } from 'src/Renderer.js';
 import * as utils from 'src/utils.js';
-import { loadExternalScript } from 'src/adloader.js';
-require('test/mocks/adloaderStub.js');
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('Renderer', function () {
   let oldAdUnits;
@@ -142,7 +141,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -164,7 +163,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -174,7 +173,7 @@ describe('Renderer', function () {
       testRenderer.setRender(() => {})
 
       testRenderer.render()
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function() {
@@ -194,7 +193,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -204,7 +203,7 @@ describe('Renderer', function () {
       testRenderer.setRender(() => {})
 
       testRenderer.render()
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
@@ -215,16 +214,16 @@ describe('Renderer', function () {
           render: sinon.spy()
         }
       }];
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
         adUnitCode: undefined
       });
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
 
       testRenderer.render()
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('call\'s documentResolver when configured', function () {
@@ -232,7 +231,7 @@ describe('Renderer', function () {
         return document;
       });
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { documentResolver: documentResolver }
       });

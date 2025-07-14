@@ -4,6 +4,7 @@ import {
   deepSetValue,
   getBidIdParameter,
   getDefinedParams,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isStr,
@@ -20,6 +21,7 @@ import {config} from '../src/config.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const NM_VERSION = '4.3.0';
 const PBJS_VERSION = 'v$prebid.version$';
@@ -225,7 +227,7 @@ export const spec = {
     const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
     if (bidder != BIDDER_CODE) return;
 
-    let params = [];
+    const params = [];
     _each(bids, bid => {
       if (bid.params) {
         params.push(bid.params);
@@ -271,7 +273,7 @@ function getExtNextMilImp(bid) {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
     },
   };
 
@@ -292,9 +294,7 @@ export function getImp(bid, id, mediaTypes) {
   };
 
   const gpid = bid?.ortb2Imp?.ext?.gpid;
-  const pbadslot = bid?.ortb2Imp?.ext?.data?.pbadslot;
   if (gpid) imp.ext.gpid = gpid;
-  if (pbadslot) imp.ext.data = { pbadslot };
 
   getImpBanner(imp, banner);
   getImpVideo(imp, video);
@@ -383,7 +383,7 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 };
 
 export function setOrtb2Parameters(postBody, ortb2 = {}) {
-  for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
+  for (const parameter of ALLOWED_ORTB2_PARAMETERS) {
     const value = deepAccess(ortb2, parameter);
     if (value) deepSetValue(postBody, parameter, value);
   }
@@ -431,7 +431,7 @@ function getCurrency(bid = {}) {
     };
 
     if (typeof bid.getFloor === 'function') {
-      let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      const floorInfo = bid.getFloor({currency, mediaType, size: '*'});
       mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
       mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
@@ -451,7 +451,7 @@ export function getPlacementId(bid) {
   const placementId = getBidIdParameter('placement_id', bid.params);
   if (!groupId) return placementId;
 
-  let windowTop = getTopWindow(window);
+  const windowTop = getTopWindow(window);
   let sizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.banner) sizes = [...bid.mediaTypes.banner.sizes];
@@ -498,17 +498,17 @@ function getSiteObj() {
 }
 
 function getDeviceObj() {
+  const { width, height } = getViewportSize();
   return {
-    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
-    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
+    w: width,
+    h: height,
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
   };
 }
 
 export function getSourceObj(validBidRequests, bidderRequest) {
-  const schain = validBidRequests?.[0]?.schain ||
-    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain || bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
 
   if (!schain) return;
 
@@ -520,7 +520,7 @@ export function getSourceObj(validBidRequests, bidderRequest) {
 }
 
 function getSua() {
-  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  const {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {

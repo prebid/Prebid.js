@@ -10,7 +10,8 @@ import {
   parseSizesInput,
   deepSetValue,
   formatQS,
-  setOnAny
+  setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -82,7 +83,7 @@ export const spec = {
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
-    let { user } = commonFpd;
+    const { user } = commonFpd;
 
     if (typeof getConfig('app') === 'object') {
       app = getConfig('app') || {};
@@ -101,8 +102,9 @@ export const spec = {
     }
 
     const device = getConfig('device') || {};
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    device.w = device.w || innerWidth;
+    device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
     const paramsEndpoint = setOnAny(validBidRequests, 'params.endpoint');
@@ -119,7 +121,7 @@ export const spec = {
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;

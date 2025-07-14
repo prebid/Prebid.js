@@ -294,7 +294,7 @@ describe('Adagio bid adapter', () => {
       const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
 
       const bid01 = new BidRequestBuilder().withParams().build();
-      let ortb = {
+      const ortb = {
         ortb2: {
           site: {
             ext: {
@@ -618,12 +618,13 @@ describe('Adagio bid adapter', () => {
       };
 
       it('should add the schain if available at bidder level', function() {
-        const bid01 = new BidRequestBuilder({ schain }).withParams().build();
+        const bid01 = new BidRequestBuilder({ ortb2: { source: { ext: { schain } } } }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+        expect(requests[0].data.schain).to.exist;
         expect(requests[0].data.schain).to.deep.equal(schain);
       });
 
@@ -999,7 +1000,8 @@ describe('Adagio bid adapter', () => {
         const bid01 = new BidRequestBuilder().withParams().build();
         bid01.ortb2Imp = {
           ext: {
-            data: { pbadslot: gpid }
+            data: {},
+            gpid,
           }
         };
         const bidderRequest = new BidderRequestBuilder().build();
@@ -1076,10 +1078,68 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.device).to.deep.equal(expectedData);
       });
     });
+
+    describe('with `rwdd` and `instl` signals', function() {
+      const tests = [
+        {
+          n: 'Should set signals in bidRequest if value is 1',
+          ortb2Imp: {
+            rwdd: 1,
+            instl: '1'
+          },
+          expected: {
+            rwdd: 1,
+            instl: 1
+          }
+        },
+        {
+          n: 'Should not set signals in bidRequest if value is 0',
+          ortb2Imp: {
+            rwdd: 0,
+            instl: '0'
+          },
+          expected: {
+            rwdd: undefined,
+            instl: undefined
+          }
+        },
+        {
+          n: 'Should not set if rwdd and instl are missformated',
+          ortb2Imp: {
+            rwdd: 'a',
+            ext: { instl: 1 }
+          },
+          expected: {
+            rwdd: undefined,
+            instl: undefined
+          }
+        },
+        {
+          n: 'Should not set rwdd and instl in bidRequest if undefined',
+          ortb2Imp: {},
+          expected: {
+            rwdd: undefined,
+            instl: undefined
+          }
+        }
+      ]
+
+      tests.forEach((t) => {
+        it(t.n, function() {
+          const bid01 = new BidRequestBuilder().withParams().build();
+          bid01.ortb2Imp = t.ortb2Imp;
+          const bidderRequest = new BidderRequestBuilder().build();
+          const requests = spec.buildRequests([bid01], bidderRequest);
+          const expected = t.expected;
+          expect(requests[0].data.adUnits[0].rwdd).to.equal(expected.rwdd);
+          expect(requests[0].data.adUnits[0].instl).to.equal(expected.instl);
+        });
+      })
+    })
   });
 
   describe('interpretResponse()', function() {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         data: {
           pred: 1
@@ -1105,7 +1165,7 @@ describe('Adagio bid adapter', () => {
       }
     };
 
-    let bidRequest = {
+    const bidRequest = {
       data: {
         adUnits: [{
           bidder: 'adagio',
@@ -1149,7 +1209,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should handle properly a correct bid response', function() {
-      let expectedResponse = [{
+      const expectedResponse = [{
         ad: '<div style="background-color:red; height:250px; width:300px"></div>',
         cpm: 1,
         creativeId: 'creativeId',
@@ -1182,7 +1242,7 @@ describe('Adagio bid adapter', () => {
       const altServerResponse = utils.deepClone(serverResponse);
       delete altServerResponse.body.bids[0].meta;
 
-      let expectedResponse = [{
+      const expectedResponse = [{
         ad: '<div style="background-color:red; height:250px; width:300px"></div>',
         cpm: 1,
         creativeId: 'creativeId',
@@ -1384,8 +1444,6 @@ describe('Adagio bid adapter', () => {
 
       const bidRequestNative = utils.deepClone(bidRequest)
       bidRequestNative.nativeParams = {
-        sendTargetingKeys: false,
-
         clickUrl: {
           required: true,
         },
@@ -1514,7 +1572,7 @@ describe('Adagio bid adapter', () => {
         }
       }];
 
-      let result = spec.getUserSyncs(syncOptions, serverResponses);
+      const result = spec.getUserSyncs(syncOptions, serverResponses);
 
       expect(result[0].type).to.equal('iframe');
       expect(result[0].url).contain('setuid');

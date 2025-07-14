@@ -51,7 +51,7 @@ const RESPONSE = {
 
 describe('rixengine bid adapter', function () {
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: 'rixengine',
       params: {
         endpoint: 'http://demo.svr.rixengine.com/rtb',
@@ -93,8 +93,8 @@ describe('rixengine bid adapter', function () {
 
   describe('interpretResponse', function () {
     it('has bids', function () {
-      let request = spec.buildRequests(REQUEST, {})[0];
-      let bids = spec.interpretResponse(RESPONSE, request);
+      const request = spec.buildRequests(REQUEST, {})[0];
+      const bids = spec.interpretResponse(RESPONSE, request);
       expect(bids).to.be.an('array').that.is.not.empty;
       validateBidOnIndex(0);
 

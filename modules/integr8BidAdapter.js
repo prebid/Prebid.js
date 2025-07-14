@@ -34,8 +34,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let deliveryUrl = '';
@@ -58,7 +59,7 @@ export const spec = {
       }
     }
 
-    let placements = validBidRequests.map(bidRequest => {
+    const placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
@@ -82,7 +83,7 @@ export const spec = {
       deliveryUrl = DEFAULT_ENDPOINT_URL;
     }
 
-    let body = {
+    const body = {
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
       storageId: storageId,
@@ -149,7 +150,7 @@ export function getBidFloor(bid) {
     return null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'EUR',
     mediaType: '*',
     size: '*'

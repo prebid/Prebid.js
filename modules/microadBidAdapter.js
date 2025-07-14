@@ -1,5 +1,4 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
-import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -10,7 +9,7 @@ const ENDPOINT_URLS = {
   'production': 'https://s-rtb-pb.send.microad.jp/prebid',
   'test': 'https://rtbtest.send.microad.jp/prebid'
 };
-export let ENVIRONMENT = 'production';
+export const ENVIRONMENT = 'production';
 
 /* eslint-disable no-template-curly-in-string */
 const EXT_URL_STRING = '${COMPASS_EXT_URL}';
@@ -100,7 +99,7 @@ export const spec = {
           const aidParam = { type: audienceId.type, id: bidAudienceId };
           // Set ext
           if (isArray(userIdAsEids)) {
-            const targetEid = find(userIdAsEids, (eid) => eid.source === audienceId.source) || {};
+            const targetEid = ((userIdAsEids) || []).find((eid) => eid.source === audienceId.source) || {};
             if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
               aidParam.ext = targetEid.uids[0].ext;
             }
@@ -115,7 +114,7 @@ export const spec = {
       }
 
       const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || pbadslot;
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         params['gpid'] = gpid;
       }

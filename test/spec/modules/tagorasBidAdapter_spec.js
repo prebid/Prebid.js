@@ -208,6 +208,9 @@ function getTopWindowQueryParams() {
 }
 
 describe('TagorasBidAdapter', function () {
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
+
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -273,7 +276,7 @@ describe('TagorasBidAdapter', function () {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
     });
 

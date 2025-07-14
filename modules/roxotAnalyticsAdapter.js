@@ -2,7 +2,7 @@ import {deepClone, getParameterByName, logError, logInfo} from '../src/utils.js'
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {includes} from '../src/polyfill.js';
+
 import {ajaxBuilder} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
@@ -11,7 +11,7 @@ const MODULE_CODE = 'roxot';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
-let ajax = ajaxBuilder(0);
+const ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'pa.rxthdr.com/v3';
 const DEFAULT_SERVER_CONFIG_URL = 'pa.rxthdr.com/v3';
@@ -44,21 +44,21 @@ const ROXOT_EVENTS = {
 
 let initOptions = {};
 
-let localStoragePrefix = 'roxot_analytics_';
+const localStoragePrefix = 'roxot_analytics_';
 
-let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-let utmTtlKey = 'utm_ttl';
-let utmTtl = 60 * 60 * 1000;
+const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+const utmTtlKey = 'utm_ttl';
+const utmTtl = 60 * 60 * 1000;
 
-let isNewKey = 'is_new_flag';
-let isNewTtl = 60 * 60 * 1000;
+const isNewKey = 'is_new_flag';
+const isNewTtl = 60 * 60 * 1000;
 
-let auctionCache = {};
-let auctionTtl = 60 * 60 * 1000;
+const auctionCache = {};
+const auctionTtl = 60 * 60 * 1000;
 
-let sendEventCache = [];
+const sendEventCache = [];
 let sendEventTimeoutId = null;
-let sendEventTimeoutTime = 1000;
+const sendEventTimeoutTime = 1000;
 
 function detectDevice() {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
@@ -71,8 +71,8 @@ function detectDevice() {
 }
 
 function checkIsNewFlag() {
-  let key = buildLocalStorageKey(isNewKey);
-  let lastUpdate = Number(storage.getDataFromLocalStorage(key));
+  const key = buildLocalStorageKey(isNewKey);
+  const lastUpdate = Number(storage.getDataFromLocalStorage(key));
   storage.setDataInLocalStorage(key, Date.now());
   return Date.now() - lastUpdate > isNewTtl;
 }
@@ -82,7 +82,7 @@ function updateUtmTimeout() {
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
+  const utmTimestamp = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
   return (Date.now() - utmTimestamp) > utmTtl;
 }
 
@@ -95,12 +95,12 @@ function isSupportedAdUnit(adUnit) {
     return true;
   }
 
-  return includes(initOptions.adUnits, adUnit);
+  return initOptions.adUnits.includes(adUnit);
 }
 
 function deleteOldAuctions() {
-  for (let auctionId in auctionCache) {
-    let auction = auctionCache[auctionId];
+  for (const auctionId in auctionCache) {
+    const auction = auctionCache[auctionId];
     if (Date.now() - auction.start > auctionTtl) {
       delete auctionCache[auctionId];
     }
@@ -190,33 +190,33 @@ function handleAuctionInit(args) {
 }
 
 function handleBidRequested(args) {
-  let auction = auctionCache[args.auctionId];
+  const auction = auctionCache[args.auctionId];
   args.bids.forEach(function (bidRequest) {
-    let adUnitCode = extractAdUnitCode(bidRequest);
-    let bidder = extractBidder(bidRequest);
+    const adUnitCode = extractAdUnitCode(bidRequest);
+    const bidder = extractBidder(bidRequest);
     if (!isSupportedAdUnit(adUnitCode)) {
       return;
     }
     auction['adUnits'][adUnitCode] = auction['adUnits'][adUnitCode] || buildAdUnitAuctionEntity(auction, bidRequest);
-    let adUnitAuction = auction['adUnits'][adUnitCode];
+    const adUnitAuction = auction['adUnits'][adUnitCode];
     adUnitAuction['bidders'][bidder] = adUnitAuction['bidders'][bidder] || buildBidderRequest(auction, bidRequest);
   });
 }
 
 function handleBidAdjustment(args) {
-  let adUnitCode = extractAdUnitCode(args);
-  let bidder = extractBidder(args);
+  const adUnitCode = extractAdUnitCode(args);
+  const bidder = extractBidder(args);
   if (!isSupportedAdUnit(adUnitCode)) {
     return;
   }
 
-  let adUnitAuction = auctionCache[args.auctionId]['adUnits'][adUnitCode];
+  const adUnitAuction = auctionCache[args.auctionId]['adUnits'][adUnitCode];
   if (adUnitAuction.status === AUCTION_STATUS.FINISHED) {
     handleBidAfterTimeout(adUnitAuction, args);
     return;
   }
 
-  let bidderRequest = adUnitAuction['bidders'][bidder];
+  const bidderRequest = adUnitAuction['bidders'][bidder];
   if (bidderRequest.cpm < args.cpm) {
     bidderRequest.cpm = args.cpm;
     bidderRequest.finish = args.responseTimestamp;
@@ -229,9 +229,9 @@ function handleBidAdjustment(args) {
 }
 
 function handleBidAfterTimeout(adUnitAuction, args) {
-  let bidder = extractBidder(args);
-  let bidderRequest = adUnitAuction['bidders'][bidder];
-  let bidAfterTimeout = buildBidAfterTimeout(adUnitAuction, args);
+  const bidder = extractBidder(args);
+  const bidderRequest = adUnitAuction['bidders'][bidder];
+  const bidAfterTimeout = buildBidAfterTimeout(adUnitAuction, args);
 
   if (bidAfterTimeout.cpm > bidderRequest.cpm) {
     bidderRequest.cpm = bidAfterTimeout.cpm;
@@ -246,20 +246,20 @@ function handleBidAfterTimeout(adUnitAuction, args) {
 }
 
 function handleBidderDone(args) {
-  let auction = auctionCache[args.auctionId];
+  const auction = auctionCache[args.auctionId];
 
   args.bids.forEach(function (bidDone) {
-    let adUnitCode = extractAdUnitCode(bidDone);
-    let bidder = extractBidder(bidDone);
+    const adUnitCode = extractAdUnitCode(bidDone);
+    const bidder = extractBidder(bidDone);
     if (!isSupportedAdUnit(adUnitCode)) {
       return;
     }
 
-    let adUnitAuction = auction['adUnits'][adUnitCode];
+    const adUnitAuction = auction['adUnits'][adUnitCode];
     if (adUnitAuction.status === AUCTION_STATUS.FINISHED) {
       return;
     }
-    let bidderRequest = adUnitAuction['bidders'][bidder];
+    const bidderRequest = adUnitAuction['bidders'][bidder];
     if (bidderRequest.status !== BIDDER_STATUS.REQUESTED) {
       return;
     }
@@ -271,20 +271,20 @@ function handleBidderDone(args) {
 }
 
 function handleAuctionEnd(args) {
-  let auction = auctionCache[args.auctionId];
+  const auction = auctionCache[args.auctionId];
   if (!Object.keys(auction.adUnits).length) {
     delete auctionCache[args.auctionId];
   }
 
-  let finish = Date.now();
+  const finish = Date.now();
   auction.finish = finish;
-  for (let adUnit in auction.adUnits) {
-    let adUnitAuction = auction.adUnits[adUnit];
+  for (const adUnit in auction.adUnits) {
+    const adUnitAuction = auction.adUnits[adUnit];
     adUnitAuction.finish = finish;
     adUnitAuction.status = AUCTION_STATUS.FINISHED;
 
-    for (let bidder in adUnitAuction.bidders) {
-      let bidderRequest = adUnitAuction.bidders[bidder];
+    for (const bidder in adUnitAuction.bidders) {
+      const bidderRequest = adUnitAuction.bidders[bidder];
       if (bidderRequest.status !== BIDDER_STATUS.REQUESTED) {
         continue;
       }
@@ -297,12 +297,12 @@ function handleAuctionEnd(args) {
 }
 
 function handleBidWon(args) {
-  let adUnitCode = extractAdUnitCode(args);
+  const adUnitCode = extractAdUnitCode(args);
   if (!isSupportedAdUnit(adUnitCode)) {
     return;
   }
-  let adUnitAuction = auctionCache[args.auctionId]['adUnits'][adUnitCode];
-  let impression = buildImpression(adUnitAuction, args);
+  const adUnitAuction = auctionCache[args.auctionId]['adUnits'][adUnitCode];
+  const impression = buildImpression(adUnitAuction, args);
   registerEvent(ROXOT_EVENTS.IMPRESSION, 'Bid won', impression);
 }
 
@@ -310,7 +310,7 @@ function handleOtherEvents(eventType, args) {
   registerEvent(eventType, eventType, args);
 }
 
-let roxotAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
+const roxotAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
   track({eventType, args}) {
     switch (eventType) {
       case AUCTION_INIT:
@@ -349,10 +349,10 @@ roxotAdapter.enableAnalytics = function (config) {
 };
 
 roxotAdapter.buildUtmTagData = function () {
-  let utmTagData = {};
+  const utmTagData = {};
   let utmTagsDetected = false;
   utmTags.forEach(function (utmTagKey) {
-    let utmTagValue = getParameterByName(utmTagKey);
+    const utmTagValue = getParameterByName(utmTagKey);
     if (utmTagValue !== '') {
       utmTagsDetected = true;
     }
@@ -400,7 +400,7 @@ roxotAdapter.getOptions = function () {
 };
 
 function registerEvent(eventType, eventName, data) {
-  let eventData = {
+  const eventData = {
     eventType: eventType,
     eventName: eventName,
     data: data
@@ -425,8 +425,8 @@ function checkSendEvent() {
   }
 
   while (sendEventCache.length) {
-    let event = sendEventCache.shift();
-    let isNeedSend = initOptions.serverConfig[event.eventType] || 0;
+    const event = sendEventCache.shift();
+    const isNeedSend = initOptions.serverConfig[event.eventType] || 0;
     if (Number(isNeedSend) === 0) {
       _logInfo('Skip event ' + event.eventName, event);
       continue;
@@ -444,8 +444,8 @@ function checkEventAfterTimeout() {
 }
 
 function sendEvent(eventType, eventName, data) {
-  let url = 'https://' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
-  let eventData = {
+  const url = 'https://' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  const eventData = {
     'event': eventType,
     'eventName': eventName,
     'options': initOptions,
@@ -467,7 +467,7 @@ function sendEvent(eventType, eventName, data) {
 }
 
 function loadServerConfig() {
-  let url = 'https://' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  const url = 'https://' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   ajax(
     url,
     {

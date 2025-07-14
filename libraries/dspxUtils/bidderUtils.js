@@ -1,5 +1,5 @@
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.js';
+import {deepAccess, isArray, isEmptyStr, isFn} from '../../src/utils.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,65 +13,65 @@ import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.j
  * @param payload
  */
 export function fillUsersIds(bidRequest, payload) {
-  if (bidRequest.hasOwnProperty('userId')) {
-    let didMapping = {
-      did_netid: 'userId.netId',
-      did_id5: 'userId.id5id.uid',
-      did_id5_linktype: 'userId.id5id.ext.linkType',
-      did_uid2: 'userId.uid2',
-      did_sharedid: 'userId.sharedid',
-      did_pubcid: 'userId.pubcid',
-      did_uqid: 'userId.utiq',
-      did_cruid: 'userId.criteoid',
-      did_euid: 'userId.euid',
-      // did_tdid: 'unifiedId',
-      did_tdid: 'userId.tdid',
-      did_ppuid: function() {
-        let path = 'userId.pubProvidedId';
-        let value = deepAccess(bidRequest, path);
-        if (isArray(value)) {
-          for (const rec of value) {
-            if (rec.uids && rec.uids.length > 0) {
-              for (let i = 0; i < rec.uids.length; i++) {
-                if ('id' in rec.uids[i] && deepAccess(rec.uids[i], 'ext.stype') === 'ppuid') {
-                  return (rec.uids[i].atype ?? '') + ':' + rec.source + ':' + rec.uids[i].id;
-                }
-              }
+  if (bidRequest.hasOwnProperty('userIdAsEids')) {
+    const didMapping = {
+      did_netid: 'netid.de',
+      did_uid2: 'uidapi.com',
+      did_sharedid: 'sharedid.org',
+      did_pubcid: 'pubcid.org',
+      did_cruid: 'criteo.com',
+      did_tdid: 'adserver.org',
+      did_pbmid: 'regexp:[esp\.]*pubmatic\.com',
+      did_id5: 'id5-sync.com',
+      did_uqid: 'utiq.com',
+      did_id5_linktype: ['id5-sync.com', function (e) {
+        return e.uids?.[0]?.ext?.linkType;
+      }],
+      did_euid: 'euid.eu',
+      did_yhid: 'yahoo.com',
+      did_ppuid: ['regexp:.*', function (e) {
+        if (e.uids?.length) {
+          for (let i = 0; i < e.uids.length; i++) {
+            if ('id' in e.uids[i] && deepAccess(e.uids[i], 'ext.stype') === 'ppuid') {
+              return (e.uids[i].atype ?? '') + ':' + e.source + ':' + e.uids[i].id;
             }
           }
         }
-        return undefined;
-      },
-      did_cpubcid: 'crumbs.pubcid'
+      }],
     };
-    for (let paramName in didMapping) {
-      let path = didMapping[paramName];
+    bidRequest.userIdAsEids?.forEach(eid => {
+      for (const paramName in didMapping) {
+        let targetSource = didMapping[paramName];
 
-      // handle function
-      if (typeof path == 'function') {
-        let value = path(paramName);
-        if (value) {
-          payload[paramName] = value;
+        // func support
+        let func = null;
+        if (Array.isArray(targetSource)) {
+          func = targetSource[1];
+          targetSource = targetSource[0];
         }
-        continue;
-      }
-      // direct access
-      let value = deepAccess(bidRequest, path);
-      if (typeof value == 'string' || typeof value == 'number') {
-        payload[paramName] = value;
-      } else if (typeof value == 'object') {
-        // trying to find string ID value
-        if (typeof deepAccess(bidRequest, path + '.id') == 'string') {
-          payload[paramName] = deepAccess(bidRequest, path + '.id');
-        } else {
-          if (Object.keys(value).length > 0) {
-            logError(`WARNING: fillUserIds had to use first key in user object to get value for bid.userId key: ${path}.`);
-            payload[paramName] = value[Object.keys(value)[0]];
+
+        // regexp support
+        let targetSourceType = 'eq';
+        if (targetSource.includes('regexp:')) {
+          targetSourceType = 'regexp';
+          targetSource = targetSource.substring(7);
+        }
+
+        // fill payload
+        const isMatches = targetSourceType === 'eq' ? eid.source === targetSource : eid.source.match(targetSource);
+        if (isMatches) {
+          if (func == null) {
+            if (eid.uids?.[0]?.id) {
+              payload[paramName] = eid.uids[0].id;
+            }
+          } else {
+             payload[paramName] = func(eid);
           }
         }
       }
-    }
+    });
   }
+  payload["did_cpubcid"] = bidRequest.crumbs?.pubcid;
 }
 
 export function appendToUrl(url, what) {
@@ -82,13 +82,14 @@ export function appendToUrl(url, what) {
 }
 
 export function objectToQueryString(obj, prefix) {
-  let str = [];
+  const str = [];
   let p;
   for (p in obj) {
     if (obj.hasOwnProperty(p)) {
-      let k = prefix ? prefix + '[' + p + ']' : p;
-      let v = obj[p];
-      str.push((v !== null && typeof v === 'object')
+      const k = prefix ? prefix + '[' + p + ']' : p;
+      const v = obj[p];
+      if (v === null || v === undefined) continue;
+      str.push((typeof v === 'object')
         ? objectToQueryString(v, k)
         : encodeURIComponent(k) + '=' + encodeURIComponent(v));
     }
@@ -152,7 +153,7 @@ export function getBannerSizes(bid) {
  * @returns {object} sizeObj
  */
 export function parseSize(size) {
-  let sizeObj = {}
+  const sizeObj = {}
   sizeObj.width = parseInt(size[0], 10);
   sizeObj.height = parseInt(size[1], 10);
   return sizeObj;
@@ -177,7 +178,7 @@ export function parseSizes(sizes) {
  * @returns {*}
  */
 export function convertMediaInfoForRequest(mediaTypesInfo) {
-  let requestData = {};
+  const requestData = {};
   Object.keys(mediaTypesInfo).forEach(mediaType => {
     requestData[mediaType] = mediaTypesInfo[mediaType].map(size => {
       return size.width + 'x' + size.height;
@@ -192,7 +193,7 @@ export function convertMediaInfoForRequest(mediaTypesInfo) {
  * @param bid
  */
 export function getMediaTypesInfo(bid) {
-  let mediaTypesInfo = {};
+  const mediaTypesInfo = {};
 
   if (bid.mediaTypes) {
     Object.keys(bid.mediaTypes).forEach(mediaType => {
@@ -239,24 +240,24 @@ export function siteContentToString(content) {
   if (!content) {
     return '';
   }
-  let stringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'isrc', 'url', 'keywords'];
-  let intKeys = ['episode', 'context', 'livestream'];
-  let arrKeys = ['cat'];
-  let retArr = [];
+  const stringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'isrc', 'url', 'keywords'];
+  const intKeys = ['episode', 'context', 'livestream'];
+  const arrKeys = ['cat'];
+  const retArr = [];
   arrKeys.forEach(k => {
-    let val = deepAccess(content, k);
+    const val = deepAccess(content, k);
     if (val && Array.isArray(val)) {
       retArr.push(k + ':' + val.join('|'));
     }
   });
   intKeys.forEach(k => {
-    let val = deepAccess(content, k);
+    const val = deepAccess(content, k);
     if (val && typeof val === 'number') {
       retArr.push(k + ':' + val);
     }
   });
   stringKeys.forEach(k => {
-    let val = deepAccess(content, k);
+    const val = deepAccess(content, k);
     if (val && typeof val === 'string') {
       retArr.push(k + ':' + encodeURIComponent(val));
     }

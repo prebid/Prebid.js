@@ -14,7 +14,6 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
@@ -24,8 +23,8 @@ import {expect} from 'chai';
 import {deepClone} from '../../src/utils.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
-import '../../modules/currency.js'
-import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
+import { setConfig as setCurrencyConfig } from '../../modules/currency.js'
+
 import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 import {sandbox} from 'sinon';
@@ -57,7 +56,7 @@ const ADUNIT_CODE1 = 'adUnit-code-1';
  * @returns {Bid}
  */
 function mockBid(opts) {
-  let bidderCode = opts && opts.bidderCode;
+  const bidderCode = opts && opts.bidderCode;
 
   return {
     adUnitCode: opts?.adUnitCode || ADUNIT_CODE,
@@ -100,16 +99,16 @@ function mockBidRequest(bid, opts) {
   if (!bid) {
     throw new Error('bid required');
   }
-  let bidderCode = opts && opts.bidderCode;
-  let adUnitCode = opts && opts.adUnitCode;
-  let defaultMediaType = {
+  const bidderCode = opts && opts.bidderCode;
+  const adUnitCode = opts && opts.adUnitCode;
+  const defaultMediaType = {
     banner: {
       sizes: [[300, 250], [300, 600]]
     }
   }
-  let mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
+  const mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
 
-  let requestId = utils.getUniqueIdentifierStr();
+  const requestId = utils.getUniqueIdentifierStr();
 
   return {
     'bidderCode': bidderCode || bid.bidderCode,
@@ -141,7 +140,7 @@ function mockBidRequest(bid, opts) {
 }
 
 function mockBidder(bidderCode, bids) {
-  let spec = {
+  const spec = {
     code: bidderCode,
     isBidRequestValid: sinon.stub(),
     buildRequests: sinon.stub(),
@@ -254,19 +253,19 @@ describe('auctionmanager.js', function () {
 
     it('No bidder level configuration defined - default', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
-      let expected = getDefaultExpected(bid);
+      const expected = getDefaultExpected(bid);
       // remove hb_cache_host from expected
       delete expected.hb_cache_host;
-      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
     it('should suppress acat if undefined', function () {
       const noAcatBid = deepClone(DEFAULT_BID);
       noAcatBid.meta.primaryCatId = ''
-      let expected = getDefaultExpected(noAcatBid);
+      const expected = getDefaultExpected(noAcatBid);
       delete expected.hb_acat;
-      let response = getKeyValueTargetingPairs(noAcatBid.bidderCode, noAcatBid);
+      const response = getKeyValueTargetingPairs(noAcatBid.bidderCode, noAcatBid);
       assert.deepEqual(response, expected);
     });
 
@@ -278,83 +277,83 @@ describe('auctionmanager.js', function () {
           }
         });
         $$PREBID_GLOBAL$$.bidderSettings = {};
-        let videoBid = utils.deepClone(bid);
+        const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
 
-        let expected = getDefaultExpected(videoBid);
-        let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
+        const expected = getDefaultExpected(videoBid);
+        const response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
         assert.deepEqual(response, expected);
       });
     }
 
     it('Custom configuration for all bidders', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        standard: {
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
+        {
+          standard: {
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  // change default here
+                  return bidResponse.pbHg;
+                }
+              }, {
+                key: TARGETING_KEYS.SIZE,
+                val: function (bidResponse) {
+                  return bidResponse.size;
+                }
+              },
+              {
+                key: TARGETING_KEYS.SOURCE,
+                val: function (bidResponse) {
+                  return bidResponse.source;
+                }
+              },
+              {
+                key: TARGETING_KEYS.FORMAT,
+                val: function (bidResponse) {
+                  return bidResponse.mediaType;
+                }
+              },
+              {
+                key: TARGETING_KEYS.ADOMAIN,
+                val: function (bidResponse) {
+                  return bidResponse.meta.advertiserDomains[0];
+                }
+              },
+              {
+                key: TARGETING_KEYS.CRID,
+                val: function (bidResponse) {
+                  return bidResponse.creativeId;
+                }
+              },
+              {
+                key: TARGETING_KEYS.DSP,
+                val: function (bidResponse) {
+                  return bidResponse.meta.networkId;
+                }
+              },
+              {
+                key: TARGETING_KEYS.ACAT,
+                val: function (bidResponse) {
+                  return bidResponse.meta.primaryCatId;
+                }
               }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                // change default here
-                return bidResponse.pbHg;
-              }
-            }, {
-              key: TARGETING_KEYS.SIZE,
-              val: function (bidResponse) {
-                return bidResponse.size;
-              }
-            },
-            {
-              key: TARGETING_KEYS.SOURCE,
-              val: function (bidResponse) {
-                return bidResponse.source;
-              }
-            },
-            {
-              key: TARGETING_KEYS.FORMAT,
-              val: function (bidResponse) {
-                return bidResponse.mediaType;
-              }
-            },
-            {
-              key: TARGETING_KEYS.ADOMAIN,
-              val: function (bidResponse) {
-                return bidResponse.meta.advertiserDomains[0];
-              }
-            },
-            {
-              key: TARGETING_KEYS.CRID,
-              val: function (bidResponse) {
-                return bidResponse.creativeId;
-              }
-            },
-            {
-              key: TARGETING_KEYS.DSP,
-              val: function (bidResponse) {
-                return bidResponse.meta.networkId;
-              }
-            },
-            {
-              key: TARGETING_KEYS.ACAT,
-              val: function (bidResponse) {
-                return bidResponse.meta.primaryCatId;
-              }
-            }
-          ]
+            ]
 
-        }
-      };
+          }
+        };
 
       var expected = getDefaultExpected(bid);
       expected[TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
@@ -370,126 +369,126 @@ describe('auctionmanager.js', function () {
             url: 'https://prebid.adnxs.com/pbc/v1/cache'
           }
         });
-        let videoBid = utils.deepClone(bid);
+        const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
 
         $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        standard: {
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
-              }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                return bidResponse.pbMg;
-              }
-            }, {
-              key: TARGETING_KEYS.SIZE,
-              val: function (bidResponse) {
-                return bidResponse.size;
-              }
-            },
-            {
-              key: TARGETING_KEYS.SOURCE,
-              val: function (bidResponse) {
-                return bidResponse.source;
-              }
-            },
-            {
-              key: TARGETING_KEYS.FORMAT,
-              val: function (bidResponse) {
-                return bidResponse.mediaType;
-              }
-            },
-            {
-              key: TARGETING_KEYS.UUID,
-              val: function (bidResponse) {
-                return bidResponse.videoCacheKey;
-              }
-            },
-            {
-              key: TARGETING_KEYS.CACHE_ID,
-              val: function (bidResponse) {
-                return bidResponse.videoCacheKey;
-              }
-            },
-            {
-              key: TARGETING_KEYS.ADOMAIN,
-              val: function (bidResponse) {
-                return bidResponse.meta.advertiserDomains[0];
-              }
-            },
-            {
-              key: TARGETING_KEYS.CRID,
-              val: function (bidResponse) {
-                return bidResponse.creativeId;
-              }
-            },
-            {
-              key: TARGETING_KEYS.DSP,
-              val: function (bidResponse) {
-                return bidResponse.meta.networkId;
-              }
-            },
-            {
-              key: TARGETING_KEYS.ACAT,
-              val: function (bidResponse) {
-                return bidResponse.meta.primaryCatId;
-              }
+          {
+            standard: {
+              adserverTargeting: [
+                {
+                  key: TARGETING_KEYS.BIDDER,
+                  val: function (bidResponse) {
+                    return bidResponse.bidderCode;
+                  }
+                }, {
+                  key: TARGETING_KEYS.AD_ID,
+                  val: function (bidResponse) {
+                    return bidResponse.adId;
+                  }
+                }, {
+                  key: TARGETING_KEYS.PRICE_BUCKET,
+                  val: function (bidResponse) {
+                    return bidResponse.pbMg;
+                  }
+                }, {
+                  key: TARGETING_KEYS.SIZE,
+                  val: function (bidResponse) {
+                    return bidResponse.size;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.SOURCE,
+                  val: function (bidResponse) {
+                    return bidResponse.source;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.FORMAT,
+                  val: function (bidResponse) {
+                    return bidResponse.mediaType;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.UUID,
+                  val: function (bidResponse) {
+                    return bidResponse.videoCacheKey;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.CACHE_ID,
+                  val: function (bidResponse) {
+                    return bidResponse.videoCacheKey;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.ADOMAIN,
+                  val: function (bidResponse) {
+                    return bidResponse.meta.advertiserDomains[0];
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.CRID,
+                  val: function (bidResponse) {
+                    return bidResponse.creativeId;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.DSP,
+                  val: function (bidResponse) {
+                    return bidResponse.meta.networkId;
+                  }
+                },
+                {
+                  key: TARGETING_KEYS.ACAT,
+                  val: function (bidResponse) {
+                    return bidResponse.meta.primaryCatId;
+                  }
+                }
+              ]
+
             }
-          ]
+          };
 
-        }
-      };
+        const expected = getDefaultExpected(videoBid);
 
-        let expected = getDefaultExpected(videoBid);
-
-        let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
+        const response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
         assert.deepEqual(response, expected);
       });
     }
 
     it('Custom configuration for one bidder', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        appnexus: {
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
+        {
+          appnexus: {
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  // change default here
+                  return bidResponse.pbHg;
+                }
+              }, {
+                key: TARGETING_KEYS.SIZE,
+                val: function (bidResponse) {
+                  return bidResponse.size;
+                }
               }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                // change default here
-                return bidResponse.pbHg;
-              }
-            }, {
-              key: TARGETING_KEYS.SIZE,
-              val: function (bidResponse) {
-                return bidResponse.size;
-              }
-            }
-          ]
+            ]
 
-        }
-      };
+          }
+        };
 
       var expected = getDefaultExpected(bid);
       expected[TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
@@ -500,35 +499,35 @@ describe('auctionmanager.js', function () {
 
     it('Custom configuration for one bidder - not matched', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        nonExistentBidder: {
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
+        {
+          nonExistentBidder: {
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  // change default here
+                  return bidResponse.pbHg;
+                }
+              }, {
+                key: TARGETING_KEYS.SIZE,
+                val: function (bidResponse) {
+                  return bidResponse.size;
+                }
               }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                // change default here
-                return bidResponse.pbHg;
-              }
-            }, {
-              key: TARGETING_KEYS.SIZE,
-              val: function (bidResponse) {
-                return bidResponse.size;
-              }
-            }
-          ]
+            ]
 
-        }
-      };
+          }
+        };
       var expected = getDefaultExpected(bid);
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
@@ -548,45 +547,45 @@ describe('auctionmanager.js', function () {
       });
 
       $$PREBID_GLOBAL$$.bidderSettings = {};
-      let expected = getDefaultExpected(bid);
-      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      const expected = getDefaultExpected(bid);
+      const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        appnexus: {
-          bidCpmAdjustment: function (bidCpm) {
-            return bidCpm * 0.7;
+        {
+          appnexus: {
+            bidCpmAdjustment: function (bidCpm) {
+              return bidCpm * 0.7;
+            },
           },
-        },
-        standard: {
-          bidCpmAdjustment: function (bidCpm) {
-            return 200;
-          },
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
+          standard: {
+            bidCpmAdjustment: function (bidCpm) {
+              return 200;
+            },
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  // change default here
+                  return 10.00;
+                }
               }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                // change default here
-                return 10.00;
-              }
-            }
-          ]
+            ]
 
-        }
-      };
+          }
+        };
       var expected = getDefaultExpected(bid, [TARGETING_KEYS.BIDDER, TARGETING_KEYS.AD_ID]);
       expected[TARGETING_KEYS.PRICE_BUCKET] = 10.0;
 
@@ -596,20 +595,20 @@ describe('auctionmanager.js', function () {
 
     it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
       const bid = Object.assign({},
-        createBid(2),
+        createBid(),
         fixtures.getBidResponses()[5]
       );
 
       assert.equal(bid.cpm, 0.5);
 
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        standard: {
-          bidCpmAdjustment: function (bidCpm) {
-            return bidCpm * 0.5;
+        {
+          standard: {
+            bidCpmAdjustment: function (bidCpm) {
+              return bidCpm * 0.5;
+            }
           }
-        }
-      };
+        };
 
       adjustBids(bid)
       assert.equal(bid.cpm, 0.25);
@@ -617,60 +616,60 @@ describe('auctionmanager.js', function () {
 
     it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        appnexus: {
-          bidCpmAdjustment: function (bidCpm) {
-            return bidCpm * 0.7;
-          },
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
-              }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                // change default here
-                return 15.00;
-              }
-            }
-          ]
-        },
-        standard: {
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
-              }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                // change default here
-                return 10.00;
-              },
+        {
+          appnexus: {
+            bidCpmAdjustment: function (bidCpm) {
+              return bidCpm * 0.7;
             },
-            {
-              key: TARGETING_KEYS.SIZE,
-              val: function (bidResponse) {
-                return bidResponse.size;
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  // change default here
+                  return 15.00;
+                }
               }
-            }
-          ]
+            ]
+          },
+          standard: {
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  // change default here
+                  return 10.00;
+                },
+              },
+              {
+                key: TARGETING_KEYS.SIZE,
+                val: function (bidResponse) {
+                  return bidResponse.size;
+                }
+              }
+            ]
 
-        }
-      };
+          }
+        };
       var expected = getDefaultExpected(bid, [TARGETING_KEYS.BIDDER, TARGETING_KEYS.AD_ID, TARGETING_KEYS.SIZE]);
       expected[TARGETING_KEYS.PRICE_BUCKET] = 15.0;
 
@@ -680,29 +679,29 @@ describe('auctionmanager.js', function () {
 
     it('sendStandardTargeting=false, and inherit custom', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        appnexus: {
-          sendStandardTargeting: false,
-          adserverTargeting: [
-            {
-              key: TARGETING_KEYS.BIDDER,
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
+        {
+          appnexus: {
+            sendStandardTargeting: false,
+            adserverTargeting: [
+              {
+                key: TARGETING_KEYS.BIDDER,
+                val: function (bidResponse) {
+                  return bidResponse.bidderCode;
+                }
+              }, {
+                key: TARGETING_KEYS.AD_ID,
+                val: function (bidResponse) {
+                  return bidResponse.adId;
+                }
+              }, {
+                key: TARGETING_KEYS.PRICE_BUCKET,
+                val: function (bidResponse) {
+                  return bidResponse.pbHg;
+                }
               }
-            }, {
-              key: TARGETING_KEYS.AD_ID,
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: TARGETING_KEYS.PRICE_BUCKET,
-              val: function (bidResponse) {
-                return bidResponse.pbHg;
-              }
-            }
-          ]
-        }
-      };
+            ]
+          }
+        };
       var expected = getDefaultExpected(bid);
       expected[TARGETING_KEYS.PRICE_BUCKET] = 5.57;
 
@@ -713,21 +712,21 @@ describe('auctionmanager.js', function () {
 
     it('suppressEmptyKeys=true', function() {
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        standard: {
-          suppressEmptyKeys: true,
-          adserverTargeting: [
-            {
-              key: 'aKeyWithAValue',
-              val: 42
-            },
-            {
-              key: 'aKeyWithAnEmptyValue',
-              val: ''
-            }
-          ]
-        }
-      };
+        {
+          standard: {
+            suppressEmptyKeys: true,
+            adserverTargeting: [
+              {
+                key: 'aKeyWithAValue',
+                val: 42
+              },
+              {
+                key: 'aKeyWithAnEmptyValue',
+                val: ''
+              }
+            ]
+          }
+        };
 
       var expected = {
         'aKeyWithAValue': 42
@@ -741,31 +740,31 @@ describe('auctionmanager.js', function () {
   describe('adjustBids', function () {
     it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
-        createBid(2),
+        createBid(),
         fixtures.getBidResponses()[5]
       );
 
       assert.equal(bid.cpm, 0.5);
 
       $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        brealtime: {
-          bidCpmAdjustment: function (bidCpm, bidObj) {
-            assert.deepEqual(bidObj, bid);
-            if (bidObj.adUnitCode === 'negative') {
-              return bidCpm * -0.5;
-            }
-            if (bidObj.adUnitCode === 'zero') {
-              return 0;
-            }
-            return bidCpm * 0.5;
+        {
+          brealtime: {
+            bidCpmAdjustment: function (bidCpm, bidObj) {
+              assert.deepEqual(bidObj, bid);
+              if (bidObj.adUnitCode === 'negative') {
+                return bidCpm * -0.5;
+              }
+              if (bidObj.adUnitCode === 'zero') {
+                return 0;
+              }
+              return bidCpm * 0.5;
+            },
           },
-        },
-        standard: {
-          adserverTargeting: [
-          ]
-        }
-      };
+          standard: {
+            adserverTargeting: [
+            ]
+          }
+        };
 
       // negative
       bid.adUnitCode = 'negative';
@@ -845,7 +844,7 @@ describe('auctionmanager.js', function () {
 
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({adUnits});
-      stubCallAdapters.reset();
+      stubCallAdapters.resetHistory();
       auction.callBids();
       await auction.requestsDone;
     })
@@ -1051,7 +1050,7 @@ describe('auctionmanager.js', function () {
           bids[0].cpm = cpm;
           auction.callBids();
 
-          let registeredBid = auction.getBidsReceived().pop();
+          const registeredBid = auction.getBidsReceived().pop();
           assert.equal(registeredBid.pbDg, expected, msg);
         };
       };
@@ -1072,7 +1071,7 @@ describe('auctionmanager.js', function () {
         bids[0].dealId = 'test deal';
         auction.callBids();
 
-        let registeredBid = auction.getBidsReceived().pop();
+        const registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.adserverTargeting[TARGETING_KEYS.DEAL], 'test deal', 'dealId placed in adserverTargeting');
       });
 
@@ -1081,7 +1080,7 @@ describe('auctionmanager.js', function () {
         bids[0].adserverTargeting.extra = 'stuff';
         auction.callBids();
 
-        let registeredBid = auction.getBidsReceived().pop();
+        const registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.adserverTargeting[TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
@@ -1112,7 +1111,7 @@ describe('auctionmanager.js', function () {
           })
 
           function getBid() {
-            let bid = Object.assign({},
+            const bid = Object.assign({},
               bids[0],
               {
                 bidderCode: BIDDER_CODE,
@@ -1137,14 +1136,14 @@ describe('auctionmanager.js', function () {
       })
 
       it('installs publisher-defined backup renderers on bids', function () {
-        let renderer = {
+        const renderer = {
           url: 'renderer.js',
           backupOnly: true,
           render: (bid) => bid
         };
         Object.assign(adUnits[0], {renderer});
 
-        let bids1 = Object.assign({},
+        const bids1 = Object.assign({},
           bids[0],
           {
             bidderCode: BIDDER_CODE,
@@ -1162,8 +1161,8 @@ describe('auctionmanager.js', function () {
           url: 'videoRenderer.js',
           render: (bid) => bid
         };
-        let myBid = mockBid();
-        let bidRequest = mockBidRequest(myBid);
+        const myBid = mockBid();
+        const bidRequest = mockBidRequest(myBid);
 
         bidRequest.bids[0] = {
           ...bidRequest.bids[0],
@@ -1193,8 +1192,8 @@ describe('auctionmanager.js', function () {
           backupOnly: true,
           render: (bid) => bid
         };
-        let myBid = mockBid();
-        let bidRequest = mockBidRequest(myBid);
+        const myBid = mockBid();
+        const bidRequest = mockBidRequest(myBid);
 
         bidRequest.bids[0] = {
           ...bidRequest.bids[0],
@@ -1228,8 +1227,8 @@ describe('auctionmanager.js', function () {
           Object.assign(adUnits[0], {renderer});
           // make sure that if the renderer is only on the second ad unit, prebid
           // still correctly uses it
-          let bid = mockBid();
-          let bidRequests = [mockBidRequest(bid, {auctionId: auction.getAuctionId()})];
+          const bid = mockBid();
+          const bidRequests = [mockBidRequest(bid, {auctionId: auction.getAuctionId()})];
 
           bidRequests[0].bids[1] = Object.assign({
             bidId: utils.getUniqueIdentifierStr()
@@ -1249,7 +1248,7 @@ describe('auctionmanager.js', function () {
         it('should use renderers on bid response', () => {
           auction.callBids();
 
-          const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode === ADUNIT_CODE);
+          const addedBid = auction.getBidsReceived().find(bid => bid.adUnitCode === ADUNIT_CODE);
           assert.equal(addedBid.renderer.url, 'renderer.js');
         });
 
@@ -1266,6 +1265,31 @@ describe('auctionmanager.js', function () {
         auction.callBids();
         expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
       });
+
+      [
+        {
+          request: 1,
+          response: true
+        },
+        {
+          request: 0,
+          response: false
+        },
+        {
+          request: 2,
+          response: false
+        },
+        {
+          request: undefined,
+          response: false
+        }
+      ].forEach(({request, response}) => {
+        it(`sets bidResponse.instl to ${response} if adUnit.ortb2Imp.instl is ${request}`, () => {
+          adUnits[0].ortb2Imp = {instl: request};
+          auction.callBids();
+          expect(auction.getBidsReceived()[0].instl).to.equal(response);
+        })
+      })
     });
 
     describe('when auction timeout is 20', function () {
@@ -1276,7 +1300,7 @@ describe('auctionmanager.js', function () {
       }
 
       function runAuction() {
-        let bidRequests = bids.map(bid => mockBidRequest(bid, {auctionId: auction.getAuctionId()}));
+        const bidRequests = bids.map(bid => mockBidRequest(bid, {auctionId: auction.getAuctionId()}));
         makeRequestsStub.returns(bidRequests);
         return new Promise((resolve) => {
           auctionDone = resolve;
@@ -1397,13 +1421,31 @@ describe('auctionmanager.js', function () {
             enabled: true,
             defaultVendor: 'appnexuspsp',
             bidders: ['mock-s2s-1'],
-            adapter: 'pbs'
+            adapter: 'pbs',
+            endpoint: {
+              p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
+              noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
+            },
+            maxTimeout: 1000,
+            syncEndpoint: {
+              p1Consent: "https://prebid.adnxs.com/pbs/v1/cookie_sync",
+              noP1Consent: "https://prebid.adnxs-simple.com/pbs/v1/cookie_sync"
+            },
           }, {
             accountId: '1',
             enabled: true,
             defaultVendor: 'rubicon',
             bidders: ['mock-s2s-2'],
-            adapter: 'pbs'
+            adapter: 'pbs',
+            endpoint: {
+              p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+              noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+            },
+            maxTimeout: 500,
+            syncEndpoint: {
+              p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
+              noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
+            },
           }]
         })
         adUnits[0].bids.push({bidder: 'mock-s2s-1'}, {bidder: 'mock-s2s-2'})
@@ -1453,8 +1495,8 @@ describe('auctionmanager.js', function () {
     let auction;
     let ajaxStub;
 
-    let bids = TEST_BIDS;
-    let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+    const bids = TEST_BIDS;
+    const bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
     beforeEach(function () {
       adUnits = [{
@@ -1474,11 +1516,11 @@ describe('auctionmanager.js', function () {
       }];
       adUnitCodes = adUnits.map(({ code }) => code);
       auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
-      let bidRequests = [
+      const bidRequests = [
         mockBidRequest(bids[0], { auctionId: auction.getAuctionId() }),
         mockBidRequest(bids1[0], { auctionId: auction.getAuctionId(), adUnitCode: ADUNIT_CODE1 })
       ];
-      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
+      const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
@@ -1513,7 +1555,7 @@ describe('auctionmanager.js', function () {
 
       auction.callBids();
 
-      let length = auction.getBidsReceived().length;
+      const length = auction.getBidsReceived().length;
       const addedBid2 = auction.getBidsReceived().pop();
       assert.notEqual(addedBid2.adId, bids1[0].requestId);
       assert.equal(length, 1);
@@ -1589,8 +1631,8 @@ describe('auctionmanager.js', function () {
     let logWarnStub;
     let logErrorStub;
 
-    let bids = TEST_BIDS;
-    let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+    const bids = TEST_BIDS;
+    const bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
     before(function () {
       logMessageStub = sinon.stub(utils, 'logMessage');
@@ -1635,11 +1677,11 @@ describe('auctionmanager.js', function () {
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       indexAuctions = [auction];
-      let bidRequests = [
+      const bidRequests = [
         mockBidRequest(bids[0], { auctionId: auction.getAuctionId() }),
         mockBidRequest(bids1[0], { auctionId: auction.getAuctionId(), adUnitCode: ADUNIT_CODE1 })
       ];
-      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
+      const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
@@ -1668,7 +1710,7 @@ describe('auctionmanager.js', function () {
       assert.equal(auctionBidRequests.length > 0, true);
       assert.equal(Array.isArray(auctionBidRequests[0].bids), true);
 
-      const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
+      const bid = auctionBidRequests[0].bids.find(bid => bid.adUnitCode === ADUNIT_CODE);
       assert.equal(typeof bid !== 'undefined', true);
     });
   });
@@ -1710,7 +1752,7 @@ describe('auctionmanager.js', function () {
       });
 
       it('should add legacy fields to native response', function () {
-        let nativeBid = mockBid();
+        const nativeBid = mockBid();
         nativeBid.mediaType = 'native';
         nativeBid.native = {
           ortb: {
@@ -1730,7 +1772,7 @@ describe('auctionmanager.js', function () {
           }
         }
 
-        let bidRequest = mockBidRequest(nativeBid, { mediaType: { native: ortbNativeRequest } });
+        const bidRequest = mockBidRequest(nativeBid, { mediaType: { native: ortbNativeRequest } });
         makeRequestsStub.returns([bidRequest]);
 
         spec.interpretResponse.returns(nativeBid);
@@ -1785,7 +1827,7 @@ describe('auctionmanager.js', function () {
       });
 
       it('video-outstream', function () {
-        let mediaTypes = { video: { context: 'outstream' } };
+        const mediaTypes = { video: { context: 'outstream' } };
 
         expect(getMediaTypeGranularity('video', mediaTypes, {
           'banner': 'low', 'video': 'medium', 'video-outstream': 'high'
@@ -1793,7 +1835,7 @@ describe('auctionmanager.js', function () {
       });
 
       it('video-instream', function () {
-        let mediaTypes = { video: { context: 'instream' } };
+        const mediaTypes = { video: { context: 'instream' } };
 
         expect(getMediaTypeGranularity('video', mediaTypes, {
           banner: 'low', video: 'medium', 'video-instream': 'high'
@@ -1820,7 +1862,7 @@ describe('auctionmanager.js', function () {
   describe('addWinningBid', () => {
     let auction, bid, adUnits, sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(adapterManager, 'callBidWonBidder');
       sandbox.stub(adapterManager, 'triggerBilling')
       adUnits = [{code: 'au1'}, {code: 'au2'}]
@@ -1914,7 +1956,7 @@ describe('auctionmanager.js', function () {
     });
 
     describe('auctionCallbacks', function() {
-      let bids = TEST_BIDS;
+      const bids = TEST_BIDS;
       let bidRequests;
       let doneSpy;
       let auction;
@@ -1942,17 +1984,17 @@ describe('auctionmanager.js', function () {
         'rejected from': (cbs) => cbs.addBidResponse.reject,
       }).forEach(([t, getMethod]) => {
         it(`should call auction done after bid is ${t} auction for mediaType banner`, async function () {
-          let ADUNIT_CODE2 = 'adUnitCode2';
-          let BIDDER_CODE2 = 'sampleBidder2';
+          const ADUNIT_CODE2 = 'adUnitCode2';
+          const BIDDER_CODE2 = 'sampleBidder2';
 
-          let bids1 = [mockBid({bidderCode: BIDDER_CODE1, adUnitId: ADUNIT_CODE1})];
-          let bids2 = [mockBid({bidderCode: BIDDER_CODE2, adUnitId: ADUNIT_CODE2})];
+          const bids1 = [mockBid({bidderCode: BIDDER_CODE1, adUnitId: ADUNIT_CODE1})];
+          const bids2 = [mockBid({bidderCode: BIDDER_CODE2, adUnitId: ADUNIT_CODE2})];
           bidRequests = [
             mockBidRequest(bids[0]),
             mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
             mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE2})
           ];
-          let cbs = auctionCallbacks(doneSpy, auction);
+          const cbs = auctionCallbacks(doneSpy, auction);
           const method = getMethod(cbs);
           method(ADUNIT_CODE, bids[0]);
           cbs.adapterDone.call(bidRequests[0]);
@@ -1968,9 +2010,9 @@ describe('auctionmanager.js', function () {
       if (FEATURES.VIDEO) {
         it('should call auction done after prebid cache is complete for mediaType video', async function () {
           bids[0].mediaType = 'video';
-          let bids1 = [mockBid({bidderCode: BIDDER_CODE1})];
+          const bids1 = [mockBid({bidderCode: BIDDER_CODE1})];
 
-          let opts = {
+          const opts = {
             mediaType: {
               video: {
                 context: 'instream',
@@ -1983,7 +2025,7 @@ describe('auctionmanager.js', function () {
             mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
           ];
 
-          let cbs = auctionCallbacks(doneSpy, auction);
+          const cbs = auctionCallbacks(doneSpy, auction);
           cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
           cbs.adapterDone.call(bidRequests[0]);
           cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
@@ -2078,7 +2120,7 @@ describe('auctionmanager.js', function () {
         });
 
         beforeEach(() => {
-          onBidRejected.reset();
+          onBidRejected.resetHistory();
           bid = mockBid({bidderCode: BIDDER_CODE});
           bidRequests = [
             mockBidRequest(bid),
@@ -2119,9 +2161,9 @@ describe('auctionmanager.js', function () {
       let bidRequests;
       let doneSpy;
       let clock;
-      let requiredBidder = BIDDER_CODE;
-      let requiredBidder1 = BIDDER_CODE1;
-      let secondaryBidder = 'doNotWaitForMe';
+      const requiredBidder = BIDDER_CODE;
+      const requiredBidder1 = BIDDER_CODE1;
+      const secondaryBidder = 'doNotWaitForMe';
       let auction;
 
       beforeEach(() => {
@@ -2145,15 +2187,15 @@ describe('auctionmanager.js', function () {
       });
 
       it('should not wait to call auction done for secondary bidders', async function () {
-        let bids1 = [mockBid({bidderCode: requiredBidder, transactionId: ADUNIT_CODE1})];
-        let bids2 = [mockBid({bidderCode: requiredBidder1, transactionId: ADUNIT_CODE1})];
-        let bids3 = [mockBid({bidderCode: secondaryBidder, transactionId: ADUNIT_CODE1})];
+        const bids1 = [mockBid({bidderCode: requiredBidder, transactionId: ADUNIT_CODE1})];
+        const bids2 = [mockBid({bidderCode: requiredBidder1, transactionId: ADUNIT_CODE1})];
+        const bids3 = [mockBid({bidderCode: secondaryBidder, transactionId: ADUNIT_CODE1})];
         bidRequests = [
           mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
           mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE1}),
           mockBidRequest(bids3[0], {adUnitCode: ADUNIT_CODE1}),
         ];
-        let cbs = auctionCallbacks(doneSpy, auction);
+        const cbs = auctionCallbacks(doneSpy, auction);
         // required bidder responds immeaditely to auction
         cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
         cbs.adapterDone.call(bidRequests[0]);
@@ -2178,15 +2220,15 @@ describe('auctionmanager.js', function () {
             secondaryBidders: [requiredBidder, requiredBidder1, secondaryBidder]
           }
         })
-        let bids1 = [mockBid({bidderCode: requiredBidder})];
-        let bids2 = [mockBid({bidderCode: requiredBidder1})];
-        let bids3 = [mockBid({bidderCode: secondaryBidder})];
+        const bids1 = [mockBid({bidderCode: requiredBidder})];
+        const bids2 = [mockBid({bidderCode: requiredBidder1})];
+        const bids3 = [mockBid({bidderCode: secondaryBidder})];
         bidRequests = [
           mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
           mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE1}),
           mockBidRequest(bids3[0], {adUnitCode: ADUNIT_CODE1}),
         ];
-        let cbs = auctionCallbacks(doneSpy, auction);
+        const cbs = auctionCallbacks(doneSpy, auction);
         cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
         cbs.adapterDone.call(bidRequests[0]);
         clock.tick(100);
@@ -2206,15 +2248,15 @@ describe('auctionmanager.js', function () {
       });
 
       it('should allow secondaryBidders to respond in auction before is is done', async function () {
-        let bids1 = [mockBid({bidderCode: requiredBidder})];
-        let bids2 = [mockBid({bidderCode: requiredBidder1})];
-        let bids3 = [mockBid({bidderCode: secondaryBidder})];
+        const bids1 = [mockBid({bidderCode: requiredBidder})];
+        const bids2 = [mockBid({bidderCode: requiredBidder1})];
+        const bids3 = [mockBid({bidderCode: secondaryBidder})];
         bidRequests = [
           mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
           mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE1}),
           mockBidRequest(bids3[0], {adUnitCode: ADUNIT_CODE1}),
         ];
-        let cbs = auctionCallbacks(doneSpy, auction);
+        const cbs = auctionCallbacks(doneSpy, auction);
         // secondaryBidder is first to respond
         cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
         cbs.adapterDone.call(bidRequests[2]);
