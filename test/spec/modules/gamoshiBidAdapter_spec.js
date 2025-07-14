@@ -241,7 +241,10 @@ describe('GamoshiAdapter', () => {
     };
   });
 
-  afterEach(() => sandBox.restore());
+  afterEach(() => {
+    sandBox.restore()
+    config.resetConfig();
+  });
 
   describe('Get top Frame', () => {
     it('check if you are in the top frame', () => {
@@ -616,6 +619,7 @@ describe('GamoshiAdapter', () => {
       const response = spec.buildRequests([bidRequest], bidRequestWithGpp)[0];
       expect(response.data.regs.ext.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
       expect(response.data.regs.ext.gpp_sid).to.deep.equal([2, 6]);
+      config.resetConfig();
     });
 
     it('builds request with DNT', () => {
@@ -623,6 +627,7 @@ describe('GamoshiAdapter', () => {
       window.doNotTrack = '1'; // Simulate DNT enabled
       const request = spec.buildRequests([bidRequest], bidRequestWithDnt)[0];
       expect(request.data.device.dnt).to.equal(1);
+      window.doNotTrack = '0'; // Reset DNT
     });
     it('builds request with COPPA', () => {
       const bidRequestWithCoppa = utils.deepClone(bidRequest);
@@ -630,6 +635,7 @@ describe('GamoshiAdapter', () => {
       config.setConfig({'coppa': true});
       const request = spec.buildRequests([bidRequest], bidRequestWithCoppa)[0];
       expect(request.data.regs.coppa).to.equal(1);
+      config.resetConfig();
     });
     it('builds request with first party data from ortb2', () => {
       const bidRequestWithFpd = utils.deepClone(bidRequest);
