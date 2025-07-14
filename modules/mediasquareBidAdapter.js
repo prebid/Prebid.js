@@ -66,11 +66,11 @@ export const spec = {
         if (Array.isArray(adunitValue.sizes)) {
           adunitValue.sizes.forEach(value => {
             const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor != {}) { code.floor[value.join('x')] = tmpFloor; }
+            if (tmpFloor !== {}) { code.floor[value.join('x')] = tmpFloor; }
           });
         }
         const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
-        if (tmpFloor != {}) { code.floor['*'] = tmpFloor; }
+        if (tmpFloor !== {}) { code.floor['*'] = tmpFloor; }
       }
       if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
       codes.push(code);
@@ -163,7 +163,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
+    if (typeof serverResponses === 'object' && serverResponses !== null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
@@ -177,7 +177,7 @@ export const spec = {
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType === 'video') {
       return;
     }
     const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
