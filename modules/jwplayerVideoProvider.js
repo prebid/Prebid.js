@@ -637,7 +637,7 @@ export const utils = {
     }
 
     // Width is undefined when player has not yet rendered
-    if (width !== undefined) {
+    if (width !== undefined && width !== null) {
       return width;
     }
 
@@ -807,7 +807,7 @@ export const utils = {
    * @returns {boolean} - support of omid
    */
   isOmidSupported: function(adClient) {
-    const omidIsLoaded = window.OmidSessionClient !== undefined;
+    const omidIsLoaded = window.OmidSessionClient !== undefined && window.OmidSessionClient !== null;
     return omidIsLoaded && adClient === 'vast';
   },
 
@@ -824,7 +824,7 @@ export const utils = {
 
     const currentTrackIndex = Math.max(player.getCurrentAudioTrack() || 0, 0); // returns -1 when there are no alternative tracks.
     const audioTrack = audioTracks[currentTrackIndex];
-    return audioTrack && audioTrack.language;
+    return (audioTrack && audioTrack.language) || undefined;
   },
 
   /**
@@ -854,7 +854,7 @@ export const utils = {
    * @return {Object} - Object compliant with the oRTB content.data[index] spec.
    */
   getContentDatum: function (mediaId, segments) {
-    if (!mediaId && !segments) {
+    if (!mediaId && (!segments || segments.length === 0)) {
       return;
     }
 
@@ -867,7 +867,7 @@ export const utils = {
       contentData.ext.cids = contentData.cids = [mediaId];
     }
 
-    if (segments) {
+    if (segments && segments.length > 0) {
       contentData.segment = segments;
       contentData.ext.segtax = 502;
     }
@@ -997,13 +997,13 @@ export function adStateFactory() {
     }
 
     const adProperties = Object.keys(ad);
-    adProperties.forEach(property => {
+    for (const property of adProperties) {
       const value = ad[property];
       const wrapperIds = value.adWrapperIds;
       if (wrapperIds) {
         return wrapperIds;
       }
-    });
+    }
   }
 
   return adState;
