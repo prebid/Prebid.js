@@ -303,6 +303,25 @@ describe('tadvertisingBidAdapter', () => {
       expect(data.imp[0].bidfloor).to.equal(2.5);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
     })
+
+    it('should set placementId on every impression on bids', function() {
+      let bidderRequest = getBidderRequest();
+      let bid1 = getBid()
+      bid1.bidId = '123'
+      bid1.params.placementId = '111'
+
+      let bid2 = getBid()
+      bid2.bidId = '456'
+      bid2.params.placementId = '222'
+
+      bidderRequest.bids = [bid1, bid2]
+
+      const request = spec.buildRequests([bid1, bid2], bidderRequest);
+      const data = request.data;
+
+      expect(data.imp[0].ext.gpid).to.equal(bidderRequest.bids[0].params.placementId);
+      expect(data.imp[1].ext.gpid).to.equal(bidderRequest.bids[1].params.placementId);
+    })
   });
 
   describe('interpretResponse', function () {

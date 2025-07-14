@@ -187,7 +187,6 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let data = converter.toORTB({validBidRequests, bidderRequest})
     deepSetValue(data, 'site.publisher.id', bidderRequest.bids[0].params.publisherId)
-    deepSetValue(data, 'imp.0.ext.gpid', bidderRequest.bids[0].params.placementId)
 
     const bidFloor = getBidFloor(bidderRequest.bids[0])
     if (bidFloor) {
@@ -199,8 +198,9 @@ export const spec = {
       data.user = data.user || {};
       data.user.buyeruid = bidderRequest.bids[0].userId.tdid;
     }
-    bidderRequest.bids.forEach(bid => {
+    bidderRequest.bids.forEach((bid, index) => {
       pageCache[bid.bidId] = deepAccess(bid, 'ortb2.site.page');
+      deepSetValue(data, `imp.${index}.ext.gpid`, bid.params.placementId);
     })
     return {
       method: 'POST',
