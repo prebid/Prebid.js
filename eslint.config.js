@@ -118,7 +118,6 @@ module.exports = [
       // See Issue #1111.
       // also see: reality. These are here to stay.
 
-      eqeqeq: 'off',
       'no-return-assign': 'off',
       'no-throw-literal': 'off',
       'no-undef': 2,
