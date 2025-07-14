@@ -110,7 +110,7 @@ export const openPairIdSubmodule = {
       }
     }
 
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       logInfo('Open Pair ID: no ids found')
       return undefined;
     }
