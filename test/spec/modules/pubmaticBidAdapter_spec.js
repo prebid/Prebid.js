@@ -703,7 +703,14 @@ describe('PubMatic adapter', () => {
             expect(request.options.endpointCompression).to.be.true;
           });
           
-          it('should respect global pubmatic.gzipEnabled config', () => {
+          it('should respect bidder-specific pubmatic.compression.gzipEnabled config', () => {
+            configStub.withArgs('pubmatic').returns({ compression: { gzipEnabled: false } });
+            configStub.withArgs('compression').returns({});
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+          
+          it('should respect legacy pubmatic.gzipEnabled config for backward compatibility', () => {
             configStub.withArgs('pubmatic').returns({ gzipEnabled: false });
             configStub.withArgs('compression').returns({});
             const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -723,6 +730,13 @@ describe('PubMatic adapter', () => {
             const modifiedBidRequests = utils.deepClone(validBidRequests);
             modifiedBidRequests[0].params.gzipEnabled = false;
             const request = spec.buildRequests(modifiedBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+          
+          it('should prioritize pubmatic.compression.gzipEnabled over pubmatic.gzipEnabled', () => {
+            configStub.withArgs('pubmatic').returns({ compression: { gzipEnabled: false }, gzipEnabled: true });
+            configStub.withArgs('compression').returns({});
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
             expect(request.options.endpointCompression).to.be.false;
           });
           

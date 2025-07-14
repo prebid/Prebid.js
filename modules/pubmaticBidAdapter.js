@@ -696,14 +696,30 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   };
 };
 
+/**
+ * Determines if gzip compression should be enabled for requests
+ * Checks in order:
+ * 1. Bidder-level setting from bid.params.gzipEnabled
+ * 2. Bidder-specific compression setting from config.pubmatic.compression.gzipEnabled
+ * 3. Bidder-specific legacy setting from config.pubmatic.gzipEnabled (for backward compatibility)
+ * 4. Global setting from config.compression.gzipEnabled
+ * 5. Default value (true)
+ * @param {Object} bid - The bid object
+ * @returns {boolean} - Whether gzip compression should be enabled
+ */
 export const getGzipSetting = (bid) => {
   // Check bidder-level setting first
   if (bid && bid.params && typeof bid.params.gzipEnabled === 'boolean') {
     return bid.params.gzipEnabled;
   }
   
-  // Check bidder-specific global setting
+  // Check bidder-specific compression setting
   const pubmaticConfig = config.getConfig('pubmatic') || {};
+  if (pubmaticConfig.compression && typeof pubmaticConfig.compression.gzipEnabled === 'boolean') {
+    return pubmaticConfig.compression.gzipEnabled;
+  }
+  
+  // Check bidder-specific legacy setting (for backward compatibility)
   if (typeof pubmaticConfig.gzipEnabled === 'boolean') {
     return pubmaticConfig.gzipEnabled;
   }
