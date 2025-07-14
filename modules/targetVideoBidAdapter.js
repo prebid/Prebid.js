@@ -169,7 +169,7 @@ export const spec = {
     if (serverResponse.tags) {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
-        if (rtbBid && rtbBid.cpm !== 0 && rtbBid.ad_type == VIDEO) {
+          if (rtbBid && rtbBid.cpm !== 0 && rtbBid.ad_type === VIDEO) {
           bids.push(bannerBid(serverBid, rtbBid, bidderRequest, MARGIN));
         }
       });
@@ -181,7 +181,7 @@ export const spec = {
           const requestId = bidRequest.bidId;
           const params = bidRequest.params;
           const vBid = videoBid(bid, requestId, currency, params, TIME_TO_LIVE);
-          if (bids.length == 0 || bids[0].cpm < vBid.cpm) {
+            if (bids.length === 0 || bids[0].cpm < vBid.cpm) {
             bids[0] = vBid;
           }
         });
