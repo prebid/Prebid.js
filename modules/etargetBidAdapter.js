@@ -79,7 +79,7 @@ export const spec = {
           if (typeof hmetas[k] === 'object') {
             var mname = hmetas[k].name || hmetas[k].getAttribute('property');
             var mcont = hmetas[k].content;
-            if (!!mname && mname != 'null' && !!mcont) {
+            if (!!mname && mname !== 'null' && !!mcont) {
               if (wnames.indexOf(mname) >= 0) {
                 if (!mts[mname]) {
                   mts[mname] = [];
@@ -155,8 +155,8 @@ export const spec = {
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width == validSizes[j][0] &&
-            adItem.height == validSizes[j][1]) {
+        if (adItem.width === validSizes[j][0] &&
+            adItem.height === validSizes[j][1]) {
           return true;
         }
       }

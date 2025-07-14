@@ -155,7 +155,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
   request.site = { page: bidderRequest.refererInfo.page };
@@ -168,7 +168,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   }
   deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
-  if (GET_CONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
+  if (GET_CONFIG('coppa') === true) deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);

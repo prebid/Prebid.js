@@ -176,7 +176,7 @@ export const spec = {
   buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     const imps = [];
     adSizes.forEach((size, i) => {
-        if (!size || size.length !== 2) {
+      if (!size || size.length !== 2) {
         return;
       }
       const size0 = size[0];
