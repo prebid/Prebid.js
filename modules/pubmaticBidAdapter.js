@@ -30,13 +30,15 @@ const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js');
 const MSG_VIDEO_PLCMT_MISSING = 'Video.plcmt param missing';
 const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const DEFAULT_TTL = 360;
+const DEFAULT_GZIP_ENABLED = true;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
   'yob': '', // User year of birth
   'lat': '', // User location - Latitude
   'lon': '', // User Location - Longitude
-  'wiid': '' // OpenWrap Wrapper Impression ID
+  'wiid': '', // OpenWrap Wrapper Impression ID
+  'gzipEnabled': '' // Enable/disable gzip compression
 };
 
 const dealChannel = {
@@ -613,6 +615,10 @@ const BB_RENDERER = {
 
 function _parseSlotParam(paramName, paramValue) {
   if (!isStr(paramValue)) {
+    // Special handling for boolean parameters - only for gzipEnabled
+    if (paramName === 'gzipEnabled' && typeof paramValue === 'boolean') {
+      return paramValue;
+    }
     paramValue && logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
@@ -640,6 +646,31 @@ const getPublisherId = (bids) =>
   Array.isArray(bids) && bids.length > 0
     ? bids.find(bid => bid.params?.publisherId?.trim())?.params.publisherId || null
     : null;
+
+/**
+ * Determines if gzip compression should be enabled for requests
+ * Checks in order:
+ * 1. Bidder-level setting from bid.params.gzipEnabled
+ * 2. Global setting from config.pubmatic.gzipEnabled
+ * 3. Default value (true)
+ * @param {Object} bid - The bid object
+ * @returns {boolean} - Whether gzip compression should be enabled
+ */
+function getGzipSetting(bid) {
+  // Check bidder-level setting first
+  if (bid && bid.params && typeof bid.params.gzipEnabled === 'boolean') {
+    return bid.params.gzipEnabled;
+  }
+  
+  // Check global setting
+  const pubmaticConfig = config.getConfig('pubmatic') || {};
+  if (typeof pubmaticConfig.gzipEnabled === 'boolean') {
+    return pubmaticConfig.gzipEnabled;
+  }
+  
+  // Default to true if not specified
+  return DEFAULT_GZIP_ENABLED;
+}
 
 const _handleCustomParams = (params, conf) => {
   Object.keys(CUSTOM_PARAMS).forEach(key => {
@@ -785,7 +816,7 @@ export const spec = {
       data: data,
       bidderRequest: bidderRequest,
       options: {
-        endpointCompression: true
+        endpointCompression: getGzipSetting(validBidRequests[0])
       },
     };
     return data?.imp?.length ? serverRequest : null;
