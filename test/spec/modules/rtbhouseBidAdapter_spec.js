@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { spec } from 'modules/rtbhouseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { mergeDeep } from '../../../src/utils';
-import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils';
+import { mergeDeep } from '../../../src/utils.js';
+import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
