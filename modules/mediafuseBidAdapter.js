@@ -275,9 +275,9 @@ export const spec = {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
           const tmp = {'source': eid.source, 'id': uid.id};
-          if (eid.source == 'adserver.org') {
+          if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
-          } else if (eid.source == 'uidapi.com') {
+          } else if (eid.source === 'uidapi.com') {
             tmp.rti_partner = 'UID2';
           }
           eids.push(tmp);
@@ -394,7 +394,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
           const scriptArray = nestedDoc.getElementsByTagName('script');
           for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
             const currentScript = scriptArray[j];
-            if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
+            if (currentScript.getAttribute('data-src') === jsTrackerSrc) {
               currentScript.setAttribute('src', newJsTrackerSrc);
               currentScript.setAttribute('data-src', '');
               if (currentScript.removeAttribute) {
@@ -623,7 +623,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     let jsTrackers = nativeAd.javascript_trackers;
 
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined) {
       jsTrackers = jsTrackerDisarmed;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];
