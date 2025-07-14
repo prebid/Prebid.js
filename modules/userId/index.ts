@@ -696,8 +696,8 @@ function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
   }
-  const providers: googletag.secureSignals.SecureSignalProvider[] | googletag.secureSignals.SecureSignalProvidersArray = window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
-  const existingIds = new Set((providers as any[]).map((p: any) => p.id));
+  const providers: googletag.secureSignals.SecureSignalProvider[] = window.googletag.secureSignalProviders = (window.googletag.secureSignalProviders || []) as googletag.secureSignals.SecureSignalProvider[];
+  const existingIds = new Set(providers.map(p => 'id' in p ? p.id : p.networkCode));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
