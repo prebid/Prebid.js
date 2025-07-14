@@ -215,7 +215,6 @@ describe('PubMatic adapter', () => {
         it('should return true if banner/native present, but outstreamAU or renderer is missing', () => {
           videoBidRequest.mediaTypes.video.mimes = ['video/flv'];
           videoBidRequest.mediaTypes.video.context = 'outstream';
-
           videoBidRequest.mediaTypes.banner = {
             sizes: [[728, 90], [160, 600]]
           };
@@ -234,7 +233,6 @@ describe('PubMatic adapter', () => {
         });
 
         it('should return TRUE if outstreamAU or renderer is present', () => {
-        
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(false);
         });
@@ -951,9 +949,7 @@ describe('PubMatic adapter', () => {
             mediaType: 'banner',
             meta: { mediaType: 'banner' }
           };
-
           spec.onBidWon(bid);
-
           expect(cpmAdjustment).to.deep.equal({
             currency: 'USD',
             originalCurrency: 'USD',
