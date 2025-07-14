@@ -379,13 +379,13 @@ describe('adnuntiusBidAdapter', function () {
             'url': 'https://whatever.com'
           },
           'assets': [
-          {
-            'id': 1,
-            'required': 1,
-            'img': {
-              'url': 'http://something.com/something.png'
-            }
-          }]
+            {
+              'id': 1,
+              'required': 1,
+              'img': {
+                'url': 'http://something.com/something.png'
+              }
+            }]
         }
       },
       'matchedAdCount': 1,

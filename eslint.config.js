@@ -162,7 +162,6 @@ module.exports = [
       '@stylistic/multiline-ternary': 'off',
       '@stylistic/computed-property-spacing': 'off',
       '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/indent': 'off',
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
       '@stylistic/object-property-newline': 'off',
