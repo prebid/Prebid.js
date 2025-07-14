@@ -120,7 +120,7 @@ export const spec = {
       const api = getBidIdParameter('api', bid.params) || [2];
       const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
 
-      let smartxReq = [{
+      const smartxReq = [{
         id: bid.bidId,
         secure: secure,
         bidfloor: bidfloor,
@@ -216,11 +216,12 @@ export const spec = {
         userExt.fpc = pubcid;
       }
 
-      // Add schain object if available
-      if (bid && bid.schain) {
+      // Add schain object if available from the new location
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (bid && schain) {
         requestPayload['source'] = {
           ext: {
-            schain: bid.schain
+            schain: schain
           }
         };
       }
@@ -286,7 +287,7 @@ export const spec = {
       _each(serverResponseBody.seatbid, function (bids) {
         _each(bids.bid, function (smartxBid) {
           let currentBidRequest = {};
-          for (let i in bidderRequest.bidRequest.bids) {
+          for (const i in bidderRequest.bidRequest.bids) {
             if (smartxBid.impid == bidderRequest.bidRequest.bids[i].bidId) {
               currentBidRequest = bidderRequest.bidRequest.bids[i];
             }
@@ -364,15 +365,15 @@ export const spec = {
 }
 
 function createOutstreamConfig(bid) {
-  let confMinAdWidth = getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
-  let confMaxAdWidth = getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
-  let confStartOpen = getBidIdParameter('startOpen', bid.renderer.config.outstream_options)
-  let confEndingScreen = getBidIdParameter('endingScreen', bid.renderer.config.outstream_options)
-  let confTitle = getBidIdParameter('title', bid.renderer.config.outstream_options);
-  let confSkipOffset = getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
-  let confDesiredBitrate = getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
-  let confVisibilityThreshold = getBidIdParameter('visibilityThreshold', bid.renderer.config.outstream_options);
-  let elementId = getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
+  const confMinAdWidth = getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
+  const confMaxAdWidth = getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
+  const confStartOpen = getBidIdParameter('startOpen', bid.renderer.config.outstream_options)
+  const confEndingScreen = getBidIdParameter('endingScreen', bid.renderer.config.outstream_options)
+  const confTitle = getBidIdParameter('title', bid.renderer.config.outstream_options);
+  const confSkipOffset = getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
+  const confDesiredBitrate = getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
+  const confVisibilityThreshold = getBidIdParameter('visibilityThreshold', bid.renderer.config.outstream_options);
+  const elementId = getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
 
   logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
@@ -459,7 +460,7 @@ function createOutstreamConfig(bid) {
  */
 function getBidFloor(bid) {
   let floor = getBidIdParameter('bidfloor', bid.params);
-  let floorcur = getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
+  const floorcur = getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
 
   if (!floor && isFn(bid.getFloor)) {
     const floorObj = bid.getFloor({

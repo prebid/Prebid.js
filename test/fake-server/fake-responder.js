@@ -12,8 +12,8 @@ const fixturesPath = path.join(__dirname, 'fixtures');
  * @returns {object} responseBody
  */
 const matchResponse = function (requestBody) {
-  let actualUuids = [];
-  let reqResMap = generateFixtures(fixturesPath);
+  const actualUuids = [];
+  const reqResMap = generateFixtures(fixturesPath);
   const requestResponsePairs = Object.keys(reqResMap).map(testName => reqResMap[testName]);
 
   // delete 'uuid' property
@@ -23,6 +23,7 @@ const matchResponse = function (requestBody) {
 
     // delete the 'uuid'
     delete body.uuid;
+    delete body.tid;
   });
 
   ['sdk', 'referrer_detection', 'gdpr_consent'].forEach(prop => {

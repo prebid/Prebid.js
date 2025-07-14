@@ -229,7 +229,7 @@ describe('AdPlayerProProvider', function () {
 
       const provider = AdPlayerProProvider(config, null, null, utilsMock);
       provider.init();
-      let video = provider.getOrtbVideo();
+      const video = provider.getOrtbVideo();
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
       expect(video.protocols).to.include.members([

@@ -199,7 +199,7 @@ describe('AdstirAdapter', function () {
     });
 
     it('when config.pageUrl is not set, ref.topurl equals to refererInfo.reachedTop', function () {
-      let bidderRequestClone = utils.deepClone(bidderRequest);
+      const bidderRequestClone = utils.deepClone(bidderRequest);
       [true, false].forEach(function (reachedTop) {
         bidderRequestClone.refererInfo.reachedTop = reachedTop;
         const requests = spec.buildRequests(validBidRequests, bidderRequestClone);
@@ -217,7 +217,7 @@ describe('AdstirAdapter', function () {
       });
 
       it('ref.topurl should be false', function () {
-        let bidderRequestClone = utils.deepClone(bidderRequest);
+        const bidderRequestClone = utils.deepClone(bidderRequest);
         [true, false].forEach(function (reachedTop) {
           bidderRequestClone.refererInfo.reachedTop = reachedTop;
           const requests = spec.buildRequests(validBidRequests, bidderRequestClone);
@@ -228,7 +228,7 @@ describe('AdstirAdapter', function () {
     });
 
     it('gdprConsent.gdprApplies is sent', function () {
-      let bidderRequestClone = utils.deepClone(bidderRequest);
+      const bidderRequestClone = utils.deepClone(bidderRequest);
       [true, false].forEach(function (gdprApplies) {
         bidderRequestClone.gdprConsent = { gdprApplies };
         const requests = spec.buildRequests(validBidRequests, bidderRequestClone);
@@ -238,7 +238,7 @@ describe('AdstirAdapter', function () {
     });
 
     it('includes in the request parameters whether CCPA applies', function () {
-      let bidderRequestClone = utils.deepClone(bidderRequest);
+      const bidderRequestClone = utils.deepClone(bidderRequest);
       const cases = [
         { uspConsent: '1---', expected: false },
         { uspConsent: '1YYY', expected: true },
@@ -279,7 +279,7 @@ describe('AdstirAdapter', function () {
       };
       const serializedSchain = '1.0,1!exchange1.example,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.example!exchange2.example,abcd,1,bid-request-2,intermediary,intermediary.example';
 
-      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { schain })], bidderRequest);
+      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { ortb2: { source: { ext: { schain } } } })], bidderRequest);
       const d = JSON.parse(request.data);
       expect(d.schain).to.deep.equal(serializedSchain);
     });
@@ -305,7 +305,7 @@ describe('AdstirAdapter', function () {
       };
       const serializedSchain = '1.0,1!exchange1.example,1234%21abcd,1,,,!,,,,,!exchange2.example,abcd,1,,,';
 
-      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { schain })], bidderRequest);
+      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { ortb2: { source: { ext: { schain } } } })], bidderRequest);
       const d = JSON.parse(request.data);
       expect(d.schain).to.deep.equal(serializedSchain);
     });

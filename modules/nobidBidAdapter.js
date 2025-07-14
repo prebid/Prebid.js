@@ -1,4 +1,4 @@
-import { logInfo, deepAccess, logWarn, isArray, getParameterByName } from '../src/utils.js';
+import { logInfo, deepAccess, logWarn, isArray, getParameterByName, getWinDimensions } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -86,10 +86,11 @@ function nobidBuildRequests(bids, bidderRequest) {
       return gppConsent;
     }
     var schain = function(bids) {
-      if (bids && bids.length > 0) {
-        return bids[0].schain
+      try {
+        return bids[0]?.ortb2?.source?.ext?.schain;
+      } catch (e) {
+        return null;
       }
-      return null;
     }
     var coppa = function() {
       if (config.getConfig('coppa') === true) {
@@ -123,8 +124,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     };
     var clientDim = function() {
       try {
-        var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        const winDimensions = getWinDimensions();
+        var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
+        var height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
         logWarn('Could not parse screen dimensions, error details:', e);
@@ -132,9 +134,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     var getEIDs = function(eids) {
       if (isArray(eids) && eids.length > 0) {
-        let src = [];
+        const src = [];
         eids.forEach((eid) => {
-          let ids = [];
+          const ids = [];
           if (eid.uids) {
             eid.uids.forEach(value => {
               ids.push({'id': value.id + ''});
@@ -239,7 +241,7 @@ function nobidBuildRequests(bids, bidderRequest) {
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
   }
-  let ublock = nobidGetCookie('_ublock');
+  const ublock = nobidGetCookie('_ublock');
   if (ublock) {
     log('Request blocked for user. hours: ', ublock);
     return false;
@@ -353,7 +355,7 @@ window.nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag() tag NOT FOUND *ERROR*', id);
 }
 window.addEventListener('message', function (event) {
-  let key = event.message ? 'message' : 'data';
+  const key = event.message ? 'message' : 'data';
   var msg = '' + event[key];
   if (msg.substring(0, 'nbTagRenderer.requestAdMarkup|'.length) === 'nbTagRenderer.requestAdMarkup|') {
     log('Prebid received nbTagRenderer.requestAdMarkup event');
@@ -390,8 +392,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
@@ -477,7 +480,7 @@ export const spec = {
         url: 'https://public.servenobid.com/sync.html' + params
       }];
     } else if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      let syncs = [];
+      const syncs = [];
       if (serverResponses[0].body.syncs && serverResponses[0].body.syncs.length > 0) {
         serverResponses[0].body.syncs.forEach(element => {
           syncs.push({
@@ -495,7 +498,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function(data) {
     window.nobid.timeoutTotal++;

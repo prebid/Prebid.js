@@ -52,6 +52,12 @@ function buildRequests(bidReqs, bidderRequest) {
 
       const imp = {
         id: bid.bidId,
+        banner: {
+          format: processedSizes,
+          ext: {
+            viewability: viewabilityAmountRounded,
+          }
+        },
         ext: {
           ...gpidData
         },
@@ -61,13 +67,6 @@ function buildRequests(bidReqs, bidderRequest) {
       if (bid?.mediaTypes?.video) {
         imp.video = {
           ...bid.mediaTypes.video,
-        }
-      } else {
-        imp.banner = {
-          format: processedSizes,
-          ext: {
-            viewability: viewabilityAmountRounded,
-          }
         }
       }
 
@@ -115,8 +114,9 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    if (bidReqs?.[0]?.schain) {
-      deepSetValue(payload, 'source.ext.schain', bidReqs[0].schain)
+    const schain = bidReqs?.[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain)
     }
 
     if (bidderRequest?.ortb2?.user) {
@@ -125,10 +125,6 @@ function buildRequests(bidReqs, bidderRequest) {
 
     if (bidReqs?.[0]?.userIdAsEids) {
       deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
-    }
-
-    if (bidReqs?.[0].userId) {
-      deepSetValue(payload, 'user.ext.ids', bidReqs[0].userId || [])
     }
 
     if (bidderRequest?.ortb2?.site?.content) {
@@ -270,7 +266,7 @@ function _isViewabilityMeasurable(element) {
 }
 
 function _getViewability(element, topWin, {w, h} = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, topWin, {w, h}) : 0;
+  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
 }
 
 function _extractGpidData(bid) {
@@ -299,7 +295,7 @@ function _getBidFloor(bid) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD', mediaType: '*', size: '*'
   });
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {

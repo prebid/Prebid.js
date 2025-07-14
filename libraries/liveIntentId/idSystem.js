@@ -11,7 +11,7 @@ import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -88,7 +88,6 @@ function initializeLiveConnect(configParams) {
   }
 
   configParams = configParams || {};
-  const fpidConfig = configParams.fpid || {};
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
@@ -119,10 +118,6 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
-
-  liveConnectConfig.idCookie = {};
-  liveConnectConfig.idCookie.name = fpidConfig.name;
-  liveConnectConfig.idCookie.strategy = fpidConfig.strategy == 'html5' ? 'localStorage' : fpidConfig.strategy;
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
@@ -191,13 +186,14 @@ export const liveIntentIdSubmodule = {
    */
   decode(value, config) {
     const configParams = (config && config.params) || {};
+    setUpTreatment(configParams);
 
     if (!liveConnect) {
       initializeLiveConnect(configParams);
     }
     tryFireEvent();
 
-    return composeIdObject(value);
+    return composeResult(value, configParams);
   },
 
   /**
@@ -208,6 +204,8 @@ export const liveIntentIdSubmodule = {
    */
   getId(config) {
     const configParams = (config && config.params) || {};
+    setUpTreatment(configParams);
+
     const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
       return;

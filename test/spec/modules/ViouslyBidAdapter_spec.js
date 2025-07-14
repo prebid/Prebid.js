@@ -108,8 +108,8 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return true for banner with no pos', function () {
-        let newBid = deepClone(VALID_BID_BANNER);
-        let newRequest = deepClone(VALID_REQUEST_BANNER);
+        const newBid = deepClone(VALID_BID_BANNER);
+        const newRequest = deepClone(VALID_REQUEST_BANNER);
 
         delete newBid.mediaTypes.banner.pos;
         newRequest.data.placements[0].position = 0;
@@ -118,7 +118,7 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return false because the banner size is missing', function () {
-        let wrongBid = deepClone(VALID_BID_BANNER);
+        const wrongBid = deepClone(VALID_BID_BANNER);
 
         wrongBid.mediaTypes.banner.sizes = '123456';
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
@@ -128,14 +128,14 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return false because the pid is missing', function () {
-        let wrongBid = deepClone(VALID_BID_VIDEO);
+        const wrongBid = deepClone(VALID_BID_VIDEO);
         delete wrongBid.params.pid;
 
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });
 
       it('should return false because the video context parameter is missing', function () {
-        let wrongBid = deepClone(VALID_BID_VIDEO);
+        const wrongBid = deepClone(VALID_BID_VIDEO);
 
         delete wrongBid.mediaTypes.video.context;
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
@@ -154,13 +154,13 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return the right formatted request with the referer info', function() {
-        let bidderRequest = {
+        const bidderRequest = {
           refererInfo: {
             page: 'https://www.example.com/test'
           }
         };
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             domain: 'www.example.com',
             page_domain: 'https://www.example.com/test'
@@ -176,7 +176,7 @@ describe('ViouslyAdapter', function () {
           .withArgs('pageUrl')
           .returns('https://www.example.com/page');
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             domain: 'www.example.com',
             page_domain: 'https://www.example.com/page'
@@ -189,11 +189,11 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return the right formatted request with GDPR Consent info', function() {
-        let bidderRequest = {
+        const bidderRequest = {
           gdprConsent: VALID_GDPR
         };
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             gdpr: true,
             gdpr_consent: 'abcdefgh',
@@ -205,11 +205,11 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return the right formatted request with US Privacy info', function() {
-        let bidderRequest = {
+        const bidderRequest = {
           uspConsent: US_PRIVACY
         };
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             us_privacy: US_PRIVACY
           }
@@ -220,7 +220,7 @@ describe('ViouslyAdapter', function () {
 
       // TODO: Supply chain
       it('should return the right formatted request with Supply Chain info', function() {
-        let schain = {
+        const schain = {
           'ver': '1.0',
           'complete': 1,
           'nodes': [
@@ -237,11 +237,17 @@ describe('ViouslyAdapter', function () {
           ]
         };
 
-        let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
-          schain: schain
+        const bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
         });
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             schain: schain
           }
@@ -251,7 +257,7 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return the right formatted request with User Ids info', function() {
-        let userIds = {
+        const userIds = {
           idl_env: '1234-5678-9012-3456', // Liveramp
           netId: 'testnetid123', // NetId
           IDP: 'userIDP000', // IDP
@@ -259,13 +265,13 @@ describe('ViouslyAdapter', function () {
           uid2: { id: 'testuid2' } // UID 2.0
         };
 
-        let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
+        const bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
           userIds: userIds
         }, {
           userIdAsEids: createEidsArray(userIds)
         });
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             users_uid: createEidsArray(userIds)
           }
@@ -275,15 +281,15 @@ describe('ViouslyAdapter', function () {
       });
 
       it('should return the right formatted request with endpoint test', function() {
-        let endpoint = 'https://bid-test.viously.com/prebid';
+        const endpoint = 'https://bid-test.viously.com/prebid';
 
-        let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
+        const bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
           params: {
             endpoint: endpoint
           }
         });
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO));
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO));
 
         requests.url = endpoint;
 
@@ -297,7 +303,7 @@ describe('ViouslyAdapter', function () {
   describe('interpretResponse', function() {
     describe('Check method return', function () {
       it('should return the right formatted response', function() {
-        let response = {
+        const response = {
           body: {
             ads: [
               {
@@ -346,7 +352,7 @@ describe('ViouslyAdapter', function () {
             ]
           }
         };
-        let requests = {
+        const requests = {
           data: {
             placements: [
               {
@@ -369,7 +375,7 @@ describe('ViouslyAdapter', function () {
           }
         };
 
-        let formattedReponse = [
+        const formattedReponse = [
           {
             requestId: '5678',
             id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-1',
@@ -430,7 +436,7 @@ describe('ViouslyAdapter', function () {
   describe('onBidWon', function() {
     describe('Check methods succeed', function () {
       it('should not throw error', function() {
-        let bids = [
+        const bids = [
           {
             requestId: '5678',
             id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-1',

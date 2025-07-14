@@ -1,5 +1,5 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
-import { replaceAuctionPrice, deepAccess } from '../../src/utils.js';
+import { replaceAuctionPrice } from '../../src/utils.js';
 import { ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
@@ -8,7 +8,7 @@ import { interpretNativeBid } from './bidNativeUtils.js';
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  let req = {
+  const req = {
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
     user: {
@@ -79,7 +79,7 @@ export function onBidWon(bid) {
 }
 
 export function macroReplace(adm, cpm) {
-  let replacedadm = replaceAuctionPrice(adm, cpm);
+  const replacedadm = replaceAuctionPrice(adm, cpm);
   return replacedadm;
 }
 
@@ -89,7 +89,7 @@ function mapImpression(slot, bidderRequest) {
     bidFloor: getBidFloor(slot),
   };
 
-  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
+  if (slot.mediaType === 'native' || slot?.mediaTypes?.native) {
     imp.native = mapNative(slot)
   } else {
     imp.banner = mapBanner(slot)
@@ -98,8 +98,8 @@ function mapImpression(slot, bidderRequest) {
 }
 
 function mapNative(slot) {
-  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
-    let request = {
+  if (slot.mediaType === 'native' || slot?.mediaTypes?.native) {
+    const request = {
       assets: slot.nativeOrtbRequest.assets || slot.nativeParams.ortb.assets,
       ver: '1.2'
     };
@@ -111,7 +111,7 @@ function mapNative(slot) {
 
 function mapBanner(slot) {
   if (slot.mediaTypes.banner) {
-    let format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
+    const format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
       return { w: size[0], h: size[1] }
     });
 
@@ -130,7 +130,7 @@ export function buildBidResponse(serverResponse) {
         return;
       }
       if (serverBid.adm.indexOf('{') === 0) {
-        let interpretedBid = interpretNativeBid(serverBid);
+        const interpretedBid = interpretNativeBid(serverBid);
         bids.push(interpretedBid
         );
       } else {

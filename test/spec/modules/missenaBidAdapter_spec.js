@@ -3,11 +3,14 @@ import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
+import { getWinDimensions } from '../../../src/utils.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
 const COOKIE_DEPRECATION_LABEL = 'test';
+const CONSENT_STRING = 'AAAAAAAAA==';
 const API_KEY = 'PA-XXXXXX';
+const GPID = '/11223344/AdUnit#300x250';
 
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
@@ -15,31 +18,38 @@ describe('Missena Adapter', function () {
       storageAllowed: true,
     },
   };
-  let sandbox = sinon.sandbox.create();
+  const sandbox = sinon.createSandbox();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
-  const viewport = { width: window.top.innerWidth, height: window.top.innerHeight };
+  const viewport = { width: getWinDimensions().innerWidth, height: getWinDimensions().innerHeight };
 
   const bidId = 'abc';
   const bid = {
     bidder: 'missena',
     bidId: bidId,
     mediaTypes: { banner: { sizes: [[1, 1]] } },
+    ortb2Imp: {
+      ext: { gpid: GPID },
+    },
     ortb2: {
       device: {
         ext: { cdep: COOKIE_DEPRECATION_LABEL },
+      },
+      source: {
+        ext: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+            },
+          },
+        },
       },
     },
     params: {
       apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
-    },
-    schain: {
-      validation: 'strict',
-      config: {
-        ver: '1.0',
-      },
     },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
@@ -63,11 +73,9 @@ describe('Missena Adapter', function () {
     },
   };
 
-  const consentString = 'AAAAAAAAA==';
-
   const bidderRequest = {
     gdprConsent: {
-      consentString: consentString,
+      consentString: CONSENT_STRING,
       gdprApplies: true,
     },
     uspConsent: 'IDO',
@@ -75,7 +83,17 @@ describe('Missena Adapter', function () {
       topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
     },
-    ortb2: { regs: { coppa: 1 } },
+    ortb2: {
+      regs: { coppa: 1, ext: { gdpr: 1 }, us_privacy: 'IDO' },
+      user: {
+        ext: { consent: CONSENT_STRING },
+      },
+      device: {
+        w: screen.width,
+        h: screen.height,
+        ext: { cdep: COOKIE_DEPRECATION_LABEL },
+      },
+    },
   };
 
   const bids = [bid, bidWithoutFloor];
@@ -119,12 +137,12 @@ describe('Missena Adapter', function () {
     });
 
     it('should contain coppa', function () {
-      expect(payload.coppa).to.equal(1);
+      expect(payload.ortb2.regs.coppa).to.equal(1);
     });
     sandbox.restore();
 
     it('should contain uspConsent', function () {
-      expect(payload.us_privacy).to.equal('IDO');
+      expect(payload.ortb2.regs.us_privacy).to.equal('IDO');
     });
 
     it('should contain schain', function () {
@@ -151,20 +169,20 @@ describe('Missena Adapter', function () {
       expect(payload.params.formats).to.eql(['sticky-banner']);
     });
 
-    it('should send referer information to the request', function () {
-      expect(payload.referer).to.equal(REFERRER);
-      expect(payload.referer_canonical).to.equal('https://canonical');
-    });
-
     it('should send viewport', function () {
       expect(payload.viewport.width).to.equal(viewport.width);
       expect(payload.viewport.height).to.equal(viewport.height);
     });
 
     it('should send gdpr consent information to the request', function () {
-      expect(payload.consent_string).to.equal(consentString);
-      expect(payload.consent_required).to.equal(true);
+      expect(payload.ortb2.user.ext.consent).to.equal(CONSENT_STRING);
+      expect(payload.ortb2.regs.ext.gdpr).to.equal(1);
     });
+
+    it('should forward GPID from ortb2Imp into ortb2.ext', function () {
+      expect(payload.ortb2.ext.gpid).to.equal(GPID);
+    });
+
     it('should send floor data', function () {
       expect(payload.floor).to.equal(3.5);
       expect(payload.floor_currency).to.equal('EUR');
@@ -179,8 +197,8 @@ describe('Missena Adapter', function () {
     });
 
     it('should send screen', function () {
-      expect(payload.screen.width).to.equal(screen.width);
-      expect(payload.screen.height).to.equal(screen.height);
+      expect(payload.ortb2.device.w).to.equal(screen.width);
+      expect(payload.ortb2.device.h).to.equal(screen.height);
     });
 
     it('should send size', function () {
@@ -250,7 +268,7 @@ describe('Missena Adapter', function () {
     });
 
     it('should send cookie deprecation', function () {
-      expect(payload.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
+      expect(payload.ortb2.device.ext.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
 

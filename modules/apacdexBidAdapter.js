@@ -43,13 +43,14 @@ export const spec = {
     let eids;
     let geo;
     let test;
-    let bids = [];
+    const bids = [];
 
     test = config.getConfig('debug');
 
     validBidRequests.forEach(bidReq => {
-      if (bidReq.schain) {
-        schain = schain || bidReq.schain
+      const bidSchain = bidReq?.ortb2?.source?.ext?.schain;
+      if (bidSchain) {
+        schain = schain || bidSchain
       }
 
       if (bidReq.userIdAsEids) {
@@ -80,7 +81,7 @@ export const spec = {
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
 
-      let bidFloor = getBidFloor(bidReq);
+      const bidFloor = getBidFloor(bidReq);
       if (bidFloor) {
         bidReq.bidFloor = bidFloor;
       }
@@ -334,7 +335,7 @@ function getBidFloor(bid) {
     return (bid.params.floorPrice) ? bid.params.floorPrice : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

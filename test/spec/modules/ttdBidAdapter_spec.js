@@ -8,7 +8,7 @@ import { buildWindowTree } from '../../helpers/refererDetectionHelper';
 
 describe('ttdBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
-    let clonedBidderRequest = deepClone(bidderRequestBase);
+    const clonedBidderRequest = deepClone(bidderRequestBase);
     clonedBidderRequest.bids = bidRequests;
     return spec.buildRequests(bidRequests, clonedBidderRequest);
   }
@@ -42,25 +42,31 @@ describe('ttdBidAdapter', function () {
       });
 
       it('should return false when publisherId not passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.params.publisherId;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false when supplySourceId not passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.params.supplySourceId;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false when publisherId is longer than 64 characters', function () {
-        let bid = makeBid();
-        bid.params.publisherId = '1111111111111111111111111111111111111111111111111111111111111111111111';
+        const bid = makeBid();
+        bid.params.publisherId = '1'.repeat(65);
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
+      it('should return true when publisherId is equal to 64 characters', function () {
+        const bid = makeBid();
+        bid.params.publisherId = '1'.repeat(64);
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
       it('should return true if placementId is not passed and gpid is passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.params.placementId;
         bid.ortb2Imp = {
           ext: {
@@ -71,25 +77,25 @@ describe('ttdBidAdapter', function () {
       });
 
       it('should return false if neither placementId nor gpid is passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.params.placementId;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false if neither mediaTypes.banner nor mediaTypes.video is passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.mediaTypes
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false if bidfloor is passed incorrectly', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         bid.params.bidfloor = 'invalid bidfloor';
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return true if bidfloor is passed correctly as a float', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         bid.params.bidfloor = 3.01;
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
@@ -97,7 +103,7 @@ describe('ttdBidAdapter', function () {
 
     describe('banner', function () {
       it('should return true if banner.pos is passed correctly', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         bid.mediaTypes.banner.pos = 1;
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
@@ -137,30 +143,30 @@ describe('ttdBidAdapter', function () {
       }
 
       it('should return true if required parameters are passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return false if maxduration is missing', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.mediaTypes.video.maxduration;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false if api is missing', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.mediaTypes.video.api;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false if mimes is missing', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.mediaTypes.video.mimes;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return false if protocols is missing', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.mediaTypes.video.protocols;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
@@ -179,11 +185,11 @@ describe('ttdBidAdapter', function () {
       };
       const uspConsent = '1YYY';
 
-      let syncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent);
+      const syncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
 
-      let params = new URLSearchParams(new URL(syncs[0].url).search);
+      const params = new URLSearchParams(new URL(syncs[0].url).search);
       expect(params.get('us_privacy')).to.equal(uspConsent);
       expect(params.get('ust')).to.equal('image');
       expect(params.get('gdpr')).to.equal('1');
@@ -262,6 +268,29 @@ describe('ttdBidAdapter', function () {
       expect(request.data).to.be.not.null;
     });
 
+    it('bid request should parse tmax or have a default and minimum', function () {
+      const requestWithoutTimeout = {
+        ...baseBidderRequest,
+        timeout: null
+      };
+      var requestBody = testBuildRequests(baseBannerBidRequests, requestWithoutTimeout).data;
+      expect(requestBody.tmax).to.be.equal(400);
+
+      const requestWithTimeout = {
+        ...baseBidderRequest,
+        timeout: 600
+      };
+      requestBody = testBuildRequests(baseBannerBidRequests, requestWithTimeout).data;
+      expect(requestBody.tmax).to.be.equal(600);
+
+      const requestWithLowerTimeout = {
+        ...baseBidderRequest,
+        timeout: 300
+      };
+      requestBody = testBuildRequests(baseBannerBidRequests, requestWithLowerTimeout).data;
+      expect(requestBody.tmax).to.be.equal(400);
+    });
+
     it('sets bidrequest.id to bidderRequestId', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.id).to.equal('18084284054531');
@@ -278,7 +307,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sends bid requests to the correct custom endpoint', function () {
-      let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
+      const bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
       bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
       const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
       expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
@@ -291,20 +320,13 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.publisher.id).to.equal(baseBannerBidRequests[0].params.publisherId);
     });
 
-    it('sends integration type header', function () {
-      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
-      expect(requestBody.options).to.be.not.null;
-      expect(requestBody.options.customHeaders).to.be.not.null;
-      expect(requestBody.options.customHeaders['x-integration-type']).to.equal(1);
-    });
-
     it('sends placement id in tagid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].tagid).to.equal(baseBannerBidRequests[0].params.placementId);
     });
 
     it('sends gpid in tagid if present', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       const gpid = '/1111/home#header';
       clonedBannerRequests[0].ortb2Imp = {
         ext: {
@@ -316,7 +338,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sends gpid in ext.gpid if present', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       const gpid = '/1111/home#header';
       clonedBannerRequests[0].ortb2Imp = {
         ext: {
@@ -329,7 +351,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sends rwdd in imp.rwdd if present', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       const gpid = '/1111/home#header';
       const rwdd = 1;
       clonedBannerRequests[0].ortb2Imp = {
@@ -368,7 +390,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets the banner pos correctly if sent', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].mediaTypes.banner.pos = 1;
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
@@ -376,7 +398,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets the banner expansion direction correctly if sent', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       const expdir = [1, 3]
       clonedBannerRequests[0].params.banner = {
         expdir: expdir
@@ -453,7 +475,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets battr properly if present', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       const battr = [1, 2, 3];
       clonedBannerRequests[0].ortb2Imp = {
         banner: {
@@ -465,15 +487,15 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets ext properly', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.ext.ttdprebid.pbjs).to.equal('$prebid.version$');
     });
 
     it('adds gdpr consent info to the request', function () {
-      let consentString = 'BON3G4EON3G4EAAABAENAA____ABl____A';
-      let clonedBidderRequest = deepClone(baseBidderRequest);
+      const consentString = 'BON3G4EON3G4EAAABAENAA____ABl____A';
+      const clonedBidderRequest = deepClone(baseBidderRequest);
       clonedBidderRequest.gdprConsent = {
         consentString: consentString,
         gdprApplies: true
@@ -485,8 +507,8 @@ describe('ttdBidAdapter', function () {
     });
 
     it('adds usp consent info to the request', function () {
-      let consentString = 'BON3G4EON3G4EAAABAENAA____ABl____A';
-      let clonedBidderRequest = deepClone(baseBidderRequest);
+      const consentString = 'BON3G4EON3G4EAAABAENAA____ABl____A';
+      const clonedBidderRequest = deepClone(baseBidderRequest);
       clonedBidderRequest.uspConsent = consentString;
 
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
@@ -494,7 +516,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('adds coppa consent info to the request', function () {
-      let clonedBidderRequest = deepClone(baseBidderRequest);
+      const clonedBidderRequest = deepClone(baseBidderRequest);
 
       config.setConfig({coppa: true});
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
@@ -509,7 +531,7 @@ describe('ttdBidAdapter', function () {
           gpp_sid: [6, 7]
         }
       };
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       config.resetConfig();
       expect(requestBody.regs.gpp).to.equal('somegppstring');
@@ -530,28 +552,28 @@ describe('ttdBidAdapter', function () {
           'hp': 1
         }]
       };
-      let clonedBannerBidRequests = deepClone(baseBannerBidRequests);
-      clonedBannerBidRequests[0].schain = schain;
+      const clonedBannerBidRequests = deepClone(baseBannerBidRequests);
+      clonedBannerBidRequests[0].ortb2 = { source: { ext: { schain: schain } } };
 
       const requestBody = testBuildRequests(clonedBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source.ext.schain).to.deep.equal(schain);
     });
 
-    it('adds unified ID info to the request', function () {
+    it('no longer uses userId', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].userId = {
         tdid: TDID
       };
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.user.buyeruid).to.equal(TDID);
+      expect(requestBody.user.buyeruid).to.be.undefined;
     });
 
     it('adds unified ID and UID2 info to user.ext.eids in the request', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].userIdAsEids = [
         {
           source: 'adserver.org',
@@ -579,6 +601,28 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
+      expect(requestBody.user.buyeruid).to.equal(TDID);
+    });
+
+    it('has an empty buyeruid if tdid not found in userIdAsEids', function () {
+      const UID2 = '99999999-9999-9999-9999-999999999999';
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
+      clonedBannerRequests[0].userIdAsEids = [
+        {
+          source: 'uidapi.com',
+          uids: [
+            {
+              atype: 3,
+              id: UID2
+            }
+          ]
+        }
+      ];
+      const expectedEids = clonedBannerRequests[0].userIdAsEids;
+
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
+      expect(requestBody.user.buyeruid).to.be.undefined;
     });
 
     it('adds first party site data to the request', function () {
@@ -594,7 +638,7 @@ describe('ttdBidAdapter', function () {
           keywords: 'power tools, drills'
         }
       };
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       expect(requestBody.site.name).to.equal('example');
       expect(requestBody.site.domain).to.equal('page.example.com');
@@ -607,7 +651,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('should fallback to floor module if no bidfloor is sent ', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       const bidfloor = 5.00;
       clonedBannerRequests[0].getFloor = () => {
         return { currency: 'USD', floor: bidfloor };
@@ -623,7 +667,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('adds secure to request', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].ortb2Imp.secure = 0;
 
       let requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
@@ -642,7 +686,7 @@ describe('ttdBidAdapter', function () {
         }
       };
 
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
       validateExtFirstPartyData(requestBody.site.ext)
@@ -657,7 +701,7 @@ describe('ttdBidAdapter', function () {
         }
       };
 
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
       validateExtFirstPartyData(requestBody.user.ext)
@@ -666,7 +710,7 @@ describe('ttdBidAdapter', function () {
 
     it('adds all of imp first party data to request', function() {
       const metric = { type: 'viewability', value: 0.8 };
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].ortb2Imp = {
         ext: extFirstPartyData,
         metric: [metric],
@@ -689,7 +733,7 @@ describe('ttdBidAdapter', function () {
         }
       };
 
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
       validateExtFirstPartyData(requestBody.app.ext)
@@ -704,7 +748,7 @@ describe('ttdBidAdapter', function () {
         }
       };
 
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
       validateExtFirstPartyData(requestBody.device.ext)
@@ -719,7 +763,7 @@ describe('ttdBidAdapter', function () {
         }
       };
 
-      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
       validateExtFirstPartyData(requestBody.imp[0].pmp.ext)
@@ -987,7 +1031,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets the minduration to 0 if missing', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       delete clonedVideoRequests[0].mediaTypes.video.minduration
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
@@ -1009,7 +1053,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets skip correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.skip = 1;
       clonedVideoRequests[0].mediaTypes.video.skipmin = 5;
       clonedVideoRequests[0].mediaTypes.video.skipafter = 10;
@@ -1021,7 +1065,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets bitrate correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.minbitrate = 100;
       clonedVideoRequests[0].mediaTypes.video.maxbitrate = 500;
 
@@ -1031,7 +1075,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets pos correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.pos = 1;
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
@@ -1039,7 +1083,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets playbackmethod correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.playbackmethod = [1];
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
@@ -1047,7 +1091,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets startdelay correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.startdelay = -1;
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
@@ -1055,7 +1099,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets placement correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.placement = 3;
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
@@ -1063,7 +1107,7 @@ describe('ttdBidAdapter', function () {
     });
 
     it('sets plcmt correctly if sent', function () {
-      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      const clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
@@ -1073,18 +1117,18 @@ describe('ttdBidAdapter', function () {
 
   describe('interpretResponse-empty', function () {
     it('should handle empty response', function () {
-      let result = spec.interpretResponse({});
+      const result = spec.interpretResponse({});
       expect(result.length).to.equal(0);
     });
 
     it('should handle empty seatbid response', function () {
-      let response = {
+      const response = {
         body: {
           'id': '5e5c23a5ba71e78',
           'seatbid': []
         }
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
@@ -1190,7 +1234,7 @@ describe('ttdBidAdapter', function () {
     };
 
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(incoming, serverRequest);
+      const result = spec.interpretResponse(incoming, serverRequest);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(expectedBid);
     });
@@ -1348,7 +1392,7 @@ describe('ttdBidAdapter', function () {
     };
 
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(incoming, serverRequest);
+      const result = spec.interpretResponse(incoming, serverRequest);
       expect(result.length).to.equal(2);
       expect(result).to.deep.equal(expectedBids);
     });
@@ -1468,22 +1512,22 @@ describe('ttdBidAdapter', function () {
     };
 
     it('should get the correct bid response if nurl is returned', function () {
-      let result = spec.interpretResponse(incoming, serverRequest);
+      const result = spec.interpretResponse(incoming, serverRequest);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(expectedBid);
     });
 
     it('should get the correct bid response if adm is returned', function () {
       const vastXml = "<VAST version=\"2.0\"><Ad id=\"preroll-1\"><InLine><AdSystem>2.0</AdSystem><AdTitle>5748406</AdTitle><Impression id=\"blah\"><![CDATA[http://b.scorecardresearch.com/b?C1=1&C2=6000003&C3=0000000200500000197000000&C4=us&C7=http://www.scanscout.com&C8=scanscout.com&C9=http://www.scanscout.com&C10=xn&rn=-103217130]]></Impression><Creatives><Creative><Linear><Duration>00:00:30</Duration><TrackingEvents> </TrackingEvents><VideoClicks><ClickThrough id=\"scanscout\"><![CDATA[ http://www.target.com ]]></ClickThrough></VideoClicks><MediaFiles><MediaFile height=\"396\" width=\"600\" bitrate=\"496\" type=\"video/x-flv\" delivery=\"progressive\"><![CDATA[http://media.scanscout.com/ads/partner1_a1d1fbbc-c4d4-419f-b6c8-e9db63fd4491.flv]]></MediaFile></MediaFiles></Linear></Creative><Creative><CompanionAds><Companion height=\"250\" width=\"300\" id=\"555750\"><HTMLResource><![CDATA[<A onClick=\"var i= new Image(1,1); i.src='http://app.scanscout.com/ssframework/log/log.png?a=logitemaction&RI=555750&CbC=1&CbF=true&EC=0&RC=0&SmC=2&CbM=1.0E-5&VI=736e6b13bad531dc476bc3612749bc35&admode=preroll&PRI=-4827170214961170629&RprC=0&ADsn=17&VcaI=192,197&RrC=1&VgI=736e6b13bad531dc476bc3612749bc35&AVI=142&Ust=ma&Uctry=us&CI=1223187&AC=4&PI=567&Udma=506&ADI=5748406&VclF=true';\" HREF=\"http://target.com\" target=\"_blank\"> <IMG SRC=\"http://media.scanscout.com/ads/target300x250Companion.jpg\" BORDER=0 WIDTH=300 HEIGHT=250 ALT=\"Click Here\"> </A> <img src=\"http://app.scanscout.com/ssframework/log/log.png?a=logitemaction&RI=555750&CbC=1&CbF=true&EC=1&RC=0&SmC=2&CbM=1.0E-5&VI=736e6b13bad531dc476bc3612749bc35&admode=preroll&PRI=-4827170214961170629&RprC=0&ADsn=17&VcaI=192,197&RrC=1&VgI=736e6b13bad531dc476bc3612749bc35&AVI=142&Ust=ma&Uctry=us&CI=1223187&AC=4&PI=567&Udma=506&ADI=5748406&VclF=true\" height=\"1\" width=\"1\">]]></HTMLResource></Companion></CompanionAds></Creative></Creatives></InLine></Ad></VAST>";
-      let admIncoming = deepClone(incoming);
+      const admIncoming = deepClone(incoming);
       delete admIncoming.body.seatbid[0].bid[0].nurl;
       admIncoming.body.seatbid[0].bid[0].adm = vastXml;
 
-      let vastXmlExpectedBid = deepClone(expectedBid);
+      const vastXmlExpectedBid = deepClone(expectedBid);
       delete vastXmlExpectedBid.vastUrl;
       vastXmlExpectedBid.vastXml = vastXml;
 
-      let result = spec.interpretResponse(admIncoming, serverRequest);
+      const result = spec.interpretResponse(admIncoming, serverRequest);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(vastXmlExpectedBid);
     });
@@ -1653,7 +1697,7 @@ describe('ttdBidAdapter', function () {
     };
 
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(incoming, serverRequest);
+      const result = spec.interpretResponse(incoming, serverRequest);
       expect(result.length).to.equal(2);
       expect(result).to.deep.equal(expectedBids);
     });

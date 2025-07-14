@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 const CONFIG_PARAMS = {
   endpoint: undefined,
@@ -41,7 +41,7 @@ function mockResponse(
 describe('Merkle System', function () {
   describe('merkleIdSystem.decode()', function() {
     it('provides multiple Merkle IDs (EID) from a stored object', function() {
-      let storage = {
+      const storage = {
         merkleId: [{
           id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
         }, {
@@ -62,7 +62,7 @@ describe('Merkle System', function () {
     });
 
     it('can decode legacy stored object', function() {
-      let merkleId = {'pam_id': {'id': 'testmerkleId', 'keyID': 1}};
+      const merkleId = {'pam_id': {'id': 'testmerkleId', 'keyID': 1}};
 
       expect(merkleIdSubmodule.decode(merkleId)).to.deep.equal({
         merkleId: {'id': 'testmerkleId', 'keyID': 1}
@@ -70,7 +70,7 @@ describe('Merkle System', function () {
     })
 
     it('returns undefined', function() {
-      let merkleId = {};
+      const merkleId = {};
       expect(merkleIdSubmodule.decode(merkleId)).to.be.undefined;
     })
   });
@@ -81,7 +81,7 @@ describe('Merkle System', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sinon.stub(utils, 'logInfo');
       sinon.stub(utils, 'logWarn');
       sinon.stub(utils, 'logError');
@@ -97,7 +97,7 @@ describe('Merkle System', function () {
     });
 
     it('getId() should fail on missing sv_pubid', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           sv_pubid: undefined
@@ -105,13 +105,13 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
+      const submoduleCallback = merkleIdSubmodule.getId(config, undefined);
       expect(submoduleCallback).to.be.undefined;
       expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
     });
 
     it('getId() should fail on missing ssp_ids', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           ssp_ids: undefined
@@ -119,13 +119,13 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
+      const submoduleCallback = merkleIdSubmodule.getId(config, undefined);
       expect(submoduleCallback).to.be.undefined;
       expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid ssp_ids array to be defined');
     });
 
     it('getId() should warn on missing endpoint', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           endpoint: undefined
@@ -133,25 +133,25 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined).callback;
+      const submoduleCallback = merkleIdSubmodule.getId(config, undefined).callback;
       submoduleCallback(callbackSpy);
       expect(callbackSpy.calledOnce).to.be.true;
       expect(utils.logWarn.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule endpoint string is not defined');
     });
 
     it('getId() should handle callback with valid configuration', function () {
-      let config = {
+      const config = {
         params: CONFIG_PARAMS,
         storage: STORAGE_PARAMS
       };
 
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined).callback;
+      const submoduleCallback = merkleIdSubmodule.getId(config, undefined).callback;
       submoduleCallback(callbackSpy);
       expect(callbackSpy.calledOnce).to.be.true;
     });
 
     it('getId() does not handle consent strings', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           ssp_ids: []
@@ -159,7 +159,7 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let submoduleCallback = merkleIdSubmodule.getId(config, {gdpr: {gdprApplies: true}});
+      const submoduleCallback = merkleIdSubmodule.getId(config, {gdpr: {gdprApplies: true}});
       expect(submoduleCallback).to.be.undefined;
       expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule does not currently handle consent strings');
     });
@@ -171,7 +171,7 @@ describe('Merkle System', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sinon.stub(utils, 'logInfo');
       sinon.stub(utils, 'logWarn');
       sinon.stub(utils, 'logError');
@@ -187,19 +187,19 @@ describe('Merkle System', function () {
     });
 
     it('extendId() get storedid', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
         },
         storage: STORAGE_PARAMS
       };
 
-      let id = merkleIdSubmodule.extendId(config, undefined, 'Merkle_Stored_ID');
+      const id = merkleIdSubmodule.extendId(config, undefined, 'Merkle_Stored_ID');
       expect(id.id).to.exist.and.to.equal('Merkle_Stored_ID');
     });
 
     it('extendId() get storedId on configured storageParam.refreshInSeconds', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           refreshInSeconds: 1000
@@ -207,16 +207,16 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let yesterday = new Date(Date.now() - 86400000).toUTCString();
-      let storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+      const yesterday = new Date(Date.now() - 86400000).toUTCString();
+      const storedId = {value: 'Merkle_Stored_ID', date: yesterday};
 
-      let id = merkleIdSubmodule.extendId(config, undefined,
+      const id = merkleIdSubmodule.extendId(config, undefined,
         storedId);
 
       expect(id.id).to.exist.and.to.equal(storedId);
     });
     it('extendId() should warn on missing endpoint', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           endpoint: undefined
@@ -224,10 +224,10 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let yesterday = new Date(Date.now() - 86400000).toUTCString();
-      let storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+      const yesterday = new Date(Date.now() - 86400000).toUTCString();
+      const storedId = {value: 'Merkle_Stored_ID', date: yesterday};
 
-      let submoduleCallback = merkleIdSubmodule.extendId(config, undefined,
+      const submoduleCallback = merkleIdSubmodule.extendId(config, undefined,
         storedId).callback;
       submoduleCallback(callbackSpy);
       expect(callbackSpy.calledOnce).to.be.true;
@@ -235,17 +235,17 @@ describe('Merkle System', function () {
     });
 
     it('extendId() callback on configured storageParam.refreshInSeconds', function () {
-      let config = {
+      const config = {
         params: {
           ...CONFIG_PARAMS,
           refreshInSeconds: 1
         }
       };
 
-      let yesterday = new Date(Date.now() - 86400000).toUTCString();
-      let storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+      const yesterday = new Date(Date.now() - 86400000).toUTCString();
+      const storedId = {value: 'Merkle_Stored_ID', date: yesterday};
 
-      let submoduleCallback = merkleIdSubmodule.extendId(config, undefined, storedId).callback;
+      const submoduleCallback = merkleIdSubmodule.extendId(config, undefined, storedId).callback;
       submoduleCallback(callbackSpy);
       expect(callbackSpy.calledOnce).to.be.true;
     });
