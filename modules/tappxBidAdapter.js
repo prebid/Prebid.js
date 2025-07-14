@@ -359,7 +359,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     video.mimes = videoMediaType.mimes;
 
     const videoExt = {};
-    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded == 1) {
+    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded === 1) {
       videoExt.rewarded = videoMediaType.rewarded;
     }
     video.ext = videoExt;
@@ -507,12 +507,12 @@ function getLanguage() {
 
 function getOs() {
   const ua = navigator.userAgent;
-  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') !== -1) { return 'macOS'; } else if (ua.indexOf('Windows') !== -1) { return 'Windows'; } else if (ua.indexOf('Linux') !== -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
 function getVendor() {
   const ua = navigator.userAgent;
-  if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
+  if (ua.indexOf('Chrome') !== -1) { return 'Google'; } else if (ua.indexOf('Firefox') !== -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') !== -1) { return 'Apple'; } else if (ua.indexOf('Edge') !== -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') !== -1 || ua.indexOf('Trident') !== -1) { return 'Microsoft'; } else { return ''; }
 }
 
 export function _getHostInfo(validBidRequests) {
