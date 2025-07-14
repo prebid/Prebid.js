@@ -258,8 +258,8 @@ describe('nextrollBidAdapter', function() {
 
     it('Should interpret all assets', () => {
       const allAssetsResponse = utils.deepClone(responseBody)
-      const iconUrl = imgUrl + '?icon=true', iconW = 10, iconH = 15
-      const logoUrl = imgUrl + '?logo=true', logoW = 20, logoH = 25
+      const iconUrl = imgUrl + '?icon=true'; const iconW = 10; const iconH = 15
+      const logoUrl = imgUrl + '?logo=true'; const logoW = 20; const logoH = 25
       const bodyText = 'Some body text'
 
       allAssetsResponse.body.seatbid[0].bid[0].adm.assets.push(...[

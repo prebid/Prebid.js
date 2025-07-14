@@ -19,7 +19,7 @@ describe('AdkernelAdn adapter', function () {
         }
       },
       adUnitCode: 'ad-unit-1',
-    }, bid2_pub1 = {
+    }; const bid2_pub1 = {
       bidder: 'adkernelAdn',
       transactionId: 'transact0',
       bidderRequestId: 'req0',
@@ -34,7 +34,7 @@ describe('AdkernelAdn adapter', function () {
           sizes: [[300, 250]]
         }
       }
-    }, bid1_pub2 = {
+    }; const bid1_pub2 = {
       bidder: 'adkernelAdn',
       transactionId: 'transact2',
       bidderRequestId: 'req1',
@@ -50,7 +50,7 @@ describe('AdkernelAdn adapter', function () {
           sizes: [[728, 90]]
         }
       }
-    }, bid_video1 = {
+    }; const bid_video1 = {
       bidder: 'adkernelAdn',
       transactionId: 'transact3',
       bidderRequestId: 'req1',
@@ -69,7 +69,7 @@ describe('AdkernelAdn adapter', function () {
       params: {
         pubId: 7
       }
-    }, bid_video2 = {
+    }; const bid_video2 = {
       bidder: 'adkernelAdn',
       transactionId: 'transact3',
       bidderRequestId: 'req1',
@@ -85,7 +85,7 @@ describe('AdkernelAdn adapter', function () {
       params: {
         pubId: 7
       }
-    }, bid_multiformat = {
+    }; const bid_multiformat = {
       bidder: 'adkernelAdn',
       transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
       bidderRequestId: 'req-001',
@@ -134,7 +134,7 @@ describe('AdkernelAdn adapter', function () {
         vast_url: 'https://vast.com/vast.xml'
       }],
       syncpages: ['https://dsp.adkernel.com/sync']
-    }, usersyncOnlyResponse = {
+    }; const usersyncOnlyResponse = {
       syncpages: ['https://dsp.adkernel.com/sync']
     };
 
