@@ -85,7 +85,7 @@ export const extractConsent = ({ gdpr }) => {
     return null
   }
   const { gdprApplies, consentString } = gdpr
-  if (!(gdprApplies == '0' || gdprApplies == '1')) {
+  if (!['0', '1'].includes(String(gdprApplies))) {
     throw 'TCF Consent: gdprApplies has wrong format'
   }
   if (consentString && typeof consentString !== 'string') {
@@ -200,7 +200,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
     const siteDataPath = 'site.content.data';
     const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || [];
     const updatedSiteContentData = [
-      ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
+      ...currentSiteContentData.filter(({ name }) => name !== siteContentData.name),
       siteContentData
     ];
     deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData);
@@ -210,7 +210,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
     const userDataPath = 'user.data';
     const currentUserData = deepAccess(bidderConfig, userDataPath) || [];
     const updatedUserData = [
-      ...currentUserData.filter(({ name }) => name != userData.name),
+      ...currentUserData.filter(({ name }) => name !== userData.name),
       userData
     ];
     deepSetValue(bidderConfig, userDataPath, updatedUserData);
