@@ -54,7 +54,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
       if (typeof callback === 'function') { callback(); }
       const timeToRun = new Date() - moduleStarted;
       logInfo(LOG_PREFIX + ' time to run: ' + timeToRun);
-      if (getRandomNumber(50) == 1) {
+      if (getRandomNumber(50) === 1) {
         ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {method: 'POST', withCredentials: true});
       }
     }).catch(error => logError(LOG_PREFIX, 'bidInterestError', error));
@@ -100,7 +100,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
     adUnits[adUnitIndex].bids = bids.filter((bid, bidIndex) => {
       if (!params.bidders || params.bidders.includes(bid.bidder)) {
         const index = interestingBidsRates.findIndex(({ id }) => id === bid._id);
-        if (index == -1) {
+        if (index === -1) {
           const tmpBid = bid;
           tmpBid['code'] = adUnits[adUnitIndex].code;
           tmpBid['mediaTypes'] = adUnits[adUnitIndex].mediaTypes;
@@ -111,7 +111,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
           filteredBids.push(tmpBid);
           adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'filtered';
         } else {
-          if (sampledBidsRates.findIndex(({ id }) => id === bid._id) == -1) {
+          if (sampledBidsRates.findIndex(({ id }) => id === bid._id) === -1) {
             adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'cleared';
           } else {
             adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'sampled';
