@@ -224,8 +224,8 @@ export const spec = {
   _getUrlPixelMetric(eventName, bids) {
     if (!Array.isArray(bids)) bids = [bids];
 
-    const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
-    if (bidder != BIDDER_CODE) return;
+      const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
+      if (bidder !== BIDDER_CODE) return;
 
     const params = [];
     _each(bids, bid => {
