@@ -128,7 +128,7 @@ export const spec = {
         bidResponse.vastXml = response.vastXML;
         try {
           if (bidResponse.vastXml != null) {
-            if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
+            if (JSON.parse(bidRequest.data).videoData.format === 'outstream' || JSON.parse(bidRequest.data).videoData.format === 'banner') {
               bidResponse.renderer = Renderer.install({
                 id: bidRequest.bidId,
                 adunitcode: bidRequest.tagId,
@@ -180,12 +180,12 @@ export const spec = {
       consentGPP += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
-    if (syncOptions.iframeEnabled && raiSync.raiIframe != 'exclude') {
+    if (syncOptions.iframeEnabled && raiSync.raiIframe !== 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
-      if (consent != '') {
+      if (consent !== '') {
         syncUrl += `&${consent}`
       }
-      if (consentGPP != '') {
+      if (consentGPP !== '') {
         syncUrl += `&${consentGPP}`
       }
       syncs.push({
@@ -194,12 +194,12 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0 && raiSync.raiImage != 'exclude') {
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length === 0 && raiSync.raiImage !== 'exclude') {
       syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
-      if (consent != '') {
+      if (consent !== '') {
         syncUrl += `&${consent}`
       }
-      if (consentGPP != '') {
+      if (consentGPP !== '') {
         syncUrl += `&${consentGPP}`
       }
       syncs.push({
@@ -237,13 +237,13 @@ function raiGetDemandType(bid) {
   let raiFormat = 'display';
   if (typeof bid.sizes !== 'undefined') {
     bid.sizes.forEach(function (sz) {
-      if ((sz[0] == '1800' && sz[1] == '1000') || (sz[0] == '1' && sz[1] == '1')) {
+      if ((sz[0] === '1800' && sz[1] === '1000') || (sz[0] === '1' && sz[1] === '1')) {
         raiFormat = 'skin'
       }
     })
   }
-  if (bid.mediaTypes != undefined) {
-    if (bid.mediaTypes.video != undefined) {
+  if (bid.mediaTypes !== undefined) {
+    if (bid.mediaTypes.video !== undefined) {
       raiFormat = 'video';
     }
   }
@@ -252,7 +252,7 @@ function raiGetDemandType(bid) {
 
 function raiGetVideoInfo(bid) {
   let videoData;
-  if (raiGetDemandType(bid) == 'video') {
+  if (raiGetDemandType(bid) === 'video') {
     videoData = {
       format: bid.mediaTypes.video.context,
       playerSize: bid.mediaTypes.video.playerSize,
@@ -304,10 +304,10 @@ function raiGetSyncInclude(config) {
     if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings !== 'undefined') {
       raConfig = config.getConfig('userSync').filterSettings
       if (raConfig.iframe != null && typeof raConfig.iframe !== 'undefined') {
-        raiSync.raiIframe = raConfig.iframe.bidders == 'richaudience' || raConfig.iframe.bidders == '*' ? raConfig.iframe.filter : 'exclude';
+        raiSync.raiIframe = raConfig.iframe.bidders === 'richaudience' || raConfig.iframe.bidders === '*' ? raConfig.iframe.filter : 'exclude';
       }
       if (raConfig.image != null && typeof raConfig.image !== 'undefined') {
-        raiSync.raiImage = raConfig.image.bidders == 'richaudience' || raConfig.image.bidders == '*' ? raConfig.image.filter : 'exclude';
+        raiSync.raiImage = raConfig.image.bidders === 'richaudience' || raConfig.image.bidders === '*' ? raConfig.image.filter : 'exclude';
       }
     }
     return raiSync;

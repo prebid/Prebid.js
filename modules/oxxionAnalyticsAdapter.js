@@ -94,9 +94,9 @@ function cleanCreatives(args) {
 
 function enhanceMediaType(arg) {
   saveEvents['bidRequested'].forEach((bidRequested) => {
-    if (bidRequested['auctionId'] == arg['auctionId'] && Array.isArray(bidRequested['bids'])) {
+    if (bidRequested['auctionId'] === arg['auctionId'] && Array.isArray(bidRequested['bids'])) {
       bidRequested['bids'].forEach((bid) => {
-        if (bid['transactionId'] == arg['transactionId'] && bid['bidId'] == arg['requestId']) { arg['mediaTypes'] = bid['mediaTypes']; }
+        if (bid['transactionId'] === arg['transactionId'] && bid['bidId'] === arg['requestId']) { arg['mediaTypes'] = bid['mediaTypes']; }
       });
     }
   });
@@ -106,20 +106,20 @@ function enhanceMediaType(arg) {
 function addBidResponse(args) {
   const eventType = BID_RESPONSE;
   const argsCleaned = cleanCreatives(args); ;
-  if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
+  if (allEvents[eventType] === undefined) { allEvents[eventType] = [] }
   allEvents[eventType].push(argsCleaned);
 }
 
 function addBidRequested(args) {
   const eventType = BID_REQUESTED;
   const argsCleaned = filterAttributes(args, true);
-  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(argsCleaned);
 }
 
 function addTimeout(args) {
   const eventType = BID_TIMEOUT;
-  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
   const argsCleaned = [];
   let argsDereferenced = {};
@@ -128,7 +128,7 @@ function addTimeout(args) {
   argsDereferenced.forEach((attr) => {
     argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
-  if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
 
@@ -159,10 +159,10 @@ export const dereferenceWithoutRenderer = function(args) {
 
 function addAuctionEnd(args) {
   const eventType = AUCTION_END;
-  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
   const argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
-  if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
 
@@ -171,9 +171,9 @@ function handleBidWon(args) {
   let increment = args['cpm'];
   if (typeof saveEvents['auctionEnd'] === 'object') {
     saveEvents['auctionEnd'].forEach((auction) => {
-      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidsReceived'] === 'object') {
+        if (auction['auctionId'] === args['auctionId'] && typeof auction['bidsReceived'] === 'object') {
         auction['bidsReceived'].forEach((bid) => {
-          if (bid['transactionId'] == args['transactionId'] && bid['adId'] != args['adId']) {
+          if (bid['transactionId'] === args['transactionId'] && bid['adId'] !== args['adId']) {
             if (args['cpm'] < bid['cpm']) {
               increment = 0;
             } else if (increment > args['cpm'] - bid['cpm']) {
@@ -182,10 +182,10 @@ function handleBidWon(args) {
           }
         });
       }
-      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] === 'object') {
+      if (auction['auctionId'] === args['auctionId'] && typeof auction['bidderRequests'] === 'object') {
         auction['bidderRequests'].forEach((req) => {
           req.bids.forEach((bid) => {
-            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+              if (bid['bidId'] === args['requestId'] && bid['transactionId'] === args['transactionId']) {
               args['ova'] = bid['ova'];
             }
           });

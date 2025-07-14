@@ -68,7 +68,7 @@ function generateGUID() {
   const guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
-    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   });
   return guid;
 }
@@ -318,7 +318,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return value && value != '' && INVALID_ID != value ? {'intentIqId': value} : undefined;
+    return value && value !== '' && INVALID_ID !== value ? {'intentIqId': value} : undefined;
   },
 
   /**
@@ -536,7 +536,7 @@ export const intentIqIdSubmodule = {
 
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
-              if (respJson.tc == 41) {
+              if (respJson.tc === 41) {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
                 if (groupChanged) groupChanged(firstPartyData.group);
@@ -581,7 +581,7 @@ export const intentIqIdSubmodule = {
                 return
               }
               // If data is empty, means we should save as INVALID_ID
-              if (respJson.data == '') {
+              if (respJson.data === '') {
                 respJson.data = INVALID_ID;
               } else {
                 // If data is a single string, assume it is an id with source intentiq.com
