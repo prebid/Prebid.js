@@ -119,8 +119,8 @@ function hasParamsNotBlankString(params, key) {
   return (
     key in params &&
     typeof params[key] !== 'undefined' &&
-    params[key] != null &&
-    params[key] != ''
+    params[key] !== null &&
+    params[key] !== ''
   );
 }
 
@@ -151,7 +151,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       ? encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.GENIEE_CT0])
       : '',
     referer: refererInfo?.ref || encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.REFERRER]) || '',
-    topframe: window.parent == window.self ? 1 : 0,
+      topframe: window.parent === window.self ? 1 : 0,
     cur: bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
     requestid: bid.bidId,
     ua: navigator.userAgent,

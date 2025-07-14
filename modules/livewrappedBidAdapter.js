@@ -167,17 +167,17 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (serverResponses.length == 0) return [];
+    if (serverResponses.length === 0) return [];
 
     const syncList = [];
     const userSync = serverResponses[0].body.pixels || [];
 
     userSync.forEach(function(sync) {
-      if (syncOptions.pixelEnabled && sync.type == 'Redirect') {
+      if (syncOptions.pixelEnabled && sync.type === 'Redirect') {
         syncList.push({type: 'image', url: sync.url});
       }
 
-      if (syncOptions.iframeEnabled && sync.type == 'Iframe') {
+      if (syncOptions.iframeEnabled && sync.type === 'Iframe') {
         syncList.push({type: 'iframe', url: sync.url});
       }
     });
@@ -287,7 +287,7 @@ function getBidFloor(bid, currency) {
     size: '*'
   });
 
-  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency == currency
+  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === currency
     ? floor.floor
     : undefined;
 }

@@ -97,7 +97,7 @@ function getSyncUrl(gdprConsent, usPrivacy) {
 function getPublisherUrl() {
   var url = '';
   try {
-    if (window.top == window) {
+  if (window.top === window) {
       url = window.location.href;
     } else {
       try {
@@ -121,7 +121,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
   var isHidden = (document.hidden) ? '1' : '0';
   var visibilityState = encodeURIComponent(document.visibilityState);
 
-  var intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
+  var intT = window.TR_INT_T && window.TR_INT_T !== -1 ? window.TR_INT_T : null;
   if (!intT) {
     intT = getStorageData(BASE_KEY + 'int_t');
   }

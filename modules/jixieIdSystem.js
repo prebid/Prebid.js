@@ -107,7 +107,7 @@ function shouldCallSrv(logstr) {
   const now = Date.now();
   const tsStr = logstr.split('_')[0];
   let ts = parseInt(tsStr, 10);
-  if (!(tsStr.length == 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
+  if (!(tsStr.length === 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
     ts = undefined;
   }
   return (ts === undefined || (ts && now > ts));
