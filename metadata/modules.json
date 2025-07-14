@@ -5560,6 +5560,11 @@
     },
     {
       "componentType": "analytics",
+      "componentName": "datawrkzanalytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
       "componentName": "eightPod",
       "gvlid": null
     },
