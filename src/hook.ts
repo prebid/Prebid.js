@@ -4,15 +4,15 @@ import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {AllExceptLast, Last} from "./types/tuples.d.ts";
 
 export type Next<W extends AnyFunction> = {
-    (...args: Parameters<W>): unknown;
-    bail(result: ReturnType<W>): void;
+  (...args: Parameters<W>): unknown;
+  bail(result: ReturnType<W>): void;
 }
 
 export type HookFunction<W extends AnyFunction> = (next: Next<W>, ...args: Parameters<W>) => unknown;
 export type BeforeHookParams<TYP extends HookType, FN extends AnyFunction> =
     TYP extends 'async'
-        ? Last<Parameters<FN>> extends AnyFunction ? AllExceptLast<Parameters<FN>> : Parameters<FN>
-        : Parameters<FN>;
+      ? Last<Parameters<FN>> extends AnyFunction ? AllExceptLast<Parameters<FN>> : Parameters<FN>
+      : Parameters<FN>;
 
 export type HookType = 'sync' | 'async';
 
@@ -20,14 +20,14 @@ export type BeforeHook<TYP extends HookType, FN extends AnyFunction> = HookFunct
 export type AfterHook<FN extends AnyFunction> = HookFunction<(result: ReturnType<FN>) => ReturnType<FN>>;
 
 export type Hookable<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> & {
-    before(beforeHook: BeforeHook<TYP, FN>, priority?: number): void;
-    after(afterHook: AfterHook<FN>, priority?: number): void;
-    getHooks(options?: { hook?: BeforeHook<TYP, FN> | AfterHook<FN> }): { length: number, remove(): void }
-    removeAll(): void;
+  before(beforeHook: BeforeHook<TYP, FN>, priority?: number): void;
+  after(afterHook: AfterHook<FN>, priority?: number): void;
+  getHooks(options?: { hook?: BeforeHook<TYP, FN> | AfterHook<FN> }): { length: number, remove(): void }
+  removeAll(): void;
 }
 
 export interface NamedHooks {
-    [name: string]: Hookable<HookType, AnyFunction>;
+  [name: string]: Hookable<HookType, AnyFunction>;
 }
 
 interface FunHooks {
@@ -41,7 +41,7 @@ interface FunHooks {
  * see https://github.com/snapwich/fun-hooks/issues/42
  */
 
-export let hook: FunHooks = funHooks({
+export const hook: FunHooks = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
 
@@ -66,7 +66,7 @@ export const ready: Promise<void> = readyCtl.promise;
 export const getHook = hook.get;
 
 export function setupBeforeHookFnOnce<TYP extends HookType, FN extends AnyFunction>(baseFn: Hookable<TYP, FN>, hookFn: BeforeHook<TYP, FN>, priority = 15) {
-  let result = baseFn.getHooks({hook: hookFn});
+  const result = baseFn.getHooks({hook: hookFn});
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
   }
@@ -81,7 +81,7 @@ export function module(name, install, {postInstallAllowed = false} = {}) {
 }
 
 export interface Submodules {
-    [name: string]: unknown[]
+  [name: string]: unknown[]
 }
 
 export function submodule<N extends keyof Submodules>(name: N, ...args: Submodules[N]) {
@@ -113,8 +113,8 @@ export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hoo
  * should be treated as a normal argument.
  */
 export function ignoreCallbackArg<FN extends AnyFunction>(hook: Hookable<'async', FN>): Hookable<'async', (...args: [...Parameters<FN>, () => void]) => ReturnType<FN>> {
-    return wrapHook(hook, function (...args) {
-        args.push(function () {})
-        return hook.apply(this, args);
-    } as any) as any;
+  return wrapHook(hook, function (...args) {
+    args.push(function () {})
+    return hook.apply(this, args);
+  } as any) as any;
 }

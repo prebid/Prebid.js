@@ -61,7 +61,7 @@ function createORTB(bR, bid) {
   const consentString = gdpr ? bR.gdprConsent?.consentString : '';
   const usPrivacy = bR.uspConsent || '';
 
-  let oR = {
+  const oR = {
     id: generateUUID(),
     cur: [currency],
     imp: [],
@@ -119,8 +119,8 @@ function appendImp(bid, oRtb) {
       dfp_ad_unit_code: bid.adUnitCode,
       ...(bid?.ortb2Imp?.ext?.data &&
         isPlainObject(bid.ortb2Imp.ext.data) && {
-          data: bid.ortb2Imp.ext.data,
-        }),
+        data: bid.ortb2Imp.ext.data,
+      }),
     },
     ...(bid?.params?.zid && { tagid: String(bid.params.zid) }),
     ...(bid?.ortb2Imp?.instl === 1 && { instl: 1 }),
@@ -217,7 +217,7 @@ export const spec = {
 
     sR.body.seatbid.forEach((sb) => {
       try {
-        let b = sb.bid[0];
+        const b = sb.bid[0];
 
         res.push({
           adId: b?.adId ? b.adId : b.impid || b.crid,

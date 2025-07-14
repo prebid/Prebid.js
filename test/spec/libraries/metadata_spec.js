@@ -20,7 +20,7 @@ describe('metadata', () => {
     expect(metadata.getMetadata('bidder', 'mock')).to.eql(meta);
   });
   it('can register and return storage disclosures', () => {
-    const disclosure = ['foo', 'bar'];
+    const disclosure = {timestamp: 'mock', disclosures: ['foo', 'bar']};
     metadata.register('mockModule', {
       disclosures: {
         'mock.url': disclosure
@@ -42,7 +42,7 @@ describe('metadata', () => {
         }
       ]
       const disclosures = {
-        'mock.url': ['foo', 'bar']
+        'mock.url': {disclosures: ['foo', 'bar']}
       };
       metadata.register('mockModule', {
         components

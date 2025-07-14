@@ -176,6 +176,7 @@ const RESPONSE = {
   pid: 2222,
   adsize: '728x90',
   adtype: 'BANNER',
+  netRevenue: false,
 };
 
 const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
@@ -511,14 +512,14 @@ describe('yieldlabBidAdapter', () => {
       it('does not pass the sizes parameter for mediaType video', () => {
         const videoRequest = VIDEO_REQUEST();
 
-        let request = spec.buildRequests([videoRequest], REQPARAMS);
+        const request = spec.buildRequests([videoRequest], REQPARAMS);
         expect(request.url).to.not.include('sizes');
       });
 
       it('does not pass the sizes parameter for mediaType native', () => {
         const nativeRequest = NATIVE_REQUEST();
 
-        let request = spec.buildRequests([nativeRequest], REQPARAMS);
+        const request = spec.buildRequests([nativeRequest], REQPARAMS);
         expect(request.url).to.not.include('sizes');
       });
     });
@@ -533,27 +534,27 @@ describe('yieldlabBidAdapter', () => {
       });
 
       it('does pass dsarequired parameter', () => {
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsarequired=1');
       });
 
       it('does pass dsapubrender parameter', () => {
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsapubrender=2');
       });
 
       it('does pass dsadatatopub parameter', () => {
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsadatatopub=3');
       });
 
       it('does pass dsadomain parameter', () => {
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsadomain=test.com');
       });
 
       it('does pass encoded dsaparams parameter', () => {
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsaparams=1%2C2%2C3');
       });
 
@@ -584,7 +585,7 @@ describe('yieldlabBidAdapter', () => {
 
         config.setConfig(DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES);
 
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES });
 
         expect(request.url).to.include('dsatransparency=test.com~1_2_3~~example.com~4_5_6');
         expect(request.url).to.not.include('dsadomain');
@@ -654,7 +655,7 @@ describe('yieldlabBidAdapter', () => {
         };
 
         config.setConfig(INVALID_TOPICS_DATA);
-        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA });
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA });
 
         expect(request.url).to.not.include('segtax');
         expect(request.url).to.not.include('segclass');
@@ -861,6 +862,16 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
       expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
       expect(result[0].meta.dsa.adrender).to.equal(1);
+    });
+
+    it('should set netRevenue correctly', () => {
+      const NET_REVENUE_RESPONSE = {
+        ...RESPONSE,
+        netRevenue: true,
+      };
+      const result = spec.interpretResponse({body: [NET_REVENUE_RESPONSE]}, {validBidRequests: [bidRequest], queryParams: REQPARAMS});
+
+      expect(result[0].netRevenue).to.equal(true);
     });
   });
 

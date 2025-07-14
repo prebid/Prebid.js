@@ -151,7 +151,7 @@ function getFloor(bid, mediaType, size = '*') {
 function getHighestFloor(bid) {
   const floors = [];
 
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     const floor = getFloor(bid, mediaType);
 
     if (isNumber(floor)) {
@@ -212,7 +212,7 @@ function createOrtbTemplate() {
  * @returns {object}
  */
 function createBannerImp(bid) {
-  let sizes = bid.mediaTypes.banner.sizes;
+  const sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 
   if (!isArray(sizes) || !sizes.length) {
@@ -301,7 +301,7 @@ function createNativeImp(bid) {
     nativeParams.title.len = 90;
   }
 
-  for (let key in nativeParams) {
+  for (const key in nativeParams) {
     if (nativeParams.hasOwnProperty(key)) {
       const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.name === key);
       if (!internalNativeAsset) {
@@ -444,7 +444,7 @@ function createImp(bid) {
   }
 
   // Only supports proper mediaTypes definition…
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     switch (mediaType) {
       case BANNER:
         const banner = createBannerImp(bid);
@@ -610,7 +610,7 @@ export const spec = {
     deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
-      let bid = deepClone(validBid);
+      const bid = deepClone(validBid);
 
       // No additional params atm.
       const imp = createImp(bid);

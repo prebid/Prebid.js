@@ -21,10 +21,10 @@ const LOG_PREFIX = 'Equativ:';
 const OUTSTREAM_RENDERER_URL = 'https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js';
 const PID_STORAGE_NAME = 'eqt_pid';
 
-let feedbackArray = [];
-let impIdMap = {};
+const feedbackArray = [];
+const impIdMap = {};
 let nwid = 0;
-let tokens = {};
+const tokens = {};
 
 /**
  * Gets value of the local variable impIdMap
@@ -160,11 +160,13 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       window.addEventListener('message', function handler(event) {
         if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
-          event.source.postMessage({
-            action: 'consentResponse',
-            id: event.data.id,
-            consents: gdprConsent.vendorData.vendor.consents
-          }, event.origin);
+          if (event.source && event.source.postMessage) {
+            event.source.postMessage({
+              action: 'consentResponse',
+              id: event.data.id,
+              consents: gdprConsent.vendorData.vendor.consents
+            }, event.origin);
+          }
 
           if (event.data.pid) {
             storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid);
@@ -244,7 +246,7 @@ export const converter = ortbConverter({
 
     let req = buildRequest(splitImps, bidderRequest, context);
 
-    let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
+    const env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
     nwid = deepAccess(bid, env + '.id') || bid.params.networkId;
     deepSetValue(req, env.replace('ortb2.', '') + '.id', nwid);
 

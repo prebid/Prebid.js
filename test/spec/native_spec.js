@@ -554,7 +554,7 @@ describe('native.js', function () {
 
 describe('validate native openRTB', function () {
   it('should validate openRTB request', function () {
-    let openRTBNativeRequest = { assets: [] };
+    const openRTBNativeRequest = { assets: [] };
     // assets array can't be empty
     expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
     openRTBNativeRequest.assets.push({
@@ -604,7 +604,7 @@ describe('validate native openRTB', function () {
         },
       ],
     };
-    let openRTBBid = {
+    const openRTBBid = {
       assets: [
         {
           id: 1,
@@ -650,7 +650,7 @@ describe('validate native', function () {
     },
   };
 
-  let validBid = {
+  const validBid = {
     adId: 'abc123',
     requestId: 'test_bid_id',
     adUnitId: 'test_adunit',
@@ -677,7 +677,7 @@ describe('validate native', function () {
     },
   };
 
-  let noIconDimBid = {
+  const noIconDimBid = {
     adId: 'abc234',
     requestId: 'test_bid_id',
     adUnitId: 'test_adunit',
@@ -700,7 +700,7 @@ describe('validate native', function () {
     },
   };
 
-  let noImgDimBid = {
+  const noImgDimBid = {
     adId: 'abc345',
     requestId: 'test_bid_id',
     adUnitId: 'test_adunit',

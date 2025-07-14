@@ -55,7 +55,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const vastXmlEditor = vastXmlEditor_;
 
   verifier.trackBid = function(bid) {
-    let { vastXml, vastUrl } = bid;
+    const { vastXml, vastUrl } = bid;
     if (!vastXml && !vastUrl) {
       return;
     }
@@ -135,7 +135,7 @@ export function baseImpressionVerifier(bidTracker_) {
   const bidTracker = bidTracker_;
 
   function trackBid(bid) {
-    let { adId, adUnitCode, requestId, auctionId } = bid;
+    const { adId, adUnitCode, requestId, auctionId } = bid;
     const trackingId = PB_PREFIX + generateUUID(10 ** 13);
     bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
     return trackingId;
@@ -163,7 +163,7 @@ export function baseImpressionVerifier(bidTracker_) {
     }
 
     const queryParams = url.searchParams;
-    let uuid = queryParams.get(UUID_MARKER);
+    const uuid = queryParams.get(UUID_MARKER);
     return uuid && bidTracker.remove(uuid);
   }
 
@@ -172,7 +172,7 @@ export function baseImpressionVerifier(bidTracker_) {
       return;
     }
 
-    for (const wrapperId in adWrapperIds) {
+    for (const wrapperId of adWrapperIds) {
       const bidInfo = bidTracker.remove(wrapperId);
       if (bidInfo) {
         return bidInfo;

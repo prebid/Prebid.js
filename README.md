@@ -1,6 +1,5 @@
-[![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](https://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
+[![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg?branch=master)](https://coveralls.io/github/prebid/Prebid.js?branch=master)
 
 # Prebid.js
 
@@ -185,9 +184,13 @@ Features that can be disabled this way are:
  - `VIDEO` - support for video bids;
  - `NATIVE` - support for native bids;
 - `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
-- `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).
+- `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see [note](#greedy-promise)).
+- `LOG_NON_ERROR` - support for non-error console messages. (see [note](#log-features))
+- `LOG_ERROR` - support for error console messages (see [note](#log-features))
 
 `GREEDY` is disabled and all other features are enabled when no features are explicitly chosen. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior. If you disable any feature, you must explicitly also disable `GREEDY` to get the default behavior on promises.
+
+<a id="greedy-promise"></a>
 
 #### Greedy promises
 
@@ -200,6 +203,16 @@ You may also override the `Promise` constructor used by Prebid through `pbjs.Pro
 var pbjs = pbjs || {};
 pbjs.Promise = myCustomPromiseConstructor;
 ```
+
+<a id="log-features"></a>
+
+#### Logging
+
+Disabling `LOG_NON_ERROR` and `LOG_ERROR` removes most logging statements from source, which can save on bundle size. Beware, however, that there is no test coverage with either of these disabled. Turn them off at your own risk.
+
+Disabling logging — especially `LOG_ERROR` — also makes debugging more difficult. Consider building a separate version with logging enabled for debugging purposes.
+
+We suggest running the build with logging off only if you are able to confirm a real world metric improvement via a testing framework. Using this build without such a framework may result in unexpectedly worse performance.
 
 ## Unminified code
 

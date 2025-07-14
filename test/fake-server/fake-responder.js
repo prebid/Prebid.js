@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 const deepEqual = require('deep-equal');
-const generateFixtures = require('./fixtures');
+const generateFixtures = require('./fixtures/index.js');
 const path = require('path');
 
 // path to the fixture directory
@@ -12,8 +12,8 @@ const fixturesPath = path.join(__dirname, 'fixtures');
  * @returns {object} responseBody
  */
 const matchResponse = function (requestBody) {
-  let actualUuids = [];
-  let reqResMap = generateFixtures(fixturesPath);
+  const actualUuids = [];
+  const reqResMap = generateFixtures(fixturesPath);
   const requestResponsePairs = Object.keys(reqResMap).map(testName => reqResMap[testName]);
 
   // delete 'uuid' property
@@ -23,6 +23,7 @@ const matchResponse = function (requestBody) {
 
     // delete the 'uuid'
     delete body.uuid;
+    delete body.tid;
   });
 
   ['sdk', 'referrer_detection', 'gdpr_consent'].forEach(prop => {

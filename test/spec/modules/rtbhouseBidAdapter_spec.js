@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { spec } from 'modules/rtbhouseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { mergeDeep } from '../../../src/utils';
-import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils';
+import { mergeDeep } from '../../../src/utils.js';
+import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -15,7 +15,7 @@ describe('RTBHouseAdapter', () => {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'rtbhouse',
       'params': {
         'publisherId': 'PREBID_TEST',
@@ -37,14 +37,14 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('Checking backward compatibility. should return true', function () {
-      let bid2 = Object.assign({}, bid);
+      const bid2 = Object.assign({}, bid);
       delete bid2.mediaTypes;
       bid2.sizes = [[300, 250], [300, 600]];
       expect(spec.isBidRequestValid(bid2)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'someIncorrectParam': 0
@@ -88,7 +88,8 @@ describe('RTBHouseAdapter', () => {
           'transactionId': 'example-transaction-id',
           'ortb2Imp': {
             'ext': {
-              'tid': 'ortb2Imp-transaction-id-1'
+              'tid': 'ortb2Imp-transaction-id-1',
+              'gpid': 'example-gpid'
             }
           },
           'ortb2': {
@@ -118,26 +119,26 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('should build test param into the request', () => {
-      let builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
+      const builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).test).to.equal(1);
     });
 
     it('should build channel param into request.site', () => {
-      let builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
+      const builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).site.channel).to.equal('Partner_Site - news');
     })
 
     it('should not build channel param into request.site if no value is passed', () => {
-      let bidRequest = Object.assign([], bidRequests);
+      const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].params.channel = undefined;
-      let builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
+      const builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).site.channel).to.be.undefined
     })
 
     it('should cap the request.site.channel length to 50', () => {
-      let bidRequest = Object.assign([], bidRequests);
+      const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].params.channel = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent scelerisque ipsum eu purus lobortis iaculis.';
-      let builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
+      const builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).site.channel.length).to.equal(50)
     })
 
@@ -158,7 +159,7 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
-      let bidRequest = Object.assign([], bidRequests);
+      const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebid/bids');
@@ -166,16 +167,16 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('should not populate GDPR if for non-EEA users', function () {
-      let bidRequest = Object.assign([], bidRequests);
+      const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(bidRequest, bidderRequest);
-      let data = JSON.parse(request.data);
+      const data = JSON.parse(request.data);
       expect(data).to.not.have.property('regs');
       expect(data).to.not.have.property('user');
     });
 
     it('should populate GDPR and consent string if available for EEA users', function () {
-      let bidRequest = Object.assign([], bidRequests);
+      const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(
         bidRequest,
@@ -186,13 +187,13 @@ describe('RTBHouseAdapter', () => {
           }
         })
       );
-      let data = JSON.parse(request.data);
+      const data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
     });
 
     it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', function () {
-      let bidRequest = Object.assign([], bidRequests);
+      const bidRequest = Object.assign([], bidRequests);
       delete bidRequest[0].params.test;
       const request = spec.buildRequests(
         bidRequest,
@@ -202,7 +203,7 @@ describe('RTBHouseAdapter', () => {
           }
         })
       );
-      let data = JSON.parse(request.data);
+      const data = JSON.parse(request.data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('');
     });
@@ -276,6 +277,21 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
+    });
+
+    it('should include impression level GPID when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.gpid).to.equal('example-gpid');
+    });
+
+    it('should not include imp[].ext.ae set at impression level when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].ortb2Imp.ext.ae = 1;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.ae).to.be.undefined;
     });
 
     it('should not include invalid schain', () => {
@@ -662,7 +678,7 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('should get correct bid response', function () {
-      let expectedResponse = [
+      const expectedResponse = [
         {
           'requestId': '552b8922e28f27',
           'cpm': 0.5,
@@ -678,14 +694,14 @@ describe('RTBHouseAdapter', () => {
         }
       ];
       let bidderRequest;
-      let result = spec.interpretResponse({body: response}, {bidderRequest});
+      const result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
-      let response = '';
+      const response = '';
       let bidderRequest;
-      let result = spec.interpretResponse({body: response}, {bidderRequest});
+      const result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(result.length).to.equal(0);
     });
 
@@ -724,7 +740,7 @@ describe('RTBHouseAdapter', () => {
           }
         ];
         let bidderRequest;
-        let result = spec.interpretResponse({body: response}, {bidderRequest});
+        const result = spec.interpretResponse({body: response}, {bidderRequest});
 
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
         expect(result[0]).to.have.nested.property('meta.dsa');

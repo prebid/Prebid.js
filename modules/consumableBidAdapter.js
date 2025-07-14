@@ -39,7 +39,7 @@ export const spec = {
    */
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let ret = {
+    const ret = {
       method: 'POST',
       url: '',
       data: '',
@@ -130,7 +130,7 @@ export const spec = {
     let bids;
     let bidId;
     let bidObj;
-    let bidResponses = [];
+    const bidResponses = [];
 
     bids = bidRequest.bidRequest;
 
@@ -316,7 +316,7 @@ function getBidFloor(bid, sizes) {
 
   let floor;
 
-  let floorInfo = bid.getFloor({
+  const floorInfo = bid.getFloor({
     currency: 'USD',
     mediaType: bid.mediaTypes.video ? 'video' : 'banner',
     size: sizes.length === 1 ? sizes[0] : '*'

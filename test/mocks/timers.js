@@ -10,10 +10,10 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
   wrappersActive = true;
   let theseWrappersActive = true;
 
-  let originalSetTimeout = setTimeout, originalSetInterval = setInterval, originalClearTimeout = clearTimeout, originalClearInterval = clearInterval;
+  const originalSetTimeout = setTimeout; const originalSetInterval = setInterval; const originalClearTimeout = clearTimeout; const originalClearInterval = clearInterval;
 
   let timerId = -1;
-  let timers = [];
+  const timers = [];
 
   const waitOnTimersResolves = [];
   function checkWaits() {

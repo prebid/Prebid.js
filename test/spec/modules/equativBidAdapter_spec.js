@@ -475,7 +475,7 @@ describe('Equativ bid adapter tests', () => {
       getDataFromLocalStorageStub.restore();
     });
 
-     it('should pass prebid version as ext.equativprebidjsversion param', () => {
+    it('should pass prebid version as ext.equativprebidjsversion param', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
@@ -898,10 +898,22 @@ describe('Equativ bid adapter tests', () => {
 
   describe('getUserSyncs', () => {
     let setDataInLocalStorageStub;
+    let addEventListenerStub;
+    let messageHandler;
 
-    beforeEach(() => setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage'));
-
-    afterEach(() => setDataInLocalStorageStub.restore());
+    beforeEach(() => {
+      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+      addEventListenerStub = sinon.stub(window, 'addEventListener').callsFake((type, handler) => {
+        if (type === 'message') {
+          messageHandler = handler;
+        }
+        return addEventListenerStub.wrappedMethod.call(this, type, handler);
+      });
+    });
+    afterEach(() => {
+      setDataInLocalStorageStub.restore();
+      addEventListenerStub.restore();
+    });
 
     it('should return empty array if iframe sync not enabled', () => {
       const syncs = spec.getUserSyncs({}, SAMPLE_RESPONSE);
@@ -915,20 +927,15 @@ describe('Equativ bid adapter tests', () => {
         { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
       );
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: '7767825890726'
-        },
+      messageHandler.call(window, {
         origin: 'https://apps.smartadserver.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.calledOnce).to.be.true;
-        expect(setDataInLocalStorageStub.calledWith('eqt_pid', '7767825890726')).to.be.true;
-        done();
+        data: { action: 'getConsent', pid: '7767825890726' },
+        source: { postMessage: sinon.stub() }
       });
+
+      expect(setDataInLocalStorageStub.calledOnce).to.be.true;
+      expect(setDataInLocalStorageStub.calledWith('eqt_pid', '7767825890726')).to.be.true;
+      done();
     });
 
     it('should not save user pid coming from incorrect origin', (done) => {
@@ -938,19 +945,14 @@ describe('Equativ bid adapter tests', () => {
         { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
       );
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: '7767825890726'
-        },
+      messageHandler.call(window, {
         origin: 'https://another-origin.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.notCalled).to.be.true;
-        done();
+        data: { action: 'getConsent', pid: '7767825890726' },
+        source: { postMessage: sinon.stub() }
       });
+
+      expect(setDataInLocalStorageStub.notCalled).to.be.true;
+      done();
     });
 
     it('should not save empty pid', (done) => {
@@ -960,19 +962,14 @@ describe('Equativ bid adapter tests', () => {
         { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
       );
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: ''
-        },
+      messageHandler.call(window, {
         origin: 'https://apps.smartadserver.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.notCalled).to.be.true;
-        done();
+        data: { action: 'getConsent', pid: '' },
+        source: { postMessage: sinon.stub() }
       });
+
+      expect(setDataInLocalStorageStub.notCalled).to.be.true;
+      done();
     });
 
     it('should return array including iframe cookie sync object (gdprApplies=true)', () => {
