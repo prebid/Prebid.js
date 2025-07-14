@@ -34,9 +34,9 @@ export const spec = {
 
   getPlayerSize: function (bidRequest) {
     var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-    if (playerSize === null) return [640, 440];
-    if (playerSize[0] !== null) playerSize = playerSize[0];
-    if (playerSize === null || playerSize[0] === null || playerSize[1] === null) return [640, 440];
+    if (!playerSize) return [640, 440];
+    if (playerSize[0] != null) playerSize = playerSize[0];
+    if (!playerSize || playerSize[0] == null || playerSize[1] == null) return [640, 440];
     return playerSize;
   },
 
