@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { testPageURL, setupTest } = require('../../../helpers/testing-utils');
+const { testPageURL, setupTest } = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('multiple_bidders.html?pbjs_debug=true');
 const CREATIVE_BANNER_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/prebid_multiformat_test_0"]';

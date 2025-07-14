@@ -162,8 +162,8 @@ describe('AdTrueBidAdapter', function () {
               zoneId: '21423',
               publisherId: '1212'
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
       it('invalid bid case: publisherId not passed', function () {
@@ -172,8 +172,8 @@ describe('AdTrueBidAdapter', function () {
             params: {
               zoneId: '21423'
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('valid bid case: zoneId is not passed', function () {
@@ -182,8 +182,8 @@ describe('AdTrueBidAdapter', function () {
             params: {
               publisherId: '1212'
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('should return false if there are no params', () => {

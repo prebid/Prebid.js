@@ -1,7 +1,7 @@
 import { spec } from 'modules/newspassidBidAdapter.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
-import { resolveNewpassidPublisherId } from '../../../modules/newspassidBidAdapter';
+import { resolveNewpassidPublisherId } from '../../../modules/newspassidBidAdapter.js';
 
 describe('newspassidBidAdapter', function () {
   const TEST_PUBLISHER_ID = '123456';
