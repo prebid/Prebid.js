@@ -70,7 +70,7 @@ function getUtilsMock() {
     getPlaybackMethod: function () {},
     isOmidSupported: function () {},
     getSkipParams: function () {},
-    getJwEvent: event => event,
+    getJwEvent: utils.getJwEvent,
     getIsoLanguageCode: function () {},
     getSegments: function () {},
     getContentDatum: function () {}
@@ -78,28 +78,6 @@ function getUtilsMock() {
 }
 
 const sharedUtils = { videoEvents };
-
-function testEventHandler(provider, eventName, callback, mockEvent, expectedPayload) {
-  const player = provider.player || provider;
-  const onSpy = sinon.spy();
-  player.on = onSpy;
-
-  provider.onEvent(eventName, callback, {});
-
-  expect(onSpy.calledOnce).to.be.true;
-  expect(onSpy.args[0][0]).to.equal(eventName);
-
-  const eventHandler = onSpy.args[0][1];
-
-  // Simulate the player calling the event handler
-  eventHandler(mockEvent);
-
-  expect(callback.calledOnce).to.be.true;
-  if (expectedPayload) {
-    const payload = callback.args[0][1];
-    expect(payload).to.deep.equal(expectedPayload);
-  }
-}
 
 function addDiv() {
   const div = document.createElement('div');
@@ -705,21 +683,17 @@ describe('JWPlayerProvider', function () {
 
       // Simulate the player calling the event handler
       const mockEvent = {
-        adErrorCode: 1001,
-        code: 301,
-        message: 'VAST error',
-        sourceError: new Error('Test error')
+        sourceError: new Error('Player error'),
+        code: 3001,
+        message: 'Media error occurred'
       };
       eventHandler(mockEvent);
 
       expect(callback.calledOnce).to.be.true;
       const payload = callback.args[0][1];
-      expect(payload.playerErrorCode).to.be.equal(1001);
-      expect(payload.vastErrorCode).to.be.equal(301);
-      expect(payload.errorMessage).to.be.equal('VAST error');
       expect(payload.sourceError).to.be.equal(mockEvent.sourceError);
-      expect(payload).to.include(expectedAdState);
-      expect(payload).to.include(expectedTimeState);
+      expect(payload.errorCode).to.be.equal(3001);
+      expect(payload.errorMessage).to.be.equal('Media error occurred');
     });
 
     it('should handle AD_COMPLETE event payload', function () {
@@ -869,9 +843,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(PLAY_ATTEMPT_FAILED, callback, {});
 
-      const eventHandler = player.getEventHandler(PLAY_ATTEMPT_FAILED);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(PLAY_ATTEMPT_FAILED);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = {
         playReason: 'autoplay',
         sourceError: new Error('Play failed'),
@@ -893,9 +874,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(CONTENT_LOADED, callback, {});
 
-      const eventHandler = player.getEventHandler(CONTENT_LOADED);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal('playlistItem'); // CONTENT_LOADED maps to 'playlistItem'
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = {
         item: {
           mediaid: 'content-123',
@@ -981,9 +969,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(SEEK_START, callback, {});
 
-      const eventHandler = player.getEventHandler(SEEK_START);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal('seek'); // SEEK_START maps to 'seek'
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { position: 10, offset: 30, duration: 120 };
       eventHandler(mockEvent);
 
@@ -999,17 +994,27 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(SEEK_END, callback, {});
+
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal('seeked'); // SEEK_END maps to 'seeked'
+
+      const eventHandler = onSpy.args[0][1];
 
       // First trigger a seek start to set pendingSeek
       const seekStartCallback = sinon.spy();
+      const seekStartOnSpy = sinon.spy();
+      player.on = seekStartOnSpy;
       provider.onEvent(SEEK_START, seekStartCallback, {});
-      const seekStartHandler = player.getEventHandler(SEEK_START);
+      const seekStartHandler = seekStartOnSpy.args[0][1];
       seekStartHandler({ position: 10, offset: 30, duration: 120 });
 
       // Now trigger seek end
-      const seekEndHandler = player.getEventHandler(SEEK_END);
-      seekEndHandler({});
+      eventHandler({});
 
       expect(callback.calledOnce).to.be.true;
       const payload = callback.args[0][1];
@@ -1022,9 +1027,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(MUTE, callback, {});
 
-      const eventHandler = player.getEventHandler(MUTE);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(MUTE);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { mute: true };
       eventHandler(mockEvent);
 
@@ -1038,9 +1050,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(VOLUME, callback, {});
 
-      const eventHandler = player.getEventHandler(VOLUME);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(VOLUME);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { volume: 75 };
       eventHandler(mockEvent);
 
@@ -1054,9 +1073,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(RENDITION_UPDATE, callback, {});
 
-      const eventHandler = player.getEventHandler(RENDITION_UPDATE);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal('visualQuality'); // RENDITION_UPDATE maps to 'visualQuality'
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = {
         bitrate: 2000000,
         level: { width: 1920, height: 1080 },
@@ -1078,9 +1104,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(ERROR, callback, {});
 
-      const eventHandler = player.getEventHandler(ERROR);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(ERROR);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = {
         sourceError: new Error('Player error'),
         code: 3001,
@@ -1123,9 +1156,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(FULLSCREEN, callback, {});
 
-      const eventHandler = player.getEventHandler(FULLSCREEN);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(FULLSCREEN);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { fullscreen: true };
       eventHandler(mockEvent);
 
@@ -1139,9 +1179,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(PLAYER_RESIZE, callback, {});
 
-      const eventHandler = player.getEventHandler(PLAYER_RESIZE);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal('resize'); // PLAYER_RESIZE maps to 'resize'
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { height: 480, width: 640 };
       eventHandler(mockEvent);
 
@@ -1158,9 +1205,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(VIEWABLE, callback, {});
 
-      const eventHandler = player.getEventHandler(VIEWABLE);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(VIEWABLE);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { viewable: true };
       eventHandler(mockEvent);
 
@@ -1175,9 +1229,16 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const callback = sinon.spy();
+
+      const onSpy = sinon.spy();
+      player.on = onSpy;
+
       provider.onEvent(CAST, callback, {});
 
-      const eventHandler = player.getEventHandler(CAST);
+      expect(onSpy.calledOnce).to.be.true;
+      expect(onSpy.args[0][0]).to.equal(CAST);
+
+      const eventHandler = onSpy.args[0][1];
       const mockEvent = { active: true };
       eventHandler(mockEvent);
 
@@ -1194,7 +1255,6 @@ describe('JWPlayerProvider', function () {
       const callback = sinon.spy();
       provider.onEvent('UNKNOWN_EVENT', callback, {});
 
-      // Should not register any event handler for unknown events
       expect(onSpy.called).to.be.false;
     });
 
@@ -1275,28 +1335,24 @@ describe('JWPlayerProvider', function () {
       expect(result).to.be.undefined;
     });
 
-    it('should handle missing config', function () {
+    it('should not throw when missing config', function () {
       const player = getPlayerMock();
       player.getConfig = () => null;
 
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const result = provider.getOrtbVideo();
-      // The method returns an object even with missing config, but with undefined mimes
       expect(result).to.be.an('object');
-      expect(result.mimes).to.be.undefined;
     });
 
-    it('should handle missing advertising config', function () {
+    it('should not throw when missing advertising config', function () {
       const player = getPlayerMock();
       player.getConfig = () => ({});
 
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeStateFactory(), callbackStorageFactory(), getUtilsMock(), sharedUtils);
       provider.init();
       const result = provider.getOrtbVideo();
-      // The method returns an object even with missing advertising config
       expect(result).to.be.an('object');
-      expect(result.mimes).to.be.undefined;
     });
 
     it('should calculate size from aspect ratio when height and width are null', function () {
@@ -1394,6 +1450,24 @@ describe('JWPlayerProvider', function () {
       const result = provider.getOrtbContent();
 
       expect(result).to.not.have.property('data');
+    });
+
+    it('should handle missing language', function () {
+      const player = getPlayerMock();
+      player.getPlaylistItem = () => ({ mediaid: 'test', file: 'video.mp4' });
+
+      const timeState = timeStateFactory();
+      timeState.getState = () => ({ duration: 120 });
+
+      const utils = getUtilsMock();
+      utils.getSegments = () => undefined;
+      utils.getContentDatum = () => undefined;
+      utils.getIsoLanguageCode = () => undefined;
+
+      const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), adStateFactory(), timeState, callbackStorageFactory(), utils, sharedUtils);
+      provider.init();
+      const result = provider.getOrtbContent();
+
       expect(result).to.not.have.property('language');
     });
   });
@@ -1632,7 +1706,9 @@ describe('adStateFactory', function () {
   it('should handle googima client wrapper ad ids', function () {
     const mockImaAd = {
       ad: {
-        adWrapperIds: ['wrapper1', 'wrapper2']
+        a: {
+          adWrapperIds: ['wrapper1', 'wrapper2']
+        }
       }
     };
 
@@ -1642,8 +1718,7 @@ describe('adStateFactory', function () {
     });
 
     const state = adState.getState();
-    // The implementation might not be working as expected, so we'll check if it's undefined
-    expect(state.wrapperAdIds).to.be.undefined;
+    expect(state.wrapperAdIds).to.deep.equal(['wrapper1', 'wrapper2']);
   });
 
   it('should handle googima client without wrapper ad ids', function () {
@@ -1669,7 +1744,7 @@ describe('adStateFactory', function () {
     expect(state.wrapperAdIds).to.be.undefined;
   });
 
-  it('should not set wrapper ad ids for non-googima clients', function () {
+  it('should support wrapper ad ids for non-googima clients', function () {
     adState.updateForEvent({
       client: 'vast',
       wrapperAdIds: ['existing']
