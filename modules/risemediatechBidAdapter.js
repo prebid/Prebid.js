@@ -132,8 +132,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 const interpretResponse = (serverResponse, request) => {
   logInfo('Interpreting server response:', serverResponse);
 
-  if (serverResponse && serverResponse.status === 204) {
-    logInfo('No bids returned from the server (HTTP 204).');
+  if (serverResponse && serverResponse.status !== 200) {
+    logInfo(`No bids returned from the server (HTTP ${serverResponse.status}).`);
     return [];
   }
 
