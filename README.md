@@ -208,7 +208,11 @@ pbjs.Promise = myCustomPromiseConstructor;
 
 #### Logging
 
-Disabling `LOG_NON_ERROR` and `LOG_ERROR` removes most logging statements from source, which can save on bundle size. Beware however that there is no test coverage with either of these disabled - you can turn them off at your own risk.        
+Disabling `LOG_NON_ERROR` and `LOG_ERROR` removes most logging statements from source, which can save on bundle size. Beware, however, that there is no test coverage with either of these disabled. Turn them off at your own risk.
+
+Disabling logging — especially `LOG_ERROR` — also makes debugging more difficult. Consider building a separate version with logging enabled for debugging purposes.
+
+We suggest running the build with logging off only if you are able to confirm a real world metric improvement via a testing framework. Using this build without such a framework may result in unexpectedly worse performance.
 
 ## Unminified code
 
