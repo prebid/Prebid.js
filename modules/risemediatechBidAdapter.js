@@ -166,7 +166,7 @@ const interpretResponse = (serverResponse, request) => {
       // Set media type based on bid.mtype
       if (bid.mtype == null) {
         logWarn('Bid response does not contain media type for bidId: ', bid.id);
-        bidResponse.meta.mediaType = BANNER;
+        bidResponse.mediaType = BANNER;
       }
       switch (bid.mtype) {
         case 1:

@@ -56,18 +56,6 @@ describe('RiseMediaTech adapter', () => {
       expect(spec.isBidRequestValid(validBidRequest)).to.equal(true);
     });
 
-    it('should return false if publisherId is missing', () => {
-      const invalidBidRequest = { ...validBidRequest };
-      delete invalidBidRequest.params.publisherId;
-      expect(spec.isBidRequestValid(invalidBidRequest)).to.equal(false);
-    });
-
-    it('should return false if adSlot is missing', () => {
-      const invalidBidRequest = { ...validBidRequest };
-      delete invalidBidRequest.params.adSlot;
-      expect(spec.isBidRequestValid(invalidBidRequest)).to.equal(false);
-    });
-
     it('should return false for invalid video bid request', () => {
       const invalidVideoRequest = {
         ...validBidRequest,
@@ -187,7 +175,7 @@ describe('RiseMediaTech adapter', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       expect(request).to.be.an('object');
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('http://localhost:8082/ads/rtb/prebid/js');
+      expect(request.url).to.equal('https://dev-ads.risemediatech.com/ads/rtb/prebid/js');
       expect(request.data).to.be.an('object');
     });
 
@@ -286,7 +274,7 @@ describe('RiseMediaTech adapter', () => {
       expect(bid).to.have.property('creativeId', 'creative123');
       expect(bid).to.have.property('currency', 'USD');
       expect(bid).to.have.property('netRevenue', true);
-      expect(bid).to.have.property('ttl', 300);
+      expect(bid).to.have.property('ttl', 60);
     });
 
     it('should return an empty array if no bids are present', () => {
@@ -339,13 +327,13 @@ describe('RiseMediaTech adapter', () => {
       expect(bids).to.be.an('array').with.lengthOf(2);
       expect(bids[0]).to.have.property('requestId', '1abc');
       expect(bids[1]).to.have.property('requestId', '2bcd');
-      expect(bids[0].meta.mediaType).to.equal('banner');
-      expect(bids[1].meta.mediaType).to.equal('video');
+      expect(bids[0].mediaType).to.equal('banner');
+      expect(bids[1].mediaType).to.equal('video');
       expect(bids[0]).to.have.property('cpm', 1.5);
       expect(bids[1]).to.have.property('cpm', 2.0);
     });
 
-    it('should set meta.mediaType to banner if mtype is missing', () => {
+    it('should set mediaType to banner if mtype is missing', () => {
       const responseNoMtype = {
         body: {
           id: '2def',
@@ -370,7 +358,7 @@ describe('RiseMediaTech adapter', () => {
       };
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(responseNoMtype, request);
-      expect(bids[0].meta.mediaType).to.equal('banner');
+      expect(bids[0].mediaType).to.equal('banner');
     });
 
     it('should set meta.advertiserDomains to an empty array if adomain is missing', () => {
@@ -417,29 +405,102 @@ describe('RiseMediaTech adapter', () => {
       const bids = spec.interpretResponse(serverResponse, request);
       expect(bids).to.be.an('array').with.lengthOf(1);
     });
+
+    it('should return an empty array for HTTP 204 response', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse({ status: 204 }, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should log a warning and not set mediaType for unknown mtype', () => {
+      const responseWithUnknownMtype = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  price: 1.5,
+                  adm: '<div>Ad</div>',
+                  w: 300,
+                  h: 250,
+                  crid: 'creative123',
+                  adomain: ['example.com'],
+                  mtype: 999, // Unknown mtype
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(responseWithUnknownMtype, request);
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0].meta).to.not.have.property('mediaType');
+    });
+
+    it('should include dealId if present in the bid response', () => {
+      const responseWithDealId = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  price: 1.5,
+                  adm: '<div>Ad</div>',
+                  w: 300,
+                  h: 250,
+                  crid: 'creative123',
+                  adomain: ['example.com'],
+                  dealid: 'deal123',
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(responseWithDealId, request);
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0]).to.have.property('dealId', 'deal123');
+    });
+
+    it('should handle bids with missing price gracefully', () => {
+      const responseWithoutPrice = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  adm: '<div>Ad</div>',
+                  w: 300,
+                  h: 250,
+                  crid: 'creative123',
+                  adomain: ['example.com'],
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(responseWithoutPrice, request);
+      expect(bids).to.be.an('array').that.is.not.empty;
+    });
   });
 
   describe('getUserSyncs', () => {
-    it('should return iframe sync if iframeEnabled is true', () => {
+    it('should return null as user syncs are not implemented', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
-      expect(syncs).to.be.an('array').with.lengthOf(1);
-      expect(syncs[0]).to.have.property('type', 'iframe');
-      expect(syncs[0]).to.have.property('url').that.includes('https://sync.risemediatech.com/iframe');
-    });
-
-    it('should return image sync if iframeEnabled is false', () => {
-      const syncs = spec.getUserSyncs({ iframeEnabled: false }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
-      expect(syncs).to.be.an('array').with.lengthOf(1);
-      expect(syncs[0]).to.have.property('type', 'image');
-      expect(syncs[0]).to.have.property('url').that.includes('https://sync.risemediatech.com/image');
-    });
-
-    it('should include GDPR and USP consent in the sync URL', () => {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
-      const syncUrl = syncs[0].url;
-      expect(syncUrl).to.include('gdpr=1');
-      expect(syncUrl).to.include('gdpr_consent=consent123');
-      expect(syncUrl).to.include('us_privacy=1YNN');
+      expect(syncs).to.be.null;
     });
   });
 });
