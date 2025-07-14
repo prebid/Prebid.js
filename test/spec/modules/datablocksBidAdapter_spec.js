@@ -515,11 +515,11 @@ describe('DatablocksAdapter', function() {
         expect(bid.ttl).to.be.a('number');
         expect(bid.mediaType).to.be.a('string');
 
-        if (bid.mediaType == 'banner') {
+        if (bid.mediaType === 'banner') {
           expect(bid.width).to.be.a('number');
           expect(bid.height).to.be.a('number');
           expect(bid.ad).to.be.a('string');
-        } else if (bid.mediaType == 'native') {
+        } else if (bid.mediaType === 'native') {
           expect(bid.native).to.be.a('object');
         }
       })

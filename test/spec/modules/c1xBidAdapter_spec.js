@@ -60,8 +60,8 @@ describe('C1XAdapter', () => {
     ];
     const parseRequest = (data) => {
       const parsedData = '{"' + data.replace(/=|&/g, (foundChar) => {
-        if (foundChar == '=') return '":"';
-        else if (foundChar == '&') return '","';
+        if (foundChar === '=') return '":"';
+        else if (foundChar === '&') return '","';
       }) + '"}'
       return parsedData;
     };
