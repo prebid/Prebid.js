@@ -243,8 +243,7 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      'camelcase': 'off',
-      'no-global-assign': 'off'
+      'camelcase': 'off'
     }
   },
   {
