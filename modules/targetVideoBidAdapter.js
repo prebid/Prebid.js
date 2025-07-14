@@ -1,7 +1,7 @@
-import {_each, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {formatRequest, getRtbBid, getSiteObj, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
+import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
 import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
 
 /**
@@ -52,6 +52,8 @@ export const spec = {
               sdk,
               id: bidderRequest.bidderRequestId,
               site,
+              device: deepAccess(bidderRequest, 'ortb2.device'),
+              user: { ext: {} },
               imp: []
             }
 
@@ -88,18 +90,29 @@ export const spec = {
               if (gdprConsent) {
                 if (typeof gdprConsent.gdprApplies !== 'undefined') {
                   payload.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-                };
+                }
 
                 if (typeof gdprConsent.consentString !== 'undefined') {
-                  payload.user = {
-                    ext: { consent: gdprConsent.consentString }
-                  };
-                };
-              };
-            };
+                  payload.user.ext.consent = gdprConsent.consentString;
+                }
+              }
+            }
 
-            if (bidRequests[0].schain) {
-              payload.schain = bidRequests[0].schain;
+            const eids = deepAccess(bidRequests[0], 'userIdAsEids');
+            if (eids) {
+              payload.user.ext.eids = eids;
+            }
+
+            const ortbUserExtData = deepAccess(bidderRequest, 'ortb2.user.data');
+            if (ortbUserExtData) {
+              payload.user.ext.data = ortbUserExtData;
+            }
+
+            const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+            if (schain) {
+              payload.source = {
+                ext: { schain: schain }
+              };
             }
 
             requests.push(formatRequest({ payload, url: VIDEO_ENDPOINT_URL, bidId }));
@@ -108,7 +121,7 @@ export const spec = {
 
           case BANNER: {
             const tags = bidRequests.map(createVideoTag);
-            const schain = bidRequests[0].schain;
+            const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
 
             const payload = {
               tags,
@@ -123,8 +136,8 @@ export const spec = {
               };
 
               if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
-                let ac = bidderRequest.gdprConsent.addtlConsent;
-                let acStr = ac.substring(ac.indexOf('~') + 1);
+                const ac = bidderRequest.gdprConsent.addtlConsent;
+                const acStr = ac.substring(ac.indexOf('~') + 1);
                 payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
               }
             }
@@ -167,14 +180,26 @@ export const spec = {
         _each(resp.bid, (bid) => {
           const requestId = bidRequest.bidId;
           const params = bidRequest.params;
-
-          bids.push(videoBid(bid, requestId, currency, params, TIME_TO_LIVE));
+          const vBid = videoBid(bid, requestId, currency, params, TIME_TO_LIVE);
+          if (bids.length == 0 || bids[0].cpm < vBid.cpm) {
+            bids[0] = vBid;
+          }
         });
       });
     }
 
     return bids;
+  },
+
+  /**
+   * Determine the user sync type (either 'iframe' or 'image') based on syncOptions.
+   * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
+   * Return an array containing an object with the sync type and the constructed URL.
+   */
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+    return getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, 'targetvideo');
   }
+
 }
 
 registerBidder(spec);

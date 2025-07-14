@@ -1,9 +1,9 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject} from '../src/utils.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -51,25 +51,25 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const userId = find(bidRequests, hasUserId);
-    const pubcid = find(bidRequests, hasPubcid);
-    const publisherId = find(bidRequests, hasPublisherId);
-    const auctionId = find(bidRequests, hasAuctionId);
-    let bidUrl = find(bidRequests, hasBidUrl);
-    let url = find(bidRequests, hasUrl);
-    let test = find(bidRequests, hasTestParam);
-    const seats = find(bidRequests, hasSeatsParam);
-    const deviceId = find(bidRequests, hasDeviceIdParam);
-    const ifa = find(bidRequests, hasIfaParam);
-    const bundle = find(bidRequests, hasBundleParam);
-    const tid = find(bidRequests, hasTidParam);
-    const schain = bidRequests[0].schain;
+    const userId = ((bidRequests) || []).find(hasUserId);
+    const pubcid = ((bidRequests) || []).find(hasPubcid);
+    const publisherId = ((bidRequests) || []).find(hasPublisherId);
+    const auctionId = ((bidRequests) || []).find(hasAuctionId);
+    let bidUrl = ((bidRequests) || []).find(hasBidUrl);
+    let url = ((bidRequests) || []).find(hasUrl);
+    let test = ((bidRequests) || []).find(hasTestParam);
+    const seats = ((bidRequests) || []).find(hasSeatsParam);
+    const deviceId = ((bidRequests) || []).find(hasDeviceIdParam);
+    const ifa = ((bidRequests) || []).find(hasIfaParam);
+    const bundle = ((bidRequests) || []).find(hasBundleParam);
+    const tid = ((bidRequests) || []).find(hasTidParam);
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-    const currency = config.getConfig('currency.adServerCurrency') || 'USD';
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || 'USD';
     var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
     const adRequestsContainFloors = adRequests.some(r => r.flr !== undefined);
 
@@ -112,8 +112,7 @@ export const spec = {
     return {
       method: 'POST',
       url: bidUrl,
-      data: payloadString,
-    };
+      data: payloadString};
   },
 
   /**
@@ -143,6 +142,14 @@ export const spec = {
         meta: ad.meta
       };
 
+      if (ad.meta?.dealId) {
+        bidResponse.dealId = ad.meta?.dealId;
+      }
+
+      if (ad.fwb) {
+        bidResponse.bidderCode = ad.meta?.bidder;
+      }
+
       if (ad.native) {
         bidResponse.native = ad.native;
         bidResponse.mediaType = NATIVE;
@@ -162,8 +169,8 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses) {
     if (serverResponses.length == 0) return [];
 
-    let syncList = [];
-    let userSync = serverResponses[0].body.pixels || [];
+    const syncList = [];
+    const userSync = serverResponses[0].body.pixels || [];
 
     userSync.forEach(function(sync) {
       if (syncOptions.pixelEnabled && sync.type == 'Redirect') {
@@ -324,12 +331,12 @@ function getDeviceIfa() {
 
 function getDeviceWidth() {
   const device = config.getConfig('device') || {};
-  return device.w || window.innerWidth;
+  return device.w || getWinDimensions().innerWidth;
 }
 
 function getDeviceHeight() {
   const device = config.getConfig('device') || {};
-  return device.h || window.innerHeight;
+  return device.h || getWinDimensions().innerHeight;
 }
 
 function getCoppa() {

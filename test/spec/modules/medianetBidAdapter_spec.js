@@ -1,11 +1,13 @@
 import {expect, assert} from 'chai';
-import {spec, EVENT_PIXEL_URL, EVENTS} from 'modules/medianetBidAdapter.js';
+import {spec, EVENTS} from '../../../modules/medianetBidAdapter.js';
+import {POST_ENDPOINT} from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
-import { config } from 'src/config.js';
+import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
+import {resetWinDimensions} from '../../../src/utils.js';
 
 $$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
-let VALID_BID_REQUEST = [{
+const VALID_BID_REQUEST = [{
     'bidder': 'medianet',
     'params': {
       'cid': 'customer_id',
@@ -30,7 +32,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1,
   }, {
     'bidder': 'medianet',
     'params': {
@@ -57,7 +59,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_BID_REQUEST_WITH_CRID = [{
@@ -87,7 +89,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -115,7 +117,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_BID_REQUEST_WITH_ORTB2 = [{
     'bidder': 'medianet',
@@ -144,7 +146,7 @@ let VALID_BID_REQUEST = [{
         'data': {'pbadslot': '/12345/my-gpt-tag-0'}
       }
     },
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -173,7 +175,7 @@ let VALID_BID_REQUEST = [{
         'data': {'pbadslot': '/12345/my-gpt-tag-0'}
       }
     },
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   // Protected Audience API Request
   VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
@@ -203,7 +205,7 @@ let VALID_BID_REQUEST = [{
         'ae': 1
       }
     },
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_BID_REQUEST_WITH_USERID = [{
@@ -235,7 +237,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -263,7 +265,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_BID_REQUEST_WITH_USERIDASEIDS = [{
     'bidder': 'medianet',
@@ -301,7 +303,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -329,7 +331,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_BID_REQUEST_INVALID_BIDFLOOR = [{
@@ -359,7 +361,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -386,7 +388,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_NATIVE_BID_REQUEST = [{
     'bidder': 'medianet',
@@ -414,7 +416,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1,
+    'auctionsCount': 1,
     'nativeParams': {
       'image': {
         'required': true,
@@ -471,7 +473,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1,
+    'auctionsCount': 1,
     'nativeParams': {
       'image': {
         'required': true,
@@ -531,6 +533,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -622,6 +634,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -714,6 +736,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -807,6 +839,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -901,6 +943,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1008,6 +1060,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1104,6 +1166,16 @@ let VALID_BID_REQUEST = [{
         'w': 1000,
         'h': 1000
       },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
+      }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [
@@ -1174,7 +1246,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
 
   VALID_PAYLOAD_PAGE_META = (() => {
@@ -1184,8 +1256,6 @@ let VALID_BID_REQUEST = [{
     } catch (e) {}
     PAGE_META.site = Object.assign(PAGE_META.site, {
       'canonical_url': 'http://localhost:9999/canonical-test',
-      'twitter_url': 'http://localhost:9999/twitter-test',
-      'og_url': 'http://localhost:9999/fb-test'
     });
     return PAGE_META;
   })(),
@@ -1576,7 +1646,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -1603,7 +1673,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'bidRequestsCount': 1
+    'auctionsCount': 1
   }],
   VALID_BIDDER_REQUEST_WITH_GDPR = {
     'gdprConsent': {
@@ -1640,6 +1710,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1747,6 +1827,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1828,36 +1918,41 @@ let VALID_BID_REQUEST = [{
 describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
+    sandbox.stub(window.top, 'innerHeight').value(780)
+    sandbox.stub(window.top, 'innerWidth').value(440)
+    sandbox.stub(window.top, 'scrollY').value(100)
+    sandbox.stub(window.top, 'scrollX').value(50)
   });
 
   afterEach(function () {
+    resetWinDimensions();
     sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
     it('should accept valid bid params', function () {
-      let isValid = spec.isBidRequestValid(VALID_PARAMS);
+      const isValid = spec.isBidRequestValid(VALID_PARAMS);
       expect(isValid).to.equal(true);
     });
 
     it('should reject bid if cid is not present', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITHOUT_CID);
+      const isValid = spec.isBidRequestValid(PARAMS_WITHOUT_CID);
       expect(isValid).to.equal(false);
     });
 
     it('should reject bid if cid is not a string', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITH_INTEGER_CID);
+      const isValid = spec.isBidRequestValid(PARAMS_WITH_INTEGER_CID);
       expect(isValid).to.equal(false);
     });
 
     it('should reject bid if cid is a empty string', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITH_EMPTY_CID);
+      const isValid = spec.isBidRequestValid(PARAMS_WITH_EMPTY_CID);
       expect(isValid).to.equal(false);
     });
 
     it('should have missing params', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_MISSING);
+      const isValid = spec.isBidRequestValid(PARAMS_MISSING);
       expect(isValid).to.equal(false);
     });
   });
@@ -1866,8 +1961,8 @@ describe('Media.net bid adapter', function () {
     beforeEach(function () {
       $$PREBID_GLOBAL$$.medianetGlobals = {};
 
-      let documentStub = sandbox.stub(document, 'getElementById');
-      let boundingRect = {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      const boundingRect = {
         top: 50,
         left: 50,
         bottom: 100,
@@ -1879,7 +1974,7 @@ describe('Media.net bid adapter', function () {
       documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
         getBoundingClientRect: () => boundingRect
       });
-      let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
+      const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
@@ -1887,37 +1982,37 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should build valid payload on bid', function () {
-      let requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      const requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.parse(requestObj.data)).to.deep.include(VALID_PAYLOAD);
     });
 
     it('should accept size as a one dimensional array', function () {
-      let bidReq = spec.buildRequests(BID_REQUEST_SIZE_AS_1DARRAY, VALID_AUCTIONDATA);
+      const bidReq = spec.buildRequests(BID_REQUEST_SIZE_AS_1DARRAY, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD);
     });
 
     it('should ignore bidfloor if not a valid number', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR, VALID_AUCTIONDATA);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_INVALID_BIDFLOOR, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_INVALID_BIDFLOOR);
     });
 
     it('should add gdpr to response ext', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GDPR);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GDPR);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GDPR);
     });
 
     it('should have gpp params in ortb2', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GPP_IN_ORTB2);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GPP_IN_ORTB2);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GPP_ORTB2);
     });
 
     it('should parse params for native request', function () {
-      let bidReq = spec.buildRequests(VALID_NATIVE_BID_REQUEST, VALID_AUCTIONDATA);
+      const bidReq = spec.buildRequests(VALID_NATIVE_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_NATIVE);
     });
 
     it('should parse params for video request', function () {
-      let bidReq = spec.buildRequests(VALID_VIDEO_BID_REQUEST, VALID_AUCTIONDATA);
+      const bidReq = spec.buildRequests(VALID_VIDEO_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.stringify(bidReq.data)).to.include('instream');
     });
 
@@ -1928,7 +2023,7 @@ describe('Media.net bid adapter', function () {
         };
         return config[key];
       });
-      let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, VALID_AUCTIONDATA);
+      const bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidreq.data)).to.deep.equal(VALID_PAYLOAD_WITH_CRID);
     });
 
@@ -1944,23 +2039,23 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have userid in bid request', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERID, VALID_AUCTIONDATA);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_WITH_USERID);
     });
 
     it('should have userIdAsEids in bid request', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERIDASEIDS, VALID_AUCTIONDATA);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERIDASEIDS, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_WITH_USERIDASEIDS);
     });
 
     it('should have valid payload when PAAPI is enabled', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAAPI);
     });
 
     it('should send whatever is set in ortb2imp.ext.ae in all bid requests when PAAPI is enabled', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      let data = JSON.parse(bidReq.data);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const data = JSON.parse(bidReq.data);
       expect(data).to.deep.equal(VALID_PAYLOAD_PAAPI);
       expect(data.imp[0].ext).to.have.property('ae');
       expect(data.imp[0].ext.ae).to.equal(1);
@@ -1970,8 +2065,9 @@ describe('Media.net bid adapter', function () {
       beforeEach(() => {
         spec.clearPageMeta();
       });
-      it('should pass canonical, twitter and fb paramters if available', () => {
-        let documentStub = sandbox.stub(window.top.document, 'querySelector');
+
+      it('should pass canonical, twitter and fb parameters if available', () => {
+        const documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'
         });
@@ -1981,7 +2077,7 @@ describe('Media.net bid adapter', function () {
         documentStub.withArgs('meta[name="twitter:url"]').returns({
           content: 'http://localhost:9999/twitter-test'
         });
-        let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+        const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
         expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAGE_META);
       });
     });
@@ -1990,7 +2086,7 @@ describe('Media.net bid adapter', function () {
   describe('slot visibility', function () {
     let documentStub;
     beforeEach(function () {
-      let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
+      const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
@@ -1998,7 +2094,7 @@ describe('Media.net bid adapter', function () {
       documentStub = sandbox.stub(document, 'getElementById');
     });
     it('slot visibility should be 2 and ratio 0 when ad unit is BTF', function () {
-      let boundingRect = {
+      const boundingRect = {
         top: 1010,
         left: 1010,
         bottom: 1050,
@@ -2011,13 +2107,13 @@ describe('Media.net bid adapter', function () {
         getBoundingClientRect: () => boundingRect
       });
 
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
-      let data = JSON.parse(bidReq.data);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
       expect(data.imp[0].ext.viewability).to.equal(0);
     });
     it('slot visibility should be 2 and ratio < 0.5 when ad unit is partially inside viewport', function () {
-      let boundingRect = {
+      const boundingRect = {
         top: 990,
         left: 990,
         bottom: 1050,
@@ -2029,13 +2125,13 @@ describe('Media.net bid adapter', function () {
       documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
         getBoundingClientRect: () => boundingRect
       });
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
-      let data = JSON.parse(bidReq.data);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
       expect(data.imp[0].ext.viewability).to.equal(100 / 75000);
     });
     it('slot visibility should be 1 and ratio > 0.5 when ad unit mostly in viewport', function () {
-      let boundingRect = {
+      const boundingRect = {
         top: 800,
         left: 800,
         bottom: 1050,
@@ -2047,14 +2143,14 @@ describe('Media.net bid adapter', function () {
       documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
         getBoundingClientRect: () => boundingRect
       });
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
-      let data = JSON.parse(bidReq.data);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(1);
       expect(data.imp[0].ext.viewability).to.equal(40000 / 75000);
     });
     it('co-ordinates should not be sent and slot visibility should be 0 when ad unit is not present', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
-      let data = JSON.parse(bidReq.data);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
+      const data = JSON.parse(bidReq.data);
       expect(data.imp[1].ext).to.not.have.ownPropertyDescriptor('viewability');
       expect(data.imp[1].ext.visibility).to.equal(0);
     });
@@ -2063,7 +2159,7 @@ describe('Media.net bid adapter', function () {
       const divId = 'div-gpt-ad-1460505748561-0';
       window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
 
-      let boundingRect = {
+      const boundingRect = {
         top: 1010,
         left: 1010,
         bottom: 1050,
@@ -2086,84 +2182,84 @@ describe('Media.net bid adapter', function () {
 
   describe('getUserSyncs', function () {
     it('should exclude iframe syncs if iframe is disabled', function () {
-      let userSyncs = spec.getUserSyncs(SYNC_OPTIONS_PIXEL_ENABLED, SERVER_CSYNC_RESPONSE);
+      const userSyncs = spec.getUserSyncs(SYNC_OPTIONS_PIXEL_ENABLED, SERVER_CSYNC_RESPONSE);
       expect(userSyncs).to.deep.equal(ENABLED_SYNC_PIXEL);
     });
 
     it('should exclude pixel syncs if pixel is disabled', function () {
-      let userSyncs = spec.getUserSyncs(SYNC_OPTIONS_IFRAME_ENABLED, SERVER_CSYNC_RESPONSE);
+      const userSyncs = spec.getUserSyncs(SYNC_OPTIONS_IFRAME_ENABLED, SERVER_CSYNC_RESPONSE);
       expect(userSyncs).to.deep.equal(ENABLED_SYNC_IFRAME);
     });
 
     it('should choose iframe sync urls if both sync options are enabled', function () {
-      let userSyncs = spec.getUserSyncs(SYNC_OPTIONS_BOTH_ENABLED, SERVER_CSYNC_RESPONSE);
+      const userSyncs = spec.getUserSyncs(SYNC_OPTIONS_BOTH_ENABLED, SERVER_CSYNC_RESPONSE);
       expect(userSyncs).to.deep.equal(ENABLED_SYNC_IFRAME);
     });
 
     it('should have empty user sync array', function() {
-      let userSyncs = spec.getUserSyncs(SYNC_OPTIONS_IFRAME_ENABLED, {});
+      const userSyncs = spec.getUserSyncs(SYNC_OPTIONS_IFRAME_ENABLED, {});
       expect(userSyncs).to.deep.equal([]);
     });
   });
 
   describe('interpretResponse', function () {
     it('should not push bid response if cpm missing', function () {
-      let validBids = [];
-      let bids = spec.interpretResponse(SERVER_RESPONSE_CPM_MISSING, []);
+      const validBids = [];
+      const bids = spec.interpretResponse(SERVER_RESPONSE_CPM_MISSING, []);
       expect(bids).to.deep.equal(validBids);
     });
 
     it('should not push bid response if cpm 0', function () {
-      let validBids = [];
-      let bids = spec.interpretResponse(SERVER_RESPONSE_CPM_ZERO, []);
+      const validBids = [];
+      const bids = spec.interpretResponse(SERVER_RESPONSE_CPM_ZERO, []);
       expect(bids).to.deep.equal(validBids);
     });
 
     it('should not push response if no-bid', function () {
-      let validBids = [];
-      let bids = spec.interpretResponse(SERVER_RESPONSE_NOBID, []);
+      const validBids = [];
+      const bids = spec.interpretResponse(SERVER_RESPONSE_NOBID, []);
       expect(bids).to.deep.equal(validBids);
     });
 
     it('should have empty bid response', function() {
-      let bids = spec.interpretResponse(SERVER_RESPONSE_NOBODY, []);
+      const bids = spec.interpretResponse(SERVER_RESPONSE_NOBODY, []);
       expect(bids).to.deep.equal([]);
     });
 
     it('should have valid bids', function () {
-      let bids = spec.interpretResponse(SERVER_RESPONSE_VALID_BID, []);
+      const bids = spec.interpretResponse(SERVER_RESPONSE_VALID_BID, []);
       expect(bids).to.deep.equal(SERVER_VALID_BIDS);
     });
 
     it('should have empty bid list', function() {
-      let validBids = [];
-      let bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
+      const validBids = [];
+      const bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
       expect(bids).to.deep.equal(validBids);
     });
 
     it('should return paapi if PAAPI response is received', function() {
-      let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
+      const response = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
       expect(response).to.have.property('bids');
       expect(response).to.have.property('paapi');
       expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI.body.ext.paApiAuctionConfigs[0]);
     });
 
     it('should return paapi if openRTB PAAPI response received', function () {
-      let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
+      const response = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
       expect(response).to.have.property('bids');
       expect(response).to.have.property('paapi');
       expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI_ORTB.body.ext.igi[0].igs[0])
     });
 
     it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id', function() {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
       expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
 
     it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id for openRTB response', function() {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
       expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
   });
@@ -2186,7 +2282,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.TIMEOUT_EVENT_NAME);
       assert.equal(reqBody.get('rd'), timeoutData[0].timeout.toString());
       assert.equal(reqBody.get('acid[]'), timeoutData[0].auctionId);
@@ -2212,7 +2308,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.BID_WON_EVENT_NAME);
       assert.equal(reqBody.get('value'), bid.cpm.toString());
       assert.equal(reqBody.get('acid[]'), bid.auctionId);
@@ -2239,7 +2335,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.SET_TARGETING);
       assert.equal(reqBody.get('value'), bid.cpm.toString());
       assert.equal(reqBody.get('acid[]'), bid.auctionId);
@@ -2270,7 +2366,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.BIDDER_ERROR);
       assert.equal(reqBody.get('rd'), `timedOut:${error.timedOut}|status:${error.status}|message:${error.reason.message}`);
       assert.equal(reqBody.get('acid[]'), bids[0].auctionId);
@@ -2278,12 +2374,12 @@ describe('Media.net bid adapter', function () {
   });
 
   it('context should be outstream', function () {
-    let bids = spec.interpretResponse(SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID, []);
+    const bids = spec.interpretResponse(SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID, []);
     expect(bids[0].context).to.equal('outstream');
   });
   describe('buildRequests floor tests', function () {
     let floor;
-    let getFloor = function(req) {
+    const getFloor = function(req) {
       return floor[req.mediaType];
     };
     beforeEach(function () {
@@ -2295,8 +2391,8 @@ describe('Media.net bid adapter', function () {
       };
       $$PREBID_GLOBAL$$.medianetGlobals = {};
 
-      let documentStub = sandbox.stub(document, 'getElementById');
-      let boundingRect = {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      const boundingRect = {
         top: 50,
         left: 50,
         bottom: 100,
@@ -2308,7 +2404,7 @@ describe('Media.net bid adapter', function () {
       documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
         getBoundingClientRect: () => boundingRect
       });
-      let windowSizeStub = sandbox.stub(spec, 'getWindowSize');
+      const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
@@ -2325,51 +2421,51 @@ describe('Media.net bid adapter', function () {
 
   describe('isBidRequestValid trustedstack', function () {
     it('should accept valid bid params', function () {
-      let isValid = spec.isBidRequestValid(VALID_PARAMS_TS);
+      const isValid = spec.isBidRequestValid(VALID_PARAMS_TS);
       expect(isValid).to.equal(true);
     });
 
     it('should reject bid if cid is not present', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITHOUT_CID_TS);
+      const isValid = spec.isBidRequestValid(PARAMS_WITHOUT_CID_TS);
       expect(isValid).to.equal(false);
     });
 
     it('should reject bid if cid is not a string', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITH_INTEGER_CID_TS);
+      const isValid = spec.isBidRequestValid(PARAMS_WITH_INTEGER_CID_TS);
       expect(isValid).to.equal(false);
     });
 
     it('should reject bid if cid is a empty string', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITH_EMPTY_CID_TS);
+      const isValid = spec.isBidRequestValid(PARAMS_WITH_EMPTY_CID_TS);
       expect(isValid).to.equal(false);
     });
 
     it('should have missing params', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_MISSING_TS);
+      const isValid = spec.isBidRequestValid(PARAMS_MISSING_TS);
       expect(isValid).to.equal(false);
     });
   });
 
   describe('interpretResponse trustedstack', function () {
     it('should not push response if no-bid', function () {
-      let validBids = [];
-      let bids = spec.interpretResponse(SERVER_RESPONSE_NOBID, []);
+      const validBids = [];
+      const bids = spec.interpretResponse(SERVER_RESPONSE_NOBID, []);
       expect(bids).to.deep.equal(validBids);
     });
 
     it('should have empty bid response', function() {
-      let bids = spec.interpretResponse(SERVER_RESPONSE_NOBODY, []);
+      const bids = spec.interpretResponse(SERVER_RESPONSE_NOBODY, []);
       expect(bids).to.deep.equal([]);
     });
 
     it('should have valid bids', function () {
-      let bids = spec.interpretResponse(SERVER_RESPONSE_VALID_BID, []);
+      const bids = spec.interpretResponse(SERVER_RESPONSE_VALID_BID, []);
       expect(bids).to.deep.equal(SERVER_VALID_BIDS);
     });
 
     it('should have empty bid list', function() {
-      let validBids = [];
-      let bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
+      const validBids = [];
+      const bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
       expect(bids).to.deep.equal(validBids);
     });
   });

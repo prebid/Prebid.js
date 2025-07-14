@@ -5,9 +5,9 @@ import {
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
-import { config } from '../src/config.js';
-
 import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
   deepSetValue,
@@ -31,6 +31,12 @@ const BIDDER_CODE = 'connatix';
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
+const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
+const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
+const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collection_updated';
+let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
@@ -51,7 +57,7 @@ export function getBidFloor(bid) {
       mediaType: '*',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (err) {
     logError(err);
     return 0;
@@ -101,7 +107,7 @@ export function _isViewabilityMeasurable(element) {
 
 export function _getViewability(element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, topWin, { w, h })
+    ? percentInView(element, { w, h })
     : 0;
 }
 
@@ -176,10 +182,38 @@ export function _getBidRequests(validBidRequests) {
  * Get ids from Prebid User ID Modules and add them to the payload
  */
 function _handleEids(payload, validBidRequests) {
-  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
+}
+
+export function hasQueryParams(url) {
+  try {
+    const urlObject = new URL(url);
+    return !!urlObject.search;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function saveOnAllStorages(name, value, expirationTimeMs) {
+  const date = new Date();
+  date.setTime(date.getTime() + expirationTimeMs);
+  const expires = `expires=${date.toUTCString()}`;
+  storage.setCookie(name, JSON.stringify(value), expires);
+  storage.setDataInLocalStorage(name, JSON.stringify(value));
+  cnxIdsValues = value;
+}
+
+export function readFromAllStorages(name) {
+  const fromCookie = storage.getCookie(name);
+  const fromLocalStorage = storage.getDataFromLocalStorage(name);
+
+  const parsedCookie = fromCookie ? JSON.parse(fromCookie) : undefined;
+  const parsedLocalStorage = fromLocalStorage ? JSON.parse(fromLocalStorage) : undefined;
+
+  return parsedCookie || parsedLocalStorage || undefined;
 }
 
 export const spec = {
@@ -208,10 +242,10 @@ export const spec = {
     if (!isValid) {
       logError(
         `Invalid bid request:
-          hasBidId: ${hasBidId}, 
-          hasMediaTypes: ${hasMediaTypes}, 
-          isValidBanner: ${isValidBanner}, 
-          isValidVideo: ${isValidVideo}, 
+          hasBidId: ${hasBidId},
+          hasMediaTypes: ${hasMediaTypes},
+          isValidBanner: ${isValidBanner},
+          isValidVideo: ${isValidVideo},
           hasRequiredBidParams: ${hasRequiredBidParams}`
       );
     }
@@ -225,6 +259,12 @@ export const spec = {
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     const bidRequests = _getBidRequests(validBidRequests);
+    let userIds;
+    try {
+      userIds = readFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY) || cnxIdsValues;
+    } catch (error) {
+      userIds = cnxIdsValues;
+    }
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
@@ -232,6 +272,7 @@ export const spec = {
       uspConsent: bidderRequest.uspConsent,
       gppConsent: bidderRequest.gppConsent,
       refererInfo: bidderRequest.refererInfo,
+      identityProviderData: userIds,
       bidRequests,
     };
 
@@ -308,10 +349,33 @@ export const spec = {
       params['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
+    window.addEventListener('message', function handler(event) {
+      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
+        return;
+      }
+
+      const { message, data } = event.data.cnx;
+
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
+        this.removeEventListener('message', handler);
+        event.stopImmediatePropagation();
+      }
+
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
+        if (data) {
+          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
+        }
+      }
+    }, true)
+
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
 
-    const url = queryParams ? `${syncUrl}?${queryParams}` : syncUrl;
+    let url = syncUrl;
+    if (queryParams) {
+      url += hasQueryParams(syncUrl) ? `&${queryParams}` : `?${queryParams}`;
+    }
+
     return [{
       type: 'iframe',
       url

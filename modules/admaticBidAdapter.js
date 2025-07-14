@@ -1,9 +1,10 @@
-import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { Renderer } from '../src/Renderer.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,29 +12,7 @@ import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
-export const OPENRTB = {
-  N: {
-    IMAGE_TYPE: {
-      ICON: 1,
-      MAIN: 3,
-    },
-    ASSET_ID: {
-      TITLE: 1,
-      IMAGE: 2,
-      ICON: 3,
-      BODY: 4,
-      SPONSORED: 5,
-      CTA: 6
-    },
-    DATA_ASSET_TYPE: {
-      SPONSORED: 1,
-      DESC: 2,
-      CTA_TEXT: 12,
-    },
-  }
-};
-
-let SYNC_URL = '';
+let SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
 const BIDDER_CODE = 'admatic';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -41,8 +20,12 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 1281,
   aliases: [
-    {code: 'pixad', gvlid: 1281},
-    {code: 'monetixads', gvlid: 1281}
+    { code: 'admaticde', gvlid: 1281 },
+    { code: 'pixad', gvlid: 1281 },
+    { code: 'monetixads', gvlid: 1281 },
+    { code: 'netaddiction', gvlid: 1281 },
+    { code: 'adt', gvlid: 779 },
+    { code: 'yobee', gvlid: 1281 }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -73,7 +56,8 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
-    const host = getValue(validBidRequests[0].params, 'host');
+    let host = getValue(validBidRequests[0].params, 'host');
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || null;
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -102,9 +86,7 @@ export const spec = {
       tmax: parseInt(tmax)
     };
 
-    if (config.getConfig('currency.adServerCurrency')) {
-      payload.ext.cur = config.getConfig('currency.adServerCurrency');
-    }
+    payload.ext.cur = currency;
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -130,8 +112,9 @@ export const spec = {
       payload.regs.ext.uspIab = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         payload.schain = schain;
       }
@@ -143,32 +126,35 @@ export const spec = {
     }
 
     if (payload) {
-      switch (bidderName) {
-        case 'monetixads':
-          SYNC_URL = 'https://static.cdn.monetixads.com/sync.html';
-          break;
-        case 'pixad':
-          SYNC_URL = 'https://static.cdn.pixad.com.tr/sync.html';
-          break;
-        default:
-          SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
-          break;
+      const domain = {};
+      domain.parts = host.split('rtb.');
+      if (domain.parts.length > 1) {
+        domain.url = domain.parts[1];
       }
+      SYNC_URL = `https://static.cdn.${domain.url}/${bidderName}/sync.html`;
 
+      host = host.replace('https://', '').replace('http://', '').replace('/', '');
       return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
     }
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
-      // data is only assigned if params are available to pass to syncEndpoint
-      let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
-      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
+      // Retrieve the sync parameters
+      const params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+
+      // Create a URL object from SYNC_URL
+      const urlObj = new URL(SYNC_URL);
+
+      // Append each parameter from the params object to the URL's search parameters
+      Object.keys(params).forEach(key => {
+        urlObj.searchParams.append(key, params[key]);
+      });
 
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_URL + params
+        url: urlObj.toString()
       };
     }
   },
@@ -270,7 +256,7 @@ function isUrl(str) {
   }
 };
 
-function outstreamRender (bid) {
+function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       targetId: bid.adUnitCode,
@@ -367,7 +353,7 @@ function buildRequestObject(bid) {
   }
   if (bid.mediaTypes?.native) {
     reqObj.type = 'native';
-    reqObj.size = [{w: 1, h: 1}];
+    reqObj.size = [{ w: 1, h: 1 }];
     reqObj.mediatype = bid.mediaTypes.native;
   }
 
@@ -387,15 +373,15 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  const videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  const nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
+  const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    let mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
+    const mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
     return mediaTypesSizes
-      .reduce(function(acc, currSize) {
+      .reduce(function (acc, currSize) {
         if (isArray(currSize)) {
           if (isArray(currSize[0])) {
             currSize.forEach(function (childSize) {
@@ -406,45 +392,6 @@ function concatSizes(bid) {
         return acc;
       }, []);
   }
-}
-
-function interpretNativeAd(adm) {
-  const native = JSON.parse(adm).native;
-  const result = {
-    clickUrl: encodeURI(native.link.url),
-    impressionTrackers: native.imptrackers
-  };
-  native.assets.forEach(asset => {
-    switch (asset.id) {
-      case OPENRTB.N.ASSET_ID.TITLE:
-        result.title = asset.title.text;
-        break;
-      case OPENRTB.N.ASSET_ID.IMAGE:
-        result.image = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.N.ASSET_ID.ICON:
-        result.icon = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.N.ASSET_ID.BODY:
-        result.body = asset.data.value;
-        break;
-      case OPENRTB.N.ASSET_ID.SPONSORED:
-        result.sponsoredBy = asset.data.value;
-        break;
-      case OPENRTB.N.ASSET_ID.CTA:
-        result.cta = asset.data.value;
-        break;
-    }
-  });
-  return result;
 }
 
 function _validateId(id) {

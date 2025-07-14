@@ -15,23 +15,41 @@ import {
   isEmpty,
   buildUrl,
   isArray,
+  generateUUID,
+  getWinDimensions,
+  canAccessWindowTop,
+  deepAccess,
+  getSafeframeGeometry,
+  getWindowSelf,
+  getWindowTop,
+  inIframe,
+  isSafeFrameWindow,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
+// Constants
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
-const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
+const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
+const CONTXTFUL_DEFER_DEFAULT = 0;
+
+// Functions
+let _sm;
+function sm() {
+  return _sm ??= generateUUID();
+}
 
 const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
-  moduleName: MODULE_NAME
+  moduleName: MODULE_NAME,
 });
 
 let rxApi = null;
-let isFirstBidRequestCall = true;
 
 /**
  * Return current receptivity value for the requester.
@@ -43,31 +61,28 @@ function getRxEngineReceptivity(requester) {
 }
 
 function getItemFromSessionStorage(key) {
-  let value = null;
   try {
-    // Use the Storage Manager
-    value = storageManager.getDataFromSessionStorage(key, null);
+    return storageManager.getDataFromSessionStorage(key);
   } catch (error) {
+    logError(MODULE, error);
   }
-
-  return value;
 }
 
 function loadSessionReceptivity(requester) {
-  let sessionStorageValue = getItemFromSessionStorage(requester);
+  const sessionStorageValue = getItemFromSessionStorage(requester);
   if (!sessionStorageValue) {
     return null;
   }
 
   try {
     // Check expiration of the cached value
-    let sessionStorageReceptivity = JSON.parse(sessionStorageValue);
-    let expiration = parseInt(sessionStorageReceptivity?.exp);
+    const sessionStorageReceptivity = JSON.parse(sessionStorageValue);
+    const expiration = parseInt(sessionStorageReceptivity?.exp);
     if (expiration < new Date().getTime()) {
       return null;
     }
 
-    let rx = sessionStorageReceptivity?.rx;
+    const rx = sessionStorageReceptivity?.rx;
     return rx;
   } catch {
     return null;
@@ -102,6 +117,9 @@ function init(config) {
 
   try {
     initCustomer(config);
+
+    observeLastCursorPosition();
+
     return true;
   } catch (error) {
     logError(MODULE, error);
@@ -128,9 +146,10 @@ export function extractParameters(config) {
     throw Error(`${MODULE}: params.customer should be a non-empty string`);
   }
 
-  const hostname = config?.params?.hostname || CONTXTFUL_RECEPTIVITY_DOMAIN;
+  const hostname = config?.params?.hostname || CONTXTFUL_HOSTNAME_DEFAULT;
+  const defer = config?.params?.defer || CONTXTFUL_DEFER_DEFAULT;
 
-  return { version, customer, hostname };
+  return { version, customer, hostname, defer };
 }
 
 /**
@@ -139,7 +158,7 @@ export function extractParameters(config) {
  * @param { String } config
  */
 function initCustomer(config) {
-  const { version, customer, hostname } = extractParameters(config);
+  const { version, customer, hostname, defer } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
     host: hostname,
@@ -147,7 +166,14 @@ function initCustomer(config) {
   });
 
   addConnectorEventListener(customer, config);
-  loadExternalScript(CONNECTOR_URL, MODULE_NAME);
+
+  const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME, undefined, undefined, { 'data-sm': sm() });
+  // Optionally defer the loading of the script
+  if (Number.isFinite(defer) && defer > 0) {
+    setTimeout(loadScript, defer);
+  } else {
+    loadScript();
+  }
 }
 
 /**
@@ -164,12 +190,15 @@ function addConnectorEventListener(tagId, prebidConfig) {
       }
       // Fetch the customer configuration
       const { rxApiBuilder, fetchConfig } = rxConnector;
-      let config = await fetchConfig(tagId);
+      const config = await fetchConfig(tagId);
       if (!config) {
         return;
       }
       config['prebid'] = prebidConfig || {};
       rxApi = await rxApiBuilder(config);
+
+      // Remove listener now that we can use rxApi.
+      removeListeners();
     }
   );
 }
@@ -189,8 +218,11 @@ function getTargetingData(adUnits, config, _userConsent) {
     logInfo(MODULE, 'getTargetingData');
 
     const requester = config?.params?.customer;
-    const rx = getRxEngineReceptivity(requester) ||
-      loadSessionReceptivity(requester) || {};
+    const rx =
+      getRxEngineReceptivity(requester) ||
+      loadSessionReceptivity(requester) ||
+      {};
+
     if (isEmpty(rx)) {
       return {};
     }
@@ -205,6 +237,161 @@ function getTargetingData(adUnits, config, _userConsent) {
   }
 }
 
+function getVisibilityStateElement(domElement, windowTop) {
+  if ('checkVisibility' in domElement) {
+    return domElement.checkVisibility();
+  }
+
+  const elementCss = windowTop.getComputedStyle(domElement, null);
+  return elementCss.display !== 'none';
+}
+
+function getElementFromTopWindowRecurs(element, currentWindow) {
+  try {
+    if (getWindowTop() === currentWindow) {
+      return element;
+    } else {
+      const frame = currentWindow.frameElement;
+      const frameClientRect = getBoundingClientRect(frame);
+      const elementClientRect = getBoundingClientRect(element);
+      if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
+        return undefined;
+      }
+      return getElementFromTopWindowRecurs(frame, currentWindow.parent);
+    }
+  } catch (err) {
+    logError(MODULE, err);
+    return undefined;
+  }
+}
+
+function getDivIdPosition(divId) {
+  if (!isSafeFrameWindow() && !canAccessWindowTop()) {
+    return {};
+  }
+
+  const position = {};
+
+  if (isSafeFrameWindow()) {
+    const { self } = getSafeframeGeometry() ?? {};
+
+    if (!self) {
+      return {};
+    }
+
+    position.x = Math.round(self.t);
+    position.y = Math.round(self.l);
+  } else {
+    try {
+      // window.top based computing
+      const wt = getWindowTop();
+      const d = wt.document;
+
+      let domElement;
+
+      if (inIframe() === true) {
+        const ws = getWindowSelf();
+        const currentElement = ws.document.getElementById(divId);
+        domElement = getElementFromTopWindowRecurs(currentElement, ws);
+      } else {
+        domElement = wt.document.getElementById(divId);
+      }
+
+      if (!domElement) {
+        return {};
+      }
+
+      const box = getBoundingClientRect(domElement);
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
+      const clientLeft = (d.clientLeft ?? body.clientLeft) ?? 0;
+      const scrollTop = (wt.scrollY ?? docEl.scrollTop) ?? body.scrollTop;
+      const scrollLeft = (wt.scrollX ?? docEl.scrollLeft) ?? body.scrollLeft;
+
+      position.visibility = getVisibilityStateElement(domElement, wt);
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    } catch (err) {
+      logError(MODULE, err);
+      return {};
+    }
+  }
+
+  return position;
+}
+
+function tryGetDivIdPosition(divIdMethod) {
+  const divId = divIdMethod();
+  if (divId) {
+    const divIdPosition = getDivIdPosition(divId);
+    if (divIdPosition.x !== undefined && divIdPosition.y !== undefined) {
+      return divIdPosition;
+    }
+  }
+  return undefined;
+}
+
+function tryMultipleDivIdPositions(adUnit) {
+  const divMethods = [
+    // ortb2\
+    () => {
+      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+      const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+      return deepAccess(ortb2Imp, 'ext.data.divId');
+    },
+    // gpt
+    () => getGptSlotInfoForAdUnitCode(adUnit.code).divId,
+    // adunit code
+    () => adUnit.code
+  ];
+
+  for (const divMethod of divMethods) {
+    const divPosition = tryGetDivIdPosition(divMethod);
+    if (divPosition) {
+      return divPosition;
+    }
+  }
+}
+
+function tryGetAdUnitPosition(adUnit) {
+  const adUnitPosition = {};
+  adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+
+  // try to get position with the divId
+  const divIdPosition = tryMultipleDivIdPositions(adUnit);
+  if (divIdPosition) {
+    adUnitPosition.p = { x: divIdPosition.x, y: divIdPosition.y };
+    adUnitPosition.v = divIdPosition.visibility;
+    adUnitPosition.t = 'div';
+    return adUnitPosition;
+  }
+
+  // try to get IAB position
+  const iabPos = adUnit?.mediaTypes?.banner?.pos;
+  if (iabPos !== undefined) {
+    adUnitPosition.p = iabPos;
+    adUnitPosition.t = 'iab';
+    return adUnitPosition;
+  }
+
+  return undefined;
+}
+
+function getAdUnitPositions(bidReqConfig) {
+  const adUnits = bidReqConfig.adUnits || [];
+  const adUnitPositions = {};
+
+  for (const adUnit of adUnits) {
+    const adUnitPosition = tryGetAdUnitPosition(adUnit);
+    if (adUnitPosition) {
+      adUnitPositions[adUnit.code] = adUnitPosition;
+    }
+  }
+
+  return adUnitPositions;
+}
+
 /**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} onDone Called on completion
@@ -213,9 +400,6 @@ function getTargetingData(adUnits, config, _userConsent) {
  */
 function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   function onReturn() {
-    if (isFirstBidRequestCall) {
-      isFirstBidRequestCall = false;
-    };
     onDone();
   }
   logInfo(MODULE, 'getBidRequestData');
@@ -225,62 +409,137 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
     return;
   }
 
-  let fromApiBatched = () => rxApi?.receptivityBatched?.(bidders);
-  let fromApiSingle = () => prepareBatch(bidders, getRxEngineReceptivity);
-  let fromStorage = () => prepareBatch(bidders, loadSessionReceptivity);
+  let ortb2Fragment;
+  const getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
+  if (typeof (getContxtfulOrtb2Fragment) == 'function') {
+    ortb2Fragment = getContxtfulOrtb2Fragment(bidders, reqBidsConfigObj);
+  } else {
+    const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);
 
-  function tryMethods(methods) {
-    for (let method of methods) {
-      try {
-        let batch = method();
-        if (!isEmpty(batch)) {
-          return batch;
-        }
-      } catch (error) { }
-    }
-    return {};
-  }
-  let rxBatch = {};
-  try {
-    if (isFirstBidRequestCall) {
-      rxBatch = tryMethods([fromStorage, fromApiBatched, fromApiSingle]);
-    } else {
-      rxBatch = tryMethods([fromApiBatched, fromApiSingle, fromStorage])
-    }
-  } catch (error) { }
+    const fromApi = rxApi?.receptivityBatched?.(bidders) || {};
+    const fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
-  if (isEmpty(rxBatch)) {
-    onReturn();
-    return;
-  }
+    const sources = [fromStorage, fromApi];
 
-  bidders
-    .map((bidderCode) => ({ bidderCode, rx: rxBatch[bidderCode] }))
-    .filter(({ rx }) => !isEmpty(rx))
-    .forEach(({ bidderCode, rx }) => {
-      const ortb2 = {
-        user: {
-          data: [
-            {
-              name: MODULE_NAME,
-              ext: {
-                rx,
-                params: {
-                  ev: config.params?.version,
-                  ci: config.params?.customer,
+    const rxBatch = Object.assign(...sources);
+
+    const singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
+    ortb2Fragment = {};
+    ortb2Fragment.bidder = Object.fromEntries(
+      bidders
+        .map(bidderCode => {
+          return [bidderCode, {
+            user: {
+              data: [
+                {
+                  name: MODULE_NAME,
+                  ext: {
+                    rx: rxBatch[bidderCode],
+                    events: singlePointEvents,
+                    pos: btoa(JSON.stringify(adUnitsPositions)),
+                    sm: sm(),
+                    params: {
+                      ev: config.params?.version,
+                      ci: config.params?.customer,
+                    },
+                  },
                 },
-              },
+              ],
             },
-          ],
-        },
-      };
-      mergeDeep(reqBidsConfigObj.ortb2Fragments?.bidder, {
-        [bidderCode]: ortb2,
-      });
-    });
+          }
+          ]
+        }));
+  }
+
+  mergeDeep(reqBidsConfigObj.ortb2Fragments, ortb2Fragment);
 
   onReturn();
-};
+}
+
+function getUiEvents() {
+  return {
+    position: lastCursorPosition,
+    screen: getScreen(),
+  };
+}
+
+function getScreen() {
+  function getInnerSize() {
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    const w = innerWidth;
+    const h = innerHeight;
+
+    if (w && h) {
+      return [w, h];
+    }
+  }
+
+  function getDocumentSize() {
+    const windowDimensions = getWinDimensions();
+
+    const w = windowDimensions.document.body.clientWidth;
+    const h = windowDimensions.document.body.clientHeight;
+
+    if (w && h) {
+      return [w, h];
+    }
+  }
+
+  // If we cannot access or cast the window dimensions, we get None.
+  // If we cannot collect the size from the window we try to use the root document dimensions
+  const [width, height] = getInnerSize() || getDocumentSize() || [0, 0];
+  const topLeft = { x: window.scrollX, y: window.scrollY };
+
+  return {
+    topLeft,
+    width,
+    height,
+    timestampMs: performance.now(),
+  };
+}
+
+let lastCursorPosition;
+
+function observeLastCursorPosition() {
+  function pointerEventToPosition(event) {
+    lastCursorPosition = {
+      x: event.clientX,
+      y: event.clientY,
+      timestampMs: performance.now()
+    };
+  }
+
+  function touchEventToPosition(event) {
+    const touch = event.touches.item(0);
+    if (!touch) {
+      return;
+    }
+
+    lastCursorPosition = {
+      x: touch.clientX,
+      y: touch.clientY,
+      timestampMs: performance.now()
+    };
+  }
+
+  addListener('pointermove', pointerEventToPosition);
+  addListener('touchmove', touchEventToPosition);
+}
+
+const listeners = {};
+function addListener(name, listener) {
+  listeners[name] = listener;
+
+  window.addEventListener(name, listener);
+}
+
+function removeListeners() {
+  for (const name in listeners) {
+    window.removeEventListener(name, listeners[name]);
+    delete listeners[name];
+  }
+}
 
 export const contxtfulSubmodule = {
   name: MODULE_NAME,

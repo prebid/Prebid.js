@@ -11,7 +11,7 @@ export function getAdUnitSizes(adUnit) {
 
   let sizes = [];
   if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
-    let bannerSizes = adUnit.mediaTypes.banner.sizes;
+    const bannerSizes = adUnit.mediaTypes.banner.sizes;
     if (Array.isArray(bannerSizes[0])) {
       sizes = bannerSizes;
     } else {
@@ -24,6 +24,31 @@ export function getAdUnitSizes(adUnit) {
     } else {
       sizes.push(adUnit.sizes);
     }
+  }
+  return sizes;
+}
+
+/**
+ * Normalize adUnit.mediaTypes.banner.sizes to Array.<Array.<number>>
+ *
+ * @param {Array.<number|string> | Array.<Array.<number|string>>} bidSizes - value of adUnit.mediaTypes.banner.sizes.
+ * @returns {Array.<Array.<number>>} - Normalized value.
+ */
+
+export function normalizeBannerSizes(bidSizes) {
+  const sizes = [];
+  if (Array.isArray(bidSizes) && bidSizes.length === 2 && !Array.isArray(bidSizes[0])) {
+    sizes.push({
+      width: parseInt(bidSizes[0], 10),
+      height: parseInt(bidSizes[1], 10),
+    });
+  } else if (Array.isArray(bidSizes) && Array.isArray(bidSizes[0])) {
+    bidSizes.forEach((size) => {
+      sizes.push({
+        width: parseInt(size[0], 10),
+        height: parseInt(size[1], 10),
+      });
+    });
   }
   return sizes;
 }

@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {OUTSTREAM} from '../src/video.js';
-import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
@@ -14,7 +14,6 @@ import {Renderer} from '../src/Renderer.js';
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
 const CURRENCY = 'USD';
-const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: { id: 0, name: 'title' },
   icon: { id: 2, type: 1, name: 'img' },
@@ -23,6 +22,10 @@ const NATIVE_PARAMS = {
   body: { id: 4, name: 'data', type: 2 },
   cta: { id: 1, type: 12, name: 'data' }
 };
+const NATIVE_ASSET_IDS = Object.entries(NATIVE_PARAMS).reduce((acc, [key, value]) => {
+  acc[value.id] = key;
+  return acc;
+}, {});
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
@@ -75,7 +78,6 @@ export const spec = {
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
-      bid.netRevenue = 'net';
       const imp = {
         id: id + 1 + ''
       }
@@ -193,7 +195,7 @@ export const spec = {
           cpm: bidResponse.price,
           creativeId: bidResponse.crid,
           ttl: 360,
-          netRevenue: bid.netRevenue === 'net',
+          netRevenue: true,
           currency: cur,
           mediaType: type,
           nurl: bidResponse.nurl,
@@ -221,9 +223,9 @@ export const spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     const syncs = [];
-    let syncUrl = config.getConfig('outbrain.usersyncUrl');
+    const syncUrl = config.getConfig('outbrain.usersyncUrl');
 
-    let query = [];
+    const query = [];
     if (syncOptions.pixelEnabled && syncUrl) {
       if (gdprConsent) {
         query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
@@ -353,7 +355,7 @@ function _getFloor(bid, type) {
     mediaType: type,
     size: '*'
   });
-  if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+  if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
     return parseFloat(floorInfo.floor);
   }
   return null;

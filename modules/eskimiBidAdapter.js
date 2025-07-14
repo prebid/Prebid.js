@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -47,7 +46,6 @@ const REGION_SUBDOMAIN_SUFFIX = {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['eskimi'],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
@@ -82,7 +80,7 @@ const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
       imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
@@ -120,7 +118,7 @@ function isBidRequestValid(bidRequest) {
 }
 
 function isPlacementIdValid(bidRequest) {
-  return utils.isNumber(bidRequest.params.placementId);
+  return !!parseInt(bidRequest.params.placementId);
 }
 
 function isValidBannerRequest(bidRequest) {
@@ -143,9 +141,9 @@ function isValidVideoRequest(bidRequest) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(validBidRequests, bidderRequest) {
-  let videoBids = validBidRequests.filter(bid => isVideoBid(bid));
-  let bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
-  let requests = [];
+  const videoBids = validBidRequests.filter(bid => isVideoBid(bid));
+  const bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
+  const requests = [];
 
   bannerBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -194,7 +192,7 @@ function buildBannerImp(bidRequest, imp) {
 
   const bannerParams = {...bannerAdUnitParams, ...bannerBidderParams};
 
-  let sizes = bidRequest.mediaTypes.banner.sizes;
+  const sizes = bidRequest.mediaTypes.banner.sizes;
 
   if (sizes) {
     utils.deepSetValue(imp, 'banner.w', sizes[0][0]);
@@ -215,7 +213,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
 
   const bid = bidRequests.find((b) => b.params.placementId)
   if (!data.site) data.site = {}
-  data.site.ext = {placementId: bid.params.placementId}
+  data.site.ext = {placementId: parseInt(bid.params.placementId)}
 
   if (bidderRequest.gdprConsent) {
     if (!data.user) data.user = {};
@@ -234,7 +232,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: getBidRequestUrlByRegion(),
     data: data,
-    options: {contentType: 'application/json;charset=UTF-8', withCredentials: false}
+    options: {
+      withCredentials: true,
+      contentType: 'application/json;charset=UTF-8',
+    }
   }
 }
 
@@ -255,44 +256,29 @@ function isBannerBid(bid) {
  * @return {{type: (string), url: (*|string)}[]}
  */
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-  if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled) && hasSyncConsent(gdprConsent, uspConsent, gppConsent)) {
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let query = [];
-    let syncUrl = getUserSyncUrlByRegion();
-    // Attaching GDPR Consent Params in UserSync url
+  if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const query = [];
+    const syncUrl = getUserSyncUrlByRegion();
+    // GDPR Consent Params in UserSync url
     if (gdprConsent) {
       query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
       query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
     }
-    // CCPA
+    // US Privacy Consent
     if (uspConsent) {
       query.push('us_privacy=' + encodeURIComponent(uspConsent));
     }
-    // GPP Consent
+    // Global Privacy Platform Consent
     if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
       query.push('gpp=' + encodeURIComponent(gppConsent.gppString));
       query.push('gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(',')));
     }
     return [{
       type: pixelType,
-      url: `${syncUrl}${query.length > 0 ? '?' + query.join('&') : ''}`
+      url: `${syncUrl}${query.length > 0 ? '&' + query.join('&') : ''}`
     }];
   }
-}
-
-function hasSyncConsent(gdprConsent, uspConsent, gppConsent) {
-  return hasPurpose1Consent(gdprConsent) && hasUspConsent(uspConsent) && hasGppConsent(gppConsent);
-}
-
-function hasUspConsent(uspConsent) {
-  return typeof uspConsent !== 'string' || !(uspConsent[0] === '1' && uspConsent[2] === 'Y');
-}
-
-function hasGppConsent(gppConsent) {
-  return (
-    !(gppConsent && Array.isArray(gppConsent.applicableSections)) ||
-    gppConsent.applicableSections.every((section) => typeof section === 'number' && section <= 5)
-  );
 }
 
 /**

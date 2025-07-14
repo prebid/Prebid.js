@@ -31,22 +31,21 @@ Changes in 4.0 Version
 const analyticsType = 'endpoint';
 const analyticsName = 'PubWise:';
 const prebidVersion = '$prebid.version$';
-let pubwiseVersion = '4.0.1';
+const pubwiseVersion = '4.0.1';
 let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v5/event/add/', debug: null};
 let pwAnalyticsEnabled = false;
-let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
-let sessionData = {sessionId: '', activationId: ''};
-let pwNamespace = 'pubwise';
-let pwEvents = [];
+const utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
+const sessionData = {sessionId: '', activationId: ''};
+const pwNamespace = 'pubwise';
+const pwEvents = [];
 let metaData = {};
-let auctionEnded = false;
-let sessTimeout = 60 * 30 * 1000; // 30 minutes, G Analytics default session length
-let sessName = 'sess_id';
-let sessTimeoutName = 'sess_timeout';
+const auctionEnded = false;
+const sessTimeout = 60 * 30 * 1000; // 30 minutes, G Analytics default session length
+const sessName = 'sess_id';
+const sessTimeoutName = 'sess_timeout';
 
 function enrichWithSessionInfo(dataBag) {
   try {
-    // eslint-disable-next-line
     // console.log(sessionData);
     dataBag['session_id'] = sessionData.sessionId;
     dataBag['activation_id'] = sessionData.activationId;
@@ -77,7 +76,7 @@ function enrichWithMetrics(dataBag) {
 function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
-    for (let prop in utmKeys) {
+    for (const prop in utmKeys) {
       utmKeys[prop] = getParameterByName(prop);
       if (utmKeys[prop]) {
         newUtm = true;
@@ -86,14 +85,14 @@ function enrichWithUTM(dataBag) {
     }
 
     if (newUtm === false) {
-      for (let prop in utmKeys) {
-        let itemValue = storage.getDataFromLocalStorage(setNamespace(prop));
+      for (const prop in utmKeys) {
+        const itemValue = storage.getDataFromLocalStorage(setNamespace(prop));
         if (itemValue !== null && typeof itemValue !== 'undefined' && itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
     } else {
-      for (let prop in utmKeys) {
+      for (const prop in utmKeys) {
         storage.setDataInLocalStorage(setNamespace(prop), utmKeys[prop]);
       }
     }
@@ -106,7 +105,7 @@ function enrichWithUTM(dataBag) {
 
 function expireUtmData() {
   pwInfo(`Session Expiring UTM Data`);
-  for (let prop in utmKeys) {
+  for (const prop in utmKeys) {
     storage.removeDataFromLocalStorage(setNamespace(prop));
   }
 }
@@ -163,13 +162,13 @@ function userSessionID() {
 }
 
 function sessionExpired() {
-  let sessLastTime = storage.getDataFromLocalStorage(localStorageSessTimeoutName());
+  const sessLastTime = storage.getDataFromLocalStorage(localStorageSessTimeoutName());
   return (Date.now() - parseInt(sessLastTime)) > sessTimeout;
 }
 
 function flushEvents() {
   if (pwEvents.length > 0) {
-    let dataBag = {metaData: metaData, eventList: pwEvents.splice(0)}; // put all the events together with the metadata and send
+    const dataBag = {metaData: metaData, eventList: pwEvents.splice(0)}; // put all the events together with the metadata and send
     ajax(configOptions.endpoint, (result) => pwInfo(`Result`, result), JSON.stringify(dataBag));
   }
 }
@@ -198,7 +197,7 @@ function pwInfo(info, context) {
 }
 
 function filterBidResponse(data) {
-  let modified = Object.assign({}, data);
+  const modified = Object.assign({}, data);
   // clean up some properties we don't track in public version
   if (typeof modified.ad !== 'undefined') {
     modified.ad = '';
@@ -221,7 +220,7 @@ function filterBidResponse(data) {
 }
 
 function filterAuctionInit(data) {
-  let modified = Object.assign({}, data);
+  const modified = Object.assign({}, data);
 
   modified.refererInfo = {};
   // handle clean referrer, we only need one
@@ -255,7 +254,7 @@ function filterAuctionInit(data) {
   return modified;
 }
 
-let pubwiseAnalytics = Object.assign(adapter({analyticsType}), {
+const pubwiseAnalytics = Object.assign(adapter({analyticsType}), {
   // Override AnalyticsAdapter functions by supplying custom methods
   track({eventType, args}) {
     this.handleEvent(eventType, args);
@@ -306,16 +305,16 @@ pubwiseAnalytics.storeSessionID = function (userSessID) {
 
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
-  let sessionId = userSessionID();
+  const sessionId = userSessionID();
   if (sessionExpired() === true || sessionId === null || sessionId === '') {
-    let generatedId = generateUUID();
+    const generatedId = generateUUID();
     expireUtmData();
     this.storeSessionID(generatedId);
     sessionData.sessionId = generatedId;
   } else if (sessionId != null) {
     sessionData.sessionId = sessionId;
   }
-  // eslint-disable-next-line
+
   // console.log('ensured session');
   extendUserSessionTimeout();
 };

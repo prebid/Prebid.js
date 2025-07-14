@@ -6,6 +6,7 @@ import {setImpBidParams} from './params.js';
 import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
+import {addEventTrackers} from './eventTrackers.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -47,13 +48,13 @@ export const PBS_PROCESSORS = {
       // sets bidderCode from on seatbid.seat
       fn(bidResponse, bid, context) {
         bidResponse.bidderCode = context.seatbid.seat;
-        bidResponse.adapterCode = deepAccess(bid, 'ext.prebid.meta.adaptercode') || context.bidRequest?.bidder || bidResponse.bidderCode;
+        bidResponse.adapterCode = bid?.ext?.prebid?.meta?.adaptercode || context.bidRequest?.bidder || bidResponse.bidderCode;
       }
     },
     pbsBidId: {
       // sets bidResponse.pbsBidId from ext.prebid.bidid
       fn(bidResponse, bid) {
-        const bidId = deepAccess(bid, 'ext.prebid.bidid');
+        const bidId = bid?.ext?.prebid?.bidid;
         if (isStr(bidId)) {
           bidResponse.pbsBidId = bidId;
         }
@@ -62,7 +63,7 @@ export const PBS_PROCESSORS = {
     adserverTargeting: {
       // sets bidResponse.adserverTargeting from ext.prebid.targeting
       fn(bidResponse, bid) {
-        const targeting = deepAccess(bid, 'ext.prebid.targeting');
+        const targeting = bid?.ext?.prebid?.targeting;
         if (isPlainObject(targeting)) {
           bidResponse.adserverTargeting = targeting;
         }
@@ -71,17 +72,12 @@ export const PBS_PROCESSORS = {
     extPrebidMeta: {
       // sets bidResponse.meta from ext.prebid.meta
       fn(bidResponse, bid) {
-        bidResponse.meta = mergeDeep({}, deepAccess(bid, 'ext.prebid.meta'), bidResponse.meta);
+        bidResponse.meta = mergeDeep({}, bid?.ext?.prebid?.meta, bidResponse.meta);
       }
     },
-    pbsWurl: {
-      // sets bidResponse.pbsWurl from ext.prebid.events.win
-      fn(bidResponse, bid) {
-        const wurl = deepAccess(bid, 'ext.prebid.events.win');
-        if (isStr(wurl)) {
-          bidResponse.pbsWurl = wurl;
-        }
-      }
+    pbsWinTrackers: {
+      // converts "legacy" burl and ext.prebid.events.win into eventtrackers
+      fn: addEventTrackers
     },
   },
   [RESPONSE]: {

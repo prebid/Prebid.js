@@ -12,16 +12,16 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
   const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
   const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
-  const PB_ENDPOINT = 'pb';
+  const PB_ENDPOINT = 'pb'; []
   const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
   const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
@@ -205,18 +205,26 @@ describe('Improve Digital Adapter Tests', function () {
 
   describe('buildRequests', function () {
     let getConfigStub = null;
+    let getGlobalStub = null;
 
     afterEach(function () {
       if (getConfigStub) {
         getConfigStub.restore();
         getConfigStub = null;
       }
+
+      if (getGlobalStub) {
+        getGlobalStub.restore();
+        getGlobalStub = null;
+      }
     });
 
-    it('should make a well-formed request objects', function () {
-      const request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
+    it('should make a well-formed request objects', async function () {
+      const request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
+      expect(request.options).to.be.an('object');
+      expect(request.options.endpointCompression).to.equal(true);
       expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
       const payload = JSON.parse(request.data);
@@ -231,7 +239,7 @@ describe('Improve Digital Adapter Tests', function () {
       sinon.assert.match(payload.imp, [
         sinon.match({
           id: '33e9500b21129f',
-          secure: 0,
+          secure: 1,
           ext: {
             bidder: {
               placementId: 1053688,
@@ -251,6 +259,8 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests(updateNativeParams([multiFormatBidRequest]), multiFormatBidderRequest)[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
+      expect(request.options).to.be.an('object');
+      expect(request.options.endpointCompression).to.equal(true);
       expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
       const payload = JSON.parse(request.data);
@@ -258,7 +268,7 @@ describe('Improve Digital Adapter Tests', function () {
       sinon.assert.match(payload.imp, [
         sinon.match({
           id: '33e9500b21129f',
-          secure: 0,
+          secure: 1,
           ext: {
             bidder: {
               placementId: 1053688,
@@ -349,10 +359,21 @@ describe('Improve Digital Adapter Tests', function () {
       }
     });
 
-    it('should add bid floor', function () {
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+    it('should add bid floor correctly', function () {
+      getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
+        convertCurrency: (cpm, from, to) => {
+          const conversionKeys = { 'EUR-USD': 1.75 };
+          const conversionRate = conversionKeys[`${from}-${to}`];
+          if (!conversionRate) {
+            throw new Error(`No conversion rate found for ${from}-${to}`);
+          }
+          return cpm * conversionRate;
+        }
+      });
+      const bidRequest = deepClone(simpleBidRequest);
+
       // Floor price currency shouldn't be populated without a floor price
+      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
       expect(payload.imp[0].bidfloorcur).to.not.exist;
 
       // Default floor price currency
@@ -361,67 +382,74 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].bidfloor).to.equal(0.05);
       expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
-      // Floor price currency
-      bidRequest.params.bidFloorCur = 'eUR';
+      // Floor price sent as is when currency cannot be converted to default bid adapter currency
+      bidRequest.params.bidFloorCur = 'UAH';
+      bidRequest.params.bidFloor = 0.05;
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
       expect(payload.imp[0].bidfloor).to.equal(0.05);
-      expect(payload.imp[0].bidfloorcur).to.equal('EUR');
+      expect(payload.imp[0].bidfloorcur).to.equal('UAH');
+
+      // Floor price currency converted to default bid adapter currency
+      bidRequest.params.bidFloorCur = 'eUR';
+      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.08750000000000001);
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
       // getFloor defined -> use it over bidFloor
-      let getFloorResponse = { currency: 'USD', floor: 3 };
+      const getFloorResponse = { currency: 'USD', floor: 3 };
       bidRequest.getFloor = () => getFloorResponse;
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
       expect(payload.imp[0].bidfloor).to.equal(3);
-      // expect(payload.imp[0].bidfloorcur).to.equal('USD');
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
     });
 
-    it('should add GDPR consent string', function () {
+    it('should add GDPR consent string', async function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
       expect(payload.user.ext.consent).to.equal('CONSENT');
       expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.deep.equal('1~1.35.41.101');
     });
 
-    it('should not add consented providers when empty', function () {
+    it('should not add consented providers when empty', async function () {
       const bidderRequestGdprEmptyAddtl = deepClone(bidderRequestGdpr);
       bidderRequestGdprEmptyAddtl.gdprConsent.addtlConsent = '1~';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdprEmptyAddtl))[0].data);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdprEmptyAddtl))[0].data);
       expect(payload.user.ext.consented_providers_settings).to.not.exist;
     });
 
-    it('should add ConsentedProvidersSettings when extend mode enabled', function () {
+    it('should add ConsentedProvidersSettings when extend mode enabled', async function () {
       const bidRequest = deepClone(extendBidRequest);
-      const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
       expect(payload.user.ext.consent).to.equal('CONSENT');
       expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.equal('1~1.35.41.101');
       expect(payload.user.ext.consented_providers_settings).to.not.exist;
     });
 
-    it('should add CCPA consent string', function () {
+    it('should add CCPA consent string', async function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
+      const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
       const payload = JSON.parse(request[0].data);
       expect(payload.regs.ext.us_privacy).to.equal('1YYY');
     });
 
-    it('should add COPPA flag', function () {
+    it('should add COPPA flag', async function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('coppa').returns(true);
       let bidRequest = Object.assign({}, simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      let payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.coppa).to.equal(1);
       getConfigStub.withArgs('coppa').returns(false);
       bidRequest = Object.assign({}, simpleBidRequest);
-      payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.coppa).to.equal(0);
     });
 
-    it('should add referrer', function () {
+    it('should add referrer', async function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
+      const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestReferrer))[0];
       const payload = JSON.parse(request.data);
       expect(payload.site.page).to.equal('https://blah.com/test.html');
     });
@@ -493,8 +521,8 @@ describe('Improve Digital Adapter Tests', function () {
         const videoTestInvParam = Object.assign({}, videoTest);
         videoTestInvParam.blah = 1;
         bidRequest.params.video = videoTestInvParam;
-        let request = spec.buildRequests([bidRequest], {})[0];
-        let payload = JSON.parse(request.data);
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
         expect(payload.imp[0].video.blah).not.to.exist;
       });
 
@@ -528,8 +556,25 @@ describe('Improve Digital Adapter Tests', function () {
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.schain = schain;
-      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+
+      // Add schain to both locations in the bid
+      bidRequest.ortb2 = {
+        source: {
+          ext: {schain: schain}
+        }
+      };
+
+      // Add schain to bidderRequest as well
+      const modifiedBidderRequest = {
+        ...bidderRequestReferrer,
+        ortb2: {
+          source: {
+            ext: {schain: schain}
+          }
+        }
+      };
+
+      const request = spec.buildRequests([bidRequest], modifiedBidderRequest)[0];
       const payload = JSON.parse(request.data);
       expect(payload.source.ext.schain).to.equal(schain);
     });
@@ -625,22 +670,22 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should not set site when app is defined in FPD', function () {
       const ortb2 = {app: {content: 'XYZ'}};
-      let request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
-      let payload = JSON.parse(request.data);
+      const request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
+      const payload = JSON.parse(request.data);
       expect(payload.site).does.not.exist;
       expect(payload.app).does.exist;
       expect(payload.app.content).does.exist.and.equal('XYZ');
     });
 
-    it('should set correct site params', function () {
-      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
+    it('should set correct site params', async function () {
+      let request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest(bidderRequestReferrer))[0];
       let payload = JSON.parse(request.data);
       expect(payload.site.content).does.not.exist;
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
 
       const ortb2 = {site: {content: 'ZZZ'}};
-      request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest({...bidderRequestReferrer, ortb2}))[0];
+      request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest({...bidderRequestReferrer, ortb2}))[0];
       payload = JSON.parse(request.data);
       expect(payload.site.content).does.exist.and.equal('ZZZ');
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
@@ -681,6 +726,28 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].ext.bidder).to.not.exist;
       expect(payload.imp[0].ext.prebid.bidder.improvedigital.placementId).to.equal(123456);
       expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal('123456');
+    });
+
+    it('should add max_bids param in imp.ext objects when bidLimit is specified in the bidderRequest', function () {
+      const bidderRequestDeepClone = deepClone(bidderRequest);
+      bidderRequestDeepClone.bidLimit = 3;
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequestDeepClone);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+    });
+
+    it('should not add max_bids param in imp.ext objects when bidLimit is not specified in the bidderRequest', function () {
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
     });
 
     it('should set extend url when extend mode enabled in adunit params', function () {
@@ -981,7 +1048,7 @@ describe('Improve Digital Adapter Tests', function () {
         width: 728,
         height: 90,
         ttl: 300,
-        ad: '\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"publisherId":1234,"placementId":1053688,"keyValues":{"testKey":["testValue"]},"bidFloor":0.05,"bidFloorCur":"eUR","size":{"w":800,"h":600}},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]}},"sizes":[[300,250],[160,600]]},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=728 height=90 src=\\"https://creative.360yield.com/file/241121/728x90.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"510265\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"35adfe19-d6e9-46b9-9f7d-20da7026b965","cpm":1.9200543539802946,"currency":"EUR","width":728,"height":90,"creative_id":"510265","creativeId":"510265","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        ad: '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
         creativeId: '510265',
         dealId: 320896,
         netRevenue: false,
@@ -991,7 +1058,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     const multiFormatExpectedBid = [
       Object.assign({}, expectedBid[0], {
-        ad: '\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"publisherId":1234,"placementId":1053688},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]},"native":{},"video":{"context":"outstream","playerSize":[640,480]}},"sizes":[[300,250],[160,600]],"nativeParams":{"body":{"required":true}}},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=728 height=90 src=\\"https://creative.360yield.com/file/241121/728x90.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"510265\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"35adfe19-d6e9-46b9-9f7d-20da7026b965","cpm":1.9200543539802946,"currency":"EUR","width":728,"height":90,"creative_id":"510265","creativeId":"510265","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        ad: '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
       })
     ];
 
@@ -1004,7 +1071,7 @@ describe('Improve Digital Adapter Tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        ad: '\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"publisherId":1234,"placementId":1053688,"keyValues":{"testKey":["testValue"]},"bidFloor":0.05,"bidFloorCur":"eUR","size":{"w":800,"h":600}},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]}},"sizes":[[300,250],[160,600]]},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=300 height=250 src=\\"https://creative.360yield.com/file/238052/test_ads-300x250.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"479163\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"83c8d524-0955-4d0c-b558-4c9f3600e09b","cpm":1.9200543539802946,"currency":"EUR","width":300,"height":250,"creative_id":"479163","creativeId":"479163","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com" target="_blank"><img style="border: 0;" border="0" width=300 height=250 src="https://creative.360yield.com/file/238052/test_ads-300x250.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="479163" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        ad: '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com" target="_blank"><img style="border: 0;" border="0" width=300 height=250 src="https://creative.360yield.com/file/238052/test_ads-300x250.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="479163" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
         creativeId: '479163',
         dealId: 320896,
         netRevenue: false,
@@ -1281,7 +1348,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should attach usp consent to iframe sync url', function () {
       spec.buildRequests([simpleBidRequest], bidderRequest);
-      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, null, uspConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, null, uspConsent);
       expect(syncs).to.deep.equal([{ type: 'iframe', url: `${basicIframeSyncUrl}&us_privacy=${uspConsent}` }]);
     });
 
@@ -1307,8 +1374,8 @@ describe('Improve Digital Adapter Tests', function () {
       spec.buildRequests([simpleBidRequest], {});
       const rawResponse = deepClone(serverResponse)
       deepSetValue(rawResponse, 'body.ext.responsetimemillis', {a: 1, b: 1, c: 1, d: 1, e: 1})
-      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [rawResponse]);
-      let url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e'
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [rawResponse]);
+      const url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e'
       expect(syncs).to.deep.equal([{ type: 'iframe', url }]);
     });
   });

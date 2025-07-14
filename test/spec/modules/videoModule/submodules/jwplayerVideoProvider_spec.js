@@ -11,7 +11,7 @@ import {
 } from 'libraries/video/constants/ortb.js';
 
 import {
-  SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, videoEvents
+  SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, AD_STARTED, SEEK_END, videoEvents
 } from 'libraries/video/constants/events.js';
 
 import { PLAYBACK_MODE } from 'libraries/video/constants/constants.js';
@@ -26,6 +26,7 @@ function getPlayerMock() {
     getVolume: function () {},
     getConfig: function () {},
     getHeight: function () {},
+    getContainer: function () {},
     getWidth: function () {},
     getFullscreen: function () {},
     getPlaylistItem: function () {},
@@ -51,6 +52,9 @@ function makePlayerFactoryMock(playerMock_) {
 function getUtilsMock() {
   return {
     getJwConfig: function () {},
+    getPlayerHeight: function () {},
+    getPlayerWidth: function () {},
+    getPlayerSizeFromAspectRatio: function () {},
     getSupportedMediaTypes: function () {},
     getStartDelay: function () {},
     getPlacement: function () {},
@@ -114,7 +118,7 @@ describe('JWPlayerProvider', function () {
     });
 
     it('should trigger failure when jwplayer version is under min supported version', function () {
-      let jwplayerMock = () => {};
+      const jwplayerMock = () => {};
       jwplayerMock.version = '8.20.0';
       const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
@@ -127,7 +131,7 @@ describe('JWPlayerProvider', function () {
 
     it('should trigger failure when div is missing', function () {
       removeDiv();
-      let jwplayerMock = () => {};
+      const jwplayerMock = () => {};
       const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});
@@ -212,6 +216,8 @@ describe('JWPlayerProvider', function () {
       player.getWidth = () => test_width;
       player.getFullscreen = () => true; //
 
+      utils.getPlayerHeight = () => 100;
+      utils.getPlayerWidth = () => 200;
       utils.getSupportedMediaTypes = () => [test_media_type];
       utils.getStartDelay = () => test_start_delay;
       utils.getPlacement = () => test_placement;
@@ -317,6 +323,28 @@ describe('JWPlayerProvider', function () {
     });
   });
 
+  describe('setAdXml', function () {
+    it('should not call loadAdXml when xml is missing', function () {
+      const player = getPlayerMock();
+      const loadSpy = player.loadAdXml = sinon.spy();
+      const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
+      provider.init();
+      provider.setAdXml();
+      expect(loadSpy.called).to.be.false;
+    });
+
+    it('should call loadAdXml with xml and options', function () {
+      const player = getPlayerMock();
+      const loadSpy = player.loadAdXml = sinon.spy();
+      const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
+      provider.init();
+      const xml = '<VAST></VAST>';
+      const options = {foo: 'bar'};
+      provider.setAdXml(xml, options);
+      expect(loadSpy.calledOnceWith(xml, options)).to.be.true;
+    });
+  });
+
   describe('events', function () {
     it('should register event listener on player', function () {
       const player = getPlayerMock();
@@ -359,7 +387,7 @@ describe('JWPlayerProvider', function () {
 });
 
 describe('adStateFactory', function () {
-  let adState = adStateFactory();
+  const adState = adStateFactory();
 
   beforeEach(() => {
     adState.clearState();
@@ -493,7 +521,7 @@ describe('adStateFactory', function () {
 });
 
 describe('timeStateFactory', function () {
-  let timeState = timeStateFactory();
+  const timeState = timeStateFactory();
 
   beforeEach(() => {
     timeState.clearState();
@@ -546,7 +574,7 @@ describe('timeStateFactory', function () {
 });
 
 describe('callbackStorageFactory', function () {
-  let callbackStorage = callbackStorageFactory();
+  const callbackStorage = callbackStorageFactory();
 
   beforeEach(() => {
     callbackStorage.clearStorage();
@@ -599,7 +627,7 @@ describe('utils', function () {
     });
 
     it('should set vendor config params to top level', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         params: {
           vendorConfig: {
             'test': 'a',
@@ -612,7 +640,7 @@ describe('utils', function () {
     });
 
     it('should convert video module params', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         mute: true,
         autoStart: true,
         licenseKey: 'key'
@@ -624,7 +652,7 @@ describe('utils', function () {
     });
 
     it('should apply video module params only when absent from vendor config', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         mute: true,
         autoStart: true,
         licenseKey: 'key',
@@ -643,7 +671,7 @@ describe('utils', function () {
     });
 
     it('should not convert undefined properties', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         params: {
           vendorConfig: {
             test: 'a'
@@ -657,7 +685,7 @@ describe('utils', function () {
     });
 
     it('should exclude fallback ad block when setupAds is explicitly disabled', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         setupAds: false,
         params: {
 
@@ -669,7 +697,7 @@ describe('utils', function () {
     });
 
     it('should set advertising block when setupAds is allowed', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         params: {
           vendorConfig: {
             advertising: {
@@ -684,22 +712,97 @@ describe('utils', function () {
     });
 
     it('should fallback to vast plugin', function () {
-      let jwConfig = getJwConfig({});
+      const jwConfig = getJwConfig({});
 
       expect(jwConfig).to.have.property('advertising');
       expect(jwConfig.advertising).to.have.property('client', 'vast');
     });
   });
+
+  describe('getPlayerHeight', function () {
+    const getPlayerHeight = utils.getPlayerHeight;
+
+    it('should return height from API when defined', function () {
+      const expectedHeight = 500;
+      const playerMock = { getHeight: () => expectedHeight };
+      expect(getPlayerHeight(playerMock, {})).to.equal(expectedHeight);
+    });
+
+    it('should return height from config when API returns undefined', function () {
+      const expectedHeight = 500;
+      const playerMock = { getHeight: () => undefined };
+      expect(getPlayerHeight(playerMock, { height: 500 })).to.equal(expectedHeight);
+    });
+  });
+
+  describe('getPlayerWidth', function () {
+    const getPlayerWidth = utils.getPlayerWidth;
+
+    it('should return width from API when defined', function () {
+      const expectedWidth = 1000;
+      const playerMock = { getWidth: () => expectedWidth };
+      expect(getPlayerWidth(playerMock, {})).to.equal(expectedWidth);
+    });
+
+    it('should return width from config when API returns undefined', function () {
+      const expectedWidth = 1000;
+      const playerMock = { getWidth: () => undefined };
+      expect(getPlayerWidth(playerMock, { width: expectedWidth })).to.equal(expectedWidth);
+    });
+
+    it('should return undefined when width is string', function () {
+      const playerMock = { getWidth: () => undefined };
+      expect(getPlayerWidth(playerMock, { width: '50%' })).to.be.undefined;
+    });
+  });
+
+  describe('getPlayerSizeFromAspectRatio', function () {
+    const getPlayerSizeFromAspectRatio = utils.getPlayerSizeFromAspectRatio;
+    const testContainer = {
+      clientWidth: 640,
+      clientHeight: 480
+    };
+
+    it('should return an empty object when width and aspectratio are not strings', function () {
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {width: 100})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2', width: 100})).to.deep.equal({});
+    });
+
+    it('should return an empty object when aspectratio is malformed', function () {
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '0.5', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1-2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: ':2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: ':', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2:3', width: '100%'})).to.deep.equal({});
+    });
+
+    it('should return an empty object when player container cannot be obtained', function () {
+      expect(getPlayerSizeFromAspectRatio({}, {aspectratio: '1:2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => undefined }, {aspectratio: '1:2', width: '100%'})).to.deep.equal({});
+    });
+
+    it('should calculate the size given the width percentage and aspect ratio', function () {
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '2:1', width: '100%'})).to.deep.equal({ height: 320, width: 640 });
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '4:1', width: '70%'})).to.deep.equal({ height: 112, width: 448 });
+    });
+
+    it('should return the container height when smaller than the calculated height', function () {
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:1', width: '100%'})).to.deep.equal({ height: 480, width: 640 });
+    });
+  });
+
   describe('getSkipParams', function () {
     const getSkipParams = utils.getSkipParams;
 
     it('should return an empty object when skip is not configured', function () {
-      let skipParams = getSkipParams({});
+      const skipParams = getSkipParams({});
       expect(skipParams).to.be.empty;
     });
 
     it('should set skip to false when explicitly configured', function () {
-      let skipParams = getSkipParams({
+      const skipParams = getSkipParams({
         skipoffset: -1
       });
       expect(skipParams.skip).to.be.equal(0);
@@ -709,7 +812,7 @@ describe('utils', function () {
 
     it('should be skippable when skip offset is set', function () {
       const skipOffset = 3;
-      let skipParams = getSkipParams({
+      const skipParams = getSkipParams({
         skipoffset: skipOffset
       });
       expect(skipParams.skip).to.be.equal(1);
@@ -863,7 +966,7 @@ describe('utils', function () {
     it('should return the first audio track language code if the getCurrentAudioTrack returns undefined', function () {
       const player = getPlayerMock();
       player.getAudioTracks = () => sampleAudioTracks;
-      let languageCode = utils.getIsoLanguageCode(player);
+      const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.equal('ht');
     });
 
@@ -871,7 +974,7 @@ describe('utils', function () {
       const player = getPlayerMock();
       player.getAudioTracks = () => sampleAudioTracks;
       player.getCurrentAudioTrack = () => null;
-      let languageCode = utils.getIsoLanguageCode(player);
+      const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.equal('ht');
     });
 
@@ -889,6 +992,58 @@ describe('utils', function () {
       player.getCurrentAudioTrack = () => 2;
       const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.equal('es');
+    });
+  });
+
+  describe('getJwEvent', function () {
+    const getJwEvent = utils.getJwEvent;
+    it('should map known events', function () {
+      expect(getJwEvent(SETUP_COMPLETE)).to.equal('ready');
+      expect(getJwEvent(SEEK_END)).to.equal('seeked');
+      expect(getJwEvent(AD_STARTED)).to.equal(AD_IMPRESSION);
+    });
+
+    it('should return event name when not mapped', function () {
+      expect(getJwEvent('custom')).to.equal('custom');
+    });
+  });
+
+  describe('getSegments', function () {
+    const getSegments = utils.getSegments;
+    it('should return undefined for empty input', function () {
+      expect(getSegments()).to.be.undefined;
+      expect(getSegments([])).to.be.undefined;
+    });
+
+    it('should convert segments to objects', function () {
+      const segs = ['a', 'b'];
+      expect(getSegments(segs)).to.deep.equal([
+        {id: 'a'},
+        {id: 'b'}
+      ]);
+    });
+  });
+
+  describe('getContentDatum', function () {
+    const getContentDatum = utils.getContentDatum;
+    it('should return undefined when no data provided', function () {
+      expect(getContentDatum()).to.be.undefined;
+    });
+
+    it('should set media id and segments', function () {
+      const segments = [{id: 'x'}];
+      expect(getContentDatum('id1', segments)).to.deep.equal({
+        name: 'jwplayer.com',
+        segment: segments,
+        ext: { cids: ['id1'], segtax: 502 }
+      });
+    });
+
+    it('should set only media id when segments missing', function () {
+      expect(getContentDatum('id2')).to.deep.equal({
+        name: 'jwplayer.com',
+        ext: { cids: ['id2'] }
+      });
     });
   });
 });

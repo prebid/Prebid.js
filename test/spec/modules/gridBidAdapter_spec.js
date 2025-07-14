@@ -14,7 +14,7 @@ describe('TheMediaGrid Adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'grid',
       'params': {
         'uid': '1'
@@ -30,7 +30,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -56,7 +56,7 @@ describe('TheMediaGrid Adapter', function () {
       }
     };
     const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'grid',
         'params': {
@@ -449,7 +449,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should add gpp information to the request via bidderRequest.gppConsent', function () {
-      let consentString = 'abc1234';
+      const consentString = 'abc1234';
       const gppBidderRequest = Object.assign({gppConsent: {gppString: consentString, applicableSections: [8]}}, bidderRequest);
 
       const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
@@ -461,7 +461,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
-      let consentString = 'abc1234';
+      const consentString = 'abc1234';
       const gppBidderRequest = {
         ...bidderRequest,
         ortb2: {
@@ -540,7 +540,13 @@ describe('TheMediaGrid Adapter', function () {
       };
       const bidRequestsWithSChain = bidRequests.map((bid) => {
         return Object.assign({
-          schain: schain
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
         }, bid);
       });
       const [request] = spec.buildRequests(bidRequestsWithSChain, bidderRequest);
@@ -786,7 +792,7 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
-    it('should prioritize pbadslot over adslot', function() {
+    it('should prioritize gpid over adslot', function() {
       const ortb2Imp = [{
         ext: {
           data: {
@@ -801,8 +807,8 @@ describe('TheMediaGrid Adapter', function () {
             adserver: {
               adslot: 'adslot'
             },
-            pbadslot: 'pbadslot'
-          }
+          },
+          gpid: 'pbadslot'
         }
       }];
       const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 2).map((bid, ind) => {
@@ -812,7 +818,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload.imp[0].ext.gpid).to.equal(ortb2Imp[0].ext.data.adserver.adslot);
-      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.data.pbadslot);
+      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.gpid);
     });
 
     it('should prioritize gpid over pbadslot and adslot', function() {
@@ -884,7 +890,7 @@ describe('TheMediaGrid Adapter', function () {
       const fpdUserIdNumVal = 2345543345;
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
         arg => arg === 'tmguid' ? fpdUserIdNumVal : null);
-      let bidRequestWithNumId = {
+      const bidRequestWithNumId = {
         'bidder': 'grid',
         'params': {
           'uid': 1,
@@ -949,6 +955,33 @@ describe('TheMediaGrid Adapter', function () {
       payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(null);
     })
+
+    it('should add ORTB2 device data to the request', function () {
+      const bidderRequestWithDevice = {
+        ...bidderRequest,
+        ...{
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            },
+          },
+        },
+      };
+
+      const [request] = spec.buildRequests([bidRequests[0]], bidderRequestWithDevice);
+      const payload = parseRequest(request.data);
+
+      expect(payload.device).to.deep.equal(bidderRequestWithDevice.ortb2.device);
+    });
 
     describe('floorModule', function () {
       const floorTestData = {
@@ -1576,7 +1609,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should register the Emily iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 

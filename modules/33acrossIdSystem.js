@@ -27,6 +27,7 @@ const GVLID = 58;
 
 const STORAGE_FPID_KEY = '33acrossIdFp';
 const STORAGE_TPID_KEY = '33acrossIdTp';
+const STORAGE_HEM_KEY = '33acrossIdHm'
 const DEFAULT_1PID_SUPPORT = true;
 const DEFAULT_TPID_SUPPORT = true;
 
@@ -59,7 +60,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
+function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -95,6 +96,11 @@ function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
   const tp = getStoredValue(STORAGE_TPID_KEY, enabledStorageTypes);
   if (tp) {
     params.tp = encodeURIComponent(tp);
+  }
+
+  const hem = pubProvidedHem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  if (hem) {
+    params.sha256 = encodeURIComponent(hem);
   }
 
   return params;
@@ -139,14 +145,55 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
-function handleSupplementalId(key, id, storageConfig) {
-  id
-    ? storeValue(key, id, storageConfig)
-    : deleteFromStorage(key);
+function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, envelopeAvailable }) {
+  const ids = [];
+
+  if (storeFpid) {
+    ids.push(
+      /**
+       * [
+       *   <storage key>,
+       *   < ID value to store or remove >,
+       *   < clear flag: indicates if existing storage item should be removed or not based on certain condition>
+       * ]
+       */
+      [STORAGE_FPID_KEY, fp, !fp],
+      [STORAGE_HEM_KEY, hem, !envelopeAvailable] // Clear hashed email if envelope is not available
+    );
+  }
+
+  if (storeTpid) {
+    ids.push([STORAGE_TPID_KEY, tp, !tp]);
+  }
+
+  return ids;
+}
+
+function updateSupplementalIdStorage(supplementalId, storageConfig) {
+  const [ key, id, clear ] = supplementalId;
+
+  if (clear) {
+    deleteFromStorage(key);
+
+    return;
+  }
+
+  if (id) {
+    storeValue(key, id, storageConfig);
+  }
+}
+
+function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }) {
+  filterEnabledSupplementalIds(ids, options).forEach((supplementalId) => {
+    updateSupplementalIdStorage(supplementalId, {
+      enabledStorageTypes,
+      expires
+    })
+  });
 }
 
 /** @type {Submodule} */
-export const thirthyThreeAcrossIdSubmodule = {
+export const thirtyThreeAcrossIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -175,7 +222,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -188,7 +235,13 @@ export const thirthyThreeAcrossIdSubmodule = {
       return;
     }
 
-    const { pid, storeFpid = DEFAULT_1PID_SUPPORT, storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL } = params;
+    const {
+      storeFpid = DEFAULT_1PID_SUPPORT,
+      storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL,
+      pid,
+      hem
+    } = params;
+    const pubProvidedHem = hem || window._33across?.hem?.sha256;
 
     return {
       callback(cb) {
@@ -203,22 +256,22 @@ export const thirthyThreeAcrossIdSubmodule = {
             }
 
             if (!responseObj.envelope) {
-              deleteFromStorage(MODULE_NAME);
-            }
-
-            if (storeFpid) {
-              handleSupplementalId(STORAGE_FPID_KEY, responseObj.fp, {
-                enabledStorageTypes,
-                expires: storageConfig.expires
+              ['', '_last', '_exp', '_cst'].forEach(suffix => {
+                deleteFromStorage(`${MODULE_NAME}${suffix}`);
               });
             }
 
-            if (storeTpid) {
-              handleSupplementalId(STORAGE_TPID_KEY, responseObj.tp, {
-                enabledStorageTypes,
-                expires: storageConfig.expires
-              });
-            }
+            handleSupplementalIds({
+              fp: responseObj.fp,
+              tp: responseObj.tp,
+              hem: pubProvidedHem
+            }, {
+              storeFpid,
+              storeTpid,
+              envelopeAvailable: !!responseObj.envelope,
+              enabledStorageTypes,
+              expires: storageConfig.expires
+            });
 
             cb(responseObj.envelope);
           },
@@ -227,7 +280,7 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes), {
+        }, calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes), {
           method: 'GET',
           withCredentials: true
         });
@@ -246,4 +299,4 @@ export const thirthyThreeAcrossIdSubmodule = {
   }
 };
 
-submodule('userId', thirthyThreeAcrossIdSubmodule);
+submodule('userId', thirtyThreeAcrossIdSubmodule);

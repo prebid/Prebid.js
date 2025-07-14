@@ -2,10 +2,10 @@ import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizes
 import {ajax, fetch} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { EVENTS, STATUS } from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {includes as strIncludes} from '../src/polyfill.js';
+
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
@@ -40,7 +40,7 @@ const _pageInfo = {
 };
 
 function getParameterByName(param) {
-  let vars = {};
+  const vars = {};
   window.location.href.replace(location.hash, '').replace(
     /[?&]+([^=&]+)=?([^&]*)?/gi,
     function (m, key, value) {
@@ -52,7 +52,7 @@ function getParameterByName(param) {
 
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
-    let newSessionId = generateUUID();
+    const newSessionId = generateUUID();
     storage.setDataInLocalStorage(localStoragePrefix.concat('session_id'), newSessionId);
   }
   initOptions.sessionId = getSessionId();
@@ -64,7 +64,7 @@ function updateSessionIdTimeout() {
 }
 
 function isSessionIdTimeoutExpired() {
-  let cpmSessionTimestamp = storage.getDataFromLocalStorage(localStoragePrefix.concat('session_timeout'));
+  const cpmSessionTimestamp = storage.getDataFromLocalStorage(localStoragePrefix.concat('session_timeout'));
   return Date.now() - cpmSessionTimestamp > 3600000;
 }
 
@@ -73,7 +73,7 @@ function getSessionId() {
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = storage.getDataFromLocalStorage(localStoragePrefix.concat('utm_timeout'));
+  const utmTimestamp = storage.getDataFromLocalStorage(localStoragePrefix.concat('utm_timeout'));
   return (Date.now() - utmTimestamp) > 3600000;
 }
 
@@ -139,8 +139,8 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
             if (typeof events.auctions[args.auctionId] === 'undefined') {
               events.auctions[args.auctionId] = { bids: {} };
             } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
-              let bidResponse = events.auctions[args.auctionId]['bids'][args.requestId];
-              bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
+              const bidResponse = events.auctions[args.auctionId]['bids'][args.requestId];
+              bidResponse.isBid = true;
               bidResponse.cpm = args.cpm;
               bidResponse.currency = args.currency;
               bidResponse.netRevenue = args.netRevenue;
@@ -155,7 +155,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               bidResponse.responseTimestamp = args.responseTimestamp;
               bidResponse.bidForSize = args.size;
               for (const [adserverTargetingKey, adserverTargetingValue] of Object.entries(args.adserverTargeting)) {
-                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !strIncludes(adserverTargetingKey, ele))) {
+                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !adserverTargetingKey.includes(ele))) {
                   bidResponse['adserverTargeting-' + adserverTargetingKey] = adserverTargetingValue;
                 }
               }
@@ -222,11 +222,11 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
 });
 
 yuktamediaAnalyticsAdapter.buildUtmTagData = function (options) {
-  let utmTagData = {};
+  const utmTagData = {};
   let utmTagsDetected = false;
   if (typeof options.enableUTMCollection !== 'undefined' && options.enableUTMCollection) {
     utmTags.forEach(function (utmTagKey) {
-      let utmTagValue = getParameterByName(utmTagKey);
+      const utmTagValue = getParameterByName(utmTagKey);
       if (utmTagValue !== '') {
         utmTagsDetected = true;
       }

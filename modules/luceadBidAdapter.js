@@ -75,7 +75,7 @@ function buildRequests(bidRequests, bidderRequest) {
           sizes: bidRequest.sizes,
           media_types: bidRequest.mediaTypes,
           placement_id: bidRequest.params.placementId,
-          schain: bidRequest.schain,
+          schain: bidRequest?.ortb2?.source?.ext?.schain,
         };
       }),
     }),
@@ -152,7 +152,7 @@ function report(type, data) {
 function onBidWon(bid) {
   logInfo('Bid won', bid);
 
-  let data = {
+  const data = {
     bid_id: bid?.bidId,
     placement_id: bid.params ? (bid?.params[0]?.placementId || '0') : '0',
     spent: bid?.cpm,

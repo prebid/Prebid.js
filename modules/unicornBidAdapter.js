@@ -102,9 +102,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
 }
 
 const initializeEids = (bidRequest) => {
-  let eids = [];
+  const eids = [];
 
-  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
   if (id5) {
     eids.push({
       source: 'id5-sync.com',
@@ -135,7 +135,7 @@ const interpretResponse = (serverResponse, request) => {
           ad: b.adm,
           ttl: 1000,
           creativeId: b.crid,
-          netRevenue: false,
+          netRevenue: true,
           currency: res.cur
         }
 

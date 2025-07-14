@@ -7,7 +7,7 @@ import { createEidsArray } from 'modules/userId/eids.js';
 describe('vrtcalBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  let bidRequest = {
+  const bidRequest = {
     bidId: 'bidID0001',
     transactionId: 'transID0001',
     sizes: [[ 300, 250 ]]
@@ -20,7 +20,7 @@ describe('vrtcalBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'vrtcal',
         'adUnitCode': 'adunit0001',
@@ -98,7 +98,7 @@ describe('vrtcalBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should form compliant bid object response', function () {
-      let res = {
+      const res = {
         body: {
           id: 'bidID0001',
           seatbid: [{
@@ -119,11 +119,11 @@ describe('vrtcalBidAdapter', function () {
         }
       }
 
-      let ir = spec.interpretResponse(res, bidRequest)
+      const ir = spec.interpretResponse(res, bidRequest)
 
       expect(ir.length).to.equal(1)
 
-      let en = ir[0]
+      const en = ir[0]
 
       expect(en.requestId != null &&
             en.cpm != null && typeof en.cpm === 'number' &&

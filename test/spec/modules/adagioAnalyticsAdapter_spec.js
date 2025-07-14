@@ -5,8 +5,8 @@ import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 
-let adapterManager = require('src/adapterManager').default;
-let events = require('src/events');
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
 
 describe('adagio analytics adapter - adagio.js', () => {
   let sandbox;
@@ -53,7 +53,7 @@ describe('adagio analytics adapter - adagio.js', () => {
     it('builds and sends auction data', () => {
       const w = utils.getWindowTop();
 
-      let bidRequest = {
+      const bidRequest = {
         bids: [{
           adUnitCode: 'div-1',
           params: {
@@ -78,7 +78,7 @@ describe('adagio analytics adapter - adagio.js', () => {
           },
         }],
       };
-      let bidResponse = {
+      const bidResponse = {
         bidderCode: 'adagio',
         width: 300,
         height: 250,
@@ -287,141 +287,192 @@ const AUCTION_INIT_ANOTHER = {
     },
   } ],
   'adUnitCodes': ['/19968336/header-bid-tag-1', '/19968336/footer-bid-tag-1'],
-  'bidderRequests': [ {
-    'bidderCode': 'another',
-    'auctionId': AUCTION_ID,
-    'bidderRequestId': '1be65d7958826a',
-    'bids': [ {
-      'bidder': 'another',
-      'params': {
-        'publisherId': '1001',
-      },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [[640, 480]]
-        }
-      },
-      'adUnitCode': '/19968336/header-bid-tag-1',
-      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-      'sizes': [[640, 480]],
-      'bidId': '2ecff0db240757',
-      'bidderRequestId': '1be65d7958826a',
+  'bidderRequests': [
+    {
+      'bidderCode': 'another',
       'auctionId': AUCTION_ID,
-      'src': 'client',
-      'bidRequestsCount': 1
-    }, {
-      'bidder': 'another',
-      'params': {
-        'publisherId': '1001'
-      },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [[640, 480]]
-        }
-      },
-      'adUnitCode': '/19968336/footer-bid-tag-1',
-      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-      'sizes': [[640, 480]],
-      'bidId': '2ecff0db240757',
       'bidderRequestId': '1be65d7958826a',
-      'auctionId': AUCTION_ID,
-      'src': 'client',
-      'bidRequestsCount': 1
-    }, {
-      'bidder': 'nobid',
-      'params': {
-        'publisherId': '1001'
+      'bids': [
+        {
+          'bidder': 'another',
+          'params': {
+            'publisherId': '1001',
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[640, 480]]
+            }
+          },
+          'adUnitCode': '/19968336/header-bid-tag-1',
+          'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+          'sizes': [[640, 480]],
+          'bidId': '2ecff0db240757',
+          'bidderRequestId': '1be65d7958826a',
+          'auctionId': AUCTION_ID,
+          'src': 'client',
+          'bidRequestsCount': 1
+        },
+        {
+          'bidder': 'another',
+          'params': {
+            'publisherId': '1001'
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[640, 480]]
+            }
+          },
+          'adUnitCode': '/19968336/footer-bid-tag-1',
+          'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+          'sizes': [[640, 480]],
+          'bidId': '2ecff0db240757',
+          'bidderRequestId': '1be65d7958826a',
+          'auctionId': AUCTION_ID,
+          'src': 'client',
+          'bidRequestsCount': 1
+        },
+      ],
+      'timeout': 3000,
+      'refererInfo': {
+        'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
       },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [[640, 480]]
+      'ortb2': {
+        'site': {
+          'ext': {
+            'data': {
+              'adg_rtd': {
+                ...ADG_RTD
+              },
+              ...ORTB_DATA
+            }
+          }
         }
-      },
-      'adUnitCode': '/19968336/footer-bid-tag-1',
-      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-      'sizes': [[640, 480]],
-      'bidId': '2ecff0db240757',
-      'bidderRequestId': '1be65d7958826a',
-      'auctionId': AUCTION_ID,
-      'src': 'client',
-      'bidRequestsCount': 1
-    }, {
-      'bidder': 'anotherWithAlias',
-      'params': {
-        'publisherId': '1001',
-      },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [[640, 480]]
-        }
-      },
-      'adUnitCode': '/19968336/header-bid-tag-1',
-      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-      'sizes': [[640, 480]],
-      'bidId': '2ecff0db240757',
-      'bidderRequestId': '1be65d7958826a',
-      'auctionId': AUCTION_ID,
-      'src': 'client',
-      'bidRequestsCount': 1
+      }
     },
-    ],
-    'timeout': 3000,
-    'refererInfo': {
-      'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+    {
+      'bidderCode': 'nobid',
+      'auctionId': AUCTION_ID,
+      'bidderRequestId': '1be65d7958826a',
+      'bids': [{
+        'bidder': 'nobid',
+        'params': {
+          'publisherId': '1001'
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[640, 480]]
+          }
+        },
+        'adUnitCode': '/19968336/header-bid-tag-1',
+        'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+        'sizes': [[640, 480]],
+        'bidId': '2ecff0db240757',
+        'bidderRequestId': '1be65d7958826a',
+        'auctionId': AUCTION_ID,
+        'src': 'client',
+        'bidRequestsCount': 1
+      }
+      ],
+      'timeout': 3000,
+      'refererInfo': {
+        'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      },
+      'ortb2': {
+        'site': {
+          'ext': {
+            'data': {
+              'adg_rtd': {
+                ...ADG_RTD
+              },
+              ...ORTB_DATA
+            }
+          }
+        }
+      }
     },
-    'ortb2': {
-      'site': {
-        'ext': {
-          'data': {
-            'adg_rtd': {
-              ...ADG_RTD
-            },
-            ...ORTB_DATA
+    {
+      bidderCode: 'anotherWithAlias',
+      'auctionId': AUCTION_ID,
+      'bidderRequestId': '1be65d7958826a',
+      'bids': [
+        {
+          'bidder': 'anotherWithAlias',
+          'params': {
+            'publisherId': '1001',
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[640, 480]]
+            }
+          },
+          'adUnitCode': '/19968336/header-bid-tag-1',
+          'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+          'sizes': [[640, 480]],
+          'bidId': '2ecff0db240757',
+          'bidderRequestId': '1be65d7958826a',
+          'auctionId': AUCTION_ID,
+          'src': 'client',
+          'bidRequestsCount': 1
+        },
+      ],
+      'timeout': 3000,
+      'refererInfo': {
+        'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      },
+      'ortb2': {
+        'site': {
+          'ext': {
+            'data': {
+              'adg_rtd': {
+                ...ADG_RTD
+              },
+              ...ORTB_DATA
+            }
+          }
+        }
+      }
+    },
+    {
+      'bidderCode': 'adagio',
+      'auctionId': AUCTION_ID,
+      'bidderRequestId': '1be65d7958826a',
+      'bids': [ {
+        'bidder': 'adagio',
+        'params': {
+          ...PARAMS_ADG
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[640, 480]]
+          }
+        },
+        'adUnitCode': '/19968336/header-bid-tag-1',
+        'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+        'sizes': [[640, 480]],
+        'bidId': '2ecff0db240757',
+        'bidderRequestId': '1be65d7958826a',
+        'auctionId': AUCTION_ID,
+        'src': 'client',
+        'bidRequestsCount': 1
+      }
+      ],
+      'timeout': 3000,
+      'refererInfo': {
+        'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      },
+      'ortb2': {
+        'site': {
+          'ext': {
+            'data': {
+              'adg_rtd': {
+                ...ADG_RTD
+              },
+              ...ORTB_DATA
+            }
           }
         }
       }
     }
-  }, {
-    'bidderCode': 'adagio',
-    'auctionId': AUCTION_ID,
-    'bidderRequestId': '1be65d7958826a',
-    'bids': [ {
-      'bidder': 'adagio',
-      'params': {
-        ...PARAMS_ADG
-      },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [[640, 480]]
-        }
-      },
-      'adUnitCode': '/19968336/header-bid-tag-1',
-      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-      'sizes': [[640, 480]],
-      'bidId': '2ecff0db240757',
-      'bidderRequestId': '1be65d7958826a',
-      'auctionId': AUCTION_ID,
-      'src': 'client',
-      'bidRequestsCount': 1
-    }
-    ],
-    'timeout': 3000,
-    'refererInfo': {
-      'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
-    },
-    'ortb2': {
-      'site': {
-        'ext': {
-          'data': {
-            'adg_rtd': {
-              ...ADG_RTD
-            },
-            ...ORTB_DATA
-          }
-        }
-      }
-    }
-  }
   ],
   'bidsReceived': [],
   'winningBids': [],

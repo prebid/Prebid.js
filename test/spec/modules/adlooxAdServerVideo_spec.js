@@ -34,7 +34,6 @@ describe('Adloox Ad Server Video', function () {
   };
 
   const analyticsOptions = {
-    js: 'https://j.adlooxtracking.com/ads/js/tfav_adl_%%clientid%%.js',
     client: 'adlooxtest',
     clientid: 127,
     platformid: 0,
@@ -99,7 +98,7 @@ describe('Adloox Ad Server Video', function () {
   });
 
   before(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]);
 
     adapterManager.enableAnalytics({
@@ -154,9 +153,9 @@ describe('Adloox Ad Server Video', function () {
       });
 
       it('should require options.adUnit or options.bid', function (done) {
-        let BID = utils.deepClone(bid);
+        const BID = utils.deepClone(bid);
 
-        let getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
+        const getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
         getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
 
         const ret = buildVideoUrl({ url: vastUrl }, function () {});

@@ -5,7 +5,6 @@ import {
   deepAccess,
   deepClone,
   generateUUID,
-  getDNT,
   getWindowSelf,
   isArray,
   isFn,
@@ -14,6 +13,7 @@ import {
   logError,
   logInfo,
   logWarn,
+  mergeDeep,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM, validateOrtbVideoFields } from '../src/video.js';
@@ -21,7 +21,6 @@ import { Renderer } from '../src/Renderer.js';
 import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
@@ -39,19 +38,33 @@ export const BB_RENDERER_URL = `https://${BB_PUBLICATION}.bbvms.com/r/$RENDERER.
 const CURRENCY = 'USD';
 
 /**
- * Returns the window.ADAGIO global object used to store Adagio data.
- * This object is created in window.top if possible, otherwise in window.self.
+ * Get device data object, with some properties
+ * deviated from the OpenRTB spec.
+ * @param {Object} ortb2Data
+ * @returns {Object} Device data object
  */
-function getDevice() {
+function getDevice(ortb2Data) {
+  const _device = {};
+
+  // Merge the device object from ORTB2 data.
+  if (ortb2Data?.device) {
+    mergeDeep(_device, ortb2Data.device);
+  }
+
+  // If the geo object is not defined, create it.
+  if (!_device.geo) {
+    _device.geo = {};
+  }
+
   const language = navigator.language ? 'language' : 'userLanguage';
-  return {
+  mergeDeep(_device, {
     userAgent: navigator.userAgent,
     language: navigator[language],
-    dnt: getDNT() ? 1 : 0,
-    geo: {},
     js: 1
-  };
-};
+  });
+
+  return _device;
+}
 
 function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
@@ -142,7 +155,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'schain');
+  return deepAccess(bidRequest, 'ortb2.source.ext.schain');
 }
 
 function _getEids(bidRequest) {
@@ -313,7 +326,7 @@ function _getFloors(bidRequest) {
     floors.push(cleanObj({
       mt: mediaType,
       s: isArray(size) ? `${size[0]}x${size[1]}` : undefined,
-      f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : undefined
+      f: (!isNaN(info?.floor) && info?.currency === CURRENCY) ? info?.floor : undefined
     }));
   }
 
@@ -502,7 +515,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const secure = (location.protocol === 'https:') ? 1 : 0;
-    const device = _internal.getDevice();
+    const device = _internal.getDevice(bidderRequest?.ortb2);
     const site = _internal.getSite(bidderRequest);
     const pageviewId = _internal.getAdagioNs().pageviewId;
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
@@ -624,9 +637,18 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
       if (gpid) {
         bidRequest.gpid = gpid;
+      }
+
+      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      if (instl !== undefined) {
+        bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
+      }
+      const rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      if (rwdd !== undefined) {
+        bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
       }
 
       // features are added by the adagioRtdProvider.
@@ -654,6 +676,8 @@ export const spec = {
         nativeParams: bidRequest.nativeParams,
         score: bidRequest.score,
         transactionId: bidRequest.transactionId,
+        instl: bidRequest.instl,
+        rwdd: bidRequest.rwdd,
       }
 
       return adUnit;
@@ -717,7 +741,7 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     try {
       const response = serverResponse.body;
       if (response) {
@@ -732,7 +756,7 @@ export const spec = {
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
-            const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
+            const bidReq = bidRequest.data.adUnits.find(bid => bid.bidId === bidObj.requestId);
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response

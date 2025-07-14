@@ -11,7 +11,7 @@ import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, DEFAULT_DELAY, GVLID, PRIMARY_IDS, parseRequestedAttributes } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -23,7 +23,7 @@ const EVENTS_TOPIC = 'pre_lips';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const calls = {
-  ajaxGet: (url, onSuccess, onError, timeout) => {
+  ajaxGet: (url, onSuccess, onError, timeout, headers) => {
     ajaxBuilder(timeout)(
       url,
       {
@@ -33,7 +33,8 @@ const calls = {
       undefined,
       {
         method: 'GET',
-        withCredentials: true
+        withCredentials: true,
+        customHeaders: headers
       }
     )
   },
@@ -87,12 +88,15 @@ function initializeLiveConnect(configParams) {
   }
 
   configParams = configParams || {};
-  const fpidConfig = configParams.fpid || {};
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     publisherId: publisherId,
-    requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
+    requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides),
+    extraAttributes: {
+      ipv4: configParams.ipv4,
+      ipv6: configParams.ipv6
+    }
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url;
@@ -115,10 +119,6 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
 
-  liveConnectConfig.idCookie = {};
-  liveConnectConfig.idCookie.name = fpidConfig.name;
-  liveConnectConfig.idCookie.strategy = fpidConfig.strategy == 'html5' ? 'localStorage' : fpidConfig.strategy;
-
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -136,8 +136,10 @@ function initializeLiveConnect(configParams) {
   // The second param is the storage object, LS & Cookie manipulation uses PBJS.
   // The third param is the ajax and pixel object, the AJAX and pixel use PBJS.
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
-  if (configParams.emailHash) {
-    liveConnect.push({ hash: configParams.emailHash });
+
+  const sourceEvent = makeSourceEventToSend(configParams)
+  if (sourceEvent != null) {
+    liveConnect.push(sourceEvent);
   }
   return liveConnect;
 }
@@ -184,13 +186,14 @@ export const liveIntentIdSubmodule = {
    */
   decode(value, config) {
     const configParams = (config && config.params) || {};
+    setUpTreatment(configParams);
 
     if (!liveConnect) {
       initializeLiveConnect(configParams);
     }
     tryFireEvent();
 
-    return composeIdObject(value);
+    return composeResult(value, configParams);
   },
 
   /**
@@ -201,6 +204,8 @@ export const liveIntentIdSubmodule = {
    */
   getId(config) {
     const configParams = (config && config.params) || {};
+    setUpTreatment(configParams);
+
     const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
       return;

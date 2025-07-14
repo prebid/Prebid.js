@@ -2,11 +2,13 @@ import { expect } from 'chai';
 import { spec } from 'modules/beopBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 const utils = require('src/utils');
 
-const ENDPOINT = 'https://hb.beop.io/bid';
+const ENDPOINT = 'https://hb.collectiveaudience.co/bid';
 
-let validBid = {
+const validBid = {
   'bidder': 'beop',
   'params': {
     'accountId': '5a8af500c9e77c00017e4cad'
@@ -49,7 +51,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return true if no accountId but networkId', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.params;
       bid.params = {
         'networkId': '5a8af500c9e77c00017e4aaa'
@@ -58,7 +60,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return false if neither account or network id param found', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.params;
       bid.params = {
         'someId': '5a8af500c9e77c00017e4aaa'
@@ -67,7 +69,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return false if account Id param is not an ObjectId', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.params;
       bid.params = {
         'someId': '12345'
@@ -76,7 +78,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return false if there is no banner media type', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.mediaTypes;
       bid.mediaTypes = {
         'native': {
@@ -88,27 +90,36 @@ describe('BeOp Bid Adapter tests', () => {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [];
+    const bidRequests = [];
     bidRequests.push(validBid);
 
     it('should build the request', function () {
-      config.setConfig({'currency': {'adServerCurrency': 'USD'}});
-      const request = spec.buildRequests(bidRequests, {});
-      const payload = JSON.parse(request.data);
-      const url = request.url;
-      expect(url).to.equal(ENDPOINT);
-      expect(payload.pid).to.exist;
-      expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad');
-      expect(payload.gdpr_applies).to.exist;
-      expect(payload.gdpr_applies).to.equals(false);
-      expect(payload.slts[0].name).to.exist;
-      expect(payload.slts[0].name).to.equal('bellow-article');
-      expect(payload.slts[0].flr).to.equal(10);
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
+        }
+      };
+      setCurrencyConfig({ adServerCurrency: 'USD' })
+
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const request = spec.buildRequests(bidRequests, res);
+        const payload = JSON.parse(request.data);
+        const url = request.url;
+        expect(url).to.equal(ENDPOINT);
+        expect(payload.pid).to.exist;
+        expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad');
+        expect(payload.gdpr_applies).to.exist;
+        expect(payload.gdpr_applies).to.equals(false);
+        expect(payload.slts[0].name).to.exist;
+        expect(payload.slts[0].name).to.equal('bellow-article');
+        expect(payload.slts[0].flr).to.equal(10);
+        setCurrencyConfig({});
+      });
     });
 
     it('should call the endpoint with GDPR consent and pageURL info if found', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest =
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest =
       {
         'gdprConsent':
         {
@@ -132,8 +143,8 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.url).to.equal('http://test.te');
     });
 
-    it('should call the endpoint with psegs and bpsegs (stringified) data if any or [] if none', function () {
-      let bidderRequest =
+    it('should call the endpoint with bpsegs (stringified) data if any or [] if none', function () {
+      const bidderRequest =
       {
         'ortb2': {
           'user': {
@@ -149,25 +160,22 @@ describe('BeOp Bid Adapter tests', () => {
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-      expect(payload.psegs).to.exist;
-      expect(payload.psegs).to.include(1234);
-      expect(payload.psegs).to.include(5678);
-      expect(payload.psegs).to.include(910);
-      expect(payload.psegs).to.not.include(1);
       expect(payload.bpsegs).to.exist;
       expect(payload.bpsegs).to.include('axed');
       expect(payload.bpsegs).to.include('axec');
       expect(payload.bpsegs).to.include('1234');
+      expect(payload.bpsegs).to.include('1234');
+      expect(payload.bpsegs).to.include('5678');
+      expect(payload.bpsegs).to.include('910');
+      expect(payload.bpsegs).to.not.include('1');
 
-      let bidderRequest2 =
+      const bidderRequest2 =
       {
         'ortb2': {}
       };
 
       const request2 = spec.buildRequests(bidRequests, bidderRequest2);
       const payload2 = JSON.parse(request2.data);
-      expect(payload2.psegs).to.exist;
-      expect(payload2.psegs).to.be.empty;
       expect(payload2.bpsegs).to.exist;
       expect(payload2.bpsegs).to.be.empty;
     });
@@ -186,7 +194,7 @@ describe('BeOp Bid Adapter tests', () => {
   });
 
   describe('interpretResponse', function() {
-    let serverResponse = {
+    const serverResponse = {
       'body': {
         'bids': [
           {
@@ -231,7 +239,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onTimeout({params: {accountId: '5a8af500c9e77c00017e4cad'}, timeout: 2000});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=timeout');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('pid=5a8af500c9e77c00017e4cad');
@@ -243,7 +251,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onBidWon({params: {accountId: '5a8af500c9e77c00017e4cad'}, cpm: 1.2});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
@@ -254,7 +262,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onBidWon({params: [{accountId: '5a8af500c9e77c00017e4cad'}], cpm: 1.2});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
@@ -268,7 +276,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should work with keywords as an array', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.params.keywords = ['a', 'b'];
       bidRequests.push(bid);
       config.setConfig({
@@ -283,7 +291,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should work with keywords as a string', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.params.keywords = 'list of keywords';
       bidRequests.push(bid);
       config.setConfig({
@@ -297,7 +305,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should work with keywords as a string containing a comma', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.params.keywords = 'list, of, keywords';
       bidRequests.push(bid);
       config.setConfig({
@@ -320,7 +328,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it(`should get eids from bid`, function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.userIdAsEids = [{source: 'provider.com', uids: [{id: 'someid', atype: 1, ext: {whatever: true}}]}];
       bidRequests.push(bid);
 
@@ -330,4 +338,76 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.eids[0].source).to.equal('provider.com');
     });
   })
+
+  describe('Ensure first party cookie is well managed', function () {
+    const bidRequests = [];
+
+    it(`should generate a new uuid`, function () {
+      const bid = Object.assign({}, validBid);
+      bidRequests.push(bid);
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.fg).to.exist;
+    })
+  })
+  describe('getUserSyncs', function () {
+    it('should return iframe sync when iframeEnabled and syncFrame provided', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: false };
+      const serverResponses = [{ body: { sync_frames: ['https://example.com/sync_frame', 'https://example2.com/sync_second'] } }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://example.com/sync_frame');
+    });
+
+    it('should return pixel syncs when pixelEnabled and syncPixels provided', function () {
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          sync_pixels: [
+            'https://example.com/pixel1',
+            'https://example.com/pixel2'
+          ]
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal('https://example.com/pixel1');
+      expect(syncs[1].url).to.equal('https://example.com/pixel2');
+    });
+
+    it('should return both iframe and pixel syncs when both options are enabled', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          sync_frames: ['https://example.com/sync_frame'],
+          sync_pixels: ['https://example.com/pixel1']
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[1].type).to.equal('image');
+    });
+
+    it('should return empty array when no serverResponses', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when no syncFrame or syncPixels provided', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{ body: {} }];
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+  });
 });

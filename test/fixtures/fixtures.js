@@ -1,5 +1,5 @@
 // jscs:disable
-import { TARGETING_KEYS, STATUS } from 'src/constants.js';
+import { TARGETING_KEYS } from 'src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
@@ -822,6 +822,68 @@ export function getAdUnits() {
   ];
 };
 
+export function getTwinAdUnits() {
+  return [
+    {
+      'code': '/19968336/header-bid-tag1',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [
+              728,
+              90
+            ]
+          ]
+        }
+      },
+      'bids': [
+        {
+          'bidder': 'pubmatic',
+          'params': {
+            'publisherId': 1234567,
+            'adSlot': '1234567@728x90'
+          }
+        },
+        {
+          'bidder': 'medianet',
+          'params': {
+            'cid': '8CUWQS47C',
+            'crid': '241882766'
+          },
+        },
+      ]
+    },
+    {
+      'code': '/19968336/header-bid-tag1',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [
+              970,
+              90
+            ]
+          ]
+        }
+      },
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '543221'
+          }
+        },
+        {
+          'bidder': 'medianet',
+          'params': {
+            'cid': '8CUWQS47C',
+            'crid': '241882764'
+          },
+        },
+      ]
+    }
+  ]
+}
+
 export function getBidResponsesFromAPI() {
   return {
     '/19968336/header-bid-tag-0': {
@@ -1226,7 +1288,7 @@ export function getCurrencyRates() {
 }
 
 export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType}) {
-  let bid = {
+  const bid = {
     'bidderCode': bidder,
     'width': '300',
     'height': '250',
@@ -1262,7 +1324,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
   if (typeof status !== 'undefined') {
     bid.status = status;
   }
-  return Object.assign(createBid(STATUS.GOOD), bid);
+  return Object.assign(createBid(), bid);
 }
 
 export function getServerTestingsAds() {

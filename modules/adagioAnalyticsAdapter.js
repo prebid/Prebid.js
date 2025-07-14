@@ -68,6 +68,7 @@ const cache = {
     return { auctionId: null, adUnitCode: null }
   }
 };
+
 const enc = window.encodeURIComponent;
 
 /**
@@ -195,7 +196,14 @@ function handlerAuctionInit(event) {
   const w = getBestWindowForAdagio();
 
   const prebidAuctionId = event.auctionId;
-  const adUnitCodes = removeDuplicates(event.adUnitCodes, adUnitCode => adUnitCode);
+
+  // adUnitCodes come from `event.bidderRequests` to be sure to keep the ad-units that are valid and will be effectively used during the auction.
+  // This array can be different than `event.adUnitCodes` because of the usage of conditionnal ad-units (see: https://docs.prebid.org/dev-docs/conditional-ad-units.html)
+  const adUnitCodes = new Set(
+    event.bidderRequests
+      .map(br => br.bids.map(bid => bid.adUnitCode))
+      .flat()
+  );
 
   // Check if Adagio is on the bid requests.
   const adagioBidRequest = event.bidderRequests.find(bidRequest => isAdagio(bidRequest.bidderCode));
@@ -207,6 +215,7 @@ function handlerAuctionInit(event) {
 
   adUnitCodes.forEach(adUnitCode => {
     // event.adUnits are splitted by mediatypes
+    // having twin ad-unit codes is ok: https://docs.prebid.org/dev-docs/adunit-reference.html#twin-adunit-codes
     const adUnits = event.adUnits.filter(adUnit => adUnit.code === adUnitCode);
 
     // Get all bidders configured for the ad unit.
@@ -222,7 +231,7 @@ function handlerAuctionInit(event) {
       mediaTypeKey => mediaTypeKey
     ).map(mediaType => getMediaTypeAlias(mediaType)).sort();
     const bannerSizes = removeDuplicates(
-      mediaTypes.filter(mediaType => mediaType.hasOwnProperty(BANNER))
+      mediaTypes.filter(mediaType => mediaType.hasOwnProperty(BANNER) && mediaType[BANNER].hasOwnProperty('sizes'))
         .map(mediaType => mediaType[BANNER].sizes.map(size => size.join('x')))
         .flat(),
       bannerSize => bannerSize
@@ -236,6 +245,7 @@ function handlerAuctionInit(event) {
       const request = event.bidderRequests.find(br => br.bidderCode === bidder)
       return request ? request.bids[0].src : null
     }
+
     const biddersSrc = sortedBidderNames.map(bidSrcMapper).join(',');
     const biddersCode = sortedBidderNames.map(bidder => adapterManager.resolveAlias(bidder)).join(',');
 
@@ -350,7 +360,7 @@ function handlerAuctionEnd(event) {
 }
 
 function handlerBidWon(event) {
-  let auctionId = getTargetedAuctionId(event);
+  const auctionId = getTargetedAuctionId(event);
 
   if (!guard.bidTracked(auctionId, event.adUnitCode)) {
     return;
@@ -386,7 +396,7 @@ function handlerBidWon(event) {
 
 function handlerAdRender(event, isSuccess) {
   const { adUnitCode } = event.bid;
-  let auctionId = getTargetedAuctionId(event.bid);
+  const auctionId = getTargetedAuctionId(event.bid);
 
   if (!guard.bidTracked(auctionId, adUnitCode)) {
     return;
@@ -473,7 +483,7 @@ function gamSlotCallback(event) {
   }
 }
 
-let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
+const adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
   track: function(event) {
     const { eventType, args } = event;
     try {
@@ -525,7 +535,7 @@ adagioAdapter.originEnableAnalytics = adagioAdapter.enableAnalytics;
 adagioAdapter.enableAnalytics = config => {
   _internal.getAdagioNs().versions.adagioAnalyticsAdapter = VERSION;
 
-  let modules = getGlobal().installedModules;
+  const modules = getGlobal().installedModules;
   if (modules && (!modules.length || modules.indexOf('adagioRtdProvider') === -1 || modules.indexOf('rtdModule') === -1)) {
     logError('Adagio Analytics Adapter requires rtdModule & adagioRtdProvider modules which are not installed. No beacon will be sent');
     return;

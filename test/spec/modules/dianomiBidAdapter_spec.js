@@ -3,12 +3,14 @@ import { assert } from 'chai';
 import { spec } from 'modules/dianomiBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Dianomi adapter', () => {
   let bids = [];
 
   describe('isBidRequestValid', () => {
-    let bid = {
+    const bid = {
       bidder: 'dianomi',
       params: {
         smartadId: 1234,
@@ -39,13 +41,13 @@ describe('Dianomi adapter', () => {
       config.resetConfig();
     });
     it('should send request with correct structure', () => {
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
       ];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://www-prebid.dianomi.com/cgi-bin/smartads_prebid.pl');
@@ -54,12 +56,12 @@ describe('Dianomi adapter', () => {
 
     describe('user privacy', () => {
       it('should send GDPR Consent data to Dianomi if gdprApplies', () => {
-        let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
-        let bidderRequest = {
+        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
+        const bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
         };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user.ext.consent, bidderRequest.gdprConsent.consentString);
         assert.equal(request.regs.ext.gdpr, bidderRequest.gdprConsent.gdprApplies);
@@ -67,19 +69,19 @@ describe('Dianomi adapter', () => {
       });
 
       it('should send gdpr as number', () => {
-        let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
-        let bidderRequest = {
+        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
+        const bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
         };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(typeof request.regs.ext.gdpr, 'number');
         assert.equal(request.regs.ext.gdpr, 1);
       });
 
       it('should send CCPA Consent data to dianomi', () => {
-        let validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
+        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } };
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
@@ -98,7 +100,7 @@ describe('Dianomi adapter', () => {
       });
 
       it('should not send GDPR Consent data to dianomi if gdprApplies is undefined', () => {
-        let validBidRequests = [
+        const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
@@ -123,13 +125,13 @@ describe('Dianomi adapter', () => {
         assert.equal(request.regs, undefined);
       });
       it('should send default GDPR Consent data to dianomi', () => {
-        let validBidRequests = [
+        const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
         ];
-        let request = JSON.parse(
+        const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
@@ -139,29 +141,29 @@ describe('Dianomi adapter', () => {
     });
 
     it('should have default request structure', () => {
-      let keys = 'site,device,source,ext,imp'.split(',');
-      let validBidRequests = [
+      const keys = 'site,device,source,ext,imp'.split(',');
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
       ];
-      let request = JSON.parse(
+      const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
-      let data = Object.keys(request);
+      const data = Object.keys(request);
 
       assert.deepEqual(keys, data);
     });
 
     it('should set request keys correct values', () => {
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
       ];
-      let request = JSON.parse(
+      const request = JSON.parse(
         spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}, ortb2: {source: {tid: 'tid'}}}).data
       );
 
@@ -173,13 +175,13 @@ describe('Dianomi adapter', () => {
       config.setConfig({
         device: { w: 100, h: 100 },
       });
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
       ];
-      let request = JSON.parse(
+      const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
 
@@ -193,14 +195,14 @@ describe('Dianomi adapter', () => {
         app: { id: 'appid' },
       });
       const ortb2 = { app: { name: 'appname' } };
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
           ortb2,
         },
       ];
-      let request = JSON.parse(
+      const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data
       );
 
@@ -225,15 +227,15 @@ describe('Dianomi adapter', () => {
           },
         },
       };
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
           ortb2,
         },
       ];
-      let refererInfo = { page: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
+      const refererInfo = { page: 'page' };
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
         page: refererInfo.page,
@@ -246,7 +248,7 @@ describe('Dianomi adapter', () => {
     });
 
     it('should pass extended ids', () => {
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
@@ -260,36 +262,44 @@ describe('Dianomi adapter', () => {
         },
       ];
 
-      let request = JSON.parse(
+      const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
       assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
     });
 
     it('should send currency if defined', () => {
-      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
-      let validBidRequests = [{ params: { smartadId: 1234 } }];
-      let refererInfo = { page: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
-
-      assert.deepEqual(request.cur, ['EUR']);
+      setCurrencyConfig({ adServerCurrency: 'EUR' })
+      const validBidRequests = [{ params: { smartadId: 1234 } }];
+      const refererInfo = { page: 'page' };
+      return addFPDToBidderRequest({ refererInfo }).then(res => {
+        const request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        assert.deepEqual(request.cur, ['EUR']);
+        setCurrencyConfig({});
+      });
     });
 
     it('should pass supply chain object', () => {
-      let validBidRequests = [
+      const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          schain: {
-            validation: 'strict',
-            config: {
-              ver: '1.0',
-            },
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                  },
+                }
+              }
+            }
           },
         },
       ];
 
-      let request = JSON.parse(
+      const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
       assert.deepEqual(request.source.ext.schain, {
@@ -302,26 +312,26 @@ describe('Dianomi adapter', () => {
 
     describe('priceType', () => {
       it('should send default priceType', () => {
-        let validBidRequests = [
+        const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
         ];
-        let request = JSON.parse(
+        const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
         assert.equal(request.ext.pt, 'net');
       });
       it('should send correct priceType value', () => {
-        let validBidRequests = [
+        const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
         ];
-        let request = JSON.parse(
+        const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
@@ -331,7 +341,7 @@ describe('Dianomi adapter', () => {
 
     describe('bids', () => {
       it('should add more than one bid to the request', () => {
-        let validBidRequests = [
+        const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
@@ -341,14 +351,14 @@ describe('Dianomi adapter', () => {
             params: { smartadId: 1234 },
           },
         ];
-        let request = JSON.parse(
+        const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         );
 
         assert.equal(request.imp.length, 2);
       });
       it('should add incrementing values of id', () => {
-        let validBidRequests = [
+        const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
@@ -365,7 +375,7 @@ describe('Dianomi adapter', () => {
             mediaTypes: { video: {} },
           },
         ];
-        let imps = JSON.parse(
+        const imps = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
         ).imp;
 
@@ -379,7 +389,7 @@ describe('Dianomi adapter', () => {
           const validBidRequests = [
             { bidId: 'bidId', params: { smartadId: 1234 }, mediaTypes: { video: {} } },
           ];
-          let imp = getRequestImps(validBidRequests)[0];
+          const imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, undefined);
@@ -387,25 +397,31 @@ describe('Dianomi adapter', () => {
 
         it('should not add if floor price not defined', () => {
           const validBidRequests = [getBidWithFloor()];
-          let imp = getRequestImps(validBidRequests)[0];
+          const imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, 'USD');
         });
 
         it('should request floor price in adserver currency', () => {
-          config.setConfig({ currency: { adServerCurrency: 'GBP' } });
+          setCurrencyConfig({ adServerCurrency: 'GBP' })
           const validBidRequests = [getBidWithFloor()];
-          let imp = getRequestImps(validBidRequests)[0];
+          const refererInfo = { page: 'page' };
+          return addFPDToBidderRequest({ refererInfo }).then(res => {
+            const imp = JSON.parse(
+              spec.buildRequests(validBidRequests, res).data
+            ).imp[0];
 
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'GBP');
+            assert.equal(imp.bidfloor, undefined);
+            assert.equal(imp.bidfloorcur, 'GBP');
+            setCurrencyConfig({});
+          });
         });
 
         it('should add correct floor values', () => {
           const expectedFloors = [1, 1.3, 0.5];
           const validBidRequests = expectedFloors.map(getBidWithFloor);
-          let imps = getRequestImps(validBidRequests);
+          const imps = getRequestImps(validBidRequests);
 
           expectedFloors.forEach((floor, index) => {
             assert.equal(imps[index].bidfloor, floor);
@@ -429,7 +445,7 @@ describe('Dianomi adapter', () => {
 
       describe('multiple media types', () => {
         it('should use all configured media types for bidding', () => {
-          let validBidRequests = [
+          const validBidRequests = [
             {
               bidId: 'bidId',
               params: { smartadId: 1234 },
@@ -469,7 +485,7 @@ describe('Dianomi adapter', () => {
               },
             },
           ];
-          let [first, second, third] = JSON.parse(
+          const [first, second, third] = JSON.parse(
             spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
           ).imp;
 
@@ -489,7 +505,7 @@ describe('Dianomi adapter', () => {
 
       describe('banner', () => {
         it('should convert sizes to openrtb format', () => {
-          let validBidRequests = [
+          const validBidRequests = [
             {
               bidId: 'bidId',
               params: { smartadId: 1234 },
@@ -503,7 +519,7 @@ describe('Dianomi adapter', () => {
               },
             },
           ];
-          let { banner } = JSON.parse(
+          const { banner } = JSON.parse(
             spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
           ).imp[0];
           assert.deepEqual(banner, {
@@ -517,7 +533,7 @@ describe('Dianomi adapter', () => {
 
       describe('video', () => {
         it('should pass video mediatype config', () => {
-          let validBidRequests = [
+          const validBidRequests = [
             {
               bidId: 'bidId',
               params: { smartadId: 1234 },
@@ -530,7 +546,7 @@ describe('Dianomi adapter', () => {
               },
             },
           ];
-          let { video } = JSON.parse(
+          const { video } = JSON.parse(
             spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
           ).imp[0];
           assert.deepEqual(video, {
@@ -544,7 +560,7 @@ describe('Dianomi adapter', () => {
       describe('native', () => {
         describe('assets', () => {
           it('should set correct asset id', () => {
-            let validBidRequests = [
+            const validBidRequests = [
               {
                 bidId: 'bidId',
                 params: { smartadId: 1234 },
@@ -562,7 +578,7 @@ describe('Dianomi adapter', () => {
                 },
               },
             ];
-            let assets = JSON.parse(
+            const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
 
@@ -571,7 +587,7 @@ describe('Dianomi adapter', () => {
             assert.equal(assets[2].id, 4);
           });
           it('should add required key if it is necessary', () => {
-            let validBidRequests = [
+            const validBidRequests = [
               {
                 bidId: 'bidId',
                 params: { smartadId: 1234 },
@@ -591,7 +607,7 @@ describe('Dianomi adapter', () => {
               },
             ];
 
-            let assets = JSON.parse(
+            const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
 
@@ -602,7 +618,7 @@ describe('Dianomi adapter', () => {
           });
 
           it('should map img and data assets', () => {
-            let validBidRequests = [
+            const validBidRequests = [
               {
                 bidId: 'bidId',
                 params: { smartadId: 1234 },
@@ -618,7 +634,7 @@ describe('Dianomi adapter', () => {
               },
             ];
 
-            let assets = JSON.parse(
+            const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
             assert.ok(assets[0].title);
@@ -648,7 +664,7 @@ describe('Dianomi adapter', () => {
                 },
               ];
 
-              let assets = JSON.parse(
+              const assets = JSON.parse(
                 spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
               ).imp[0].native.assets;
               assert.ok(assets[0].img);
@@ -685,7 +701,7 @@ describe('Dianomi adapter', () => {
               },
             ];
 
-            let assets = JSON.parse(
+            const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
             ).imp[0].native.assets;
             assert.ok(assets[0].img);
@@ -730,13 +746,13 @@ describe('Dianomi adapter', () => {
 
   describe('interpretResponse', () => {
     it('should return if no body in response', () => {
-      let serverResponse = {};
-      let bidRequest = {};
+      const serverResponse = {};
+      const bidRequest = {};
 
       assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
     });
     it('should return more than one bids', () => {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           seatbid: [
             {
@@ -766,7 +782,7 @@ describe('Dianomi adapter', () => {
           ],
         },
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [
           {
@@ -809,7 +825,7 @@ describe('Dianomi adapter', () => {
     });
 
     it('should parse seatbids', () => {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           seatbid: [
             {
@@ -847,7 +863,7 @@ describe('Dianomi adapter', () => {
           ],
         },
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [
           {
@@ -934,7 +950,7 @@ describe('Dianomi adapter', () => {
     });
 
     it('should set correct values to bid', () => {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           id: null,
           bidid: null,
@@ -964,7 +980,7 @@ describe('Dianomi adapter', () => {
           cur: 'USD',
         },
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [
           {
@@ -1075,7 +1091,7 @@ describe('Dianomi adapter', () => {
           cur: 'USD',
         },
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [{ bidId: 'bidId1' }],
       };
@@ -1108,7 +1124,7 @@ describe('Dianomi adapter', () => {
           cur: 'USD',
         },
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [{ bidId: 'bidId1' }],
       };
@@ -1118,7 +1134,7 @@ describe('Dianomi adapter', () => {
 
     describe('banner', () => {
       it('should set ad content on response', () => {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             seatbid: [
               {
@@ -1127,7 +1143,7 @@ describe('Dianomi adapter', () => {
             ],
           },
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {
@@ -1147,7 +1163,7 @@ describe('Dianomi adapter', () => {
 
     describe('video', () => {
       it('should set vastXml on response', () => {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             seatbid: [
               {
@@ -1156,7 +1172,7 @@ describe('Dianomi adapter', () => {
             ],
           },
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {
@@ -1174,7 +1190,7 @@ describe('Dianomi adapter', () => {
       });
 
       it('should add renderer for outstream bids', () => {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             seatbid: [
               {
@@ -1186,7 +1202,7 @@ describe('Dianomi adapter', () => {
             ],
           },
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {
@@ -1218,10 +1234,10 @@ describe('Dianomi adapter', () => {
   });
 
   describe('UserSyncs', () => {
-    let usersyncIframeUrl = 'https://www-prebid.dianomi.com/prebid/usersync/index.html?';
-    let usersyncRedirectUrl = 'https://data.dianomi.com/frontend/usync?';
+    const usersyncIframeUrl = 'https://www-prebid.dianomi.com/prebid/usersync/index.html?';
+    const usersyncRedirectUrl = 'https://data.dianomi.com/frontend/usync?';
     it('should register the usersync iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         iframeEnabled: true,
       });
 
@@ -1229,7 +1245,7 @@ describe('Dianomi adapter', () => {
     });
 
     it('should register the usersync redirect', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true,
       });
 

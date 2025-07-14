@@ -168,7 +168,7 @@ function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return null;
   }
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'EUR',
     mediaType: '*',
     size: '*'

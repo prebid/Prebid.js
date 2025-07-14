@@ -43,15 +43,15 @@ export const fabrickIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
    * @param {SubmoduleConfig} [config]
-   * @param {ConsentData}
-   * @param {Object} cacheIdObj - existing id, if any consentData]
+   * @param {ConsentData} consentData
+   * @param {Object} cacheIdObj - existing id, if any
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
     try {
       const configParams = (config && config.params) || {};
       if (window.fabrickMod1) {
-        window.fabrickMod1(configParams, consentData, cacheIdObj);
+        window.fabrickMod1(configParams, consentData?.gdpr, cacheIdObj);
       }
       if (!configParams || !configParams.apiKey || typeof configParams.apiKey !== 'string') {
         logError('fabrick submodule requires an apiKey.');
@@ -59,15 +59,15 @@ export const fabrickIdSubmodule = {
       }
       try {
         let url = _getBaseUrl(configParams);
-        let keysArr = Object.keys(configParams);
-        for (let i in keysArr) {
-          let k = keysArr[i];
+        const keysArr = Object.keys(configParams);
+        for (const i in keysArr) {
+          const k = keysArr[i];
           if (k === 'url' || k === 'refererInfo' || (k.length > 3 && k.substring(0, 3) === 'max')) {
             continue;
           }
-          let v = configParams[k];
+          const v = configParams[k];
           if (Array.isArray(v)) {
-            for (let j in v) {
+            for (const j in v) {
               if (typeof v[j] === 'string' || typeof v[j] === 'number') {
                 url += `${k}=${v[j]}&`;
               }
@@ -96,7 +96,7 @@ export const fabrickIdSubmodule = {
             success: response => {
               if (window.fabrickMod2) {
                 return window.fabrickMod2(
-                  callback, response, configParams, consentData, cacheIdObj);
+                  callback, response, configParams, consentData?.gdpr, cacheIdObj);
               } else {
                 let responseObj;
                 if (response) {

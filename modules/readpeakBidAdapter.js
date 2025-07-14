@@ -16,9 +16,11 @@ const NATIVE_DEFAULTS = {
 };
 
 const BIDDER_CODE = 'readpeak';
+const GVLID = 290;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
 
   supportedMediaTypes: [NATIVE, BANNER],
 
@@ -136,7 +138,7 @@ function impression(slot) {
       mediaType: 'native',
       size: '\*'
     });
-    bidFloorFromModule = floorInfo.currency === 'USD' ? floorInfo.floor : undefined;
+    bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
   }
   const imp = {
     id: slot.bidId,

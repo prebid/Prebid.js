@@ -45,6 +45,11 @@ describe('Adloox Analytics Adapter', function () {
     adapter: analyticsAdapter
   });
   describe('enableAnalytics', function () {
+    afterEach(function () {
+      analyticsAdapter.disableAnalytics();
+      expect(analyticsAdapter.context).is.null;
+    });
+
     describe('invalid options', function () {
       it('should require options', function (done) {
         adapterManager.enableAnalytics({
@@ -58,6 +63,32 @@ describe('Adloox Analytics Adapter', function () {
       it('should reject non-string options.js', function (done) {
         const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
         analyticsOptionsLocal.js = function () { };
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.null;
+
+        done();
+      });
+
+      it('should accept subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://test.adlooxtracking.com/test.js';
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.not.null;
+
+        done();
+      });
+
+      it('should reject non-subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://example.com/test.js';
 
         adapterManager.enableAnalytics({
           provider: analyticsAdapterName,
@@ -113,7 +144,7 @@ describe('Adloox Analytics Adapter', function () {
 
   describe('process', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
 
       sandbox.stub(events, 'getEvents').returns([]);
 
@@ -139,7 +170,7 @@ describe('Adloox Analytics Adapter', function () {
 
         const uri = utils.parseUrl(analyticsAdapter.url(analyticsOptions.js));
         const isLinkPreloadAsScript = function(arg) {
-          const href_uri = utils.parseUrl(arg.href);	// IE11 requires normalisation (hostname always includes port)
+          const href_uri = utils.parseUrl(arg.href);  // IE11 requires normalisation (hostname always includes port)
           return arg.tagName === 'LINK' && arg.getAttribute('rel') === 'preload' && arg.getAttribute('as') === 'script' && href_uri.href === uri.href;
         };
 
@@ -169,7 +200,7 @@ describe('Adloox Analytics Adapter', function () {
 
         events.emit(EVENTS.BID_WON, bid);
 
-        const [urlInserted, moduleCode] = loadExternalScriptStub.getCall(0).args;
+        const [urlInserted, _, moduleCode] = loadExternalScriptStub.getCall(0).args;
 
         expect(urlInserted.substr(0, url.length)).to.equal(url);
         expect(moduleCode).to.equal(analyticsAdapterName);

@@ -9,7 +9,6 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import { parseUrl, buildUrl, logError } from '../src/utils.js';
-import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 /**
@@ -33,15 +32,15 @@ function isHex(s) {
 }
 
 function publinkIdUrl(params, consentData, storedId) {
-  let url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
+  const url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
     mpn: 'Prebid.js',
     mpv: '$prebid.version$',
   };
 
-  if (consentData) {
-    url.search.gdpr = (consentData.gdprApplies) ? 1 : 0;
-    url.search.gdpr_consent = consentData.consentString;
+  if (consentData?.gdpr) {
+    url.search.gdpr = (consentData.gdpr.gdprApplies) ? 1 : 0;
+    url.search.gdpr_consent = consentData.gdpr.consentString;
   }
 
   if (params) {
@@ -60,7 +59,7 @@ function publinkIdUrl(params, consentData, storedId) {
     url.search.publink = storedId;
   }
 
-  const usPrivacyString = uspDataHandler.getConsentData();
+  const usPrivacyString = consentData?.usp;
   if (usPrivacyString && typeof usPrivacyString === 'string') {
     url.search.us_privacy = usPrivacyString;
   }
@@ -71,9 +70,9 @@ function publinkIdUrl(params, consentData, storedId) {
 function makeCallback(config = {}, consentData, storedId) {
   return function(prebidCallback) {
     const options = {method: 'GET', withCredentials: true};
-    let handleResponse = function(responseText, xhr) {
+    const handleResponse = function(responseText, xhr) {
       if (xhr.status === 200) {
-        let response = JSON.parse(responseText);
+        const response = JSON.parse(responseText);
         if (response) {
           prebidCallback(response.publink);
         }

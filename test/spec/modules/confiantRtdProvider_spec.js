@@ -14,14 +14,24 @@ const {
 
 describe('Confiant RTD module', function () {
   describe('setupPage()', function() {
+    let logErrorStub;
+    beforeEach(function() {
+      logErrorStub = sinon.stub(utils, 'logError');
+    });
+    afterEach(function() {
+      logErrorStub.restore();
+    });
+
     it('should return false if propertId is not present in config', function() {
       expect(setupPage({})).to.be.false;
       expect(setupPage({ params: {} })).to.be.false;
       expect(setupPage({ params: { propertyId: '' } })).to.be.false;
+      expect(logErrorStub.callCount).to.equal(3);
     });
 
     it('should return true if expected parameters are present', function() {
       expect(setupPage({ params: { propertyId: 'clientId' } })).to.be.true;
+      expect(logErrorStub.callCount).to.equal(0);
     });
   });
 
