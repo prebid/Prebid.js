@@ -247,7 +247,6 @@ module.exports = [
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
-      'one-var': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
       'camelcase': 'off',
