@@ -57,7 +57,7 @@ MACRO['targetelt'] = function(b, c) {
   return c.toselector(b);
 };
 MACRO['creatype'] = function(b, c) {
-  return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
+  return b.mediaType === 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
 };
 MACRO['pageurl'] = function(b, c) {
   const refererInfo = getRefererInfo();
@@ -224,7 +224,7 @@ analyticsAdapter.url = function(url, args, bid) {
 
 const preloaded = {};
 analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
-  if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
+  if (!(auctionDetails.auctionStatus === AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
 
   const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
   const href = `${uri.protocol}://${uri.host}${uri.pathname}`;

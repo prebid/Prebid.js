@@ -181,9 +181,9 @@ export const spec = {
         });
 
         if (syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type == 'iframe');
+          syncs = syncs.filter(s => s.type === 'iframe');
         } else if (syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type == 'image');
+          syncs = syncs.filter(s => s.type === 'image');
         }
       }
     });

@@ -486,7 +486,7 @@ function getBidFloor(bidRequest, mediaType, sizes) {
 
       return {
         ...floorData,
-        size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
+          size: size && size.length === 2 ? {width: size[0], height: size[1]} : null,
         floor: floorData.floor != null ? floorData.floor : null
       };
   };

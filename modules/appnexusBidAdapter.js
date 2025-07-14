@@ -369,9 +369,9 @@ export const spec = {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
           const tmp = {'source': eid.source, 'id': uid.id};
-          if (eid.source == 'adserver.org') {
+          if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
-          } else if (eid.source == 'uidapi.com') {
+          } else if (eid.source === 'uidapi.com') {
             tmp.rti_partner = 'UID2';
           }
           eids.push(tmp);
@@ -395,7 +395,7 @@ export const spec = {
       if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
         const tpData = [];
         pubDsaObj.transparency.forEach((tpObj) => {
-          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+          if (isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
             tpData.push(tpObj);
           }
         });
@@ -675,7 +675,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
 
     let jsTrackers = nativeAd.javascript_trackers;
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined) {
       jsTrackers = viewScript;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, viewScript];

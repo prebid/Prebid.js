@@ -155,7 +155,7 @@ export const spec = {
 
     if (bid.trackers && bid.trackers.length > 0) {
       for (var i = 0; i < bid.trackers.length; i++) {
-        if (bid.trackers[i].type == 0) {
+          if (bid.trackers[i].type === 0) {
           utils.triggerPixel(bid.trackers[i].url);
         }
       }
