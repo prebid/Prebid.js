@@ -36,15 +36,15 @@ describe('storage manager', function() {
 
   it('should allow to set cookie for core modules without checking gdpr enforcements', function () {
     const coreStorage = getCoreStorageManager();
-    let date = new Date();
+    const date = new Date();
     date.setTime(date.getTime() + (24 * 60 * 60 * 1000));
-    let expires = date.toUTCString();
+    const expires = date.toUTCString();
     coreStorage.setCookie('hello', 'world', expires);
     expect(coreStorage.getCookie('hello')).to.equal('world');
   });
 
   it('should add done callbacks to storageCallbacks array', function () {
-    let noop = sinon.spy();
+    const noop = sinon.spy();
     const coreStorage = newStorageManager();
 
     coreStorage.setCookie('foo', 'bar', null, null, null, noop);
@@ -64,7 +64,7 @@ describe('storage manager', function() {
   });
 
   it('should allow bidder to access device if gdpr enforcement module is not included', function () {
-    let deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
+    const deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
     const storage = newStorageManager();
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);

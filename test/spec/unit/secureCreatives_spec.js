@@ -101,7 +101,7 @@ describe('secureCreatives', () => {
         renderer: null
       }, obj);
       auction.getBidsReceived = function() {
-        let bidsReceived = getBidResponses();
+        const bidsReceived = getBidResponses();
         bidsReceived.push(adResponse);
         return bidsReceived;
       }
@@ -390,7 +390,7 @@ describe('secureCreatives', () => {
       });
 
       it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
-        let adId = 3;
+        const adId = 3;
         pushBidResponseToAuction({ adId });
 
         const data = {
@@ -541,7 +541,7 @@ describe('secureCreatives', () => {
       window.googletag = origGpt;
     });
     function mockSlot(elementId, pathId) {
-      let targeting = {};
+      const targeting = {};
       return {
         getSlotElementId: sinon.stub().callsFake(() => elementId),
         getAdUnitPath: sinon.stub().callsFake(() => pathId),

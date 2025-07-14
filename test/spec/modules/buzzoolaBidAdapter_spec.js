@@ -258,9 +258,9 @@ describe('buzzoolaBidAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    let videoBidRequests = [VIDEO_BID];
-    let bannerBidRequests = [BANNER_BID];
-    let nativeBidRequests = [NATIVE_BID];
+    const videoBidRequests = [VIDEO_BID];
+    const bannerBidRequests = [BANNER_BID];
+    const nativeBidRequests = [NATIVE_BID];
 
     const bannerRequest = spec.buildRequests(bannerBidRequests, BANNER_BID_REQUEST);
     const nativeRequest = spec.buildRequests(nativeBidRequests, NATIVE_BID_REQUEST);

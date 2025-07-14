@@ -136,7 +136,6 @@ module.exports = [
       'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
-      'import-x/no-named-default': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',
@@ -237,14 +236,8 @@ module.exports = [
       'no-unused-vars': 'off',
       'import/extensions': 'off',
       'camelcase': 'off',
-      'import-x/no-duplicates': 'off',
-      'no-loss-of-precision': 'off',
-      'no-redeclare': 'off',
       'no-global-assign': 'off',
-      'default-case-last': 'off',
-      '@stylistic/no-mixed-spaces-and-tabs': 'off',
-      '@stylistic/no-tabs': 'off',
-      '@stylistic/no-trailing-spaces': 'error',
+      'default-case-last': 'off'
     }
   },
   {

@@ -156,7 +156,7 @@ describe('AdTrueBidAdapter', function () {
   describe('implementation', function () {
     describe('Bid validations', function () {
       it('valid bid case', function () {
-        let validBid = {
+        const validBid = {
             bidder: 'adtrue',
             params: {
               zoneId: '21423',
@@ -167,7 +167,7 @@ describe('AdTrueBidAdapter', function () {
         expect(isValid).to.equal(true);
       });
       it('invalid bid case: publisherId not passed', function () {
-        let validBid = {
+        const validBid = {
             bidder: 'adtrue',
             params: {
               zoneId: '21423'
@@ -177,7 +177,7 @@ describe('AdTrueBidAdapter', function () {
         expect(isValid).to.equal(false);
       });
       it('valid bid case: zoneId is not passed', function () {
-        let validBid = {
+        const validBid = {
             bidder: 'adtrue',
             params: {
               publisherId: '1212'
@@ -259,15 +259,15 @@ describe('AdTrueBidAdapter', function () {
     });
     describe('Request formation', function () {
       it('buildRequests function should not modify original bidRequests object', function () {
-        let originalBidRequests = utils.deepClone(bidRequests);
-        let request = spec.buildRequests(bidRequests, {
+        const originalBidRequests = utils.deepClone(bidRequests);
+        const request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'
         });
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
 
       it('Endpoint/method checking', function () {
-        let request = spec.buildRequests(bidRequests, {
+        const request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'
         });
         expect(request.url).to.equal('https://hb.adtrue.com/prebid/auction');
@@ -275,17 +275,17 @@ describe('AdTrueBidAdapter', function () {
       });
 
       it('test flag not sent when adtrueTest=true is absent in page url', function () {
-        let request = spec.buildRequests(bidRequests, {
+        const request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'
         });
-        let data = JSON.parse(request.data);
+        const data = JSON.parse(request.data);
         expect(data.test).to.equal(undefined);
       });
       it('Request params check', function () {
-        let request = spec.buildRequests(bidRequests, {
+        const request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'
         });
-        let data = JSON.parse(request.data);
+        const data = JSON.parse(request.data);
         expect(data.at).to.equal(1); // auction  type
         expect(data.cur[0]).to.equal('USD'); // currency
         expect(data.site.domain).to.be.a('string'); // domain should be set
@@ -300,14 +300,14 @@ describe('AdTrueBidAdapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
       it('Request params check with GDPR Consent', function () {
-        let bidRequest = {
+        const bidRequest = {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
             gdprApplies: true
           }
         };
-        let request = spec.buildRequests(bidRequests, bidRequest);
-        let data = JSON.parse(request.data);
+        const request = spec.buildRequests(bidRequests, bidRequest);
+        const data = JSON.parse(request.data);
         expect(data.user.ext.consent).to.equal('kjfdniwjnifwenrif3');
         expect(data.at).to.equal(1); // auction type
         expect(data.cur[0]).to.equal('USD'); // currency
@@ -323,11 +323,11 @@ describe('AdTrueBidAdapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
       it('Request params check with USP/CCPA Consent', function () {
-        let bidRequest = {
+        const bidRequest = {
           uspConsent: '1NYN'
         };
-        let request = spec.buildRequests(bidRequests, bidRequest);
-        let data = JSON.parse(request.data);
+        const request = spec.buildRequests(bidRequests, bidRequest);
+        const data = JSON.parse(request.data);
         expect(data.regs.ext.us_privacy).to.equal('1NYN');// USP/CCPAs
         expect(data.at).to.equal(1); // auction type
         expect(data.cur[0]).to.equal('USD'); // currency
@@ -345,7 +345,7 @@ describe('AdTrueBidAdapter', function () {
 
       it('should NOT include coppa flag in bid request if coppa config is not present', () => {
         const request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
+        const data = JSON.parse(request.data);
         if (data.regs) {
           // in case GDPR is set then data.regs will exist
           expect(data.regs.coppa).to.equal(undefined);
@@ -354,7 +354,7 @@ describe('AdTrueBidAdapter', function () {
         }
       });
       it('should include coppa flag in bid request if coppa is set to true', () => {
-        let sandbox = sinon.createSandbox();
+        const sandbox = sinon.createSandbox();
         sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             'coppa': true
@@ -362,12 +362,12 @@ describe('AdTrueBidAdapter', function () {
           return config[key];
         });
         const request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
+        const data = JSON.parse(request.data);
         expect(data.regs.coppa).to.equal(1);
         sandbox.restore();
       });
       it('should NOT include coppa flag in bid request if coppa is set to false', () => {
-        let sandbox = sinon.createSandbox();
+        const sandbox = sinon.createSandbox();
         sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             'coppa': false
@@ -375,7 +375,7 @@ describe('AdTrueBidAdapter', function () {
           return config[key];
         });
         const request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
+        const data = JSON.parse(request.data);
         if (data.regs) {
           // in case GDPR is set then data.regs will exist
           expect(data.regs.coppa).to.equal(undefined);
@@ -388,11 +388,11 @@ describe('AdTrueBidAdapter', function () {
   });
   describe('Response checking', function () {
     it('should check for valid response values', function () {
-      let request = spec.buildRequests(bidRequests, {
+      const request = spec.buildRequests(bidRequests, {
         auctionId: 'new-auction-id'
       });
-      let data = JSON.parse(request.data);
-      let response = spec.interpretResponse(bidResponses, request);
+      const data = JSON.parse(request.data);
+      const response = spec.interpretResponse(bidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
       expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);

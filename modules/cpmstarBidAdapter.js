@@ -105,7 +105,7 @@ export const spec = {
         url.searchParams.set('tfcd', (config.getConfig('coppa') ? 1 : 0));
       }
 
-      let adUnitCode = bidRequest.adUnitCode;
+      const adUnitCode = bidRequest.adUnitCode;
       if (adUnitCode) {
         body.adUnitCode = adUnitCode;
       }

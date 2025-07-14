@@ -575,7 +575,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       const bidRequests = [];
       const bidderRequest = {};
       config.setConfig({coppa: false});
-      let buildRequests = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const buildRequests = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = buildRequests.data;
       expect(ortbRequest.regs.coppa).to.equal(0);
     });

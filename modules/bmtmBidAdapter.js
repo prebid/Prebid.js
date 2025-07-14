@@ -24,9 +24,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    let requestData = [];
+    const requestData = [];
     let size = [0, 0];
-    let oRTBRequest = {
+    const oRTBRequest = {
       at: 2,
       site: buildSite(bidderRequest),
       device: buildDevice(),
@@ -95,7 +95,7 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse, { bidRequest }) => {
-    let bidResponse = [];
+    const bidResponse = [];
     let bid;
     let response;
 
@@ -111,7 +111,7 @@ export const spec = {
       return [];
     }
 
-    let tempResponse = {
+    const tempResponse = {
       requestId: bidRequest.bidId,
       cpm: bid.price,
       currency: response.cur,
@@ -151,7 +151,7 @@ registerBidder(spec);
 
 function buildSite(bidderRequest) {
   // TODO: should name/domain be the domain?
-  let site = {
+  const site = {
     name: window.location.hostname,
     publisher: {
       domain: window.location.hostname,
@@ -186,7 +186,7 @@ function buildDevice() {
 }
 
 function buildRegs(bidderRequest) {
-  let regs = {
+  const regs = {
     coppa: config.getConfig('coppa') == true ? 1 : 0,
   };
 
