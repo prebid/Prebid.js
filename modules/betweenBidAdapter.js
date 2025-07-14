@@ -198,7 +198,7 @@ function getRr() {
 
   if (typeof rr !== 'undefined' && rr.length > 0) {
     return encodeURIComponent(rr);
-  } else if (typeof rr !== 'undefined' && rr == '') {
+  } else if (typeof rr !== 'undefined' && rr === '') {
     return 'direct';
   }
 }
@@ -232,7 +232,7 @@ function get_pubdata(adds) {
     let index = 0;
     let url = '';
     for(var key in adds.pubdata) {
-      if (index == 0) {
+      if (index === 0) {
         url = url + encodeURIComponent('pubside_macro[' + key + ']') + '=' + encodeURIComponent(adds.pubdata[key]);
         index++;
       } else {

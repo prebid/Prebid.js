@@ -316,7 +316,7 @@ export const spec = {
 };
 
 function isReportingAllowed(loggingPercentage) {
-  return loggingPercentage != 0;
+  return loggingPercentage !== 0;
 }
 
 function report(type, data) {

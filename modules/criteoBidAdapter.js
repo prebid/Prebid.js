@@ -230,7 +230,7 @@ export const spec = {
       queryParams.push(`topUrl=${refererInfo.domain}`);
       if (gdprConsent) {
         if (gdprConsent.gdprApplies) {
-          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`);
         }
         if (gdprConsent.consentString) {
           queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
@@ -261,7 +261,7 @@ export const spec = {
       };
 
       window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != 'https://gum.criteo.com') {
+        if (!event.data || event.origin !== 'https://gum.criteo.com') {
           return;
         }
 
@@ -532,7 +532,7 @@ function checkNativeSendId(bidRequest) {
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  if (sizes === undefined) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
