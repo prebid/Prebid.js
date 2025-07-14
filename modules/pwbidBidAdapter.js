@@ -218,7 +218,7 @@ export const spec = {
     });
 
     // no payload imps, no rason to continue
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
 
@@ -380,7 +380,7 @@ export const spec = {
 
 function _checkMediaType(bid, newBid) {
   // Check Various ADM Aspects to Determine Media Type
-  if (bid.ext && bid.ext['bidtype'] != undefined) {
+  if (bid.ext && bid.ext['bidtype'] !== undefined) {
     // this is the most explicity check
     newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
@@ -513,7 +513,7 @@ function _createOrtbTemplate(conf) {
     device: {
       ua: navigator.userAgent,
       js: 1,
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: navigator.language,
@@ -672,7 +672,7 @@ function _addFloorFromFloorModule(impObj, bid) {
         const floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
         if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
-          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+          bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
       }
     });
@@ -803,13 +803,13 @@ function _createNativeRequest(params) {
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
     var lengthOfExistingAssets = nativeRequestObject.assets.length;
     for (var i = 0; i < lengthOfExistingAssets; i++) {
-      if (ele.id == nativeRequestObject.assets[i].id) {
+      if (ele.id === nativeRequestObject.assets[i].id) {
         presentrequiredAssetCount++;
         break;
       }
     }
   });
-  if (requiredAssetCount == presentrequiredAssetCount) {
+  if (requiredAssetCount === presentrequiredAssetCount) {
     isInvalidNativeRequest = false;
   } else {
     isInvalidNativeRequest = true;
@@ -937,7 +937,7 @@ function _isNonEmptyArray(test) {
  * @returns
  */
 function _getEndpointURL(bid) {
-  if (!isEmptyStr(bid?.params?.endpoint_url) && bid?.params?.endpoint_url != UNDEFINED) {
+  if (!isEmptyStr(bid?.params?.endpoint_url) && bid?.params?.endpoint_url !== UNDEFINED) {
     return bid.params.endpoint_url;
   }
 
