@@ -281,7 +281,7 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('callbacks', () => {
-    let bid = {};
+    const bid = {};
     let reportStub;
 
     beforeEach(() => (reportStub = sinon.stub(spec, 'report')));

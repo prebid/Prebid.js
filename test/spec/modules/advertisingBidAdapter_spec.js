@@ -57,7 +57,7 @@ describe('advertisingBidAdapter ', function () {
   });
 
   describe('impression type', function () {
-    let nonVideoReq = {
+    const nonVideoReq = {
       bidId: '9876abcd',
       sizes: [[300, 250], [300, 600]],
       params: {
@@ -67,7 +67,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let bannerReq = {
+    const bannerReq = {
       bidId: '9876abcd',
       sizes: [[300, 250], [300, 600]],
       params: {
@@ -88,7 +88,7 @@ describe('advertisingBidAdapter ', function () {
       },
     };
 
-    let videoReq = {
+    const videoReq = {
       bidId: '9876abcd',
       sizes: [[640, 480]],
       params: {
@@ -115,7 +115,7 @@ describe('advertisingBidAdapter ', function () {
     });
   });
   describe('buildRequests', function () {
-    let validBidRequestVideo = {
+    const validBidRequestVideo = {
       bidder: 'advertising',
       params: {
         seatId: 'prebid',
@@ -140,7 +140,7 @@ describe('advertisingBidAdapter ', function () {
       bidRequestsCount: 1
     };
 
-    let bidderRequestVideo = {
+    const bidderRequestVideo = {
       bidderCode: 'advertising',
       auctionId: 'VideoAuctionId124',
       bidderRequestId: '117954d20d7c9c',
@@ -156,7 +156,7 @@ describe('advertisingBidAdapter ', function () {
     };
 
     bidderRequestVideo.bids = validBidRequestVideo;
-    let expectedDataVideo1 = {
+    const expectedDataVideo1 = {
       id: 'v2624fabbb078e8-640x480',
       tagid: '1234',
       video: {
@@ -167,7 +167,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let validBidRequest = {
+    const validBidRequest = {
       bidId: '9876abcd',
       sizes: [[300, 250], [300, 600]],
       params: {
@@ -177,14 +177,14 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let bidderRequest = {
+    const bidderRequest = {
       bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       }
     };
 
-    let bidderRequestWithTimeout = {
+    const bidderRequestWithTimeout = {
       auctionId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
@@ -192,7 +192,7 @@ describe('advertisingBidAdapter ', function () {
       timeout: 3000
     };
 
-    let bidderRequestWithUSPInExt = {
+    const bidderRequestWithUSPInExt = {
       bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
@@ -206,7 +206,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let bidderRequestWithUSPInRegs = {
+    const bidderRequestWithUSPInRegs = {
       bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
@@ -218,7 +218,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let bidderRequestWithUSPAndOthersInExt = {
+    const bidderRequestWithUSPAndOthersInExt = {
       bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
@@ -233,7 +233,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let validBidRequestWithUserIds = {
+    const validBidRequestWithUserIds = {
       bidId: '9876abcd',
       sizes: [[300, 250], [300, 600]],
       params: {
@@ -269,7 +269,7 @@ describe('advertisingBidAdapter ', function () {
       ]
     };
 
-    let expectedEids = [
+    const expectedEids = [
       {
         source: 'pubcid.org',
         uids: [{
@@ -296,7 +296,7 @@ describe('advertisingBidAdapter ', function () {
       }
     ];
 
-    let expectedDataImp1 = {
+    const expectedDataImp1 = {
       banner: {
         format: [
           {
@@ -317,7 +317,7 @@ describe('advertisingBidAdapter ', function () {
 
     it('should return valid request when valid bids are used', function () {
       // banner test
-      let req = spec.buildRequests([validBidRequest], bidderRequest);
+      const req = spec.buildRequests([validBidRequest], bidderRequest);
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
@@ -327,7 +327,7 @@ describe('advertisingBidAdapter ', function () {
       expect(req.data.imp).to.eql([expectedDataImp1]);
 
       // video test
-      let reqVideo = spec.buildRequests([validBidRequestVideo], bidderRequestVideo);
+      const reqVideo = spec.buildRequests([validBidRequestVideo], bidderRequestVideo);
       expect(reqVideo).be.an('object');
       expect(reqVideo).to.have.property('method', 'POST');
       expect(reqVideo).to.have.property('url');
@@ -337,17 +337,17 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should return no tmax', function () {
-      let req = spec.buildRequests([validBidRequest], bidderRequest);
+      const req = spec.buildRequests([validBidRequest], bidderRequest);
       expect(req.data).to.not.have.property('tmax');
     });
 
     it('should return tmax equal to callback timeout', function () {
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithTimeout);
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithTimeout);
       expect(req.data.tmax).to.eql(bidderRequestWithTimeout.timeout);
     });
 
     it('should return multiple bids when multiple valid requests with the same seatId are used', function () {
-      let secondBidRequest = {
+      const secondBidRequest = {
         bidId: 'foobar',
         sizes: [[300, 600]],
         params: {
@@ -356,7 +356,7 @@ describe('advertisingBidAdapter ', function () {
           bidfloor: '0.50'
         }
       };
-      let req = spec.buildRequests([validBidRequest, secondBidRequest], bidderRequest);
+      const req = spec.buildRequests([validBidRequest, secondBidRequest], bidderRequest);
       expect(req).to.exist.and.be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
@@ -379,7 +379,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should return only first bid when different seatIds are used', function () {
-      let mismatchedSeatBidRequest = {
+      const mismatchedSeatBidRequest = {
         bidId: 'foobar',
         sizes: [[300, 250]],
         params: {
@@ -388,7 +388,7 @@ describe('advertisingBidAdapter ', function () {
           bidfloor: '0.50'
         }
       };
-      let req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest);
+      const req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://somethingelse.technoratimedia.com/openrtb/bids/somethingelse?');
@@ -412,7 +412,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should not use bidfloor when the value is not a number', function () {
-      let badFloorBidRequest = {
+      const badFloorBidRequest = {
         bidId: '9876abcd',
         sizes: [[300, 250]],
         params: {
@@ -421,7 +421,7 @@ describe('advertisingBidAdapter ', function () {
           bidfloor: 'abcd'
         }
       };
-      let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
+      const req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -444,7 +444,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should not use bidfloor when there is no value', function () {
-      let badFloorBidRequest = {
+      const badFloorBidRequest = {
         bidId: '9876abcd',
         sizes: [[300, 250]],
         params: {
@@ -452,7 +452,7 @@ describe('advertisingBidAdapter ', function () {
           tagId: '1234'
         }
       };
-      let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
+      const req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -475,7 +475,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should use the pos given by the bid request', function () {
-      let newPosBidRequest = {
+      const newPosBidRequest = {
         bidId: '9876abcd',
         sizes: [[300, 250]],
         params: {
@@ -484,7 +484,7 @@ describe('advertisingBidAdapter ', function () {
           pos: 1
         }
       };
-      let req = spec.buildRequests([newPosBidRequest], bidderRequest);
+      const req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -507,7 +507,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should use the default pos if none in bid request', function () {
-      let newPosBidRequest = {
+      const newPosBidRequest = {
         bidId: '9876abcd',
         sizes: [[300, 250]],
         params: {
@@ -515,7 +515,7 @@ describe('advertisingBidAdapter ', function () {
           tagId: '1234',
         }
       };
-      let req = spec.buildRequests([newPosBidRequest], bidderRequest);
+      const req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -542,7 +542,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should return empty impression when there is no valid sizes in bidrequest', function () {
-      let validBidReqWithoutSize = {
+      const validBidReqWithoutSize = {
         bidId: '9876abcd',
         sizes: [],
         params: {
@@ -552,7 +552,7 @@ describe('advertisingBidAdapter ', function () {
         }
       };
 
-      let validBidReqInvalidSize = {
+      const validBidReqInvalidSize = {
         bidId: '9876abcd',
         sizes: [[300]],
         params: {
@@ -562,7 +562,7 @@ describe('advertisingBidAdapter ', function () {
         }
       };
 
-      let bidderRequest = {
+      const bidderRequest = {
         auctionId: 'xyz123',
         refererInfo: {
           referer: 'https://test.com/foo/bar'
@@ -575,7 +575,7 @@ describe('advertisingBidAdapter ', function () {
       assert.isUndefined(req);
     });
     it('should use all the video params in the impression request', function () {
-      let validBidRequestVideo = {
+      const validBidRequestVideo = {
         bidder: 'advertising',
         params: {
           seatId: 'prebid',
@@ -607,7 +607,7 @@ describe('advertisingBidAdapter ', function () {
         bidRequestsCount: 1
       };
 
-      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      const req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -633,7 +633,7 @@ describe('advertisingBidAdapter ', function () {
       ]);
     });
     it('should move any video params in the mediaTypes object to params.video object', function () {
-      let validBidRequestVideo = {
+      const validBidRequestVideo = {
         bidder: 'advertising',
         params: {
           seatId: 'prebid',
@@ -665,7 +665,7 @@ describe('advertisingBidAdapter ', function () {
         bidRequestsCount: 1
       };
 
-      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      const req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -691,7 +691,7 @@ describe('advertisingBidAdapter ', function () {
       ]);
     });
     it('should create params.video object if not present on bid request and move any video params in the mediaTypes object to it', function () {
-      let validBidRequestVideo = {
+      const validBidRequestVideo = {
         bidder: 'advertising',
         params: {
           seatId: 'prebid',
@@ -717,7 +717,7 @@ describe('advertisingBidAdapter ', function () {
         bidRequestsCount: 1
       };
 
-      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      const req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req.data.imp).to.eql([
         {
           video: {
@@ -735,7 +735,7 @@ describe('advertisingBidAdapter ', function () {
       ]);
     });
     it('should have us_privacy string in regs instead of regs.ext bidder request', function () {
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInExt);
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInExt);
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
@@ -748,7 +748,7 @@ describe('advertisingBidAdapter ', function () {
     });
     it('should accept us_privacy string in regs', function () {
       // banner test
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInRegs);
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInRegs);
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
@@ -761,7 +761,7 @@ describe('advertisingBidAdapter ', function () {
     });
     it('should not remove regs.ext when moving us_privacy if there are other things in regs.ext', function () {
       // banner test
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithUSPAndOthersInExt);
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPAndOthersInExt);
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
@@ -773,7 +773,7 @@ describe('advertisingBidAdapter ', function () {
       expect(req.data.imp).to.eql([expectedDataImp1]);
     });
     it('should contain user object when user ids are present in the bidder request', function () {
-      let req = spec.buildRequests([validBidRequestWithUserIds], bidderRequest);
+      const req = spec.buildRequests([validBidRequestWithUserIds], bidderRequest);
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
@@ -789,7 +789,7 @@ describe('advertisingBidAdapter ', function () {
   });
 
   describe('Bid Requests with placementId should be backward compatible ', function () {
-    let validVideoBidReq = {
+    const validVideoBidReq = {
       bidder: 'advertising',
       params: {
         seatId: 'prebid',
@@ -818,7 +818,7 @@ describe('advertisingBidAdapter ', function () {
       bidderWinsCount: 0
     };
 
-    let validBannerBidRequest = {
+    const validBannerBidRequest = {
       bidId: '9876abcd',
       sizes: [[300, 250]],
       params: {
@@ -827,7 +827,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
@@ -836,14 +836,14 @@ describe('advertisingBidAdapter ', function () {
     };
 
     it('should return valid bid request for banner impression', function () {
-      let req = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      const req = spec.buildRequests([validBannerBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
     });
 
     it('should return valid bid request for video impression', function () {
-      let req = spec.buildRequests([validVideoBidReq], bidderRequest);
+      const req = spec.buildRequests([validVideoBidReq], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -851,7 +851,7 @@ describe('advertisingBidAdapter ', function () {
   });
 
   describe('Bid Requests with schain object ', function () {
-    let validBidReq = {
+    const validBidReq = {
       bidder: 'advertising',
       params: {
         seatId: 'prebid',
@@ -896,7 +896,7 @@ describe('advertisingBidAdapter ', function () {
         }
       }
     };
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
@@ -949,7 +949,7 @@ describe('advertisingBidAdapter ', function () {
     };
 
     it('should return valid bid request with schain object', function () {
-      let req = spec.buildRequests([validBidReq], bidderRequest);
+      const req = spec.buildRequests([validBidReq], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
@@ -970,7 +970,7 @@ describe('advertisingBidAdapter ', function () {
       w: 300,
       h: 250
     };
-    let bidResponse2 = {
+    const bidResponse2 = {
       id: '10865933907263800~9999~0',
       impid: 'b9876abcd',
       price: 1.99,
@@ -1040,7 +1040,7 @@ describe('advertisingBidAdapter ', function () {
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
       };
-      let serverRespVideo = {
+      const serverRespVideo = {
         body: {
           id: 'abcd1234',
           seatbid: [
@@ -1067,7 +1067,7 @@ describe('advertisingBidAdapter ', function () {
       };
 
       // serverResponse.body.seatbid[0].bid.push(bidResponse);
-      let resp = spec.interpretResponse(serverRespVideo, bidRequest);
+      const resp = spec.interpretResponse(serverRespVideo, bidRequest);
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
@@ -1088,7 +1088,7 @@ describe('advertisingBidAdapter ', function () {
 
     it('should return 1 bid when 1 bid is in the response', function () {
       serverResponse.body.seatbid[0].bid.push(bidResponse);
-      let resp = spec.interpretResponse(serverResponse, bidRequest);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
@@ -1110,7 +1110,7 @@ describe('advertisingBidAdapter ', function () {
         seat: '9999',
         bid: [bidResponse2],
       });
-      let resp = spec.interpretResponse(serverResponse, bidRequest);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
       expect(resp).to.be.an('array').to.have.lengthOf(2);
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
@@ -1140,7 +1140,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should not return a bid when no bid is in the response', function () {
-      let resp = spec.interpretResponse(serverResponse, bidRequest);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
       expect(resp).to.be.an('array').that.is.empty;
     });
 
@@ -1150,8 +1150,8 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should not include videoCacheKey property on the returned response when cache url is present in the config', function () {
-      let sandbox = sinon.createSandbox();
-      let serverRespVideo = {
+      const sandbox = sinon.createSandbox();
+      const serverRespVideo = {
         body: {
           id: 'abcd1234',
           seatbid: [
@@ -1184,7 +1184,7 @@ describe('advertisingBidAdapter ', function () {
         return config[key];
       });
 
-      let resp = spec.interpretResponse(serverRespVideo, bidRequest);
+      const resp = spec.interpretResponse(serverRespVideo, bidRequest);
       sandbox.restore();
       expect(resp[0].videoCacheKey).to.not.exist;
     });
@@ -1211,7 +1211,7 @@ describe('advertisingBidAdapter ', function () {
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
       };
 
-      let serverRespVideo = {
+      const serverRespVideo = {
         body: {
           id: 'abcd1234',
           seatbid: [
@@ -1234,7 +1234,7 @@ describe('advertisingBidAdapter ', function () {
           ]
         }
       };
-      let resp = spec.interpretResponse(serverRespVideo, bidRequest);
+      const resp = spec.interpretResponse(serverRespVideo, bidRequest);
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
@@ -1287,7 +1287,7 @@ describe('advertisingBidAdapter ', function () {
       };
 
       serverResponse.body.seatbid[0].bid.push(bidResponse);
-      let resp = spec.interpretResponse(serverResponse, bidRequest);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: 'abc123',
@@ -1313,9 +1313,9 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should return ttl equal to bid.ext["imds.tv"].ttl if it is defined but bid.exp is undefined', function() {
-      let br = { ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
+      const br = { ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
-      let resp = spec.interpretResponse(serverResponse, bidRequest);
+      const resp = spec.interpretResponse(serverResponse, bidRequest);
       expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.have.property('ttl');
       expect(resp[0].ttl).to.equal(4321);
@@ -1359,7 +1359,7 @@ describe('advertisingBidAdapter ', function () {
   });
   describe('getUserSyncs', function () {
     it('should return an iframe usersync when iframes is enabled', function () {
-      let usersyncs = spec.getUserSyncs({
+      const usersyncs = spec.getUserSyncs({
         iframeEnabled: true
       }, null);
       expect(usersyncs).to.be.an('array').with.lengthOf(1);
@@ -1369,7 +1369,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should return an image usersync when pixels are enabled', function () {
-      let usersyncs = spec.getUserSyncs({
+      const usersyncs = spec.getUserSyncs({
         pixelEnabled: true
       }, null);
       expect(usersyncs).to.be.an('array').with.lengthOf(1);
@@ -1379,7 +1379,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should return an iframe usersync when both iframe and pixel are enabled', function () {
-      let usersyncs = spec.getUserSyncs({
+      const usersyncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
       }, null);
@@ -1390,7 +1390,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should not return a usersync when neither iframes nor pixel are enabled', function () {
-      let usersyncs = spec.getUserSyncs({
+      const usersyncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
       }, null);
@@ -1399,7 +1399,7 @@ describe('advertisingBidAdapter ', function () {
   });
 
   describe('Bid Requests with price module should use if available', function () {
-    let validVideoBidRequest = {
+    const validVideoBidRequest = {
       bidder: 'advertising',
       params: {
         bidfloor: '0.50',
@@ -1429,7 +1429,7 @@ describe('advertisingBidAdapter ', function () {
       bidderWinsCount: 0
     };
 
-    let validBannerBidRequest = {
+    const validBannerBidRequest = {
       bidId: '9876abcd',
       sizes: [[300, 250]],
       params: {
@@ -1439,7 +1439,7 @@ describe('advertisingBidAdapter ', function () {
       }
     };
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
@@ -1454,8 +1454,8 @@ describe('advertisingBidAdapter ', function () {
       expect(bannerRequest.data.imp[0].bidfloor).to.equal(0.5);
       expect(videoRequest.data.imp[0].bidfloor).to.equal(0.5);
 
-      let priceModuleFloor = 3;
-      let floorResponse = { currency: 'USD', floor: priceModuleFloor };
+      const priceModuleFloor = 3;
+      const floorResponse = { currency: 'USD', floor: priceModuleFloor };
 
       validBannerBidRequest.getFloor = () => { return floorResponse; };
       validVideoBidRequest.getFloor = () => { return floorResponse; };
@@ -1469,7 +1469,7 @@ describe('advertisingBidAdapter ', function () {
   });
 
   describe('Bid Requests with gpid or anything in bid.ext should use if available', function () {
-    let validVideoBidRequest = {
+    const validVideoBidRequest = {
       bidder: 'advertising',
       params: {
         seatId: 'prebid',
@@ -1483,7 +1483,7 @@ describe('advertisingBidAdapter ', function () {
       ortb2Imp: {
         ext: {
           gpid: '/1111/homepage-video',
-	          data: {
+            data: {
             pbadslot: '/1111/homepage-video'
           }
         }
@@ -1506,7 +1506,7 @@ describe('advertisingBidAdapter ', function () {
       bidderWinsCount: 0
     };
 
-    let validBannerBidRequest = {
+    const validBannerBidRequest = {
       bidId: '9876abcd',
       sizes: [[300, 250]],
       params: {
@@ -1516,14 +1516,14 @@ describe('advertisingBidAdapter ', function () {
       ortb2Imp: {
         ext: {
           gpid: '/1111/homepage-banner',
-	          data: {
+            data: {
             pbadslot: '/1111/homepage-banner'
           }
         }
       }
     };
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         referer: 'http://localhost:9999/'
       },
@@ -1532,8 +1532,8 @@ describe('advertisingBidAdapter ', function () {
     };
 
     it('should return valid gpid and pbadslot', function () {
-      let videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
-      let bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      const videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+      const bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
 
       expect(videoRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-video');
       expect(videoRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-video');

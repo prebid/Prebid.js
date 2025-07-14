@@ -182,7 +182,7 @@ export function _getBidRequests(validBidRequests) {
  * Get ids from Prebid User ID Modules and add them to the payload
  */
 function _handleEids(payload, validBidRequests) {
-  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }

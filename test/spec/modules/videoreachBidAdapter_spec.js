@@ -6,7 +6,7 @@ const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
 describe('videoreachBidAdapter', function () {
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'params': {
         'TagId': 'ABCDE'
       },
@@ -21,7 +21,7 @@ describe('videoreachBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'TagId': ''
@@ -31,7 +31,7 @@ describe('videoreachBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'videoreach',
         'params': {
@@ -59,9 +59,9 @@ describe('videoreachBidAdapter', function () {
     });
 
     it('send bid request with GDPR to endpoint', function () {
-      let consentString = 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA';
+      const consentString = 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA';
 
-      let bidderRequest = {
+      const bidderRequest = {
         'gdprConsent': {
           'consentString': consentString,
           'gdprApplies': true
@@ -77,7 +77,7 @@ describe('videoreachBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let serverResponse =
+    const serverResponse =
       {
         'body': {
           'responses': [{
@@ -98,7 +98,7 @@ describe('videoreachBidAdapter', function () {
       };
 
     it('should handle response', function() {
-      let expectedResponse = [
+      const expectedResponse = [
         {
           cpm: 10.0,
           width: '1',
@@ -115,18 +115,18 @@ describe('videoreachBidAdapter', function () {
         }
       ];
 
-      let result = spec.interpretResponse(serverResponse);
+      const result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
     it('should handles empty response', function() {
-      let serverResponse = {
+      const serverResponse = {
         'body': {
           'responses': []
         }
       };
 
-      let result = spec.interpretResponse(serverResponse);
+      const result = spec.interpretResponse(serverResponse);
       expect(result.length).to.equal(0);
     });
 

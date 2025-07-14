@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('tercept analytics adapter', function () {
   beforeEach(function () {
@@ -17,14 +17,14 @@ describe('tercept analytics adapter', function () {
   });
 
   describe('track', function () {
-    let initOptions = {
+    const initOptions = {
       pubId: '1',
       pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
       hostName: 'us-central1-quikr-ebay.cloudfunctions.net',
       pathName: '/prebid-analytics'
     };
 
-    let prebidEvent = {
+    const prebidEvent = {
       'addAdUnits': {},
       'requestBids': {},
       'auctionInit': {
@@ -569,9 +569,9 @@ describe('tercept analytics adapter', function () {
         ]
       }
     };
-    let location = utils.getWindowLocation();
+    const location = utils.getWindowLocation();
 
-    let expectedAfterBid = {
+    const expectedAfterBid = {
       'bids': [
         {
           'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -713,7 +713,7 @@ describe('tercept analytics adapter', function () {
       'initOptions': initOptions
     };
 
-    let expectedAfterBidWon = {
+    const expectedAfterBidWon = {
       'bidWon': {
         'bidderCode': 'appnexus',
         'bidId': '263efc09896d0c',
@@ -769,7 +769,7 @@ describe('tercept analytics adapter', function () {
 
       expect(server.requests.length).to.equal(1);
 
-      let realAfterBid = JSON.parse(server.requests[0].requestBody);
+      const realAfterBid = JSON.parse(server.requests[0].requestBody);
 
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
@@ -778,7 +778,7 @@ describe('tercept analytics adapter', function () {
 
       expect(server.requests.length).to.equal(2);
 
-      let winEventData = JSON.parse(server.requests[1].requestBody);
+      const winEventData = JSON.parse(server.requests[1].requestBody);
 
       expect(winEventData).to.deep.equal(expectedAfterBidWon);
     });

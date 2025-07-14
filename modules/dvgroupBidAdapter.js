@@ -29,15 +29,15 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    let valid = bid.params.sspId;
+    const valid = bid.params.sspId;
 
     return !!valid;
   },
 
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
-      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
-      let bidMediaType = deepAccess(bid, 'mediaTypes.video');
+      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      const bidMediaType = deepAccess(bid, 'mediaTypes.video');
       return {
         method: 'POST',
         url: `https://${endpoint}/bid?sspuid=${bid.params.sspId}`,

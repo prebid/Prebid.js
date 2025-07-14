@@ -250,7 +250,7 @@ describe('MediaSquare bid adapter tests', function () {
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);
     expect(server.requests.length).to.equal(1);
-    let message = JSON.parse(server.requests[0].requestBody);
+    const message = JSON.parse(server.requests[0].requestBody);
     expect(message).to.have.property('increment').exist;
     expect(message).to.have.property('increment').and.to.equal('1');
     expect(message).to.have.property('ova').and.to.equal('cleared');
@@ -270,12 +270,12 @@ describe('MediaSquare bid adapter tests', function () {
     var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
-  it('Verifies user sync with no bid body response', function() {
-    var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.lengthOf(0);
-    var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.lengthOf(0);
-  });
+    it('Verifies user sync with no bid body response', function() {
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+    });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);
     BID_RESPONSE.body.responses[0].native = {'title': 'native title'};
