@@ -254,13 +254,13 @@ describe('kargo adapter tests', function() {
 
   describe('buildRequests', function() {
     let bids;
-      let bidderRequest;
-      let undefinedCurrency;
-      let noAdServerCurrency;
-      let nonUSDAdServerCurrency;
-      let cookies = [];
-      let localStorageItems = [];
-      let session_id = null;
+    let bidderRequest;
+    let undefinedCurrency;
+    let noAdServerCurrency;
+    let nonUSDAdServerCurrency;
+    let cookies = [];
+    let localStorageItems = [];
+    let session_id = null;
 
     before(function() {
       sinon.spy(spec, 'buildRequests');

@@ -4,13 +4,13 @@ import {logError, logWarn, mergeDeep} from '../../src/utils.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {EVENTS} from '../../src/constants.js';
 import {
-    AD_ERROR,
-    AD_IMPRESSION,
-    additionalEvents,
-    AUCTION_AD_LOAD_ABORT,
-    BID_ERROR,
-    BID_IMPRESSION,
-    videoEvents
+  AD_ERROR,
+  AD_IMPRESSION,
+  additionalEvents,
+  AUCTION_AD_LOAD_ABORT,
+  BID_ERROR,
+  BID_IMPRESSION,
+  videoEvents
 } from '../../libraries/video/constants/events.js'
 import {PLACEMENT} from '../../libraries/video/constants/ortb.js';
 import {videoKey} from '../../libraries/video/constants/constants.js'
@@ -35,42 +35,42 @@ const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[even
 events.addEvents(allVideoEvents.concat(additionalEvents).map(getExternalVideoEventName) as any);
 
 declare module '../../src/events' {
-    interface EventNames {
-        video: VideoEvent
-    }
+  interface EventNames {
+    video: VideoEvent
+  }
 }
 
 interface AdServerConfig {
-    /**
-     * The identifier of the AdServer vendor (i.e. gam, etc).
-     */
-    vendorCode: AdServerVendor
-    /**
-     * Your AdServer Ad Tag. The targeting params of the winning bid will be appended.
-     */
-    baseAdTagUrl?: string;
-    /**
-     * Querystring parameters that will be used to construct the video ad tag URL.
-     */
-    params?: Record<string, string>;
+  /**
+   * The identifier of the AdServer vendor (i.e. gam, etc).
+   */
+  vendorCode: AdServerVendor
+  /**
+   * Your AdServer Ad Tag. The targeting params of the winning bid will be appended.
+   */
+  baseAdTagUrl?: string;
+  /**
+   * Querystring parameters that will be used to construct the video ad tag URL.
+   */
+  params?: Record<string, string>;
 }
 
 interface AdUnitVideoOptions {
-    /**
-     * Unique identifier of the player provider, used to specify which player should be used to render the ad.
-     * Equivalent to the HTML Div Id of the player.
-     */
-    divId: string;
-    /**
-     * Configuration for ad server integration. Supersedes video.adServer configurations defined in the Prebid Config.
-     */
-    adServer?: AdServerConfig
+  /**
+   * Unique identifier of the player provider, used to specify which player should be used to render the ad.
+   * Equivalent to the HTML Div Id of the player.
+   */
+  divId: string;
+  /**
+   * Configuration for ad server integration. Supersedes video.adServer configurations defined in the Prebid Config.
+   */
+  adServer?: AdServerConfig
 }
 
 declare module '../../src/adUnits' {
-    interface AdUnitDefinition {
-        video?: AdUnitVideoOptions
-    }
+  interface AdUnitDefinition {
+    video?: AdUnitVideoOptions
+  }
 }
 
 /**
@@ -328,9 +328,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
 }
 
 declare module '../../src/prebidGlobal' {
-    interface PrebidJS {
-        videoModule: ReturnType<typeof PbVideo>
-    }
+  interface PrebidJS {
+    videoModule: ReturnType<typeof PbVideo>
+  }
 }
 
 function videoRenderHook(next, args) {

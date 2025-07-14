@@ -513,46 +513,46 @@ describe('PubWiseAdapter', function () {
   describe('Properly Validates Bids', function () {
     it('valid bid', function () {
       const validBid = {
-          bidder: 'pubwise',
-          params: {
-            siteId: 'xxxxxx'
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        bidder: 'pubwise',
+        params: {
+          siteId: 'xxxxxx'
+        }
+      };
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
     it('valid bid: extra fields are ok', function () {
       const validBid = {
-          bidder: 'pubwise',
-          params: {
-            siteId: 'xxxxxx',
-            gender: 'M',
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        bidder: 'pubwise',
+        params: {
+          siteId: 'xxxxxx',
+          gender: 'M',
+        }
+      };
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
     it('invalid bid: no siteId', function () {
       const inValidBid = {
-          bidder: 'pubwise',
-          params: {
-            gender: 'M',
-          }
-        };
-        const isValid = spec.isBidRequestValid(inValidBid);
+        bidder: 'pubwise',
+        params: {
+          gender: 'M',
+        }
+      };
+      const isValid = spec.isBidRequestValid(inValidBid);
       expect(isValid).to.equal(false);
     });
 
     it('invalid bid: siteId should be a string', function () {
       const validBid = {
-          bidder: 'pubwise',
-          params: {
-            siteId: 123456
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        bidder: 'pubwise',
+        params: {
+          siteId: 123456
+        }
+      };
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(false);
     });
   });

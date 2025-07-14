@@ -124,7 +124,7 @@ class NodalsAiRtdProvider {
           callback,
           userConsent,
           storedData
-       );
+        );
       } catch (error) {
         logError(`Error getting bid request data: ${error}`);
         callback();

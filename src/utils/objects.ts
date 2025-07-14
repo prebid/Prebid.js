@@ -3,7 +3,7 @@ import type {AnyFunction} from "../types/functions.d.ts";
 import type {Repeat} from "../types/tuples.d.ts";
 
 export function deepClone<T>(obj: T): T {
-    return (klona(obj) || {}) as T;
+  return (klona(obj) || {}) as T;
 }
 
 /**
@@ -14,9 +14,9 @@ export function deepClone<T>(obj: T): T {
  * @returns An object containing all the specified values that are defined
  */
 export function getDefinedParams<T extends object, K extends readonly (keyof T)[]>(object: T, params: K): Partial<Pick<T, K[number]>> {
-    return params
-        .filter(param => object[param])
-        .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
+  return params
+    .filter(param => object[param])
+    .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
 }
 
 const tStr = 'String';
@@ -34,29 +34,29 @@ const toString = Object.prototype.toString;
  * @return {Boolean} if object is of type _t
  */
 export function isA(object, _t) {
-    return toString.call(object) === '[object ' + _t + ']';
+  return toString.call(object) === '[object ' + _t + ']';
 }
 
 export function isFn(object): object is AnyFunction {
-    return isA(object, tFn);
+  return isA(object, tFn);
 }
 
 export function isStr(object): object is string {
-    return isA(object, tStr);
+  return isA(object, tStr);
 }
 
 export const isArray: (object) => object is any[] = Array.isArray.bind(Array);
 
 export function isNumber(object): object is number {
-    return isA(object, tNumb);
+  return isA(object, tNumb);
 }
 
 export function isPlainObject(object): object is Record<any, unknown> {
-    return isA(object, tObject);
+  return isA(object, tObject);
 }
 
 export function isBoolean(object): object is boolean {
-    return isA(object, tBoolean);
+  return isA(object, tBoolean);
 }
 
 /**
@@ -66,5 +66,5 @@ export function isBoolean(object): object is boolean {
 export const isInteger: (value) => value is number = Number.isInteger.bind(Number);
 
 export function isArrayOfNums<L extends number>(val, size?: L): val is Repeat<number, L> {
-    return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
+  return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }

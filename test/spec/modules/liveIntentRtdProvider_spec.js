@@ -47,8 +47,8 @@ describe('LiveIntent Rtd Provider', function () {
         bidderRequestId: '2a038c6820142b',
         bids: [
           {
-              bidder: 'appnexus',
-              ortb2: {}
+            bidder: 'appnexus',
+            ortb2: {}
           }
         ]
       }

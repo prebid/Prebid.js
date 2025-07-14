@@ -1699,35 +1699,35 @@ describe('smaatoBidAdapterTest', () => {
 
     it('when iframeEnabled true then returns iframe sync', () => {
       expect(spec.getUserSyncs({iframeEnabled: true}, null, null, null)).to.deep.equal(
-          [
-            {
-              type: 'iframe',
-              url: IFRAME_SYNC_URL
-            }
-          ]
+        [
+          {
+            type: 'iframe',
+            url: IFRAME_SYNC_URL
+          }
+        ]
       )
     })
 
     it('when iframeEnabled true and syncsPerBidder then returns iframe sync', () => {
       config.setConfig({userSync: {syncsPerBidder: 5}});
       expect(spec.getUserSyncs({iframeEnabled: true}, null, null, null)).to.deep.equal(
-          [
-            {
-              type: 'iframe',
-              url: `${IFRAME_SYNC_URL}&maxUrls=5`
-            }
-          ]
+        [
+          {
+            type: 'iframe',
+            url: `${IFRAME_SYNC_URL}&maxUrls=5`
+          }
+        ]
       )
     })
 
     it('when iframeEnabled and pixelEnabled true then returns iframe sync', () => {
       expect(spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, null, null, null)).to.deep.equal(
-          [
-            {
-              type: 'iframe',
-              url: IFRAME_SYNC_URL
-            }
-          ]
+        [
+          {
+            type: 'iframe',
+            url: IFRAME_SYNC_URL
+          }
+        ]
       )
     })
 
@@ -1744,12 +1744,12 @@ describe('smaatoBidAdapterTest', () => {
 
     it('when iframeEnabled true and gdprConsent then returns iframe with gdpr params', () => {
       expect(spec.getUserSyncs({iframeEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
-          [
-            {
-              type: 'iframe',
-              url: `${IFRAME_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
-            }
-          ]
+        [
+          {
+            type: 'iframe',
+            url: `${IFRAME_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
       )
     })
 
@@ -1766,12 +1766,12 @@ describe('smaatoBidAdapterTest', () => {
 
     it('when iframeEnabled true and gdprConsent without gdpr then returns iframe sync with gdpr_consent', () => {
       expect(spec.getUserSyncs({iframeEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
-          [
-            {
-              type: 'iframe',
-              url: `${IFRAME_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
-            }
-          ]
+        [
+          {
+            type: 'iframe',
+            url: `${IFRAME_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
       )
     })
   })
