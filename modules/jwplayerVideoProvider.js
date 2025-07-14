@@ -672,11 +672,15 @@ export const utils = {
     const xRatio = parseInt(ratios[0], 10);
     const yRatio = parseInt(ratios[1], 10);
 
-    if (isNaN(xRatio) || isNaN(yRatio)) {
+    if (isNaN(xRatio) || isNaN(yRatio) || xRatio === 0 || yRatio === 0) {
       return {};
     }
 
     const numericWidthPercentage = parseInt(percentageWidth, 10);
+
+    if (isNaN(numericWidthPercentage)) {
+      return {};
+    }
 
     const desiredWidth = containerWidth * numericWidthPercentage / 100;
     const desiredHeight = Math.min(desiredWidth * yRatio / xRatio, containerHeight);
