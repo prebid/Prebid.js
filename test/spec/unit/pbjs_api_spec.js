@@ -2967,7 +2967,7 @@ describe('Unit: Prebid Module', function () {
           });
           return (req.bids.length > 0) ? req : undefined;
         }).filter((item) => {
-          return item != undefined;
+          return item !== undefined;
         });
       };
       auction1.getBidsReceived = function() {
@@ -2983,7 +2983,7 @@ describe('Unit: Prebid Module', function () {
           });
           return (req.bids.length > 0) ? req : undefined;
         }).filter((item) => {
-          return item != undefined;
+          return item !== undefined;
         });
       };
       auction2.getBidsReceived = function() {

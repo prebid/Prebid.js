@@ -270,9 +270,9 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       let iframeCount = 0;
       let imageCount = 0;
       pixelObjects.forEach(pixelObject => {
-        if (pixelObject.type == 'iframe') {
+        if (pixelObject.type === 'iframe') {
           iframeCount++;
-        } else if (pixelObject.type == 'image') {
+        } else if (pixelObject.type === 'image') {
           imageCount++;
         }
       });
