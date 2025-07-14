@@ -332,7 +332,7 @@ describe('ApacdexBidAdapter', function () {
     });
     it('should attach bidFloor param when either bid param floorPrice or getFloor function exists', function () {
       const getFloorResponse = { currency: 'USD', floor: 3 };
-      let singleBidRequest, request, payload = null;
+      let singleBidRequest; let request; let payload = null;
 
       // 1 -> floorPrice not defined, getFloor not defined > empty
       singleBidRequest = deepClone(bidRequest[0]);

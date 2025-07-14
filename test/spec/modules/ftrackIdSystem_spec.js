@@ -225,9 +225,9 @@ describe('FTRACK ID System', () => {
     })
 
     it(`should populate localstorage and return the IDS (end-to-end test)`, () => {
-      let ftrackId,
-        ftrackIdExp,
-        forceCallback = false;
+      let ftrackId;
+        let ftrackIdExp;
+        let forceCallback = false;
 
       // Confirm that our item is not in localStorage yet
       expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
@@ -265,13 +265,13 @@ describe('FTRACK ID System', () => {
           HHID: 'household_test_id',
           DeviceID: 'device_test_id',
           SingleDeviceID: 'single_device_test_id'
-        },
-        MOCK_VALUE_ARRAYS = {
+        };
+        const MOCK_VALUE_ARRAYS = {
           HHID: ['household_test_id', 'a', 'b'],
           DeviceID: ['device_test_id', 'c', 'd'],
           SingleDeviceID: ['single_device_test_id', 'e', 'f']
-        },
-        MOCK_VALUE_BOTH = {
+        };
+        const MOCK_VALUE_BOTH = {
           foo: ['foo', 'a', 'b'],
           bar: 'bar',
           baz: ['baz', 'baz', 'baz']

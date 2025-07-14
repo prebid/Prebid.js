@@ -259,6 +259,7 @@ export function canAccessWindowTop() {
 /**
  * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
  */
+// eslint-disable-next-line no-restricted-syntax
 export function logMessage() {
   if (debugTurnedOn() && consoleLogExists) {
     // eslint-disable-next-line no-console
@@ -266,6 +267,7 @@ export function logMessage() {
   }
 }
 
+// eslint-disable-next-line no-restricted-syntax
 export function logInfo() {
   if (debugTurnedOn() && consoleInfoExists) {
     // eslint-disable-next-line no-console
@@ -273,6 +275,7 @@ export function logInfo() {
   }
 }
 
+// eslint-disable-next-line no-restricted-syntax
 export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
     // eslint-disable-next-line no-console
@@ -281,6 +284,7 @@ export function logWarn() {
   emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
 }
 
+// eslint-disable-next-line no-restricted-syntax
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     // eslint-disable-next-line no-console

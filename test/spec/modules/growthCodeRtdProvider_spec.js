@@ -1,5 +1,5 @@
 import {config} from 'src/config.js';
-import {growthCodeRtdProvider} from '../../../modules/growthCodeRtdProvider';
+import {growthCodeRtdProvider} from '../../../modules/growthCodeRtdProvider.js';
 import sinon from 'sinon';
 import * as ajaxLib from 'src/ajax.js';
 

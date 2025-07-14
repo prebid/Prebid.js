@@ -102,7 +102,7 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 };
 
 describe(`UID2 module`, function () {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let suiteSandbox; let testSandbox; let timerSpy; let fullTestTitle; let restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();

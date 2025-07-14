@@ -227,7 +227,7 @@ describe('DailyhuntAdapter', function () {
               impid: 'native-impid',
               price: 50,
               nurl: 'winUrl',
-              adm: '{"native":{"link":{"url":"url","clicktrackers":[]},"assets":[{"id":1,"required":1,"img":{},"video":{},"data":{},"title":{"text":"TITLE"},"link":{}},{"id":1,"required":1,"img":{},"video":{},"data":{"type":2,"value":"Lorem Ipsum Lorem Ipsum Lorem Ipsum."},"title":{},"link":{}},{"id":1,"required":1,"img":{},"video":{},"data":{"type":12,"value":"Install Here"},"title":{},"link":{}},{"id":1,"required":1,"img":{"type":3,"url":"urk","w":990,"h":505},"video":{},"data":{},"title":{},"link":{}}],"imptrackers":[]}}',
+              adm: '{"native":{"ver":"1.2","assets":[{"id":1,"required":1,"title":{"text":"Discover Amazing Products Today!"}},{"id":2,"required":1,"img":{"type":3,"url":"https://cdn.prod.website-files.com/64aabfa2adf7363205ea0135/67c168c650acb91b6ce4dfdf_%EC%8D%B8%EB%84%A4%EC%9D%BC_EN.webp","w":600,"h":315}},{"id":3,"data":{"label":"CTA","value":"Click Here To Visit Site","type":12}}],"link":{"url":"https://dailyhunt.in/news/india/english/for+you?launch=true&mode=pwa"},"imptrackers":["https://example.com/impression"]}}',
               adid: '968',
               crid: '2370',
               w: 300,
@@ -314,18 +314,17 @@ describe('DailyhuntAdapter', function () {
           winUrl: 'winUrl',
           adomain: 'dailyhunt',
           native: {
-            clickUrl: 'https%3A%2F%2Fmontu1996.github.io%2F',
+            clickUrl: "https://dailyhunt.in/news/india/english/for+you?launch=true&mode=pwa",
             clickTrackers: [],
-            impressionTrackers: [],
+            impressionTrackers: ["https://example.com/impression"],
             javascriptTrackers: [],
-            title: 'TITLE',
-            body: 'Lorem Ipsum Lorem Ipsum Lorem Ipsum.',
-            cta: 'Install Here',
+            title: "Discover Amazing Products Today!",
+            cta: "Click Here To Visit Site",
             image: {
-              url: 'url',
-              height: 505,
-              width: 990
-            }
+              height: 315,
+              url: "https://cdn.prod.website-files.com/64aabfa2adf7363205ea0135/67c168c650acb91b6ce4dfdf_%EC%8D%B8%EB%84%A4%EC%9D%BC_EN.webp",
+              width: 600,
+            },
           }
         },
         {

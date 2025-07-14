@@ -591,8 +591,8 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('should use placementId value as imp.tagid when using "zid"', () => {
-      const { validBR, bidderRequest } = createRequestMock({}),
-        TEST_ZID = '54321';
+      const { validBR, bidderRequest } = createRequestMock({});
+        const TEST_ZID = '54321';
       validBR[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.imp[0].tagid).to.deep.equal(TEST_ZID);

@@ -220,6 +220,10 @@ module.exports = {
     }
     return disabled.filter(feature => !enabled.includes(feature));
   },
+  getTestDisableFeatures() {
+    // test with all features disabled with exceptions for logging, as tests often assert logs
+    return require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR')
+  },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
   }

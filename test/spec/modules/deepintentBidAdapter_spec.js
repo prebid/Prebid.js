@@ -135,8 +135,8 @@ describe('Deepintent adapter', function () {
           params: {
             tagId: '1232'
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('invalidBid : tagId is not passed', function () {
@@ -146,8 +146,8 @@ describe('Deepintent adapter', function () {
             h: 200,
             w: 300
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('invalidBid : tagId is not a string', function () {
@@ -156,8 +156,8 @@ describe('Deepintent adapter', function () {
           params: {
             tagId: 12345
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('should check for context if video is present', function() {
@@ -176,8 +176,8 @@ describe('Deepintent adapter', function () {
               context: 'instream'
             }
           },
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
     });
     it('should error out if context is not present and is Video', function() {
@@ -195,15 +195,15 @@ describe('Deepintent adapter', function () {
               playerSize: [640, 480]
             }
           },
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     })
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {
-      const oRequest = utils.deepClone(request),
-        bidRequest = spec.buildRequests(request);
+      const oRequest = utils.deepClone(request);
+        const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {
