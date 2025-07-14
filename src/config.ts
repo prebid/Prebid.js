@@ -249,6 +249,15 @@ export interface Config {
      * https://docs.prebid.org/features/firstPartyData.html
      */
     ortb2?: DeepPartial<ORTBRequest>;
+    /**
+     * Configure compression settings for bid requests
+     */
+    compression?: {
+        /**
+         * Enable/disable gzip compression globally
+         */
+        gzipEnabled?: boolean
+    };
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };

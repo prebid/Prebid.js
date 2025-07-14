@@ -684,6 +684,55 @@ describe('PubMatic adapter', () => {
           expect(request).to.have.property('options');
           expect(request.options).to.have.property('endpointCompression').to.equal(true);
         });
+        
+        describe('Gzip Configuration', () => {
+          let configStub;
+          
+          beforeEach(() => {
+            configStub = sinon.stub(config, 'getConfig');
+          });
+          
+          afterEach(() => {
+            configStub.restore();
+          });
+          
+          it('should enable gzip compression by default', () => {
+            configStub.withArgs('pubmatic').returns({});
+            configStub.withArgs('compression').returns({});
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.true;
+          });
+          
+          it('should respect global pubmatic.gzipEnabled config', () => {
+            configStub.withArgs('pubmatic').returns({ gzipEnabled: false });
+            configStub.withArgs('compression').returns({});
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+          
+          it('should respect global compression.gzipEnabled config', () => {
+            configStub.withArgs('pubmatic').returns({});
+            configStub.withArgs('compression').returns({ gzipEnabled: false });
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+          
+          it('should prioritize bidder-level gzipEnabled setting over global settings', () => {
+            configStub.withArgs('pubmatic').returns({ gzipEnabled: true });
+            configStub.withArgs('compression').returns({ gzipEnabled: true });
+            const modifiedBidRequests = utils.deepClone(validBidRequests);
+            modifiedBidRequests[0].params.gzipEnabled = false;
+            const request = spec.buildRequests(modifiedBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+          
+          it('should prioritize pubmatic.gzipEnabled over compression.gzipEnabled', () => {
+            configStub.withArgs('pubmatic').returns({ gzipEnabled: false });
+            configStub.withArgs('compression').returns({ gzipEnabled: true });
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+        });
       });
 
       describe('GROUPM', () => {

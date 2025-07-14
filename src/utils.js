@@ -1293,6 +1293,44 @@ export function extractDomainFromHost(pageHost) {
   return domain;
 }
 
+/**
+ * Determines if gzip compression should be enabled for requests
+ * Checks in order:
+ * 1. Bidder-level setting from bid.params.gzipEnabled
+ * 2. Bidder-specific setting from bidder config
+ * 3. Global setting from config.compression.gzipEnabled
+ * 4. Default value (true)
+ * 
+ * @param {string} bidderCode - The bidder code
+ * @param {Object} [bidRequest] - The bid request object that may contain bidder-specific settings
+ * @returns {boolean} - Whether gzip compression should be enabled
+ */
+export function shouldUseCompression(bidderCode, bidRequest = null) {
+  const DEFAULT_GZIP_ENABLED = true;
+  
+  // Check bidder-specific settings in the bid request
+  if (bidRequest && 
+      bidRequest.params && 
+      typeof bidRequest.params.gzipEnabled === 'boolean') {
+    return bidRequest.params.gzipEnabled;
+  }
+  
+  // Check bidder-specific settings in the global config
+  const bidderConfig = config.getBidderConfig()[bidderCode];
+  if (bidderConfig?.compression?.gzipEnabled !== undefined) {
+    return bidderConfig.compression.gzipEnabled;
+  }
+  
+  // Check global settings
+  const globalConfig = config.getConfig('compression') || {};
+  if (typeof globalConfig.gzipEnabled === 'boolean') {
+    return globalConfig.gzipEnabled;
+  }
+  
+  // Default to true if not specified
+  return DEFAULT_GZIP_ENABLED;
+}
+
 export function triggerNurlWithCpm(bid, cpm) {
   if (isStr(bid.nurl) && bid.nurl !== '') {
     bid.nurl = bid.nurl.replace(

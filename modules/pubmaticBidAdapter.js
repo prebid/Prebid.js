@@ -696,6 +696,28 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   };
 };
 
+export const getGzipSetting = (bid) => {
+  // Check bidder-level setting first
+  if (bid && bid.params && typeof bid.params.gzipEnabled === 'boolean') {
+    return bid.params.gzipEnabled;
+  }
+  
+  // Check bidder-specific global setting
+  const pubmaticConfig = config.getConfig('pubmatic') || {};
+  if (typeof pubmaticConfig.gzipEnabled === 'boolean') {
+    return pubmaticConfig.gzipEnabled;
+  }
+  
+  // Check global compression setting
+  const compressionConfig = config.getConfig('compression') || {};
+  if (typeof compressionConfig.gzipEnabled === 'boolean') {
+    return compressionConfig.gzipEnabled;
+  }
+  
+  // Default to true if not specified
+  return DEFAULT_GZIP_ENABLED;
+};
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
