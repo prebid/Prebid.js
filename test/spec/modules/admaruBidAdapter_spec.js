@@ -14,7 +14,7 @@ describe('Admaru Adapter', function () {
   });
 
   describe('isBidRequestValidForBanner', () => {
-    let bid = {
+    const bid = {
       'bidder': 'admaru',
       'params': {
         'pub_id': '1234',
@@ -39,7 +39,7 @@ describe('Admaru Adapter', function () {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         wrong: 'missing pub_id or adspace_id'
@@ -49,7 +49,7 @@ describe('Admaru Adapter', function () {
   });
 
   describe('buildRequestsForBanner', () => {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'admaru',
         'params': {
@@ -91,7 +91,7 @@ describe('Admaru Adapter', function () {
   });
 
   describe('interpretResponseForBanner', () => {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'admaru',
         'params': {
@@ -115,9 +115,9 @@ describe('Admaru Adapter', function () {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(bidRequests);
-      let response = '';
+      const response = '';
 
-      let result = spec.interpretResponse(response, request[0]);
+      const result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
     });
   });

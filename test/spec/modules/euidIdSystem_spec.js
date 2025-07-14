@@ -9,7 +9,7 @@ import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 // N.B. Most of the EUID code is shared with UID2 - the tests here only cover the happy path.
 // Most of the functionality is covered by the UID2 tests.

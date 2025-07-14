@@ -31,9 +31,9 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 function fixURL(config, ns) {
   config.params = (config && config.params) ? config.params : {};
   config.params.url = config.params.url || TNC_API_URL;
-  let url = parseUrl(config.params.url);
+  const url = parseUrl(config.params.url);
   url.search = url.search || {};
-  let providerId = config.params.publisherId || config.params.providerId || url.search.publisherId || url.search.providerId || TNC_PREBIDJS_PROVIDER_ID;
+  const providerId = config.params.publisherId || config.params.providerId || url.search.publisherId || url.search.providerId || TNC_PREBIDJS_PROVIDER_ID;
   delete url.search.publisherId;
   url.search.providerId = providerId;
   url.search.ns = ns;
@@ -42,7 +42,7 @@ function fixURL(config, ns) {
 
 const loadRemoteScript = function(url) {
   return new Promise((resolve, reject) => {
-    let endpoint = buildUrl(url);
+    const endpoint = buildUrl(url);
     logMessage('TNC Endpoint', endpoint);
     loadExternalScript(endpoint, MODULE_TYPE_UID, MODULE_NAME, resolve);
   });
@@ -91,7 +91,7 @@ const tncCallback = async function(cb) {
 
     if (!window[tncNS] || typeof window[tncNS].ready !== 'function') {
       tncNS = TNC_PREBID_NS; // Register a new namespace for TNC global object
-      let url = fixURL(moduleConfig, tncNS);
+      const url = fixURL(moduleConfig, tncNS);
       if (!url) return cb();
       TNCObject(tncNS); // create minimal TNC object
       await loadRemoteScript(url); // load remote script

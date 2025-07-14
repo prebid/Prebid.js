@@ -7,7 +7,7 @@ import * as utils from '../../src/utils.js';
 export function getDevice() {
   let check = false;
   (function (a) {
-    let reg1 = new RegExp(
+    const reg1 = new RegExp(
       [
         '(android|bbd+|meego)',
         '.+mobile|avantgo|bada/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)',
@@ -17,7 +17,7 @@ export function getDevice() {
       ].join(''),
       'i'
     );
-    let reg2 = new RegExp(
+    const reg2 = new RegExp(
       [
         '1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s-)',
         '|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|-m|r |s )',

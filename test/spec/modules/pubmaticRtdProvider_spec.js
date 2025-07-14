@@ -39,7 +39,7 @@ describe('Pubmatic RTD Provider', () => {
 
     describe('registerSubModule', () => {
         it('should register RTD submodule provider', () => {
-            let submoduleStub = sinon.stub(hook, 'submodule');
+            const submoduleStub = sinon.stub(hook, 'submodule');
             registerSubModule();
             assert(submoduleStub.calledOnceWith('realTimeData', pubmaticSubmodule));
             submoduleStub.restore();
