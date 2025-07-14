@@ -18,16 +18,22 @@ describe('LockerDomeAdapter', function () {
     bidId: '2652ca954bce9',
     bidderRequestId: '14a54fade69854',
     auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72',
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'indirectseller.com',
-          sid: '00001',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }, {
     bidder: 'lockerdome',
@@ -44,16 +50,22 @@ describe('LockerDomeAdapter', function () {
     bidId: '4510f2834773ce',
     bidderRequestId: '14a54fade69854',
     auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72',
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'indirectseller.com',
-          sid: '00001',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }];
 
@@ -63,7 +75,7 @@ describe('LockerDomeAdapter', function () {
       expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
     });
     it('should return false if the adUnitId parameter is not present', function () {
-      let bidRequest = utils.deepClone(bidRequests[0]);
+      const bidRequest = utils.deepClone(bidRequests[0]);
       delete bidRequest.params.adUnitId;
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
     });

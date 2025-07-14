@@ -3,7 +3,6 @@ import {
   getBidRequest,
   getParameterByName,
   isArray,
-  isFn,
   isNumber,
   isPlainObject,
   logError
@@ -11,12 +10,12 @@ import {
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
+import {addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -74,8 +73,7 @@ function wrapAd(bid, position) {
               inR: {
                 tg: ${position.domParent},
                 rf: ${position.child}
-              },
-            };
+              }};
           \`;
           var s = parent.document.head.getElementsByTagName("script")[0];
           s.parentNode.insertBefore(w, s);
@@ -146,7 +144,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
       userObj = { 'coppa': true };
@@ -154,14 +152,14 @@ export const spec = {
 
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
-        .filter((param) => includes(USER_PARAMS, param))
+        .filter((param) => USER_PARAMS.includes(param))
         .forEach((param) => {
-          let uparam = convertCamelToUnderscore(param);
+          const uparam = convertCamelToUnderscore(param);
           if (
             param === 'segments' &&
             isArray(userObjBid.params.user[param])
           ) {
-            let segs = [];
+            const segs = [];
             userObjBid.params.user[param].forEach((val) => {
               if (isNumber(val)) {
                 segs.push({ id: val });
@@ -176,16 +174,16 @@ export const spec = {
         });
     }
 
-    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
-    const appIdObjBid = find(bidRequests, hasAppId);
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
@@ -193,9 +191,9 @@ export const spec = {
       };
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
+    const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
 
     const payload = {
       tags: [...tags],
@@ -231,7 +229,7 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let refererinfo = {
+      const refererinfo = {
         // TODO: this collects everything it finds, except for canonicalUrl
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
@@ -244,7 +242,7 @@ export const spec = {
     }
 
     if (bidRequests[0].userId) {
-      let eids = [];
+      const eids = [];
 
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
@@ -289,7 +287,7 @@ export const spec = {
         if (rtbBid) {
           if (
             rtbBid.cpm !== 0 &&
-            includes(this.supportedMediaTypes, rtbBid.ad_type)
+            this.supportedMediaTypes.includes(rtbBid.ad_type)
           ) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
@@ -316,7 +314,7 @@ export const spec = {
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
-  let options = {
+  const options = {
     withCredentials: true
   };
 
@@ -436,7 +434,7 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
-  let bidFloor = getBidFloor(bid);
+  const bidFloor = getBidFloor(bid);
   if (bidFloor) {
     tag.reserve = bidFloor;
   }
@@ -457,7 +455,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -471,29 +469,8 @@ function bidToTag(bid) {
   return tag;
 }
 
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
-
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
-}
-
-function hasAppDeviceInfo(bid) {
-  if (bid.params) {
-    return !!bid.params.app
-  }
-}
-
-function hasAppId(bid) {
-  if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
-  }
-  return !!bid.params.app
-}
-
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, (ad) => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
 }
 
 function parseMediaType(rtbBid) {
@@ -504,31 +481,8 @@ function parseMediaType(rtbBid) {
   return BANNER;
 }
 
-function addUserId(eids, id, source, rti) {
-  if (id) {
-    if (rti) {
-      eids.push({ source, id, rti_partner: rti });
-    } else {
-      eids.push({ source, id });
-    }
-  }
-  return eids;
-}
-
-function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return (bid.params.reserve) ? bid.params.reserve : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
+function hasMemberId(bid) {
+  return !!parseInt(bid.params.member, 10);
 }
 
 registerBidder(spec);

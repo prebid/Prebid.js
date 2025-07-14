@@ -56,7 +56,13 @@ describe('GamoshiAdapter', () => {
         consentString: 'some string',
         gdprApplies: true
       },
-      schain: schainConfig,
+      ortb2: {
+        source: {
+          ext: {
+            schain: schainConfig
+          }
+        }
+      },
       uspConsent: 'gamoshiCCPA'
     };
 
@@ -321,7 +327,7 @@ describe('GamoshiAdapter', () => {
     });
 
     it('builds request correctly', () => {
-      let bidRequest2 = utils.deepClone(bidRequest);
+      const bidRequest2 = utils.deepClone(bidRequest);
       Object.assign(bidRequest2.refererInfo, {
         page: 'http://www.test.com/page.html',
         domain: 'www.test.com',
@@ -339,7 +345,7 @@ describe('GamoshiAdapter', () => {
       expect(response.data.imp[0].bidfloor).to.equal(0);
       expect(response.data.imp[0].bidfloorcur).to.equal('USD');
       expect(response.data.regs.ext.us_privacy).to.equal('gamoshiCCPA');// USP/CCPAs
-      expect(response.data.source.ext.schain).to.deep.equal(bidRequest2.schain);
+      expect(response.data.source.ext.schain).to.deep.equal(bidRequest2.ortb2.source.ext.schain);
 
       const bidRequestWithInstlEquals1 = utils.deepClone(bidRequest);
       bidRequestWithInstlEquals1.params.instl = 1;
@@ -483,7 +489,7 @@ describe('GamoshiAdapter', () => {
     });
 
     it('builds request with gdpr consent', () => {
-      let response = spec.buildRequests([bidRequest], bidRequest)[0];
+      const response = spec.buildRequests([bidRequest], bidRequest)[0];
 
       expect(response.data.ext.gdpr_consent).to.not.equal(null).and.not.equal(undefined);
       expect(response.data.ext).to.have.property('gdpr_consent');
@@ -498,7 +504,7 @@ describe('GamoshiAdapter', () => {
       const bidRequestClone = utils.deepClone(bidRequest);
       bidRequestClone.userId = {};
       bidRequestClone.userId.id5id = { uid: 'id5-user-id' };
-      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      const request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
       expect(request.data.user.ext.eids).to.deep.equal([{
         'source': 'id5-sync.com',
         'uids': [{
@@ -514,7 +520,7 @@ describe('GamoshiAdapter', () => {
       const bidRequestClone = utils.deepClone(bidRequest);
       bidRequestClone.userId = {};
       bidRequestClone.userId.tdid = 'tdid-user-id';
-      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      const request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
       expect(request.data.user.ext.eids).to.deep.equal([{
         'source': 'adserver.org',
         'uids': [{

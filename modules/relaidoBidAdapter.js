@@ -19,7 +19,7 @@ import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.2.1';
+const ADAPTER_VERSION = '1.2.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -27,7 +27,7 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
-    logWarn('placementId param is reqeuired.');
+    logWarn('placementId param is required.');
     return false;
   }
   if (hasVideoMediaType(bid) && isVideoValid(bid)) {
@@ -45,7 +45,6 @@ function isBidRequestValid(bid) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
-  let imuid = null;
   let bidDomain = null;
   let bidder = null;
   let count = null;
@@ -70,13 +69,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       width = sizes[0][0];
       height = sizes[0][1];
       mediaType = BANNER;
-    }
-
-    if (!imuid) {
-      const pickImuid = deepAccess(bidRequest, 'userId.imuid');
-      if (pickImuid) {
-        imuid = pickImuid;
-      }
     }
 
     if (!bidDomain) {
@@ -127,7 +119,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     bid_requests_count: count,
     uuid: getUuid(),
     pv: '$prebid.version$',
-    imuid: imuid,
+    imuid: null,
     canonical_url: canonicalUrl,
     canonical_url_hash: getCanonicalUrlHash(canonicalUrl),
     ref: bidderRequest.refererInfo.page
@@ -152,7 +144,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
   for (const res of body.ads) {
     const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
-    let bidResponse = {
+    const bidResponse = {
       requestId: res.bidId,
       placementId: res.placementId,
       width: res.width,
@@ -203,7 +195,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 }
 
 function onBidWon(bid) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(bid, 'params.0.placementId'),
     creative_id: deepAccess(bid, 'creativeId'),
     price: deepAccess(bid, 'cpm'),
@@ -219,7 +211,7 @@ function onBidWon(bid) {
 }
 
 function onTimeout(data) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(data, '0.params.0.placementId'),
     timeout: deepAccess(data, '0.timeout'),
     auction_id: deepAccess(data, '0.auctionId'),
@@ -335,7 +327,7 @@ function hasVideoMediaType(bid) {
 }
 
 function getValidSizes(sizes) {
-  let result = [];
+  const result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
       if (isArray(sizes[i]) && sizes[i].length == 2) {

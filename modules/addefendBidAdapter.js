@@ -1,9 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'addefend';
+const GVLID = 539;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   hostname: 'https://addefend-platform.com',
 
   getHostname() {
@@ -15,7 +17,7 @@ export const spec = {
               (bid.params.placementId !== undefined && (typeof bid.params.placementId === 'string')));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    let bid = {
+    const bid = {
       v: 'v' + '$prebid.version$',
       auctionId: false,
       pageId: false,
@@ -27,8 +29,8 @@ export const spec = {
     };
 
     for (var i = 0; i < validBidRequests.length; i++) {
-      let vb = validBidRequests[i];
-      let o = vb.params;
+      const vb = validBidRequests[i];
+      const o = vb.params;
       // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       bid.auctionId = vb.auctionId;
       o.bidId = vb.bidId;
@@ -44,7 +46,7 @@ export const spec = {
 
       if (vb.sizes && Array.isArray(vb.sizes)) {
         for (var j = 0; j < vb.sizes.length; j++) {
-          let s = vb.sizes[j];
+          const s = vb.sizes[j];
           if (Array.isArray(s) && s.length == 2) {
             o.sizes.push(s[0] + 'x' + s[1]);
           }

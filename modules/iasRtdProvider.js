@@ -5,6 +5,10 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'ias';
@@ -52,7 +56,7 @@ export function init(config, userConsent) {
   }
   if (params.hasOwnProperty('keyMappings')) {
     const keyMappings = params.keyMappings;
-    for (let prop in keyMappings) {
+    for (const prop in keyMappings) {
       if (IAS_KEY_MAPPINGS.hasOwnProperty(prop)) {
         IAS_KEY_MAPPINGS[prop] = keyMappings[prop]
       }
@@ -101,7 +105,8 @@ function stringifySlot(bidRequest, adUnitPath) {
 }
 
 function stringifyWindowSize() {
-  return [window.innerWidth || -1, window.innerHeight || -1].join('.');
+  const { innerWidth, innerHeight } = utils.getWinDimensions();
+  return [innerWidth || -1, innerHeight || -1].join('.');
 }
 
 function stringifyScreenSize() {
@@ -109,8 +114,8 @@ function stringifyScreenSize() {
 }
 
 function renameKeyValues(source) {
-  let result = {};
-  for (let prop in IAS_KEY_MAPPINGS) {
+  const result = {};
+  for (const prop in IAS_KEY_MAPPINGS) {
     if (source.hasOwnProperty(prop)) {
       result[IAS_KEY_MAPPINGS[prop]] = source[prop];
     }
@@ -119,7 +124,7 @@ function renameKeyValues(source) {
 }
 
 function formatTargetingData(adUnit) {
-  let result = {};
+  const result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
   }
@@ -152,13 +157,23 @@ function constructQueryString(anId, adUnits, pageUrl, adUnitPath) {
 }
 
 function parseResponse(result) {
-  let iasResponse = {};
   try {
-    iasResponse = JSON.parse(result);
+    mergeResponseData(JSON.parse(result));
   } catch (err) {
     utils.logError('error', err);
   }
+}
+
+function mergeResponseData(iasResponse) {
+  const cachedSlots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
+
   iasTargeting = iasResponse;
+
+  const slots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
+
+  Object.keys(cachedSlots)
+    .filter((adUnit) => adUnit in slots === false)
+    .forEach((adUnit) => (slots[adUnit] = cachedSlots[adUnit]));
 }
 
 function getTargetingData(adUnits, config, userConsent) {

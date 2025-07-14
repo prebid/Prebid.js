@@ -550,7 +550,7 @@ describe('Outbrain Adapter', function () {
       });
 
       it('should pass extended ids', function () {
-        let bidRequest = {
+        const bidRequest = {
           bidId: 'bidId',
           params: {},
           userIdAsEids: [
@@ -559,7 +559,7 @@ describe('Outbrain Adapter', function () {
           ...commonBidRequest,
         };
 
-        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.eids).to.deep.equal([
           { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
@@ -569,13 +569,13 @@ describe('Outbrain Adapter', function () {
       it('should pass OB user token', function () {
         getDataFromLocalStorageStub.returns('12345');
 
-        let bidRequest = {
+        const bidRequest = {
           bidId: 'bidId',
           params: {},
           ...commonBidRequest,
         };
 
-        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.obusertoken).to.equal('12345')
         expect(getDataFromLocalStorageStub.called).to.be.true;
@@ -600,7 +600,7 @@ describe('Outbrain Adapter', function () {
       });
 
       it('should transform string sizes to numbers', function () {
-        let bidRequest = {
+        const bidRequest = {
           bidId: 'bidId',
           params: {},
           ...commonBidRequest,
@@ -634,7 +634,7 @@ describe('Outbrain Adapter', function () {
           ]
         }
 
-        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
       });
@@ -703,7 +703,7 @@ describe('Outbrain Adapter', function () {
             cpm: 1.1,
             creativeId: '28023739',
             ttl: 360,
-            netRevenue: false,
+            netRevenue: true,
             currency: 'USD',
             mediaType: 'native',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',
@@ -780,7 +780,7 @@ describe('Outbrain Adapter', function () {
             cpm: 1.1,
             creativeId: '29998660',
             ttl: 360,
-            netRevenue: false,
+            netRevenue: true,
             currency: 'USD',
             mediaType: 'banner',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',
@@ -843,7 +843,7 @@ describe('Outbrain Adapter', function () {
             cpm: 1.1,
             creativeId: '29998660',
             ttl: 360,
-            netRevenue: false,
+            netRevenue: true,
             currency: 'USD',
             mediaType: 'video',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',

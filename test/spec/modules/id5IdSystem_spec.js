@@ -20,6 +20,13 @@ import {PbPromise} from '../../../src/utils/promise.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
 describe('ID5 ID System', function () {
+  let logInfoStub;
+  before(function () {
+    logInfoStub = sinon.stub(utils, 'logInfo');
+  });
+  after(function () {
+    logInfoStub.restore();
+  });
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
@@ -824,17 +831,17 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass gpp_string and gpp_sid to ID5 server', function () {
-      let xhrServerMock = new XhrServerMock(server);
+      const xhrServerMock = new XhrServerMock(server);
       const gppData = {
         ready: true,
         gppString: 'GPP_STRING',
         applicableSections: [2]
       };
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
+          const requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.gpp_string).is.equal('GPP_STRING');
           expect(requestBody.gpp_sid).contains(2);
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
@@ -845,7 +852,7 @@ describe('ID5 ID System', function () {
     describe('when legacy cookies are set', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(id5System.storage, 'getCookie');
       });
       afterEach(() => {
@@ -858,12 +865,12 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass true link info to ID5 server even when true link is not booted', function () {
-      let xhrServerMock = new XhrServerMock(server);
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      const xhrServerMock = new XhrServerMock(server);
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
+          const requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.true_link).is.eql({booted: false});
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
@@ -871,18 +878,18 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass full true link info to ID5 server when true link is booted', function () {
-      let xhrServerMock = new XhrServerMock(server);
-      let trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
+      const xhrServerMock = new XhrServerMock(server);
+      const trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
       window.id5Bootstrap = {
         getTrueLinkInfo: function () {
           return trueLinkResponse;
         }
       };
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
+          const requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.true_link).is.eql(trueLinkResponse);
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
@@ -893,7 +900,7 @@ describe('ID5 ID System', function () {
   describe('Local storage', () => {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(id5System.storage, 'localStorageIsEnabled');
     });
     afterEach(() => {
@@ -922,17 +929,20 @@ describe('ID5 ID System', function () {
   });
 
   describe('Request Bids Hook', function () {
-    let adUnits;
+    let adUnits, ortb2Fragments;
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${id5System.ID5_STORAGE_NAME}_last`);
       coreStorage.setDataInLocalStorage(id5System.ID5_STORAGE_NAME + '_cst', getConsentHash());
       adUnits = [getAdUnitMock()];
+      ortb2Fragments = {
+        global: {}
+      }
     });
     afterEach(function () {
       events.getEvents.restore();
@@ -951,24 +961,18 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, () => {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
-              expect(bid.userId.id5id.uid).is.equal(ID5_STORED_ID);
-              expect(bid.userIdAsEids[0]).is.eql({
-                source: ID5_SOURCE,
-                uids: [{
-                  id: ID5_STORED_ID,
-                  atype: 1,
-                  ext: {
-                    linkType: ID5_STORED_LINK_TYPE
-                  }
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[0]).is.eql({
+            source: ID5_SOURCE,
+            uids: [{
+              id: ID5_STORED_ID,
+              atype: 1,
+              ext: {
+                linkType: ID5_STORED_LINK_TYPE
+              }
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
 
       it('should add stored EUID from cache to bids', function (done) {
@@ -979,25 +983,19 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.euid`);
-              expect(bid.userId.euid.uid).is.equal(EUID_STORED_ID);
-              expect(bid.userIdAsEids[0].uids[0].id).is.equal(ID5_STORED_ID);
-              expect(bid.userIdAsEids[1]).is.eql({
-                source: EUID_SOURCE,
-                uids: [{
-                  id: EUID_STORED_ID,
-                  atype: 3,
-                  ext: {
-                    provider: ID5_SOURCE
-                  }
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[0].uids[0].id).is.equal(ID5_STORED_ID);
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
+            source: EUID_SOURCE,
+            uids: [{
+              id: EUID_STORED_ID,
+              atype: 3,
+              ext: {
+                provider: ID5_SOURCE
+              }
+            }]
           });
           done();
-        }, {adUnits});
+        }, {ortb2Fragments});
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids', function (done) {
@@ -1008,33 +1006,27 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
-              expect(bid.userId.trueLinkId.uid).is.equal(TRUE_LINK_STORED_ID);
-              expect(bid.userIdAsEids[1]).is.eql({
-                source: TRUE_LINK_SOURCE,
-                uids: [{
-                  id: TRUE_LINK_STORED_ID,
-                  atype: 1
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
+            source: TRUE_LINK_SOURCE,
+            uids: [{
+              id: TRUE_LINK_STORED_ID,
+              atype: 1
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
     });
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
       const xhrServerMock = new XhrServerMock(server);
-      let storedObject = ID5_STORED_OBJ;
+      const storedObject = ID5_STORED_OBJ;
       storedObject.nbPage = 1;
       const initialLocalStorageValue = JSON.stringify(storedObject);
       storeInStorage(id5System.ID5_STORAGE_NAME, initialLocalStorageValue, 1);
       storeInStorage(`${id5System.ID5_STORAGE_NAME}_last`, expDaysStr(-1), 1);
 
-      let id5Config = getFetchLocalStorageConfig();
+      const id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
       id5Config.userSync.auctionDelay = 0; // do not trigger callback before auction
       init(config);
@@ -1057,6 +1049,8 @@ describe('ID5 ID System', function () {
     });
 
     describe('when request with "ids" object stored', function () {
+      // FIXME: all these tests involve base userId logic
+      // (which already has its own tests, so these make it harder to refactor it)
       it('should add stored ID from cache to bids - from ids', function (done) {
         storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_IDS_ID5ID_ONLY), 1);
 
@@ -1065,26 +1059,18 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
         const id5IdEidUid = IDS_ID5ID.eid.uids[0];
         startAuctionHook(wrapAsyncExpects(done, () => {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
-              expect(bid.userId.id5id).is.eql({
-                uid: id5IdEidUid.id,
-                ext: id5IdEidUid.ext
-              });
-              expect(bid.userIdAsEids[0]).is.eql({
-                source: IDS_ID5ID.eid.source,
-                uids: [{
-                  id: id5IdEidUid.id,
-                  atype: id5IdEidUid.atype,
-                  ext: id5IdEidUid.ext
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[0]).is.eql({
+            source: IDS_ID5ID.eid.source,
+            uids: [{
+              id: id5IdEidUid.id,
+              atype: id5IdEidUid.atype,
+              ext: id5IdEidUid.ext
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
+
       it('should add stored EUID from cache to bids - from ids', function (done) {
         storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify({
           ...ID5_STORED_OBJ,
@@ -1099,19 +1085,11 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, () => {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.euid`);
-              expect(bid.userId.euid).is.eql({
-                uid: IDS_EUID.eid.uids[0].id,
-                ext: IDS_EUID.eid.uids[0].ext
-              });
-              expect(bid.userIdAsEids[0]).is.eql(IDS_ID5ID.eid);
-              expect(bid.userIdAsEids[1]).is.eql(IDS_EUID.eid);
-            });
-          });
+          const eids = ortb2Fragments.global.user.ext.eids;
+          expect(eids[0]).is.eql(IDS_ID5ID.eid);
+          expect(eids[1]).is.eql(IDS_EUID.eid);
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids - from ids', function (done) {
@@ -1128,15 +1106,9 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
-              expect(bid.userId.trueLinkId.uid).is.eql(IDS_TRUE_LINK_ID.eid.uids[0].id);
-              expect(bid.userIdAsEids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
-            });
-          });
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
 
       it('should add other id from cache to bids', function (done) {
@@ -1169,25 +1141,19 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.otherId`);
-              expect(bid.userId.otherId.uid).is.eql('other-id-value');
-              expect(bid.userIdAsEids[1]).is.eql({
-                source: 'other-id.com',
-                inserter: 'id5-sync.com',
-                uids: [{
-                  id: 'other-id-value',
-                  atype: 2,
-                  ext: {
-                    provider: 'id5-sync.com'
-                  }
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
+            source: 'other-id.com',
+            inserter: 'id5-sync.com',
+            uids: [{
+              id: 'other-id-value',
+              atype: 2,
+              ext: {
+                provider: 'id5-sync.com'
+              }
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
     });
   });
@@ -1222,7 +1188,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should decode all ids from a stored object with ids', function () {
-      let decoded = id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_IDS_ALL, getId5FetchConfig());
+      const decoded = id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_IDS_ALL, getId5FetchConfig());
       expect(decoded.id5id).is.eql({
         uid: IDS_ID5ID.eid.uids[0].id,
         ext: IDS_ID5ID.eid.uids[0].ext
@@ -1270,6 +1236,7 @@ describe('ID5 ID System', function () {
         let logErrorSpy;
 
         beforeEach(function () {
+          utils.logError.restore?.();
           logErrorSpy = sinon.spy(utils, 'logError');
         });
         afterEach(function () {

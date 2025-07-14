@@ -113,7 +113,7 @@ export function getFloor(bid) {
   const mediaTypes = getBidRequestMediaTypes(bid)
   const firstMediaType = mediaTypes[0];
 
-  let floorResult = bid.getFloor({
+  const floorResult = bid.getFloor({
     currency: 'USD',
     mediaType: mediaTypes.length === 1 ? firstMediaType : '*',
     size: '*'
@@ -224,7 +224,7 @@ export function generateBidParameters(bid, bidderRequest) {
     sizes: getSizesArray(bid),
     floorPrice: Math.max(getFloor(bid), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
-    loop: bid.bidderRequestsCount || 0,
+    loop: bid.auctionsCount || 0,
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0,
@@ -427,8 +427,8 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     generalParams.ifa = generalBidParams.ifa;
   }
 
-  if (generalObject.schain) {
-    generalParams.schain = getSupplyChain(generalObject.schain);
+  if (bidderRequest?.ortb2?.source?.ext?.schain) {
+    generalParams.schain = getSupplyChain(bidderRequest.ortb2.source.ext.schain);
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {

@@ -9,6 +9,7 @@ describe('Ad Queue Coordinator', function () {
       onEvents: sinon.spy(),
       offEvents: sinon.spy(),
       setAdTagUrl: sinon.spy(),
+      setAdXml: sinon.spy(),
     }
   };
 
@@ -27,7 +28,7 @@ describe('Ad Queue Coordinator', function () {
       coordinator.queueAd('testAdTag', testId, { param: {} });
 
       expect(mockEvents.emit.calledOnce).to.be.true;
-      let emitArgs = mockEvents.emit.firstCall.args;
+      const emitArgs = mockEvents.emit.firstCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadQueued');
       expect(mockVideoCore.setAdTagUrl.called).to.be.false;
     });
@@ -58,6 +59,24 @@ describe('Ad Queue Coordinator', function () {
       expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
     });
 
+    it('should run setAdXml instead of setAdTagUrl if vast has been prefetched', function () {
+      const mockVideoCore = mockVideoCoreFactory();
+      const mockEvents = mockEventsFactory();
+      let setupComplete;
+      mockVideoCore.onEvents = function(events, callback, id) {
+        if (events[0] === SETUP_COMPLETE && id === testId) {
+          setupComplete = callback;
+        }
+      };
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
+      coordinator.registerProvider(testId);
+      coordinator.queueAd('testAdTag', testId, {prefetchedVastXml: '<VAST></VAST>'});
+
+      setupComplete('', { divId: testId });
+      expect(mockVideoCore.setAdXml.calledOnce).to.be.true;
+      expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.false;
+    });
+
     it('should load ads without queueing', function () {
       const mockVideoCore = mockVideoCoreFactory();
       const mockEvents = mockEventsFactory();
@@ -74,7 +93,7 @@ describe('Ad Queue Coordinator', function () {
 
       coordinator.queueAd('testAdTag', testId, { param: {} });
       expect(mockEvents.emit.calledOnce).to.be.true;
-      let emitArgs = mockEvents.emit.firstCall.args;
+      const emitArgs = mockEvents.emit.firstCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
       expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
     });

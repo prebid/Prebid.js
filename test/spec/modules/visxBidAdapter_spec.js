@@ -18,7 +18,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'visx',
       'params': {
         'uid': 903536
@@ -35,7 +35,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -44,7 +44,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when uid can not be parsed as number', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 'sdvsdv'
@@ -53,7 +53,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should fail on invalid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -65,7 +65,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should pass on valid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -142,7 +142,7 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'visx',
         'params': {
@@ -597,7 +597,7 @@ describe('VisxAdapter', function () {
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
-        Object.assign({schain: schainObject}, bidRequests[0]),
+        Object.assign({ortb2: {source: {ext: {schain: schainObject}}}}, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
@@ -901,7 +901,7 @@ describe('VisxAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    it('should send requst for banner bid', function () {
+    it('should send request for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -1056,7 +1056,7 @@ describe('VisxAdapter', function () {
     let documentStub;
 
     before(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('visx-adunit-code-1').returns({
         id: 'visx-adunit-code-1'
@@ -1952,7 +1952,7 @@ describe('VisxAdapter', function () {
       return { path, query };
     }
     it('should call iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -1968,7 +1968,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should call image', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 

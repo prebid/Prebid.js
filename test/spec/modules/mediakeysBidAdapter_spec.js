@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import {find} from 'src/polyfill.js';
 import { spec } from 'modules/mediakeysBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
@@ -247,7 +246,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].native.request.plcmttype).to.equal(1);
         expect(data.imp[0].native.request.assets.length).to.equal(6);
         // find the asset body
-        const bodyAsset = find(data.imp[0].native.request.assets, asset => asset.id === 6);
+        const bodyAsset = data.imp[0].native.request.assets.find(asset => asset.id === 6);
         expect(bodyAsset.data.type).to.equal(2);
       });
 
@@ -452,7 +451,10 @@ describe('mediakeysBidAdapter', function () {
         ],
       };
       const bidRequests = [utils.deepClone(bid)];
-      bidRequests[0].schain = schain;
+      bidRequests[0].ortb2 = bidRequests[0].ortb2 || {};
+      bidRequests[0].ortb2.source = bidRequests[0].ortb2.source || {};
+      bidRequests[0].ortb2.source.ext = bidRequests[0].ortb2.source.ext || {};
+      bidRequests[0].ortb2.source.ext.schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const data = request.data;
       expect(data.source.ext.schain).to.equal(schain);
@@ -688,15 +690,6 @@ describe('mediakeysBidAdapter', function () {
       expect(response04.length).to.equal(0);
       expect(response05.length).to.equal(0);
       expect(response06.length).to.equal(0);
-    });
-
-    it('Log an error', function () {
-      const bidRequests = [utils.deepClone(bid)];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      sinon.stub(utils, 'isArray').throws();
-      utilsMock.expects('logError').once();
-      spec.interpretResponse(rawServerResponse, request);
-      utils.isArray.restore();
     });
 
     it('Meta Primary category handling', function() {

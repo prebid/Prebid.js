@@ -209,7 +209,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     return request;
   });
 
-  let request = {
+  const request = {
     tags,
     pageTitle: document.title,
     pageUrl: deepAccess(bidderRequest, 'refererInfo.page').replace(/\?.*$/, ''),
@@ -218,7 +218,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     ect: getEffectiveConnectionType(),
   };
 
-  const schain = deepAccess(validBidRequests[0], 'schain')
+  const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain')
   const eids = getUserIds(validBidRequests)
   const device = bidderRequest.ortb2?.device
   if (schain) {
@@ -275,7 +275,7 @@ const interpretResponse = (serverResponse) => {
  * @return {[{type: string, url: string}]|*[]}
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-  let syncs = [];
+  const syncs = [];
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
     let gdprParams = ''
     let uspConsentStr = ''
@@ -309,7 +309,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
 };
 
 /**
- * @type {{interpretResponse: interpretResponse, code: string, aliases: string[], getUserSyncs: getUserSyncs, buildRequests: buildRequests, onTimeout: onTimeout, onSetTargeting: onSetTargeting, isBidRequestValid: isBidRequestValid, onBidWon: onBidWon}}
+ * @type {{interpretResponse: typeof interpretResponse, code: string, aliases: string[], getUserSyncs: typeof getUserSyncs, buildRequests: typeof buildRequests, isBidRequestValid: typeof isBidRequestValid}}
  */
 export const spec = {
   code: BIDDER_CODE,

@@ -184,7 +184,7 @@ function convertRequest(bid) {
     aw: size[0],
     ah: size[1],
     tf: 0,
-    sc: bid.schain || {},
+    sc: bid?.ortb2?.source?.ext?.schain || {},
     f: ensureFloor(getFloor(bid)),
     rtb: bid.ortb2Imp,
   };
@@ -462,7 +462,7 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
-    let { bidderSettings } = getGlobal();
+    const { bidderSettings } = getGlobal();
     const currentBidder = config.getCurrentBidder();
     const allowAlternateBidderCodes = alternateCodesAllowed(bidderSettings ?? {}, currentBidder) ||
       alternateCodesAllowed(config.getConfig('bidderSettings') ?? {}, currentBidder);
