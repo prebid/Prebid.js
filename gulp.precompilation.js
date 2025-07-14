@@ -186,8 +186,7 @@ gulp.task('ts', helpers.execaTask('tsc'));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
-const disableFeaturesForPrecompile = require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR');
-gulp.task('precompile-all-features-disabled', precompile({disableFeatures: disableFeaturesForPrecompile}));
+gulp.task('precompile-all-features-disabled', precompile({disableFeatures: helpers.getTestDisableFeatures()}));
 gulp.task('verbatim', copyVerbatim)
 
 

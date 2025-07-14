@@ -542,9 +542,7 @@ gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'))
 gulp.task('test-only-nobuild', testTaskMaker({coverage: true}))
 gulp.task('test-only', gulp.series('precompile', test));
 
-// test with all features disabled with exceptions for logging, as tests often assert logs
-const disableFeaturesForTests = require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR');
-gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: disableFeaturesForTests, oneBrowser: 'chrome', watch: false}));
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
 
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
