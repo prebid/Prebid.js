@@ -314,9 +314,9 @@ const setFloorInImp = (imp, bid) => {
 const updateBannerImp = (bannerObj, adSlot) => {
   const slot = adSlot.split(':');
   let splits = slot[0]?.split('@');
-  splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
+  splits = splits?.length === 2 ? splits[1].split('x') : splits.length === 3 ? splits[2].split('x') : [];
   const primarySize = bannerObj.format[0];
-  if (splits.length !== 2 || (parseInt(splits[0]) == 0 && parseInt(splits[1]) == 0)) {
+  if (splits.length !== 2 || (parseInt(splits[0]) === 0 && parseInt(splits[1]) === 0)) {
     bannerObj.w = primarySize.w;
     bannerObj.h = primarySize.h;
   } else {
@@ -461,7 +461,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   res.pm_dspid = bid.ext?.dspid ? bid.ext.dspid : null;
   res.pm_seat = seatbid.seat;
   if (!res.creativeId) res.creativeId = bid.id;
-  if (res.ttl == DEFAULT_TTL) res.ttl = MEDIATYPE_TTL[res.mediaType];
+  if (res.ttl === DEFAULT_TTL) res.ttl = MEDIATYPE_TTL[res.mediaType];
   if (bid.dealid) {
     res.dealChannel = bid.ext?.deal_channel ? dealChannel[bid.ext.deal_channel] || null : 'PMP';
   }
@@ -531,7 +531,7 @@ const addExtenstionParams = (req) => {
  */
 const assignDealTier = (bid, context, maxduration) => {
   if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
-  if (context != ADPOD) return;
+  if (context !== ADPOD) return;
 
   const duration = bid?.ext?.video?.duration || maxduration;
   // if (!duration) return;
