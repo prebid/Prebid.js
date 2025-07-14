@@ -131,8 +131,8 @@ function getTestFlag() {
 function getLanguage() {
   return navigator && navigator.language
     ? navigator.language.indexOf('-') !== -1
-        ? navigator.language.split('-')[0]
-        : navigator.language
+      ? navigator.language.split('-')[0]
+      : navigator.language
     : undefined;
 }
 

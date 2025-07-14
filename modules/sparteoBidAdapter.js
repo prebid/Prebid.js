@@ -49,7 +49,7 @@ const converter = ortbConverter({
 
     const response = buildBidResponse(bid, context);
 
-      if (context.mediaType === 'video') {
+    if (context.mediaType === 'video') {
       response.nurl = bid.nurl;
       response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url') ?? null;
     }
@@ -96,7 +96,7 @@ export const spec = {
     if (bannerParams) {
       const sizes = bannerParams.sizes;
 
-        if (!sizes || parseSizesInput(sizes).length === 0) {
+      if (!sizes || parseSizesInput(sizes).length === 0) {
         logError('mediaTypes.banner.sizes must be set for banner placement at the right format.');
         return false;
       }
@@ -107,7 +107,7 @@ export const spec = {
      */
 
     if (videoParams) {
-        if (parseSizesInput(videoParams.playerSize).length === 0) {
+      if (parseSizesInput(videoParams.playerSize).length === 0) {
         logError('mediaTypes.video.playerSize must be set for video placement at the right format.');
         return false;
       }

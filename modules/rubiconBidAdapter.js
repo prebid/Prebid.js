@@ -207,7 +207,7 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     // skip banner-only requests
     const bidRequestType = bidType(bidRequest);
-      if (bidRequestType.includes(BANNER) && bidRequestType.length === 1) return;
+    if (bidRequestType.includes(BANNER) && bidRequestType.length === 1) return;
 
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;

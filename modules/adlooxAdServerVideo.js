@@ -186,9 +186,9 @@ function VASTWrapper(options, callback) {
       [ 'id19', 'na' ],
       [ 'id20', 'na' ]
     ];
-      if (version && version !== 3) args.push([ 'version', version ]);
+    if (version && version !== 3) args.push([ 'version', version ]);
     if (vpaid) args.push([ 'vpaid', 1 ]);
-      if (duration !== 15) args.push([ 'duration', duration ]);
+    if (duration !== 15) args.push([ 'duration', duration ]);
     if (skip) args.push([ 'skip', skip ]);
 
     logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);

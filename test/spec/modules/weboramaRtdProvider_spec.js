@@ -2091,7 +2091,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-              return adUnitCode === 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 

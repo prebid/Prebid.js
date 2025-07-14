@@ -266,11 +266,11 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           nurl: bidData.nurl.replace(/^http:\/\//i, 'https://')
         };
 
-          if (mediaType === 'native') {
+        if (mediaType === 'native') {
           bidResponse.native = native;
         }
 
-          if (mediaType === 'video') {
+        if (mediaType === 'video') {
           bidResponse.vastXml = bidData.adm;
           bidResponse.width = bidData.w;
           bidResponse.height = bidData.h;

@@ -1219,8 +1219,8 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 
       if (isArray(pubDsaObj.transparency)) {
         const tpData = [];
-          pubDsaObj.transparency.forEach((tpObj) => {
-            if (isPlainObject(tpObj) && isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+        pubDsaObj.transparency.forEach((tpObj) => {
+          if (isPlainObject(tpObj) && isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
             tpData.push(tpObj);
           }
         });
@@ -1633,7 +1633,7 @@ export const spec = {
       }
     }
 
-      if (!isExchangeIdConfigured() && bid.params.siteId === undefined) {
+    if (!isExchangeIdConfigured() && bid.params.siteId === undefined) {
       logError('IX Bid Adapter: Invalid configuration - either siteId or exchangeId must be configured.');
       return false;
     }
@@ -1967,25 +1967,25 @@ export function deduplicateImpExtFields(r) {
         }
         if (imp.banner.format !== undefined) {
           for (let i = 0; i < imp.banner.format.length; i++) {
-              if (imp.banner.format[i].ext !== undefined && imp.banner.format[i].ext[key] !== undefined && imp.banner.format[i].ext[key] === impExt[key]) {
+            if (imp.banner.format[i].ext !== undefined && imp.banner.format[i].ext[key] !== undefined && imp.banner.format[i].ext[key] === impExt[key]) {
               delete r.imp[index].banner.format[i].ext[key];
             }
           }
         }
       }
-        if (VIDEO in imp) {
-          const videoExt = imp.video.ext;
-          if (videoExt !== undefined && videoExt[key] !== undefined && videoExt[key] === impExt[key]) {
-            delete r.imp[index].video.ext[key];
-          }
+      if (VIDEO in imp) {
+        const videoExt = imp.video.ext;
+        if (videoExt !== undefined && videoExt[key] !== undefined && videoExt[key] === impExt[key]) {
+          delete r.imp[index].video.ext[key];
         }
+      }
 
-        if (NATIVE in imp) {
-          const nativeExt = imp.native.ext;
-          if (nativeExt !== undefined && nativeExt[key] !== undefined && nativeExt[key] === impExt[key]) {
-            delete r.imp[index].native.ext[key];
-          }
+      if (NATIVE in imp) {
+        const nativeExt = imp.native.ext;
+        if (nativeExt !== undefined && nativeExt[key] !== undefined && nativeExt[key] === impExt[key]) {
+          delete r.imp[index].native.ext[key];
         }
+      }
     });
   });
   return r;

@@ -531,7 +531,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         return [ config, true ];
       }
 
-        if (!('api_version' in config) || (typeof (config.api_version) === 'string' && config.api_version.length === 0)) {
+      if (!('api_version' in config) || (typeof (config.api_version) === 'string' && config.api_version.length === 0)) {
         config.api_version = 'x1';
       }
 
@@ -540,7 +540,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         return [ config, true ];
       }
 
-        if (!(('api_hostname') in config) || typeof (config.api_hostname) !== 'string' || config.api_hostname.length === 0) {
+      if (!(('api_hostname') in config) || typeof (config.api_hostname) !== 'string' || config.api_hostname.length === 0) {
         onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
         return [ config, true ];
       }

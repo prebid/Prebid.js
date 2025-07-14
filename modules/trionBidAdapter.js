@@ -97,7 +97,7 @@ function getSyncUrl(gdprConsent, usPrivacy) {
 function getPublisherUrl() {
   var url = '';
   try {
-  if (window.top === window) {
+    if (window.top === window) {
       url = window.location.href;
     } else {
       try {

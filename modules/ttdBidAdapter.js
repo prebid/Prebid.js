@@ -112,7 +112,7 @@ function getUser(bidderRequest, firstPartyData) {
   if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
 
-      const tdid = eids.find(eid => eid.source === 'adserver.org')?.uids?.[0]?.id;
+    const tdid = eids.find(eid => eid.source === 'adserver.org')?.uids?.[0]?.id;
     if (tdid) {
       user.buyeruid = tdid
     }

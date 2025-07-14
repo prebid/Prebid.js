@@ -207,7 +207,7 @@ export const spec = {
               nurl: bidResponse.nurl ? bidResponse.nurl : []
             };
 
-              if (bidResponse.type === VIDEO) {
+            if (bidResponse.type === VIDEO) {
               if (bidResponse.ad_url) {
                 bid.vastUrl = bidResponse.ad_url;
               } else {

@@ -171,7 +171,7 @@ function handleBidWon(args) {
   let increment = args['cpm'];
   if (typeof saveEvents['auctionEnd'] === 'object') {
     saveEvents['auctionEnd'].forEach((auction) => {
-        if (auction['auctionId'] === args['auctionId'] && typeof auction['bidsReceived'] === 'object') {
+      if (auction['auctionId'] === args['auctionId'] && typeof auction['bidsReceived'] === 'object') {
         auction['bidsReceived'].forEach((bid) => {
           if (bid['transactionId'] === args['transactionId'] && bid['adId'] !== args['adId']) {
             if (args['cpm'] < bid['cpm']) {
@@ -185,7 +185,7 @@ function handleBidWon(args) {
       if (auction['auctionId'] === args['auctionId'] && typeof auction['bidderRequests'] === 'object') {
         auction['bidderRequests'].forEach((req) => {
           req.bids.forEach((bid) => {
-              if (bid['bidId'] === args['requestId'] && bid['transactionId'] === args['transactionId']) {
+            if (bid['bidId'] === args['requestId'] && bid['transactionId'] === args['transactionId']) {
               args['ova'] = bid['ova'];
             }
           });
