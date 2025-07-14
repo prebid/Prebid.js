@@ -23,16 +23,16 @@ const ENV = {
 } as const;
 
 type MichaoBidParams = {
-    site: number;
-    placement: string;
-    partner?: number;
-    test?: boolean;
+  site: number;
+  placement: string;
+  partner?: number;
+  test?: boolean;
 }
 
 declare module '../src/adUnits' {
-    interface BidderParams {
-        [ENV.BIDDER_CODE]: MichaoBidParams;
-    }
+  interface BidderParams {
+    [ENV.BIDDER_CODE]: MichaoBidParams;
+  }
 }
 
 export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {

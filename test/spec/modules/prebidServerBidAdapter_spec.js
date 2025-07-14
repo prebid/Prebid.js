@@ -599,8 +599,8 @@ describe('s2s configuration', () => {
 
 describe('S2S Adapter', function () {
   let adapter;
-    let addBidResponse = sinon.spy();
-    let done = sinon.spy();
+  let addBidResponse = sinon.spy();
+  let done = sinon.spy();
 
   addBidResponse.reject = sinon.spy();
 

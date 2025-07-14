@@ -73,17 +73,17 @@ const setEventsListeners = (function () {
 })();
 
 type RealTimeDataConfig = {
-    dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
-    /**
-     * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
-     */
-    auctionDelay?: number;
+  dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
+  /**
+   * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
+   */
+  auctionDelay?: number;
 }
 
 declare module '../../src/config' {
-    interface Config {
-        [MODULE_NAME]?: RealTimeDataConfig;
-    }
+  interface Config {
+    [MODULE_NAME]?: RealTimeDataConfig;
+  }
 }
 
 export function init(config) {

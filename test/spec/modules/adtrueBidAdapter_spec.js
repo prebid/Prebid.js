@@ -157,33 +157,33 @@ describe('AdTrueBidAdapter', function () {
     describe('Bid validations', function () {
       it('valid bid case', function () {
         const validBid = {
-            bidder: 'adtrue',
-            params: {
-              zoneId: '21423',
-              publisherId: '1212'
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'adtrue',
+          params: {
+            zoneId: '21423',
+            publisherId: '1212'
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
       it('invalid bid case: publisherId not passed', function () {
         const validBid = {
-            bidder: 'adtrue',
-            params: {
-              zoneId: '21423'
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'adtrue',
+          params: {
+            zoneId: '21423'
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('valid bid case: zoneId is not passed', function () {
         const validBid = {
-            bidder: 'adtrue',
-            params: {
-              publisherId: '1212'
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'adtrue',
+          params: {
+            publisherId: '1212'
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('should return false if there are no params', () => {

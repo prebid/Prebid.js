@@ -68,11 +68,11 @@ const BROWSER_REGEX_MAP = [
 ];
 
 export const defaultValueTemplate = {
-    currency: 'USD',
-    skipRate: 0,
-    schema: {
-        fields: ['mediaType', 'size']
-    }
+  currency: 'USD',
+  skipRate: 0,
+  schema: {
+    fields: ['mediaType', 'size']
+  }
 };
 
 let initTime;
@@ -92,12 +92,12 @@ export const setProfileConfigs = (configs) => { _profileConfigs = configs; };
 
 // Waits for a given promise to resolve within a timeout
 export function withTimeout(promise, ms) {
-    let timeout;
-    const timeoutPromise = new Promise((resolve) => {
-      timeout = setTimeout(() => resolve(undefined), ms);
-    });
+  let timeout;
+  const timeoutPromise = new Promise((resolve) => {
+    timeout = setTimeout(() => resolve(undefined), ms);
+  });
 
-    return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
+  return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
 }
 
 // Utility Functions
@@ -437,98 +437,98 @@ export const getUtm = () => {
 }
 
 export const getFloorsConfig = (floorsData, profileConfigs) => {
-    if (!isPlainObject(profileConfigs) || isEmpty(profileConfigs)) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
-      return undefined;
-    }
+  if (!isPlainObject(profileConfigs) || isEmpty(profileConfigs)) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
+    return undefined;
+  }
 
-    // Floor configs from adunit / setconfig
-    const defaultFloorConfig = conf.getConfig('floors') ?? {};
-    if (defaultFloorConfig?.endpoint) {
-      delete defaultFloorConfig.endpoint;
-    }
-    // Plugin data from profile
-    const dynamicFloors = profileConfigs?.plugins?.dynamicFloors;
+  // Floor configs from adunit / setconfig
+  const defaultFloorConfig = conf.getConfig('floors') ?? {};
+  if (defaultFloorConfig?.endpoint) {
+    delete defaultFloorConfig.endpoint;
+  }
+  // Plugin data from profile
+  const dynamicFloors = profileConfigs?.plugins?.dynamicFloors;
 
-    // If plugin disabled or config not present, return undefined
-    if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
-      return undefined;
-    }
+  // If plugin disabled or config not present, return undefined
+  if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
+    return undefined;
+  }
 
-    const config = { ...dynamicFloors.config };
+  const config = { ...dynamicFloors.config };
 
-    // default values provided by publisher on profile
-    const defaultValues = config.defaultValues ?? {};
-    // If floorsData is not present, use default values
-    const finalFloorsData = floorsData ?? { ...defaultValueTemplate, values: { ...defaultValues } };
+  // default values provided by publisher on profile
+  const defaultValues = config.defaultValues ?? {};
+  // If floorsData is not present, use default values
+  const finalFloorsData = floorsData ?? { ...defaultValueTemplate, values: { ...defaultValues } };
 
-    delete config.defaultValues;
-    // If skiprate is provided in configs, overwrite the value in finalFloorsData
-    (config.skipRate !== undefined) && (finalFloorsData.skipRate = config.skipRate);
+  delete config.defaultValues;
+  // If skiprate is provided in configs, overwrite the value in finalFloorsData
+  (config.skipRate !== undefined) && (finalFloorsData.skipRate = config.skipRate);
 
-    // merge default configs from page, configs
-    return {
-        floors: {
-            ...defaultFloorConfig,
-            ...config,
-            data: finalFloorsData,
-            additionalSchemaFields: {
-                deviceType: getDeviceType,
-                timeOfDay: getCurrentTimeOfDay,
-                browser: getBrowserType,
-                os: getOs,
-                utm: getUtm,
-                country: getCountry,
-                bidder: getBidder,
-            },
-        },
-    };
+  // merge default configs from page, configs
+  return {
+    floors: {
+      ...defaultFloorConfig,
+      ...config,
+      data: finalFloorsData,
+      additionalSchemaFields: {
+        deviceType: getDeviceType,
+        timeOfDay: getCurrentTimeOfDay,
+        browser: getBrowserType,
+        os: getOs,
+        utm: getUtm,
+        country: getCountry,
+        bidder: getBidder,
+      },
+    },
+  };
 };
 
 export const fetchData = async (publisherId, profileId, type) => {
-    try {
-      const endpoint = CONSTANTS.ENDPOINTS[type];
-      const baseURL = (type === 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
-      const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
-      const response = await fetch(url);
+  try {
+    const endpoint = CONSTANTS.ENDPOINTS[type];
+    const baseURL = (type === 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
+    const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
+    const response = await fetch(url);
 
-      if (!response.ok) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: Not ok`);
-        return;
-      }
-
-      if (type === "FLOORS") {
-        const cc = response.headers?.get('country_code');
-        _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
-      }
-
-      const data = await response.json();
-
-      // Extract multipliers from floors.json if available
-      if (type === "FLOORS" && data && data.multiplier) {
-        // Map of source keys to destination keys
-        const multiplierKeys = {
-          'win': 'WIN',
-          'floored': 'FLOORED',
-          'nobid': 'NOBID'
-        };
-
-        // Initialize _multipliers and only add keys that exist in data.multiplier
-        _multipliers = Object.entries(multiplierKeys)
-          .reduce((acc, [srcKey, destKey]) => {
-            if (srcKey in data.multiplier) {
-              acc[destKey] = data.multiplier[srcKey];
-            }
-            return acc;
-          }, {});
-
-        logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
-      }
-
-      return data;
-    } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: ${error}`);
+    if (!response.ok) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: Not ok`);
+      return;
     }
+
+    if (type === "FLOORS") {
+      const cc = response.headers?.get('country_code');
+      _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
+    }
+
+    const data = await response.json();
+
+    // Extract multipliers from floors.json if available
+    if (type === "FLOORS" && data && data.multiplier) {
+      // Map of source keys to destination keys
+      const multiplierKeys = {
+        'win': 'WIN',
+        'floored': 'FLOORED',
+        'nobid': 'NOBID'
+      };
+
+      // Initialize _multipliers and only add keys that exist in data.multiplier
+      _multipliers = Object.entries(multiplierKeys)
+        .reduce((acc, [srcKey, destKey]) => {
+          if (srcKey in data.multiplier) {
+            acc[destKey] = data.multiplier[srcKey];
+          }
+          return acc;
+        }, {});
+
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
+    }
+
+    return data;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: ${error}`);
+  }
 };
 
 /**
@@ -538,45 +538,45 @@ export const fetchData = async (publisherId, profileId, type) => {
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-    initTime = Date.now(); // Capture the initialization time
-    const { publisherId, profileId } = config?.params || {};
+  initTime = Date.now(); // Capture the initialization time
+  const { publisherId, profileId } = config?.params || {};
 
-    if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
-      logError(
+  if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
+    logError(
         `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
           : !isStr(publisherId) ? 'Publisher Id should be a string.'
             : !profileId ? 'Missing profile Id.'
               : 'Profile Id should be a string.'
         }`
-      );
-      return false;
-    }
+    );
+    return false;
+  }
 
-    if (!isFn(continueAuction)) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
-      return false;
-    }
+  if (!isFn(continueAuction)) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
+    return false;
+  }
 
-    _fetchFloorRulesPromise = fetchData(publisherId, profileId, "FLOORS");
-    _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
+  _fetchFloorRulesPromise = fetchData(publisherId, profileId, "FLOORS");
+  _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
 
-    _fetchConfigPromise.then(async (profileConfigs) => {
-      const auctionDelay = conf?.getConfig('realTimeData')?.auctionDelay || 300;
-      const maxWaitTime = 0.8 * auctionDelay;
+  _fetchConfigPromise.then(async (profileConfigs) => {
+    const auctionDelay = conf?.getConfig('realTimeData')?.auctionDelay || 300;
+    const maxWaitTime = 0.8 * auctionDelay;
 
-      const elapsedTime = Date.now() - initTime;
-      const remainingTime = Math.max(maxWaitTime - elapsedTime, 0);
-      const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
+    const elapsedTime = Date.now() - initTime;
+    const remainingTime = Math.max(maxWaitTime - elapsedTime, 0);
+    const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
 
-      // Store the profile configs globally
-      setProfileConfigs(profileConfigs);
+    // Store the profile configs globally
+    setProfileConfigs(profileConfigs);
 
-      const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
-      floorsConfig && conf?.setConfig(floorsConfig);
-      configMerged();
-    });
+    const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
+    floorsConfig && conf?.setConfig(floorsConfig);
+    configMerged();
+  });
 
-    return true;
+  return true;
 };
 
 /**
@@ -584,33 +584,33 @@ const init = (config, _userConsent) => {
  * @param {function} callback
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
-    configMergedPromise.then(() => {
-        const hookConfig = {
-            reqBidsConfigObj,
-            context: this,
-            nextFn: () => true,
-            haveExited: false,
-            timer: null
-        };
-        continueAuction(hookConfig);
-        if (_country) {
-          const ortb2 = {
-              user: {
-                  ext: {
-                      ctr: _country,
-                  }
-              }
+  configMergedPromise.then(() => {
+    const hookConfig = {
+      reqBidsConfigObj,
+      context: this,
+      nextFn: () => true,
+      haveExited: false,
+      timer: null
+    };
+    continueAuction(hookConfig);
+    if (_country) {
+      const ortb2 = {
+        user: {
+          ext: {
+            ctr: _country,
           }
-
-          mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-              [CONSTANTS.SUBMODULE_NAME]: ortb2
-          });
         }
-        callback();
-    }).catch((error) => {
-        logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
-        callback();
-    });
+      }
+
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+        [CONSTANTS.SUBMODULE_NAME]: ortb2
+      });
+    }
+    callback();
+  }).catch((error) => {
+    logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
+    callback();
+  });
 }
 
 /**

@@ -184,123 +184,123 @@ const bid_request = {
     withCredentials: true
   },
   data: {
-      'id': 'c09c6e47-8bdb-4884-a46d-93165322b368',
-      'imp': [{
-          'id': '1',
-          'tagid': '/19968336/header-bid-tag-0',
-          'placement_id': 0,
-          'secure': true,
-          'banner': {
-              'w': 300,
-              'h': 250,
-              'format': [{
-                  'w': 300,
-                  'h': 250
-              }, {
-                  'w': 300,
-                  'h': 600
-              }]
-          }
-      }, {
-          'id': '2',
-          'tagid': '/19968336/header-bid-tag-1',
-          'placement_id': 12345,
-          'secure': true,
-          'banner': {
-              'w': 729,
-              'h': 90,
-              'format': [{
-                  'w': 729,
-                  'h': 90
-              }, {
-                  'w': 970,
-                  'h': 250
-              }]
-          }
-      }, {
-          'id': '3',
-          'tagid': '/19968336/prebid_multiformat_test',
-          'placement_id': 0,
-          'secure': true,
-          'native': {
-              'ver': '1.2',
-              'request': {
-                  'assets': [{
-                      'required': 1,
-                      'id': 1,
-                      'title': {}
-                  }, {
-                      'required': 1,
-                      'id': 3,
-                      'img': {
-                          'type': 3
-                      }
-                  }, {
-                      'required': 1,
-                      'id': 5,
-                      'data': {
-                          'type': 1
-                      }
-                  }],
-                  'context': 1,
-                  'plcmttype': 1,
-                  'ver': '1.2'
-              }
-          }
-      }],
-      'site': {
-          'domain': 'test.datablocks.net',
-          'page': 'https://test.datablocks.net/index.html',
-          'schain': {},
-          'ext': {
-              'p_domain': 'https://test.datablocks.net',
-              'rt': true,
-              'frames': 0,
-              'stack': ['https://test.datablocks.net/index.html'],
-              'timeout': 3000
-          },
-          'keywords': 'HTML, CSS, JavaScript'
-      },
-      'device': {
-          'ip': 'peer',
-          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
-          'js': 1,
-          'language': 'en',
-          'buyerid': '1234567',
-          'ext': {
-              'pb_eids': [{
-                  'source': 'criteo.com',
-                  'uids': [{
-                      'id': 'test',
-                      'atype': 1
-                  }]
-              }],
-              'syncs': {
-                  '1000': 'db_4044853',
-                  '1001': true
-              },
-              'coppa': 0,
-              'gdpr': {},
-              'usp': {},
-              'client_info': {
-                  'wiw': 2560,
-                  'wih': 1281,
-                  'saw': 2560,
-                  'sah': 1417,
-                  'scd': 24,
-                  'sw': 2560,
-                  'sh': 1440,
-                  'whl': 4,
-                  'wxo': 0,
-                  'wyo': 0,
-                  'wpr': 2,
-                  'is_bot': false,
-                  'is_hid': false,
-                  'vs': 'hidden'
-              },
-              'fpd': {}
-          }
+    'id': 'c09c6e47-8bdb-4884-a46d-93165322b368',
+    'imp': [{
+      'id': '1',
+      'tagid': '/19968336/header-bid-tag-0',
+      'placement_id': 0,
+      'secure': true,
+      'banner': {
+        'w': 300,
+        'h': 250,
+        'format': [{
+          'w': 300,
+          'h': 250
+        }, {
+          'w': 300,
+          'h': 600
+        }]
       }
+    }, {
+      'id': '2',
+      'tagid': '/19968336/header-bid-tag-1',
+      'placement_id': 12345,
+      'secure': true,
+      'banner': {
+        'w': 729,
+        'h': 90,
+        'format': [{
+          'w': 729,
+          'h': 90
+        }, {
+          'w': 970,
+          'h': 250
+        }]
+      }
+    }, {
+      'id': '3',
+      'tagid': '/19968336/prebid_multiformat_test',
+      'placement_id': 0,
+      'secure': true,
+      'native': {
+        'ver': '1.2',
+        'request': {
+          'assets': [{
+            'required': 1,
+            'id': 1,
+            'title': {}
+          }, {
+            'required': 1,
+            'id': 3,
+            'img': {
+              'type': 3
+            }
+          }, {
+            'required': 1,
+            'id': 5,
+            'data': {
+              'type': 1
+            }
+          }],
+          'context': 1,
+          'plcmttype': 1,
+          'ver': '1.2'
+        }
+      }
+    }],
+    'site': {
+      'domain': 'test.datablocks.net',
+      'page': 'https://test.datablocks.net/index.html',
+      'schain': {},
+      'ext': {
+        'p_domain': 'https://test.datablocks.net',
+        'rt': true,
+        'frames': 0,
+        'stack': ['https://test.datablocks.net/index.html'],
+        'timeout': 3000
+      },
+      'keywords': 'HTML, CSS, JavaScript'
+    },
+    'device': {
+      'ip': 'peer',
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
+      'js': 1,
+      'language': 'en',
+      'buyerid': '1234567',
+      'ext': {
+        'pb_eids': [{
+          'source': 'criteo.com',
+          'uids': [{
+            'id': 'test',
+            'atype': 1
+          }]
+        }],
+        'syncs': {
+          '1000': 'db_4044853',
+          '1001': true
+        },
+        'coppa': 0,
+        'gdpr': {},
+        'usp': {},
+        'client_info': {
+          'wiw': 2560,
+          'wih': 1281,
+          'saw': 2560,
+          'sah': 1417,
+          'scd': 24,
+          'sw': 2560,
+          'sh': 1440,
+          'whl': 4,
+          'wxo': 0,
+          'wyo': 0,
+          'wpr': 2,
+          'is_bot': false,
+          'is_hid': false,
+          'vs': 'hidden'
+        },
+        'fpd': {}
+      }
+    }
   }
 }
 
