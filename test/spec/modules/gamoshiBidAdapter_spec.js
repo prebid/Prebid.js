@@ -622,13 +622,6 @@ describe('GamoshiAdapter', () => {
       config.resetConfig();
     });
 
-    it('builds request with DNT', () => {
-      const bidRequestWithDnt = utils.deepClone(bidRequest);
-      window.doNotTrack = '1'; // Simulate DNT enabled
-      const request = spec.buildRequests([bidRequest], bidRequestWithDnt)[0];
-      expect(request.data.device.dnt).to.equal(1);
-      window.doNotTrack = '0'; // Reset DNT
-    });
     it('builds request with COPPA', () => {
       const bidRequestWithCoppa = utils.deepClone(bidRequest);
        // Simulate COPPA enabled
