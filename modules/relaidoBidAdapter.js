@@ -138,7 +138,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const body = serverResponse.body;
-  if (!body || body.status != 'ok') {
+  if (!body || body.status !== 'ok') {
     return [];
   }
 
@@ -330,10 +330,10 @@ function getValidSizes(sizes) {
   const result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
-      if (isArray(sizes[i]) && sizes[i].length == 2) {
+      if (isArray(sizes[i]) && sizes[i].length === 2) {
         const width = sizes[i][0];
         const height = sizes[i][1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
@@ -342,7 +342,7 @@ function getValidSizes(sizes) {
       } else if (isNumber(sizes[i])) {
         const width = sizes[0];
         const height = sizes[1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
