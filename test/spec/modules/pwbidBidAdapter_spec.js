@@ -1,9 +1,7 @@
 // import or require modules necessary for the test, e.g.:
 
 import {expect} from 'chai';
-import {spec} from 'modules/pwbidBidAdapter.js';
-import {_checkVideoPlacement, _checkMediaType} from 'modules/pwbidBidAdapter.js'; // this is exported only for testing so maintaining the JS convention of _ to indicate the intent
-import {_parseAdSlot} from 'modules/pwbidBidAdapter.js'; // this is exported only for testing so maintaining the JS convention of _ to indicate the intent
+import {spec, _checkVideoPlacement, _checkMediaType, _parseAdSlot} from 'modules/pwbidBidAdapter.js'; // _ functions exported only for testing so maintaining the JS convention of _ to indicate the intent
 import * as utils from 'src/utils.js';
 
 const sampleRequestBanner = {
