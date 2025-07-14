@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { server } from '../../mocks/xhr';
-import { getWinDimensions } from '../../../src/utils';
-import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
+import { server } from '../../mocks/xhr.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 
 import {
   mediaSize,
@@ -281,7 +281,7 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('callbacks', () => {
-    let bid = {};
+    const bid = {};
     let reportStub;
 
     beforeEach(() => (reportStub = sinon.stub(spec, 'report')));

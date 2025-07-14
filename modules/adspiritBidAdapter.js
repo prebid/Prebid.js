@@ -13,7 +13,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
-    let host = spec.getBidderHost(bid);
+    const host = spec.getBidderHost(bid);
     if (!host || !bid.params.placementId) {
       return false;
     }
@@ -23,15 +23,15 @@ export const spec = {
     return SCRIPT_URL;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    let requests = [];
-    let prebidVersion = getGlobal().version;
+    const requests = [];
+    const prebidVersion = getGlobal().version;
     const win = getWinDimensions();
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      let bidRequest = validBidRequests[i];
+      const bidRequest = validBidRequests[i];
       bidRequest.adspiritConId = spec.genAdConId(bidRequest);
       let reqUrl = spec.getBidderHost(bidRequest);
-      let placementId = utils.getBidIdParameter('placementId', bidRequest.params);
+      const placementId = utils.getBidIdParameter('placementId', bidRequest.params);
       const eids = spec.getEids(bidRequest);
 
       reqUrl = '//' + reqUrl + RTB_URL +
@@ -44,14 +44,14 @@ export const spec = {
         '&async=' + bidRequest.adspiritConId +
         '&t=' + Math.round(Math.random() * 100000);
 
-      let gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0;
-      let gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : '';
+      const gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0;
+      const gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : '';
 
       if (bidderRequest.gdprConsent) {
         reqUrl += '&gdpr=' + gdprApplies + '&gdpr_consent=' + gdprConsentString;
       }
 
-      let openRTBRequest = {
+      const openRTBRequest = {
         id: bidderRequest.auctionId,
         at: 1,
         cur: ['EUR'],
@@ -156,7 +156,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const bidObj = bidRequest.bidRequest;
-    let host = spec.getBidderHost(bidObj);
+    const host = spec.getBidderHost(bidObj);
 
     if (!serverResponse || !serverResponse.body) {
       utils.logWarn(`adspirit: Empty response from bidder`);
@@ -244,8 +244,8 @@ export const spec = {
         });
       });
     } else {
-      let adData = serverResponse.body;
-      let cpm = adData.cpm;
+      const adData = serverResponse.body;
+      const cpm = adData.cpm;
 
       if (!cpm) return [];
       const bidResponse = {
@@ -261,7 +261,7 @@ export const spec = {
           advertiserDomains: adData.adomain || []
         }
       };
-      let adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
+      const adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
       bidResponse.ad = adm;
       bidResponse.mediaType = BANNER;
 

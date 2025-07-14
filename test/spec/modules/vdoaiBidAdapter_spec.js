@@ -267,7 +267,7 @@ describe('vdoaiBidAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        let data = serverRequest.data;
+        const data = serverRequest.data;
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys(
           'deviceWidth',
@@ -348,7 +348,7 @@ describe('vdoaiBidAdapter', function () {
     })
   })
   describe('interpretBannerResponse', function () {
-    let resObject = {
+    const resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -369,7 +369,7 @@ describe('vdoaiBidAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -391,7 +391,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('interpretVideoResponse', function () {
-    let resObject = {
+    const resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -412,7 +412,7 @@ describe('vdoaiBidAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -434,7 +434,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('isBidRequestValid', function() {
-    let bid = {
+    const bid = {
       bidId: '2dd581a2b6281d',
       bidder: 'vdoai',
       bidderRequestId: '145e1d6a7837c9',
@@ -461,7 +461,7 @@ describe('vdoaiBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function() {
-      let bidFailed = {
+      const bidFailed = {
         bidder: 'vdoai',
         bidderRequestId: '145e1d6a7837c9',
         params: {
@@ -477,7 +477,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('interpretResponse', function() {
-    let resObject = {
+    const resObject = {
       requestId: '123',
       cpm: 0.3,
       width: 320,
@@ -493,7 +493,7 @@ describe('vdoaiBidAdapter', function () {
       }
     };
     it('should skip responses which do not contain required params', function() {
-      let bidResponses = {
+      const bidResponses = {
         body: [ {
           cpm: 0.3,
           ttl: 1000,
@@ -507,28 +507,28 @@ describe('vdoaiBidAdapter', function () {
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should skip responses which do not contain advertiser domains', function() {
-      let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithoutAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should return responses which contain empty advertiser domains', function() {
-      let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
     it('should skip responses which do not contain meta media type', function() {
-      let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
+      const resObjectWithoutMetaMediaType = Object.assign({}, resObject);
       resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutMetaMediaType.meta.mediaType;
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithoutMetaMediaType, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);

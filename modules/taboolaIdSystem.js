@@ -106,7 +106,7 @@ const userData = {
  * Build the Taboola sync URL, adding GDPR, USP, or GPP parameters as needed.
  */
 function buildTaboolaSyncUrl() {
-  let paramPrefix = '&';
+  const paramPrefix = '&';
   let syncUrl = TABOOLA_SYNC_ENDPOINT;
   const extraParams = [];
   // GDPR

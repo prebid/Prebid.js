@@ -186,6 +186,7 @@ gulp.task('ts', helpers.execaTask('tsc'));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
+gulp.task('precompile-all-features-disabled', precompile({disableFeatures: helpers.getTestDisableFeatures()}));
 gulp.task('verbatim', copyVerbatim)
 
 

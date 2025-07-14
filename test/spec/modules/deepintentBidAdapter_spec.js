@@ -130,38 +130,38 @@ describe('Deepintent adapter', function () {
 
   describe('validations', function () {
     it('validBid : tagId is passed', function () {
-      let bid = {
+      const bid = {
           bidder: 'deepintent',
           params: {
             tagId: '1232'
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('invalidBid : tagId is not passed', function () {
-      let bid = {
+      const bid = {
           bidder: 'deepintent',
           params: {
             h: 200,
             w: 300
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('invalidBid : tagId is not a string', function () {
-      let bid = {
+      const bid = {
           bidder: 'deepintent',
           params: {
             tagId: 12345
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('should check for context if video is present', function() {
-      let bid = {
+      const bid = {
           bidder: 'deepintent',
           params: {
             tagId: '12345',
@@ -176,12 +176,12 @@ describe('Deepintent adapter', function () {
               context: 'instream'
             }
           },
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
     });
     it('should error out if context is not present and is Video', function() {
-      let bid = {
+      const bid = {
           bidder: 'deepintent',
           params: {
             tagId: '12345',
@@ -195,26 +195,26 @@ describe('Deepintent adapter', function () {
               playerSize: [640, 480]
             }
           },
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     })
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {
-      let oRequest = utils.deepClone(request),
-        bidRequest = spec.buildRequests(request);
+      const oRequest = utils.deepClone(request);
+        const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {
-      let bRequest = spec.buildRequests(request);
+      const bRequest = spec.buildRequests(request);
       expect(bRequest.url).to.equal('https://prebid.deepintent.com/prebid');
       expect(bRequest.method).to.equal('POST');
       expect(bRequest.options.contentType).to.equal('application/json');
     });
     it('bid request check : Device', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.device.ua).to.be.a('string');
       expect(data.device.js).to.equal(1);
       expect(data.device.dnt).to.be.a('number');
@@ -222,33 +222,33 @@ describe('Deepintent adapter', function () {
       expect(data.device.w).to.be.a('number');
     });
     it('bid request check : Impression', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.at).to.equal(1); // auction type
       expect(data.imp[0].id).to.equal(request[0].bidId);
       expect(data.imp[0].tagid).to.equal('100013');
     });
     it('bid request check : ad size', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.imp[0].banner).to.be.a('object');
       expect(data.imp[0].banner.w).to.equal(300);
       expect(data.imp[0].banner.h).to.equal(250);
     });
     it('bid request check : custom params', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.imp[0].ext).to.be.a('object');
       expect(data.imp[0].ext.deepintent.position).to.equal('right-box');
     });
     it('bid request check: position check', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.imp[0].banner.pos).to.equal(1);
     });
     it('bid request check: displaymanager check', function() {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.imp[0].displaymanager).to.equal('di_prebid');
       expect(data.imp[0].displaymanagerver).to.equal('1.0.0');
     });
@@ -269,8 +269,8 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].bidfloor).to.equal(1.2);
     });
     it('bid request check: user object check', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
       expect(data.user).to.be.a('object');
       expect(data.user.id).to.equal('di_testuid');
       expect(data.user.buyeruid).to.equal('di_testbuyeruid');
@@ -278,37 +278,37 @@ describe('Deepintent adapter', function () {
       expect(data.user.gender).to.equal('F');
     });
     it('bid request check: CCPA Check', function () {
-      let bidRequest = {
+      const bidRequest = {
         uspConsent: '1NYN'
       };
-      let bRequest = spec.buildRequests(request, bidRequest);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request, bidRequest);
+      const data = JSON.parse(bRequest.data);
       expect(data.regs.ext.us_privacy).to.equal('1NYN');
-      let bidRequest2 = {};
-      let bRequest2 = spec.buildRequests(request, bidRequest2);
-      let data2 = JSON.parse(bRequest2.data);
+      const bidRequest2 = {};
+      const bRequest2 = spec.buildRequests(request, bidRequest2);
+      const data2 = JSON.parse(bRequest2.data);
       expect(data2.regs).to.equal(undefined);
     });
     it('bid Request check: GDPR Check', function () {
-      let bidRequest = {
+      const bidRequest = {
         gdprConsent: {
           consentString: 'kjfdnidasd123sadsd',
           gdprApplies: true
         }
       };
-      let bRequest = spec.buildRequests(request, bidRequest);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request, bidRequest);
+      const data = JSON.parse(bRequest.data);
       expect(data.user.ext.consent).to.equal('kjfdnidasd123sadsd');
       expect(data.regs.ext.gdpr).to.equal(1);
-      let bidRequest2 = {};
-      let bRequest2 = spec.buildRequests(request, bidRequest2);
-      let data2 = JSON.parse(bRequest2.data);
+      const bidRequest2 = {};
+      const bRequest2 = spec.buildRequests(request, bidRequest2);
+      const data2 = JSON.parse(bRequest2.data);
       expect(data2.regs).to.equal(undefined);
       expect(data2.user.ext).to.equal(undefined);
     });
     it('bid request check: Video params check ', function() {
-      let bRequest = spec.buildRequests(videoBidRequests);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(videoBidRequests);
+      const data = JSON.parse(bRequest.data);
       expect(data.imp[0].video).to.be.a('object');
       expect(data.imp[0].video.minduration).to.be.a('number');
       expect(data.imp[0].video.maxduration).to.be.a('number');
@@ -322,8 +322,8 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].video.w).to.be.a('number');
     });
     it('bid request param check : invalid video params', function() {
-      let bRequest = spec.buildRequests(videoBidRequests);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(videoBidRequests);
+      const data = JSON.parse(bRequest.data);
       expect(data.imp[0].video).to.be.a('object');
       expect(data.imp[0].video.testwrongparam).to.equal(undefined);
       expect(data.imp[0].video.testwrongparam1).to.equal(undefined);
@@ -331,10 +331,10 @@ describe('Deepintent adapter', function () {
   });
   describe('user sync check', function () {
     it('user sync url check', function () {
-      let syncOptions = {
+      const syncOptions = {
         iframeEnabled: true
       };
-      let userSync = spec.getUserSyncs(syncOptions);
+      const userSync = spec.getUserSyncs(syncOptions);
       expect(userSync).to.be.an('array').with.length.above(0);
       expect(userSync[0].type).to.equal('iframe');
       expect(userSync[0].url).to.equal('https://cdn.deepintent.com/syncpixel.html');
@@ -342,9 +342,9 @@ describe('Deepintent adapter', function () {
   });
   describe('response check', function () {
     it('bid response check: valid bid response', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
-      let bResponse = spec.interpretResponse(bannerResponse, request);
+      const bRequest = spec.buildRequests(request);
+      const data = JSON.parse(bRequest.data);
+      const bResponse = spec.interpretResponse(bannerResponse, request);
       expect(bResponse).to.be.an('array').with.length.above(0);
       expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
       expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w);
@@ -358,32 +358,32 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
     });
     it('bid response check: valid video bid response', function() {
-      let request = spec.buildRequests(videoBidRequests);
-      let response = spec.interpretResponse(videoBidResponse, request);
+      const request = spec.buildRequests(videoBidRequests);
+      const response = spec.interpretResponse(videoBidResponse, request);
       expect(response[0].mediaType).to.equal('video');
       expect(response[0].vastXml).to.not.equal(undefined);
     });
     it('invalid bid response check ', function() {
-      let bRequest = spec.buildRequests(request);
-      let response = spec.interpretResponse(invalidResponse, bRequest);
+      const bRequest = spec.buildRequests(request);
+      const response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].mediaType).to.equal(undefined);
     });
     it('invalid bid response check ', function() {
-      let bRequest = spec.buildRequests(videoBidRequests);
-      let response = spec.interpretResponse(invalidResponse, bRequest);
+      const bRequest = spec.buildRequests(videoBidRequests);
+      const response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].mediaType).to.equal(undefined);
     });
   });
   describe('GPP and coppa', function() {
     it('Request params check with GPP Consent', function () {
-      let bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
-      let bRequest = spec.buildRequests(request, bidderReq);
-      let data = JSON.parse(bRequest.data);
+      const bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
       expect(data.regs.gpp).to.equal('gpp-string-test');
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
     it('Request params check with GPP Consent read from ortb2', function () {
-      let bidderReq = {
+      const bidderReq = {
         ortb2: {
           regs: {
             gpp: 'gpp-test-string',
@@ -391,15 +391,15 @@ describe('Deepintent adapter', function () {
           }
         }
       };
-      let bRequest = spec.buildRequests(request, bidderReq);
-      let data = JSON.parse(bRequest.data);
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
       expect(data.regs.gpp).to.equal('gpp-test-string');
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
     it('should include coppa flag in bid request if coppa is set to true', () => {
-      let bidderReq = {ortb2: {regs: {coppa: 1}}};
-      let bRequest = spec.buildRequests(request, bidderReq);
-      let data = JSON.parse(bRequest.data);
+      const bidderReq = {ortb2: {regs: {coppa: 1}}};
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
       expect(data.regs.coppa).to.equal(1);
     });
   });

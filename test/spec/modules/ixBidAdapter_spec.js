@@ -1084,7 +1084,7 @@ describe('IndexexchangeAdapter', function () {
       const syncOptions = {
         'iframeEnabled': true
       }
-      let userSync = spec.getUserSyncs(syncOptions, []);
+      const userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('iframe');
       const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -1094,7 +1094,7 @@ describe('IndexexchangeAdapter', function () {
       const syncOptions = {
         'iframeEnabled': false,
       }
-      let userSync = spec.getUserSyncs(syncOptions, []);
+      const userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -1110,7 +1110,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       })
-      let userSync = spec.getUserSyncs(syncOptions, []);
+      const userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -1126,7 +1126,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 0 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 0 } } }]);
       expect(userSync.length).to.equal(0);
     });
 
@@ -1140,7 +1140,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
@@ -1159,7 +1159,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 4 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 4 } } }]);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
@@ -1180,7 +1180,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 0
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
@@ -1424,7 +1424,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should fail if native openRTB object contains no valid assets', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
       bid.nativeOrtbRequest = {}
       expect(spec.isBidRequestValid(bid)).to.be.false;
 
@@ -1637,12 +1637,12 @@ describe('IndexexchangeAdapter', function () {
 
     it('IX adapter filters eids from prebid past the maximum eid limit', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = generateEid(55);
+      const eid_sent_from_prebid = generateEid(55);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
       expect(payload.user.eids).to.have.lengthOf(50);
-      let eid_accepted = eid_sent_from_prebid.slice(0, 50);
+      const eid_accepted = eid_sent_from_prebid.slice(0, 50);
       expect(payload.user.eids).to.have.deep.members(eid_accepted);
       expect(payload.ext.ixdiag.eidLength).to.equal(55);
     });
@@ -1678,7 +1678,7 @@ describe('IndexexchangeAdapter', function () {
         }
       };
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = generateEid(49);
+      const eid_sent_from_prebid = generateEid(49);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
@@ -1699,7 +1699,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('Has incoming eids with no uid', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = [
+      const eid_sent_from_prebid = [
         {
           source: 'catijah.org'
         },
@@ -2912,7 +2912,7 @@ describe('IndexexchangeAdapter', function () {
       for (var i = 0; i < requests.length; i++) {
         const reqSize = `${requests[i].url}?${utils.parseQueryStringParameters(requests[i].data)}`.length;
         expect(reqSize).to.be.lessThan(8000);
-        let payload = extractPayload(requests[i]);
+        const payload = extractPayload(requests[i]);
         expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       }
     });
@@ -3254,7 +3254,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should build request with given asset properties', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
       bid[0].nativeOrtbRequest = {
         assets: [{ id: 0, required: 0, title: { len: 140 } }, { id: 1, required: 0, video: { mimes: ['javascript'], minduration: 10, maxduration: 60, protocols: [1] } }]
       }
@@ -3264,7 +3264,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should build request with all possible Prebid asset properties', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
       bid[0].nativeOrtbRequest = {
         'ver': '1.2',
         'assets': [
@@ -3556,7 +3556,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('impression should have paapi extension when passed', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      let bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
       bid.ortb2Imp.ext.ae = 1
       bid.ortb2Imp.ext.paapi = {
         requestedSize: {
@@ -3944,7 +3944,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should not set bid[].renderer if renderer defined at mediaType.video level', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].mediaTypes.video.renderer = {
         url: 'test',
         render: function () { }
@@ -3956,7 +3956,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should not set bid[].renderer if renderer defined at the ad unit level', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].renderer = {
         url: 'test',
         render: function () { }
@@ -3968,7 +3968,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should set bid[].renderer if ad unit renderer is invalid', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].mediaTypes.video.renderer = {
         url: 'test'
       };
@@ -3979,7 +3979,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should set bid[].renderer if ad unit renderer is a backup', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].mediaTypes.video.renderer = {
         url: 'test',
         render: function () { },
@@ -4062,7 +4062,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      let bid_response = DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM;
+      const bid_response = DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM;
       bid_response.seatbid[0].bid[0].ext['vasturl'] = 'www.abcd.com/vast';
       const result = spec.interpretResponse({ body: bid_response }, {
         data: videoBidderRequest.data, validBidRequests: ONE_VIDEO
@@ -4550,7 +4550,7 @@ describe('IndexexchangeAdapter', function () {
       expect(lsData.features.test.activated).to.be.true;
     });
 
-    it('should retrive features from localstorage when enabled', () => {
+    it('should retrieve features from localstorage when enabled', () => {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       serverResponse.body.ext.features.test.activated = true;
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
@@ -4609,7 +4609,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requests).to.be.an('array');
       // buildRequestv2 enabled causes only 1 requests to get generated.
       expect(requests).to.have.lengthOf(1);
-      for (let request of requests) {
+      for (const request of requests) {
         expect(request.method).to.equal('POST');
       }
     });
@@ -4803,7 +4803,7 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let adunitcode = bids[1].adUnitCode;
+        const adunitcode = bids[1].adUnitCode;
         bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
@@ -4821,7 +4821,7 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let adunitcode = bids[1].adUnitCode;
+        const adunitcode = bids[1].adUnitCode;
         bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
@@ -4838,7 +4838,7 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.05;
         bids[0].params.bidFloorCur = 'USD';
-        let adunitcode = bids[1].adUnitCode;
+        const adunitcode = bids[1].adUnitCode;
         bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.35;
         bids[1].params.bidFloorCur = 'USD';
@@ -4852,7 +4852,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should return valid banner and video requests, different adunit, creates multiimp request', function () {
-        let bid = DEFAULT_MULTIFORMAT_VALID_BID[0]
+        const bid = DEFAULT_MULTIFORMAT_VALID_BID[0]
         bid.bidId = '1abcdef'
         const bids = [DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0], bid];
         const request = spec.buildRequests(bids, {});
@@ -4861,7 +4861,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should return valid  video requests, different adunit, creates multiimp request', function () {
-        let bid = DEFAULT_BANNER_VALID_BID[0]
+        const bid = DEFAULT_BANNER_VALID_BID[0]
         bid.bidId = '1abcdef'
         const bids = [DEFAULT_VIDEO_VALID_BID[0], bid];
         const request = spec.buildRequests(bids, {});

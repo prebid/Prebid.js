@@ -189,7 +189,7 @@ export function ortbConverter<B extends BidderCode>({
   return {
     toORTB({bidderRequest, bidRequests, context = {}}: {
         bidderRequest: BidderRequest<B>,
-        bidRequests: BidRequest<B>[],
+        bidRequests?: BidRequest<B>[],
         context?: Context
     }): ORTBRequest {
       bidRequests = bidRequests || bidderRequest.bids;
@@ -220,7 +220,7 @@ export function ortbConverter<B extends BidderCode>({
     },
     fromORTB({request, response}: {
         request: ORTBRequest;
-        response: ORTBResponse;
+        response: ORTBResponse | null;
     }): AdapterResponse {
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
@@ -230,7 +230,7 @@ export function ortbConverter<B extends BidderCode>({
         return Object.assign(ctx, {ortbRequest: request}, extraParams);
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
-      const bidResponses = (response.seatbid || []).flatMap(seatbid =>
+      const bidResponses = (response?.seatbid || []).flatMap(seatbid =>
         (seatbid.bid || []).map((bid) => {
           if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
             return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));

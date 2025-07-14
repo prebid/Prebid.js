@@ -484,7 +484,7 @@ const adapterManager = {
         }
         const refererInfo = getRefererInfo();
 
-        let bidRequests: BidderRequest<any>[] = [];
+        const bidRequests: BidderRequest<any>[] = [];
 
         const ortb2 = ortb2Fragments.global || {};
         const bidderOrtb2 = ortb2Fragments.bidder || {};
@@ -507,10 +507,10 @@ const adapterManager = {
         _s2sConfigs.forEach(s2sConfig => {
             const s2sParams = s2sActivityParams(s2sConfig);
             if (s2sConfig && s2sConfig.enabled && dep.isAllowed(ACTIVITY_FETCH_BIDS, s2sParams)) {
-                let {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
+                const {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
                 // uniquePbsTid is so we know which server to send which bids to during the callBids function
-                let uniquePbsTid = generateUUID();
+                const uniquePbsTid = generateUUID();
 
                 (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
                     const bidderRequestId = getUniqueIdentifierStr();
@@ -535,7 +535,7 @@ const adapterManager = {
                 // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
                 // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
                 adUnitsS2SCopy.forEach((adUnitCopy) => {
-                    let validBids = adUnitCopy.bids.filter((adUnitBid) =>
+                    const validBids = adUnitCopy.bids.filter((adUnitBid) =>
                         bidRequests.find(request =>
                             request.bids.find((reqBid) => reqBid.bidId === adUnitBid.bid_id)));
                     adUnitCopy.bids = validBids;
@@ -550,7 +550,7 @@ const adapterManager = {
         });
 
         // client adapters
-        let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
+        const adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
         clientBidders.forEach(bidderCode => {
             const bidderRequestId = getUniqueIdentifierStr();
             const metrics = auctionMetrics.fork();
@@ -593,7 +593,7 @@ const adapterManager = {
             return;
         }
 
-        let [clientBidderRequests, serverBidderRequests] = bidRequests.reduce((partitions, bidRequest) => {
+        const [clientBidderRequests, serverBidderRequests] = bidRequests.reduce((partitions, bidRequest) => {
             partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC)].push(bidRequest);
             return partitions;
         }, [[], []]);
@@ -621,17 +621,17 @@ const adapterManager = {
                     request: requestCallbacks.request.bind(null, 's2s'),
                     done: requestCallbacks.done
                 } : undefined);
-                let adaptersServerSide = s2sConfig.bidders;
+                const adaptersServerSide = s2sConfig.bidders;
                 const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-                let uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
-                let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
+                const uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
+                const adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
 
-                let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
+                const uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
                 if (s2sAdapter) {
-                    let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments, requestBidsTimeout};
+                    const s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments, requestBidsTimeout};
                     if (s2sBidRequest.ad_units.length) {
-                        let doneCbs = uniqueServerRequests.map(bidRequest => {
+                        const doneCbs = uniqueServerRequests.map(bidRequest => {
                             bidRequest.start = timestamp();
                             return function (timedOut, ...args) {
                                 if (!timedOut) {
@@ -675,7 +675,7 @@ const adapterManager = {
                 logMessage(`CALLING BIDDER`);
                 events.emit(EVENTS.BID_REQUESTED, bidderRequest);
             });
-            let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+            const ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
                 request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
                 done: requestCallbacks.done
             } : undefined);
@@ -720,10 +720,10 @@ const adapterManager = {
         }
     },
     aliasBidAdapter(bidderCode: BidderCode, alias: BidderCode, options?: AliasBidderOptions) {
-        let existingAlias = _bidderRegistry[alias];
+        const existingAlias = _bidderRegistry[alias];
 
         if (typeof existingAlias === 'undefined') {
-            let bidAdapter = _bidderRegistry[bidderCode];
+            const bidAdapter = _bidderRegistry[bidderCode];
             if (typeof bidAdapter === 'undefined') {
                 // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
                 const nonS2SAlias = [];
@@ -743,7 +743,7 @@ const adapterManager = {
             } else {
                 try {
                     let newAdapter;
-                    let supportedMediaTypes = getSupportedMediaTypes(bidderCode);
+                    const supportedMediaTypes = getSupportedMediaTypes(bidderCode);
                     // Have kept old code to support backward compatibilitiy.
                     // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
                     if (bidAdapter.constructor.prototype != Object.prototype) {
@@ -751,13 +751,13 @@ const adapterManager = {
                         newAdapter.setBidderCode(alias);
                     } else {
                         const { useBaseGvlid = false } = options || {};
-                        let spec = bidAdapter.getSpec();
+                        const spec = bidAdapter.getSpec();
                         const gvlid = useBaseGvlid ? spec.gvlid : options?.gvlid;
                         if (gvlid == null && spec.gvlid != null) {
                             logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`)
                         }
 
-                        let skipPbsAliasing = options && options.skipPbsAliasing;
+                        const skipPbsAliasing = options && options.skipPbsAliasing;
                         newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, skipPbsAliasing }));
                         _aliasRegistry[alias] = bidderCode;
                     }
@@ -900,7 +900,7 @@ const adapterManager = {
 }
 
 function getSupportedMediaTypes(bidderCode) {
-  let supportedMediaTypes = [];
+  const supportedMediaTypes = [];
   if (FEATURES.VIDEO && adapterManager.videoAdapters.includes(bidderCode)) supportedMediaTypes.push('video');
   if (FEATURES.NATIVE && nativeAdapters.includes(bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;

@@ -320,7 +320,7 @@ ascAdapter.dataProcess = function (t) {
 
 ascAdapter.sendPayload = function (data) {
   var obj = { 'records': [{ 'value': data }] };
-  let strJSON = JSON.stringify(obj);
+  const strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 }
 

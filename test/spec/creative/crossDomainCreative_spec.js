@@ -54,7 +54,7 @@ describe('cross-domain creative', () => {
   function waitFor(predicate, timeout = 1000) {
     let timedOut = false;
     return new Promise((resolve, reject) => {
-      let to = setTimeout(() => {
+      const to = setTimeout(() => {
         timedOut = true;
         reject(new Error('timeout'))
       }, timeout)

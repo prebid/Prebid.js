@@ -75,7 +75,7 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The constructed impression object.
  */
 function imp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
+  const imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
   imp.tagid = bidRequest.adUnitCode;
@@ -114,7 +114,7 @@ function imp(buildImp, bidRequest, context) {
  * @returns {Object} The complete oRTB request object.
  */
 function request(buildRequest, imps, bidderRequest, context) {
-  let request = buildRequest(imps, bidderRequest, context);
+  const request = buildRequest(imps, bidderRequest, context);
   const siteId = context.bidRequests[0]?.params?.siteId;
 
   deepSetValue(request, 'auctionStart', bidderRequest.auctionStart);
@@ -218,7 +218,7 @@ export const spec = {
       return [];
     }
 
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SERVER_PATH_US1_SYNC + '?';
 
     syncUrl = gdprConsent ? tryAppendQueryString(syncUrl, 'gdpr', gdprConsent.gdprApplies ? 1 : 0) : syncUrl;

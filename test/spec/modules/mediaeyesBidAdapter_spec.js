@@ -57,39 +57,39 @@ describe('mediaeyes adapter', function () {
 
     describe('validations', function () {
         it('isBidValid : itemId is passed', function () {
-            let bid = {
+            const bid = {
                 bidder: 'mediaeyes',
                 params: {
                     itemId: 'ec1d7389a4a5afa28a23c4',
                 }
-            },
-                isValid = spec.isBidRequestValid(bid);
+            };
+                const isValid = spec.isBidRequestValid(bid);
             expect(isValid).to.equals(true);
         });
         it('isBidValid : itemId is not passed', function () {
-            let bid = {
+            const bid = {
                 bidder: 'mediaeyes',
                 params: {
 
                 }
-            },
-                isValid = spec.isBidRequestValid(bid);
+            };
+                const isValid = spec.isBidRequestValid(bid);
             expect(isValid).to.equals(false);
         });
     });
     describe('Validate Request', function () {
         it('Immutable bid request validate', function () {
-            let _Request = utils.deepClone(request),
-                bidRequest = spec.buildRequests(request);
+            const _Request = utils.deepClone(request);
+                const bidRequest = spec.buildRequests(request);
             expect(request).to.deep.equal(_Request);
         });
     });
 
     describe('responses processing', function () {
         it('should return fully-initialized banner bid-response', function () {
-            let bidRequest = spec.buildRequests(request);
+            const bidRequest = spec.buildRequests(request);
 
-            let resp = spec.interpretResponse(bannerResponse, bidRequest[0])[0];
+            const resp = spec.interpretResponse(bannerResponse, bidRequest[0])[0];
             expect(resp).to.have.property('requestId');
             expect(resp).to.have.property('cpm');
             expect(resp).to.have.property('width');
@@ -102,7 +102,7 @@ describe('mediaeyes adapter', function () {
         });
 
         it('no ads returned', function () {
-            let response = {
+            const response = {
                 "body": {
                     "id": "0309d787-75cd-4e9d-a430-666fc76c1fbe",
                     "seatbid": [
@@ -114,7 +114,7 @@ describe('mediaeyes adapter', function () {
             }
             let bidderRequest;
 
-            let result = spec.interpretResponse(response, {bidderRequest});
+            const result = spec.interpretResponse(response, {bidderRequest});
             expect(result.length).to.equal(0);
         });
     })
@@ -122,7 +122,7 @@ describe('mediaeyes adapter', function () {
     describe('setting imp.floor using floorModule', function () {
         let newRequest;
         let floorModuleTestData;
-        let getFloor = function (req) {
+        const getFloor = function (req) {
             return floorModuleTestData['banner'];
         };
 
@@ -140,7 +140,7 @@ describe('mediaeyes adapter', function () {
         it('params bidfloor undefined', function () {
             floorModuleTestData.banner.floor = 0;
             newRequest[0].params.bidFloor = undefined;
-            let request = spec.buildRequests(newRequest);
+            const request = spec.buildRequests(newRequest);
             let data = JSON.parse(request[0].data);
             data = data.imp[0];
             expect(data.bidfloor).to.equal(0);
@@ -149,7 +149,7 @@ describe('mediaeyes adapter', function () {
         it('floormodule if floor is not number', function () {
             floorModuleTestData.banner.floor = 'INR';
             newRequest[0].params.bidFloor = undefined;
-            let request = spec.buildRequests(newRequest);
+            const request = spec.buildRequests(newRequest);
             let data = JSON.parse(request[0].data);
             data = data.imp[0];
             expect(data.bidfloor).to.equal(0);
@@ -158,7 +158,7 @@ describe('mediaeyes adapter', function () {
         it('floormodule if currency is not matched', function () {
             floorModuleTestData.banner.currency = 'INR';
             newRequest[0].params.bidFloor = undefined;
-            let request = spec.buildRequests(newRequest);
+            const request = spec.buildRequests(newRequest);
             let data = JSON.parse(request[0].data);
             data = data.imp[0];
             expect(data.bidfloor).to.equal(1);
@@ -166,7 +166,7 @@ describe('mediaeyes adapter', function () {
 
         it('bidFloor is not passed, use minimum from floorModule', function () {
             newRequest[0].params.bidFloor = undefined;
-            let request = spec.buildRequests(newRequest);
+            const request = spec.buildRequests(newRequest);
             let data = JSON.parse(request[0].data);
             data = data.imp[0];
             expect(data.bidfloor).to.equal(1);
@@ -174,7 +174,7 @@ describe('mediaeyes adapter', function () {
 
         it('if params bidFloor is passed, priority use it', function () {
             newRequest[0].params.bidFloor = 1;
-            let request = spec.buildRequests(newRequest);
+            const request = spec.buildRequests(newRequest);
             let data = JSON.parse(request[0].data);
             data = data.imp[0];
             expect(data.bidfloor).to.equal(1);

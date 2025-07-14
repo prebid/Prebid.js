@@ -12,7 +12,7 @@ import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 const clearTimersAfterEachTest = true;
 const debugOutput = () => {};
@@ -102,7 +102,7 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 };
 
 describe(`UID2 module`, function () {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let suiteSandbox; let testSandbox; let timerSpy; let fullTestTitle; let restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
@@ -237,7 +237,7 @@ describe(`UID2 module`, function () {
     it('and GDPR applies, when getId is called directly it provides no identity', () => {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       const consentConfig = setGdprApplies();
-      let configObj = makePrebidConfig(legacyConfigParams);
+      const configObj = makePrebidConfig(legacyConfigParams);
       const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], {gdpr: consentConfig.consentData});
       expect(result?.id).to.not.exist;
     });
@@ -260,7 +260,7 @@ describe(`UID2 module`, function () {
   });
 
   // This setup runs all of the functional tests with both types of config - the full token response in params, or a server cookie with the cookie name provided
-  let scenarios = [
+  const scenarios = [
     {
       name: 'Token provided in config call',
       setConfig: (token, extraConfig = {}) => {
