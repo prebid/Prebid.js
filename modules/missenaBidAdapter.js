@@ -123,7 +123,7 @@ export const spec = {
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
-      (!capping?.referer || capping?.referer == referer)
+      (!capping?.referer || capping?.referer === referer)
     ) {
       logInfo('Missena - Capped');
       return [];

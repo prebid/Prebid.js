@@ -30,7 +30,7 @@ export const spec = {
       };
 
       if (typeof bid.getFloor === 'function') {
-        const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
+        const mediaType = (Object.keys(bid.mediaTypes).length === 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
