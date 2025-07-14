@@ -72,7 +72,7 @@ export const operaIdSubmodule = {
    * @returns {{'operaId': string}}
    */
   decode: (id) =>
-    id !== null && id.length > 0
+    typeof id === 'string' && id.length > 0
       ? { [ID_KEY]: id }
       : undefined,
 
