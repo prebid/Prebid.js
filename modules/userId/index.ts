@@ -703,15 +703,15 @@ function registerSignalSources() {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
       encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
-          source.forEach((src) => {
-            if (!existingIds.has(src)) {
-              providers.push({
-                id: src,
-                collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
-              });
-              existingIds.add(src);
-            }
-          });
+        source.forEach((src) => {
+          if (!existingIds.has(src)) {
+            providers.push({
+              id: src,
+              collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+            });
+            existingIds.add(src);
+          }
+        });
       })
     }, registerDelay)
   } else {
