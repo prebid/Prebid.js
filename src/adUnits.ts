@@ -24,7 +24,7 @@ export interface RendererConfig {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface BidderParams {
     /**
-     * Adapter-specific paramters - to be extended in the adapters
+     * Adapter-specific parameters - to be extended in the adapters
      */
 }
 
@@ -143,7 +143,7 @@ export function reset() {
 }
 
 function ensureAdUnit(adunit, bidderCode?) {
-  let adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
+  const adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
   if (bidderCode) {
     return adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
   }

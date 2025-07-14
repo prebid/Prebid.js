@@ -10,13 +10,13 @@ import {getRefererInfo} from '../src/refererDetection.js';
  */
 const DEFAULT_EVENT_URL = 'https://api.adv.red/api/event'
 
-let ajax = ajaxBuilder(10000)
+const ajax = ajaxBuilder(10000)
 let pwId
 let initOptions
 let flushInterval
 let queue = []
 
-let advRedAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType: 'endpoint'}), {
+const advRedAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType: 'endpoint'}), {
   track({eventType, args}) {
     handleEvent(eventType, args)
   }
@@ -70,7 +70,7 @@ function convertBid(bid) {
 }
 
 function convertAuctionInit(origEvent) {
-  let shortEvent = {}
+  const shortEvent = {}
   shortEvent.auctionId = origEvent.auctionId
   shortEvent.timeout = origEvent.timeout
   shortEvent.adUnits = origEvent.adUnits && origEvent.adUnits.map(convertAdUnit)
@@ -78,7 +78,7 @@ function convertAuctionInit(origEvent) {
 }
 
 function convertBidRequested(origEvent) {
-  let shortEvent = {}
+  const shortEvent = {}
   shortEvent.bidderCode = origEvent.bidderCode
   shortEvent.bids = origEvent.bids && origEvent.bids.map(convertBid)
   shortEvent.timeout = origEvent.timeout
@@ -86,19 +86,19 @@ function convertBidRequested(origEvent) {
 }
 
 function convertBidTimeout(origEvent) {
-  let shortEvent = {}
+  const shortEvent = {}
   shortEvent.bids = origEvent && origEvent.map ? origEvent.map(convertBid) : origEvent
   return shortEvent
 }
 
 function convertBidderError(origEvent) {
-  let shortEvent = {}
+  const shortEvent = {}
   shortEvent.bids = origEvent.bidderRequest && origEvent.bidderRequest.bids && origEvent.bidderRequest.bids.map(convertBid)
   return shortEvent
 }
 
 function convertAuctionEnd(origEvent) {
-  let shortEvent = {}
+  const shortEvent = {}
   shortEvent.adUnitCodes = origEvent.adUnitCodes
   shortEvent.bidsReceived = origEvent.bidsReceived && origEvent.bidsReceived.map(convertBid)
   shortEvent.noBids = origEvent.noBids && origEvent.noBids.map(convertBid)
@@ -106,7 +106,7 @@ function convertAuctionEnd(origEvent) {
 }
 
 function convertBidWon(origEvent) {
-  let shortEvent = {}
+  const shortEvent = {}
   shortEvent.adUnitCode = origEvent.adUnitCode
   shortEvent.bidderCode = origEvent.bidderCode
   shortEvent.mediaType = origEvent.mediaType

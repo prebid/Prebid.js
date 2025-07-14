@@ -218,7 +218,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
 };
 
 /**
- * Updates bidder configs with the targeting data retreived from Profile API
+ * Updates bidder configs with the targeting data retrieved from Profile API
  * @param {Object} papiResponse Response from Profile API
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration

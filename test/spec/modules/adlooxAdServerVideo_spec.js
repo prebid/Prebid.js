@@ -153,9 +153,9 @@ describe('Adloox Ad Server Video', function () {
       });
 
       it('should require options.adUnit or options.bid', function (done) {
-        let BID = utils.deepClone(bid);
+        const BID = utils.deepClone(bid);
 
-        let getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
+        const getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
         getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
 
         const ret = buildVideoUrl({ url: vastUrl }, function () {});

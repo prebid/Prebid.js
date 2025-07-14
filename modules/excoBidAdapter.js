@@ -21,7 +21,7 @@ export const ENDPOINT = 'https://v.ex.co/se/openrtb/hb/pbjs';
 const SYNC_URL = 'https://cdn.ex.co/sync/e15e216-l/cookie_sync.html';
 
 export const BIDDER_CODE = 'exco';
-const VERSION = '0.0.2';
+const VERSION = '0.0.3';
 const CURRENCY = 'USD';
 
 const SYNC = {
@@ -122,9 +122,10 @@ export class AdapterHelpers {
   adoptBidResponse(bidResponse, bid, context) {
     bidResponse.bidderCode = BIDDER_CODE;
 
-    bidResponse.vastXml = bidResponse.ad || bid.adm;
+    if (!bid.vastXml && bid.mediaType === VIDEO) {
+      bidResponse.vastXml = bidResponse.ad || bid.adm;
+    }
 
-    bidResponse.ad = bid.ad;
     bidResponse.adUrl = bid.adUrl;
     bidResponse.nurl = bid.nurl;
 
@@ -246,10 +247,7 @@ export class AdapterHelpers {
   }
 
   triggerUrl(url) {
-    fetch(url, {
-      keepalive: true,
-      credentials: 'include'
-    });
+    fetch(url, { keepalive: true });
   }
 
   log(severity, message) {
@@ -264,6 +262,10 @@ export class AdapterHelpers {
     if (severity === 'info') {
       logInfo(msg);
     }
+  }
+
+  isDebugEnabled(url = '') {
+    return config.getConfig('debug') || url.includes('exco_debug=true');
   }
 }
 
@@ -281,7 +283,7 @@ export const converter = ortbConverter({
     }
 
     data.cur = [CURRENCY];
-    data.test = config.getConfig('debug') ? 1 : 0;
+    data.test = helpers.isDebugEnabled(window.location.href) ? 1 : 0;
 
     helpers.addOrtbFirstPartyData(data, context.bidRequests || []);
 
@@ -473,9 +475,9 @@ export const spec = {
     }
 
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
-      helpers.triggerUrl(
-        helpers.replaceMacro(bid.nurl)
-      );
+      const url = helpers.replaceMacro(bid.nurl)
+        .replace('ad_auction_won', 'ext_auction_won');
+      helpers.triggerUrl(url);
     }
   },
 };
