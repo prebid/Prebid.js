@@ -106,7 +106,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid == 'object' && !!bid.params.apiKey;
+    return typeof bid === 'object' && !!bid.params.apiKey;
   },
 
   /**

@@ -401,7 +401,7 @@ function createOutstreamConfig(bid) {
     playerConfig.endingScreen = false;
   }
 
-  if (confTitle || (typeof bid.renderer.config.outstream_options.title == 'string' && bid.renderer.config.outstream_options.title == '')) {
+  if (confTitle || (typeof bid.renderer.config.outstream_options.title === 'string' && bid.renderer.config.outstream_options.title == '')) {
     playerConfig.layoutSettings.advertisingLabel = confTitle;
   }
 

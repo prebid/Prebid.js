@@ -187,7 +187,7 @@ export const spec = {
       paramsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
-          if (typeof params[param] == 'number') {
+          if (typeof params[param] === 'number') {
             params[param] = params[param].toString();
           }
         }
@@ -197,7 +197,7 @@ export const spec = {
     paramsToSearchFor.forEach(param => {
       if (bid.hasOwnProperty(param)) {
         params[param] = bid[param];
-        if (typeof params[param] == 'number') {
+        if (typeof params[param] === 'number') {
           params[param] = params[param].toString();
         }
       }

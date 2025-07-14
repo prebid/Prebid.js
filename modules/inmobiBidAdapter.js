@@ -258,7 +258,7 @@ export const spec = {
    * @returns {Bid[]} Parsed bids or configurations.
    */
   interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
+    if (typeof response?.body === 'undefined') {
       return [];
     }
 

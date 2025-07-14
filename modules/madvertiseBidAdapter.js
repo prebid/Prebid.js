@@ -30,7 +30,7 @@ export const spec = {
       return false;
     }
 
-    return typeof bid.params.s != 'undefined';
+    return typeof bid.params.s !== 'undefined';
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -52,7 +52,7 @@ export const spec = {
 
       _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
 
-      if (typeof bidRequest.params.u == 'undefined') {
+      if (typeof bidRequest.params.u === 'undefined') {
         src = src + '&u=' + navigator.userAgent;
       }
 

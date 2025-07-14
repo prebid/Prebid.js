@@ -76,7 +76,7 @@ export const spec = {
       var wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
       try {
         for (var k in hmetas) {
-          if (typeof hmetas[k] == 'object') {
+          if (typeof hmetas[k] === 'object') {
             var mname = hmetas[k].name || hmetas[k].getAttribute('property');
             var mcont = hmetas[k].content;
             if (!!mname && mname != 'null' && !!mcont) {

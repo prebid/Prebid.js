@@ -52,7 +52,7 @@ export const idxIdSubmodule = {
    */
   getId() {
     const idxString = readIDxFromLocalStorage() || readIDxFromCookie();
-    if (typeof idxString == 'string' && idxString) {
+    if (typeof idxString === 'string' && idxString) {
       try {
         const idxObj = JSON.parse(idxString);
         return idxObj && idxObj.idx ? { id: idxObj.idx } : undefined;

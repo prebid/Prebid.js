@@ -82,7 +82,7 @@ export const spec = {
     if (
       !serverResponse ||
       !serverResponse.body ||
-      typeof serverResponse.body != 'object' ||
+      typeof serverResponse.body !== 'object' ||
       Object.keys(serverResponse.body).length === 0
     ) {
       logWarn('no response or body is malformed');

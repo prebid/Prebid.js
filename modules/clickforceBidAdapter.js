@@ -60,7 +60,7 @@ export const spec = {
     const cfResponses = [];
     const bidRequestList = [];
 
-    if (typeof bidRequest != 'undefined') {
+    if (typeof bidRequest !== 'undefined') {
       _each(bidRequest.validBidRequests, function(req) {
         bidRequestList[req.bidId] = req;
       });

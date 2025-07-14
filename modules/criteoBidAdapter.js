@@ -382,7 +382,7 @@ export const spec = {
    * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
    */
   interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
+    if (typeof response?.body === 'undefined') {
       return []; // no bid
     }
 

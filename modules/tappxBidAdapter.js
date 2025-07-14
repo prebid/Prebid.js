@@ -205,9 +205,9 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
-  if (typeof serverBid.lurl != 'undefined') { bidReturned.lurl = serverBid.lurl }
-  if (typeof serverBid.nurl != 'undefined') { bidReturned.nurl = serverBid.nurl }
-  if (typeof serverBid.burl != 'undefined') { bidReturned.burl = serverBid.burl }
+  if (typeof serverBid.lurl !== 'undefined') { bidReturned.lurl = serverBid.lurl }
+  if (typeof serverBid.nurl !== 'undefined') { bidReturned.nurl = serverBid.nurl }
+  if (typeof serverBid.burl !== 'undefined') { bidReturned.burl = serverBid.burl }
 
   if (typeof request.bids?.mediaTypes !== 'undefined' && typeof request.bids?.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
@@ -394,7 +394,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
   bidder.bidfloor = BIDFLOOR;
-  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
+  bidder.ext = (typeof BIDEXTRA === 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
@@ -437,8 +437,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     eidsArr = eidsArr.filter(
       uuid =>
         (typeof uuid !== 'undefined' && uuid !== null) &&
-        (typeof uuid.source == 'string' && uuid.source !== null) &&
-        (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
+        (typeof uuid.source === 'string' && uuid.source !== null) &&
+        (typeof uuid.uids[0].id === 'string' && uuid.uids[0].id !== null)
     );
 
     user.ext.eids = eidsArr;
@@ -470,7 +470,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payloadExt.bidder.mktag = MKTAG;
   payloadExt.bidder.bcid = deepAccess(validBidRequests, 'params.bcid');
   payloadExt.bidder.bcrid = deepAccess(validBidRequests, 'params.bcrid');
-  payloadExt.bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : {};
+  payloadExt.bidder.ext = (typeof BIDEXTRA === 'object') ? BIDEXTRA : {};
   if (typeof videoMediaType !== 'undefined') {
     payloadExt.bidder.ext.pbvidtype = videoMediaType.context;
   }
@@ -549,7 +549,7 @@ export function _getHostInfo(validBidRequests) {
 
 function outstreamRender(bid, request) {
   let rendererOptions = {};
-  rendererOptions = (typeof bid.params[0].video != 'undefined') ? bid.params[0].video : {};
+  rendererOptions = (typeof bid.params[0].video !== 'undefined') ? bid.params[0].video : {};
   rendererOptions.content = bid.vastXml;
 
   bid.renderer.push(() => {

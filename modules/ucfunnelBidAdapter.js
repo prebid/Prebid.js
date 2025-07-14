@@ -36,7 +36,7 @@ export const spec = {
     const isVideoMediaType = (bid.mediaTypes && bid.mediaTypes.video != null);
     const videoContext = (bid.mediaTypes && bid.mediaTypes.video != null) ? bid.mediaTypes.video.videoContext : '';
 
-    if (typeof bid.params !== 'object' || typeof bid.params.adid != 'string') {
+    if (typeof bid.params !== 'object' || typeof bid.params.adid !== 'string') {
       return false;
     }
 

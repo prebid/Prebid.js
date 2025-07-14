@@ -166,14 +166,14 @@ function getTestConfig() {
 function setIAB(vjson) {
   window.arcobj2 = {};
   window.arcobj2.cat = 0;
-  if (typeof vjson.codes != 'undefined') {
+  if (typeof vjson.codes !== 'undefined') {
     window.arcobj2.cat = 1;
-    if (typeof vjson.codes.images != 'undefined') {
+    if (typeof vjson.codes.images !== 'undefined') {
       vjson.codes.images.forEach(function f(e, i) {
         vjson.codes.images[i] = e.replace('-', '_');
       });
     }
-    if (typeof vjson.codes.text != 'undefined') {
+    if (typeof vjson.codes.text !== 'undefined') {
       vjson.codes.text.forEach(function f(e, i) {
         vjson.codes.text[i] = e.replace('-', '_');
       });

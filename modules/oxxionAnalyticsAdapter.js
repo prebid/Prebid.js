@@ -30,34 +30,34 @@ function getAdapterNameForAlias(aliasName) {
 
 function filterAttributes(arg, removead) {
   const response = {};
-  if (typeof arg == 'object') {
-    if (typeof arg['bidderCode'] == 'string') {
+  if (typeof arg === 'object') {
+    if (typeof arg['bidderCode'] === 'string') {
       response['originalBidder'] = getAdapterNameForAlias(arg['bidderCode']);
-    } else if (typeof arg['bidder'] == 'string') {
+    } else if (typeof arg['bidder'] === 'string') {
       response['originalBidder'] = getAdapterNameForAlias(arg['bidder']);
     }
-    if (!removead && typeof arg['ad'] != 'undefined') {
+    if (!removead && typeof arg['ad'] !== 'undefined') {
       response['ad'] = arg['ad'];
     }
-    if (typeof arg['gdprConsent'] != 'undefined') {
+    if (typeof arg['gdprConsent'] !== 'undefined') {
       response['gdprConsent'] = {};
-      if (typeof arg['gdprConsent']['consentString'] != 'undefined') {
+      if (typeof arg['gdprConsent']['consentString'] !== 'undefined') {
         response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString'];
       }
     }
-    if (typeof arg['meta'] == 'object') {
+    if (typeof arg['meta'] === 'object') {
       response['meta'] = {};
-      if (typeof arg['meta']['advertiserDomains'] != 'undefined') {
+      if (typeof arg['meta']['advertiserDomains'] !== 'undefined') {
         response['meta']['advertiserDomains'] = arg['meta']['advertiserDomains'];
       }
-      if (typeof arg['meta']['demandSource'] == 'string') {
+      if (typeof arg['meta']['demandSource'] === 'string') {
         response['meta']['demandSource'] = arg['meta']['demandSource'];
       }
     }
     requestsAttributes.forEach((attr) => {
-      if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
+      if (typeof arg[attr] !== 'undefined') { response[attr] = arg[attr]; }
     });
-    if (typeof response['creativeId'] == 'number') {
+    if (typeof response['creativeId'] === 'number') {
       response['creativeId'] = response['creativeId'].toString();
     }
   }
@@ -74,7 +74,7 @@ function cleanAuctionEnd(args) {
       response[attr] = [];
       args[attr].forEach((obj) => {
         filteredObj = filterAttributes(obj, true);
-        if (typeof obj['bids'] == 'object') {
+        if (typeof obj['bids'] === 'object') {
           filteredObj['bids'] = [];
           obj['bids'].forEach((bid) => {
             filteredObj['bids'].push(filterAttributes(bid, true));
@@ -169,9 +169,9 @@ function addAuctionEnd(args) {
 function handleBidWon(args) {
   args = enhanceMediaType(filterAttributes(JSON.parse(dereferenceWithoutRenderer(args)), true));
   let increment = args['cpm'];
-  if (typeof saveEvents['auctionEnd'] == 'object') {
+  if (typeof saveEvents['auctionEnd'] === 'object') {
     saveEvents['auctionEnd'].forEach((auction) => {
-      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidsReceived'] == 'object') {
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidsReceived'] === 'object') {
         auction['bidsReceived'].forEach((bid) => {
           if (bid['transactionId'] == args['transactionId'] && bid['adId'] != args['adId']) {
             if (args['cpm'] < bid['cpm']) {
@@ -182,7 +182,7 @@ function handleBidWon(args) {
           }
         });
       }
-      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] === 'object') {
         auction['bidderRequests'].forEach((req) => {
           req.bids.forEach((bid) => {
             if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
@@ -195,14 +195,14 @@ function handleBidWon(args) {
   }
   args['cpmIncrement'] = increment;
   args['referer'] = encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation);
-  if (typeof saveEvents.bidRequested == 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
+  if (typeof saveEvents.bidRequested === 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
   ajax(endpoint + '.oxxion.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }
 
 function handleAuctionEnd() {
   ajax(endpoint + '.oxxion.io/analytics/auctions', function (data) {
     const list = JSON.parse(data);
-    if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
+    if (Array.isArray(list) && typeof allEvents['bidResponse'] !== 'undefined') {
       const alreadyCalled = [];
       allEvents['bidResponse'].forEach((bidResponse) => {
         const tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];

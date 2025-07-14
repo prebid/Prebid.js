@@ -154,7 +154,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   }
 
   function onBidResponse(bidResponse, config, userConsent) {
-    if (bidResponse.dealId && typeof (bidResponse.dealId) != typeof (undefined)) {
+    if (bidResponse.dealId && typeof (bidResponse.dealId) !== typeof (undefined)) {
       const membership = dapUtils.dapGetMembershipFromLocalStorage(); // Get Membership details from Local Storage
       const deals = membership.deals; // Get list of Deals the user is mapped to
       deals.forEach((deal) => {
@@ -234,7 +234,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         function(token, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
           const exp = dapUtils.dapExtractExpiryFromToken(token);
-          if (typeof exp == 'number') {
+          if (typeof exp === 'number') {
             item.expires_at = exp - 10;
           }
           item.token = token;
@@ -289,7 +289,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         function(membership, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
           const exp = dapUtils.dapExtractExpiryFromToken(membership.said)
-          if (typeof exp == 'number') {
+          if (typeof exp === 'number') {
             item.expires_at = exp - 10;
           }
           item.said = membership.said;
@@ -337,7 +337,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         function(encToken, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
           const exp = dapUtils.dapExtractExpiryFromToken(encToken);
-          if (typeof exp == 'number') {
+          if (typeof exp === 'number') {
             item.expires_at = exp - 10;
           }
           item.encryptedSegments = encToken;
@@ -526,27 +526,27 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         onError = function(xhr, status, error, onDone) {};
       }
 
-      if (config == null || typeof (config) == typeof (undefined)) {
+      if (config == null || typeof (config) === typeof (undefined)) {
         onError(null, 'Invalid config object', 'ClientError', onDone);
         return [ config, true ];
       }
 
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
+      if (!('api_version' in config) || (typeof (config.api_version) === 'string' && config.api_version.length == 0)) {
         config.api_version = 'x1';
       }
 
-      if (typeof (config.api_version) != 'string') {
+      if (typeof (config.api_version) !== 'string') {
         onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
         return [ config, true ];
       }
 
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
+      if (!(('api_hostname') in config) || typeof (config.api_hostname) !== 'string' || config.api_hostname.length == 0) {
         onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
         return [ config, true ];
       }
 
       if (token) {
-        if (typeof (token) != 'string') {
+        if (typeof (token) !== 'string') {
           onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
           return [ config, true ];
         }
@@ -556,7 +556,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     },
 
     addIdentifier: async function(identity, apiParams) {
-      if (window.crypto && window.crypto.subtle && typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
+      if (window.crypto && window.crypto.subtle && typeof (identity.value) !== typeof (undefined) && identity.value.trim() !== '') {
         const hashBuffer = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -609,7 +609,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       [ config, hasTokenizeError ] = this.dapValidationHelper(config, onDone, null, onError);
       if (hasTokenizeError) { return; }
 
-      if (typeof (config.domain) != 'string') {
+      if (typeof (config.domain) !== 'string') {
         onError(null, 'Invalid config.domain: must be a string', 'ClientError', onDone);
         return;
       }
@@ -619,12 +619,12 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         return;
       }
 
-      if (identity == null || typeof (identity) == typeof (undefined)) {
+      if (identity == null || typeof (identity) === typeof (undefined)) {
         onError(null, 'Invalid identity object', 'ClientError', onDone);
         return;
       }
 
-      if (!('type' in identity) || typeof (identity.type) != 'string' || identity.type.length <= 0) {
+      if (!('type' in identity) || typeof (identity.type) !== 'string' || identity.type.length <= 0) {
         onError(null, "Identity must contain a valid 'type' field", 'ClientError', onDone);
         return;
       }
@@ -648,7 +648,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     },
 
     callTokenize(config, identity, apiParams, onDone, onSuccess, onError) {
-      if (typeof (identity.attributes) != typeof (undefined)) {
+      if (typeof (identity.attributes) !== typeof (undefined)) {
         apiParams.attributes = identity.attributes;
       }
 
@@ -742,7 +742,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       [ config, hasMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
       if (hasMembershipError) { return; }
 
-      if (typeof (config.domain) != 'string') {
+      if (typeof (config.domain) !== 'string') {
         onError(null, 'Invalid config.domain: must be a string', 'ClientError', onDone);
         return;
       }

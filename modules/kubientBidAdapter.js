@@ -161,7 +161,7 @@ function kubientGetConsentGiven(gdprConsent) {
 function kubientGetSyncInclude(config) {
   try {
     const kubientSync = {};
-    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
+    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings !== 'undefined') {
       const filterSettings = config.getConfig('userSync').filterSettings
       if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
         kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';

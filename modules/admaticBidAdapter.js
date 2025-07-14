@@ -399,7 +399,7 @@ function _validateId(id) {
 }
 
 function _validateString(str) {
-  return (typeof str == 'string');
+  return (typeof str === 'string');
 }
 
 registerBidder(spec);

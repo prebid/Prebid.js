@@ -196,9 +196,9 @@ function getRr() {
     var rr = td.referrer;
   } catch (err) { return false }
 
-  if (typeof rr != 'undefined' && rr.length > 0) {
+  if (typeof rr !== 'undefined' && rr.length > 0) {
     return encodeURIComponent(rr);
-  } else if (typeof rr != 'undefined' && rr == '') {
+  } else if (typeof rr !== 'undefined' && rr == '') {
     return 'direct';
   }
 }

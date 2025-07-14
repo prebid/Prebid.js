@@ -20,7 +20,7 @@ export function flattenObj(obj, parent, res = {}) {
       continue;
     }
     const propName = parent ? parent + '.' + key : key;
-    if (typeof obj[key] == 'object') {
+    if (typeof obj[key] === 'object') {
       flattenObj(obj[key], propName, res);
     } else {
       res[propName] = String(obj[key]);

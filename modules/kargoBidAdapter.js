@@ -150,7 +150,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
 
       // Do not pass any empty strings
-      if (typeof suaValue == 'string' && suaValue.trim() === '') {
+      if (typeof suaValue === 'string' && suaValue.trim() === '') {
         return;
       }
 
@@ -271,7 +271,7 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   var gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
 
   // don't sync if opted out via usPrivacy
-  if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
+  if (typeof usPrivacy === 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
     return syncs;
   }
   if (syncOptions.iframeEnabled && seed && clientId) {

@@ -22,14 +22,14 @@ export const oxxionSubmodule = {
 
 function init(config, userConsent) {
   if (!config.params || !config.params.domain) { return false }
-  if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') { return true }
+  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') { return true }
   return false;
 }
 
 function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
   const moduleStarted = new Date();
   logInfo(LOG_PREFIX + 'started with ', config);
-  if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') {
+  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') {
     let filteredBids;
     const requests = getRequestsList(reqBidsConfigObj);
     const gdpr = userConsent && userConsent.gdpr ? userConsent.gdpr.consentString : null;
@@ -51,7 +51,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
           withCredentials: true
         });
       }
-      if (typeof callback == 'function') { callback(); }
+      if (typeof callback === 'function') { callback(); }
       const timeToRun = new Date() - moduleStarted;
       logInfo(LOG_PREFIX + ' time to run: ' + timeToRun);
       if (getRandomNumber(50) == 1) {
@@ -81,7 +81,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
   const filteredBids = [];
   // Separate bidsRateInterests in two groups against threshold & samplingRate
   const { interestingBidsRates, uninterestingBidsRates, sampledBidsRates } = bidsRateInterests.reduce((acc, interestingBid) => {
-    const isBidRateUpper = typeof threshold == 'number' ? interestingBid.rate === true || interestingBid.rate > threshold : interestingBid.suggestion;
+    const isBidRateUpper = typeof threshold === 'number' ? interestingBid.rate === true || interestingBid.rate > threshold : interestingBid.suggestion;
     const isBidInteresting = isBidRateUpper || sampling;
     const key = isBidInteresting ? 'interestingBidsRates' : 'uninterestingBidsRates';
     acc[key].push(interestingBid);

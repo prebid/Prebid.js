@@ -224,7 +224,7 @@ export const spec = {
       return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
     };
 
-    if (!serverResponse.body || typeof serverResponse.body != 'object') {
+    if (!serverResponse.body || typeof serverResponse.body !== 'object') {
       return;
     }
     const {id, seatbid: seatbids} = serverResponse.body;

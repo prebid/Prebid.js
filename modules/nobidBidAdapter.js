@@ -255,7 +255,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     var divid = bid.adUnitCode;
     divids.push(divid);
     var sizes = bid.sizes;
-    siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
+    siteId = (typeof bid.params['siteId'] !== 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
 
     let adType = 'banner';

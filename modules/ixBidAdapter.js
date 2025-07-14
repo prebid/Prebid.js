@@ -1200,7 +1200,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 
   // regulations from ortb2
   if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
-    if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
+    if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp === 'string') {
       deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
     }
 

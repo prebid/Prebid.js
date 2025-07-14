@@ -18,7 +18,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     // will receive request bid. check if have necessary params for bidding
-    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.siteId != null && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && typeof bid.mediaTypes.banner == 'object')
+    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.siteId != null && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && typeof bid.mediaTypes.banner === 'object')
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {

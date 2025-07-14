@@ -41,19 +41,19 @@ const helpers = {
       },
     };
 
-    if (typeof bid.params.format == 'string') {
+    if (typeof bid.params.format === 'string') {
       ext.impactify.format = bid.params.format;
     }
 
-    if (typeof bid.params.style == 'string') {
+    if (typeof bid.params.style === 'string') {
       ext.impactify.style = bid.params.style;
     }
 
-    if (typeof bid.params.container == 'string') {
+    if (typeof bid.params.container === 'string') {
       ext.impactify.container = bid.params.container;
     }
 
-    if (typeof bid.params.size == 'string') {
+    if (typeof bid.params.size === 'string') {
       ext.impactify.size = bid.params.size;
     }
 
@@ -187,7 +187,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       ext: helpers.getExtParamsFromBid(bid)
     };
 
-    if (bannerObj && typeof imp.ext.impactify.size == 'string') {
+    if (bannerObj && typeof imp.ext.impactify.size === 'string') {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
       }
@@ -228,10 +228,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (typeof bid.params.appId != 'string' || !bid.params.appId) {
+    if (typeof bid.params.appId !== 'string' || !bid.params.appId) {
       return false;
     }
-    if (typeof bid.params.format != 'string' || typeof bid.params.style != 'string' || !bid.params.format || !bid.params.style) {
+    if (typeof bid.params.format !== 'string' || typeof bid.params.style !== 'string' || !bid.params.format || !bid.params.style) {
       return false;
     }
     if (bid.params.format !== 'screen' && bid.params.format !== 'display') {

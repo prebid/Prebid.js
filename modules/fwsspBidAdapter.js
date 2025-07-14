@@ -269,7 +269,7 @@ export const spec = {
       playerSize = getBiggerSize(bidrequest.sizes);
     }
 
-    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
+    if (typeof serverResponse === 'object' && typeof serverResponse.body === 'string') {
       serverResponse = serverResponse.body;
     }
 
@@ -379,8 +379,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted == 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton == 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
 
   let playerParams = null;
   try {
@@ -527,7 +527,7 @@ function getBidFloor(bid, config) {
   try {
     const bidFloor = bid.getFloor({
       currency: getFloorCurrency(config),
-      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+      mediaType: typeof bid.mediaTypes['banner'] === 'object' ? 'banner' : 'video',
       size: '*',
     });
     return bidFloor.floor;
