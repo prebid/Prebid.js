@@ -475,7 +475,7 @@ describe('Equativ bid adapter tests', () => {
       getDataFromLocalStorageStub.restore();
     });
 
-     it('should pass prebid version as ext.equativprebidjsversion param', () => {
+    it('should pass prebid version as ext.equativprebidjsversion param', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST

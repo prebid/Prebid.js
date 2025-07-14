@@ -207,14 +207,14 @@ export function redactorFactory(isAllowed = isActivityAllowed) {
 export const redactor = redactorFactory();
 
 declare module '../config' {
-    interface Config {
-        /**
-         * Prebid generates unique IDs for both auctions and ad units within auctions; these can be used by DSPs
-         * to correlate requests from different sources, which is useful for many applications but also a potential
-         * privacy concern. Since version 8 they are disabled by default, and can be re-enabled with this flag.
-         */
-        enableTIDs?: boolean;
-    }
+  interface Config {
+    /**
+     * Prebid generates unique IDs for both auctions and ad units within auctions; these can be used by DSPs
+     * to correlate requests from different sources, which is useful for many applications but also a potential
+     * privacy concern. Since version 8 they are disabled by default, and can be re-enabled with this flag.
+     */
+    enableTIDs?: boolean;
+  }
 }
 // by default, TIDs are off since version 8
 registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {

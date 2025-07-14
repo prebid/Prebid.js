@@ -194,15 +194,15 @@ describe('hypelabBidAdapter', function () {
       });
       const winDimensions = getWinDimensions();
       expect(data.vp).to.deep.equal([
-      Math.max(
-        winDimensions?.document.documentElement.clientWidth || 0,
-        winDimensions?.innerWidth || 0
-      ),
-      Math.max(
-        winDimensions?.document.documentElement.clientHeight || 0,
-        winDimensions?.innerHeight || 0
-      ),
-    ]);
+        Math.max(
+          winDimensions?.document.documentElement.clientWidth || 0,
+          winDimensions?.innerWidth || 0
+        ),
+        Math.max(
+          winDimensions?.document.documentElement.clientHeight || 0,
+          winDimensions?.innerHeight || 0
+        ),
+      ]);
       expect(data.pp).to.deep.equal(null);
     });
 

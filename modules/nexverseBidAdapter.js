@@ -255,7 +255,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     imps.push(imp);
   }
   if (bid.mediaTypes.native) {
-     let imp = {
+    let imp = {
       id: bid.bidId,
       native: {
         request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string

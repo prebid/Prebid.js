@@ -67,7 +67,7 @@ const adUnitsCommon = [
 describe('relevadRtdProvider', function() {
   describe('relevadSubmodule', function() {
     it('successfully instantiates', function () {
-          expect(relevadSubmodule.init()).to.equal(true);
+      expect(relevadSubmodule.init()).to.equal(true);
     });
   });
 

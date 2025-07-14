@@ -226,8 +226,8 @@ describe('FTRACK ID System', () => {
 
     it(`should populate localstorage and return the IDS (end-to-end test)`, () => {
       let ftrackId;
-        let ftrackIdExp;
-        let forceCallback = false;
+      let ftrackIdExp;
+      let forceCallback = false;
 
       // Confirm that our item is not in localStorage yet
       expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
@@ -262,20 +262,20 @@ describe('FTRACK ID System', () => {
   describe(`decode() method`, () => {
     it(`should respond with an object with the key 'ftrackId'`, () => {
       const MOCK_VALUE_STRINGS = {
-          HHID: 'household_test_id',
-          DeviceID: 'device_test_id',
-          SingleDeviceID: 'single_device_test_id'
-        };
-        const MOCK_VALUE_ARRAYS = {
-          HHID: ['household_test_id', 'a', 'b'],
-          DeviceID: ['device_test_id', 'c', 'd'],
-          SingleDeviceID: ['single_device_test_id', 'e', 'f']
-        };
-        const MOCK_VALUE_BOTH = {
-          foo: ['foo', 'a', 'b'],
-          bar: 'bar',
-          baz: ['baz', 'baz', 'baz']
-        };
+        HHID: 'household_test_id',
+        DeviceID: 'device_test_id',
+        SingleDeviceID: 'single_device_test_id'
+      };
+      const MOCK_VALUE_ARRAYS = {
+        HHID: ['household_test_id', 'a', 'b'],
+        DeviceID: ['device_test_id', 'c', 'd'],
+        SingleDeviceID: ['single_device_test_id', 'e', 'f']
+      };
+      const MOCK_VALUE_BOTH = {
+        foo: ['foo', 'a', 'b'],
+        bar: 'bar',
+        baz: ['baz', 'baz', 'baz']
+      };
 
       // strings are just passed through
       expect(ftrackIdSubmodule.decode(MOCK_VALUE_STRINGS, configMock)).to.deep.equal({
