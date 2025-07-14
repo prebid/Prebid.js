@@ -326,8 +326,8 @@ function enrichSlotWithFloors(slot, bidRequest) {
   }
 }
 
-function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  function parseSizes(sizes, parser = s => s) {
+    if (sizes === undefined) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
