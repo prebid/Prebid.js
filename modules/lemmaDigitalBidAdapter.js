@@ -105,7 +105,7 @@ export var spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses) => {
-    let syncurl = USER_SYNC + 'pid=' + pubId;
+    const syncurl = USER_SYNC + 'pid=' + pubId;
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -295,9 +295,9 @@ export var spec = {
     if (typeof bid.getFloor === 'function') {
       [BANNER, VIDEO].forEach(mediaType => {
         if (impObj.hasOwnProperty(mediaType)) {
-          let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+          const floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
           if (utils.isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
-            let mediaTypeFloor = parseFloat(floorInfo.floor);
+            const mediaTypeFloor = parseFloat(floorInfo.floor);
             bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
           }
         }

@@ -803,7 +803,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('should pass schain', function () {
-    let schain = {
+    const schain = {
       'ver': '1.0',
       'complete': 1,
       'nodes': [{
@@ -1270,11 +1270,11 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
       })
 
-      var syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
-        gppString: 'DBABL~BVVqAAEABgA.QA',
-        applicableSections: [7]
-      },
-      );
+        let syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
+          gppString: 'DBABL~BVVqAAEABgA.QA',
+          applicableSections: [7]
+        },
+        );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
 
@@ -1282,11 +1282,11 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
       })
 
-      var syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
-        gppString: 'DBABL~BVVqAAEABgA.QA',
-        applicableSections: [7, 5]
-      },
-      );
+        syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
+          gppString: 'DBABL~BVVqAAEABgA.QA',
+          applicableSections: [7, 5]
+        },
+        );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
     });

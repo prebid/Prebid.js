@@ -1,5 +1,5 @@
 import {normalizeEIDs, normalizeFPD, normalizeSchain} from '../../../src/fpd/normalize.js';
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
 describe('FPD normalization', () => {
   let sandbox;

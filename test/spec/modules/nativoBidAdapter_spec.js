@@ -12,7 +12,7 @@ import {
   RequestData,
   UserEIDs,
   buildRequestUrl,
-} from '../../../modules/nativoBidAdapter'
+} from '../../../modules/nativoBidAdapter.js'
 
 describe('bidDataMap', function () {
   it('Should fail gracefully if no key value pairs have been added and no key is sent', function () {
@@ -44,7 +44,7 @@ describe('bidDataMap', function () {
 
 describe('nativoBidAdapterTests', function () {
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: 'nativo',
     }
 
@@ -182,7 +182,7 @@ describe('nativoBidAdapterTests', function () {
 })
 
 describe('interpretResponse', function () {
-  let response = {
+  const response = {
     id: '126456',
     seatbid: [
       {
@@ -206,7 +206,7 @@ describe('interpretResponse', function () {
   }
 
   it('should get correct bid response', function () {
-    let expectedResponse = [
+    const expectedResponse = [
       {
         requestId: '1F254428-AB11-4D5E-9887-567B3F952CA5',
         cpm: 3.569,
@@ -225,7 +225,7 @@ describe('interpretResponse', function () {
       },
     ]
 
-    let bidderRequest = {
+    const bidderRequest = {
       id: 123456,
       bids: [
         {
@@ -244,17 +244,17 @@ describe('interpretResponse', function () {
       }
     }
 
-    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+    const result = spec.interpretResponse({ body: response }, { bidderRequest })
     expect(Object.keys(result[0])).to.have.deep.members(
       Object.keys(expectedResponse[0])
     )
   })
 
   it('handles nobid responses', function () {
-    let response = {}
+    const response = {}
     let bidderRequest
 
-    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+    const result = spec.interpretResponse({ body: response }, { bidderRequest })
     expect(result.length).to.equal(0)
   })
 })
@@ -295,7 +295,7 @@ describe('getUserSyncs', function () {
   }
 
   it('Returns empty array if no supported user syncs', function () {
-    let userSync = spec.getUserSyncs(
+    const userSync = spec.getUserSyncs(
       {
         iframeEnabled: false,
         pixelEnabled: false,
@@ -308,7 +308,7 @@ describe('getUserSyncs', function () {
   })
 
   it('Returns valid iframe user sync', function () {
-    let userSync = spec.getUserSyncs(
+    const userSync = spec.getUserSyncs(
       {
         iframeEnabled: true,
         pixelEnabled: false,
@@ -327,7 +327,7 @@ describe('getUserSyncs', function () {
   })
 
   it('Returns valid URL and type', function () {
-    let userSync = spec.getUserSyncs(
+    const userSync = spec.getUserSyncs(
       {
         iframeEnabled: false,
         pixelEnabled: true,
@@ -388,7 +388,7 @@ describe('getAdUnitData', () => {
 })
 
 describe('Response to Request Filter Flow', () => {
-  let bidRequests = [
+  const bidRequests = [
     {
       bidder: 'nativo',
       params: {
@@ -433,7 +433,7 @@ describe('Response to Request Filter Flow', () => {
     }
   })
 
-  let bidderRequest = {
+  const bidderRequest = {
     id: 123456,
     bids: [
       {
@@ -454,7 +454,7 @@ describe('Response to Request Filter Flow', () => {
 
   it('Appends NO filter based on previous response', () => {
     // Getting the mock response
-    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+    const result = spec.interpretResponse({ body: response }, { bidderRequest })
 
     // Winning the bid
     spec.onBidWon(result[0])
@@ -475,7 +475,7 @@ describe('Response to Request Filter Flow', () => {
     response.seatbid[0].bid[0].ext = { adsToFilter: ['12345'] }
 
     // Getting the mock response
-    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+    const result = spec.interpretResponse({ body: response }, { bidderRequest })
 
     // Winning the bid
     spec.onBidWon(result[0])
@@ -496,7 +496,7 @@ describe('Response to Request Filter Flow', () => {
     response.seatbid[0].bid[0].ext = { advertisersToFilter: ['1'] }
 
     // Getting the mock response
-    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+    const result = spec.interpretResponse({ body: response }, { bidderRequest })
 
     // Winning the bid
     spec.onBidWon(result[0])
@@ -517,7 +517,7 @@ describe('Response to Request Filter Flow', () => {
     response.seatbid[0].bid[0].ext = { campaignsToFilter: ['234'] }
 
     // Getting the mock response
-    let result = spec.interpretResponse({ body: response }, { bidderRequest })
+    const result = spec.interpretResponse({ body: response }, { bidderRequest })
 
     // Winning the bid
     spec.onBidWon(result[0])
@@ -556,15 +556,15 @@ describe('sizeToString', () => {
 
 describe('getSizeWildcardPrice', () => {
   it('Generates the correct floor price data', () => {
-    let floorPrice = {
+    const floorPrice = {
       currency: 'USD',
       floor: 1.0,
     }
-    let getFloorMock = () => {
+    const getFloorMock = () => {
       return floorPrice
     }
-    let floorMockSpy = sinon.spy(getFloorMock)
-    let bidRequest = {
+    const floorMockSpy = sinon.spy(getFloorMock)
+    const bidRequest = {
       getFloor: floorMockSpy,
       mediaTypes: {
         banner: {
@@ -573,7 +573,7 @@ describe('getSizeWildcardPrice', () => {
       },
     }
 
-    let result = getSizeWildcardPrice(bidRequest, 'banner')
+    const result = getSizeWildcardPrice(bidRequest, 'banner')
     expect(
       floorMockSpy.calledWith({
         currency: 'USD',
@@ -587,21 +587,21 @@ describe('getSizeWildcardPrice', () => {
 
 describe('getMediaWildcardPrices', () => {
   it('Generates the correct floor price data', () => {
-    let defaultFloorPrice = {
+    const defaultFloorPrice = {
       currency: 'USD',
       floor: 1.1,
     }
-    let sizefloorPrice = {
+    const sizefloorPrice = {
       currency: 'USD',
       floor: 2.2,
     }
-    let getFloorMock = ({ currency, mediaType, size }) => {
+    const getFloorMock = ({ currency, mediaType, size }) => {
       if (Array.isArray(size)) return sizefloorPrice
 
       return defaultFloorPrice
     }
-    let floorMockSpy = sinon.spy(getFloorMock)
-    let bidRequest = {
+    const floorMockSpy = sinon.spy(getFloorMock)
+    const bidRequest = {
       getFloor: floorMockSpy,
       mediaTypes: {
         banner: {
@@ -610,7 +610,7 @@ describe('getMediaWildcardPrices', () => {
       },
     }
 
-    let result = getMediaWildcardPrices(bidRequest, ['*', [300, 250]])
+    const result = getMediaWildcardPrices(bidRequest, ['*', [300, 250]])
     expect(
       floorMockSpy.calledWith({
         currency: 'USD',
@@ -631,21 +631,21 @@ describe('getMediaWildcardPrices', () => {
 
 describe('parseFloorPriceData', () => {
   it('Generates the correct floor price data', () => {
-    let defaultFloorPrice = {
+    const defaultFloorPrice = {
       currency: 'USD',
       floor: 1.1,
     }
-    let sizefloorPrice = {
+    const sizefloorPrice = {
       currency: 'USD',
       floor: 2.2,
     }
-    let getFloorMock = ({ currency, mediaType, size }) => {
+    const getFloorMock = ({ currency, mediaType, size }) => {
       if (Array.isArray(size)) return sizefloorPrice
 
       return defaultFloorPrice
     }
-    let floorMockSpy = sinon.spy(getFloorMock)
-    let bidRequest = {
+    const floorMockSpy = sinon.spy(getFloorMock)
+    const bidRequest = {
       getFloor: floorMockSpy,
       mediaTypes: {
         banner: {
@@ -654,7 +654,7 @@ describe('parseFloorPriceData', () => {
       },
     }
 
-    let result = parseFloorPriceData(bidRequest)
+    const result = parseFloorPriceData(bidRequest)
     expect(result).to.deep.equal({
       '*': { '*': 1.1, '300x250': 2.2 },
       banner: { '*': 1.1, '300x250': 2.2 },

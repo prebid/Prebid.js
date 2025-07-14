@@ -35,7 +35,7 @@ const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
   return bR;
 }
 
-let createBidderRequest = (arr, code = 'default-code', ortb2 = {}) => {
+const createBidderRequest = (arr, code = 'default-code', ortb2 = {}) => {
   return {
     adUnitCode: code,
     auctionId: 'd4c83a3b-18e4-4208-b98b-63848449c7aa',
@@ -144,20 +144,20 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('sync check bad url and type in pixels', () => {
-      let opt = {
+      const opt = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      let pixels = spec.getUserSyncs(opt, sRs);
+      const pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(3);
     });
 
     it('sync check for iframe only', () => {
-      let opt = {
+      const opt = {
         iframeEnabled: true,
         pixelEnabled: false
       };
-      let pixels = spec.getUserSyncs(opt, sRs);
+      const pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(2);
       expect(pixels).to.deep.equal(
         [
@@ -168,11 +168,11 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('sync check for image only', () => {
-      let opt = {
+      const opt = {
         iframeEnabled: false,
         pixelEnabled: true
       };
-      let pixels = spec.getUserSyncs(opt, sRs);
+      const pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(1);
       expect(pixels).to.deep.equal(
         [
@@ -182,11 +182,11 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('Sync for iframe and image', () => {
-      let opt = {
+      const opt = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      let pixels = spec.getUserSyncs(opt, sRs);
+      const pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(3);
       expect(pixels).to.deep.equal(
         [
@@ -400,7 +400,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid request`, () => {
-      let { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         ext: {
           data: {
@@ -413,7 +413,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(data.imp[0].ext.data).to.deep.equal(validBR[0].ortb2Imp.ext.data);
     });
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid request`, () => {
-      let { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         instl: 1
       };
@@ -422,7 +422,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid request`, () => {
-      let { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         instl: true
       };
@@ -431,7 +431,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean false to be added to the bid request`, () => {
-      let { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         instl: false
       };
@@ -526,7 +526,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
   describe('validate request filtering:', () => {
     it('should return undefined when no bids', function () {
-      let request = spec.buildRequests([]);
+      const request = spec.buildRequests([]);
       expect(request).to.be.undefined;
     });
 
@@ -582,15 +582,15 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('should use siteId value as site.id', () => {
-      let { validBR, bidderRequest } = createRequestMock({pubIdMode: true});
+      const { validBR, bidderRequest } = createRequestMock({pubIdMode: true});
       validBR[0].params.sid = '9876543210';
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.site.id).to.equal('9876543210');
     });
 
     it('should use placementId value as imp.tagid when using "zid"', () => {
-      let { validBR, bidderRequest } = createRequestMock({}),
-        TEST_ZID = '54321';
+      const { validBR, bidderRequest } = createRequestMock({});
+        const TEST_ZID = '54321';
       validBR[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.imp[0].tagid).to.deep.equal(TEST_ZID);

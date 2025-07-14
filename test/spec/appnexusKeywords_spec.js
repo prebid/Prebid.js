@@ -4,10 +4,10 @@ import * as utils from '../../src/utils.js';
 
 describe('transformBidderParamKeywords', function () {
   it('returns an array of objects when keyvalue is an array', function () {
-    let keywords = {
+    const keywords = {
       genre: ['rock', 'pop']
     };
-    let result = transformBidderParamKeywords(keywords);
+    const result = transformBidderParamKeywords(keywords);
     expect(result).to.deep.equal([{
       key: 'genre',
       value: ['rock', 'pop']
@@ -15,10 +15,10 @@ describe('transformBidderParamKeywords', function () {
   });
 
   it('returns an array of objects when keyvalue is a string', function () {
-    let keywords = {
+    const keywords = {
       genre: 'opera'
     };
-    let result = transformBidderParamKeywords(keywords);
+    const result = transformBidderParamKeywords(keywords);
     expect(result).to.deep.equal([{
       key: 'genre',
       value: ['opera']
@@ -26,10 +26,10 @@ describe('transformBidderParamKeywords', function () {
   });
 
   it('returns an array of objects when keyvalue is a number', function () {
-    let keywords = {
+    const keywords = {
       age: 15
     };
-    let result = transformBidderParamKeywords(keywords);
+    const result = transformBidderParamKeywords(keywords);
     expect(result).to.deep.equal([{
       key: 'age',
       value: ['15']
@@ -37,12 +37,12 @@ describe('transformBidderParamKeywords', function () {
   });
 
   it('returns an array of objects when using multiple keys with values of differing types', function () {
-    let keywords = {
+    const keywords = {
       genre: 'classical',
       mix: ['1', 2, '3', 4],
       age: 10
     };
-    let result = transformBidderParamKeywords(keywords);
+    const result = transformBidderParamKeywords(keywords);
     expect(result).to.deep.equal([{
       key: 'genre',
       value: ['classical']
@@ -56,11 +56,11 @@ describe('transformBidderParamKeywords', function () {
   });
 
   it('returns an array of objects when the keyvalue uses an empty string', function () {
-    let keywords = {
+    const keywords = {
       test: [''],
       test2: ''
     };
-    let result = transformBidderParamKeywords(keywords);
+    const result = transformBidderParamKeywords(keywords);
     expect(result).to.deep.equal([{
       key: 'test',
     }, {

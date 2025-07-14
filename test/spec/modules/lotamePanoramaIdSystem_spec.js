@@ -51,10 +51,10 @@ describe('LotameId', function() {
 
   describe('caching initial data received from the remote server', function () {
     let request;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     beforeEach(function() {
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+      const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
       submoduleCallback(callBackSpy);
 
       request = server.requests[0];
@@ -118,10 +118,10 @@ describe('LotameId', function() {
   describe('No stored values', function() {
     describe('and receives the profile id but no panorama id', function() {
       let request;
-      let callBackSpy = sinon.spy();
+      const callBackSpy = sinon.spy();
 
       beforeEach(function() {
-        let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+        const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
         submoduleCallback(callBackSpy);
         request = server.requests[0];
 
@@ -182,10 +182,10 @@ describe('LotameId', function() {
 
     describe('and receives both the profile id and the panorama id', function () {
       let request;
-      let callBackSpy = sinon.spy();
+      const callBackSpy = sinon.spy();
 
       beforeEach(function () {
-        let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+        const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
         submoduleCallback(callBackSpy);
         request = server.requests[0];
 
@@ -265,7 +265,7 @@ describe('LotameId', function() {
 
     describe('and can try again', function () {
       let request;
-      let callBackSpy = sinon.spy();
+      const callBackSpy = sinon.spy();
 
       beforeEach(function () {
         getCookieStub.withArgs('panoramaId_expiry').returns('1000');
@@ -275,7 +275,7 @@ describe('LotameId', function() {
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87d'
           );
 
-        let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+        const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
         submoduleCallback(callBackSpy);
 
         request = server.requests[0];
@@ -299,7 +299,7 @@ describe('LotameId', function() {
 
     describe('receives an optout request', function () {
       let request;
-      let callBackSpy = sinon.spy();
+      const callBackSpy = sinon.spy();
 
       beforeEach(function () {
         getCookieStub.withArgs('panoramaId_expiry').returns('1000');
@@ -309,7 +309,7 @@ describe('LotameId', function() {
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87d'
           );
 
-        let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+        const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
         submoduleCallback(callBackSpy);
 
         request = server.requests[0];
@@ -381,14 +381,14 @@ describe('LotameId', function() {
 
     describe('and can try again', function () {
       let request;
-      let callBackSpy = sinon.spy();
+      const callBackSpy = sinon.spy();
 
       beforeEach(function () {
         getLocalStorageStub
           .withArgs('panoramaId_expiry')
           .returns('1000');
 
-        let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+        const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
         submoduleCallback(callBackSpy);
 
         request = server.requests[0];
@@ -413,10 +413,10 @@ describe('LotameId', function() {
 
   describe('when gdpr applies', function () {
     let request;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     beforeEach(function () {
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, {
+      const submoduleCallback = lotamePanoramaIdSubmodule.getId({}, {
         gdpr: {
           gdprApplies: true,
           consentString: 'consentGiven'
@@ -451,8 +451,8 @@ describe('LotameId', function() {
 
   describe('when gdpr applies but no consent string is available', function () {
     let request;
-    let callBackSpy = sinon.spy();
-    let consentData = {
+    const callBackSpy = sinon.spy();
+    const consentData = {
       gdpr: {
         gdprApplies: true,
         consentString: undefined
@@ -460,7 +460,7 @@ describe('LotameId', function() {
     };
 
     beforeEach(function () {
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
+      const submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
       submoduleCallback(callBackSpy);
 
       // the contents of the response don't matter for this
@@ -481,11 +481,11 @@ describe('LotameId', function() {
 
   describe('when no consentData and no cookies', function () {
     let request;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
     let consentData;
 
     beforeEach(function () {
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
+      const submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
       submoduleCallback(callBackSpy);
 
       // the contents of the response don't matter for this
@@ -504,10 +504,10 @@ describe('LotameId', function() {
 
   describe('with an empty cache, ignore profile id for error 111', function () {
     let request;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     beforeEach(function () {
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+      const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
       submoduleCallback(callBackSpy);
 
       request = server.requests[0];
@@ -561,7 +561,7 @@ describe('LotameId', function() {
 
   describe('receives an optout request with an error 111', function () {
     let request;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     beforeEach(function () {
       getCookieStub.withArgs('panoramaId_expiry').returns('1000');
@@ -571,7 +571,7 @@ describe('LotameId', function() {
           'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87d'
         );
 
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+      const submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
       submoduleCallback(callBackSpy);
 
       request = server.requests[0];
@@ -684,10 +684,10 @@ describe('LotameId', function() {
     describe('with no client expiry set', function () {
       describe('and no existing pano id', function () {
         let request;
-        let callBackSpy = sinon.spy();
+        const callBackSpy = sinon.spy();
 
         beforeEach(function () {
-          let submoduleCallback = lotamePanoramaIdSubmodule.getId(
+          const submoduleCallback = lotamePanoramaIdSubmodule.getId(
             {
               params: {
                 clientId: '1234',
@@ -767,10 +767,10 @@ describe('LotameId', function() {
     });
     describe('when client consent has errors', function () {
       let request;
-      let callBackSpy = sinon.spy();
+      const callBackSpy = sinon.spy();
 
       beforeEach(function () {
-        let submoduleCallback = lotamePanoramaIdSubmodule.getId(
+        const submoduleCallback = lotamePanoramaIdSubmodule.getId(
           {
             params: {
               clientId: '1234',

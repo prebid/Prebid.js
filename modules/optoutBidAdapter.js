@@ -65,7 +65,7 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (gdprConsent) {
-      let gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : 0;
+      const gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : 0;
       if (syncOptions.iframeEnabled && (!gdprConsent.gdprApplies || hasPurpose1Consent(gdprConsent))) {
         return [{
           type: 'iframe',
