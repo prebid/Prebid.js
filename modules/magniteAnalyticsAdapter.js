@@ -913,7 +913,7 @@ magniteAdapter.track = ({ eventType, args }) => {
         if (adUnit.bids[bid.bidId].source === 'server') adUnit.pbsRequest = 1;
         // set acct site zone id on adunit
         if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
-          if (deepAccess(bid, 'params.accountId') === accountId) {
+          if (Number(deepAccess(bid, 'params.accountId')) === accountId) {
             adUnit.accountId = parseInt(accountId);
             adUnit.siteId = parseInt(deepAccess(bid, 'params.siteId'));
             adUnit.zoneId = parseInt(deepAccess(bid, 'params.zoneId'));
