@@ -70,8 +70,9 @@ describe('PubMatic adapter', () => {
         }
       }
     },
-    rtd: {jwplayer: {targeting: {content:{id:'jwplayer-content-id'},segments: ['jwplayer-segment-1', 'jwplayer-segment-2']}}},
-  
+    rtd: { 
+        jwplayer: { targeting: { content: { id: 'jwplayer-content-id' }, segments: ['jwplayer-segment-1', 'jwplayer-segment-2'] } } },
+
   }
   videoBid = {
     'seat': 'seat-id',
@@ -197,7 +198,7 @@ describe('PubMatic adapter', () => {
             linearity: 2
           }
         videoBidRequest.params.outstreamAU = 'outstreamAU';
-        videoBidRequest.params.renderer= 'renderer_test_pubmatic'
+        videoBidRequest.params.renderer = 'renderer_test_pubmatic'
 
         });
         it('should return false if mimes are missing in a video impression request', () => {
@@ -233,7 +234,7 @@ describe('PubMatic adapter', () => {
         });
 
         it('should return TRUE if outstreamAU or renderer is present', () => {
-          
+        
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(false);
         });
@@ -243,7 +244,6 @@ describe('PubMatic adapter', () => {
 
   describe('Request formation', () => {
     describe('IMP', () => {
-
       it('should include previousAuctionInfo in request when available', () => {
         const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
         const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
@@ -293,7 +293,6 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('ext');
         expect(imp[0]).to.have.property('ext').to.have.property('key_val');
       });
-
 
       it('should set w and h to the primary size for banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -1141,7 +1140,7 @@ describe('PubMatic adapter', () => {
       delete bidRequest.mediaTypes.video;
       bidRequest.sizes = undefined;
       const request = spec.buildRequests([bidRequest], bidderRequest);
-      
+    
       // Prepare a native bid response with missing w and h
       const nativeAdm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Test' } }] } });
       const nativeBid = {
@@ -1156,7 +1155,7 @@ describe('PubMatic adapter', () => {
       const seatbid = [{ bid: [nativeBid] }];
       const nativeResponse = { body: { seatbid } };
       const bidResponses = spec.interpretResponse(nativeResponse, request);
-      
+    
       expect(bidResponses).to.be.an('array');
       expect(bidResponses[0]).to.exist;
       expect(bidResponses[0].native).to.exist;
@@ -1237,7 +1236,7 @@ describe('PubMatic adapter', () => {
         beforeEach(() => {
           let videoBidderRequest = utils.deepClone(bidderRequest);
           delete videoBidderRequest.bids[0].mediaTypes.banner;
-          
+        
           videoBidderRequest.bids[0].mediaTypes.video = {
             skip: 1,
             mimes: ['video/mp4', 'video/x-flv'],
@@ -1292,7 +1291,6 @@ describe('PubMatic adapter', () => {
         it('should set renderer and rendererCode for outstream video with outstreamAU', () => {
           const request = spec.buildRequests(validBidRequests, videoBidderRequest);
           const bidResponse = spec.interpretResponse(videoResponse, request);
-          console.log('****** bidResponse: check renderer', bidResponse[0].renderer);
           expect(bidResponse).to.be.an('array');
           expect(bidResponse[0]).to.be.an('object');
           expect(bidResponse[0]).to.have.property('renderer');
@@ -1393,17 +1391,17 @@ describe('PubMatic adapter', () => {
         uids: [{ id: 'test-id-123' }]
       }
     ];
-    
+  
     // Create a clean bidderRequest without existing eids
     const cleanBidderRequest = utils.deepClone(bidderRequest);
     // Ensure user object exists
     cleanBidderRequest.user = cleanBidderRequest.user || {};
     cleanBidderRequest.user.ext = cleanBidderRequest.user.ext || {};
     delete cleanBidderRequest.user.ext.eids;
-    
+  
     // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
     cleanBidderRequest.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
-      
+    
     const request = spec.buildRequests([bidRequestWithEids], cleanBidderRequest);
     expect(request.data.user).to.exist;
     expect(request.data.user.ext).to.exist;
@@ -1418,24 +1416,24 @@ describe('PubMatic adapter', () => {
         uids: [{ id: 'test-id-123' }]
       }
     ];
-    
+  
     // Create a bidderRequest with existing eids
     const bidderRequestWithExistingEids = utils.deepClone(bidderRequest);
     // Ensure user object exists and set existing eids
     bidderRequestWithExistingEids.user = bidderRequestWithExistingEids.user || {};
     bidderRequestWithExistingEids.user.ext = bidderRequestWithExistingEids.user.ext || {};
     bidderRequestWithExistingEids.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
-    
+  
     // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
     bidderRequestWithExistingEids.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
-    
+  
     // Set existing eids in ortb2.user.ext.eids so the converter will merge them
     // and the adapter will see them as already existing
     bidderRequestWithExistingEids.ortb2 = bidderRequestWithExistingEids.ortb2 || {};
     bidderRequestWithExistingEids.ortb2.user = bidderRequestWithExistingEids.ortb2.user || {};
     bidderRequestWithExistingEids.ortb2.user.ext = bidderRequestWithExistingEids.ortb2.user.ext || {};
     bidderRequestWithExistingEids.ortb2.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
-    
+  
     const request = spec.buildRequests([bidRequestWithEids], bidderRequestWithExistingEids);
     expect(request.data.user).to.exist;
     expect(request.data.user.ext).to.exist;
@@ -1444,7 +1442,7 @@ describe('PubMatic adapter', () => {
 
   it('should copy geo from device to user when device has geo but user does not', () => {
     const bidRequestWithDeviceGeo = utils.deepClone(validBidRequests[0]);
-    
+  
     // Create a clean bidderRequest without existing geo data
     const cleanBidderRequest = utils.deepClone(bidderRequest);
     // Ensure user and device objects exist
@@ -1454,10 +1452,10 @@ describe('PubMatic adapter', () => {
     cleanBidderRequest.ortb2.device = cleanBidderRequest.ortb2.device || {};
     delete cleanBidderRequest.user.geo;
     delete cleanBidderRequest.ortb2.user.geo;
-    
+  
     // Set geo data in bidderRequest.ortb2.device.geo so the converter will merge it
     cleanBidderRequest.ortb2.device.geo = { lat: 40.7128, lon: -74.0060 };
-    
+  
     const request = spec.buildRequests([bidRequestWithDeviceGeo], cleanBidderRequest);
     expect(request.data.user).to.exist;
     expect(request.data.user.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
@@ -1465,7 +1463,7 @@ describe('PubMatic adapter', () => {
 
   it('should copy geo from user to device when user has geo but device does not', () => {
     const bidRequestWithUserGeo = utils.deepClone(validBidRequests[0]);
-    
+  
     // Create a clean bidderRequest without existing geo data
     const cleanBidderRequest = utils.deepClone(bidderRequest);
     // Ensure device object exists
@@ -1475,10 +1473,10 @@ describe('PubMatic adapter', () => {
     cleanBidderRequest.ortb2.user = cleanBidderRequest.ortb2.user || {};
     delete cleanBidderRequest.device.geo;
     delete cleanBidderRequest.ortb2.device.geo;
-    
+  
     // Set geo data in bidderRequest.ortb2.user.geo so the converter will merge it
     cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 };
-    
+  
     const request = spec.buildRequests([bidRequestWithUserGeo], cleanBidderRequest);
     expect(request.data.device).to.exist;
     expect(request.data.device.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
@@ -1498,7 +1496,7 @@ describe('PubMatic adapter', () => {
     bidderRequestWithPublisher.ortb2 = bidderRequestWithPublisher.ortb2 || {};
     bidderRequestWithPublisher.ortb2.site = bidderRequestWithPublisher.ortb2.site || {};
     bidderRequestWithPublisher.ortb2.site.publisher = bidderRequestWithPublisher.ortb2.site.publisher || {};
-    
+  
     const request = spec.buildRequests(validBidRequests, bidderRequestWithPublisher);
     expect(request.data.site).to.exist;
     expect(request.data.site.publisher).to.exist;
