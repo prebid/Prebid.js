@@ -155,8 +155,8 @@ export const spec = {
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width === validSizes[j][0] &&
-            adItem.height === validSizes[j][1]) {
+        if (Number(adItem.width) === Number(validSizes[j][0]) &&
+            Number(adItem.height) === Number(validSizes[j][1])) {
           return true;
         }
       }
