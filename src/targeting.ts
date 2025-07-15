@@ -1,4 +1,3 @@
-/// <reference types="google-publisher-tag" />
 import {auctionManager} from './auctionManager.js';
 import {getBufferedTTL} from './bidTTL.js';
 import {bidderSettings} from './bidderSettings.js';
