@@ -2713,7 +2713,7 @@ describe('utils', function () {
       player.getAudioTracks = () => [{language: null}, {language: 'en'}, {}];
       player.getCurrentAudioTrack = () => 0;
       const languageCode = utils.getIsoLanguageCode(player);
-      expect(languageCode).to.be.undefined;
+      expect(languageCode).to.be.null;
     });
   });
 

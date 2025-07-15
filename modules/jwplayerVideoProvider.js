@@ -824,7 +824,7 @@ export const utils = {
 
     const currentTrackIndex = Math.max(player.getCurrentAudioTrack() || 0, 0); // returns -1 when there are no alternative tracks.
     const audioTrack = audioTracks[currentTrackIndex];
-    return (audioTrack && audioTrack.language) || undefined;
+    return audioTrack && audioTrack.language;
   },
 
   /**
