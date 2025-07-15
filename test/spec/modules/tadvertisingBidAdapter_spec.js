@@ -727,7 +727,8 @@ describe('tadvertisingBidAdapter', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'POST',
-        contentType: 'text/plain'
+        contentType: 'text/plain',
+        keepalive: true,
       });
     });
 

@@ -126,7 +126,8 @@ export const sendNotification = (notifyUrl, eventType, data) => {
       // Fallback to using AJAX if Beacon API is not supported
       ajax(notificationUrl, null, payload, {
         method: 'POST',
-        contentType: 'text/plain'
+        contentType: 'text/plain',
+        keepalive: true,
       });
     }
   } catch (error) {
