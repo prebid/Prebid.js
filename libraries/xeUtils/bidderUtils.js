@@ -19,15 +19,17 @@ export function getBidFloor(bid, currency = 'USD') {
   return null;
 }
 
-export function isBidRequestValid(bid) {
+export function isBidRequestValid(bid, requiredParams = ['pid', 'env']) {
   if (bid && typeof bid.params !== 'object') {
     logError('Params is not defined or is incorrect in the bidder settings');
     return false;
   }
 
-  if (!getBidIdParameter('env', bid.params) || !getBidIdParameter('pid', bid.params)) {
-    logError('Env or pid is not present in bidder params');
-    return false;
+  for (const param of requiredParams) {
+    if (!getBidIdParameter(param, bid.params)) {
+      logError(`Required param "${param}" is missing in bidder params`);
+      return false;
+    }
   }
 
   if (deepAccess(bid, 'mediaTypes.video') && !isArray(deepAccess(bid, 'mediaTypes.video.playerSize'))) {

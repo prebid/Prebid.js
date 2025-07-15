@@ -75,17 +75,17 @@ function getCanonicalUrl(doc) {
 }
 
 declare module './config' {
-    interface Config {
-        /**
-         * Prebid.js will loop upward through nested iframes to find the top-most referrer. T
-         * his setting limits how many iterations it will attempt before giving up and not setting referrer.
-         */
-        maxNestedIframes?: number;
-        /**
-         * Override the Prebid.js page referrer.
-         */
-        pageUrl?: string;
-    }
+  interface Config {
+    /**
+     * Prebid.js will loop upward through nested iframes to find the top-most referrer. T
+     * his setting limits how many iterations it will attempt before giving up and not setting referrer.
+     */
+    maxNestedIframes?: number;
+    /**
+     * Override the Prebid.js page referrer.
+     */
+    pageUrl?: string;
+  }
 }
 
 /**
@@ -239,53 +239,53 @@ export function detectReferer(win) {
     }
 
     return {
-        /**
-         * True if the top window is accessible.
-         */
+      /**
+       * True if the top window is accessible.
+       */
+      reachedTop,
+      isAmp: valuesFromAmp,
+      /**
+       * number of steps between window.self and window.top
+       */
+      numIframes: level - 1,
+      /**
+       * our best guess at the location for each frame, in the direction top -> self.
+       */
+      stack,
+      /**
+       * of the top-most frame for which we could guess the location. Outside of cross-origin scenarios, this is equivalent to `location`.
+       */
+      topmostLocation: bestLocation || null,
+      /**
+       * the browser's location, or null if not available (due to cross-origin restrictions)
+       */
+      location,
+      /**
+       * the site's canonical URL as set by the publisher, through setConfig({pageUrl}) or <link rel="canonical" />
+       */
+      canonicalUrl,
+      /**
+       * the best candidate for the current page URL: `canonicalUrl`, falling back to `location`
+       */
+      page,
+      /**
+       * the domain portion of `page`
+       */
+      domain: parseDomain(page) || null,
+      /**
+       * the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
+       */
+      ref: ref || null,
+      // TODO: the "legacy" refererInfo object is provided here, for now, to accommodate
+      // adapters that decided to just send it verbatim to their backend.
+      legacy: {
         reachedTop,
         isAmp: valuesFromAmp,
-        /**
-         * number of steps between window.self and window.top
-         */
         numIframes: level - 1,
-        /**
-         * our best guess at the location for each frame, in the direction top -> self.
-         */
         stack,
-        /**
-         * of the top-most frame for which we could guess the location. Outside of cross-origin scenarios, this is equivalent to `location`.
-         */
-        topmostLocation: bestLocation || null,
-        /**
-         * the browser's location, or null if not available (due to cross-origin restrictions)
-         */
-        location,
-        /**
-         * the site's canonical URL as set by the publisher, through setConfig({pageUrl}) or <link rel="canonical" />
-         */
-        canonicalUrl,
-        /**
-         * the best candidate for the current page URL: `canonicalUrl`, falling back to `location`
-         */
-        page,
-        /**
-         * the domain portion of `page`
-         */
-        domain: parseDomain(page) || null,
-        /**
-         * the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
-         */
-        ref: ref || null,
-        // TODO: the "legacy" refererInfo object is provided here, for now, to accommodate
-        // adapters that decided to just send it verbatim to their backend.
-        legacy: {
-            reachedTop,
-            isAmp: valuesFromAmp,
-            numIframes: level - 1,
-            stack,
-            referer: bestLocation || null,
-            canonicalUrl
-        }
+        referer: bestLocation || null,
+        canonicalUrl
+      }
     };
   }
 

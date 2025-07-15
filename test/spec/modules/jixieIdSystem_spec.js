@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { jixieIdSubmodule, storage } from 'modules/jixieIdSystem.js';
-import { server } from '../../mocks/xhr';
-import {parseUrl} from '../../../src/utils';
+import { server } from '../../mocks/xhr.js';
+import {parseUrl} from '../../../src/utils.js';
 
 const COOKIE_EXPIRATION_FUTURE = (new Date(Date.now() + 60 * 60 * 24 * 1000)).toUTCString();
 const COOKIE_EXPIRATION_PAST = (new Date(Date.now() - 60 * 60 * 24 * 1000)).toUTCString();

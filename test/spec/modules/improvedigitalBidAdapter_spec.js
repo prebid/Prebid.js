@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
 import {config} from 'src/config.js';
 import {deepClone} from 'src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import {deepSetValue} from '../../../src/utils';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import {deepSetValue} from '../../../src/utils.js';
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';

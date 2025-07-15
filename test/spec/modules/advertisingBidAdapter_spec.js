@@ -1483,7 +1483,7 @@ describe('advertisingBidAdapter ', function () {
       ortb2Imp: {
         ext: {
           gpid: '/1111/homepage-video',
-            data: {
+          data: {
             pbadslot: '/1111/homepage-video'
           }
         }
@@ -1516,7 +1516,7 @@ describe('advertisingBidAdapter ', function () {
       ortb2Imp: {
         ext: {
           gpid: '/1111/homepage-banner',
-            data: {
+          data: {
             pbadslot: '/1111/homepage-banner'
           }
         }

@@ -312,20 +312,20 @@ function mapBanner(bidRequest) {
 function mapVideo(bidRequest) {
   const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
   if (videoParams) {
-      const { sizes, playerSize } = videoParams;
+    const { sizes, playerSize } = videoParams;
 
-      const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
+    const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
 
-      const [firstSize] = format || [];
+    const [firstSize] = format || [];
 
-      delete videoParams.sizes;
+    delete videoParams.sizes;
 
-      return {
-          ...videoParams,
-          w: firstSize?.w,
-          h: firstSize?.h,
-          format,
-      };
+    return {
+      ...videoParams,
+      w: firstSize?.w,
+      h: firstSize?.h,
+      format,
+    };
   }
 }
 

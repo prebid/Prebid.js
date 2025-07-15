@@ -3,30 +3,30 @@ import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
-import { hasTypeNative } from '../../../modules/onetagBidAdapter';
+import { hasTypeNative } from '../../../modules/onetagBidAdapter.js';
 
 const NATIVE_SUFFIX = 'Ad';
 
 const getFloor = function(params) {
-    let floorPrice = 0.0001;
-    switch (params.mediaType) {
-      case BANNER:
-        floorPrice = 1.0;
-        break;
-      case VIDEO:
-        floorPrice = 2.0;
-        break;
-      case INSTREAM:
-        floorPrice = 3.0;
-        break;
-      case OUTSTREAM:
-        floorPrice = 4.0;
-        break;
-      case NATIVE:
-        floorPrice = 5.0;
-        break;
-    }
-    return {currency: params.currency, floor: floorPrice};
+  let floorPrice = 0.0001;
+  switch (params.mediaType) {
+    case BANNER:
+      floorPrice = 1.0;
+      break;
+    case VIDEO:
+      floorPrice = 2.0;
+      break;
+    case INSTREAM:
+      floorPrice = 3.0;
+      break;
+    case OUTSTREAM:
+      floorPrice = 4.0;
+      break;
+    case NATIVE:
+      floorPrice = 5.0;
+      break;
+  }
+  return {currency: params.currency, floor: floorPrice};
 };
 
 describe('onetag', function () {
@@ -77,28 +77,28 @@ describe('onetag', function () {
         sendId: 1
       },
       body: {
-          required: 1,
-          sendId: 1
+        required: 1,
+        sendId: 1
       },
       cta: {
-          required: 0,
-          sendId: 1
+        required: 0,
+        sendId: 1
       },
       displayUrl: {
-          required: 0,
-          sendId: 1
+        required: 0,
+        sendId: 1
       },
       icon: {
-          required: 0,
-          sendId: 1
+        required: 0,
+        sendId: 1
       },
       image: {
-          required: 1,
-          sendId: 1
+        required: 1,
+        sendId: 1
       },
       sponsoredBy: {
-          required: 1,
-          sendId: 1
+        required: 1,
+        sendId: 1
       }
     }
     bid = addNativeParams(bid);
@@ -109,11 +109,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'native|*': 1.10
+        'native|*': 1.10
       }
     }
     bid.getFloor = getFloor;
@@ -166,7 +166,7 @@ describe('onetag', function () {
             minduration: 5,
             maxduration: 30,
             protocols: [2, 3]
-      }
+          }
         }],
         eventtrackers: [{
           event: 1,
@@ -179,11 +179,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'native|*': 1.10
+        'native|*': 1.10
       }
     }
     bid.getFloor = getFloor;
@@ -200,11 +200,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'banner|300x250': 0.10
+        'banner|300x250': 0.10
       }
     }
     bid.getFloor = getFloor;
@@ -223,11 +223,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'video|640x480': 0.10
+        'video|640x480': 0.10
       }
     }
     bid.getFloor = getFloor;
@@ -245,11 +245,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'video|640x480': 0.10
+        'video|640x480': 0.10
       }
     }
     bid.getFloor = getFloor;

@@ -3,9 +3,9 @@ import {spec, storage} from 'modules/livewrappedBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { NATIVE, VIDEO } from 'src/mediaTypes.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
-import { getWinDimensions } from '../../../src/utils';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getWinDimensions } from '../../../src/utils.js';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
