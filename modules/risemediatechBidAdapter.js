@@ -5,8 +5,6 @@ import { logInfo, logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'risemediatech';
 const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
-const SYNC_URL_IFRAME = 'https://sync.risemediatech.com/iframe';
-const SYNC_URL_IMAGE = 'https://sync.risemediatech.com/image';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 60;
 
@@ -199,7 +197,6 @@ const interpretResponse = (serverResponse, request) => {
  * @returns {Array} Array of user sync objects.
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-
   // return [{ type, url }];
   logInfo('User syncs are not implemented in this adapter yet.');
   return null;
