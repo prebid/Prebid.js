@@ -642,27 +642,27 @@ describe('PubMatic adapter', () => {
         
         describe('Gzip Configuration', () => {
           let configStub;
-          
+
           beforeEach(() => {
             configStub = sinon.stub(config, 'getConfig');
           });
-          
+
           afterEach(() => {
             configStub.restore();
           });
-          
+
           it('should enable gzip compression by default', () => {
             configStub.withArgs('pubmatic').returns({});
             const request = spec.buildRequests(validBidRequests, bidderRequest);
             expect(request.options.endpointCompression).to.be.true;
           });
-          
+
           it('should respect global pubmatic.gzipEnabled config', () => {
             configStub.withArgs('pubmatic').returns({ gzipEnabled: false });
             const request = spec.buildRequests(validBidRequests, bidderRequest);
             expect(request.options.endpointCompression).to.be.false;
           });
-          
+
           it('should prioritize bidder-level gzipEnabled setting over global setting', () => {
             configStub.withArgs('pubmatic').returns({ gzipEnabled: true });
             const modifiedBidRequests = utils.deepClone(validBidRequests);

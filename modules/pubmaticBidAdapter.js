@@ -667,7 +667,7 @@ function getGzipSetting(bid) {
   if (typeof pubmaticConfig.gzipEnabled === 'boolean') {
     return pubmaticConfig.gzipEnabled;
   }
-  
+
   // Default to true if not specified
   return DEFAULT_GZIP_ENABLED;
 }
