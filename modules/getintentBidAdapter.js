@@ -1,4 +1,4 @@
-import {getBidIdParameter, isFn, isInteger} from '../src/utils.js';
+import {getBidIdParameter, isFn, isInteger, logError} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
@@ -211,7 +211,9 @@ function produceSize (sizes) {
     if (Array.isArray(s) && s.length === 2 && isInteger(s[0]) && isInteger(s[1])) {
       return s.join('x');
     } else {
-      throw "Malformed parameter 'sizes'";
+      const msg = "Malformed parameter 'sizes'";
+      logError(msg);
+      return undefined;
     }
   }
   if (Array.isArray(sizes) && Array.isArray(sizes[0])) {
