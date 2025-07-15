@@ -144,7 +144,6 @@ module.exports = [
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
-      'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
       'prefer-const': 'off',
@@ -243,8 +242,7 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      'camelcase': 'off',
-      'no-global-assign': 'off'
+      'camelcase': 'off'
     }
   },
   {

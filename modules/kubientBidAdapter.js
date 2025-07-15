@@ -9,7 +9,6 @@ const VERSION = '1.1';
 const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: VENDOR_ID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(
