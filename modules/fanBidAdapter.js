@@ -77,8 +77,8 @@ const converter = ortbConverter({
     request.user = request.user || {};
     request.user.ext = request.user.ext || {};
 
-    if (firstBid.userIdsAsEids) {
-      request.user.ext.eids = firstBid.userIdsAsEids;
+    if (firstBid.userIdAsEids) {
+      request.user.ext.eids = firstBid.userIdAsEids;
     }
 
     if (window.geck) {
