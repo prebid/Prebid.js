@@ -99,6 +99,24 @@ describe('ttdBidAdapter', function () {
         bid.params.bidfloor = 3.01;
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
+
+      it('should return false if customBidderEndpoint is provided and does not start with https://', function () {
+        const bid = makeBid();
+        bid.params.customBidderEndpoint = 'customBidderEndpoint/bid/bidder/';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false if customBidderEndpoint is provided and does not end with /bid/bidder/', function () {
+        const bid = makeBid();
+        bid.params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return true if customBidderEndpoint is provided that starts with https:// and ends with /bid/bidder/', function () {
+        const bid = makeBid();
+        bid.params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder/';
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
     describe('banner', function () {
@@ -306,11 +324,18 @@ describe('ttdBidAdapter', function () {
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
     });
 
+    it('sends bid requests to the correct http2 endpoint', function () {
+      const bannerBidRequestsWithHttp2Endpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithHttp2Endpoint[0].params.useHttp2 = true;
+      const url = testBuildRequests(bannerBidRequestsWithHttp2Endpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
+    });
+
     it('sends bid requests to the correct custom endpoint', function () {
       const bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
-      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
+      bannerBidRequestsWithCustomEndpoint[0].params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder/';
       const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
-      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
+      expect(url).to.equal('https://customBidderEndpoint/bid/bidder/supplier');
     });
 
     it('sends publisher id', function () {
