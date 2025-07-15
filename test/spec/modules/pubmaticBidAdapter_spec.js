@@ -70,8 +70,17 @@ describe('PubMatic adapter', () => {
         }
       }
     },
-    rtd: {jwplayer: {targeting: {content:{id:'jwplayer-content-id'},segments: ['jwplayer-segment-1', 'jwplayer-segment-2']}}},
-  
+    rtd: {
+      jwplayer: {
+        targeting: {
+          content:{
+            id: 'jwplayer-content-id'
+          },segments: [ 
+            'jwplayer-segment-1', 'jwplayer-segment-2'
+          ]
+        }
+      }
+    }
   }
   videoBid = {
     'seat': 'seat-id',
@@ -432,7 +441,7 @@ describe('PubMatic adapter', () => {
               playerSize: [640, 480]
             }
             videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
-            videoBidderRequest.bids[0].params.renderer= 'renderer_test_pubmatic'
+            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic'
             videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
@@ -954,7 +963,6 @@ describe('PubMatic adapter', () => {
           };
 
           spec.onBidWon(bid);
-
           expect(cpmAdjustment).to.deep.equal({
             currency: 'USD',
             originalCurrency: 'USD',
@@ -982,9 +990,7 @@ describe('PubMatic adapter', () => {
               return currency === 'EUR' ? 2.8 : this.cpm;
             }
           };
-
           spec.onBidWon(bid);
-
           expect(cpmAdjustment).to.deep.equal({
             currency: 'USD',
             originalCurrency: 'USD',
@@ -1022,7 +1028,6 @@ describe('PubMatic adapter', () => {
           // Should add the first entry
           expect(cpmAdjustment.adjustment.length).to.equal(1);
           expect(cpmAdjustment.adjustment[0].cpm).to.equal(2.5);
-
           spec.onBidWon(bid2);
           // Should replace the entry, not add a new one
           expect(cpmAdjustment.adjustment.length).to.equal(1);
@@ -1030,35 +1035,6 @@ describe('PubMatic adapter', () => {
           expect(cpmAdjustment.adjustment[0].originalCpm).to.equal(2);
         });
       });
-
-      // describe('USER ID/ EIDS', () => {
-      //   let copiedBidderRequest;
-      //   beforeEach(() => {
-      //     copiedBidderRequest = utils.deepClone(bidderRequest);
-      //     copiedBidderRequest.bids[0].userId = {
-      //       id5id : {
-      //         uid: 'id5id-xyz-user-id'
-      //       }
-      //     }
-      //     copiedBidderRequest.bids[0].userIdAsEids = [{
-      //       source: 'id5-sync.com',
-      //       uids: [{
-      //         'id': "ID5*G3_osFE_-UHoUjSuA4T8-f51U-JTNOoGcb2aMpx1APnDy8pDwkKCzXCcoSb1HXIIw9AjWBOWmZ3QbMUDTXKq8MPPW8h0II9mBYkP4F_IXkvD-XG64NuFFDPKvez1YGGx",
-      //         'atype': 1,
-      //         'ext': {
-      //           'linkType': 2,
-      //           'pba': 'q6Vzr0jEebxzmvS8aSrVQJFoJnOxs9gKBKCOLw1y6ew='
-      //         }
-      //       }]
-      //     }]
-      //   });
-
-      //   it('should send gpid if specified', () => {
-      //     const request = spec.buildRequests(validBidRequests, copiedBidderRequest);
-      //     expect(request.data).to.have.property('user');
-      //     expect(request.data.user).to.have.property('eids');
-      //   });
-      // });
     });
   });
 
@@ -1156,7 +1132,6 @@ describe('PubMatic adapter', () => {
       const seatbid = [{ bid: [nativeBid] }];
       const nativeResponse = { body: { seatbid } };
       const bidResponses = spec.interpretResponse(nativeResponse, request);
-      
       expect(bidResponses).to.be.an('array');
       expect(bidResponses[0]).to.exist;
       expect(bidResponses[0].native).to.exist;
@@ -1257,7 +1232,6 @@ describe('PubMatic adapter', () => {
             playerSize: [640, 480]
           }
           videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
-
           videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
           videoBidderRequest.bids[0].adUnitCode = 'Div1';
         });
@@ -1425,17 +1399,14 @@ describe('PubMatic adapter', () => {
     bidderRequestWithExistingEids.user = bidderRequestWithExistingEids.user || {};
     bidderRequestWithExistingEids.user.ext = bidderRequestWithExistingEids.user.ext || {};
     bidderRequestWithExistingEids.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
-    
     // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
     bidderRequestWithExistingEids.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
-    
     // Set existing eids in ortb2.user.ext.eids so the converter will merge them
     // and the adapter will see them as already existing
     bidderRequestWithExistingEids.ortb2 = bidderRequestWithExistingEids.ortb2 || {};
     bidderRequestWithExistingEids.ortb2.user = bidderRequestWithExistingEids.ortb2.user || {};
     bidderRequestWithExistingEids.ortb2.user.ext = bidderRequestWithExistingEids.ortb2.user.ext || {};
     bidderRequestWithExistingEids.ortb2.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
-    
     const request = spec.buildRequests([bidRequestWithEids], bidderRequestWithExistingEids);
     expect(request.data.user).to.exist;
     expect(request.data.user.ext).to.exist;
@@ -1465,7 +1436,6 @@ describe('PubMatic adapter', () => {
 
   it('should copy geo from user to device when user has geo but device does not', () => {
     const bidRequestWithUserGeo = utils.deepClone(validBidRequests[0]);
-    
     // Create a clean bidderRequest without existing geo data
     const cleanBidderRequest = utils.deepClone(bidderRequest);
     // Ensure device object exists
@@ -1475,10 +1445,8 @@ describe('PubMatic adapter', () => {
     cleanBidderRequest.ortb2.user = cleanBidderRequest.ortb2.user || {};
     delete cleanBidderRequest.device.geo;
     delete cleanBidderRequest.ortb2.device.geo;
-    
     // Set geo data in bidderRequest.ortb2.user.geo so the converter will merge it
     cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 };
-    
     const request = spec.buildRequests([bidRequestWithUserGeo], cleanBidderRequest);
     expect(request.data.device).to.exist;
     expect(request.data.device.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
@@ -1538,7 +1506,6 @@ describe('PubMatic adapter', () => {
       if (mediaType === 'native') return { currency: 'AUD', floor: 1.0 };
       return { currency: 'AUD', floor: 0 };
     };
-
     const testBidderRequest = {
       bids: [testBid],
       auctionId: 'test-auction',
@@ -1547,7 +1514,6 @@ describe('PubMatic adapter', () => {
       ortb2: { device: { w: 1200, h: 1800 }, site: { domain: 'example.com', page: 'https://example.com' } },
       timeout: 2000
     };
-
     const request = spec.buildRequests([testBid], testBidderRequest);
     expect(request).to.exist;
     const builtImp = request.data.imp[0];
@@ -1563,7 +1529,6 @@ describe('PubMatic adapter', () => {
     // The impression-level bidfloor should match the banner floor (2.5)
     expect(builtImp.bidfloor).to.equal(2.5);
   });
-
 })
 
 describe('addViewabilityToImp', () => {
