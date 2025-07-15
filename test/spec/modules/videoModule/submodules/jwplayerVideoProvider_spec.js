@@ -683,17 +683,23 @@ describe('JWPlayerProvider', function () {
 
       // Simulate the player calling the event handler
       const mockEvent = {
-        sourceError: new Error('Player error'),
+        sourceError: new Error('Player Ad error'),
+        adErrorCode: 2001,
         code: 3001,
-        message: 'Media error occurred'
+        message: 'Ad playback error occurred'
       };
       eventHandler(mockEvent);
 
       expect(callback.calledOnce).to.be.true;
       const payload = callback.args[0][1];
       expect(payload.sourceError).to.be.equal(mockEvent.sourceError);
-      expect(payload.errorCode).to.be.equal(3001);
-      expect(payload.errorMessage).to.be.equal('Media error occurred');
+      expect(payload.playerErrorCode).to.be.equal(2001);
+      expect(payload.vastErrorCode).to.be.equal(3001);
+      expect(payload.errorMessage).to.be.equal('Ad playback error occurred');
+      expect(payload.adTagUrl).to.be.equal('test-ad-tag');
+      expect(payload.vastAdId).to.be.equal('ad-123');
+      expect(payload.time).to.be.equal(15);
+      expect(payload.duration).to.be.equal(30);
     });
 
     it('should handle AD_COMPLETE event payload', function () {
