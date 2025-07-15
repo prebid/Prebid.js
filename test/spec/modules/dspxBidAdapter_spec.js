@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from '../../../src/utils';
-import {BANNER} from '../../../src/mediaTypes';
+import { deepClone } from '../../../src/utils.js';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
@@ -129,20 +129,20 @@ describe('dspxAdapter', function () {
           'atype': 1
         }]
       },
-        {
-          'source': 'utiq.com',
-          'uids': [{
-            'id': 'utiq',
-            'atype': 1
-          }]
-        },
-        {
-          'source': 'euid.eu',
-          'uids': [{
-            'id': 'euid',
-            'atype': 1
-          }]
-        },
+      {
+        'source': 'utiq.com',
+        'uids': [{
+          'id': 'utiq',
+          'atype': 1
+        }]
+      },
+      {
+        'source': 'euid.eu',
+        'uids': [{
+          'id': 'euid',
+          'atype': 1
+        }]
+      },
       {
         'source': 'id5-sync.com',
         'uids': [
@@ -155,16 +155,16 @@ describe('dspxAdapter', function () {
           }
         ]
       }, {
-          source: "domain.com",
-          uids: [{
-            id: "1234",
-            atype: 1,
-            ext: {
-              stype: "ppuid"
-            }
+        source: "domain.com",
+        uids: [{
+          id: "1234",
+          atype: 1,
+          ext: {
+            stype: "ppuid"
+          }
 
-          }]
-        }
+        }]
+      }
       ],
       'crumbs': {
         'pubcid': 'crumbs_pubcid'

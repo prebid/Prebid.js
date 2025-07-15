@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config';
-import { internal, resetWinDimensions } from '../../../src/utils';
+import {config} from '../../../src/config.js';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 const URL = 'https://rt.marphezis.com/hb';
 

@@ -2,7 +2,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {deepClone} from '../../../src/utils';
+import {deepClone} from '../../../src/utils.js';
 import 'modules/consentManagementTcf';
 import 'modules/consentManagementUsp';
 import 'modules/userId/index';

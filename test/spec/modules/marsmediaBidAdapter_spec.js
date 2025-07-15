@@ -1,7 +1,7 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { internal, resetWinDimensions } from '../../../src/utils';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 var marsAdapter = spec;
 

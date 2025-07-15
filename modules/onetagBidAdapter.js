@@ -477,18 +477,18 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor !== 'function') return [];
-    const getFloorObject = (size) => {
-      const floorData = bidRequest.getFloor({
-        currency: 'EUR',
-        mediaType: mediaType || '*',
-        size: size || null
-      }) || {};
+  const getFloorObject = (size) => {
+    const floorData = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: mediaType || '*',
+      size: size || null
+    }) || {};
 
-      return {
-        ...floorData,
-        size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
-        floor: floorData.floor != null ? floorData.floor : null
-      };
+    return {
+      ...floorData,
+      size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
+      floor: floorData.floor != null ? floorData.floor : null
+    };
   };
 
   if (Array.isArray(sizes) && sizes.length > 0) {

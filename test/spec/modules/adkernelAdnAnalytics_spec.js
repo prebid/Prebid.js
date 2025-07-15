@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import adapterManager from 'src/adapterManager';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('../../../src/events');
+const events = require('../../../src/events.js');
 
 const DIRECT = {
   source: '(direct)',

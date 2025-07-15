@@ -437,7 +437,7 @@ const RESPONSE_OPENRTB_VIDEO = {
             bidder: {
               appnexus: {
                 brand_id: 1,
-                auction_id: 6673622101799484743,
+                auction_id: '6673622101799484743',
                 bidder_id: 2,
                 bid_ad_type: 1,
               },
@@ -542,7 +542,7 @@ const RESPONSE_OPENRTB_NATIVE = {
             'bidder': {
               'appnexus': {
                 'brand_id': 555545,
-                'auction_id': 4676806524825984103,
+                'auction_id': '4676806524825984103',
                 'bidder_id': 2,
                 'bid_ad_type': 3
               }
@@ -598,9 +598,9 @@ describe('s2s configuration', () => {
 });
 
 describe('S2S Adapter', function () {
-  let adapter,
-    addBidResponse = sinon.spy(),
-    done = sinon.spy();
+  let adapter;
+  let addBidResponse = sinon.spy();
+  let done = sinon.spy();
 
   addBidResponse.reject = sinon.spy();
 

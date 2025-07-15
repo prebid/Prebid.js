@@ -1,7 +1,7 @@
 import smartyadsAnalytics from 'modules/smartyadsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { EVENTS } from '../../../src/constants';
+import { EVENTS } from '../../../src/constants.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
