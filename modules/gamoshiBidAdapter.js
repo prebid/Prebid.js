@@ -100,7 +100,7 @@ export const helper = {
       return 4; // 'mobile'
     }
     return 2; // 'desktop'
-},
+  },
   getUserSyncParams(gdprConsent, uspConsent, gppConsent) {
     let params = {
       'gdpr': 0,
@@ -129,60 +129,60 @@ export const helper = {
     return params;
   },
   addExternalUserId(eids, value, source, rtiPartner) {
-  if (isStr(value)) {
-    eids.push({
-      source,
-      uids: [{
-        id: value,
-        ext: {
-          rtiPartner
-        }
-      }]
-    });
-  }
-},
-replaceMacros(url, macros) {
-  return url
-    .replace('[GDPR]', macros['gdpr'])
-    .replace('[CONSENT]', macros['gdpr_consent'])
-    .replace('[US_PRIVACY]', macros['us_privacy'])
-    .replace('[GPP_SID]', macros['gpp_sid'])
-    .replace('[GPP]', macros['gpp']);
+    if (isStr(value)) {
+      eids.push({
+        source,
+        uids: [{
+          id: value,
+          ext: {
+            rtiPartner
+          }
+        }]
+      });
+    }
+  },
+  replaceMacros(url, macros) {
+    return url
+      .replace('[GDPR]', macros['gdpr'])
+      .replace('[CONSENT]', macros['gdpr_consent'])
+      .replace('[US_PRIVACY]', macros['us_privacy'])
+      .replace('[GPP_SID]', macros['gpp_sid'])
+      .replace('[GPP]', macros['gpp']);
   },
   addRequestEids(eids, inRequest) {
-  inRequest.forEach(({ source, uids = []}) => {
-    try {
-      const hasUID = uids.length > 0 && uids[0].id;
-      if (hasUID) {
-        logWarn('Gamoshi: uidData.id is missing for source:', source, uids);
-        return;
-      }
-      if (!isStr(source) || !source.trim()) {
-        logWarn('Gamoshi: Invalid source:', source, uids);
-        return;
-      }
-      if (eids.filter(eid => eid.source === source).length > 0) {
-        logWarn('Gamoshi: Duplicate source found:', source, uids);
-        return;
-      }
-      let firstUid = uids[0];
-      eids.push({
-        source: source,
-        uids: [{
-          id: firstUid.id,
-          atype: firstUid.atype || 1, // Default to 1 if atype is not provided
-          ext: {
-            rtiPartner: firstUid.ext?.rtiPartner || ''
-          }
-        }],
-      });
-    } catch (e) {
+    inRequest.forEach(({ source, uids = []}) => {
+      try {
+        const hasUID = uids.length > 0 && uids[0].id;
+        if (hasUID) {
+          logWarn('Gamoshi: uidData.id is missing for source:', source, uids);
+          return;
+        }
+        if (!isStr(source) || !source.trim()) {
+          logWarn('Gamoshi: Invalid source:', source, uids);
+          return;
+        }
+        if (eids.filter(eid => eid.source === source).length > 0) {
+          logWarn('Gamoshi: Duplicate source found:', source, uids);
+          return;
+        }
+        let firstUid = uids[0];
+        eids.push({
+          source: source,
+          uids: [{
+            id: firstUid.id,
+            atype: firstUid.atype || 1, // Default to 1 if atype is not provided
+            ext: {
+              rtiPartner: firstUid.ext?.rtiPartner || ''
+            }
+          }],
+        });
+      } catch (e) {
       // Log any errors encountered during processing
-      logWarn('Gamoshi: error reading eid:', { source, uids }, e);
-    }
-  });
-  return eids;
-}, getWidthAndHeight(input) {
+        logWarn('Gamoshi: error reading eid:', { source, uids }, e);
+      }
+    });
+    return eids;
+  }, getWidthAndHeight(input) {
     let width, height;
 
     if (Array.isArray(input) && typeof input[0] === 'number' && typeof input[1] === 'number') {
@@ -275,13 +275,13 @@ export const spec = {
       return [];
     }
     const bids = [];
-      if (response && Array.isArray(response.seatbid)) {
-        response.seatbid.forEach(seatBid => {
-          if (seatBid && Array.isArray(seatBid.bid)) {
-            bids.push(...seatBid.bid);
-          }
-        });
-   }
+    if (response && Array.isArray(response.seatbid)) {
+      response.seatbid.forEach(seatBid => {
+        if (seatBid && Array.isArray(seatBid.bid)) {
+          bids.push(...seatBid.bid);
+        }
+      });
+    }
     let outBids = [];
     bids.forEach(bid => {
       const outBid = {
@@ -456,21 +456,21 @@ function imp(buildImp, bidRequest, context) {
     imp.video.w = sizes.width;
     imp.video.h = sizes.height;
   } else {
-      if (imp.banner) {
-        const sizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.sizes;
-        if (isArray(sizes[0])) {
-          imp.banner.w = sizes[0][0];
-          imp.banner.h = sizes[0][1];
-        } else if (isNumber(sizes[0])) {
-          imp.banner.w = sizes[0];
-          imp.banner.h = sizes[1];
-        } else {
-          imp.banner.w = 300;
-          imp.banner.h = 250;
-        }
-        imp.banner.pos = deepAccess(bidRequest, 'mediaTypes.banner.pos') || params.pos || 0;
+    if (imp.banner) {
+      const sizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.sizes;
+      if (isArray(sizes[0])) {
+        imp.banner.w = sizes[0][0];
+        imp.banner.h = sizes[0][1];
+      } else if (isNumber(sizes[0])) {
+        imp.banner.w = sizes[0];
+        imp.banner.h = sizes[1];
+      } else {
+        imp.banner.w = 300;
+        imp.banner.h = 250;
       }
+      imp.banner.pos = deepAccess(bidRequest, 'mediaTypes.banner.pos') || params.pos || 0;
     }
+  }
 
   return imp;
 }
@@ -490,17 +490,17 @@ function request(buildRequest, imps, bidderRequest, context) {
   const supplyPartnerId = bidRequest.params.supplyPartnerId || bidRequest.params.supply_partner_id || bidRequest.params.inventory_id;
   // Site/page info
   if (!request.site) request.site = {};
-    request.site.domain = deepAccess(bidderRequest, 'refererInfo.domain') || document.location.host;
-    request.site.page = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(bidderRequest, 'refererInfo.location');
-    request.site.ref = deepAccess(bidderRequest, 'refererInfo.ref') || request.site.page;
-    request.device = {
-      ua: navigator.userAgent,
-      devicetype: helper.getDeviceType(),
-      dnt: getDNT() ? 1 : 0,
-      h: screen.height,
-      w: screen.width,
-      language: navigator.language
-    };
+  request.site.domain = deepAccess(bidderRequest, 'refererInfo.domain') || document.location.host;
+  request.site.page = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(bidderRequest, 'refererInfo.location');
+  request.site.ref = deepAccess(bidderRequest, 'refererInfo.ref') || request.site.page;
+  request.device = {
+    ua: navigator.userAgent,
+    devicetype: helper.getDeviceType(),
+    dnt: getDNT() ? 1 : 0,
+    h: screen.height,
+    w: screen.width,
+    language: navigator.language
+  };
 
   // Add user IDs
   let eids = [];
@@ -514,30 +514,30 @@ function request(buildRequest, imps, bidderRequest, context) {
 
   if (bidRequest.userIdAsEids && Array.isArray(bidRequest.userIdAsEids)) {
     bidderRequest.userIdAsEids.forEach(e => {
-        if (e.source && e.uids && e.uids.length > 0) {
-          if (eids.filter(eid => eid.source === e.source).length > 0) {
-            logWarn('Gamoshi: Duplicate source found:', e.source, e.uids);
-            return;
-          }
-          eids.push({
-            source: e.source,
-            uids: e.uids.filter(uids => uids.id != null).map(uid => {
-              let uidData = {
-                id: uid.id,
-                atype: uid.atype || 1, // Default to 1 if atype is not provided
-              };
-              if (uid.ext?.rtiPartner && uid.ext.rtiPartner !== '') {
-                uidData.ext = {'rtiPartner': uid.ext.rtiPartner};
-              }
-              return uidData;
-            })
-          });
+      if (e.source && e.uids && e.uids.length > 0) {
+        if (eids.filter(eid => eid.source === e.source).length > 0) {
+          logWarn('Gamoshi: Duplicate source found:', e.source, e.uids);
+          return;
         }
+        eids.push({
+          source: e.source,
+          uids: e.uids.filter(uids => uids.id != null).map(uid => {
+            let uidData = {
+              id: uid.id,
+              atype: uid.atype || 1, // Default to 1 if atype is not provided
+            };
+            if (uid.ext?.rtiPartner && uid.ext.rtiPartner !== '') {
+              uidData.ext = {'rtiPartner': uid.ext.rtiPartner};
+            }
+            return uidData;
+          })
+        });
+      }
     });
   }
 
   if (bidRequest.ortb2?.user?.ext?.eids) {
-     eids = helper.addRequestEids(eids, bidRequest.ortb2.user.ext.eids);
+    eids = helper.addRequestEids(eids, bidRequest.ortb2.user.ext.eids);
   }
   if (eids.length > 0) {
     deepSetValue(request, 'user.ext.eids', eids);

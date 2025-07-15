@@ -374,7 +374,7 @@ describe('GamoshiAdapter', () => {
       // payload = request.data;
       // expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
     });
-});
+  });
 
   describe('buildRequests', () => {
     it('returns an array', () => {
@@ -624,7 +624,7 @@ describe('GamoshiAdapter', () => {
 
     it('builds request with COPPA', () => {
       const bidRequestWithCoppa = utils.deepClone(bidRequest);
-       // Simulate COPPA enabled
+      // Simulate COPPA enabled
       config.setConfig({'coppa': true});
       const request = spec.buildRequests([bidRequest], bidRequestWithCoppa)[0];
       expect(request.data.regs.coppa).to.equal(1);
