@@ -119,7 +119,6 @@ module.exports = [
       // also see: reality. These are here to stay.
 
       eqeqeq: 'off',
-      'no-return-assign': 'off',
       'no-throw-literal': 'off',
       'no-undef': 2,
       'no-useless-escape': 'off',
