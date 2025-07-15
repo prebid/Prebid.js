@@ -406,12 +406,6 @@ describe('RiseMediaTech adapter', () => {
       expect(bids).to.be.an('array').with.lengthOf(1);
     });
 
-    it('should return an empty array for HTTP 204 response', () => {
-      const request = spec.buildRequests([validBidRequest], bidderRequest);
-      const bids = spec.interpretResponse({ status: 204 }, request);
-      expect(bids).to.be.an('array').that.is.empty;
-    });
-
     it('should log a warning and not set mediaType for unknown mtype', () => {
       const responseWithUnknownMtype = {
         body: {

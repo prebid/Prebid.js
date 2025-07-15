@@ -132,11 +132,6 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 const interpretResponse = (serverResponse, request) => {
   logInfo('Interpreting server response:', serverResponse);
 
-  if (serverResponse && serverResponse.status !== 200) {
-    logInfo(`No bids returned from the server (HTTP ${serverResponse.status}).`);
-    return [];
-  }
-
   const bidResp = serverResponse && serverResponse.body;
   if (!bidResp || !Array.isArray(bidResp.seatbid)) {
     logWarn('Server response is empty, invalid, or does not contain seatbid array.');
