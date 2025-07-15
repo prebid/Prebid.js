@@ -10,7 +10,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import {hook} from '../../../src/hook.js'
-import {BANNER} from '../../../src/mediaTypes';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';

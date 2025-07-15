@@ -40,8 +40,8 @@ var assert = require('assert');
 /* use this method to test individual files instead of the whole prebid.js project */
 
 // TODO refactor to use the spec files
-var utils = require('../../src/utils');
-var fixtures = require('../fixtures/fixtures');
+var utils = require('../../src/utils.js');
+var fixtures = require('../fixtures/fixtures.js');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
 

@@ -14,7 +14,7 @@ import {
 } from 'modules/permutiveRtdProvider.js'
 import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
-import { permutiveIdentityManagerIdSubmodule } from '../../../modules/permutiveIdentityManagerIdSystem'
+import { permutiveIdentityManagerIdSubmodule } from '../../../modules/permutiveIdentityManagerIdSystem.js'
 
 describe('permutiveRtdProvider', function () {
   beforeEach(function () {

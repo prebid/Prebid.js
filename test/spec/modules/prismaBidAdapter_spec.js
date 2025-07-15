@@ -252,10 +252,10 @@ describe('Prisma bid adapter tests', function () {
     var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
-    it('Verifies user sync with no bid body response', function() {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.have.lengthOf(0);
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.have.lengthOf(0);
-    });
+  it('Verifies user sync with no bid body response', function() {
+    let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.lengthOf(0);
+    syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    expect(syncs).to.have.lengthOf(0);
+  });
 });
