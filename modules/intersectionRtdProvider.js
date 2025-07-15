@@ -73,14 +73,16 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
     if (checkTimeoutId) clearTimeout(checkTimeoutId);
     done = true;
     checkTimeoutId = null;
-    observer && observer.disconnect();
-    adUnits && adUnits.forEach((unit) => {
-      const intersection = intersectionMap[unit.code];
-      if (intersection && unit.bids) {
-        unit.bids.forEach(bid => bid.intersection = intersection);
-      }
-    });
-    onDone();
+      observer && observer.disconnect();
+      adUnits && adUnits.forEach((unit) => {
+        const intersection = intersectionMap[unit.code];
+        if (intersection && unit.bids) {
+          unit.bids.forEach(bid => {
+            bid.intersection = intersection;
+          });
+        }
+      });
+      onDone();
   }
 }
 function init(moduleConfig) {

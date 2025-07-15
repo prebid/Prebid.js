@@ -213,7 +213,9 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
 
     player = adPlayerPro(divId);
     callbackStorage.addAllCallbacks(player.on);
-    player.on('AdStopped', () => player = null);
+    player.on('AdStopped', () => {
+      player = null;
+    });
     player.setup(playerConfig);
   }
 

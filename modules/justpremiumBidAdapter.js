@@ -185,7 +185,8 @@ function preparePubCond (bids) {
     const exclude = params.exclude || []
 
     if (allow.length === 0 && exclude.length === 0) {
-      return cond[params.zone] = 1
+      cond[params.zone] = 1
+      return cond[params.zone]
     }
 
     cond[zone] = cond[zone] || [[], {}]

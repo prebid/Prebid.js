@@ -77,10 +77,12 @@ export const spec = {
         payload.uspConsent = bidderRequest.uspConsent;
       }
     }
-    validRequest.forEach((bid) => {
-      const imp = {};
-      Object.keys(bid).forEach(key => imp[key] = bid[key]);
-      imp.ortb2 && delete imp.ortb2;
+      validRequest.forEach((bid) => {
+        const imp = {};
+        Object.keys(bid).forEach(key => {
+          imp[key] = bid[key];
+        });
+        imp.ortb2 && delete imp.ortb2;
       const bidFloor = getBidFloor(bid);
       if (bidFloor) {
         imp.bidFloor = bidFloor;

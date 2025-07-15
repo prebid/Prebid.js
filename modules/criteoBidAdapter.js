@@ -602,14 +602,18 @@ function getFloors(bidRequest) {
     if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         floors.banner = {};
-        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes)
-        bannerSizes.forEach(bannerSize => floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER }));
+          const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes)
+          bannerSizes.forEach(bannerSize => {
+            floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER });
+          });
       }
 
       if (bidRequest.mediaTypes?.video) {
         floors.video = {};
-        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize)
-        videoSizes.forEach(videoSize => floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO }));
+          const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize)
+          videoSizes.forEach(videoSize => {
+            floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO });
+          });
       }
 
       if (bidRequest.mediaTypes?.native) {

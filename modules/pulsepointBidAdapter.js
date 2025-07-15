@@ -122,7 +122,9 @@ const converter = ortbConverter({
 function slotUnknownParams(slot) {
   const ext = {};
   const knownParamsMap = {};
-  KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
+  KNOWN_PARAMS.forEach(value => {
+    knownParamsMap[value] = 1;
+  });
   Object.keys(slot.params).forEach(key => {
     if (!knownParamsMap[key]) {
       ext[key] = slot.params[key];
