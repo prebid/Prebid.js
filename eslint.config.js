@@ -143,7 +143,6 @@ module.exports = [
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
-      'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
       'prefer-const': 'off',
@@ -161,7 +160,6 @@ module.exports = [
       '@stylistic/multiline-ternary': 'off',
       '@stylistic/computed-property-spacing': 'off',
       '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/indent': 'off',
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
       '@stylistic/object-property-newline': 'off',
@@ -243,10 +241,8 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      'camelcase': 'off',
-      'no-global-assign': 'off',
-      // TODO: remove this once tests cleaned up
-      'no-return-assign': 'off'
+      'no-return-assign': 'off',
+      'camelcase': 'off'
     }
   },
   {

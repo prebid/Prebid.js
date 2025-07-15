@@ -1,24 +1,24 @@
 import {
-    deepClone,
-    getDefinedParams,
-    insertHtmlIntoIframe,
-    isArray,
-    isBoolean,
-    isInteger,
-    isNumber,
-    isPlainObject,
-    logError,
-    pick,
-    triggerPixel
+  deepClone,
+  getDefinedParams,
+  insertHtmlIntoIframe,
+  isArray,
+  isBoolean,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  logError,
+  pick,
+  triggerPixel
 } from './utils.js';
 
 import {auctionManager} from './auctionManager.js';
 import {
-    NATIVE_ASSET_TYPES,
-    NATIVE_IMAGE_TYPES,
-    NATIVE_KEYS,
-    NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
-    PREBID_NATIVE_DATA_KEYS_TO_ORTB
+  NATIVE_ASSET_TYPES,
+  NATIVE_IMAGE_TYPES,
+  NATIVE_KEYS,
+  NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
+  PREBID_NATIVE_DATA_KEYS_TO_ORTB
 } from './constants.js';
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
@@ -34,71 +34,71 @@ type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof N
 type LegacyImageAssets = { icon: unknown, image: unknown };
 
 type LegacyImageAssetResponse = {
-    url: string;
-    width: number;
-    height: number;
+  url: string;
+  width: number;
+  height: number;
 }
 
 export type LegacyNativeAssetsResponse = {
-    [K in keyof Omit<LegacyAssets, keyof LegacyImageAssets>]?: string;
+  [K in keyof Omit<LegacyAssets, keyof LegacyImageAssets>]?: string;
 } & {
-    [K in keyof LegacyImageAssets]?: LegacyImageAssetResponse
+  [K in keyof LegacyImageAssets]?: LegacyImageAssetResponse
 };
 
 export type LegacyNativeResponse = LegacyNativeAssetsResponse & {
-    clickUrl?: string;
-    privacyLink?: string;
-    clickTrackers?: string | string[];
-    impressionTrackers?: string | string[];
-    javascriptTrackers?: string | string[];
+  clickUrl?: string;
+  privacyLink?: string;
+  clickTrackers?: string | string[];
+  impressionTrackers?: string | string[];
+  javascriptTrackers?: string | string[];
 };
 
 declare module './bidfactory' {
-    interface NativeBidResponseProperties {
-        native: LegacyNativeResponse & { ortb?: NativeResponse };
-    }
+  interface NativeBidResponseProperties {
+    native: LegacyNativeResponse & { ortb?: NativeResponse };
+  }
 
-    // core will always provide ortb for native responses
+  // core will always provide ortb for native responses
 
-    interface NativeBidProperties {
-        native: LegacyNativeResponse & { ortb: NativeResponse };
-    }
+  interface NativeBidProperties {
+    native: LegacyNativeResponse & { ortb: NativeResponse };
+  }
 }
 
 type LegacyAssetRequest = {
-    required?: boolean;
+  required?: boolean;
 }
 
 export type LegacyNativeRequest = {
-    privacyLink?: LegacyAssetRequest;
-    clickUrl?: LegacyAssetRequest;
-    title?: LegacyAssetRequest & {
-        len?: number;
-    };
-    ext?: Ext;
+  privacyLink?: LegacyAssetRequest;
+  clickUrl?: LegacyAssetRequest;
+  title?: LegacyAssetRequest & {
+    len?: number;
+  };
+  ext?: Ext;
 } & {
-    [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
-        len?: number;
-    }
+  [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
+    len?: number;
+  }
 } & {
-    [K in keyof LegacyImageAssets]?: LegacyAssetRequest & {
-        sizes?: Size | Size[];
-        aspect_ratios?: {
-            min_width: number;
-            min_height: number;
-            ratio_width: number;
-            ratio_height: number;
-        }[];
-    }
+  [K in keyof LegacyImageAssets]?: LegacyAssetRequest & {
+    sizes?: Size | Size[];
+    aspect_ratios?: {
+      min_width: number;
+      min_height: number;
+      ratio_width: number;
+      ratio_height: number;
+    }[];
+  }
 }
 
 export interface NativeMediaType extends LegacyNativeRequest {
-    /**
-     * `type: 'image'` acts as a shortcut for a native request for five assets:
-     * image, title, "sponsored by" data, description (optional), and icon (optional).
-     */
-    type?: keyof typeof SUPPORTED_TYPES
-    ortb?: NativeRequest;
+  /**
+   * `type: 'image'` acts as a shortcut for a native request for five assets:
+   * image, title, "sponsored by" data, description (optional), and icon (optional).
+   */
+  type?: keyof typeof SUPPORTED_TYPES
+  ortb?: NativeRequest;
 }
 
 export const nativeAdapters = [];
@@ -187,10 +187,10 @@ export function processNativeAdUnitParams(params: NativeMediaType): NativeMediaT
 }
 
 declare module './adUnits' {
-    interface AdUnit {
-        nativeParams?: NativeMediaType;
-        nativeOrtbRequest?: NativeRequest;
-    }
+  interface AdUnit {
+    nativeParams?: NativeMediaType;
+    nativeOrtbRequest?: NativeRequest;
+  }
 }
 
 export function decorateAdUnitsWithNativeParams(adUnits: AdUnit[]) {

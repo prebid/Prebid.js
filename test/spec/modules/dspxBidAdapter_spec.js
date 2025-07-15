@@ -129,20 +129,20 @@ describe('dspxAdapter', function () {
           'atype': 1
         }]
       },
-        {
-          'source': 'utiq.com',
-          'uids': [{
-            'id': 'utiq',
-            'atype': 1
-          }]
-        },
-        {
-          'source': 'euid.eu',
-          'uids': [{
-            'id': 'euid',
-            'atype': 1
-          }]
-        },
+      {
+        'source': 'utiq.com',
+        'uids': [{
+          'id': 'utiq',
+          'atype': 1
+        }]
+      },
+      {
+        'source': 'euid.eu',
+        'uids': [{
+          'id': 'euid',
+          'atype': 1
+        }]
+      },
       {
         'source': 'id5-sync.com',
         'uids': [
@@ -155,16 +155,16 @@ describe('dspxAdapter', function () {
           }
         ]
       }, {
-          source: "domain.com",
-          uids: [{
-            id: "1234",
-            atype: 1,
-            ext: {
-              stype: "ppuid"
-            }
+        source: "domain.com",
+        uids: [{
+          id: "1234",
+          atype: 1,
+          ext: {
+            stype: "ppuid"
+          }
 
-          }]
-        }
+        }]
+      }
       ],
       'crumbs': {
         'pubcid': 'crumbs_pubcid'

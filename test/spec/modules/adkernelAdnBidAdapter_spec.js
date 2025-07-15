@@ -4,139 +4,139 @@ import {config} from 'src/config';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
-      bidder: 'adkernelAdn',
-      transactionId: 'transact0',
-      bidderRequestId: 'req0',
-      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-      bidId: 'bidid_1',
-      params: {
-        pubId: 1,
-        host: 'tag.adkernel.com'
-      },
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 200]]
-        }
-      },
-      adUnitCode: 'ad-unit-1',
-    }; const bid2_pub1 = {
-      bidder: 'adkernelAdn',
-      transactionId: 'transact0',
-      bidderRequestId: 'req0',
-      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-      bidId: 'bidid_2',
-      params: {
-        pubId: 1
-      },
-      adUnitCode: 'ad-unit-2',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250]]
-        }
+    bidder: 'adkernelAdn',
+    transactionId: 'transact0',
+    bidderRequestId: 'req0',
+    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+    bidId: 'bidid_1',
+    params: {
+      pubId: 1,
+      host: 'tag.adkernel.com'
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 200]]
       }
-    }; const bid1_pub2 = {
-      bidder: 'adkernelAdn',
-      transactionId: 'transact2',
-      bidderRequestId: 'req1',
-      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-      bidId: 'bidid_3',
-      params: {
-        pubId: 7,
-        host: 'dps-test.com'
-      },
-      adUnitCode: 'ad-unit-2',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
+    },
+    adUnitCode: 'ad-unit-1',
+  }; const bid2_pub1 = {
+    bidder: 'adkernelAdn',
+    transactionId: 'transact0',
+    bidderRequestId: 'req0',
+    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+    bidId: 'bidid_2',
+    params: {
+      pubId: 1
+    },
+    adUnitCode: 'ad-unit-2',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
       }
-    }; const bid_video1 = {
-      bidder: 'adkernelAdn',
-      transactionId: 'transact3',
-      bidderRequestId: 'req1',
-      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-      bidId: 'bidid_4',
-      mediaTypes: {
-        video: {
-          context: 'instream',
-          playerSize: [640, 300],
-          mimes: ['video/mp4', 'video/webm'],
-          api: [1, 2],
-          protocols: [5, 6]
-        }
-      },
-      adUnitCode: 'video_wrapper',
-      params: {
-        pubId: 7
+    }
+  }; const bid1_pub2 = {
+    bidder: 'adkernelAdn',
+    transactionId: 'transact2',
+    bidderRequestId: 'req1',
+    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+    bidId: 'bidid_3',
+    params: {
+      pubId: 7,
+      host: 'dps-test.com'
+    },
+    adUnitCode: 'ad-unit-2',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
       }
-    }; const bid_video2 = {
-      bidder: 'adkernelAdn',
-      transactionId: 'transact3',
-      bidderRequestId: 'req1',
-      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-      bidId: 'bidid_5',
-      mediaTypes: {
-        video: {
-          playerSize: [1920, 1080],
-          context: 'instream'
-        }
-      },
-      adUnitCode: 'video_wrapper2',
-      params: {
-        pubId: 7
+    }
+  }; const bid_video1 = {
+    bidder: 'adkernelAdn',
+    transactionId: 'transact3',
+    bidderRequestId: 'req1',
+    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+    bidId: 'bidid_4',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 300],
+        mimes: ['video/mp4', 'video/webm'],
+        api: [1, 2],
+        protocols: [5, 6]
       }
-    }; const bid_multiformat = {
-      bidder: 'adkernelAdn',
-      transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
-      bidderRequestId: 'req-001',
-      auctionId: 'auc-001',
-      bidId: 'Bid_01',
-      mediaTypes: {
-        banner: {sizes: [[300, 250], [300, 200]]},
-        video: {context: 'instream', playerSize: [[640, 480]]}
-      },
-      adUnitCode: 'ad-unit-1',
-      params: {pubId: 7}
-    };
+    },
+    adUnitCode: 'video_wrapper',
+    params: {
+      pubId: 7
+    }
+  }; const bid_video2 = {
+    bidder: 'adkernelAdn',
+    transactionId: 'transact3',
+    bidderRequestId: 'req1',
+    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+    bidId: 'bidid_5',
+    mediaTypes: {
+      video: {
+        playerSize: [1920, 1080],
+        context: 'instream'
+      }
+    },
+    adUnitCode: 'video_wrapper2',
+    params: {
+      pubId: 7
+    }
+  }; const bid_multiformat = {
+    bidder: 'adkernelAdn',
+    transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
+    bidderRequestId: 'req-001',
+    auctionId: 'auc-001',
+    bidId: 'Bid_01',
+    mediaTypes: {
+      banner: {sizes: [[300, 250], [300, 200]]},
+      video: {context: 'instream', playerSize: [[640, 480]]}
+    },
+    adUnitCode: 'ad-unit-1',
+    params: {pubId: 7}
+  };
 
   const response = {
-      tags: [{
-        id: 'ad-unit-1',
-        impid: '2c5e951baeeadd',
-        crid: '108_159810',
-        bid: 5.0,
-        tag: '<!-- tag goes here -->',
-        w: 300,
-        h: 250,
-        advertiserId: 777,
-        advertiserName: 'advertiser',
-        agencyName: 'agency',
-        advertiserDomains: ['example.com'],
-        primaryCatId: 'IAB1-1',
-      }, {
-        id: 'ad-unit-2',
-        impid: '31d798477126c4',
-        crid: '108_21226',
-        bid: 2.5,
-        tag: '<!-- tag goes here -->',
-        w: 300,
-        h: 250,
-        advertiserId: 777,
-        advertiserName: 'advertiser',
-        agencyName: 'agency',
-        advertiserDomains: ['example.com'],
-        secondaryCatIds: ['IAB1-4', 'IAB8-16', 'IAB25-5']
-      }, {
-        id: 'video_wrapper',
-        impid: '57d602ad1c9545',
-        crid: '108_158802',
-        bid: 10.0,
-        vast_url: 'https://vast.com/vast.xml'
-      }],
-      syncpages: ['https://dsp.adkernel.com/sync']
-    }; const usersyncOnlyResponse = {
-      syncpages: ['https://dsp.adkernel.com/sync']
-    };
+    tags: [{
+      id: 'ad-unit-1',
+      impid: '2c5e951baeeadd',
+      crid: '108_159810',
+      bid: 5.0,
+      tag: '<!-- tag goes here -->',
+      w: 300,
+      h: 250,
+      advertiserId: 777,
+      advertiserName: 'advertiser',
+      agencyName: 'agency',
+      advertiserDomains: ['example.com'],
+      primaryCatId: 'IAB1-1',
+    }, {
+      id: 'ad-unit-2',
+      impid: '31d798477126c4',
+      crid: '108_21226',
+      bid: 2.5,
+      tag: '<!-- tag goes here -->',
+      w: 300,
+      h: 250,
+      advertiserId: 777,
+      advertiserName: 'advertiser',
+      agencyName: 'agency',
+      advertiserDomains: ['example.com'],
+      secondaryCatIds: ['IAB1-4', 'IAB8-16', 'IAB25-5']
+    }, {
+      id: 'video_wrapper',
+      impid: '57d602ad1c9545',
+      crid: '108_158802',
+      bid: 10.0,
+      vast_url: 'https://vast.com/vast.xml'
+    }],
+    syncpages: ['https://dsp.adkernel.com/sync']
+  }; const usersyncOnlyResponse = {
+    syncpages: ['https://dsp.adkernel.com/sync']
+  };
 
   const defaultBidderRequest = {
     bidderCode: 'adkernelAdn',

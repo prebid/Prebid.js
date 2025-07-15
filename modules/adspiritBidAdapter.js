@@ -72,14 +72,14 @@ export const spec = {
               assets: bidRequest.mediaTypes.native.ortb?.assets?.length
                 ? bidRequest.mediaTypes.native.ortb.assets
                 : [
-                  { id: 1, required: 1, title: { len: 100 } },
-                  { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg'] } },
-                  { id: 4, required: 1, data: {type: 2, len: 150} },
-                  { id: 3, required: 0, data: {type: 12, len: 50} },
-                  { id: 6, required: 0, data: {type: 1, len: 50} },
-                  { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] } }
+                    { id: 1, required: 1, title: { len: 100 } },
+                    { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg'] } },
+                    { id: 4, required: 1, data: {type: 2, len: 150} },
+                    { id: 3, required: 0, data: {type: 12, len: 50} },
+                    { id: 6, required: 0, data: {type: 1, len: 50} },
+                    { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] } }
 
-                ]
+                  ]
             })
           } : undefined,
           ext: {
@@ -96,7 +96,7 @@ export const spec = {
             name: bidRequest.params.publisherName || ''
           }
         },
-         user: {
+        user: {
           data: bidRequest.userData || [],
           ext: {
             eids: eids,

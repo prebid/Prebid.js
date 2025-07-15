@@ -95,13 +95,13 @@ export function checkDchainSyntax(bid, mode) {
 }
 
 export interface DchainConfig {
-    validation?: typeof MODES[keyof typeof MODES];
+  validation?: typeof MODES[keyof typeof MODES];
 }
 
 declare module '../src/config' {
-    interface Config {
-        dchain?: DchainConfig;
-    }
+  interface Config {
+    dchain?: DchainConfig;
+  }
 }
 
 function isValidDchain(bid) {
