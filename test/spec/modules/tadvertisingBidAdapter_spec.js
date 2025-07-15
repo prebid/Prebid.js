@@ -327,35 +327,35 @@ describe('tadvertisingBidAdapter', () => {
   describe('interpretResponse', function () {
     function getBidderResponse() {
       return { body: {
-          "id": "10b1e33f-fddc-4621-a472-d7bff0529cbf",
-          "cur": "USD",
-          "impid": "38c219964ca1998",
-          "seatbid": [
-            {
-              "bid": [
-                {
-                  "id": "1",
-                  "impid": "38c219964ca1998",
-                  "price": 0.78740156,
-                  "adm": "<html><h3>I am an ad</h3></html>",
-                  "cid": "ay35w7m",
-                  "crid": "id8tke3f",
-                  "adomain": [
-                    "emetriq.com"
-                  ],
-                  "cat": [
-                    "IAB2",
-                    "IAB2-3"
-                  ],
-                  "h": 250,
-                  "w": 300,
-                  "mtype": 1
-                }
-              ],
-              "seat": "2271"
-            }
-          ]
-        }
+        "id": "10b1e33f-fddc-4621-a472-d7bff0529cbf",
+        "cur": "USD",
+        "impid": "38c219964ca1998",
+        "seatbid": [
+          {
+            "bid": [
+              {
+                "id": "1",
+                "impid": "38c219964ca1998",
+                "price": 0.78740156,
+                "adm": "<html><h3>I am an ad</h3></html>",
+                "cid": "ay35w7m",
+                "crid": "id8tke3f",
+                "adomain": [
+                  "emetriq.com"
+                ],
+                "cat": [
+                  "IAB2",
+                  "IAB2-3"
+                ],
+                "h": 250,
+                "w": 300,
+                "mtype": 1
+              }
+            ],
+            "seat": "2271"
+          }
+        ]
+      }
       }
     }
 
@@ -518,20 +518,20 @@ describe('tadvertisingBidAdapter', () => {
       let result = buildSuccessNotification(bidderRequest)
 
       expect(result).to.deep.equal({
-          "adId": "ad789",
-          "adUnitCode": "adunit131415",
-          "auctionId": "auction101112",
-          "bidId": "ad789",
-          "cpm": 1.25,
-          "creativeId": "creative192021",
-          "currency": "USD",
-          "dealId": "deal222324",
-          "mediaType": "banner",
-          "placementId": "placement456",
-          "publisherId": "publisher123",
-          "size": "300x250",
-          "status": "rendered",
-          "ttr": 250
+        "adId": "ad789",
+        "adUnitCode": "adunit131415",
+        "auctionId": "auction101112",
+        "bidId": "ad789",
+        "cpm": 1.25,
+        "creativeId": "creative192021",
+        "currency": "USD",
+        "dealId": "deal222324",
+        "mediaType": "banner",
+        "placementId": "placement456",
+        "publisherId": "publisher123",
+        "size": "300x250",
+        "status": "rendered",
+        "ttr": 250
       });
     });
   });
