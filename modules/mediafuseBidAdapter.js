@@ -143,14 +143,14 @@ export const spec = {
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
-      if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-        appDeviceObj = {};
-        Object.keys(appDeviceObjBid.params.app)
-          .filter(param => APP_DEVICE_PARAMS.includes(param))
-          .forEach(param => {
-            appDeviceObj[param] = appDeviceObjBid.params.app[param];
-          });
-      }
+    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+      appDeviceObj = {};
+      Object.keys(appDeviceObjBid.params.app)
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
+    }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;

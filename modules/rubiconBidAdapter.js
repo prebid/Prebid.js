@@ -1026,9 +1026,9 @@ function applyFPD(bidRequest, mediaType, data) {
     const clientHints = deepAccess(fpd, 'device.sua');
     if (clientHints && rubiConf.chEnabled !== false) {
       // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
-        pick(clientHints, [
-          'architecture', arch => { data.m_ch_arch = arch; },
-          'bitness', bitness => { data.m_ch_bitness = bitness; },
+      pick(clientHints, [
+        'architecture', arch => { data.m_ch_arch = arch; },
+        'bitness', bitness => { data.m_ch_bitness = bitness; },
         'browsers', browsers => {
           if (!Array.isArray(browsers)) return;
           // reduce down into ua and full version list attributes
@@ -1043,8 +1043,8 @@ function applyFPD(bidRequest, mediaType, data) {
           data.m_ch_ua = ua?.join?.(',');
           data.m_ch_full_ver = fullVer?.join?.(',');
         },
-          'mobile', isMobile => { data.m_ch_mobile = `?${isMobile}`; },
-          'model', model => { data.m_ch_model = model; },
+        'mobile', isMobile => { data.m_ch_mobile = `?${isMobile}`; },
+        'model', model => { data.m_ch_model = model; },
         'platform', platform => {
           data.m_ch_platform = platform?.brand;
           data.m_ch_platform_ver = platform?.version?.join?.('.');

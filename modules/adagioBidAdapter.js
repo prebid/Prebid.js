@@ -658,12 +658,12 @@ export const spec = {
         adunit_position: deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position', null)
       }
       // Clean the features object from null or undefined values.
-        bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
-          if (v != null) {
-            a[k] = v;
-          }
-          return a;
-        }, {})
+      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
+        if (v != null) {
+          a[k] = v;
+        }
+        return a;
+      }, {})
 
       // Remove some params that are not needed on the server side.
       delete bidRequest.params.siteId;

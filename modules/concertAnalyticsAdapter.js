@@ -92,14 +92,14 @@ function sendEvents() {
     return;
   }
 
-    try {
-      const body = JSON.stringify(queue);
-      ajax(url, () => {
-        queue = [];
-      }, body, {
-        contentType: 'application/json',
-        method: 'POST'
-      });
+  try {
+    const body = JSON.stringify(queue);
+    ajax(url, () => {
+      queue = [];
+    }, body, {
+      contentType: 'application/json',
+      method: 'POST'
+    });
   } catch (err) { logMessage('Concert Analytics error') }
 }
 

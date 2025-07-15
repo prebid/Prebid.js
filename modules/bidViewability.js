@@ -48,10 +48,10 @@ export const fireViewabilityPixels = (globalModuleConfig, bid) => {
         url += '?';
       }
       // append all query params, `&key=urlEncoded(value)`
-        url += Object.keys(queryParams).reduce((prev, key) => {
-          prev += `&${key}=${encodeURIComponent(queryParams[key])}`;
-          return prev;
-        }, '');
+      url += Object.keys(queryParams).reduce((prev, key) => {
+        prev += `&${key}=${encodeURIComponent(queryParams[key])}`;
+        return prev;
+      }, '');
       triggerPixel(url)
     });
   }

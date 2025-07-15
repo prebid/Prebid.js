@@ -211,15 +211,15 @@ function isTestRequest(bidRequests) {
   }
   return false;
 }
-  function getTestConfig(bidRequests) {
-    let isv;
-    bidRequests.forEach(br => {
-      isv = isv || br.params.isv;
-    });
-    return {
-      t: true,
-      isv: (isv || DEFAULT_ISV)
-    };
+function getTestConfig(bidRequests) {
+  let isv;
+  bidRequests.forEach(br => {
+    isv = isv || br.params.isv;
+  });
+  return {
+    t: true,
+    isv: (isv || DEFAULT_ISV)
+  };
 }
 
 function compareSizesByPriority(size1, size2) {

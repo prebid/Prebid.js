@@ -85,26 +85,26 @@ export class GreedyPromise {
   }
 
   static all(promises) {
-      return new this((resolve, reject) => {
-        const res = [];
-        this.#collect(promises, (success, val, i) => {
-          if (success) {
-            res[i] = val;
-          } else {
-            reject(val);
-          }
-        }, () => resolve(res));
-      })
-    }
+    return new this((resolve, reject) => {
+      const res = [];
+      this.#collect(promises, (success, val, i) => {
+        if (success) {
+          res[i] = val;
+        } else {
+          reject(val);
+        }
+      }, () => resolve(res));
+    })
+  }
 
-    static allSettled(promises) {
-      return new this((resolve) => {
-        const res = [];
-        this.#collect(promises, (success, val, i) => {
-          res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val};
-        }, () => resolve(res))
-      })
-    }
+  static allSettled(promises) {
+    return new this((resolve) => {
+      const res = [];
+      this.#collect(promises, (success, val, i) => {
+        res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val};
+      }, () => resolve(res))
+    })
+  }
 
   static resolve(value) {
     return new this(resolve => resolve(value))
