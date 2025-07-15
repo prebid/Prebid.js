@@ -134,9 +134,11 @@ function replaceEids({global, bidder}, requestedBidders) {
   if (consolidated.global.length) {
     deepSetValue(global, 'user.ext.eids', consolidated.global);
   }
-  if (requestedBidders?.length) {
-    consolidated.permissions.forEach((permission) => permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder)));
-  }
+    if (requestedBidders?.length) {
+      consolidated.permissions.forEach((permission) => {
+        permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder));
+      });
+    }
   if (consolidated.permissions.length) {
     deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);
   }

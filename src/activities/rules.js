@@ -9,7 +9,8 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const registry = {};
 
   function getRules(activity) {
-    return registry[activity] = registry[activity] || [];
+    registry[activity] = registry[activity] || [];
+    return registry[activity];
   }
 
   function runRule(activity, name, rule, params) {

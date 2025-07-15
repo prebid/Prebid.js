@@ -421,7 +421,8 @@ function createSchainString(schain) {
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : '';
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
   const nodesString = schain.nodes.reduce((acc, node) => {
-    return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
+    acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
+    return acc;
   }, '');
   return `${ver},${complete}${nodesString}`;
 }

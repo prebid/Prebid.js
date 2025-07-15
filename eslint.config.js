@@ -119,7 +119,6 @@ module.exports = [
       // also see: reality. These are here to stay.
 
       eqeqeq: 'off',
-      'no-return-assign': 'off',
       'no-throw-literal': 'off',
       'no-undef': 2,
       'no-useless-escape': 'off',
@@ -245,7 +244,9 @@ module.exports = [
       'no-undef': 'off',
       'no-unused-vars': 'off',
       'camelcase': 'off',
-      'no-global-assign': 'off'
+      'no-global-assign': 'off',
+      // TODO: remove this once tests cleaned up
+      'no-return-assign': 'off'
     }
   },
   {

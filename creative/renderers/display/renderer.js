@@ -9,7 +9,11 @@ export function render({ad, adUrl, width, height, instl}, {mkFrame}, win) {
   } else {
     if (height == null) {
       const body = win.document?.body;
-      [body, body?.parentElement].filter(elm => elm?.style != null).forEach(elm => elm.style.height = '100%');
+      [body, body?.parentElement]
+        .filter(elm => elm?.style != null)
+        .forEach(elm => {
+          elm.style.height = '100%';
+        });
     }
     const doc = win.document;
     const attrs = {width: width ?? '100%', height: height ?? '100%'};
