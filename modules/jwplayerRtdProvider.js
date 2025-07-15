@@ -116,12 +116,16 @@ function parsePlaylistItem(response) {
   try {
     const data = JSON.parse(response);
     if (!data) {
-      throw ('Empty response');
+      const msg = 'Empty response';
+      logError(msg);
+      throw new Error(msg);
     }
 
     const playlist = data.playlist;
     if (!playlist || !playlist.length) {
-      throw ('Empty playlist');
+      const msg = 'Empty playlist';
+      logError(msg);
+      throw new Error(msg);
     }
 
     item = playlist[0];

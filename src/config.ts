@@ -547,13 +547,13 @@ export function newConfig() {
 
     function check(obj) {
       if (!isPlainObject(obj)) {
-        throw 'setBidderConfig bidder options must be an object';
+        throw new Error('setBidderConfig bidder options must be an object');
       }
       if (!(Array.isArray(obj.bidders) && obj.bidders.length)) {
-        throw 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
+        throw new Error('setBidderConfig bidder options must contain a bidders list with at least 1 bidder');
       }
       if (!isPlainObject(obj.config)) {
-        throw 'setBidderConfig bidder options must contain a config object';
+        throw new Error('setBidderConfig bidder options must contain a config object');
       }
     }
   }
