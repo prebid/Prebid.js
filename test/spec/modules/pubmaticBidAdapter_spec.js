@@ -206,7 +206,7 @@ describe('PubMatic adapter', () => {
             linearity: 2
           }
         videoBidRequest.params.outstreamAU = 'outstreamAU';
-        videoBidRequest.params.renderer= 'renderer_test_pubmatic'
+        videoBidRequest.params.renderer = 'renderer_test_pubmatic'
 
         });
         it('should return false if mimes are missing in a video impression request', () => {
@@ -441,7 +441,7 @@ describe('PubMatic adapter', () => {
               playerSize: [640, 480]
             }
             videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
-            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic'
+            videoBidderRequest.bids[0].params.renderer= 'renderer_test_pubmatic'
             videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
@@ -1266,7 +1266,6 @@ describe('PubMatic adapter', () => {
         it('should set renderer and rendererCode for outstream video with outstreamAU', () => {
           const request = spec.buildRequests(validBidRequests, videoBidderRequest);
           const bidResponse = spec.interpretResponse(videoResponse, request);
-          console.log('****** bidResponse: check renderer', bidResponse[0].renderer);
           expect(bidResponse).to.be.an('array');
           expect(bidResponse[0]).to.be.an('object');
           expect(bidResponse[0]).to.have.property('renderer');
@@ -1279,13 +1278,10 @@ describe('PubMatic adapter', () => {
           const modifiedVideoResponse = utils.deepClone(videoResponse);
           delete modifiedVideoResponse.body.seatbid[0].bid[0].w;
           delete modifiedVideoResponse.body.seatbid[0].bid[0].h;
-
           // Set up the request as usual
           const request = spec.buildRequests(validBidRequests, videoBidderRequest);
-
           // Interpret the response
           const bidResponses = spec.interpretResponse(modifiedVideoResponse, request);
-
           // playerWidth = 640, playerHeight = 480 from playerSize in the test setup
           expect(bidResponses[0].width).to.equal(640);
           expect(bidResponses[0].height).to.equal(480);
@@ -1374,16 +1370,13 @@ describe('PubMatic adapter', () => {
     cleanBidderRequest.user = cleanBidderRequest.user || {};
     cleanBidderRequest.user.ext = cleanBidderRequest.user.ext || {};
     delete cleanBidderRequest.user.ext.eids;
-    
     // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
     cleanBidderRequest.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
-      
     const request = spec.buildRequests([bidRequestWithEids], cleanBidderRequest);
     expect(request.data.user).to.exist;
     expect(request.data.user.ext).to.exist;
     expect(request.data.user.ext.eids).to.deep.equal(bidRequestWithEids.userIdAsEids);
   });
-
   it('should not add userIdAsEids when req.user.ext.eids already exists', () => {
     const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
     bidRequestWithEids.userIdAsEids = [
@@ -1392,7 +1385,6 @@ describe('PubMatic adapter', () => {
         uids: [{ id: 'test-id-123' }]
       }
     ];
-    
     // Create a bidderRequest with existing eids
     const bidderRequestWithExistingEids = utils.deepClone(bidderRequest);
     // Ensure user object exists and set existing eids
@@ -1428,7 +1420,6 @@ describe('PubMatic adapter', () => {
     
     // Set geo data in bidderRequest.ortb2.device.geo so the converter will merge it
     cleanBidderRequest.ortb2.device.geo = { lat: 40.7128, lon: -74.0060 };
-    
     const request = spec.buildRequests([bidRequestWithDeviceGeo], cleanBidderRequest);
     expect(request.data.user).to.exist;
     expect(request.data.user.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
@@ -1446,7 +1437,7 @@ describe('PubMatic adapter', () => {
     delete cleanBidderRequest.device.geo;
     delete cleanBidderRequest.ortb2.device.geo;
     // Set geo data in bidderRequest.ortb2.user.geo so the converter will merge it
-    cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 };
+    cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 }; 
     const request = spec.buildRequests([bidRequestWithUserGeo], cleanBidderRequest);
     expect(request.data.device).to.exist;
     expect(request.data.device.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
