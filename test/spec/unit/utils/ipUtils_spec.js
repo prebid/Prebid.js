@@ -1,4 +1,4 @@
-import { scrubIPv4, scrubIPv6 } from '../../../../src/utils/ipUtils'
+import { scrubIPv4, scrubIPv6 } from '../../../../src/utils/ipUtils.js'
 
 describe('ipUtils', () => {
   describe('ipv4', () => {

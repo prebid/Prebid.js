@@ -4,15 +4,15 @@ import type {DSAResponse} from "./ext/dsa.d.ts";
 import type {DemandChain} from "./ext/dchain.d.ts";
 
 export interface ORTBBid extends Bid {
-    ext: Ext & {
-        dsa?: DSAResponse
-        dchain?: DemandChain
-    }
+  ext: Ext & {
+    dsa?: DSAResponse
+    dchain?: DemandChain
+  }
 }
 export interface ORTBSeatBid extends SeatBid {
-    bid: ORTBBid[];
+  bid: ORTBBid[];
 }
 
 export interface ORTBResponse extends BidResponse {
-    seatbid?: ORTBSeatBid[];
+  seatbid?: ORTBSeatBid[];
 }

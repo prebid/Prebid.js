@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.2.0-pre",
+  "version": "10.3.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -9,8 +9,6 @@
     "./prebid": "./dist/src/src/prebid.public.js",
     "./types.d.ts": "./dist/src/src/types/summary/types.d.ts",
     "./global.d.ts": "./dist/src/src/types/summary/global.d.ts",
-    "./.babelrc.js": "./.babelrc.js",
-    "./babelConfig.js": "./babelConfig.js",
     "./modules/*.js": "./dist/src/public/*.js",
     "./modules/*": "./dist/src/public/*.js",
     "./metadata/*.js": "./dist/src/metadata/modules/*.js",

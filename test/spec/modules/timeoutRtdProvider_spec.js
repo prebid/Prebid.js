@@ -1,4 +1,4 @@
-import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider'
+import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider.js'
 import { expect } from 'chai';
 import * as ajax from 'src/ajax.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
