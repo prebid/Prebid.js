@@ -1,7 +1,7 @@
 import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {expect} from 'chai/index.mjs';
@@ -84,13 +84,13 @@ describe('CriteoId module', function () {
     getCookieStub.withArgs('cto_dna_bundle').returns('info');
     window.criteo_pubtag = {}
 
-    let callBackSpy = sinon.spy();
-    let result = criteoIdSubmodule.getId();
+    const callBackSpy = sinon.spy();
+    const result = criteoIdSubmodule.getId();
     result.callback(callBackSpy);
 
     const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&info=info&cw=1&pbt=1&lsw=1`;
 
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq(expectedUrl);
 
     request.respond(
@@ -124,7 +124,7 @@ describe('CriteoId module', function () {
         expect(id).to.be.deep.equal(response.bidId ? { criteoId: response.bidId } : undefined);
       });
 
-      let request = server.requests[0];
+      const request = server.requests[0];
       request.respond(
         200,
         { 'Content-Type': 'application/json' },
@@ -262,14 +262,14 @@ describe('CriteoId module', function () {
   });
 
   gdprConsentTestCases.forEach(testCase => it('should call user sync url with the gdprConsent', function () {
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     gdprConsentDataStub.returns(testCase.consentData);
 
-    let result = criteoIdSubmodule.getId(undefined);
+    const result = criteoIdSubmodule.getId(undefined);
     result.callback(callBackSpy);
 
-    let request = server.requests[0];
+    const request = server.requests[0];
 
     if (testCase.expectedGdprConsent) {
       expect(request.url).to.have.string(`gdprString=${testCase.expectedGdprConsent}`);
@@ -293,14 +293,14 @@ describe('CriteoId module', function () {
   }));
 
   [undefined, 'abc'].forEach(usPrivacy => it('should call user sync url with the us privacy string', function () {
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     uspConsentDataStub.returns(usPrivacy);
 
-    let result = criteoIdSubmodule.getId(undefined);
+    const result = criteoIdSubmodule.getId(undefined);
     result.callback(callBackSpy);
 
-    let request = server.requests[0];
+    const request = server.requests[0];
 
     if (usPrivacy) {
       expect(request.url).to.have.string(`us_privacy=${usPrivacy}`);
@@ -332,14 +332,14 @@ describe('CriteoId module', function () {
       expectedGppSid: undefined
     }
   ].forEach(testCase => it('should call user sync url with the gpp string', function () {
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
 
     gppConsentDataStub.returns(testCase.consentData);
 
-    let result = criteoIdSubmodule.getId(undefined);
+    const result = criteoIdSubmodule.getId(undefined);
     result.callback(callBackSpy);
 
-    let request = server.requests[0];
+    const request = server.requests[0];
 
     if (testCase.expectedGpp) {
       expect(request.url).to.have.string(`gpp=${testCase.expectedGpp}`);

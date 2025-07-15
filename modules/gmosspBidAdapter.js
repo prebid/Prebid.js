@@ -94,7 +94,7 @@ export const spec = {
    * @param {Array} requests
    * @return {Array} An array of bids which were nested inside the server.
    */
- interpretResponse: function (bidderResponse, requests) {
+  interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
     if (isEmpty(res)) {
@@ -165,7 +165,7 @@ function getUrlInfo(refererInfo) {
   let canonicalLink = refererInfo.canonicalUrl;
 
   if (!canonicalLink) {
-    let metaElements = getMetaElements();
+    const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
       if (metaElements[i].getAttribute('property') == 'og:url') {
         canonicalLink = metaElements[i].content;

@@ -17,8 +17,8 @@ const MODES = []; // an array of modes
 _each(MODE, mode => MODES.push(mode));
 
 export function checkDchainSyntax(bid, mode) {
-  let dchainObj = deepClone(bid.meta.dchain);
-  let failPrefix = 'Detected something wrong in bid.meta.dchain object for bid:';
+  const dchainObj = deepClone(bid.meta.dchain);
+  const failPrefix = 'Detected something wrong in bid.meta.dchain object for bid:';
   let failMsg = '';
   const dchainPropList = ['ver', 'complete', 'nodes', 'ext'];
 
@@ -34,7 +34,7 @@ export function checkDchainSyntax(bid, mode) {
     }
   }
 
-  let dchainProps = Object.keys(dchainObj);
+  const dchainProps = Object.keys(dchainObj);
   dchainProps.forEach(prop => {
     if (!dchainPropList.includes(prop)) {
       appendFailMsg(`dchain.${prop}` + shouldBeValid);
@@ -65,7 +65,7 @@ export function checkDchainSyntax(bid, mode) {
       if (!isPlainObject(node)) {
         appendFailMsg(`dchain.nodes[${index}]` + shouldBeAnObject);
       } else {
-        let nodeProps = Object.keys(node);
+        const nodeProps = Object.keys(node);
         nodeProps.forEach(prop => {
           if (!nodesPropList.includes(prop)) {
             appendFailMsg(`dchain.nodes[${index}].${prop}` + shouldBeValid);
@@ -95,13 +95,13 @@ export function checkDchainSyntax(bid, mode) {
 }
 
 export interface DchainConfig {
-    validation?: typeof MODES[keyof typeof MODES];
+  validation?: typeof MODES[keyof typeof MODES];
 }
 
 declare module '../src/config' {
-    interface Config {
-        dchain?: DchainConfig;
-    }
+  interface Config {
+    dchain?: DchainConfig;
+  }
 }
 
 function isValidDchain(bid) {
@@ -131,9 +131,9 @@ export const addBidResponseHook = timedBidResponseHook('dchain', function addBid
   }
   basicDchain.nodes.push({ name: bid.bidderCode });
 
-  let bidDchain = deepAccess(bid, 'meta.dchain');
+  const bidDchain = deepAccess(bid, 'meta.dchain');
   if (bidDchain && isPlainObject(bidDchain)) {
-    let result = isValidDchain(bid);
+    const result = isValidDchain(bid);
 
     if (result) {
       // extra check in-case mode is OFF and there is a setup issue

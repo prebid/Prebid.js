@@ -56,7 +56,7 @@ function init(config, userConsent) {
   }
 
   const configParams = (config && config.params) || {};
-  let expiresAt = parseInt(storage.getDataFromLocalStorage(RTD_EXPIRE_KEY, null));
+  const expiresAt = parseInt(storage.getDataFromLocalStorage(RTD_EXPIRE_KEY, null));
 
   items = tryParse(storage.getDataFromLocalStorage(RTD_CACHE_KEY, null));
 
@@ -68,14 +68,14 @@ function init(config, userConsent) {
 }
 function callServer(configParams, items, expiresAt, userConsent) {
   // Expire Cache
-  let now = Math.trunc(Date.now() / 1000);
+  const now = Math.trunc(Date.now() / 1000);
   if ((!isNaN(expiresAt)) && (now > expiresAt)) {
     expiresAt = NaN;
     storage.removeDataFromLocalStorage(RTD_CACHE_KEY, null)
     storage.removeDataFromLocalStorage(RTD_EXPIRE_KEY, null)
   }
   if ((items === null) && (isNaN(expiresAt))) {
-    let gcid = storage.getDataFromLocalStorage('gcid')
+    const gcid = storage.getDataFromLocalStorage('gcid')
 
     let url = configParams.url ? configParams.url : ENDPOINT_URL;
     url = tryAppendQueryString(url, 'pid', configParams.pid);
@@ -87,7 +87,7 @@ function callServer(configParams, items, expiresAt, userConsent) {
 
     ajax.ajaxBuilder()(url, {
       success: response => {
-        let respJson = tryParse(response);
+        const respJson = tryParse(response);
         // If response is a valid json and should save is true
         if (respJson && respJson.results >= 1) {
           storage.setDataInLocalStorage(RTD_CACHE_KEY, JSON.stringify(respJson.items), null);
@@ -109,8 +109,8 @@ function addData(reqBidsConfigObj, items) {
   let merge = false
 
   for (let j = 0; j < items.length; j++) {
-    let item = items[j]
-    let data = JSON.parse(item.parameters);
+    const item = items[j]
+    const data = JSON.parse(item.parameters);
     if (item['attachment_point'] === 'data') {
       mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, data)
       merge = true

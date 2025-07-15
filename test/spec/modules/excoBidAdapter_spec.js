@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER, VIDEO } from '../../../src/mediaTypes';
-import { config } from '../../../src/config';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import sinon from 'sinon';
 
 describe('ExcoBidAdapter', function () {
@@ -366,6 +366,36 @@ describe('ExcoBidAdapter', function () {
 
       adapter.onBidWon(bid);
       expect(stubbedFetch.callCount).to.equal(0);
+    });
+  });
+
+  describe('isDebugEnabled', function () {
+    let originalConfig;
+
+    beforeEach(function () {
+      originalConfig = config.getConfig('debug');
+    });
+
+    afterEach(function () {
+      config.setConfig({ debug: originalConfig });
+    });
+
+    it('should return true if debug is enabled in config', function () {
+      config.setConfig({ debug: true });
+      expect(helpers.isDebugEnabled()).to.be.true;
+    });
+
+    it('should return false if debug is disabled in config', function () {
+      config.setConfig({ debug: false });
+      expect(helpers.isDebugEnabled()).to.be.false;
+    });
+
+    it('should return true if URL contains exco_debug=true', function () {
+      expect(helpers.isDebugEnabled('https://example.com?exco_debug=true')).to.be.true;
+    });
+
+    it('should return false if URL does not contain exco_debug=true', function () {
+      expect(helpers.isDebugEnabled('https://example.com')).to.be.false;
     });
   });
 });

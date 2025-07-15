@@ -154,7 +154,7 @@ function getTopUsableWindow () {
 function getORTBCommon (bidderRequest) {
   let app, site;
   const commonFpd = bidderRequest.ortb2 || {};
-  let { user } = commonFpd;
+  const { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
     app = getConfig('app') || {}
     if (commonFpd.app) {

@@ -172,7 +172,7 @@ export const spec = {
    * Register User Sync.
    */
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
-    let params = {};
+    const params = {};
     const syncs = [];
 
     // Attaching GDPR Consent Params in UserSync url
@@ -195,7 +195,7 @@ export const spec = {
         })
         .map((entry) => {
           return entry.urls.map((endpoint) => {
-            let urlInfo = parseUrl(endpoint);
+            const urlInfo = parseUrl(endpoint);
             mergeDeep(urlInfo.search, params);
             if (Object.keys(urlInfo.search).length === 0) {
               delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url

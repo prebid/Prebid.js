@@ -1,6 +1,4 @@
-
-let path = require('path');
-var argv = require('yargs').argv;
+const path = require('path');
 
 function useLocal(module) {
   return require.resolve(module, {
@@ -12,7 +10,7 @@ function useLocal(module) {
 
 module.exports = function (options = {}) {
 
-  const isES5Mode = argv.ES5 || options.ES5;
+  const isES5Mode = options.ES5;
 
   return {
     'presets': [

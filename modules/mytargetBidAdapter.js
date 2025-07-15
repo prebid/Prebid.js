@@ -8,9 +8,9 @@ const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_TTL = 180;
 
 function buildPlacement(bidRequest) {
-  let { bidId, params } = bidRequest;
-  let { placementId, position, response, bidfloor } = params;
-  let placement = {
+  const { bidId, params } = bidRequest;
+  const { placementId, position, response, bidfloor } = params;
+  const placement = {
     placementId,
     id: bidId,
     position: position || 0,
@@ -77,11 +77,11 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, bidRequest) {
-    let { body } = serverResponse;
+    const { body } = serverResponse;
 
     if (body.bids) {
       return _map(body.bids, (bid) => {
-        let bidResponse = {
+        const bidResponse = {
           requestId: bid.id,
           cpm: bid.price,
           width: bid.size.width,

@@ -3,7 +3,7 @@ import {
   spec, STORAGE, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils';
+import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
 const sandbox = sinon.createSandbox();
 
 describe('Nexx360 bid adapter tests', () => {
@@ -715,9 +715,9 @@ describe('Nexx360 bid adapter tests', () => {
       expect(syncs).to.eql([]);
     });
     it('Verifies user sync with no bid body response', () => {
-      var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
-      var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
   });

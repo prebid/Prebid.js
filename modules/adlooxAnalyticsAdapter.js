@@ -80,7 +80,7 @@ const PARAMS_DEFAULT = {
   'id11': '$ADLOOX_WEBSITE'
 };
 
-let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+const analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
     if (!analyticsAdapter[`handle_${eventType}`]) return;
 

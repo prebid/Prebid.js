@@ -19,7 +19,7 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return [];
     }
-    let payloadArr = []
+    const payloadArr = []
     let ctr = 1;
     validBidRequests = validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
@@ -30,8 +30,8 @@ export const spec = {
       const cb = Math.floor(Math.random() * 99999999999);
       const bidId = bidRequest.bidId;
       const referrer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : '';
-      let mediaTypes = {}
-      let payload = {
+      const mediaTypes = {}
+      const payload = {
         v: 'hb1',
         p: placementId,
         pos: '~' + ctr,
@@ -76,7 +76,7 @@ export const spec = {
         const crid = response.creativeId || 0;
         const width = response.width || 0;
         const height = response.height || 0;
-        let cpm = response.cpm || 0;
+        const cpm = response.cpm || 0;
         if (cpm <= 0) {
           return bidResponses;
         }

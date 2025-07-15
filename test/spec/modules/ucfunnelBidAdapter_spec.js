@@ -198,7 +198,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     it('should set bidfloor if configured', function() {
-      let bid = deepClone(validBannerBidReq);
+      const bid = deepClone(validBannerBidReq);
       bid.getFloor = function() {
         return {
           currency: 'USD',
@@ -211,7 +211,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     it('should set bidfloor if configured', function() {
-      let bid = deepClone(validBannerBidReq);
+      const bid = deepClone(validBannerBidReq);
       bid.params.bidfloor = 2.01;
       const requests = spec.buildRequests([ bid ], bidderRequest);
       const data = requests[0].data;
@@ -219,7 +219,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     it('should set bidfloor if configured', function() {
-      let bid = deepClone(validBannerBidReq);
+      const bid = deepClone(validBannerBidReq);
       bid.getFloor = function() {
         return {
           currency: 'USD',

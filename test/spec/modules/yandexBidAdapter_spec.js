@@ -1,9 +1,9 @@
 import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { BANNER, NATIVE } from '../../../src/mediaTypes';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('Yandex adapter', function () {
   describe('isBidRequestValid', function () {

@@ -11,7 +11,7 @@ import {
   setGroupConfigData,
   requestContextData,
   windowPostMessageReceived
-} from '../../../modules/qortexRtdProvider';
+} from '../../../modules/qortexRtdProvider.js';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
 
@@ -172,7 +172,7 @@ describe('qortexRtdProvider', () => {
     let addEventListenerSpy;
     let billableEvents = [];
 
-    let config = cloneDeep(validModuleConfig);
+    const config = cloneDeep(validModuleConfig);
     config.params.tagConfig = validTagConfig;
 
     events.on(EVENTS.BILLABLE_EVENT, (e) => {

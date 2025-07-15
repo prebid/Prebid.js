@@ -15,7 +15,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let bids = [];
+    const bids = [];
     validBidRequests.forEach(bidRequest => {
       bids.push({
         bidId: bidRequest.bidId,
@@ -25,7 +25,7 @@ export const spec = {
       })
     })
 
-    let payload = {
+    const payload = {
       requestId: bidderRequest.bidderRequestId,
       bids,
       referer: bidderRequest.refererInfo.page,
@@ -65,9 +65,9 @@ export const spec = {
       return [];
     }
 
-    let bids = [];
+    const bids = [];
     prebidResponse.forEach(bidResponse => {
-      let bid = deepClone(bidResponse);
+      const bid = deepClone(bidResponse);
       bid.cpm = parseFloat(bidResponse.cpm);
 
       // banner or video

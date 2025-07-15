@@ -7,7 +7,7 @@ import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
-import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
+import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter.js';
 import {FIRST_PARTY_KEY, PREBID, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
@@ -57,7 +57,7 @@ const getUserConfigWithReportingServerAddress = () => [
   }
 ];
 
-let wonRequest = {
+const wonRequest = {
   'bidderCode': 'pubmatic',
   'width': 728,
   'height': 90,
