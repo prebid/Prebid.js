@@ -9,7 +9,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
-const BIDDER_CODE = 'programmaticxortb';
+const BIDDER_CODE = 'px';
 const BIDDER_VERSION = '1.0.0';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 

@@ -1,6 +1,6 @@
 # Overview
 
-**Module Name:** Programmaticx PX Bidder Adapter
+**Module Name:** PX Bidder Adapter
 
 **Module Type:** Bidder Adapter
 
@@ -8,7 +8,7 @@
 
 # Description
 
-Module that connects to Programmaticx's Open RTB demand sources.
+Module that connects to PX's Open RTB demand sources.
 
 # Test Parameters
 ```js
@@ -18,7 +18,7 @@ var adUnits = [
     sizes: [[300, 250]],
     bids: [
       {
-        bidder: 'programmaticxortb',
+        bidder: 'px',
         params: {
           cId: '562524b21b1c1f08117fc7f9',
           pId: '59ac17c192832d0011283fe3',

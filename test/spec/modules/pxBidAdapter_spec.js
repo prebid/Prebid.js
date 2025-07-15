@@ -3,12 +3,12 @@ import {
   spec as adapter,
   createDomain,
   storage
-} from 'modules/programmaticxOrtbBidAdapter';
+} from 'modules/pxBidAdapter';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js'
+import {config} from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -207,7 +207,7 @@ function getTopWindowQueryParams() {
   }
 }
 
-describe('programmaticxOrtbBidAdapter', function () {
+describe('pxBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
@@ -272,7 +272,7 @@ describe('programmaticxOrtbBidAdapter', function () {
     let sandbox;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        programmaticxortb: {
+        px: {
           storageAllowed: true
         }
       };
@@ -620,7 +620,7 @@ describe('programmaticxOrtbBidAdapter', function () {
   describe('unique deal id', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        programmaticxortb: {
+        px: {
           storageAllowed: true
         }
       };
@@ -655,7 +655,7 @@ describe('programmaticxOrtbBidAdapter', function () {
   describe('storage utils', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        programmaticxortb: {
+        px: {
           storageAllowed: true
         }
       };
