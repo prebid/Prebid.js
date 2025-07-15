@@ -91,7 +91,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
       case EVENTS.BIDDER_DONE:
         logInfo('ADN_BIDDER_DONE:', args);
         args.bids.forEach(doneBid => {
-          let bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId || doneBid.requestId];
+          const bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId || doneBid.requestId];
           if (!bid.ttr) {
             bid.ttr = time - bid.start;
           }
@@ -183,7 +183,7 @@ function getSentRequests() {
     const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
 
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
-      let bid = auction.bids[bidId];
+      const bid = auction.bids[bidId];
       if (!(bid.sendStatus & REQUEST_SENT)) {
         bid.sendStatus |= REQUEST_SENT;
 
@@ -210,14 +210,14 @@ function getResponses(gdpr, auctionIds) {
 
   Object.keys(cache.auctions).forEach(auctionId => {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
-      let auction = cache.auctions[auctionId];
-      let gdprPos = getGdprPos(gdpr, auction);
-      let auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
-      let bid = auction.bids[bidId];
+      const auction = cache.auctions[auctionId];
+      const gdprPos = getGdprPos(gdpr, auction);
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSE_SENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSE_SENT;
 
-        let response = getResponseObject(auction, bid, gdprPos, auctionIdPos);
+        const response = getResponseObject(auction, bid, gdprPos, auctionIdPos);
 
         responses.push(response);
       }
@@ -336,7 +336,7 @@ function getTimeouts(gdpr, auctionIds) {
       if (!(bid.sendStatus & TIMEOUT_SENT) && bid.timeout) {
         bid.sendStatus |= TIMEOUT_SENT;
 
-        let timeout = getResponseObject(auction, bid, gdprPos, auctionIdPos);
+        const timeout = getResponseObject(auction, bid, gdprPos, auctionIdPos);
 
         timeouts.push(timeout);
       }

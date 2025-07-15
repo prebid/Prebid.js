@@ -47,8 +47,8 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bids, bidderRequest) {
-  let bannerBids = bids.filter((bid) => isBannerBid(bid))
-  let requests = bannerBids.length
+  const bannerBids = bids.filter((bid) => isBannerBid(bid))
+  const requests = bannerBids.length
     ? createRequest(bannerBids, bidderRequest, BANNER)
     : []
 
@@ -159,14 +159,14 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
         secure: 1,
         pmp: params.dealId
           ? {
-            ...data.pmp,
-            deals: [
-              {
-                id: params.dealId,
-              },
-            ],
-            private_auction: 1,
-          }
+              ...data.pmp,
+              deals: [
+                {
+                  id: params.dealId,
+                },
+              ],
+              private_auction: 1,
+            }
           : data.pmp,
       }
     ]

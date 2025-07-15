@@ -101,7 +101,7 @@ const getCurrentURLEncoded = () => encodeURIComponent(getCurrentURL());
 function getServerURL(server, sizes, iu, queryParams) {
   const random = getCacheBuster();
   const size = sizes[0] + 'x' + sizes[1];
-  let serverURL = '//' + server + '/gampad/ads';
+  const serverURL = '//' + server + '/gampad/ads';
   queryParams.sz = size;
   queryParams.iu = iu;
   queryParams.url = getCurrentURL();
@@ -131,7 +131,7 @@ function interpretResponse(serverResponse, bidRequest) {
   bidResponse.meta = {
     advertiserDomains: [],
   };
-  let xmlStr = serverResponse.body;
+  const xmlStr = serverResponse.body;
   const xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
   const xmlData = parseXML(xml, bidResponse);
   logInfo(LOG_PREFIX + 'Response from: ' + bidRequest.url + ': ' + JSON.stringify(xmlData), bidRequest.bidRequest.adUnitCode);
@@ -219,7 +219,7 @@ function extractCT(xml) {
 function extractCPM(htmlContent, ct, cpm) {
   const cpmMapDiv = htmlContent.querySelectorAll('[cpmMap]')[0];
   if (cpmMapDiv) {
-    let cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
+    const cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
     if ((cpmMapJSON)) {
       if (cpmMapJSON[ct]) {
         cpm = cpmMapJSON[ct];
@@ -330,7 +330,7 @@ export function isAllowedToBidUp(html, currentURL) {
       if (excludedURL) {
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
-          let excluded = JSON.parse(excludedURLsString);
+          const excluded = JSON.parse(excludedURLsString);
           excluded.forEach((d) => {
             if (currentURL.includes(d)) allowedToPush = false;
           })

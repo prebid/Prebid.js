@@ -2,5 +2,7 @@
   "NATIVE",
   "VIDEO",
   "UID2_CSTG",
-  "GREEDY"
+  "GREEDY",
+  "LOG_NON_ERROR",
+  "LOG_ERROR"
 ]

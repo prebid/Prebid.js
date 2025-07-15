@@ -7,7 +7,7 @@ import { isPlainObject, isArray, isArrayOfNums, parseUrl, isFn } from '../../src
  * @returns {object} The native request object
  */
 export function createNativeRequest(br) {
-  let impObject = {
+  const impObject = {
     ver: '1.2',
     assets: []
   };
@@ -66,7 +66,7 @@ export function createBannerRequest(br) {
  * @returns {object} The video request object
  */
 export function createVideoRequest(br) {
-  let videoObj = {...br.mediaTypes.video, id: br.transactionId};
+  const videoObj = {...br.mediaTypes.video, id: br.transactionId};
 
   if (videoObj.playerSize) {
     const size = Array.isArray(videoObj.playerSize[0]) ? videoObj.playerSize[0] : videoObj.playerSize;
@@ -85,7 +85,7 @@ export function createVideoRequest(br) {
  * @returns {object} Parsed native ad object
  */
 export function parseNative(adm) {
-  let bid = {
+  const bid = {
     clickUrl: adm.native.link?.url,
     impressionTrackers: adm.native.imptrackers || [],
     clickTrackers: adm.native.link?.clicktrackers || [],
@@ -116,7 +116,7 @@ export function getFloor(br, mediaType, defaultCur) {
     return floor;
   }
 
-  let floorObj = br.getFloor({
+  const floorObj = br.getFloor({
     currency: defaultCur,
     mediaType,
     size: '*'
@@ -136,7 +136,7 @@ export function getFloor(br, mediaType, defaultCur) {
  * @returns {object} The site request object
  */
 export function prepareSite(br, request) {
-  let siteObj = {};
+  const siteObj = {};
 
   siteObj.publisher = {
     id: br.params.placementId.toString()

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.1.0-pre",
+  "version": "10.3.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -9,8 +9,6 @@
     "./prebid": "./dist/src/src/prebid.public.js",
     "./types.d.ts": "./dist/src/src/types/summary/types.d.ts",
     "./global.d.ts": "./dist/src/src/types/summary/global.d.ts",
-    "./.babelrc.js": "./.babelrc.js",
-    "./babelConfig.js": "./babelConfig.js",
     "./modules/*.js": "./dist/src/public/*.js",
     "./modules/*": "./dist/src/public/*.js",
     "./metadata/*.js": "./dist/src/metadata/modules/*.js",
@@ -107,7 +105,6 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-spec-reporter": "^0.0.32",
     "karma-webpack": "^5.0.0",
-    "lcov-result-merger": "^5.0.1",
     "lodash": "^4.17.21",
     "merge-stream": "^2.0.0",
     "mocha": "^10.7.3",

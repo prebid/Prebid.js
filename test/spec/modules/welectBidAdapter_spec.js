@@ -15,7 +15,7 @@ describe('WelectAdapter', function () {
   });
 
   describe('Check method isBidRequestValid return', function () {
-    let bid = {
+    const bid = {
       bidder: 'welect',
       params: {
         placementId: 'exampleAlias',
@@ -28,7 +28,7 @@ describe('WelectAdapter', function () {
         }
       },
     };
-    let bid2 = {
+    const bid2 = {
       bidder: 'welect',
       params: {
         domain: 'www.welect.de'
@@ -52,7 +52,7 @@ describe('WelectAdapter', function () {
 
   describe('Check buildRequests method', function () {
     // BidderRequest, additional context info not given by our custom params
-    let bidderRequest = {
+    const bidderRequest = {
       gdprConsent: {
         gdprApplies: 1,
         consentString: 'some_string'
@@ -71,7 +71,7 @@ describe('WelectAdapter', function () {
     }
 
     // Bid without playerSize
-    let bid1 = {
+    const bid1 = {
       bidder: 'welect',
       params: {
         placementId: 'exampleAlias'
@@ -85,7 +85,7 @@ describe('WelectAdapter', function () {
       bidId: 'abdc'
     };
     // Bid with playerSize
-    let bid2 = {
+    const bid2 = {
       bidder: 'welect',
       params: {
         placementId: 'exampleAlias'
@@ -99,13 +99,13 @@ describe('WelectAdapter', function () {
       bidId: 'abdc'
     };
 
-    let data1 = {
+    const data1 = {
       bid_id: 'abdc',
       width: 640,
       height: 360
     }
 
-    let data2 = {
+    const data2 = {
       bid_id: 'abdc',
       width: 640,
       height: 360,
@@ -121,7 +121,7 @@ describe('WelectAdapter', function () {
     }
 
     // Formatted requets
-    let request1 = {
+    const request1 = {
       method: 'POST',
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data1,
@@ -132,7 +132,7 @@ describe('WelectAdapter', function () {
       }
     };
 
-    let request2 = {
+    const request2 = {
       method: 'POST',
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data2,
@@ -154,13 +154,13 @@ describe('WelectAdapter', function () {
 
   describe('Check interpretResponse method return', function () {
     // invalid server response
-    let unavailableResponse = {
+    const unavailableResponse = {
       body: {
         available: false
       }
     };
 
-    let availableResponse = {
+    const availableResponse = {
       body: {
         available: true,
         bidResponse: {
@@ -183,7 +183,7 @@ describe('WelectAdapter', function () {
       }
     }
     // bid Request
-    let bid = {
+    const bid = {
       data: {
         bid_id: 'some bid id',
         width: 640,
@@ -198,7 +198,7 @@ describe('WelectAdapter', function () {
       }
     };
     // Formatted reponse
-    let result = {
+    const result = {
       ad: {
         video: 'some vast url'
       },

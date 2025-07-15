@@ -1,4 +1,4 @@
-import { deepClone } from '../../src/utils';
+import { deepClone } from '../../src/utils.js';
 
 var AllowedAdUnits = [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]];
 var UnsupportedAdUnits = [[700, 100], [100, 600], [300, 200], [100, 600], [300, 200], [200, 60], [900, 200], [300, 1000], [900, 90], [100, 100]];
@@ -128,7 +128,7 @@ function compareOnKeys(lhs, rhs) {
   var ronly = [];
   var both = [];
 
-  for (var key in lhs) {
+  for (let key in lhs) {
     if (key in rhs) {
       both.push({ left: lhs[key], right: rhs[key], name: key });
     } else {
@@ -136,9 +136,8 @@ function compareOnKeys(lhs, rhs) {
     }
   }
 
-  for (var key in rhs) {
-    if (key in lhs) {
-    } else {
+  for (let key in rhs) {
+    if (!(key in lhs)) {
       ronly.push(rhs[key]);
     }
   }

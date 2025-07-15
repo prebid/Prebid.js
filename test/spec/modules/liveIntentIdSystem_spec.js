@@ -77,11 +77,11 @@ describe('LiveIntentId', function() {
       gppString: 'gppConsentDataString',
       applicableSections: [1, 2]
     })
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     setTimeout(() => {
-      let requests = idxRequests().concat(rpRequests());
+      const requests = idxRequests().concat(rpRequests());
       expect(requests).to.be.empty;
       expect(callBackSpy.notCalled).to.be.true;
       done();
@@ -100,7 +100,7 @@ describe('LiveIntentId', function() {
     })
     liveIntentIdSubmodule.getId(defaultConfigParams);
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=0.*&gdpr_consent=consentDataString.*&gpp_s=gppConsentDataString.*&gpp_as=1.*/);
       done();
     }, 300);
@@ -112,7 +112,7 @@ describe('LiveIntentId', function() {
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }});
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
       done();
     }, 300);
@@ -121,7 +121,7 @@ describe('LiveIntentId', function() {
   it('should initialize LiveConnect and forward the prebid version when decode and emit an event', function(done) {
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.contain('tv=$prebid.version$')
       done();
     }, 300);
@@ -139,7 +139,7 @@ describe('LiveIntentId', function() {
       }
     }});
     setTimeout(() => {
-      let request = requests(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
+      const request = requests(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
       expect(request.length).to.be.greaterThan(0);
       done();
     }, 300);
@@ -148,7 +148,7 @@ describe('LiveIntentId', function() {
   it('should fire an event with the provided distributorId', function (done) {
     liveIntentIdSubmodule.decode({}, { params: { fireEventDelay: 1, distributorId: 'did-1111' } });
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/https:\/\/rp.liadm.com\/j\?.*did=did-1111.*&wpn=prebid.*/);
       done();
     }, 300);
@@ -157,7 +157,7 @@ describe('LiveIntentId', function() {
   it('should fire an event without the provided distributorId when appId is provided', function (done) {
     liveIntentIdSubmodule.decode({}, { params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } });
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/https:\/\/rp.liadm.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
       expect(request.url).to.not.match(/.*did=*/);
       done();
@@ -176,7 +176,7 @@ describe('LiveIntentId', function() {
     })
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*&gpp_s=gppConsentDataString&gpp_as=1.*/);
       done();
     }, 300);
@@ -188,7 +188,7 @@ describe('LiveIntentId', function() {
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }});
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/);
       done();
     }, 300);
@@ -215,10 +215,10 @@ describe('LiveIntentId', function() {
 
   it('should call the custom URL of the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {...defaultConfigParams.params, ...{'url': 'https://dummy.liveintent.com/idex'}} }).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId({ params: {...defaultConfigParams.params, ...{'url': 'https://dummy.liveintent.com/idex'}} }).callback;
     submoduleCallback(callBackSpy);
-    let request = requests(/https:\/\/dummy.liveintent.com\/idex\/.*/)[0];
+    const request = requests(/https:\/\/dummy.liveintent.com\/idex\/.*/)[0];
     expect(request.url).to.match(/https:\/\/dummy.liveintent.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=nonId.*/);
     request.respond(
       204,
@@ -229,10 +229,10 @@ describe('LiveIntentId', function() {
 
   it('should call the Identity Exchange endpoint with the provided distributorId', function() {
     getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111' } }).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111' } }).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/did-1111\/any\?.*did=did-1111.*&cd=.localhost.*&resolve=nonId.*/);
     request.respond(
       204,
@@ -243,10 +243,10 @@ describe('LiveIntentId', function() {
 
   it('should call the Identity Exchange endpoint without the provided distributorId when appId is provided', function() {
     getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } }).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } }).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/any\?.*cd=.localhost.*&resolve=nonId.*/);
     request.respond(
       204,
@@ -257,8 +257,8 @@ describe('LiveIntentId', function() {
 
   it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
     getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       ...{
         'url': 'https://dummy.liveintent.com/idex',
@@ -266,7 +266,7 @@ describe('LiveIntentId', function() {
       }
     } }).callback;
     submoduleCallback(callBackSpy);
-    let request = requests(/https:\/\/dummy.liveintent.com\/idex\/.*/)[0];
+    const request = requests(/https:\/\/dummy.liveintent.com\/idex\/.*/)[0];
     expect(request.url).to.match(/https:\/\/dummy.liveintent.com\/idex\/rubicon\/89899\?.*cd=.localhost.*&resolve=nonId.*/);
     request.respond(
       200,
@@ -278,10 +278,10 @@ describe('LiveIntentId', function() {
 
   it('should call the LiveIntent Identity Exchange endpoint, with no additional query params', function() {
     getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=nonId.*/);
     request.respond(
       200,
@@ -293,10 +293,10 @@ describe('LiveIntentId', function() {
 
   it('should log an error and continue to callback if ajax request errors', function() {
     getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=nonId.*/);
     request.respond(
       503,
@@ -310,10 +310,10 @@ describe('LiveIntentId', function() {
   it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
     const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
     getCookieStub.withArgs('_lc2_fpi').returns(oldCookie)
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     const expected = new RegExp('https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*duid=' + oldCookie + '.*&cd=.localhost.*&resolve=nonId.*');
     expect(request.url).to.match(expected);
     request.respond(
@@ -334,10 +334,10 @@ describe('LiveIntentId', function() {
         'identifiersToResolve': ['_thirdPC']
       }
     }};
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     const expected = new RegExp('https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*duid=' + oldCookie + '.*&cd=.localhost.*&_thirdPC=third-pc.*&resolve=nonId.*');
     expect(request.url).to.match(expected);
     request.respond(
@@ -357,10 +357,10 @@ describe('LiveIntentId', function() {
         'identifiersToResolve': ['_thirdPC']
       }
     }};
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&_thirdPC=%7B%22key%22%3A%22value%22%7D.*&resolve=nonId.*/);
     request.respond(
       200,
@@ -378,7 +378,7 @@ describe('LiveIntentId', function() {
       userAgent: 'boo'
     }});
     setTimeout(() => {
-      let request = rpRequests()[0];
+      const request = rpRequests()[0];
       expect(request.url).to.match(/^https:\/\/rp\.liadm\.com\/j?.*pip=.*&pip6=.*$/)
       expect(request.requestHeaders['X-LI-Provided-User-Agent']).to.be.eq('boo')
       done();
@@ -402,13 +402,13 @@ describe('LiveIntentId', function() {
   });
 
   it('should resolve extra attributes', function() {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
     } }).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=nonId.*&resolve=foo.*/);
     request.respond(
       200,
@@ -481,13 +481,13 @@ describe('LiveIntentId', function() {
   });
 
   it('should allow disabling nonId resolution', function() {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       ...{ requestedAttributesOverrides: { 'nonId': false, 'uid2': true } }
     } }).callback;
     submoduleCallback(callBackSpy);
-    let request = idxRequests()[0];
+    const request = idxRequests()[0];
     expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=uid2.*/);
     request.respond(
       200,

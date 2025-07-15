@@ -10,7 +10,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import {hook} from '../../../src/hook.js'
-import {BANNER} from '../../../src/mediaTypes';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -605,7 +605,7 @@ describe('Conversant adapter tests', function() {
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {
       // clone bidRequests
-      let requests = utils.deepClone(bidRequests);
+      const requests = utils.deepClone(bidRequests);
 
       const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
 

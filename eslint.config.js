@@ -100,6 +100,17 @@ module.exports = [
       semi: 'off',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
+          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+        {
+          selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
+          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+      ],
 
       // Exceptions below this line are temporary (TM), so that eslint can be added into the CI process.
       // Violations of these styles should be fixed, and the exceptions removed over time.
@@ -133,10 +144,8 @@ module.exports = [
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
-      'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
-      'import-x/no-named-default': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',
@@ -152,7 +161,6 @@ module.exports = [
       '@stylistic/multiline-ternary': 'off',
       '@stylistic/computed-property-spacing': 'off',
       '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/indent': 'off',
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
       '@stylistic/object-property-newline': 'off',
@@ -232,19 +240,9 @@ module.exports = [
       // tests were not subject to many rules and they are now a nightmare
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
-      'one-var': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      'import/extensions': 'off',
-      'camelcase': 'off',
-      'import-x/no-duplicates': 'off',
-      'no-loss-of-precision': 'off',
-      'no-redeclare': 'off',
-      'no-global-assign': 'off',
-      'default-case-last': 'off',
-      '@stylistic/no-mixed-spaces-and-tabs': 'off',
-      '@stylistic/no-tabs': 'off',
-      '@stylistic/no-trailing-spaces': 'error',
+      'camelcase': 'off'
     }
   },
   {
