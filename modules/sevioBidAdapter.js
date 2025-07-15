@@ -1,4 +1,5 @@
 import * as utils from "../src/utils.js";
+import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
@@ -12,37 +13,6 @@ const detectAdType = (bid) =>
   (
     ["native", "banner"].find((t) => bid.mediaTypes?.[t]) || "unknown"
   ).toUpperCase();
-
-const detectWalletsPresence = function () {
-  const _wallets = [
-    "ethereum",
-    "web3",
-    "cardano",
-    "BinanceChain",
-    "solana",
-    "tron",
-    "tronWeb",
-    "tronLink",
-    "starknet_argentX",
-    "walletLinkExtension",
-    "coinbaseWalletExtension",
-    "__venom",
-    "martian",
-    "razor",
-    "razorWallet",
-    "ic", // plug wallet,
-    "cosmos",
-    "ronin",
-    "starknet_braavos",
-    "XverseProviders",
-    "compass",
-    "solflare",
-    "solflareWalletStandardInitialized",
-    "sender",
-    "rainbow",
-  ];
-  return _wallets.some((prop) => typeof window[prop] !== "undefined") ? 1 : 0;
-};
 
 const parseNativeAd = function (bid) {
   try {
