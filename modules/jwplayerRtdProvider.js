@@ -118,14 +118,14 @@ function parsePlaylistItem(response) {
     if (!data) {
       const msg = 'Empty response';
       logError(msg);
-      throw new Error(msg);
+      return item;
     }
 
     const playlist = data.playlist;
     if (!playlist || !playlist.length) {
       const msg = 'Empty playlist';
       logError(msg);
-      throw new Error(msg);
+      return item;
     }
 
     item = playlist[0];

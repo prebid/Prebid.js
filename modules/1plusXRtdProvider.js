@@ -88,12 +88,12 @@ export const extractConsent = ({ gdpr }) => {
   if (!(gdprApplies == '0' || gdprApplies == '1')) {
     const msg = 'TCF Consent: gdprApplies has wrong format'
     logError(msg)
-    throw new Error(msg)
+    return null
   }
   if (consentString && typeof consentString != 'string') {
     const msg = 'TCF Consent: consentString must be string if defined'
     logError(msg)
-    throw new Error(msg)
+    return null
   }
   const result = {
     'gdpr_applies': gdprApplies,

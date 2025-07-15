@@ -213,7 +213,7 @@ function produceSize (sizes) {
     } else {
       const msg = "Malformed parameter 'sizes'";
       logError(msg);
-      throw new Error(msg);
+      return undefined;
     }
   }
   if (Array.isArray(sizes) && Array.isArray(sizes[0])) {

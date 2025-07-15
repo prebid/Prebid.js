@@ -394,7 +394,7 @@ class NodalsAiRtdProvider {
     } catch (error) {
       const msg = `Error parsing response: ${error}`;
       logError(msg);
-      throw new Error(msg);
+      return;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
     this.#loadAdLibraries(data.deps || []);

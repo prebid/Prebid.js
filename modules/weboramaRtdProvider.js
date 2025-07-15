@@ -353,13 +353,13 @@ class WeboramaRtdProvider {
       extra = extra || {};
       const requiredFields = extra?.requiredFields || [];
 
-      requiredFields.forEach((field) => {
+      for (const field of requiredFields) {
         if (!(field in weboSectionConf)) {
           const msg = `missing required field '${field}'`;
           logger.logError(msg);
-          throw new Error(msg);
+          return false;
         }
-      });
+      }
 
       if (
         isPlainObject(extra?.userConsent?.gdpr) &&
@@ -367,7 +367,7 @@ class WeboramaRtdProvider {
       ) {
         const msg = 'gdpr consent not ok';
         logger.logError(msg);
-        throw new Error(msg);
+        return false;
       }
     } catch (e) {
       logger.logError(
@@ -480,13 +480,13 @@ class WeboramaRtdProvider {
     if (!isFn(submoduleParams.onData)) {
       const msg = 'onData parameter should be a callback';
       logger.logError(msg);
-      throw new Error(msg);
+      return false;
     }
 
     if (!isValidProfile(submoduleParams.defaultProfile)) {
       const msg = 'defaultProfile is not valid';
       logger.logError(msg);
-      throw new Error(msg);
+      return false;
     }
   }
 
@@ -507,7 +507,7 @@ class WeboramaRtdProvider {
     } catch (e) {
       const msg = `invalid setPrebidTargeting: ${e}`;
       logger.logError(msg);
-      throw new Error(msg);
+      return false;
     }
   }
 
@@ -545,7 +545,7 @@ class WeboramaRtdProvider {
         } catch (e) {
           const msg = `invalid sendToBidders[${bidder}]: ${e}`;
           logger.logError(msg);
-          throw new Error(msg);
+          return false;
         }
       };
 
@@ -560,7 +560,7 @@ class WeboramaRtdProvider {
     } catch (e) {
       const msg = `invalid sendToBidders: ${e}`;
       logger.logError(msg);
-      throw new Error(msg);
+      return false;
     }
   }
 
@@ -696,7 +696,8 @@ class WeboramaRtdProvider {
       } else {
         const msg = `unexpected http status response ${req.status} with response ${response}`;
         logger.logError(msg);
-        throw new Error(msg);
+        onDone();
+        return;
       }
 
       onDone();
@@ -1015,7 +1016,7 @@ class WeboramaRtdProvider {
 
     const msg = `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
     logger.logError(msg);
-    throw new Error(msg);
+    return () => false;
   }
 }
 
