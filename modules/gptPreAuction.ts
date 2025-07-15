@@ -1,4 +1,3 @@
-/// <reference types="google-publisher-tag" />
 import { getSignals as getSignalsFn, getSegments as getSegmentsFn, taxonomies } from '../libraries/gptUtils/gptUtils.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
