@@ -622,7 +622,7 @@ export const utils = {
     }
 
     // Height is undefined when player has not yet rendered
-    if (height !== undefined) {
+    if (height !== undefined && height !== null) {
       return height;
     }
 
