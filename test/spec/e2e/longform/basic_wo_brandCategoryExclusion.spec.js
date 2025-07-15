@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { host, protocol, waitForElement } = require('../../../helpers/testing-utils');
+const { host, protocol, waitForElement } = require('../../../helpers/testing-utils.js');
 
 const validDurations = ['15s', '30s'];
 const validCpms = ['15.00', '14.00', '13.00', '10.00'];

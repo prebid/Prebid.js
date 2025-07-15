@@ -3,8 +3,8 @@ import { assert } from 'chai';
 import { spec } from 'modules/carodaBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('Caroda adapter', function () {
   let bids = [];

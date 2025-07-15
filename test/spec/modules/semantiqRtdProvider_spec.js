@@ -1,4 +1,4 @@
-import { convertSemantiqKeywordToOrtb, getOrtbKeywords, semantiqRtdSubmodule, storage } from '../../../modules/semantiqRtdProvider';
+import { convertSemantiqKeywordToOrtb, getOrtbKeywords, semantiqRtdSubmodule, storage } from '../../../modules/semantiqRtdProvider.js';
 import { expect } from 'chai';
 import { server } from '../../mocks/xhr.js';
 import * as utils from '../../../src/utils.js';

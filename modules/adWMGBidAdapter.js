@@ -150,13 +150,13 @@ export const spec = {
     }
     return syncs;
   },
-    parseUserAgent: (ua) => {
-      const info = parseUserAgentDetailed(ua);
-      return {
-        devicetype: info.devicetype,
-        os: info.os,
-        osv: info.osv
-      };
-    }
+  parseUserAgent: (ua) => {
+    const info = parseUserAgentDetailed(ua);
+    return {
+      devicetype: info.devicetype,
+      os: info.os,
+      osv: info.osv
+    };
+  }
 };
 registerBidder(spec);

@@ -83,11 +83,11 @@ describe('fwsspBidAdapter', () => {
         'bidder': 'fwssp',
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
-        'banner': {
-          'sizes': [
-            [300, 250], [300, 600]
-          ]
-        }
+          'banner': {
+            'sizes': [
+              [300, 250], [300, 600]
+            ]
+          }
         },
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',

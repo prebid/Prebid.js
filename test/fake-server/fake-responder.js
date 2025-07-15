@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 const deepEqual = require('deep-equal');
-const generateFixtures = require('./fixtures');
+const generateFixtures = require('./fixtures/index.js');
 const path = require('path');
 
 // path to the fixture directory

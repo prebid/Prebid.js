@@ -4,7 +4,7 @@ import { deepClone } from 'src/utils.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
-import { buildWindowTree } from '../../helpers/refererDetectionHelper';
+import { buildWindowTree } from '../../helpers/refererDetectionHelper.js';
 
 describe('ttdBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
