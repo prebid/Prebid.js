@@ -37,8 +37,13 @@ import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../.
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
 import {generateSubmoduleContainers, addIdData } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
-
-import { discloseStorageUse, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, getStorageManager } from '../../../src/storageManager.js';
+import {
+  discloseStorageUse,
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE,
+  getStorageManager,
+  getCoreStorageManager
+} from '../../../src/storageManager.js';
 
 const assert = require('chai').assert;
 const expect = require('chai').expect;
@@ -3160,6 +3165,7 @@ describe('User ID', function () {
   describe('user id modules - enforceStorageType', () => {
     let warnLogSpy;
     const UID_MODULE_NAME = 'userIdModule';
+    const cookieName = 'testCookie';
     const userSync = {
       userIds: [
         {
@@ -3184,15 +3190,22 @@ describe('User ID', function () {
 
     afterEach(() => {
       warnLogSpy.restore();
-      document.cookie = ''
+      getCoreStorageManager('test').setCookie(cookieName, '', EXPIRED_COOKIE_DATE)
     });
+
+    it('should not warn when reading', () => {
+      config.setConfig({userSync});
+      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
+      storage.cookiesAreEnabled();
+      sinon.assert.notCalled(warnLogSpy);
+    })
 
     it('should warn and allow userId module to store data for enforceStorageType unset', () => {
       config.setConfig({userSync});
       const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('cookieName', 'value', 20000);
+      storage.setCookie(cookieName, 'value', 20000);
       sinon.assert.calledWith(warnLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
-      expect(storage.getCookie('cookieName')).to.eql('value');
+      expect(storage.getCookie(cookieName)).to.eql('value');
     });
 
     it('should not allow userId module to store data for enforceStorageType set to true', () => {
@@ -3203,8 +3216,8 @@ describe('User ID', function () {
         }
       })
       const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('data', 'value', 20000);
-      expect(storage.getCookie('data')).to.not.exist;
+      storage.setCookie(cookieName, 'value', 20000);
+      expect(storage.getCookie(cookieName)).to.not.exist;
     });
   });
 });
