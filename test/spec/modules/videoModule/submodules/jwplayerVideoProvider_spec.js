@@ -2828,11 +2828,7 @@ describe('utils', function () {
     });
 
     it('should handle empty string media id', function () {
-      expect(getContentDatum('')).to.deep.equal({
-        name: 'jwplayer.com',
-        cids: [''],
-        ext: { cids: [''] }
-      });
+      expect(getContentDatum('')).to.be.undefined;
     });
   });
 
