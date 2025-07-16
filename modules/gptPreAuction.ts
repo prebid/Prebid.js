@@ -13,9 +13,9 @@ import {
   pick,
   uniques
 } from '../src/utils.js';
-import type {SlotMatchingFn} from "../src/targeting.ts";
-import type {AdUnitCode} from "../src/types/common.d.ts";
-import type {AdUnit} from "../src/adUnits.ts";
+import type {SlotMatchingFn} from '../src/targeting.ts';
+import type {AdUnitCode} from '../src/types/common.d.ts';
+import type {AdUnit} from '../src/adUnits.ts';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig: any = {};
@@ -80,7 +80,7 @@ export const appendGptSlots = adUnits => {
 
   const adUnitPaths = {};
 
-  window.googletag.pubads().getSlots().forEach(slot => {
+  window.googletag.pubads().getSlots().forEach((slot: googletag.Slot) => {
     const matchingAdUnitCode = Object.keys(adUnitMap).find(customGptSlotMatching
       ? customGptSlotMatching(slot)
       : isAdUnitCodeMatchingSlot(slot));
@@ -116,7 +116,7 @@ const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
   }
 
   // find all GPT slots with this name
-  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adUnitPath);
+  var gptSlots = window.googletag.pubads().getSlots().filter((slot: googletag.Slot) => slot.getAdUnitPath() === adUnitPath);
 
   if (gptSlots.length === 0) {
     return; // should never happen
