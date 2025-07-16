@@ -463,6 +463,8 @@ describe('33acrossBidAdapter:', function () {
     this.sandbox = sinon.sandbox.create();
     this.sandbox.stub(Date, 'now').returns(1);
     this.sandbox.stub(document, 'getElementById').returns(this.element);
+    this.sandbox.stub(internal, 'getWindowTop').returns(this.win);
+    this.sandbox.stub(internal, 'getWindowSelf').returns(this.win);
     this.sandbox.stub(utils, 'getWindowTop').returns(this.win);
     this.sandbox.stub(utils, 'getWindowSelf').returns(this.win);
 
@@ -501,6 +503,7 @@ describe('33acrossBidAdapter:', function () {
   });
 
   afterEach(function() {
+    resetWinDimensions();
     this.sandbox.restore();
   });
 
@@ -841,6 +844,7 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(this.element, { width: 800, height: 800 });
 
+        console.log('right before');
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
@@ -1005,6 +1009,7 @@ describe('33acrossBidAdapter:', function () {
         utils.getWindowTop.restore();
         this.win.document.visibilityState = 'hidden';
         this.sandbox.stub(utils, 'getWindowTop').returns(this.win);
+        resetWinDimensions();
 
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
