@@ -497,7 +497,7 @@ describe('Yandex adapter', function () {
       });
     });
 
-    it('should include eventtrackers in the native request', function () {
+    it('should include eventtrackers in the native request', () => {
       const nativeParams = buildRequestAndGetNativeParams({
         mediaTypes: {
           native: {
