@@ -98,6 +98,8 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       semi: 'off',
+      'no-undef': 2,
+      'no-console': 'error',      
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
@@ -120,9 +122,7 @@ module.exports = [
 
       eqeqeq: 'off',
       'no-throw-literal': 'off',
-      'no-undef': 2,
       'no-useless-escape': 'off',
-      'no-console': 'error',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
