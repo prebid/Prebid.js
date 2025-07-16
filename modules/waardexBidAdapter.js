@@ -167,10 +167,10 @@ const interpretResponse = (serverResponse, bidRequest) => {
     return responseBody.seatbid[0].bid
       .map(openRtbBid => {
         const hbRequestBid = getHbRequestBid(openRtbBid, bidRequest.data);
-        if (!hbRequestBid) return;
+        if (!hbRequestBid) return null;
 
         const hbRequestMediaType = getHbRequestMediaType(hbRequestBid);
-        if (!hbRequestMediaType) return;
+        if (!hbRequestMediaType) return null;
 
         return mapOpenRtbToHbBid(openRtbBid, hbRequestMediaType, hbRequestBid);
       })

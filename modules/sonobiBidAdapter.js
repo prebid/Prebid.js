@@ -79,6 +79,7 @@ export const spec = {
         }
       } else {
         logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
+        return null;
       }
     });
 
