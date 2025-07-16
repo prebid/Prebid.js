@@ -109,7 +109,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         // TODO: does this fallback make sense here?
         ret = (window.context && window.context.location && window.context.location.href) ? window.context.location.href : document.location.href;
       }
-      return encodeURIComponent(ret.replace(/\%/g, ''));
+      return encodeURIComponent(ret.replace(/%/g, ''));
     }
     var timestamp = function() {
       var date = new Date();
@@ -153,7 +153,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['sid'] = siteId;
     state['l'] = topLocation(bidderRequest);
     state['tt'] = encodeURIComponent(document.title);
-    state['tt'] = state['tt'].replace(/'|;|quot;|39;|&amp;|&|#|\r\n|\r|\n|\t|\f|\%0A|\"|\%22|\%5C|\%23|\%26|\%26|\%09/gm, '');
+    state['tt'] = state['tt'].replace(/'|;|quot;|39;|&amp;|&|#|\r\n|\r|\n|\t|\f|%0A|"|%22|%5C|%23|%26|%26|%09/gm, '');
     state['a'] = filterAdUnitsByIds(divIds, adunits || []);
     state['t'] = timestamp();
     state['tz'] = Math.round(new Date().getTimezoneOffset());

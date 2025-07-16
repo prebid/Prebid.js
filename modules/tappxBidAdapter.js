@@ -522,8 +522,8 @@ export function _getHostInfo(validBidRequests) {
 
   domainInfo.domain = hostParam.split('/', 1)[0];
 
-  const regexHostParamHttps = new RegExp(`^https:\/\/`);
-  const regexHostParamHttp = new RegExp(`^http:\/\/`);
+  const regexHostParamHttps = new RegExp('^https://');
+  const regexHostParamHttp = new RegExp('^http://');
 
   const regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
   const regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');

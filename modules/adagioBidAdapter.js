@@ -277,7 +277,7 @@ function _parseNativeBidResponse(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          const script = `<script async src=\"${tracker.url}\"></script>`;
+          const script = `<script async src="${tracker.url}"></script>`;
           if (!native.javascriptTrackers) {
             native.javascriptTrackers = script;
           } else {
