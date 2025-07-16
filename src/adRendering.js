@@ -273,8 +273,9 @@ export function renderAdDirect(doc, adId, options) {
   function renderFn(adData) {
     if (adData.ad) {
       if (
-        adData.ad.includes("display-renderer/sdk.js") ||
-        adData.ad.includes("native-to-display/sdk.js")
+        typeof adData.ad === 'string' &&
+        (adData.ad.includes("display-renderer/sdk.js") ||
+        adData.ad.includes("native-to-display/sdk.js"))
       ) {
         doc.write(`<script> window.MS_SDK_RENDER = null; </script>`);
       }
