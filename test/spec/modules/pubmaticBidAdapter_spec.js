@@ -639,7 +639,7 @@ describe('PubMatic adapter', () => {
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('tmax').to.equal(2000);
         });
-        
+
         describe('Gzip Configuration', () => {
           let configStub;
 

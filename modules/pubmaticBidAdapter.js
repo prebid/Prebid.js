@@ -661,7 +661,7 @@ function getGzipSetting(bid) {
   if (bid && bid.params && typeof bid.params.gzipEnabled === 'boolean') {
     return bid.params.gzipEnabled;
   }
-  
+
   // Check global setting
   const pubmaticConfig = config.getConfig('pubmatic') || {};
   if (typeof pubmaticConfig.gzipEnabled === 'boolean') {
