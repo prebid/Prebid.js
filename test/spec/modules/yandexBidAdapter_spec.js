@@ -495,18 +495,18 @@ describe('Yandex adapter', function () {
           },
         });
       });
-    });
 
-    it('should include eventtrackers in the native request', () => {
-      const nativeParams = buildRequestAndGetNativeParams({
-        mediaTypes: {
-          native: {
-            title: { required: true },
+      it('should include eventtrackers in the native request', () => {
+        const nativeParams = buildRequestAndGetNativeParams({
+          mediaTypes: {
+            native: {
+              title: { required: true },
+            },
           },
-        },
-      });
+        });
 
-      expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
+        expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
+      });
     });
   });
 
