@@ -110,16 +110,16 @@ describe('RumbleBidAdapter', function() {
       return spec.buildRequests(bidRequests, cbr);
     }
 
-      it('should validate request', function() {
-        let requests = createRequests(bidRequests, bidderRequest);
+    it('should validate request', function() {
+      let requests = createRequests(bidRequests, bidderRequest);
 
-        expect(requests).to.have.lengthOf(bidRequests.length);
+      expect(requests).to.have.lengthOf(bidRequests.length);
 
-        requests.forEach(function(request, idx) {
-          expect(request.method).to.equal('POST');
-          expect(request.url).to.equal('https://a.ads.rmbl.ws/v1/sites/2/ortb?pid=1&a=3');
-          expect(request.bidRequest).to.equal(bidRequests[idx]);
-        });
+      requests.forEach(function(request, idx) {
+        expect(request.method).to.equal('POST');
+        expect(request.url).to.equal('https://a.ads.rmbl.ws/v1/sites/2/ortb?pid=1&a=3');
+        expect(request.bidRequest).to.equal(bidRequests[idx]);
       });
+    });
   });
 });

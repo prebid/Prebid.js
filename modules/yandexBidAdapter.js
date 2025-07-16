@@ -458,6 +458,10 @@ function interpretResponse(serverResponse, { bidRequest }) {
       }
     };
 
+    if (bidReceived.lurl) {
+      prBid.lurl = bidReceived.lurl;
+    }
+
     if (bidReceived.adm.indexOf('{') === 0) {
       prBid.mediaType = NATIVE;
       prBid.native = interpretNativeAd(bidReceived, price, currency);
