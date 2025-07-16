@@ -3,7 +3,7 @@ import {
   spec as adapter,
   createDomain,
   storage
-} from 'modules/pxBidAdapter';
+} from 'modules/progxBidAdapter';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
@@ -207,7 +207,7 @@ function getTopWindowQueryParams() {
   }
 }
 
-describe('pxBidAdapter', function () {
+describe('progxBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
@@ -272,7 +272,7 @@ describe('pxBidAdapter', function () {
     let sandbox;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        px: {
+        progx: {
           storageAllowed: true
         }
       };
@@ -620,7 +620,7 @@ describe('pxBidAdapter', function () {
   describe('unique deal id', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        px: {
+        progx: {
           storageAllowed: true
         }
       };
@@ -655,7 +655,7 @@ describe('pxBidAdapter', function () {
   describe('storage utils', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        px: {
+        progx: {
           storageAllowed: true
         }
       };
