@@ -29,9 +29,9 @@ import {
   uniques,
 } from './utils.js';
 import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
-import type {Bid} from "./bidfactory.ts";
-import type {AdUnitCode, ByAdUnit, Identifier} from "./types/common.d.ts";
-import type {DefaultTargeting} from "./auction.ts";
+import type {Bid} from './bidfactory.ts';
+import type {AdUnitCode, ByAdUnit, Identifier} from './types/common.d.ts';
+import type {DefaultTargeting} from './auction.ts';
 
 var pbTargetingKeys = [];
 
