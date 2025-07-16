@@ -174,15 +174,14 @@ export const spec = {
       USER_SYNCED = true;
       const userSyncs = serverResponses[0].body.userSyncs;
       const syncs = userSyncs.filter(sync => {
-        const {
-          type
-        } = sync;
+        const { type } = sync;
         if (syncOptions.iframeEnabled && type === 'iframe') {
           return true
         }
         if (syncOptions.pixelEnabled && type === 'image') {
           return true
         }
+        return false;
       })
       return syncs;
     }
@@ -193,9 +192,7 @@ export const spec = {
     const mids = serverResponse.body.mids
     mids.forEach(mid => {
       const bidParam = bidRequest.bidParams.find((bidParam) => {
-        if (mid.ad_unit_code === bidParam.adUnitCode) {
-          return true
-        }
+        return mid.ad_unit_code === bidParam.adUnitCode;
       })
 
       if (!bidParam) {

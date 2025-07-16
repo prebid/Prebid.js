@@ -88,11 +88,13 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
         precision = _defaultPrecision;
       }
       cpmStr = (bucket.max * granularityMultiplier).toFixed(precision);
+      return true;
     } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucketFloor * granularityMultiplier) {
       bucket.min = bucketFloor;
-      return bucket;
+      return true;
     } else {
       bucketFloor = bucket.max;
+      return false;
     }
   });
   if (bucket) {

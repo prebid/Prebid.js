@@ -306,6 +306,7 @@ function isOWPubmaticBid(adapterName) {
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
       return true;
     }
+    return false;
   })
 }
 
