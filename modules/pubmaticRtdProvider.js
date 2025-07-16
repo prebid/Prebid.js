@@ -257,7 +257,11 @@ function selectMultiplier(multiplierKey, profileConfigs) {
     },
     {
       name: 'floor.json',
-      getValue: () => _multipliers && multiplierKey in _multipliers ? _multipliers[multiplierKey] : null
+      getValue: () => {
+        const configPath = profileConfigs?.plugins?.dynamicFloors?.data?.multiplier;
+        const lowerKey = multiplierKey.toLowerCase();
+        return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
+      }
     },
     {
       name: 'default',
