@@ -120,6 +120,6 @@ describe('RumbleBidAdapter', function() {
           expect(request.url).to.equal('https://a.ads.rmbl.ws/v1/sites/2/ortb?pid=1&a=3');
           expect(request.bidRequest).to.equal(bidRequests[idx]);
         });
-    });
+      });
   });
 });
