@@ -2,6 +2,7 @@
  * This module adds User ID support to prebid.js
  * @module modules/userId
  */
+/// <reference types="google-publisher-tag" />
 
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
@@ -46,7 +47,12 @@ import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.j
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
 import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_TYPE } from '../../src/activities/params.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
+} from '../../src/activities/params.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -695,17 +701,21 @@ function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
   }
-  window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+  const providers: googletag.secureSignals.SecureSignalProvider[] = window.googletag.secureSignalProviders = (window.googletag.secureSignalProviders || []) as googletag.secureSignals.SecureSignalProvider[];
+  const existingIds = new Set(providers.map(p => 'id' in p ? p.id : p.networkCode));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
       encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
         source.forEach((src) => {
-          window.googletag.secureSignalProviders.push({
-            id: src,
-            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
-          });
+          if (!existingIds.has(src)) {
+            providers.push({
+              id: src,
+              collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+            });
+            existingIds.add(src);
+          }
         });
       })
     }, registerDelay)
@@ -776,7 +786,7 @@ export function getConsentHash() {
     bytes.push(String.fromCharCode(hash & 255));
     hash = hash >>> 8;
   }
-  return btoa(bytes.join());
+  return btoa(bytes.join(''));
 }
 
 function consentChanged(submodule) {
@@ -1171,7 +1181,7 @@ declare module '../../src/prebidGlobal' {
 
 const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
   return (params) => {
-    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID) return;
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID || !params[ACTIVITY_PARAM_STORAGE_WRITE]) return;
 
     const matchesName = (query) => params[ACTIVITY_PARAM_COMPONENT_NAME]?.toLowerCase() === query?.toLowerCase();
     const submoduleConfig = userIdsConfig.find((configItem) => matchesName(configItem.name));

@@ -16,7 +16,7 @@ import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities
 import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
-  ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_KEY,
+  ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_WRITE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
 import {activityParams} from '../../../../src/activities/activityParams.js';
@@ -98,6 +98,25 @@ describe('storage manager', function() {
         [ACTIVITY_PARAM_STORAGE_KEY]: 'foo',
       }));
     });
+
+    it('should pass write = false on reads', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').getCookie('foo');
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_STORAGE_WRITE]: false
+      }));
+    })
+
+    it('should pass write = true on writes', () => {
+      const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
+      mgr.setDataInLocalStorage('foo', 'bar')
+      try {
+        sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+          [ACTIVITY_PARAM_STORAGE_WRITE]: true
+        }));
+      } finally {
+        mgr.removeDataFromLocalStorage('foo');
+      }
+    })
 
     it('should NOT pass storage key if advertiseKeys = false', () => {
       newStorageManager({
