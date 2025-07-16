@@ -136,7 +136,7 @@ function impression(slot) {
     const floorInfo = slot.getFloor({
       currency: 'USD',
       mediaType: 'native',
-      size: '\*'
+      size: '*'
     });
     bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
   }

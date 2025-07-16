@@ -228,12 +228,12 @@ export function getUmtSource(pageUrl, referrer) {
 
   function getSearchEngine(pageUrl) {
     const engines = {
-      'google': /^https?\:\/\/(?:www\.)?(?:google\.(?:com?\.)?(?:com|cat|[a-z]{2})|g.cn)\//i,
-      'yandex': /^https?\:\/\/(?:www\.)?ya(?:ndex\.(?:com|net)?\.?(?:asia|mobi|org|[a-z]{2})?|\.ru)\//i,
-      'bing': /^https?\:\/\/(?:www\.)?bing\.com\//i,
-      'duckduckgo': /^https?\:\/\/(?:www\.)?duckduckgo\.com\//i,
-      'ask': /^https?\:\/\/(?:www\.)?ask\.com\//i,
-      'yahoo': /^https?\:\/\/(?:[-a-z]+\.)?(?:search\.)?yahoo\.com\//i
+      'google': /^https?:\/\/(?:www\.)?(?:google\.(?:com?\.)?(?:com|cat|[a-z]{2})|g.cn)\//i,
+      'yandex': /^https?:\/\/(?:www\.)?ya(?:ndex\.(?:com|net)?\.?(?:asia|mobi|org|[a-z]{2})?|\.ru)\//i,
+      'bing': /^https?:\/\/(?:www\.)?bing\.com\//i,
+      'duckduckgo': /^https?:\/\/(?:www\.)?duckduckgo\.com\//i,
+      'ask': /^https?:\/\/(?:www\.)?ask\.com\//i,
+      'yahoo': /^https?:\/\/(?:[-a-z]+\.)?(?:search\.)?yahoo\.com\//i
     };
 
     for (const engine in engines) {
