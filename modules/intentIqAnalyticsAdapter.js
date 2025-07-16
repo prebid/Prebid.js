@@ -74,7 +74,7 @@ const getDataForDefineURL = () => {
   return [iiqConfig, gdprDetected]
 }
 
-let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({url: DEFAULT_URL, analyticsType}), {
+const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({url: DEFAULT_URL, analyticsType}), {
   initOptions: {
     lsValueInitialized: false,
     partner: null,
@@ -111,7 +111,7 @@ const {
 
 function initAdapterConfig() {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  let iiqConfig = getIntentIqConfig()
+  const iiqConfig = getIntentIqConfig()
 
   if (iiqConfig) {
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
@@ -148,7 +148,7 @@ function initReadLsIds() {
 
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
-      let pData = JSON.parse(partnerData);
+      const pData = JSON.parse(partnerData);
       iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
@@ -195,15 +195,15 @@ function bidWon(args, isReportExternal) {
 
 function parseReportingMethod(reportMethod) {
   if (typeof reportMethod === 'string') {
-      switch (reportMethod.toUpperCase()) {
-          case 'GET':
-              return 'GET';
-          case 'POST':
-              return 'POST';
-          default:
-              return 'GET';
-      }
+    switch (reportMethod.toUpperCase()) {
+      case 'GET':
+        return 'GET';
+      case 'POST':
+        return 'POST';
+      default:
+        return 'GET';
     }
+  }
   return 'GET';
 }
 
@@ -223,7 +223,7 @@ function getRandom(start, end) {
 }
 
 export function preparePayload(data) {
-  let result = getDefaultDataObject();
+  const result = getDefaultDataObject();
   readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner, allowedStorage, storage);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
@@ -342,7 +342,7 @@ function getDefaultDataObject() {
 }
 
 function constructFullUrl(data) {
-  let report = [];
+  const report = [];
   const reportMethod = iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod;
   const currentBrowserLowerCase = detectBrowser();
   data = btoa(JSON.stringify(data));

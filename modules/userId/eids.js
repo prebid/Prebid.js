@@ -1,15 +1,11 @@
 import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
 
-/**
- * @typedef {import('./index.js').SubmodulePriorityMap} SubmodulePriorityMap
- */
-
 export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
 function createEidObject(userIdData, subModuleKey, eidConf) {
   if (eidConf && userIdData) {
-    let eid = {};
+    const eid = {};
     eid.source = isFn(eidConf['getSource']) ? eidConf['getSource'](userIdData) : eidConf['source'];
     const value = isFn(eidConf['getValue']) ? eidConf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
@@ -91,9 +87,6 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
   return Object.values(allEids);
 }
 
-/**
- * @param {SubmodulePriorityMap} priorityMap
- */
 export function getEids(priorityMap) {
   const eidConfigs = new Map();
   const idValues = {};

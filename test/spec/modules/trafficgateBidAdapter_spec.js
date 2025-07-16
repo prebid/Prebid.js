@@ -11,7 +11,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import 'modules/paapi.js';
 
 import {deepClone} from 'src/utils.js';
@@ -195,7 +194,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
           invalidVideoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
@@ -227,7 +226,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithHostAndPlacement);
+          const videoBidWithMediaTypes = Object.assign({}, videoBidWithHostAndPlacement);
           videoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
         });
@@ -252,7 +251,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaType);
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaType);
           delete invalidVideoBidWithMediaTypes.params;
           invalidVideoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
@@ -462,7 +461,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             }
           });
-          let data = request[0].data;
+          const data = request[0].data;
           expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
@@ -477,7 +476,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             }
           });
-          let data = request[0].data;
+          const data = request[0].data;
           expect(data.user.yob).to.equal(1985);
         });
 
@@ -494,7 +493,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -506,7 +505,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('pbadslot');
               } else {
@@ -523,7 +522,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data).to.have.property('pbadslot');
               expect(data.imp[0].ext.data.pbadslot).to.equal('abcd');
             });
@@ -541,7 +540,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -553,7 +552,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('adserver');
               } else {
@@ -562,7 +561,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             });
 
             it('should send', function() {
-              let adSlotValue = 'abc';
+              const adSlotValue = 'abc';
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -574,7 +573,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data.adserver.name).to.equal('GAM');
               expect(data.imp[0].ext.data.adserver.adslot).to.equal(adSlotValue);
             });
@@ -592,7 +591,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -604,7 +603,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('other');
               } else {
@@ -621,7 +620,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data.other).to.equal(1234);
             });
           });
@@ -824,7 +823,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should send a coppa flag there is when there is coppa param settings in the bid requests', async function () {
-          let mockConfig = {
+          const mockConfig = {
             coppa: true
           };
 
@@ -932,13 +931,22 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            schain: schainConfig
+            ortb2: {source: {
+              ext: {schain: schainConfig}
+            }}
           }];
+
+          // Add schain to mockBidderRequest as well
+          mockBidderRequest.ortb2 = {
+            source: {
+              ext: {schain: schainConfig}
+            }
+          };
         });
 
         it('should send a supply chain object', function () {
           const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain).to.equal(schainConfig);
+          expect(request[0].data.source.ext.schain).to.deep.equal(schainConfig);
         });
 
         it('should send the supply chain object with the right version', function () {

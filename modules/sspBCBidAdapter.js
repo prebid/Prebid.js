@@ -53,7 +53,7 @@ const getNativeAssetType = id => {
   }
 
   // ...others should be decoded from nativeAssetMap
-  for (let assetName in nativeAssetMap) {
+  for (const assetName in nativeAssetMap) {
     const assetId = nativeAssetMap[assetName];
     if (assetId === id) {
       return assetName;
@@ -269,7 +269,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  */
 const getHighestFloor = (slot) => {
   const currency = requestCurrency
-  let result = { floor: 0, currency };
+  const result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
     let bannerFloor = 0;
@@ -628,7 +628,7 @@ const spec = {
     const ref = bidderRequest.refererInfo.ref;
     const { source = {}, regs = {} } = ortb2 || {};
 
-    source.schain = setOnAny(validBidRequests, 'schain');
+    source.schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     const payload = {
       id: bidderRequest.bidderRequestId,
@@ -793,7 +793,7 @@ const spec = {
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
-    let mySyncs = [];
+    const mySyncs = [];
     if (iframeEnabled) {
       mySyncs.push({
         type: 'iframe',

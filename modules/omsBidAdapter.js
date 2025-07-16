@@ -114,8 +114,9 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    if (bidReqs?.[0]?.schain) {
-      deepSetValue(payload, 'source.ext.schain', bidReqs[0].schain)
+    const schain = bidReqs?.[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain)
     }
 
     if (bidderRequest?.ortb2?.user) {
@@ -124,10 +125,6 @@ function buildRequests(bidReqs, bidderRequest) {
 
     if (bidReqs?.[0]?.userIdAsEids) {
       deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
-    }
-
-    if (bidReqs?.[0].userId) {
-      deepSetValue(payload, 'user.ext.ids', bidReqs[0].userId || [])
     }
 
     if (bidderRequest?.ortb2?.site?.content) {
@@ -298,7 +295,7 @@ function _getBidFloor(bid) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD', mediaType: '*', size: '*'
   });
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {

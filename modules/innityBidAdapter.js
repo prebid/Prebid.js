@@ -2,17 +2,19 @@ import { parseSizesInput, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'innity';
+const GVLID = 535;
 const ENDPOINT = 'https://as.innity.com/synd/';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.pub && bid.params.zone);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      let parseSized = parseSizesInput(bidRequest.sizes);
-      let arrSize = parseSized[0].split('x');
+      const parseSized = parseSizesInput(bidRequest.sizes);
+      const arrSize = parseSized[0].split('x');
       return {
         method: 'GET',
         url: ENDPOINT,

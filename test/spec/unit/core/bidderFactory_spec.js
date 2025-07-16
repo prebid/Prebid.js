@@ -42,7 +42,7 @@ before(() => {
   hook.ready();
 });
 
-let wrappedCallback = config.callbackWithBidder(CODE);
+const wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
   let onTimelyResponseStub;
@@ -530,7 +530,8 @@ describe('bidderFactory', () => {
           ]);
           bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
           sinon.assert.calledWith(ajaxStub, 'url', sinon.match.any, sinon.match.any, sinon.match({
-            browsingTopics: false
+            browsingTopics: false,
+            suppressTopicsEnrollmentWarning: true
           }));
         });
 
@@ -593,7 +594,7 @@ describe('bidderFactory', () => {
                     url,
                     sinon.match.any,
                     sinon.match.any,
-                    sinon.match({browsingTopics: shouldBeSet})
+                    sinon.match({browsingTopics: shouldBeSet, suppressTopicsEnrollmentWarning: true})
                   );
                 });
               });
@@ -1192,7 +1193,7 @@ describe('bidderFactory', () => {
     let ajaxStub;
     let logErrorSpy;
 
-    let bids = [{
+    const bids = [{
       'ad': 'creative',
       'cpm': '1.99',
       'width': 300,
@@ -1249,7 +1250,7 @@ describe('bidderFactory', () => {
           }
         }]
         decorateAdUnitsWithNativeParams(adUnits);
-        let bidRequest = {
+        const bidRequest = {
           bids: [{
             bidId: '1',
             auctionId: 'first-bid-id',
@@ -1262,7 +1263,7 @@ describe('bidderFactory', () => {
           }]
         };
 
-        let bids1 = Object.assign({},
+        const bids1 = Object.assign({},
           bids[0],
           {
             'mediaType': 'native',
@@ -1291,7 +1292,7 @@ describe('bidderFactory', () => {
           },
         }];
         decorateAdUnitsWithNativeParams(adUnits);
-        let bidRequest = {
+        const bidRequest = {
           bids: [{
             bidId: '1',
             auctionId: 'first-bid-id',
@@ -1303,7 +1304,7 @@ describe('bidderFactory', () => {
             mediaType: 'native',
           }]
         };
-        let bids1 = Object.assign({},
+        const bids1 = Object.assign({},
           bids[0],
           {
             bidderCode: CODE,
@@ -1332,7 +1333,7 @@ describe('bidderFactory', () => {
           video: {context: 'outstream'}
         }
       }]
-      let bidRequest = {
+      const bidRequest = {
         bids: [{
           bidId: '1',
           auctionId: 'first-bid-id',
@@ -1344,7 +1345,7 @@ describe('bidderFactory', () => {
         }]
       };
 
-      let bids1 = Object.assign({},
+      const bids1 = Object.assign({},
         bids[0],
         {
           bidderCode: CODE,
@@ -1364,7 +1365,7 @@ describe('bidderFactory', () => {
     });
 
     it('should add banner bids that have no width or height but single adunit size', function () {
-      let bidRequest = {
+      const bidRequest = {
         bids: [{
           bidder: CODE,
           bidId: '1',
@@ -1377,7 +1378,7 @@ describe('bidderFactory', () => {
         }]
       };
       bidderRequests = [bidRequest];
-      let bids1 = Object.assign({},
+      const bids1 = Object.assign({},
         bids[0],
         {
           width: undefined,
@@ -1396,7 +1397,7 @@ describe('bidderFactory', () => {
     });
 
     it('should disregard auctionId/transactionId set by the adapter', () => {
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidder: CODE,
           bidId: '1',

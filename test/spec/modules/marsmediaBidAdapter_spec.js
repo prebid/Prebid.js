@@ -1,7 +1,7 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { internal, resetWinDimensions } from '../../../src/utils';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 var marsAdapter = spec;
 
@@ -612,7 +612,13 @@ describe('marsmedia adapter tests', function () {
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead',
-        'schain': schain
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': schain
+            }
+          }
+        }
       }
     ];
 

@@ -211,7 +211,7 @@ const storageTool = (function () {
 const targetingTool = (function() {
   const getSegmentsFromOrtb = function(bidderRequest) {
     const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
-    let segments = [];
+    const segments = [];
     if (userData && Array.isArray(userData)) {
       userData.forEach(userdat => {
         if (userdat.segment) {
@@ -393,6 +393,11 @@ export const spec = {
           } else {
             adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
           }
+        }
+        const dealId = deepAccess(bid, 'params.dealId') || deepAccess(bid, 'params.inventory.pmp.deals');
+        if (dealId) {
+          // dealId at adserver accepts single string dealID and array
+          adUnit.dealId = dealId;
         }
         const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
         if (maxDeals > 0) {

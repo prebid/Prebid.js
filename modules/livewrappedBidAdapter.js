@@ -63,7 +63,7 @@ export const spec = {
     const ifa = ((bidRequests) || []).find(hasIfaParam);
     const bundle = ((bidRequests) || []).find(hasBundleParam);
     const tid = ((bidRequests) || []).find(hasTidParam);
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
@@ -169,8 +169,8 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses) {
     if (serverResponses.length == 0) return [];
 
-    let syncList = [];
-    let userSync = serverResponses[0].body.pixels || [];
+    const syncList = [];
+    const userSync = serverResponses[0].body.pixels || [];
 
     userSync.forEach(function(sync) {
       if (syncOptions.pixelEnabled && sync.type == 'Redirect') {
