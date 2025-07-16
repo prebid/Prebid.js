@@ -121,7 +121,6 @@ module.exports = [
       // also see: reality. These are here to stay.
 
       eqeqeq: 'off',
-      'no-throw-literal': 'off',
       'no-useless-escape': 'off',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
