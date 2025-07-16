@@ -1,15 +1,11 @@
 import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
 
-/**
- * @typedef {import('./index.js').SubmodulePriorityMap} SubmodulePriorityMap
- */
-
 export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
 function createEidObject(userIdData, subModuleKey, eidConf) {
   if (eidConf && userIdData) {
-    let eid = {};
+    const eid = {};
     eid.source = isFn(eidConf['getSource']) ? eidConf['getSource'](userIdData) : eidConf['source'];
     const value = isFn(eidConf['getValue']) ? eidConf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
@@ -22,6 +18,21 @@ function createEidObject(userIdData, subModuleKey, eidConf) {
         }
       }
       eid.uids = [uid];
+      if (eidConf['inserter'] || isFn(eidConf['getInserter'])) {
+        const inserter = isFn(eidConf['getInserter']) ? eidConf['getInserter'](userIdData) : eidConf['inserter'];
+        if (inserter != null) {
+          eid.inserter = inserter;
+        }
+      }
+      if (eidConf['matcher'] || isFn(eidConf['getMatcher'])) {
+        const matcher = isFn(eidConf['getMatcher']) ? eidConf['getMatcher'](userIdData) : eidConf['matcher'];
+        if (matcher != null) {
+          eid.matcher = matcher;
+        }
+      }
+      if (eidConf['mm'] != null) {
+        eid.mm = eidConf['mm'];
+      }
       // getEidExt
       if (isFn(eidConf['getEidExt'])) {
         const eidExt = eidConf['getEidExt'](userIdData);
@@ -76,14 +87,11 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
   return Object.values(allEids);
 }
 
-/**
- * @param {SubmodulePriorityMap} priorityMap
- */
 export function getEids(priorityMap) {
   const eidConfigs = new Map();
   const idValues = {};
-  Object.entries(priorityMap).forEach(([key, submodules]) => {
-    const submodule = submodules.find(mod => mod.idObj?.[key] != null);
+  Object.entries(priorityMap).forEach(([key, getActiveModule]) => {
+    const submodule = getActiveModule();
     if (submodule) {
       idValues[key] = submodule.idObj[key];
       let eidConf = submodule.submodule.eids?.[key];

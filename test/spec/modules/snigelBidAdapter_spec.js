@@ -36,6 +36,7 @@ const makeBidderRequest = function (overrides) {
 const DUMMY_USP_CONSENT = '1YYN';
 const DUMMY_GDPR_CONSENT_STRING =
   'BOSSotLOSSotLAPABAENBc-AAAAgR7_______9______9uz_Gv_v_f__33e8__9v_l_7_-___u_-33d4-_1vX99yfm1-7ftr3tp_86ues2_XqK_9oIiA';
+const DUMMY_GPP_CONSENT_STRING = 'DBABrw~BAAAAAAAAABA.QA~BAAAAABA.QA';
 
 describe('snigelBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -310,31 +311,6 @@ describe('snigelBidAdapter', function () {
       expect(syncs).to.be.undefined;
     });
 
-    it('should not return any user syncs if GDPR applies and the user did not consent to purpose one', function () {
-      const response = {
-        body: {
-          id: BASE_BIDDER_REQUEST.bidderRequestId,
-          cur: 'USD',
-          syncUrl: 'https://somesyncurl',
-          bids: [],
-        },
-      };
-      const syncOptions = {
-        iframeEnabled: true,
-      };
-      const gdprConsent = {
-        gdprApplies: true,
-        vendorData: {
-          purpose: {
-            consents: {1: false},
-          },
-        },
-      };
-
-      const syncs = spec.getUserSyncs(syncOptions, [response], gdprConsent);
-      expect(syncs).to.be.undefined;
-    });
-
     it("should return an iframe specific to the publisher's property if all conditions are met", function () {
       const response = {
         body: {
@@ -357,7 +333,7 @@ describe('snigelBidAdapter', function () {
       expect(sync).to.have.property('type');
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
-      expect(sync.url).to.equal('https://somesyncurl?gdpr=0&gdpr_consent=');
+      expect(sync.url).to.equal('https://somesyncurl?gdpr=0&gdpr_consent=&gpp_sid=&gpp=&us_privacy=');
     });
 
     it('should pass GDPR applicability and consent string as query parameters', function () {
@@ -388,7 +364,37 @@ describe('snigelBidAdapter', function () {
       expect(sync).to.have.property('type');
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
-      expect(sync.url).to.equal(`https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}`);
+      expect(sync.url).to.equal(
+        `https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}&gpp_sid=&gpp=&us_privacy=`
+      );
+    });
+
+    it('should pass GPP section IDs and consent string as query parameters', function () {
+      const response = {
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          syncUrl: 'https://somesyncurl',
+          bids: [],
+        },
+      };
+      const syncOptions = {
+        iframeEnabled: true,
+      };
+      const gppConsent = {
+        applicableSections: [7, 8],
+        gppString: DUMMY_GPP_CONSENT_STRING,
+      };
+
+      const syncs = spec.getUserSyncs(syncOptions, [response], undefined, undefined, gppConsent);
+      expect(syncs).to.be.an('array').and.of.length(1);
+      const sync = syncs[0];
+      expect(sync).to.have.property('type');
+      expect(sync.type).to.equal('iframe');
+      expect(sync).to.have.property('url');
+      expect(sync.url).to.equal(
+        `https://somesyncurl?gdpr=0&gdpr_consent=&gpp_sid=7,8&gpp=${DUMMY_GPP_CONSENT_STRING}&us_privacy=`
+      );
     });
 
     it('should omit session ID if no device access', function () {

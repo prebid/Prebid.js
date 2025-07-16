@@ -3,6 +3,9 @@ import {createInvisibleIframe} from './utils.js';
 import {RENDERER} from '../libraries/creative-renderer-display/renderer.js';
 import {hook} from './hook.js';
 
+// the minimum rendererVersion that will be used by PUC
+export const PUC_MIN_VERSION = 3;
+
 export const getCreativeRendererSource = hook('sync', function (bidResponse) {
   return RENDERER;
 })

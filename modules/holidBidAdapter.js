@@ -15,7 +15,7 @@ const ENDPOINT = 'https://helloworld.holid.io/openrtb2/auction';
 const COOKIE_SYNC_ENDPOINT = 'https://null.holid.io/sync.html';
 const TIME_TO_LIVE = 300;
 const TMAX = 500;
-let wurlMap = {};
+const wurlMap = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -32,7 +32,11 @@ export const spec = {
     return validBidRequests.map((bid) => {
       const requestData = {
         ...bid.ortb2,
-        source: { schain: bid.schain },
+        source: {
+          ext: {
+            schain: bid?.ortb2?.source?.ext?.schain
+          }
+        },
         id: bidderRequest.bidderRequestId,
         imp: [getImp(bid)],
         tmax: TMAX,
@@ -92,7 +96,7 @@ export const spec = {
         const impId = bid.impid; // Unique identifier matching getImp(bid).id
 
         // Build meta object with adomain and networkId, preserving any existing data
-        let meta = deepAccess(bid, 'ext.prebid.meta', {}) || {};
+        const meta = deepAccess(bid, 'ext.prebid.meta', {}) || {};
         const adomain = deepAccess(bid, 'adomain', []);
         if (adomain.length > 0) {
           meta.adomain = adomain;

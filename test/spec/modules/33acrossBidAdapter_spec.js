@@ -1,10 +1,11 @@
 import { expect } from 'chai';
 
 import * as utils from 'src/utils.js';
+import { internal } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
-import { mergeDeep } from '../../../src/utils';
+import { resetWinDimensions } from '../../../src/utils.js';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -476,8 +477,8 @@ describe('33acrossBidAdapter:', function () {
     this.buildBidderRequest = (bidRequests, additionalProps) => {
       const [ bidRequest ] = bidRequests;
 
-      return mergeDeep({
-        ortb2: mergeDeep({
+      return utils.mergeDeep({
+        ortb2: utils.mergeDeep({
           device: {
             w: 1024,
             h: 728

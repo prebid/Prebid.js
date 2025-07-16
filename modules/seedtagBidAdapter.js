@@ -1,7 +1,9 @@
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _map, isArray, triggerPixel } from '../src/utils.js';
+import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -96,7 +98,7 @@ function hasMandatoryDisplayParams(bid) {
 function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
-  let isValid =
+  const isValid =
     !!bid.params.publisherId &&
     !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
@@ -125,7 +127,7 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
+    requestCount: validBidRequest.bidRequestsCount || 1,
   };
 
   if (hasVideoMediaType(validBidRequest)) {
@@ -175,6 +177,7 @@ function buildBidResponse(seedtagBid) {
         seedtagBid && seedtagBid.adomain && seedtagBid.adomain.length > 0
           ? seedtagBid.adomain
           : [],
+      mediaType: seedtagBid.realMediaType,
     },
   };
 
@@ -219,12 +222,12 @@ function ttfb() {
 function geom(adunitCode) {
   const slot = document.getElementById(adunitCode);
   if (slot) {
-    const scrollY = window.scrollY;
-    const { top, left, width, height } = slot.getBoundingClientRect();
+    const { top, left, width, height } = getBoundingClientRect(slot);
     const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight,
+      width: getWinDimensions().innerWidth,
+      height: getWinDimensions().innerHeight,
     };
+    const scrollY = getViewportCoordinates().top || 0;
 
     return {
       scrollY,
@@ -317,11 +320,12 @@ export const spec = {
       payload['uspConsent'] = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
-    let coppa = config.getConfig('coppa');
+    const coppa = config.getConfig('coppa');
     if (coppa) {
       payload.coppa = coppa;
     }

@@ -1,5 +1,5 @@
 import mobkoiAnalyticsAdapter, { DEBUG_EVENT_LEVELS, utils, SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP, SUB_PAYLOAD_TYPES } from 'modules/mobkoiAnalyticsAdapter.js';
-import {internal} from '../../../src/utils.js';
+import * as prebidUtils from 'src/utils';
 import adapterManager from '../../../src/adapterManager.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
@@ -178,6 +178,19 @@ const getBidderRequest = () => ({
 })
 
 describe('mobkoiAnalyticsAdapter', function () {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(prebidUtils, 'logInfo');
+    sandbox.stub(prebidUtils, 'logWarn');
+    sandbox.stub(prebidUtils, 'logError');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   it('should registers with the adapter manager', function () {
     // should refer to the BIDDER_CODE in the mobkoiAnalyticsAdapter
     const adapter = adapterManager.getAnalyticsAdapter('mobkoi');
@@ -214,10 +227,6 @@ describe('mobkoiAnalyticsAdapter', function () {
         }
       });
 
-      sandbox.stub(internal, 'logInfo');
-      sandbox.stub(internal, 'logWarn');
-      sandbox.stub(internal, 'logError');
-
       // Create spies after enabling analytics to ensure localContext exists
       postAjaxStub = sandbox.stub(utils, 'postAjax');
       sendGetRequestStub = sandbox.stub(utils, 'sendGetRequest');
@@ -229,8 +238,8 @@ describe('mobkoiAnalyticsAdapter', function () {
     afterEach(function () {
       adapter.disableAnalytics();
       sandbox.restore();
-      postAjaxStub.reset();
-      sendGetRequestStub.reset();
+      postAjaxStub.resetHistory();
+      sendGetRequestStub.resetHistory();
     });
 
     it('should call sendGetRequest while tracking BIDDER_DONE / BID_WON events', function () {

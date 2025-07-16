@@ -7,8 +7,8 @@ import {
   experianRtdSubmodule, EXPERIAN_RTID_NO_TRACK_KEY
 } from '../../../modules/experianRtdProvider.js';
 import { getStorageManager } from '../../../src/storageManager.js';
-import { MODULE_TYPE_RTD } from '../../../src/activities/modules';
-import { safeJSONParse, timestamp } from '../../../src/utils';
+import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
+import { safeJSONParse, timestamp } from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
 
 describe('Experian realtime module', () => {

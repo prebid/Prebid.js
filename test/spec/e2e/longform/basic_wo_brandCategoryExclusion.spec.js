@@ -1,6 +1,5 @@
-import {includes} from 'src/polyfill.js';
 const expect = require('chai').expect;
-const { host, protocol, waitForElement } = require('../../../helpers/testing-utils');
+const { host, protocol, waitForElement } = require('../../../helpers/testing-utils.js');
 
 const validDurations = ['15s', '30s'];
 const validCpms = ['15.00', '14.00', '13.00', '10.00'];
@@ -24,15 +23,15 @@ describe('longform ads without using brandCategoryExclusion', function() {
 
     await waitForElement(listOfCpmsXpath);
 
-    let listOfCpms = await $$(listOfCpmsXpath);
-    let listOfDuras = await $$(listOfDurationsXpath);
+    const listOfCpms = await $$(listOfCpmsXpath);
+    const listOfDuras = await $$(listOfDurationsXpath);
 
     expect(listOfCpms.length).to.equal(listOfDuras.length);
     for (let i = 0; i < listOfCpms.length; i++) {
-      let cpm = listOfCpms[i].getText();
-      let dura = listOfDuras[i].getText();
-      expect(includes(validCpms, cpm), `Could not find CPM ${cpm} in accepted list`).to.equal(true);
-      expect(includes(validDurations, dura), `Could not find Duration ${dura} in accepted list`).to.equal(true);
+      const cpm = listOfCpms[i].getText();
+      const dura = listOfDuras[i].getText();
+      expect(validCpms.includes(cpm), `Could not find CPM ${cpm} in accepted list`).to.equal(true);
+      expect(validDurations.includes(dura), `Could not find Duration ${dura} in accepted list`).to.equal(true);
     }
   });
 
@@ -42,19 +41,19 @@ describe('longform ads without using brandCategoryExclusion', function() {
     await waitForElement(listOfKeyElementsXpath);
     await waitForElement(listOfKeyValuesXpath);
 
-    let listOfKeyElements = await $$(listOfKeyElementsXpath);
-    let listOfKeyValues = await $$(listOfKeyValuesXpath);
+    const listOfKeyElements = await $$(listOfKeyElementsXpath);
+    const listOfKeyValues = await $$(listOfKeyValuesXpath);
 
-    let firstKey = listOfKeyElements[0].getText();
+    const firstKey = listOfKeyElements[0].getText();
     expect(firstKey).to.equal('hb_pb_cat_dur');
 
-    let firstKeyValue = listOfKeyValues[0].getText();
+    const firstKeyValue = listOfKeyValues[0].getText();
     expect(firstKeyValue).match(customKeyRegex);
 
-    let lastKey = listOfKeyElements[listOfKeyElements.length - 1].getText();
+    const lastKey = listOfKeyElements[listOfKeyElements.length - 1].getText();
     expect(lastKey).to.equal('hb_cache_id');
 
-    let lastKeyValue = listOfKeyValues[listOfKeyValues.length - 1].getText();
+    const lastKeyValue = listOfKeyValues[listOfKeyValues.length - 1].getText();
     expect(lastKeyValue).to.match(uuidRegex);
   });
 })

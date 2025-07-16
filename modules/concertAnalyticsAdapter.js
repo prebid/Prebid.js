@@ -20,7 +20,7 @@ const {
 
 let queue = [];
 
-let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
+const concertAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({ eventType, args }) {
     switch (eventType) {
       case BID_RESPONSE:

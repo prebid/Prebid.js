@@ -7,8 +7,7 @@ import {getCreativeRendererSource} from '../src/creativeRenderers.js';
 function getRenderingDataHook(next, bidResponse, options) {
   if (isNativeResponse(bidResponse)) {
     next.bail({
-      native: getNativeRenderingData(bidResponse, auctionManager.index.getAdUnit(bidResponse)),
-      rendererVersion: 2 // 9.28 fixed a rendering bug; this signals to PUC that the native renderer is safe to use
+      native: getNativeRenderingData(bidResponse, auctionManager.index.getAdUnit(bidResponse))
     })
   } else {
     next(bidResponse, options)

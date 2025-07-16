@@ -52,7 +52,7 @@ FEATURE: Analytics Adapters API
 
     adapter.track({eventType, args});
 
-    let result = JSON.parse(server.requests[0].requestBody);
+    const result = JSON.parse(server.requests[0].requestBody);
     sinon.assert.match(result, {args: {some: 'data'}, eventType})
   });
 
@@ -65,7 +65,7 @@ FEATURE: Analytics Adapters API
 
     // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
     const index = server.requests.length - 1;
-    let result = JSON.parse(server.requests[index].requestBody);
+    const result = JSON.parse(server.requests[index].requestBody);
     sinon.assert.match(result, {eventType, args: {wat: 'wot'}})
   });
 
@@ -204,7 +204,7 @@ FEATURE: Analytics Adapters API
         adapter.enableAnalytics();
         events.emit(eventType, args);
 
-        let result = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+        const result = JSON.parse(server.requests[server.requests.length - 1].requestBody);
         sinon.assert.match(result, {
           eventType,
           args: {
@@ -246,7 +246,7 @@ FEATURE: Analytics Adapters API
         events.emit(eventType, args);
 
         expect(server.requests.length).to.equal(1);
-        let result = JSON.parse(server.requests[0].requestBody);
+        const result = JSON.parse(server.requests[0].requestBody);
         sinon.assert.match(result, {args: {more: 'info'}, eventType: 'bidWon'})
       });
 

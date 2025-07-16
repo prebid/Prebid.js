@@ -35,8 +35,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
@@ -45,10 +46,10 @@ export const spec = {
       data: bids,
       deviceWidth: screen.width
     };
-    let gdpr = bidderRequest.gdprConsent;
+    const gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
-      let isCmp = (typeof gdpr.gdprApplies === 'boolean')
-      let isConsentString = (typeof gdpr.consentString === 'string')
+      const isCmp = (typeof gdpr.gdprApplies === 'boolean')
+      const isConsentString = (typeof gdpr.consentString === 'string')
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: isCmp ? gdpr.gdprApplies : -1
@@ -107,7 +108,7 @@ export const spec = {
 }
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = getValue(bid.params, 'placementId');
+  const placementId = getValue(bid.params, 'placementId');
   reqObj.sizes = parseSizesInput(bid.sizes);
   reqObj.bidId = getBidIdParameter('bidId', bid);
   reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);

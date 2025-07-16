@@ -54,7 +54,7 @@ export const spec = {
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
         kws: bid.params.keywords,
-        schain: bid.schain,
+        schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
         userData: deepAccess(bid, 'ortb2.user.data')
@@ -211,7 +211,7 @@ export const spec = {
   },
 
   onTimeout: function (data) {
-    let url = raiGetTimeoutURL(data);
+    const url = raiGetTimeoutURL(data);
     if (url) {
       triggerPixel(url);
     }
@@ -273,14 +273,8 @@ function renderer(bid) {
 }
 
 function renderAd(bid) {
-  let raOutstreamHBPassback = `${bid.vastXml}`;
-  let raPlayerHB = {
-    config: bid.params[0].player != undefined ? {
-      end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
-      init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
-      skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
-    } : {end: 'close', init: 'close', skin: 'light'},
-    pid: bid.params[0].pid,
+  const raOutstreamHBPassback = `${bid.vastXml}`;
+  const raPlayerHB = {
     adUnit: bid.adUnitCode
   };
 
@@ -306,7 +300,7 @@ function raiSetPbAdSlot(bid) {
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
-    let raiSync = {};
+    const raiSync = {};
     if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
       raConfig = config.getConfig('userSync').filterSettings
       if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
@@ -328,7 +322,7 @@ function raiGetFloor(bid, config) {
     if (bid.params.bidfloor != null) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
-      let floorSpec = bid.getFloor({
+      const floorSpec = bid.getFloor({
         currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
         mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
@@ -343,7 +337,7 @@ function raiGetFloor(bid, config) {
 }
 
 function raiGetTimeoutURL(data) {
-  let {params, timeout} = data[0]
+  const {params, timeout} = data[0]
   let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
 
   url = url.replace('[timeout_publisher]', timeout)
@@ -355,6 +349,6 @@ function raiGetTimeoutURL(data) {
 }
 
 function setDSA(bid) {
-  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  const dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
   return dsa;
 }

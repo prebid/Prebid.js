@@ -23,7 +23,7 @@ describe('ProxistoreBidAdapter', function () {
       },
     },
   };
-  let bid = {
+  const bid = {
     sizes: [[300, 600]],
     params: {
       website: 'example.fr',
@@ -55,9 +55,9 @@ describe('ProxistoreBidAdapter', function () {
   });
   describe('buildRequests', function () {
     const url = {
-      cookieBase: 'https://api.proxistore.com/v3/rtb/prebid/multi',
+      cookieBase: 'https://abs.proxistore.com/v3/rtb/prebid/multi',
       cookieLess:
-        'https://api.cookieless-proxistore.com/v3/rtb/prebid/multi',
+        'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi',
     };
 
     let request = spec.buildRequests([bid], bidderRequest);

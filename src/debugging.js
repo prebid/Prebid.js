@@ -74,12 +74,12 @@ export const reset = ctl.reset;
 export function loadSession() {
   let storage = null;
   try {
-    // eslint-disable-next-line prebid/no-global
+    // eslint-disable-next-line no-restricted-properties
     storage = window.sessionStorage;
   } catch (e) {}
 
   if (storage !== null) {
-    let debugging = ctl;
+    const debugging = ctl;
     let config = null;
     try {
       config = storage.getItem(DEBUG_KEY);

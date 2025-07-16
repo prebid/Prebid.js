@@ -108,7 +108,7 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
 const videoVendorDirectory = {};
 
 /**
- * @constructor
+ * @class
  * @param {ParentModule} parentModule_
  * @returns {VideoCore}
  */
@@ -166,6 +166,18 @@ export function VideoCore(parentModule_) {
   }
 
   /**
+   * @name VideoCore#setAdXml
+   * @summary Requests that a player render the ad in the provided ad tag
+   * @param {string} vastXml - VAST content in xml format
+   * @param {string} divId - unique identifier of the player instance
+   * @param {Object} options - additional params
+   */
+  function setAdXml(vastXml, divId, options) {
+    const submodule = parentModule.getSubmodule(divId);
+    submodule && submodule.setAdXml(vastXml, options);
+  }
+
+  /**
    * @name VideoCore#onEvents
    * @summary attaches event listeners
    * @param {[string]} events - List of event names for which the listener should be added
@@ -216,6 +228,7 @@ export function VideoCore(parentModule_) {
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvents,
     offEvents,
     hasProviderFor(divId) {

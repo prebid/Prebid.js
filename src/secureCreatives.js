@@ -6,7 +6,6 @@
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
 import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
-import {find, includes} from './polyfill.js';
 import {
   deferRendering,
   getBidToRender,
@@ -15,7 +14,7 @@ import {
   handleRender,
   markWinner
 } from './adRendering.js';
-import {getCreativeRendererSource} from './creativeRenderers.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -89,7 +88,8 @@ function handleRenderRequest(reply, message, bidResponse) {
     renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(bidResponse)
+        renderer: getCreativeRendererSource(bidResponse),
+        rendererVersion: PUC_MIN_VERSION
       }, adData));
     },
     resizeFn: getResizer(message.adId, bidResponse),
@@ -134,16 +134,19 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
-export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+  // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
+  // be handled within it.
+  if (instl) return;
   function getDimension(value) {
     return value ? value + 'px' : '100%';
   }
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
-    let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+    const element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
-      let elementStyle = element.style;
+      const elementStyle = element.style;
       elementStyle.width = getDimension(width)
       elementStyle.height = getDimension(height);
     } else {
@@ -152,8 +155,8 @@ export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
   });
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    let parentDivEle = document.getElementById(id);
+    const id = getElementIdBasedOnAdServer(adId, adUnitCode);
+    const parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
@@ -168,16 +171,16 @@ export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
   }
 
   function getDfpElementId(adId) {
-    const slot = find(window.googletag.pubads().getSlots(), slot => {
-      return find(slot.getTargetingKeys(), key => {
-        return includes(slot.getTargeting(key), adId);
+    const slot = window.googletag.pubads().getSlots().find(slot => {
+      return slot.getTargetingKeys().find(key => {
+        return slot.getTargeting(key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;
   }
 
   function getAstElementId(adUnitCode) {
-    let astTag = window.apntag.getTag(adUnitCode);
+    const astTag = window.apntag.getTag(adUnitCode);
     return astTag && astTag.targetId;
   }
 }

@@ -26,7 +26,7 @@ export const makeBaseSpec = (baseUrl, modes) => {
       const testMode = generalObject.params.testMode;
       const rtbDomain = generalObject.params.rtbDomain || baseUrl;
 
-      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
+      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest, ADAPTER_VERSION);
       combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
 
       return {
@@ -113,7 +113,7 @@ export function getFloor(bid) {
   const mediaTypes = getBidRequestMediaTypes(bid)
   const firstMediaType = mediaTypes[0];
 
-  let floorResult = bid.getFloor({
+  const floorResult = bid.getFloor({
     currency: 'USD',
     mediaType: mediaTypes.length === 1 ? firstMediaType : '*',
     size: '*'
@@ -224,7 +224,7 @@ export function generateBidParameters(bid, bidderRequest) {
     sizes: getSizesArray(bid),
     floorPrice: Math.max(getFloor(bid), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
-    loop: bid.bidderRequestsCount || 0,
+    loop: bid.auctionsCount || 0,
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0,
@@ -399,6 +399,11 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     generalParams.device = ortb2Metadata.device;
   }
 
+  const previousAuctionInfo = deepAccess(bidderRequest, 'ortb2.ext.prebid.previousauctioninfo')
+  if (previousAuctionInfo) {
+    generalParams.prev_auction_info = JSON.stringify(previousAuctionInfo);
+  }
+
   if (syncEnabled) {
     const allowedSyncMethod = getAllowedSyncMethod(filterSettings, bidderCode);
     if (allowedSyncMethod) {
@@ -427,8 +432,8 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     generalParams.ifa = generalBidParams.ifa;
   }
 
-  if (generalObject.schain) {
-    generalParams.schain = getSupplyChain(generalObject.schain);
+  if (bidderRequest?.ortb2?.source?.ext?.schain) {
+    generalParams.schain = getSupplyChain(bidderRequest.ortb2.source.ext.schain);
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
