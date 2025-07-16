@@ -241,6 +241,7 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      'no-useless-escape': 'off',
       'camelcase': 'off'
     }
   },
