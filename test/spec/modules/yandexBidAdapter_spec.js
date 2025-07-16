@@ -529,6 +529,7 @@ describe('Yandex adapter', function () {
               ],
               adid: 'yabs.123=',
               nurl: 'https://example.com/nurl/?price=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}',
+              lurl: 'https://example.com/nurl/?reason=${AUCTION_LOSS}',
             }
           ]
         }],
@@ -555,6 +556,7 @@ describe('Yandex adapter', function () {
       expect(rtbBid.netRevenue).to.equal(true);
       expect(rtbBid.ttl).to.equal(180);
       expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
+      expect(rtbBid.lurl).to.exist;
 
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
