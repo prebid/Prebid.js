@@ -529,7 +529,7 @@ describe('unicornBidAdapterTest', () => {
       assert.deepStrictEqual(uid, uid2);
     });
     it('test if contains ID5', () => {
-      let _validBidRequests = utils.deepClone(validBidRequests);
+      const _validBidRequests = utils.deepClone(validBidRequests);
       _validBidRequests[0].userId = {
         id5id: {
           uid: 'id5_XXXXX'

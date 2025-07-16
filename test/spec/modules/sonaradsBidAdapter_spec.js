@@ -4,9 +4,9 @@ import {
 } from '../../../modules/sonaradsBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
-import { hook } from '../../../src/hook';
+import { hook } from '../../../src/hook.js';
 import { config } from '../../../src/config.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
@@ -575,7 +575,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       const bidRequests = [];
       const bidderRequest = {};
       config.setConfig({coppa: false});
-      let buildRequests = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const buildRequests = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = buildRequests.data;
       expect(ortbRequest.regs.coppa).to.equal(0);
     });

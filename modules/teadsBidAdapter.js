@@ -38,8 +38,8 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
-      let isValidPlacementId = _validateId(bid.params.placementId);
-      let isValidPageId = _validateId(bid.params.pageId);
+      const isValidPlacementId = _validateId(bid.params.placementId);
+      const isValidPageId = _validateId(bid.params.pageId);
       isValid = isValidPlacementId && isValidPageId;
     }
 
@@ -94,10 +94,10 @@ export const spec = {
       payload.schain = schain;
     }
 
-    let gpp = bidderRequest.gppConsent;
+    const gpp = bidderRequest.gppConsent;
     if (bidderRequest && gpp) {
-      let isValidConsentString = typeof gpp.gppString === 'string';
-      let validateApplicableSections =
+      const isValidConsentString = typeof gpp.gppString === 'string';
+      const validateApplicableSections =
         Array.isArray(gpp.applicableSections) &&
         gpp.applicableSections.every((section) => typeof (section) === 'number')
       payload.gpp = {
@@ -106,11 +106,11 @@ export const spec = {
       };
     }
 
-    let gdpr = bidderRequest.gdprConsent;
+    const gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
-      let isCmp = typeof gdpr.gdprApplies === 'boolean';
-      let isConsentString = typeof gdpr.consentString === 'string';
-      let status = isCmp
+      const isCmp = typeof gdpr.gdprApplies === 'boolean';
+      const isConsentString = typeof gdpr.consentString === 'string';
+      const status = isCmp
         ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData)
         : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
       payload.gdpr_iab = {
@@ -206,7 +206,7 @@ function getSharedViewerIdParameters(validBidRequests) {
     kinessoId: 'kpuid.com' // kinessoIdSystem
   }
 
-  let sharedViewerIdObject = {};
+  const sharedViewerIdObject = {};
   for (const sharedViewerId in sharedViewerIdMapping) {
     const userIdKey = sharedViewerIdMapping[sharedViewerId];
     validBidRequests[0].userIdAsEids?.forEach((eid) => {
@@ -284,8 +284,8 @@ function findGdprStatus(gdprApplies, gdprData) {
 
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = bid.params.placementId;
-  let pageId = bid.params.pageId;
+  const placementId = bid.params.placementId;
+  const pageId = bid.params.pageId;
   const gpid = bid?.ortb2Imp?.ext?.gpid;
   const videoPlcmt = bid?.mediaTypes?.video?.plcmt;
 
@@ -306,12 +306,12 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = bid?.mediaTypes?.video?.playerSize;
-  let videoSizes = bid?.mediaTypes?.video?.sizes;
-  let bannerSizes = bid?.mediaTypes?.banner?.sizes;
+  const playerSize = bid?.mediaTypes?.video?.playerSize;
+  const videoSizes = bid?.mediaTypes?.video?.sizes;
+  const bannerSizes = bid?.mediaTypes?.banner?.sizes;
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    const mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
     return mediaTypesSizes
       .reduce(function(acc, currSize) {
         if (isArray(currSize)) {

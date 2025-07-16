@@ -43,107 +43,107 @@ let _syncCount = 0;
 let _s2sConfigs: S2SConfig[];
 
 type Endpoint = string | {
-    /**
-     * Defines the auction endpoint or the cookie_sync endpoint for the Prebid Server cluster for non-consent requests or users who grant consent.
-     */
-    p1Consent: string;
-    /**
-     * Defines the auction endpoint or the cookie_sync endpoint for the Prebid Server cluster for users who do not grant consent.
-     * (This is useful for a server configured to not accept any cookies to ensure compliance regulations.)
-     */
-    noP1Consent: string;
+  /**
+   * Defines the auction endpoint or the cookie_sync endpoint for the Prebid Server cluster for non-consent requests or users who grant consent.
+   */
+  p1Consent: string;
+  /**
+   * Defines the auction endpoint or the cookie_sync endpoint for the Prebid Server cluster for users who do not grant consent.
+   * (This is useful for a server configured to not accept any cookies to ensure compliance regulations.)
+   */
+  noP1Consent: string;
 };
 
 type S2SConfig = {
-    /**
-     * Your Prebid Server account ID. This is obtained from whoever’s hosting your Prebid Server.
-     */
-    accountId: string;
-    /**
-     * A handle for this configuration, used to reference a specific server (when multiple are present) from ad unit configuration
-     */
-    name?: string;
-    /**
-     * Which bidders auctions should take place on the server side
-     */
-    bidders?: BidderCode[];
-    /**
-     * Allow Prebid Server to bid on behalf of bidders that are not explicitly listed in the adUnit.
-     * Defaults to false.
-     */
-    allowUnknownBidderCodes?: boolean;
-    /**
-     * Enables this s2sConfig block - defaults to false
-     */
-    enabled?: boolean;
-    /**
-     * Number of milliseconds allowed for the server-side auctions.
-     * This should be approximately 200ms-300ms less than your Prebid.js timeout to allow for all bids to be returned
-     * in a timely manner. Defaults to 75% of bidderTimeout or `maxTimeout`, whichever is lesser.
-     */
-    timeout?: number;
-    /**
-     * Upper limit on the default timeout. Defaults to 1500.
-     */
-    maxTimeout?: number;
-    /**
-     * Adapter to use to connect to Prebid Server. Defaults to ‘prebidServer’
-     */
-    adapter?: string;
-    /**
-     * Defines the auction endpoint for the Prebid Server cluster.
-     */
-    endpoint: Endpoint;
-    /**
-     * Defines the cookie_sync endpoint for the Prebid Server cluster.
-     */
-    syncEndpoint: Endpoint;
-    /**
-     * Max number of userSync URLs that can be executed by Prebid Server cookie_sync per request.
-     * If not defined, PBS will execute all userSync URLs included in the request.
-     */
-    userSyncLimit?: number;
-    /**
-     * Maximum number of milliseconds allowed for each server-side userSync to load. Default is 1000.
-     */
-    syncTimeout?: number;
-    /**
-     * Functions to modify a bidder’s sync url before the actual call to the sync endpoint.
-     * Bidder must be enabled for s2sConfig.
-     */
-    syncUrlModifier?: {
-        [bidder: BidderCode]: (type: SyncType, url: string, bidder: BidderCode) => string;
-    };
-    /**
-     * Whether or not PBS is allowed to perform “cooperative syncing” for bidders not on this page.
-     * Publishers help each other improve match rates by allowing this. Default is true.
-     */
-    coopSync?: boolean;
-    /**
-     * Configures the default TTL in the Prebid Server adapter to use when Prebid Server does not return a bid TTL.
-     * Defaults to 60.
-     */
-    defaultTTL?: number;
-    /**
-     * Arguments will be added to resulting OpenRTB payload to Prebid Server in every impression object at request.imp[].ext.BIDDER
-     */
-    adapterOptions?: { [bidder: BidderCode]: Record<string, unknown> };
-    /**
-     * Arguments will be added to resulting OpenRTB payload to Prebid Server in request.ext.prebid.
-     */
-    extPrebid?: Record<string, unknown>;
-    /**
-     * Base value for imp.native.request
-     */
-    ortbNative?: Partial<NativeRequest>;
-    /**
-     * If true, enable gzip compression of outgoing requests.
-     */
-    endpointCompression?: boolean
-    /**
-     * If true, exclude ad units that have no bidders defined.
-     */
-    filterBidderlessCalls?: boolean;
+  /**
+   * Your Prebid Server account ID. This is obtained from whoever’s hosting your Prebid Server.
+   */
+  accountId: string;
+  /**
+   * A handle for this configuration, used to reference a specific server (when multiple are present) from ad unit configuration
+   */
+  name?: string;
+  /**
+   * Which bidders auctions should take place on the server side
+   */
+  bidders?: BidderCode[];
+  /**
+   * Allow Prebid Server to bid on behalf of bidders that are not explicitly listed in the adUnit.
+   * Defaults to false.
+   */
+  allowUnknownBidderCodes?: boolean;
+  /**
+   * Enables this s2sConfig block - defaults to false
+   */
+  enabled?: boolean;
+  /**
+   * Number of milliseconds allowed for the server-side auctions.
+   * This should be approximately 200ms-300ms less than your Prebid.js timeout to allow for all bids to be returned
+   * in a timely manner. Defaults to 75% of bidderTimeout or `maxTimeout`, whichever is lesser.
+   */
+  timeout?: number;
+  /**
+   * Upper limit on the default timeout. Defaults to 1500.
+   */
+  maxTimeout?: number;
+  /**
+   * Adapter to use to connect to Prebid Server. Defaults to ‘prebidServer’
+   */
+  adapter?: string;
+  /**
+   * Defines the auction endpoint for the Prebid Server cluster.
+   */
+  endpoint: Endpoint;
+  /**
+   * Defines the cookie_sync endpoint for the Prebid Server cluster.
+   */
+  syncEndpoint: Endpoint;
+  /**
+   * Max number of userSync URLs that can be executed by Prebid Server cookie_sync per request.
+   * If not defined, PBS will execute all userSync URLs included in the request.
+   */
+  userSyncLimit?: number;
+  /**
+   * Maximum number of milliseconds allowed for each server-side userSync to load. Default is 1000.
+   */
+  syncTimeout?: number;
+  /**
+   * Functions to modify a bidder’s sync url before the actual call to the sync endpoint.
+   * Bidder must be enabled for s2sConfig.
+   */
+  syncUrlModifier?: {
+    [bidder: BidderCode]: (type: SyncType, url: string, bidder: BidderCode) => string;
+  };
+  /**
+   * Whether or not PBS is allowed to perform “cooperative syncing” for bidders not on this page.
+   * Publishers help each other improve match rates by allowing this. Default is true.
+   */
+  coopSync?: boolean;
+  /**
+   * Configures the default TTL in the Prebid Server adapter to use when Prebid Server does not return a bid TTL.
+   * Defaults to 60.
+   */
+  defaultTTL?: number;
+  /**
+   * Arguments will be added to resulting OpenRTB payload to Prebid Server in every impression object at request.imp[].ext.BIDDER
+   */
+  adapterOptions?: { [bidder: BidderCode]: Record<string, unknown> };
+  /**
+   * Arguments will be added to resulting OpenRTB payload to Prebid Server in request.ext.prebid.
+   */
+  extPrebid?: Record<string, unknown>;
+  /**
+   * Base value for imp.native.request
+   */
+  ortbNative?: Partial<NativeRequest>;
+  /**
+   * If true, enable gzip compression of outgoing requests.
+   */
+  endpointCompression?: boolean
+  /**
+   * If true, exclude ad units that have no bidders defined.
+   */
+  filterBidderlessCalls?: boolean;
 }
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
@@ -167,9 +167,9 @@ config.setDefaults({
 });
 
 declare module '../../src/config' {
-    interface Config {
-        s2sConfig?: S2SConfig | S2SConfig[];
-    }
+  interface Config {
+    s2sConfig?: S2SConfig | S2SConfig[];
+  }
 }
 
 function updateConfigDefaults(s2sConfig: S2SConfig) {
@@ -194,7 +194,7 @@ function validateConfigRequiredProps(s2sConfig: S2SConfig) {
 function formatUrlParams(option) {
   ['endpoint', 'syncEndpoint'].forEach((prop) => {
     if (isStr(option[prop])) {
-      let temp = option[prop];
+      const temp = option[prop];
       option[prop] = { p1Consent: temp, noP1Consent: temp };
     }
     if (isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
@@ -283,7 +283,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig: 
     filterSettings
   };
 
-  let userSyncLimit = s2sConfig.userSyncLimit;
+  const userSyncLimit = s2sConfig.userSyncLimit;
   if (isNumber(userSyncLimit) && userSyncLimit > 0) {
     payload['limit'] = userSyncLimit;
   }
@@ -394,7 +394,7 @@ function doBidderSync(type, url, bidder, done, timeout) {
  */
 function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   bidders.forEach(bidder => {
-    let clientAdapter = adapterManager.getBidAdapter(bidder);
+    const clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
       config.runWithBidder(
         bidder,
@@ -430,38 +430,38 @@ function getConsentData(bidRequests) {
 }
 
 export type SeatNonBid = {
-    /**
-     * Auction ID associated with the PBS response.
-     */
-    auctionId: Identifier;
-    /**
-     * The PBS response's `ext.seatnonbid`.
-     */
-    seatnonbid: unknown;
-    /**
-     * Bidders that were included in the request to PBS.
-     */
-    requestedBidders: BidderCode[];
-    /**
-     * PBS response data.
-     */
-    response: ORTBResponse;
-    adapterMetrics: Metrics;
+  /**
+   * Auction ID associated with the PBS response.
+   */
+  auctionId: Identifier;
+  /**
+   * The PBS response's `ext.seatnonbid`.
+   */
+  seatnonbid: unknown;
+  /**
+   * Bidders that were included in the request to PBS.
+   */
+  requestedBidders: BidderCode[];
+  /**
+   * PBS response data.
+   */
+  response: ORTBResponse;
+  adapterMetrics: Metrics;
 }
 
 export type PbsAnalytics = SeatNonBid & {
-    /**
-     * The PBS response's `ext.prebid.analytics.tags`.
-     */
-    atag: unknown;
+  /**
+   * The PBS response's `ext.prebid.analytics.tags`.
+   */
+  atag: unknown;
 }
 
 declare module '../../src/events' {
-    interface Events {
-        [EVENTS.SEAT_NON_BID]: [SeatNonBid];
-        [EVENTS.PBS_ANALYTICS]: [PbsAnalytics];
-        [EVENTS.BEFORE_PBS_HTTP]: [PbsRequestData];
-    }
+  interface Events {
+    [EVENTS.SEAT_NON_BID]: [SeatNonBid];
+    [EVENTS.PBS_ANALYTICS]: [PbsAnalytics];
+    [EVENTS.BEFORE_PBS_HTTP]: [PbsRequestData];
+  }
 }
 
 /**
@@ -478,12 +478,12 @@ export function PrebidServer() {
     done = adapterMetrics.startTiming('total').stopBefore(done);
     bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {stopPropagation: true}));
 
-    let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
+    const { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
         const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
-        let syncBidders = s2sBidRequest.s2sConfig.bidders
+        const syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
@@ -561,9 +561,9 @@ export function PrebidServer() {
 }
 
 type PbsRequestData = {
-    endpointUrl: string;
-    requestJson: string;
-    customHeaders: Record<string, string>;
+  endpointUrl: string;
+  requestJson: string;
+  customHeaders: Record<string, string>;
 }
 
 /**
@@ -577,7 +577,7 @@ type PbsRequestData = {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
 export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
-  let { gdprConsent } = getConsentData(bidRequests);
+  const { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
   // in case config.bidders contains invalid bidders, we only process those we sent requests for

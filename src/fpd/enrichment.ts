@@ -25,17 +25,17 @@ export const dep = {
 const oneClient = clientSectionChecker('FPD')
 
 export interface FirstPartyDataConfig {
-    /**
-     * High entropy UA client hints to request.
-     * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
-     */
-    uaHints?: string[]
+  /**
+   * High entropy UA client hints to request.
+   * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
+   */
+  uaHints?: string[]
 }
 
 declare module '../config' {
-    interface Config {
-        firstPartyData?: FirstPartyDataConfig;
-    }
+  interface Config {
+    firstPartyData?: FirstPartyDataConfig;
+  }
 }
 
 /**
@@ -77,7 +77,7 @@ export const enrichFPD = hook('sync', (fpd) => {
       }
 
       ortb2 = oneClient(ortb2);
-      for (let section of CLIENT_SECTIONS) {
+      for (const section of CLIENT_SECTIONS) {
         if (hasSection(ortb2, section)) {
           ortb2[section] = mergeDeep({}, clientEnrichment(ortb2, ri), ortb2[section]);
           break;

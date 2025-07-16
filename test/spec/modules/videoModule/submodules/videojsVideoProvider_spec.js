@@ -2,7 +2,7 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
-import { getWinDimensions } from '../../../../../src/utils';
+import { getWinDimensions } from '../../../../../src/utils.js';
 
 const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modules/videojsVideoProvider');
 
@@ -176,7 +176,7 @@ describe('videojsProvider', function () {
         }
       }
 
-      let provider = VideojsProvider(config, videojs, null, null, null, utils);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const video = provider.getOrtbVideo();
 

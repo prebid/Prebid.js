@@ -4,17 +4,17 @@ import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
-import { BID_WON_EVENT, AUCTION_INIT_EVENT, BID_WON_EVENT_UNDEFINED, AUCTION_INIT_EVENT_NOT_LI } from '../../fixtures/liveIntentAuctionEvents';
+import { BID_WON_EVENT, AUCTION_INIT_EVENT, BID_WON_EVENT_UNDEFINED, AUCTION_INIT_EVENT_NOT_LI } from '../../fixtures/liveIntentAuctionEvents.js';
 
-let utils = require('src/utils');
-let refererDetection = require('src/refererDetection');
-let instanceId = '77abbc81-c1f1-41cd-8f25-f7149244c800';
-let url = 'https://www.test.com'
+const utils = require('src/utils');
+const refererDetection = require('src/refererDetection');
+const instanceId = '77abbc81-c1f1-41cd-8f25-f7149244c800';
+const url = 'https://www.test.com'
 let sandbox;
 let clock;
-let now = new Date();
+const now = new Date();
 
-let events = require('src/events');
+const events = require('src/events');
 
 const USERID_CONFIG = [
   {

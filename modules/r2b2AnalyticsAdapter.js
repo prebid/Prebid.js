@@ -65,7 +65,7 @@ let errors = 0;
 
 let callDepth = 0;
 function flushEvents () {
-  let events = { prebid: { e: eventBuffer, c: adServerCurrency } };
+  const events = { prebid: { e: eventBuffer, c: adServerCurrency } };
   eventBuffer = [];
   callDepth++;
   try {
@@ -160,13 +160,13 @@ function reportError (message, params) {
 function reportEvents (events) {
   try {
     let data = 'events=' + JSON.stringify(events);
-    let url = r2b2Analytics.getUrl() +
+    const url = r2b2Analytics.getUrl() +
       `?v=${encodeURIComponent(ADAPTER_VERSION)}` +
       `&hbDomain=${encodeURIComponent(WEBSITE)}` +
       (CONFIG_ID ? `&conf=${encodeURIComponent(CONFIG_ID)}` : '') +
       (CONFIG_VERSION ? `&conf_ver=${encodeURIComponent(CONFIG_VERSION)}` : '') +
       `&u=${encodeURIComponent(REPORTED_URL)}`;
-    let headers = {
+    const headers = {
       contentType: 'application/x-www-form-urlencoded'
     }
     data = data.replace(/&/g, '%26');
@@ -283,7 +283,7 @@ function handleBidTimeout (args) {
   // console.log('bid timeout:', arguments);
   const auctionId = args.length ? args[0].auctionId : null;
   if (auctionId) {
-    let bidders = args.reduce((result, bid) => {
+    const bidders = args.reduce((result, bid) => {
       if (!result[bid.bidder]) {
         result[bid.bidder] = {}
       }
@@ -358,7 +358,7 @@ function handleBidderDone (args) {
 function getAuctionUnitsData (auctionObject) {
   let unitsData = {};
   const {bidsReceived, bidsRejected} = auctionObject;
-  let _unitsDataBidReducer = function(data, bid, key) {
+  const _unitsDataBidReducer = function(data, bid, key) {
     const {adUnitCode, bidder} = bid;
     data[adUnitCode] = data[adUnitCode] || {};
     data[adUnitCode][key] = data[adUnitCode][key] || {};
@@ -375,7 +375,7 @@ function getAuctionUnitsData (auctionObject) {
   return unitsData
 }
 function handleEmptyAuction(auction) {
-  let auctionId = auction.auctionId;
+  const auctionId = auction.auctionId;
   if (!auctionsData[auctionId]) {
     createAuctionData(auction, true);
   }
@@ -513,8 +513,8 @@ function handleBidViewable (args) {
   processEvent(event);
 }
 
-let baseAdapter = adapter({analyticsType});
-let r2b2Analytics = Object.assign({}, baseAdapter, {
+const baseAdapter = adapter({analyticsType});
+const r2b2Analytics = Object.assign({}, baseAdapter, {
   getUrl() {
     return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_EVENT_PATH}`
   },

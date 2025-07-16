@@ -78,15 +78,15 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     if (validBidRequests && validBidRequests.length === 0) return []
-    let accuontId = validBidRequests[0].params.accountId;
+    const accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
-    let winTop = window;
+    const winTop = window;
     let location;
     location = bidderRequest?.refererInfo ?? null;
-    let bids = [];
-    for (let bidRequest of validBidRequests) {
-      let impObject = prepareImpObject(bidRequest);
-      let data = {
+    const bids = [];
+    for (const bidRequest of validBidRequests) {
+      const impObject = prepareImpObject(bidRequest);
+      const data = {
         id: bidRequest.bidId,
         test: config.getConfig('debug') ? 1 : 0,
         cur: ['USD'],
@@ -136,13 +136,13 @@ export const spec = {
    */
   interpretResponse: (serverResponse) => {
     if (!serverResponse || !serverResponse.body) return [];
-    let responses = serverResponse.body;
+    const responses = serverResponse.body;
 
-    let bids = [];
-    for (let response of responses) {
-      let mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
+    const bids = [];
+    for (const response of responses) {
+      const mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
 
-      let bid = {
+      const bid = {
         requestId: response.id,
         cpm: response.seatbid[0].bid[0].price,
         width: response.seatbid[0].bid[0].w,
@@ -219,7 +219,7 @@ const parseNative = admObject => {
 }
 
 const prepareImpObject = (bidRequest) => {
-  let impObject = {
+  const impObject = {
     id: bidRequest.bidId,
     secure: 1,
     ext: {
@@ -242,7 +242,7 @@ const prepareImpObject = (bidRequest) => {
 };
 
 const addNativeParameters = bidRequest => {
-  let impObject = {
+  const impObject = {
     // TODO: this is not an "impObject", and `id` is not part of the ORTB native spec
     id: bidRequest.bidId,
     ver: NATIVE_VERSION,
@@ -286,7 +286,7 @@ const addNativeParameters = bidRequest => {
 }
 
 const addBannerParameters = (bidRequest) => {
-  let bannerObject = {};
+  const bannerObject = {};
   const size = parseSizes(bidRequest, 'banner');
   bannerObject.w = size[0];
   bannerObject.h = size[1];
@@ -294,7 +294,7 @@ const addBannerParameters = (bidRequest) => {
 };
 
 const parseSizes = (bid, mediaType) => {
-  let mediaTypes = bid.mediaTypes;
+  const mediaTypes = bid.mediaTypes;
   if (mediaType === 'video') {
     let size = [];
     if (mediaTypes.video && mediaTypes.video.w && mediaTypes.video.h) {
@@ -322,10 +322,10 @@ const parseSizes = (bid, mediaType) => {
 }
 
 const addVideoParameters = (bidRequest) => {
-  let videoObj = {};
-  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
+  const videoObj = {};
+  const supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
 
-  for (let param of supportParamsList) {
+  for (const param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {
       videoObj[param] = bidRequest.mediaTypes.video[param];
     }

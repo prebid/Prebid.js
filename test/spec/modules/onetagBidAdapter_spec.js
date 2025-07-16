@@ -3,30 +3,30 @@ import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
-import { hasTypeNative } from '../../../modules/onetagBidAdapter';
+import { hasTypeNative } from '../../../modules/onetagBidAdapter.js';
 
 const NATIVE_SUFFIX = 'Ad';
 
 const getFloor = function(params) {
-    let floorPrice = 0.0001;
-    switch (params.mediaType) {
-      case BANNER:
-        floorPrice = 1.0;
-        break;
-      case VIDEO:
-        floorPrice = 2.0;
-        break;
-      case INSTREAM:
-        floorPrice = 3.0;
-        break;
-      case OUTSTREAM:
-        floorPrice = 4.0;
-        break;
-      case NATIVE:
-        floorPrice = 5.0;
-        break;
-    }
-    return {currency: params.currency, floor: floorPrice};
+  let floorPrice = 0.0001;
+  switch (params.mediaType) {
+    case BANNER:
+      floorPrice = 1.0;
+      break;
+    case VIDEO:
+      floorPrice = 2.0;
+      break;
+    case INSTREAM:
+      floorPrice = 3.0;
+      break;
+    case OUTSTREAM:
+      floorPrice = 4.0;
+      break;
+    case NATIVE:
+      floorPrice = 5.0;
+      break;
+  }
+  return {currency: params.currency, floor: floorPrice};
 };
 
 describe('onetag', function () {
@@ -77,28 +77,28 @@ describe('onetag', function () {
         sendId: 1
       },
       body: {
-          required: 1,
-          sendId: 1
+        required: 1,
+        sendId: 1
       },
       cta: {
-          required: 0,
-          sendId: 1
+        required: 0,
+        sendId: 1
       },
       displayUrl: {
-          required: 0,
-          sendId: 1
+        required: 0,
+        sendId: 1
       },
       icon: {
-          required: 0,
-          sendId: 1
+        required: 0,
+        sendId: 1
       },
       image: {
-          required: 1,
-          sendId: 1
+        required: 1,
+        sendId: 1
       },
       sponsoredBy: {
-          required: 1,
-          sendId: 1
+        required: 1,
+        sendId: 1
       }
     }
     bid = addNativeParams(bid);
@@ -109,11 +109,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'native|*': 1.10
+        'native|*': 1.10
       }
     }
     bid.getFloor = getFloor;
@@ -121,7 +121,7 @@ describe('onetag', function () {
   }
 
   function addNativeParams(bidRequest) {
-    let bidParams = bidRequest.nativeParams || {};
+    const bidParams = bidRequest.nativeParams || {};
     for (const property in bidRequest.mediaTypes.native) {
       bidParams[property] = bidRequest.mediaTypes.native[property];
     }
@@ -166,7 +166,7 @@ describe('onetag', function () {
             minduration: 5,
             maxduration: 30,
             protocols: [2, 3]
-      }
+          }
         }],
         eventtrackers: [{
           event: 1,
@@ -179,11 +179,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'native|*': 1.10
+        'native|*': 1.10
       }
     }
     bid.getFloor = getFloor;
@@ -200,11 +200,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'banner|300x250': 0.10
+        'banner|300x250': 0.10
       }
     }
     bid.getFloor = getFloor;
@@ -223,11 +223,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'video|640x480': 0.10
+        'video|640x480': 0.10
       }
     }
     bid.getFloor = getFloor;
@@ -245,11 +245,11 @@ describe('onetag', function () {
     bid.floors = {
       currency: 'EUR',
       schema: {
-          delimiter: '|',
-          fields: [ 'mediaType', 'size' ]
+        delimiter: '|',
+        fields: [ 'mediaType', 'size' ]
       },
       values: {
-          'video|640x480': 0.10
+        'video|640x480': 0.10
       }
     }
     bid.getFloor = getFloor;
@@ -594,9 +594,9 @@ describe('onetag', function () {
     });
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
-      let dataString = serverRequest.data;
+      const dataString = serverRequest.data;
       try {
-        let dataObj = JSON.parse(dataString);
+        const dataObj = JSON.parse(dataString);
         expect(dataObj.bids).to.be.an('array').that.is.empty;
       } catch (e) { }
     });
@@ -611,9 +611,9 @@ describe('onetag', function () {
       expect(payload.bids[0].ortb2Imp).to.deep.equal(bannerBid.ortb2Imp);
     });
     it('should send GDPR consent data', function () {
-      let consentString = 'consentString';
-      let addtlConsent = '2~1.35.41.101~dv.9.21.81';
-      let bidderRequest = {
+      const consentString = 'consentString';
+      const addtlConsent = '2~1.35.41.101~dv.9.21.81';
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -624,7 +624,7 @@ describe('onetag', function () {
           addtlConsent: addtlConsent
         }
       };
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload).to.exist;
@@ -634,9 +634,9 @@ describe('onetag', function () {
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
     it('Should send GPP consent data', function () {
-      let consentString = 'consentString';
-      let applicableSections = [1, 2, 3];
-      let bidderRequest = {
+      const consentString = 'consentString';
+      const applicableSections = [1, 2, 3];
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -646,7 +646,7 @@ describe('onetag', function () {
           applicableSections: applicableSections
         }
       };
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload).to.exist;
@@ -655,15 +655,15 @@ describe('onetag', function () {
       expect(payload.gppConsent.applicableSections).to.have.same.members(applicableSections);
     });
     it('Should send us privacy string', function () {
-      let consentString = 'us_foo';
-      let bidderRequest = {
+      const consentString = 'us_foo';
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'uspConsent': consentString
       };
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload.usPrivacy).to.exist;
@@ -726,14 +726,14 @@ describe('onetag', function () {
           gpp_sid: [7]
         }
       };
-      let bidderRequest = {
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'ortb2': firtPartyData
       }
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(firtPartyData);
@@ -754,20 +754,20 @@ describe('onetag', function () {
           }
         }
       };
-      let bidderRequest = {
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'ortb2': dsa
       }
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
     });
     it('Should send FLEDGE eligibility flag when FLEDGE is enabled', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -776,14 +776,14 @@ describe('onetag', function () {
           'enabled': true
         }
       };
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload.fledgeEnabled).to.exist;
       expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
     });
     it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -792,20 +792,20 @@ describe('onetag', function () {
           enabled: false
         }
       };
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload.fledgeEnabled).to.exist;
       expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
     });
     it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
       };
-      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload.fledgeEnabled).to.exist;
@@ -827,7 +827,7 @@ describe('onetag', function () {
       });
       expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
-        let dataItem = interpretedResponse[i];
+        const dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
         if (dataItem.meta.mediaType === VIDEO) {
           const { context } = requestData.bids.find((item) => item.bidId === dataItem.requestId);
@@ -953,7 +953,7 @@ describe('onetag', function () {
       expect(syncs[0].url).to.not.match(/(?:[?&](?:gpp_consent=([^&]*)))+$/);
     });
     it('Should send us privacy string', function () {
-      let usConsentString = 'us_foo';
+      const usConsentString = 'us_foo';
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, usConsentString);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.include(sync_endpoint);

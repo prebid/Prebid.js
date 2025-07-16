@@ -9,7 +9,7 @@ const ENDPOINT_URLS = {
   'production': 'https://s-rtb-pb.send.microad.jp/prebid',
   'test': 'https://rtbtest.send.microad.jp/prebid'
 };
-export let ENVIRONMENT = 'production';
+export const ENVIRONMENT = 'production';
 
 /* eslint-disable no-template-curly-in-string */
 const EXT_URL_STRING = '${COMPASS_EXT_URL}';
