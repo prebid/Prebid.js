@@ -43,7 +43,9 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
   _dataControllerConfig.filterSDAwhenEID.some(source => {
     if (bidderEIDs.has(source)) {
       containsEIDs = true;
+      return true;
     }
+    return false;
   });
   return containsEIDs;
 }
@@ -63,7 +65,9 @@ function hasValue(bidderSegement) {
   _dataControllerConfig.filterEIDwhenSDA.some(segment => {
     if (bidderSegement.has(segment)) {
       containsSDA = true;
+      return true;
     }
+    return false;
   });
   return containsSDA;
 }

@@ -52,6 +52,7 @@ export const spec = {
       reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
       reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
       if (gpid) { reqObj.gpid = gpid; }
+      return reqObj;
     });
     const topWindow = window.top;
 

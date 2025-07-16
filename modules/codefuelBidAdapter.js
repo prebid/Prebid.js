@@ -121,6 +121,7 @@ export const spec = {
         };
         return bidObject;
       }
+      return undefined;
     }).filter(Boolean);
   },
 

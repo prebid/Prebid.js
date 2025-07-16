@@ -630,6 +630,7 @@ export const spec = {
         });
         return accum.concat(cookieSyncObjects);
       }
+      return accum;
     }, []);
   }
 };

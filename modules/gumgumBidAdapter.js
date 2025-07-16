@@ -122,7 +122,7 @@ function _serializeSupplyChainObj(schainObj) {
   let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
 
   // order of properties: asi,sid,hp,rid,name,domain
-  schainObj.nodes.map(node => {
+  schainObj.nodes.forEach(node => {
     serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
