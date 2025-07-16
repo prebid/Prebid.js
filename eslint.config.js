@@ -122,7 +122,6 @@ module.exports = [
       'no-return-assign': 'off',
       'no-throw-literal': 'off',
       'no-undef': 2,
-      'no-useless-escape': 'off',
       'no-console': 'error',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
