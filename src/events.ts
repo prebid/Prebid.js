@@ -11,20 +11,20 @@ type CoreEvent = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVE
 // hide video events (unless the video module is included) with this one weird trick
 
 export interface EventNames {
-    core: CoreEvent;
+  core: CoreEvent;
 }
 type AllEvents = {
-    [K in EventNames[keyof EventNames]]: unknown[];
+  [K in EventNames[keyof EventNames]]: unknown[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Events extends AllEvents {
-    // map from event name to the type of their arguments
-    // this is extended (defining event types) close to where they are emitted
+  // map from event name to the type of their arguments
+  // this is extended (defining event types) close to where they are emitted
 }
 
 export type EventIDs = {
-    [K in Event]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
+  [K in Event]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
 };
 
 export type Event = keyof Events;
@@ -32,20 +32,20 @@ export type EventPayload<E extends Event> = Events[E][0];
 export type EventHandler<E extends Event> = (...args: Events[E]) => void;
 
 export type EventRecord<E extends Event> = {
-    eventType: E;
-    args: EventPayload<E>;
-    id: EventIDs[E];
-    elapsedTime: number;
+  eventType: E;
+  args: EventPayload<E>;
+  id: EventIDs[E];
+  elapsedTime: number;
 }
 
 declare module './config' {
-    interface Config {
-        /**
-         * Maximum time (in seconds) that events should be kept in memory.
-         * By default, Prebid keeps in memory a log of every event since the initial page load, and makes it available to analytics adapters and getEvents().
-         */
-        [TTL_CONFIG]?: number;
-    }
+  interface Config {
+    /**
+     * Maximum time (in seconds) that events should be kept in memory.
+     * By default, Prebid keeps in memory a log of every event since the initial page load, and makes it available to analytics adapters and getEvents().
+     */
+    [TTL_CONFIG]?: number;
+  }
 }
 
 const TTL_CONFIG = 'eventHistoryTTL';
@@ -102,7 +102,7 @@ const _public = (function () {
      * `callbacks` array
      */
     if (key && eventKeys.includes(key)) {
-        callbacks.push(...event[key].que);
+      callbacks.push(...event[key].que);
     }
 
     /** Push each general callback to the `callbacks` array. */
@@ -124,68 +124,68 @@ const _public = (function () {
   }
 
   return {
-      has: _checkAvailableEvent,
-      on: function <E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
-          // check whether available event or not
-          if (_checkAvailableEvent(eventName)) {
-              const event = _handlers[eventName] || { que: [] };
+    has: _checkAvailableEvent,
+    on: function <E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+      // check whether available event or not
+      if (_checkAvailableEvent(eventName)) {
+        const event = _handlers[eventName] || { que: [] };
 
-              if (id) {
-                  event[id] = event[id] || { que: [] };
-                  event[id].que.push(handler);
-              } else {
-                  event.que.push(handler);
-              }
+        if (id) {
+          event[id] = event[id] || { que: [] };
+          event[id].que.push(handler);
+        } else {
+          event.que.push(handler);
+        }
 
-              _handlers[eventName] = event;
-          } else {
-              utils.logError('Wrong event name : ' + eventName + ' Valid event names :' + allEvents);
-          }
-      },
-      emit: function <E extends Event>(eventName: E, ...args: Events[E]) {
-          _dispatch(eventName, args);
-      },
-      off: function<E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
-          const event = _handlers[eventName];
-
-          if (utils.isEmpty(event) || (utils.isEmpty(event.que) && utils.isEmpty(event[id]))) {
-              return;
-          }
-
-          if (id && (utils.isEmpty(event[id]) || utils.isEmpty(event[id].que))) {
-              return;
-          }
-
-          if (id) {
-              (event[id].que || []).forEach(function (_handler) {
-                  const que = event[id].que;
-                  if (_handler === handler) {
-                      que.splice(que.indexOf(_handler), 1);
-                  }
-              });
-          } else {
-              (event.que || []).forEach(function (_handler) {
-                  const que = event.que;
-                  if (_handler === handler) {
-                      que.splice(que.indexOf(_handler), 1);
-                  }
-              });
-          }
-
-          _handlers[eventName] = event;
-      },
-      get: function () {
-          return _handlers;
-      },
-      addEvents: function (events: (Event)[]) {
-          allEvents = allEvents.concat(events);
-      },
-      /**
-       * Return a copy of all events fired
-       */
-      getEvents: function (): EventRecord<Event>[] {
-          return eventsFired.toArray().map(val => Object.assign({}, val))
+        _handlers[eventName] = event;
+      } else {
+        utils.logError('Wrong event name : ' + eventName + ' Valid event names :' + allEvents);
       }
+    },
+    emit: function <E extends Event>(eventName: E, ...args: Events[E]) {
+      _dispatch(eventName, args);
+    },
+    off: function<E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+      const event = _handlers[eventName];
+
+      if (utils.isEmpty(event) || (utils.isEmpty(event.que) && utils.isEmpty(event[id]))) {
+        return;
+      }
+
+      if (id && (utils.isEmpty(event[id]) || utils.isEmpty(event[id].que))) {
+        return;
+      }
+
+      if (id) {
+        (event[id].que || []).forEach(function (_handler) {
+          const que = event[id].que;
+          if (_handler === handler) {
+            que.splice(que.indexOf(_handler), 1);
+          }
+        });
+      } else {
+        (event.que || []).forEach(function (_handler) {
+          const que = event.que;
+          if (_handler === handler) {
+            que.splice(que.indexOf(_handler), 1);
+          }
+        });
+      }
+
+      _handlers[eventName] = event;
+    },
+    get: function () {
+      return _handlers;
+    },
+    addEvents: function (events: (Event)[]) {
+      allEvents = allEvents.concat(events);
+    },
+    /**
+     * Return a copy of all events fired
+     */
+    getEvents: function (): EventRecord<Event>[] {
+      return eventsFired.toArray().map(val => Object.assign({}, val))
+    }
   }
 }());
 

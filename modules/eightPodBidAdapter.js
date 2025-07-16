@@ -159,14 +159,14 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
         secure: 1,
         pmp: params.dealId
           ? {
-            ...data.pmp,
-            deals: [
-              {
-                id: params.dealId,
-              },
-            ],
-            private_auction: 1,
-          }
+              ...data.pmp,
+              deals: [
+                {
+                  id: params.dealId,
+                },
+              ],
+              private_auction: 1,
+            }
           : data.pmp,
       }
     ]

@@ -352,11 +352,11 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
 
   const markValidBidsAsWinners = (winnersAdIds) => {
     winnersAdIds.forEach((adId) => {
-        const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
-        if (winnerBid) {
-          winnerBid.iwb = 1;
-        }
-      });
+      const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
+      if (winnerBid) {
+        winnerBid.iwb = 1;
+      }
+    });
   };
 
   const checkWinnersForIwb = (winner, winningBidObj) => {

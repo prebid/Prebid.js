@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import { spec, storage } from 'modules/mgidBidAdapter.js';
 import { version } from 'package.json';
 import * as utils from '../../../src/utils.js';
-import {USERSYNC_DEFAULT_CONFIG} from '../../../src/userSync';
-import {config} from '../../../src/config';
+import {USERSYNC_DEFAULT_CONFIG} from '../../../src/userSync.js';
+import {config} from '../../../src/config.js';
 
 describe('Mgid bid adapter', function () {
   let sandbox;

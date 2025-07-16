@@ -56,8 +56,8 @@ describe('PubMatic adapter', () => {
     },
     ortb2Imp: {
       ext: {
-          tid: '92489f71-1bf2-49a0-adf9-000cea934729',
-          gpid: '/1111/homepage-leftnav',
+        tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+        gpid: '/1111/homepage-leftnav',
         data: {
           pbadslot: '/1111/homepage-leftnav',
           adserver: {
@@ -512,7 +512,7 @@ describe('PubMatic adapter', () => {
             expect(imp[0]).to.have.property('native');
           });
         });
-       }
+      }
       //   describe('MULTIFORMAT', () => {
       //     let multiFormatBidderRequest;
       //     it('should have both banner & video impressions', () => {

@@ -12,25 +12,25 @@ import type {NativeMediaType} from "./native.ts";
 export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER;
 
 export interface BaseMediaType {
-    /**
-     * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
-     */
-    renderer?: RendererConfig;
+  /**
+   * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
+   */
+  renderer?: RendererConfig;
 }
 
 export interface MediaTypes {
-    /**
-     * Defines properties of a banner ad.
-     */
-    banner?: BannerMediaType;
-    /**
-     * Defines properties of a video ad.
-     */
-    video?: VideoMediaType;
-    /**
-     * Defines properties of a native ad.
-     */
-    native?: NativeMediaType;
+  /**
+   * Defines properties of a banner ad.
+   */
+  banner?: BannerMediaType;
+  /**
+   * Defines properties of a video ad.
+   */
+  video?: VideoMediaType;
+  /**
+   * Defines properties of a native ad.
+   */
+  native?: NativeMediaType;
 }
 
 export const NATIVE = 'native';
