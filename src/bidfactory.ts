@@ -114,7 +114,7 @@ export interface NativeBidResponseProperties {
 }
 
 export interface AudioBidResponseProperties {
-    mediaType: 'audio';
+  mediaType: 'audio';
 }
 
 export type BannerBidResponse = BaseBidResponse & BannerBidResponseProperties;
@@ -167,7 +167,7 @@ export interface NativeBidProperties {
 }
 
 export interface VideoBidProperties {
-    mediaType: 'video' | 'audio';
+  mediaType: 'video' | 'audio';
 }
 
 type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;
