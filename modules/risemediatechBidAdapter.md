@@ -7,6 +7,7 @@ Maintainer : prebid@risemediatech.io
 # Description
 Connects to RiseMediaTech Exchange for bids
 RiseMediaTech supports Display & Video(Instream) currently.
+Our legal entity named Rise Media Technologies owns the domain risemediatech.io
 
 # Sample Ad Unit : Banner
 ```
