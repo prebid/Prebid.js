@@ -257,7 +257,7 @@ export function storeBatch(batch) {
 };
 
 let batchSize, batchTimeout, cleanupHandler;
-if (FEATURES.VIDEO) {
+if (FEATURES.VIDEO || FEATURES.AUDIO) {
   config.getConfig('cache', ({cache}) => {
     batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
       ? cache.batchSize

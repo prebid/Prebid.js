@@ -167,11 +167,7 @@ export interface NativeBidProperties {
 }
 
 export interface VideoBidProperties {
-    mediaType: 'video';
-}
-
-export interface AudioBidProperties {
-    mediaType: 'audio';
+    mediaType: 'video' | 'audio';
 }
 
 type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;
@@ -179,7 +175,7 @@ type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & 
 type _BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>;
 type _VideoBid = BidFrom<VideoBidResponse, VideoBidProperties>;
 type _NativeBid = BidFrom<NativeBidResponse, NativeBidProperties>;
-type _AudioBid = BidFrom<AudioBidResponse, AudioBidProperties>;
+type _AudioBid = _VideoBid;
 
 type AnyBid = _BannerBid | _VideoBid | _NativeBid | _AudioBid;
 
@@ -193,7 +189,7 @@ type ExtendBid<B extends AnyBid> = B & Omit<NullBid, keyof B>;
 export type BannerBid = ExtendBid<_BannerBid>;
 export type VideoBid = ExtendBid<_VideoBid>;
 export type NativeBid = ExtendBid<_NativeBid>;
-export type AudioBid = ExtendBid<_AudioBid>;
+export type AudioBid = VideoBid;
 
 export type Bid = BannerBid | VideoBid | NativeBid | AudioBid;
 

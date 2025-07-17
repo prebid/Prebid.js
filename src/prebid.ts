@@ -367,8 +367,8 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
-    if (FEATURES.AUDIO && mediaTypes.audio) {
-      validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateVideoMediaType(adUnit);
+    if (mediaTypes.audio) {
+      validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateAudioMediaType(adUnit);
     }
 
     const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative, validatedAudio);

@@ -70,7 +70,7 @@ export function validateOrtbAudioFields(adUnit, onInvalidParam?) {
         if (!ORTB_AUDIO_PARAMS.has(key)) {
           return
         }
-        const isValid = key.get(key)(value);
+        const isValid = ORTB_AUDIO_PARAMS.get(key)(value);
         if (!isValid) {
           if (typeof onInvalidParam === 'function') {
             onInvalidParam(key, value, adUnit);
