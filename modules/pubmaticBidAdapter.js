@@ -662,10 +662,10 @@ function getGzipSetting(bid) {
     return bid.params.gzipEnabled;
   }
 
-  // Check global setting
-  const pubmaticConfig = config.getConfig('pubmatic') || {};
-  if (typeof pubmaticConfig.gzipEnabled === 'boolean') {
-    return pubmaticConfig.gzipEnabled;
+  // Check bidder-specific configuration set via pbjs.setBidderConfig
+  const bidderConfig = config.getBidderConfig();
+  if (bidderConfig && bidderConfig.pubmatic && typeof bidderConfig.pubmatic.gzipEnabled === 'boolean') {
+    return bidderConfig.pubmatic.gzipEnabled;
   }
 
   // Default to true if not specified
