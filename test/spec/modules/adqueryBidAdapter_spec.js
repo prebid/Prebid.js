@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/adqueryBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
 describe('adqueryBidAdapter', function () {
   const adapter = newBidder(spec)

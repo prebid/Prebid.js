@@ -3,8 +3,8 @@
 import { assert } from 'chai';
 import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 
 describe('Adf adapter', function () {
   let bids = [];

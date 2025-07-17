@@ -196,79 +196,79 @@ function attachProperties(config, useDefaultValues = true) {
 }
 
 export interface Config {
-    /**
-     * Enable debug mode. In debug mode, Prebid.js will post additional messages to the browser console and cause
-     * Prebid Server to return additional information in its response.
-     */
-    debug?: boolean;
-    /**
-     * Global bidder timeout.
-     */
-    bidderTimeout?: number;
-    /**
-     * When true, the page will send keywords for all bidders to your ad server.
-     */
-    enableSendAllBids?: boolean;
-    /**
-     * Prebid.js currently allows for caching and reusing bids in a very narrowly defined scope.
-     * However, if you’d like, you can disable this feature and prevent Prebid.js from using anything but the latest bids for a given auction.
-     */
-    useBidCache?: boolean;
-    /**
-     * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
-     */
-    deviceAccess?: boolean;
-    /**
-     * Prebid core adds a timeout on XMLHttpRequest request to terminate the request once auction is timed out.
-     * Since Prebid is ignoring all the bids after timeout it does not make sense to continue the request after timeout.
-     * However, you have the option to disable this by using disableAjaxTimeout.
-     */
-    disableAjaxTimeout?: boolean;
-    /**
-     * Prebid ensures that the bid response price doesn’t exceed the maximum bid.
-     * If the CPM (after currency conversion) is higher than the maxBid, the bid is rejected.
-     * The default maxBid value is 5000.
-     */
-    maxBid?: number;
-    userSync?: UserSyncConfig;
-    /**
-     * Set the order in which bidders are called.
-     */
-    bidderSequence?: typeof RANDOM | typeof FIXED;
-    /**
-     * When a page is prerendered, by default Prebid will delay auctions until it is activated.
-     * Set this to `true` to allow auctions to run during prerendering.
-     */
-    allowPrerendering?: boolean;
-    /**
-     * If set to `private`, remove public access to Prebid's alias registry
-     */
-    aliasRegistry?: 'private'
-    /**
-     * ORTB-formatted first party data.
-     * https://docs.prebid.org/features/firstPartyData.html
-     */
-    ortb2?: DeepPartial<ORTBRequest>;
+  /**
+   * Enable debug mode. In debug mode, Prebid.js will post additional messages to the browser console and cause
+   * Prebid Server to return additional information in its response.
+   */
+  debug?: boolean;
+  /**
+   * Global bidder timeout.
+   */
+  bidderTimeout?: number;
+  /**
+   * When true, the page will send keywords for all bidders to your ad server.
+   */
+  enableSendAllBids?: boolean;
+  /**
+   * Prebid.js currently allows for caching and reusing bids in a very narrowly defined scope.
+   * However, if you’d like, you can disable this feature and prevent Prebid.js from using anything but the latest bids for a given auction.
+   */
+  useBidCache?: boolean;
+  /**
+   * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
+   */
+  deviceAccess?: boolean;
+  /**
+   * Prebid core adds a timeout on XMLHttpRequest request to terminate the request once auction is timed out.
+   * Since Prebid is ignoring all the bids after timeout it does not make sense to continue the request after timeout.
+   * However, you have the option to disable this by using disableAjaxTimeout.
+   */
+  disableAjaxTimeout?: boolean;
+  /**
+   * Prebid ensures that the bid response price doesn’t exceed the maximum bid.
+   * If the CPM (after currency conversion) is higher than the maxBid, the bid is rejected.
+   * The default maxBid value is 5000.
+   */
+  maxBid?: number;
+  userSync?: UserSyncConfig;
+  /**
+   * Set the order in which bidders are called.
+   */
+  bidderSequence?: typeof RANDOM | typeof FIXED;
+  /**
+   * When a page is prerendered, by default Prebid will delay auctions until it is activated.
+   * Set this to `true` to allow auctions to run during prerendering.
+   */
+  allowPrerendering?: boolean;
+  /**
+   * If set to `private`, remove public access to Prebid's alias registry
+   */
+  aliasRegistry?: 'private'
+  /**
+   * ORTB-formatted first party data.
+   * https://docs.prebid.org/features/firstPartyData.html
+   */
+  ortb2?: DeepPartial<ORTBRequest>;
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };
 type BidderConfig = {
-    bidders: BidderCode[];
-    config: PartialConfig;
+  bidders: BidderCode[];
+  config: PartialConfig;
 }
 
 type TopicalConfig<S extends string> = {[K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown};
 type UnregistrationFn = () => void;
 
 type GetConfigOptions = {
-    /**
-     * If true, the listener will be called immediately (instead of only on the next configuration change).
-     */
-    init?: boolean;
+  /**
+   * If true, the listener will be called immediately (instead of only on the next configuration change).
+   */
+  init?: boolean;
 }
 
 interface GetConfig {
-    (): Config;
+  (): Config;
     <S extends DeepProperty<Config> | string>(setting: S): S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown;
     (topic: typeof ALL_TOPICS, listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
     <S extends DeepProperty<Config> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
@@ -340,8 +340,8 @@ export function newConfig() {
         const override = curr[topic];
         merged[topic] = override === undefined ? base
           : base === undefined ? override
-          : isPlainObject(override) ? mergeDeep({}, base, override)
-          : override;
+            : isPlainObject(override) ? mergeDeep({}, base, override)
+              : override;
       }
       return merged;
     }
@@ -547,13 +547,13 @@ export function newConfig() {
 
     function check(obj) {
       if (!isPlainObject(obj)) {
-        throw 'setBidderConfig bidder options must be an object';
+        throw new Error('setBidderConfig bidder options must be an object');
       }
       if (!(Array.isArray(obj.bidders) && obj.bidders.length)) {
-        throw 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
+        throw new Error('setBidderConfig bidder options must contain a bidders list with at least 1 bidder');
       }
       if (!isPlainObject(obj.config)) {
-        throw 'setBidderConfig bidder options must contain a config object';
+        throw new Error('setBidderConfig bidder options must contain a config object');
       }
     }
   }

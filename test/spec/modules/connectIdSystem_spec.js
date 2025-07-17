@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
-import {server} from '../../mocks/xhr';
+import {server} from '../../mocks/xhr.js';
 import {parseQS, parseUrl} from 'src/utils.js';
-import * as refererDetection from '../../../src/refererDetection';
+import * as refererDetection from '../../../src/refererDetection.js';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
 

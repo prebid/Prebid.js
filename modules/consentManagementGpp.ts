@@ -16,31 +16,31 @@ import {CONSENT_GPP} from "../src/consentHandler.ts";
 export let consentConfig = {} as any;
 
 type RelevantCMPData = {
-    applicableSections: number[]
-    gppString: string;
-    parsedSections: Record<string, unknown>
+  applicableSections: number[]
+  gppString: string;
+  parsedSections: Record<string, unknown>
 }
 
 type CMPData = RelevantCMPData & { [key: string]: unknown };
 
 export type GPPConsentData = RelevantCMPData & {
-    gppData: CMPData;
+  gppData: CMPData;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GPPConfig {
-    // this is here to be extended by the control modules
+  // this is here to be extended by the control modules
 }
 
 export type GPPCMConfig = GPPConfig & CMConfig<RelevantCMPData>;
 
 declare module '../src/consentHandler' {
-    interface ConsentData {
-        [CONSENT_GPP]: GPPConsentData;
-    }
-    interface ConsentManagementConfig {
-        [CONSENT_GPP]?: GPPCMConfig;
-    }
+  interface ConsentData {
+    [CONSENT_GPP]: GPPConsentData;
+  }
+  interface ConsentManagementConfig {
+    [CONSENT_GPP]?: GPPCMConfig;
+  }
 }
 
 class GPPError {

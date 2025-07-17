@@ -78,7 +78,7 @@ describe('FreePass adapter', function () {
     it('should handle missing userIdAsEids gracefully', function () {
       const localBidRequests = [JSON.parse(JSON.stringify(bidRequests[0]))];
       delete localBidRequests[0].userIdAsEids;
-      expect(() => spec.buildRequests(localBidRequests, bidderRequest)).to.throw();
+      expect(() => spec.buildRequests(localBidRequests, bidderRequest)).to.not.throw();
     });
 
     it('should return a valid bid request object', function () {

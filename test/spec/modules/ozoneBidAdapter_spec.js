@@ -266,501 +266,501 @@ var valid6BidRequestsWithAuctionIdTransactionId = [{
     }
   }
 },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
           ],
-          [
-            300,
-            600
-          ]
-        ]
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
       }
-    },
-    'adUnitCode': 'mpu2',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
-    ],
-    'bidId': '3da18cc31f1ddb',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
         }
       },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
-      }
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
         ]
-      }
-    },
-    'adUnitCode': 'mpu3',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
       ]
-    ],
-    'bidId': '3da18cc31f1ddc',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
-      }
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
-        ]
-      }
-    },
-    'adUnitCode': 'mpu4',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
+  'adUnitCode': 'mpu2',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
     ],
-    'bidId': '3da18cc31f1ddd',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddb',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
       }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
         ]
-      }
-    },
-    'adUnitCode': 'mpu5',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
       ]
-    ],
-    'bidId': '3da18cc31f1dde',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
-      }
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
-        ]
-      }
-    },
-    'adUnitCode': 'mpu6',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
+  'adUnitCode': 'mpu3',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
     ],
-    'bidId': '3da18cc31f1ddf',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddc',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
       }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
     }
-  }];
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'mpu4',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddd',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
+      }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'mpu5',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1dde',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
+      }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'mpu6',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddf',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
+      }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+}];
 var validBidRequestsWithUserIdData = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -3386,12 +3386,12 @@ describe('ozone Adapter', function () {
       const req = spec.buildRequests(validBidRequests, validBidderRequest);
       const objResp = JSON.parse(JSON.stringify(validResponse));
       objResp.body.ext = {igi: [{
-          'impid': '1',
-          'igb': [{
-            'origin': 'https://paapi.dsp.com',
-            'pbs': '{"key": "value"}'
-          }]
-        }]};
+        'impid': '1',
+        'igb': [{
+          'origin': 'https://paapi.dsp.com',
+          'pbs': '{"key": "value"}'
+        }]
+      }]};
       const result = spec.interpretResponse(objResp, req);
       expect(result).to.be.an('object');
       expect(result.fledgeAuctionConfigs[0]['impid']).to.equal('1');

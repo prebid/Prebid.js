@@ -11,27 +11,27 @@ import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {EID_CONFIG, getEids} from './eids.js';
 import {
-    discloseStorageUse,
-    getCoreStorageManager,
-    newStorageManager,
-    STORAGE_TYPE_COOKIES,
-    STORAGE_TYPE_LOCALSTORAGE,
-    type StorageManager,
-    type StorageType
+  discloseStorageUse,
+  getCoreStorageManager,
+  newStorageManager,
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE,
+  type StorageManager,
+  type StorageType
 } from '../../src/storageManager.js';
 import {
-    deepEqual,
-    deepSetValue,
-    delayExecution,
-    isArray,
-    isEmpty,
-    isFn,
-    isGptPubadsDefined,
-    isNumber,
-    isPlainObject,
-    logError,
-    logInfo,
-    logWarn,
+  deepEqual,
+  deepSetValue,
+  delayExecution,
+  isArray,
+  isEmpty,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logWarn,
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, delay, PbPromise} from '../../src/utils/promise.js';
@@ -46,7 +46,12 @@ import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.j
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
 import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_TYPE } from '../../src/activities/params.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
+} from '../../src/activities/params.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -58,51 +63,51 @@ export const dep = {
 }
 
 declare module '../../src/userSync' {
-    interface UserSyncConfig {
-        /**
-         * EID source to use as PPID for GAM.
-         *
-         * Publishers using Google AdManager may want to sync one of the identifiers as their Google PPID for frequency capping or reporting.
-         * The PPID in GAM (which is unrelated to the PPID UserId Submodule) has strict rules; refer to Google AdManager documentation for them.
-         * Please note, Prebid uses a GPT command to sync identifiers for publisher convenience.
-         * It doesn’t currently work for instream video requests, as Prebid typically interacts with the player,
-         * which in turn may interact with IMA. IMA does has a similar method as GPT, but IMA does not gather this ID from GPT.
-         */
-        ppid?: string;
-        /**
-         * Map from userID name (the key in the object returned by `getUserIds`) to names of modules that should be preferred
-         * as sources for that ID, in order of decreasing priority.
-         */
-        idPriority?: {
-            [idName: keyof UserId]: UserIdProvider[]
-        }
-        userIds?: (UserIdConfig<keyof ProviderParams> | UserIdConfig<UserIdProvider>)[];
-        // TODO documentation for these is either missing or inscrutable
-        encryptedSignalSources?: {
-            sources: {
-                source: string[]
-                encrypt: boolean;
-                customFunc: AnyFunction
-            }[]
-            /**
-             * The amount of time (in milliseconds) after which registering of signals will happen. Default value 0 is considered if ‘registerDelay’ is not provided.
-             */
-            registerDelay?: number;
-        }
-        /**
-         * If true (the default), updating userSync.userIds will not remove previously configured IDs.
-         */
-        retainConfig?: boolean;
-        /**
-         * If true, updating userSync.userIds will automatically refresh IDs that have not yet been fetched.
-         */
-        autoRefresh?: boolean;
-
-        /**
-         * If true, user ID modules will only be allowed to save data in the location specified in the configuration.
-         */
-        enforceStorageType?: boolean;
+  interface UserSyncConfig {
+    /**
+     * EID source to use as PPID for GAM.
+     *
+     * Publishers using Google AdManager may want to sync one of the identifiers as their Google PPID for frequency capping or reporting.
+     * The PPID in GAM (which is unrelated to the PPID UserId Submodule) has strict rules; refer to Google AdManager documentation for them.
+     * Please note, Prebid uses a GPT command to sync identifiers for publisher convenience.
+     * It doesn’t currently work for instream video requests, as Prebid typically interacts with the player,
+     * which in turn may interact with IMA. IMA does has a similar method as GPT, but IMA does not gather this ID from GPT.
+     */
+    ppid?: string;
+    /**
+     * Map from userID name (the key in the object returned by `getUserIds`) to names of modules that should be preferred
+     * as sources for that ID, in order of decreasing priority.
+     */
+    idPriority?: {
+      [idName: keyof UserId]: UserIdProvider[]
     }
+    userIds?: (UserIdConfig<keyof ProviderParams> | UserIdConfig<UserIdProvider>)[];
+    // TODO documentation for these is either missing or inscrutable
+    encryptedSignalSources?: {
+      sources: {
+        source: string[]
+        encrypt: boolean;
+        customFunc: AnyFunction
+      }[]
+      /**
+       * The amount of time (in milliseconds) after which registering of signals will happen. Default value 0 is considered if ‘registerDelay’ is not provided.
+       */
+      registerDelay?: number;
+    }
+    /**
+     * If true (the default), updating userSync.userIds will not remove previously configured IDs.
+     */
+    retainConfig?: boolean;
+    /**
+     * If true, updating userSync.userIds will automatically refresh IDs that have not yet been fetched.
+     */
+    autoRefresh?: boolean;
+
+    /**
+     * If true, user ID modules will only be allowed to save data in the location specified in the configuration.
+     */
+    enforceStorageType?: boolean;
+  }
 }
 
 let submodules: SubmoduleContainer<UserIdProvider>[] = [];
@@ -458,9 +463,9 @@ export function enrichEids(ortb2Fragments) {
 }
 
 declare module '../../src/adapterManager' {
-    interface BaseBidRequest {
-        userIdAsEids: ORTBRequest['user']['eids'];
-    }
+  interface BaseBidRequest {
+    userIdAsEids: ORTBRequest['user']['eids'];
+  }
 }
 
 export function addIdData({ortb2Fragments}) {
@@ -604,17 +609,17 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
  * Do this lazily (instead of attaching a copy) so that it also shows EIDs added after the userId module runs (e.g. from RTD modules)
  */
 function aliasEidsHook(next, bidderRequests) {
-    bidderRequests.forEach(bidderRequest => {
-        bidderRequest.bids.forEach(bid =>
-            Object.defineProperty(bid, 'userIdAsEids', {
-                configurable: true,
-                get() {
-                    return bidderRequest.ortb2.user?.ext?.eids;
-                }
-            })
-        )
-    })
-    next(bidderRequests);
+  bidderRequests.forEach(bidderRequest => {
+    bidderRequest.bids.forEach(bid =>
+      Object.defineProperty(bid, 'userIdAsEids', {
+        configurable: true,
+        get() {
+          return bidderRequest.ortb2.user?.ext?.eids;
+        }
+      })
+    )
+  })
+  next(bidderRequests);
 }
 
 /**
@@ -695,17 +700,22 @@ function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
   }
-  window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+
+  const providers: googletag.secureSignals.SecureSignalProvider[] = window.googletag.secureSignalProviders = (window.googletag.secureSignalProviders || []) as googletag.secureSignals.SecureSignalProvider[];
+  const existingIds = new Set(providers.map(p => 'id' in p ? p.id : p.networkCode));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
       encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
         source.forEach((src) => {
-          window.googletag.secureSignalProviders.push({
-            id: src,
-            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
-          });
+          if (!existingIds.has(src)) {
+            providers.push({
+              id: src,
+              collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+            });
+            existingIds.add(src);
+          }
         });
       })
     }, registerDelay)
@@ -742,7 +752,7 @@ function retryOnCancel(initParams?) {
  * callback called when the refresh is complete
  */
 function refreshUserIds({submoduleNames}: {
-    submoduleNames?: string[]
+  submoduleNames?: string[]
 } = {}, callback?: () => void): Promise<Partial<UserId>> {
   return retryOnCancel({refresh: true, submoduleNames})
     .then((userIds) => {
@@ -776,7 +786,7 @@ export function getConsentHash() {
     bytes.push(String.fromCharCode(hash & 255));
     hash = hash >>> 8;
   }
-  return btoa(bytes.join());
+  return btoa(bytes.join(''));
 }
 
 function consentChanged(submodule) {
@@ -987,22 +997,22 @@ function populateEnabledStorageTypes(submodule: SubmoduleContainer<UserIdProvide
     switch (type) {
       case LOCAL_STORAGE:
         HTML5_SUFFIXES.forEach(suffix => {
-            discloseStorageUse('userId', {
-                type: 'web',
-                identifier: submodule.config.storage.name + suffix,
-                purposes: STORAGE_PURPOSES
-            })
+          discloseStorageUse('userId', {
+            type: 'web',
+            identifier: submodule.config.storage.name + suffix,
+            purposes: STORAGE_PURPOSES
+          })
         })
         return canUseLocalStorage(submodule);
       case COOKIE:
         COOKIE_SUFFIXES.forEach(suffix => {
-            discloseStorageUse('userId', {
-                type: 'cookie',
-                identifier: submodule.config.storage.name + suffix,
-                purposes: STORAGE_PURPOSES,
-                maxAgeSeconds: (submodule.config.storage.expires ?? 0) * 24 * 60 * 60,
-                cookieRefresh: true
-            })
+          discloseStorageUse('userId', {
+            type: 'cookie',
+            identifier: submodule.config.storage.name + suffix,
+            purposes: STORAGE_PURPOSES,
+            maxAgeSeconds: (submodule.config.storage.expires ?? 0) * 24 * 60 * 60,
+            cookieRefresh: true
+          })
         })
         return canUseCookies(submodule);
     }
@@ -1049,11 +1059,11 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
         callback: undefined,
         idObj: undefined,
         storageMgr: newStorageManager({
-            moduleType: MODULE_TYPE_UID,
-            moduleName: submoduleConfig.name,
-            // since this manager is only using keys provided directly by the publisher,
-            // turn off storageControl checks
-            advertiseKeys: false,
+          moduleType: MODULE_TYPE_UID,
+          moduleName: submoduleConfig.name,
+          // since this manager is only using keys provided directly by the publisher,
+          // turn off storageControl checks
+          advertiseKeys: false,
         })
       };
 
@@ -1067,13 +1077,13 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
 }
 
 type SubmoduleContainer<P extends UserIdProvider> = {
-    submodule: IdProviderSpec<P>;
-    enabledStorageTypes?: StorageType[];
-    config: UserIdConfig<P>;
-    callback?: ProviderResponse['callback'];
-    idObj;
-    storageMgr: StorageManager;
-    refreshIds?: boolean;
+  submodule: IdProviderSpec<P>;
+  enabledStorageTypes?: StorageType[];
+  config: UserIdConfig<P>;
+  callback?: ProviderResponse['callback'];
+  idObj;
+  storageMgr: StorageManager;
+  refreshIds?: boolean;
 }
 
 /**
@@ -1158,20 +1168,20 @@ function normalizePromise<T extends AnyFunction>(fn: T): Wraps<T> {
 }
 
 declare module '../../src/prebidGlobal' {
-    interface PrebidJS {
-        getUserIds: typeof getUserIds;
-        getUserIdsAsync: typeof getUserIdsAsync;
-        getUserIdsAsEids: typeof getUserIdsAsEids;
-        getEncryptedEidsForSource: typeof getEncryptedEidsForSource;
-        registerSignalSources: typeof registerSignalSources;
-        refreshUserIds: typeof refreshUserIds;
-        getUserIdsAsEidBySource: typeof getUserIdsAsEidBySource;
-    }
+  interface PrebidJS {
+    getUserIds: typeof getUserIds;
+    getUserIdsAsync: typeof getUserIdsAsync;
+    getUserIdsAsEids: typeof getUserIdsAsEids;
+    getEncryptedEidsForSource: typeof getEncryptedEidsForSource;
+    registerSignalSources: typeof registerSignalSources;
+    refreshUserIds: typeof refreshUserIds;
+    getUserIdsAsEidBySource: typeof getUserIdsAsEidBySource;
+  }
 }
 
 const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
   return (params) => {
-    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID) return;
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID || !params[ACTIVITY_PARAM_STORAGE_WRITE]) return;
 
     const matchesName = (query) => params[ACTIVITY_PARAM_COMPONENT_NAME]?.toLowerCase() === query?.toLowerCase();
     const submoduleConfig = userIdsConfig.find((configItem) => matchesName(configItem.name));

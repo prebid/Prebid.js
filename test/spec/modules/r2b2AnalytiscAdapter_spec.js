@@ -1,4 +1,4 @@
-import r2b2Analytics, {resetAnalyticAdapter} from '../../../modules/r2b2AnalyticsAdapter';
+import r2b2Analytics, {resetAnalyticAdapter} from '../../../modules/r2b2AnalyticsAdapter.js';
 
 import { expect } from 'chai';
 import {EVENTS, AD_RENDER_FAILED_REASON, REJECTION_REASON} from 'src/constants.js';

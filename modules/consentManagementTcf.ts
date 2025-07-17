@@ -29,47 +29,47 @@ const cmpCallMap = {
  * @see https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore
  */
 export type TCFConsentData = {
-    apiVersion: typeof CMP_VERSION;
-    /**
-     * The consent string.
-     */
-    consentString: string;
-    /**
-     * True if GDPR is in scope.
-     */
-    gdprApplies: boolean;
-    /**
-     * The response from the CMP.
-     */
-    vendorData: Record<string, unknown>;
-    /**
-     * Additional consent string, if provided by the CMP.
-     * @see https://support.google.com/admanager/answer/9681920?hl=en
-     */
-    addtlConsent?: `${number}~${string}~${string}`;
+  apiVersion: typeof CMP_VERSION;
+  /**
+   * The consent string.
+   */
+  consentString: string;
+  /**
+   * True if GDPR is in scope.
+   */
+  gdprApplies: boolean;
+  /**
+   * The response from the CMP.
+   */
+  vendorData: Record<string, unknown>;
+  /**
+   * Additional consent string, if provided by the CMP.
+   * @see https://support.google.com/admanager/answer/9681920?hl=en
+   */
+  addtlConsent?: `${number}~${string}~${string}`;
 }
 
 export interface TCFConfig {
-    /**
-     *  Defines what the gdprApplies flag should be when the CMP doesn’t respond in time or the static data doesn’t supply.
-     *  Defaults to false.
-     */
-    defaultGdprScope?: boolean;
-    /**
-     * If true, indicates that the publisher is to be considered an “Online Platform” for the purposes of the Digital Services Act
-     */
-    dsaPlatform?: boolean;
+  /**
+   *  Defines what the gdprApplies flag should be when the CMP doesn’t respond in time or the static data doesn’t supply.
+   *  Defaults to false.
+   */
+  defaultGdprScope?: boolean;
+  /**
+   * If true, indicates that the publisher is to be considered an “Online Platform” for the purposes of the Digital Services Act
+   */
+  dsaPlatform?: boolean;
 }
 
 type TCFCMConfig = TCFConfig & CMConfig<TCFConsentData>;
 
 declare module '../src/consentHandler' {
-    interface ConsentData {
-        [CONSENT_GDPR]: TCFConsentData;
-    }
-    interface ConsentManagementConfig {
-        [CONSENT_GDPR]?: TCFCMConfig;
-    }
+  interface ConsentData {
+    [CONSENT_GDPR]: TCFConsentData;
+  }
+  interface ConsentManagementConfig {
+    [CONSENT_GDPR]?: TCFCMConfig;
+  }
 }
 
 /**

@@ -1565,15 +1565,15 @@ describe('targeting tests', function () {
       ]
     });
 
-      it('can find slots by ad unit path', () => {
-        const paths = ['slot/1', 'slot/2']
-        expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
-      })
+    it('can find slots by ad unit path', () => {
+      const paths = ['slot/1', 'slot/2']
+      expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
+    })
 
-      it('can find slots by ad element ID', () => {
-        const elementIds = ['div-1', 'div-2']
-        expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
-      })
+    it('can find slots by ad element ID', () => {
+      const elementIds = ['div-1', 'div-2']
+      expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
+    })
 
     it('returns empty list on no match', () => {
       expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], null, () => slots)).to.eql({

@@ -2,7 +2,7 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
-import { getWinDimensions } from '../../../../../src/utils';
+import { getWinDimensions } from '../../../../../src/utils.js';
 
 const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modules/videojsVideoProvider');
 

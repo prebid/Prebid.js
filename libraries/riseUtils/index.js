@@ -26,7 +26,7 @@ export const makeBaseSpec = (baseUrl, modes) => {
       const testMode = generalObject.params.testMode;
       const rtbDomain = generalObject.params.rtbDomain || baseUrl;
 
-      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
+      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest, ADAPTER_VERSION);
       combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
 
       return {
@@ -397,6 +397,11 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
 
   if (ortb2Metadata.device) {
     generalParams.device = ortb2Metadata.device;
+  }
+
+  const previousAuctionInfo = deepAccess(bidderRequest, 'ortb2.ext.prebid.previousauctioninfo')
+  if (previousAuctionInfo) {
+    generalParams.prev_auction_info = JSON.stringify(previousAuctionInfo);
   }
 
   if (syncEnabled) {

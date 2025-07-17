@@ -17,7 +17,7 @@ import {
   VOLUME
 } from 'libraries/video/constants/events.js';
 import adPlayerProSubmoduleFactory, {callbackStorageFactory} from '../../../../../modules/adplayerproVideoProvider.js';
-import {PLACEMENT} from '../../../../../libraries/video/constants/ortb';
+import {PLACEMENT} from '../../../../../libraries/video/constants/ortb.js';
 import sinon from 'sinon';
 
 const {AdPlayerProProvider, utils} = require('modules/adplayerproVideoProvider.js');

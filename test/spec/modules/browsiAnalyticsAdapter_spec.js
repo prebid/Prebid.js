@@ -1,6 +1,6 @@
 import browsiAnalytics, { setStaticData, getStaticData } from '../../../modules/browsiAnalyticsAdapter.js';
 
-import adapterManager from '../../../src/adapterManager';
+import adapterManager from '../../../src/adapterManager.js';
 import { expect } from 'chai';
 import { EVENTS } from '../../../src/constants.js';
 import { server } from '../../../test/mocks/xhr.js';

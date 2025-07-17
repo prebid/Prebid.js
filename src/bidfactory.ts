@@ -9,92 +9,92 @@ import {type BID_STATUS} from "./constants.ts";
 import type {DemandChain} from "./types/ortb/ext/dchain.d.ts";
 
 type BidIdentifiers = ContextIdentifiers & {
-    src: BidSource;
-    bidder: BidderCode;
-    bidId: Identifier;
+  src: BidSource;
+  bidder: BidderCode;
+  bidId: Identifier;
 };
 
 /**
  * Bid metadata.
  */
 export interface BidMeta {
-    [key: string]: unknown;
-    /**
-     * Advertiser domains (corresponds to ORTB `bid.adomain`).
-     */
-    advertiserDomains?: string[];
-    /**
-     * Primary category ID (corresponds to ORTB `bid.cat[0]`).
-     */
-    primaryCatId?: string;
-    /**
-     * IDs of all other categories (corresponds to ORTB `bid.cat.slice(1)`).
-     */
-    secondaryCatIds?: string[];
-    /**
-     * Creative attributes (corresponds to ORTB `bid.attr`).
-     */
-    attr?: number[];
-    /**
-     * DSA transparency information.
-     */
-    dsa?: DSAResponse;
-    /**
-     * Demand chain object.
-     */
-    dchain?: DemandChain
-    /**
-     * DSP network name.
-     */
-    networkName?: string;
-    /**
-     * DSP network ID.
-     */
-    networkId?: string | number;
+  [key: string]: unknown;
+  /**
+   * Advertiser domains (corresponds to ORTB `bid.adomain`).
+   */
+  advertiserDomains?: string[];
+  /**
+   * Primary category ID (corresponds to ORTB `bid.cat[0]`).
+   */
+  primaryCatId?: string;
+  /**
+   * IDs of all other categories (corresponds to ORTB `bid.cat.slice(1)`).
+   */
+  secondaryCatIds?: string[];
+  /**
+   * Creative attributes (corresponds to ORTB `bid.attr`).
+   */
+  attr?: number[];
+  /**
+   * DSA transparency information.
+   */
+  dsa?: DSAResponse;
+  /**
+   * Demand chain object.
+   */
+  dchain?: DemandChain
+  /**
+   * DSP network name.
+   */
+  networkName?: string;
+  /**
+   * DSP network ID.
+   */
+  networkId?: string | number;
 }
 
 /**
  * Bid responses as provided by adapters; core then transforms these into `Bid`s
  */
 export interface BaseBidResponse {
-    bidderCode?: BidderCode;
-    /**
-     * This bid's BidRequest's `.bidId`.
-     */
-    requestId: Identifier;
-    mediaType: MediaType;
-    cpm: number;
-    currency: Currency;
-    /**
-     * The time to live for this bid response in seconds
-     */
-    ttl: number;
-    creativeId: string;
-    /**
-     * True if the CPM is the one this bidder will pay
-     */
-    netRevenue: boolean;
-    /**
-     * If the bid is associated with a Deal, this field contains the deal ID.
-     * @see https://docs.prebid.org/adops/deals.html
-     */
-    dealId?: string;
-    meta?: BidMeta;
-    /**
-     * If true, and deferred billing was requested for this bid, its creative will not be rendered
-     * until billing is explicitly triggered with `pbjs.triggerBilling()`.
-     * Useful to avoid premature firing of trackers embedded in the creative.
-     */
-    deferRendering?: boolean;
-    /**
-     * Event trackers for this bid.
-     */
-    eventtrackers?: EventTrackerResponse[];
-    renderer?: Renderer;
-    /**
-     * Billing tracker URL.
-     */
-    burl?: string;
+  bidderCode?: BidderCode;
+  /**
+   * This bid's BidRequest's `.bidId`.
+   */
+  requestId: Identifier;
+  mediaType: MediaType;
+  cpm: number;
+  currency: Currency;
+  /**
+   * The time to live for this bid response in seconds
+   */
+  ttl: number;
+  creativeId: string;
+  /**
+   * True if the CPM is the one this bidder will pay
+   */
+  netRevenue: boolean;
+  /**
+   * If the bid is associated with a Deal, this field contains the deal ID.
+   * @see https://docs.prebid.org/adops/deals.html
+   */
+  dealId?: string;
+  meta?: BidMeta;
+  /**
+   * If true, and deferred billing was requested for this bid, its creative will not be rendered
+   * until billing is explicitly triggered with `pbjs.triggerBilling()`.
+   * Useful to avoid premature firing of trackers embedded in the creative.
+   */
+  deferRendering?: boolean;
+  /**
+   * Event trackers for this bid.
+   */
+  eventtrackers?: EventTrackerResponse[];
+  renderer?: Renderer;
+  /**
+   * Billing tracker URL.
+   */
+  burl?: string;
 }
 
 // <format>BidResponesProperties - adapter interpretResponse properties specific to the format.
@@ -102,15 +102,15 @@ export interface BaseBidResponse {
 // Here we have only "naked" declarations, extended in banner/video/native.ts as well as modules.
 
 export interface BannerBidResponseProperties {
-    mediaType: 'banner';
+  mediaType: 'banner';
 }
 
 export interface VideoBidResponseProperties {
-    mediaType: 'video';
+  mediaType: 'video';
 }
 
 export interface NativeBidResponseProperties {
-    mediaType: 'native';
+  mediaType: 'native';
 }
 
 export type BannerBidResponse = BaseBidResponse & BannerBidResponseProperties;
@@ -120,33 +120,33 @@ export type NativeBidResponse = BaseBidResponse & NativeBidResponseProperties;
 export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse;
 
 export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidResponse, 'meta' | 'deferRendering'>> {
-    /**
-     * This bid's BidRequest's `.bidId`. Can be null in some `allowUnknownBidderCodes` scenarios.
-     */
-    requestId: Identifier | null;
-    metrics: Metrics;
-    source: BidSource;
-    width: number;
-    height: number;
-    adId: Identifier;
-    getSize(): string;
-    getStatusCode(): number;
-    status?: (typeof BID_STATUS)[keyof typeof BID_STATUS]
-    bidderCode: BidderCode;
-    adapterCode?: BidderCode;
-    /**
-     * CPM of this bid before currency conversions or adjustments.
-     */
-    originalCpm?: number;
-    /**
-     * Currency for `originalCpm`.
-     */
-    originalCurrency?: Currency;
-    /**
-     * If true, this bid will not fire billing trackers until they are explicitly
-     * triggered with `pbjs.triggerBilling()`.
-     */
-    deferBilling: boolean;
+  /**
+   * This bid's BidRequest's `.bidId`. Can be null in some `allowUnknownBidderCodes` scenarios.
+   */
+  requestId: Identifier | null;
+  metrics: Metrics;
+  source: BidSource;
+  width: number;
+  height: number;
+  adId: Identifier;
+  getSize(): string;
+  getStatusCode(): number;
+  status?: (typeof BID_STATUS)[keyof typeof BID_STATUS]
+  bidderCode: BidderCode;
+  adapterCode?: BidderCode;
+  /**
+   * CPM of this bid before currency conversions or adjustments.
+   */
+  originalCpm?: number;
+  /**
+   * Currency for `originalCpm`.
+   */
+  originalCurrency?: Currency;
+  /**
+   * If true, this bid will not fire billing trackers until they are explicitly
+   * triggered with `pbjs.triggerBilling()`.
+   */
+  deferBilling: boolean;
 }
 
 // <format>BidProperties - format specific properties of Bid objects generated by Prebid, but not in
@@ -154,15 +154,15 @@ export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidRespon
 // use.
 
 export interface BannerBidProperties {
-    mediaType: 'banner';
+  mediaType: 'banner';
 }
 
 export interface NativeBidProperties {
-    mediaType: 'native';
+  mediaType: 'native';
 }
 
 export interface VideoBidProperties {
-    mediaType: 'video';
+  mediaType: 'video';
 }
 
 type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;

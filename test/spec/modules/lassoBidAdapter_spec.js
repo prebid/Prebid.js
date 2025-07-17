@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/lassoBidAdapter.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
 const GET_IUD_URL = 'https://secure.adnxs.com/getuid?';

@@ -12,7 +12,7 @@ import {
   RequestData,
   UserEIDs,
   buildRequestUrl,
-} from '../../../modules/nativoBidAdapter'
+} from '../../../modules/nativoBidAdapter.js'
 
 describe('bidDataMap', function () {
   it('Should fail gracefully if no key value pairs have been added and no key is sent', function () {

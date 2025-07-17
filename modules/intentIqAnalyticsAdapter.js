@@ -195,15 +195,15 @@ function bidWon(args, isReportExternal) {
 
 function parseReportingMethod(reportMethod) {
   if (typeof reportMethod === 'string') {
-      switch (reportMethod.toUpperCase()) {
-          case 'GET':
-              return 'GET';
-          case 'POST':
-              return 'POST';
-          default:
-              return 'GET';
-      }
+    switch (reportMethod.toUpperCase()) {
+      case 'GET':
+        return 'GET';
+      case 'POST':
+        return 'POST';
+      default:
+        return 'GET';
     }
+  }
   return 'GET';
 }
 

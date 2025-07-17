@@ -4,8 +4,8 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 function createBidderRequest(auctionId, timeout, pageUrl, addGdprConsent) {
   const gdprConsent = addGdprConsent ? {

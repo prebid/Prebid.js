@@ -1039,13 +1039,13 @@ describe('the rubicon adapter', function () {
                   'ext': { 'segtax': 1 },
                   'segment': [
                     { 'id': '987' }
-        ]
-      }, {
-        'name': 'www.dataprovider1.com',
-        'ext': { 'segtax': 2 },
-        'segment': [
-          { 'id': '432' }
-        ]
+                  ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 2 },
+                  'segment': [
+                    { 'id': '432' }
+                  ]
                 }, {
                   'name': 'www.dataprovider1.com',
                   'ext': { 'segtax': 5 },

@@ -591,6 +591,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "theads",
+      "aliasOf": "admixer",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
       "gvlid": 1210,
@@ -3230,6 +3237,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "oprx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "opsco",
       "aliasOf": null,
       "gvlid": null,
@@ -3723,6 +3737,13 @@
       "componentName": "algorix",
       "aliasOf": "rixengine",
       "gvlid": 1176,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "robustApps",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {

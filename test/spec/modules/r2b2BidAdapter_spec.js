@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, internal as r2b2, internal} from 'modules/r2b2BidAdapter.js';
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 import 'modules/userId/index.js';
 
 function encodePlacementIds (ids) {
