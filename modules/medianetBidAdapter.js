@@ -191,12 +191,16 @@ function extParams(bidRequest, bidderRequests) {
 
 function slotParams(bidRequest, bidderRequests) {
   // check with Media.net Account manager for  bid floor and crid parameters
+  const slotInfo = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
   const params = {
     id: bidRequest.bidId,
     transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
-      display_count: bidRequest.auctionsCount
+      display_count: bidRequest.auctionsCount,
+      adUnitCode: bidRequest.adUnitCode,
+      divId: slotInfo.divId,
+      adUnitPath: slotInfo.gptSlot
     },
     all: bidRequest.params
   };
