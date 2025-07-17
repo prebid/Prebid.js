@@ -6,7 +6,7 @@ export function getStorageDisclosureSummary(moduleNames, getModuleMetadata) {
   moduleNames.forEach(moduleName => {
     const disclosure = getModuleMetadata(moduleName)?.disclosures;
     if (!disclosure) return;
-    Object.entries(disclosure).forEach(([url, identifiers]) => {
+    Object.entries(disclosure).forEach(([url, {disclosures: identifiers}]) => {
       if (summary.hasOwnProperty(url)) {
         summary[url].forEach(({disclosedBy}) => disclosedBy.push(moduleName));
       } else if (identifiers?.length > 0) {

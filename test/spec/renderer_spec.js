@@ -141,7 +141,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -163,7 +163,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -193,7 +193,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -214,7 +214,7 @@ describe('Renderer', function () {
           render: sinon.spy()
         }
       }];
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -231,7 +231,7 @@ describe('Renderer', function () {
         return document;
       });
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { documentResolver: documentResolver }
       });

@@ -23,7 +23,7 @@ General gulp commands include separate commands for serving the codebase on a bu
 - Checkout the branch (these instructions are available on the GitHub PR page as well).
 - Verify PR is a single change type. Example, refactor OR bugfix. If more than 1 type, ask submitter to break out requests.
 - Verify code under review has at least 80% unit test coverage. If legacy code doesn't have enough unit test coverage, require that additional unit tests to be included in the PR.
-- Verify tests are green in circle-ci + local build by running `gulp serve` | `gulp test`
+- Verify tests are green in Github Actions + local build by running `gulp serve` | `gulp test`
 - Verify no code quality violations are present from linting (should be reported in terminal)
 - Make sure the code is not setting cookies or localstorage directly -- it must use the `StorageManager`.
 - Review for obvious errors or bad coding practice / use best judgement here.

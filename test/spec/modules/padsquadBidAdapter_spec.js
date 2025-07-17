@@ -65,7 +65,7 @@ const RESPONSE = {
               'bidder': {
                 'appnexus': {
                   'brand_id': 334553,
-                  'auction_id': 514667951122925701,
+                  'auction_id': '514667951122925701',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
@@ -94,7 +94,7 @@ const RESPONSE = {
               'bidder': {
                 'appnexus': {
                   'brand_id': 386046,
-                  'auction_id': 517067951122925501,
+                  'auction_id': '517067951122925501',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
@@ -136,7 +136,7 @@ const RESPONSE = {
 describe('Padsquad bid adapter', function () {
   describe('isBidRequestValid', function () {
     it('should accept request if only unitId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'padsquad',
         params: {
           unitId: 'unitId',
@@ -145,7 +145,7 @@ describe('Padsquad bid adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should accept request if only networkId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'padsquad',
         params: {
           networkId: 'networkId',
@@ -154,7 +154,7 @@ describe('Padsquad bid adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should accept request if only publisherId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'padsquad',
         params: {
           publisherId: 'publisherId',
@@ -164,7 +164,7 @@ describe('Padsquad bid adapter', function () {
     });
 
     it('reject requests without params', function () {
-      let bid = {
+      const bid = {
         bidder: 'padsquad',
         params: {}
       };
@@ -174,7 +174,7 @@ describe('Padsquad bid adapter', function () {
 
   describe('buildRequests', function () {
     it('creates request data', function () {
-      let request = spec.buildRequests(REQUEST.bidRequest, REQUEST);
+      const request = spec.buildRequests(REQUEST.bidRequest, REQUEST);
 
       expect(request).to.exist.and.to.be.a('object');
       const payload = JSON.parse(request.data);
@@ -189,7 +189,7 @@ describe('Padsquad bid adapter', function () {
           gdprApplies: true,
         }
       });
-      let request = spec.buildRequests(REQUEST.bidRequest, req);
+      const request = spec.buildRequests(REQUEST.bidRequest, req);
 
       const payload = JSON.parse(request.data);
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
@@ -199,7 +199,7 @@ describe('Padsquad bid adapter', function () {
 
   describe('interpretResponse', function () {
     it('have bids', function () {
-      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+      const bids = spec.interpretResponse(RESPONSE, REQUEST);
       expect(bids).to.be.an('array').that.is.not.empty;
       validateBidOnIndex(0);
       validateBidOnIndex(1);
@@ -228,17 +228,17 @@ describe('Padsquad bid adapter', function () {
 
   describe('getUserSyncs', function () {
     it('handles no parameters', function () {
-      let opts = spec.getUserSyncs({});
+      const opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
+      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -246,7 +246,7 @@ describe('Padsquad bid adapter', function () {
     });
 
     it('pixel sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -254,7 +254,7 @@ describe('Padsquad bid adapter', function () {
     });
 
     it('all sync enabled should return all results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
 
       expect(opts.length).to.equal(2);
     });

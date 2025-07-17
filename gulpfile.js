@@ -541,7 +541,8 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), 'build-creative-dev'
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-only-nobuild', testTaskMaker({coverage: true}))
 gulp.task('test-only', gulp.series('precompile', test));
-gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
+
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
 
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
@@ -552,8 +553,8 @@ gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
-gulp.task('build', gulp.series(clean, 'update-browserslist', 'build-bundle-prod', updateCreativeExample, setupDist));
-gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist));
+gulp.task('build-release', gulp.series('build', 'update-browserslist', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));

@@ -141,7 +141,7 @@ export const spec = {
     /*     if (uspConsent) {
       SYNC_ENDPOINT = tryAppendQueryString(SYNC_ENDPOINT, 'us_privacy', uspConsent);
     } */
-    let syncs = [];
+    const syncs = [];
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
@@ -150,13 +150,13 @@ export const spec = {
     }
     return syncs;
   },
-    parseUserAgent: (ua) => {
-      const info = parseUserAgentDetailed(ua);
-      return {
-        devicetype: info.devicetype,
-        os: info.os,
-        osv: info.osv
-      };
-    }
+  parseUserAgent: (ua) => {
+    const info = parseUserAgentDetailed(ua);
+    return {
+      devicetype: info.devicetype,
+      os: info.os,
+      osv: info.osv
+    };
+  }
 };
 registerBidder(spec);

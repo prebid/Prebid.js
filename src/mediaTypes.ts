@@ -13,10 +13,10 @@ import {AudioMediaType} from "./audio.ts";
 export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER | typeof AUDIO;
 
 export interface BaseMediaType {
-    /**
-     * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
-     */
-    renderer?: RendererConfig;
+  /**
+   * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
+   */
+  renderer?: RendererConfig;
 }
 
 export interface MediaTypes {

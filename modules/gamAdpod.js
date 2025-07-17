@@ -35,9 +35,9 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
   };
 
   function getSizeForAdUnit(code) {
-    let adUnit = auctionManager.getAdUnits()
+    const adUnit = auctionManager.getAdUnits()
       .filter((adUnit) => adUnit.code === code)
-    let sizes = deepAccess(adUnit[0], 'mediaTypes.video.playerSize');
+    const sizes = deepAccess(adUnit[0], 'mediaTypes.video.playerSize');
     return parseSizesInput(sizes).join('|');
   }
 
@@ -52,7 +52,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       return;
     }
 
-    let initialValue = {
+    const initialValue = {
       [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
       [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
     };
@@ -68,7 +68,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       }, initialValue);
     }
 
-    let encodedCustomParams = encodeURIComponent(formatQS(customParams));
+    const encodedCustomParams = encodeURIComponent(formatQS(customParams));
 
     const queryParams = Object.assign({},
       DEFAULT_GAM_PARAMS,

@@ -140,7 +140,7 @@ export const spec = {
       const callImpBeacon = `<script type="application/javascript">` +
         `(function() { var img = new Image(); img.src = "${beaconUrl}"})()` +
         `</script>`;
-      let data = {
+      const data = {
         requestId: res.id,
         currency: res.cur,
         cpm: parseFloat(bid.price) || 0,

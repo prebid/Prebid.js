@@ -142,7 +142,7 @@ const VIDEO_BID_RESPONSE = {
   }],
 };
 
-let imgData = {
+const imgData = {
   url: `https://example.com/image`,
   w: 1200,
   h: 627
@@ -201,7 +201,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('should send the Coppa "required" flag set to "1" in the request', function () {
-      let serverRequest = spec.buildRequests([BANNER_BID_REQUEST]);
+      const serverRequest = spec.buildRequests([BANNER_BID_REQUEST]);
       expect(serverRequest.data[0].regs.coppa).to.equal(1);
     });
   });
@@ -211,7 +211,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, NATIVE_BID_REQUEST);
+      const bid = Object.assign({}, NATIVE_BID_REQUEST);
       delete bid.params;
       bid.params = {
         'IncorrectParam': 0
@@ -239,7 +239,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns empty data if no valid requests are passed', function () {
-      let serverRequest = spec.buildRequests([]);
+      const serverRequest = spec.buildRequests([]);
       expect(serverRequest).to.be.an('array').that.is.empty;
     });
   });
@@ -291,7 +291,7 @@ describe('IntenzeAdapter', function () {
   describe('interpretResponse', function () {
     it('Empty response must return empty array', function () {
       const emptyResponse = null;
-      let response = spec.interpretResponse(emptyResponse);
+      const response = spec.interpretResponse(emptyResponse);
 
       expect(response).to.be.an('array').that.is.empty;
     })
@@ -316,10 +316,10 @@ describe('IntenzeAdapter', function () {
         ad: BANNER_BID_RESPONSE.seatbid[0].bid[0].adm
       }
 
-      let bannerResponses = spec.interpretResponse(bannerResponse);
+      const bannerResponses = spec.interpretResponse(bannerResponse);
 
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
@@ -355,10 +355,10 @@ describe('IntenzeAdapter', function () {
         vastUrl: VIDEO_BID_RESPONSE.seatbid[0].bid[0].ext.vastUrl
       }
 
-      let videoResponses = spec.interpretResponse(videoResponse);
+      const videoResponses = spec.interpretResponse(videoResponse);
 
       expect(videoResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = videoResponses[0];
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'vastUrl', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
@@ -395,10 +395,10 @@ describe('IntenzeAdapter', function () {
         }
       }
 
-      let nativeResponses = spec.interpretResponse(nativeResponse);
+      const nativeResponses = spec.interpretResponse(nativeResponse);
 
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = nativeResponses[0];
+      const dataItem = nativeResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'native', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);

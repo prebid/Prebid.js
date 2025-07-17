@@ -962,7 +962,7 @@ describe('sovrnBidAdapter', function() {
   })
 
   describe('fledge response', function () {
-    let fledgeResponse = {
+    const fledgeResponse = {
       body: {
         id: '37386aade21a71',
         seatbid: [{
@@ -1027,7 +1027,7 @@ describe('sovrnBidAdapter', function() {
         }
       }
     }
-    let emptyFledgeResponse = {
+    const emptyFledgeResponse = {
       body: {
         id: '37386aade21a71',
         seatbid: [{
@@ -1048,7 +1048,7 @@ describe('sovrnBidAdapter', function() {
         }
       }
     }
-    let expectedResponse = {
+    const expectedResponse = {
       requestId: '263c448586f5a1',
       cpm: 0.45882675,
       width: 728,
@@ -1062,7 +1062,7 @@ describe('sovrnBidAdapter', function() {
       meta: { advertiserDomains: [] },
       ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
     }
-    let expectedFledgeResponse = [
+    const expectedFledgeResponse = [
       {
         bidId: 'test_imp_id',
         config: {

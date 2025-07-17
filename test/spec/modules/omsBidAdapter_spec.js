@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config';
-import { internal, resetWinDimensions } from '../../../src/utils';
+import {config} from '../../../src/config.js';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 const URL = 'https://rt.marphezis.com/hb';
 
@@ -90,7 +90,7 @@ describe('omsBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'oms',
       'params': {
         'publisherId': 1234567
@@ -116,7 +116,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -401,7 +401,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('should get the correct bid response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -417,12 +417,12 @@ describe('omsBidAdapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('should get the correct bid response for video bids', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -456,12 +456,12 @@ describe('omsBidAdapter', function () {
         }
       };
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('crid should default to the bid id if not on the response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -477,15 +477,15 @@ describe('omsBidAdapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: ''
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });

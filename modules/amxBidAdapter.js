@@ -330,9 +330,9 @@ export const spec = {
       bidRequests[0] != null
         ? bidRequests[0]
         : {
-          bidderRequestsCount: 0,
-          bidderWinsCount: 0,
-          bidRequestsCount: 0 };
+            bidderRequestsCount: 0,
+            bidderWinsCount: 0,
+            bidRequestsCount: 0 };
 
     const payload = {
       a: generateUUID(),
@@ -462,7 +462,7 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
-    let { bidderSettings } = getGlobal();
+    const { bidderSettings } = getGlobal();
     const currentBidder = config.getCurrentBidder();
     const allowAlternateBidderCodes = alternateCodesAllowed(bidderSettings ?? {}, currentBidder) ||
       alternateCodesAllowed(config.getConfig('bidderSettings') ?? {}, currentBidder);

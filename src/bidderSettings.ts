@@ -8,55 +8,55 @@ import type {StorageType} from "./storageManager.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface BidderSettings<B extends BidderCode> {
-    /**
-     * If true, allow bids with CPM 0to be accepted by Prebid.js and sent to the ad server.
-     */
-    allowZeroCpmBids?: boolean;
-    /**
-     * Optionally allow alternate bidder codes to use an adapter’s bidCpmAdjustment function by default instead of
-     * the standard bidCpmAdjustment function if present (note: if a bidCpmAdjustment function exists for the alternate
-     * bidder code within bidderSettings, then this will be used instead of falling back to the adapter’s bidCpmAdjustment function).
-     */
-    adjustAlternateBids?: boolean;
-    /**
-     * If adapter-specific targeting is specified, can be used to suppress the standard targeting for that adapter.
-     */
-    sendStandardTargeting?: boolean;
-    /**
-     * If custom adserverTargeting functions are specified that may generate empty keys, this can be used to suppress them.
-     */
-    suppressEmptyKeys?: boolean;
-    /**
-     * Allow use of cookies and/or local storage.
-     */
-    storageAllowed?: boolean | StorageType[];
-    /**
-     * Allow adapters to bid with alternate bidder codes.
-     */
-    allowAlternateBidderCodes?: boolean;
-    /**
-     * Array of bidder codes for which an adapter can bid.
-     * undefined or ['*'] will allow adapter to bid with any bidder code.
-     */
-    allowedAlternateBidderCodes?: ['*'] | BidderCode[];
-    /**
-     * If true (the default), allow the `Sec-Browsing-Topics` header in requests to their exchange.
-     */
-    topicsHeader?: boolean;
+  /**
+   * If true, allow bids with CPM 0to be accepted by Prebid.js and sent to the ad server.
+   */
+  allowZeroCpmBids?: boolean;
+  /**
+   * Optionally allow alternate bidder codes to use an adapter’s bidCpmAdjustment function by default instead of
+   * the standard bidCpmAdjustment function if present (note: if a bidCpmAdjustment function exists for the alternate
+   * bidder code within bidderSettings, then this will be used instead of falling back to the adapter’s bidCpmAdjustment function).
+   */
+  adjustAlternateBids?: boolean;
+  /**
+   * If adapter-specific targeting is specified, can be used to suppress the standard targeting for that adapter.
+   */
+  sendStandardTargeting?: boolean;
+  /**
+   * If custom adserverTargeting functions are specified that may generate empty keys, this can be used to suppress them.
+   */
+  suppressEmptyKeys?: boolean;
+  /**
+   * Allow use of cookies and/or local storage.
+   */
+  storageAllowed?: boolean | StorageType[];
+  /**
+   * Allow adapters to bid with alternate bidder codes.
+   */
+  allowAlternateBidderCodes?: boolean;
+  /**
+   * Array of bidder codes for which an adapter can bid.
+   * undefined or ['*'] will allow adapter to bid with any bidder code.
+   */
+  allowedAlternateBidderCodes?: ['*'] | BidderCode[];
+  /**
+   * If true (the default), allow the `Sec-Browsing-Topics` header in requests to their exchange.
+   */
+  topicsHeader?: boolean;
 }
 
 export interface BidderScopedSettings<B extends BidderCode> extends BidderSettings<B> {
-    /**
-     * Custom CPM adjustment function. Could, for example, adjust a bidder’s gross-price bid to net price.
-     */
-    bidCpmAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;
-    /**
-     * Define which key/value pairs are sent to the ad server.
-     */
-    adserverTargeting?: ({
-        key: string;
-        val(bid: Bid, bidRequest: BidRequest<B>): string;
-    })[];
+  /**
+   * Custom CPM adjustment function. Could, for example, adjust a bidder’s gross-price bid to net price.
+   */
+  bidCpmAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;
+  /**
+   * Define which key/value pairs are sent to the ad server.
+   */
+  adserverTargeting?: ({
+    key: string;
+    val(bid: Bid, bidRequest: BidRequest<B>): string;
+  })[];
 }
 
 export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends SETTINGS> {

@@ -38,7 +38,7 @@ export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defa
 export const interpretResponse = (serverResponse, defaultCur, parseNative) => {
   if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
-  let bids = [];
+  const bids = [];
   serverResponse.body.seatbid.forEach(response => {
     response.bid.forEach(bid => {
       const mediaType = bid.ext?.mediaType || 'banner';

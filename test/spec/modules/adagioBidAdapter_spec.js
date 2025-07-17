@@ -294,7 +294,7 @@ describe('Adagio bid adapter', () => {
       const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
 
       const bid01 = new BidRequestBuilder().withParams().build();
-      let ortb = {
+      const ortb = {
         ortb2: {
           site: {
             ext: {
@@ -1139,7 +1139,7 @@ describe('Adagio bid adapter', () => {
   });
 
   describe('interpretResponse()', function() {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         data: {
           pred: 1
@@ -1165,7 +1165,7 @@ describe('Adagio bid adapter', () => {
       }
     };
 
-    let bidRequest = {
+    const bidRequest = {
       data: {
         adUnits: [{
           bidder: 'adagio',
@@ -1209,7 +1209,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should handle properly a correct bid response', function() {
-      let expectedResponse = [{
+      const expectedResponse = [{
         ad: '<div style="background-color:red; height:250px; width:300px"></div>',
         cpm: 1,
         creativeId: 'creativeId',
@@ -1242,7 +1242,7 @@ describe('Adagio bid adapter', () => {
       const altServerResponse = utils.deepClone(serverResponse);
       delete altServerResponse.body.bids[0].meta;
 
-      let expectedResponse = [{
+      const expectedResponse = [{
         ad: '<div style="background-color:red; height:250px; width:300px"></div>',
         cpm: 1,
         creativeId: 'creativeId',
@@ -1572,7 +1572,7 @@ describe('Adagio bid adapter', () => {
         }
       }];
 
-      let result = spec.getUserSyncs(syncOptions, serverResponses);
+      const result = spec.getUserSyncs(syncOptions, serverResponses);
 
       expect(result[0].type).to.equal('iframe');
       expect(result[0].url).contain('setuid');
