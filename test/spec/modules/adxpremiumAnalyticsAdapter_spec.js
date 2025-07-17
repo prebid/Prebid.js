@@ -1,11 +1,11 @@
-import adxpremiumAnalyticsAdapter from 'modules/adxpremiumAnalyticsAdapter.js';
-import { testSend } from 'modules/adxpremiumAnalyticsAdapter.js';
+import adxpremiumAnalyticsAdapter, { testSend } from 'modules/adxpremiumAnalyticsAdapter.js';
+
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('AdxPremium analytics adapter', function () {
   beforeEach(function () {
@@ -17,12 +17,12 @@ describe('AdxPremium analytics adapter', function () {
   });
 
   describe('track', function () {
-    let initOptions = {
+    const initOptions = {
       pubId: 123,
       sid: 's2'
     };
 
-    let auctionInit = {
+    const auctionInit = {
       'auctionId': 'c4f0cce0-264c-483a-b2f4-8ac2248a896b',
       'timestamp': 1589707613899,
       'auctionStatus': 'inProgress',
@@ -143,7 +143,7 @@ describe('AdxPremium analytics adapter', function () {
     };
 
     // requests & responses
-    let bidRequest = {
+    const bidRequest = {
       'bidderCode': 'luponmedia',
       'auctionId': 'c4f0cce0-264c-483a-b2f4-8ac2248a896b',
       'bidderRequestId': '18c49b05a23645',
@@ -232,7 +232,7 @@ describe('AdxPremium analytics adapter', function () {
       'start': 1589707613908
     };
 
-    let bidResponse = {
+    const bidResponse = {
       'bidderCode': 'luponmedia',
       'width': 300,
       'height': 250,
@@ -279,7 +279,7 @@ describe('AdxPremium analytics adapter', function () {
     expectedAfterBidData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
     expectedAfterBidData = btoa(JSON.stringify(expectedAfterBidData));
 
-    let expectedAfterBid = {
+    const expectedAfterBid = {
       'query': 'mutation {createEvent(input: {event: {eventData: "' + expectedAfterBidData + '"}}) {event {createTime } } }'
     };
 
@@ -289,12 +289,12 @@ describe('AdxPremium analytics adapter', function () {
     expectedAfterTimeoutData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
     expectedAfterTimeoutData = btoa(JSON.stringify(expectedAfterTimeoutData));
 
-    let expectedAfterTimeout = {
+    const expectedAfterTimeout = {
       'query': 'mutation {createEvent(input: {event: {eventData: "' + expectedAfterTimeoutData + '"}}) {event {createTime } } }'
     };
 
     // lets simulate that some bidders timeout
-    let bidTimeoutArgsV1 = [
+    const bidTimeoutArgsV1 = [
       {
         'bidId': '284f8e1469246b',
         'bidder': 'luponmedia',
@@ -304,7 +304,7 @@ describe('AdxPremium analytics adapter', function () {
     ];
 
     // now simulate some WIN and RENDERING
-    let wonRequest = {
+    const wonRequest = {
       'bidderCode': 'luponmedia',
       'width': 300,
       'height': 250,
@@ -356,7 +356,7 @@ describe('AdxPremium analytics adapter', function () {
     wonExpectData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
     wonExpectData = btoa(JSON.stringify(wonExpectData));
 
-    let wonExpect = {
+    const wonExpect = {
       'query': 'mutation {createEvent(input: {event: {eventData: "' + wonExpectData + '"}}) {event {createTime } } }'
     };
 
@@ -396,7 +396,7 @@ describe('AdxPremium analytics adapter', function () {
 
       expect(server.requests.length).to.equal(2);
 
-      let realAfterBid = JSON.parse(server.requests[0].requestBody);
+      const realAfterBid = JSON.parse(server.requests[0].requestBody);
 
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
@@ -407,7 +407,7 @@ describe('AdxPremium analytics adapter', function () {
       events.emit(EVENTS.BID_WON, wonRequest);
 
       expect(server.requests.length).to.equal(3);
-      let winEventData = JSON.parse(server.requests[1].requestBody);
+      const winEventData = JSON.parse(server.requests[1].requestBody);
 
       expect(winEventData).to.deep.equal(wonExpect);
     });

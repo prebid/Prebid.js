@@ -47,7 +47,7 @@ describe('Chrome AI RTD Provider', function() {
     logErrorStub = sandbox.stub(utils, 'logError');
 
     // Stub storage manager
-    sandbox.stub(storageManager, 'getCoreStorageManager').returns(mockStorage);
+    sandbox.stub(chromeAiRtdProvider, 'storage').get(() => mockStorage);
     mockStorage.hasLocalStorage.returns(true);
     mockStorage.localStorageIsEnabled.returns(true);
     mockStorage.getDataFromLocalStorage.returns(null); // Default to no data

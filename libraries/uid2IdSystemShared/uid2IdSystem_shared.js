@@ -182,7 +182,7 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
       originalToken: token,
       latestToken: response.identity,
     };
-    let storedTokens = storageManager.getStoredValueWithFallback();
+    const storedTokens = storageManager.getStoredValueWithFallback();
     if (storedTokens?.originalIdentity) tokens.originalIdentity = storedTokens.originalIdentity;
     storageManager.storeValue(tokens);
     return tokens;
@@ -688,6 +688,7 @@ if (FEATURES.UID2_CSTG) {
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
+  // eslint-disable-next-line no-restricted-syntax
   const logInfo = (...args) => logInfoWrapper(_logInfo, ...args);
 
   let suppliedToken = null;
@@ -789,7 +790,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
 export function extractIdentityFromParams(params) {
   const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
 
-  for (let key of keysToCheck) {
+  for (const key of keysToCheck) {
     if (params.hasOwnProperty(key)) {
       return { [key]: params[key] };
     }

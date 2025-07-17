@@ -239,7 +239,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
 
-  const gpid = bid?.ortb2Imp?.ext?.gpid || bid?.ortb2Imp?.ext?.data?.pbadslot || '';
+  const gpid = bid?.ortb2Imp?.ext?.gpid || '';
   const cat = bidderRequest?.ortb2?.site?.cat || [];
   const pagecat = bidderRequest?.ortb2?.site?.pagecat || [];
   const contentData = bidderRequest?.ortb2?.site?.content?.data || [];
@@ -260,7 +260,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  let data = {
+  const data = {
     url: encodeURIComponent(topWindowUrl),
     uqs: getTopWindowQueryParams(),
     cb: Date.now(),
@@ -362,7 +362,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     const reqBidId = request?.data?.bidId;
     const {results} = serverResponse.body;
 
-    let output = [];
+    const output = [];
 
     try {
       results.forEach((result, i) => {

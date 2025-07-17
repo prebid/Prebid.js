@@ -94,7 +94,7 @@ function buildRequests(bidReqs, bidderRequest) {
 }
 
 function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+  if (typeof bid.params === 'undefined') {
     return false;
   }
 
@@ -194,7 +194,7 @@ function _getBidFloor(bid) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

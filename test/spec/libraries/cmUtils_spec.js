@@ -1,5 +1,5 @@
 import * as utils from 'src/utils.js';
-import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils';
+import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils.js';
 
 describe('consent management utils', () => {
   let sandbox, clock;

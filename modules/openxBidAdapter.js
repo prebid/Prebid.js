@@ -162,12 +162,12 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  let videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
-  let bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
+  const videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
+  const bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
     // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
     .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
 
-  let requests = bannerAndNativeRequests.length ? [createRequest(bannerAndNativeRequests, bidderRequest, null)] : [];
+  const requests = bannerAndNativeRequests.length ? [createRequest(bannerAndNativeRequests, bidderRequest, null)] : [];
   videoRequests.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
@@ -211,8 +211,8 @@ function interpretResponse(resp, req) {
  */
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let queryParamStrings = [];
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const queryParamStrings = [];
     let syncUrl = SYNC_URL;
     if (gdprConsent) {
       queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));

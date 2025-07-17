@@ -134,7 +134,7 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let refererinfo = {
+      const refererinfo = {
         // TODO: this sends everything it finds to the backend, except for canonicalUrl
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
@@ -335,7 +335,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     // setting up the jsTracker:
     // we put it as a data-src attribute so that the tracker isn't called
     // until we have the adId (see onBidWon)
-    let jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
+    const jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
 
     let jsTrackers = nativeAd.javascript_trackers;
 
@@ -417,7 +417,7 @@ function bidToTag(bid) {
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
   } else {
-    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
     // only support unknown, atf, and btf values for position at this time
     if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
       // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
@@ -520,7 +520,7 @@ function buildNativeRequest(params) {
     // convert the sizes of image/icon assets to proper format (if needed)
     const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
     if (isImageAsset && request[requestKey].sizes) {
-      let sizes = request[requestKey].sizes;
+      const sizes = request[requestKey].sizes;
       if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
         request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }

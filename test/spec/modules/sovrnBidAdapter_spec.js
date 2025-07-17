@@ -529,17 +529,23 @@ describe('sovrnBidAdapter', function() {
     it('should add schain if present', function() {
       const schainRequest = {
         ...baseBidRequest,
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'directseller.com',
-              sid: '00001',
-              rid: 'BidRequest1',
-              hp: 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'directseller.com',
+                    sid: '00001',
+                    rid: 'BidRequest1',
+                    hp: 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
       const schainRequests = [schainRequest, baseBidRequest]
@@ -956,7 +962,7 @@ describe('sovrnBidAdapter', function() {
   })
 
   describe('fledge response', function () {
-    let fledgeResponse = {
+    const fledgeResponse = {
       body: {
         id: '37386aade21a71',
         seatbid: [{
@@ -1021,7 +1027,7 @@ describe('sovrnBidAdapter', function() {
         }
       }
     }
-    let emptyFledgeResponse = {
+    const emptyFledgeResponse = {
       body: {
         id: '37386aade21a71',
         seatbid: [{
@@ -1042,7 +1048,7 @@ describe('sovrnBidAdapter', function() {
         }
       }
     }
-    let expectedResponse = {
+    const expectedResponse = {
       requestId: '263c448586f5a1',
       cpm: 0.45882675,
       width: 728,
@@ -1056,7 +1062,7 @@ describe('sovrnBidAdapter', function() {
       meta: { advertiserDomains: [] },
       ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
     }
-    let expectedFledgeResponse = [
+    const expectedFledgeResponse = [
       {
         bidId: 'test_imp_id',
         config: {

@@ -33,7 +33,7 @@ describe('anonymisedRtdProvider', function() {
 
   describe('anonymisedRtdSubmodule', function() {
     it('successfully instantiates', function () {
-		  expect(anonymisedRtdSubmodule.init()).to.equal(true);
+      expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
     it('should load external script when params.tagConfig.clientId is set', function () {
       const rtdConfig = {
