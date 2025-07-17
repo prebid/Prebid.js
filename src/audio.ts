@@ -44,44 +44,7 @@ export interface AudioMediaType extends BaseMediaType, Pick<ORTBImp['audio'], (t
     context: AudioContext;
 }
 
-export function fillAudioDefaults(adUnit: AdUnitDefinition) {
-}
-
-/**
- * validateOrtbAudioFields mutates the `adUnit.mediaTypes.audio` object by removing invalid ortb properties (default).
- * The onInvalidParam callback can be used to handle invalid properties differently.
- * Other properties are ignored and kept as is.
- *
- * @param {Object} adUnit - The adUnit object.
- * @param {Function=} onInvalidParam - The callback function to be called with key, value, and adUnit.
- * @returns {void}
- */
-export function validateOrtbAudioFields(adUnit, onInvalidParam?) {
-  const audioParams = adUnit?.mediaTypes?.audio;
-
-  if (!isPlainObject(audioParams)) {
-    logWarn(`validateOrtbAudioFields: audioParams must be an object.`);
-    return;
-  }
-
-  if (audioParams != null) {
-    Object.entries(audioParams)
-      .forEach(([key, value]: any) => {
-        if (!ORTB_AUDIO_PARAMS.has(key)) {
-          return
-        }
-        const isValid = ORTB_AUDIO_PARAMS.get(key)(value);
-        if (!isValid) {
-          if (typeof onInvalidParam === 'function') {
-            onInvalidParam(key, value, adUnit);
-          } else {
-            delete audioParams[key];
-            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.audio.${key} ORTB property. The property has been removed.`);
-          }
-        }
-      });
-  }
-}
+export function fillAudioDefaults(adUnit: AdUnitDefinition) {}
 
 /**
  * Validate that the assets required for audio context are present on the bid

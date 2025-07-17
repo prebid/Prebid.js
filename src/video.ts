@@ -100,42 +100,6 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
 }
 
 /**
- * validateOrtbVideoFields mutates the `adUnit.mediaTypes.video` object by removing invalid ortb properties (default).
- * The onInvalidParam callback can be used to handle invalid properties differently.
- * Other properties are ignored and kept as is.
- *
- * @param {Object} adUnit - The adUnit object.
- * @param {Function=} onInvalidParam - The callback function to be called with key, value, and adUnit.
- * @returns {void}
- */
-export function validateOrtbVideoFields(adUnit, onInvalidParam?) {
-  const videoParams = adUnit?.mediaTypes?.video;
-
-  if (!isPlainObject(videoParams)) {
-    logWarn(`validateOrtbVideoFields: videoParams must be an object.`);
-    return;
-  }
-
-  if (videoParams != null) {
-    Object.entries(videoParams)
-      .forEach(([key, value]: any) => {
-        if (!ORTB_VIDEO_PARAMS.has(key)) {
-          return
-        }
-        const isValid = ORTB_VIDEO_PARAMS.get(key)(value);
-        if (!isValid) {
-          if (typeof onInvalidParam === 'function') {
-            onInvalidParam(key, value, adUnit);
-          } else {
-            delete videoParams[key];
-            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
-          }
-        }
-      });
-  }
-}
-
-/**
  * Validate that the assets required for video context are present on the bid
  */
 export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = {}): boolean {

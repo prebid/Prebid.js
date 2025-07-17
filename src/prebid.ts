@@ -14,6 +14,7 @@ import {
     isFn,
     isGptPubadsDefined,
     isNumber,
+    isPlainObject,
     logError,
     logInfo,
     logMessage,
@@ -53,8 +54,8 @@ import {
     renderIfDeferred
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults, ORTB_VIDEO_PARAMS, validateOrtbVideoFields} from './video.js';
-import {ORTB_BANNER_PARAMS, validateOrtbBannerFields} from './banner.js';
+import {fillVideoDefaults, ORTB_VIDEO_PARAMS} from './video.js';
+import {ORTB_BANNER_PARAMS} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
@@ -66,7 +67,7 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
-import {fillAudioDefaults, validateOrtbAudioFields} from './audio.ts';
+import {ORTB_AUDIO_PARAMS, fillAudioDefaults} from './audio.ts';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -201,14 +202,14 @@ function validateBannerMediaType(adUnit: AdUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
-  validateOrtbBannerFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'banner');
   syncOrtb2(validatedAdUnit, 'banner')
   return validatedAdUnit;
 }
 
 function validateAudioMediaType(adUnit: AdUnit) {
   const validatedAdUnit = deepClone(adUnit);
-  validateOrtbAudioFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'audio');
   syncOrtb2(validatedAdUnit, 'audio');
   return validatedAdUnit;
 }
@@ -232,9 +233,43 @@ function validateVideoMediaType(adUnit: AdUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
-  validateOrtbVideoFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'video');
   syncOrtb2(validatedAdUnit, 'video');
   return validatedAdUnit;
+}
+
+export function validateOrtbFields(adUnit, type, onInvalidParam?) {
+  const mediaTypes = adUnit?.mediaTypes || {};
+  const params = mediaTypes[type];
+
+  const ORTB_PARAMS = {
+    banner: ORTB_BANNER_PARAMS,
+    audio: ORTB_AUDIO_PARAMS,
+    video: ORTB_VIDEO_PARAMS
+  }[type]
+
+  if (!isPlainObject(params)) {
+    logWarn(`validateOrtb${type}Fields: ${type}Params must be an object.`);
+    return;
+  }
+
+  if (params != null) {
+    Object.entries(params)
+      .forEach(([key, value]: any) => {
+        if (!ORTB_PARAMS.has(key)) {
+          return
+        }
+        const isValid = ORTB_PARAMS.get(key)(value);
+        if (!isValid) {
+          if (typeof onInvalidParam === 'function') {
+            onInvalidParam(key, value, adUnit);
+          } else {
+            delete params[key];
+            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
+          }
+        }
+      });
+  }
 }
 
 function validateNativeMediaType(adUnit: AdUnit) {
