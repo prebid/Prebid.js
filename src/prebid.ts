@@ -402,7 +402,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
-    if (mediaTypes.audio) {
+    if (FEATURES.AUDIO && mediaTypes.audio) {
       validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateAudioMediaType(adUnit);
     }
 
