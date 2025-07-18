@@ -536,7 +536,7 @@ describe('PubMatic adapter', () => {
           });
         });
        }
-      }
+      
     });
 
     describe('rest of ORTB request', () => {
