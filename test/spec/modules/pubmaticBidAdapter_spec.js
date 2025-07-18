@@ -536,7 +536,6 @@ describe('PubMatic adapter', () => {
           });
         });
        }
-      
     });
 
     describe('rest of ORTB request', () => {
@@ -1061,7 +1060,6 @@ describe('PubMatic adapter', () => {
       delete bidRequest.mediaTypes.video;
       bidRequest.sizes = undefined;
       const request = spec.buildRequests([bidRequest], bidderRequest);
-      
       // Prepare a native bid response with missing w and h
       const nativeAdm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Test' } }] } });
       const nativeBid = {
@@ -1306,7 +1304,6 @@ describe('PubMatic adapter', () => {
         uids: [{ id: 'test-id-123' }]
       }
     ];
-    
     // Create a clean bidderRequest without existing eids
     const cleanBidderRequest = utils.deepClone(bidderRequest);
     // Ensure user object exists
@@ -1350,7 +1347,6 @@ describe('PubMatic adapter', () => {
 
   it('should copy geo from device to user when device has geo but user does not', () => {
     const bidRequestWithDeviceGeo = utils.deepClone(validBidRequests[0]);
-    
     // Create a clean bidderRequest without existing geo data
     const cleanBidderRequest = utils.deepClone(bidderRequest);
     // Ensure user and device objects exist
@@ -1379,7 +1375,7 @@ describe('PubMatic adapter', () => {
     delete cleanBidderRequest.device.geo;
     delete cleanBidderRequest.ortb2.device.geo;
     // Set geo data in bidderRequest.ortb2.user.geo so the converter will merge it
-    cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 }; 
+    cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 };
     const request = spec.buildRequests([bidRequestWithUserGeo], cleanBidderRequest);
     expect(request.data.device).to.exist;
     expect(request.data.device.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
@@ -1399,7 +1395,6 @@ describe('PubMatic adapter', () => {
     bidderRequestWithPublisher.ortb2 = bidderRequestWithPublisher.ortb2 || {};
     bidderRequestWithPublisher.ortb2.site = bidderRequestWithPublisher.ortb2.site || {};
     bidderRequestWithPublisher.ortb2.site.publisher = bidderRequestWithPublisher.ortb2.site.publisher || {};
-    
     const request = spec.buildRequests(validBidRequests, bidderRequestWithPublisher);
     expect(request.data.site).to.exist;
     expect(request.data.site.publisher).to.exist;
