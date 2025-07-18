@@ -33,7 +33,7 @@ export const spec = {
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
-    let user = commonFpd.user || {};
+    const user = commonFpd.user || {};
 
     if (typeof getConfig('app') === 'object') {
       app = getConfig('app') || {};
@@ -51,7 +51,7 @@ export const spec = {
       }
     }
 
-    let device = getConfig('device') || {};
+    const device = getConfig('device') || {};
     if (commonFpd.device) {
       mergeDeep(device, commonFpd.device);
     }
@@ -60,10 +60,10 @@ export const spec = {
     device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
-    let source = commonFpd.source || {};
+    const source = commonFpd.source || {};
     source.fd = 1;
 
-    let regs = commonFpd.regs || {};
+    const regs = commonFpd.regs || {};
 
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
@@ -72,7 +72,7 @@ export const spec = {
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     if (eids) {
       deepSetValue(user, 'ext.eids', eids);
@@ -111,17 +111,17 @@ export const spec = {
       };
 
       if (bid.nativeOrtbRequest && bid.nativeOrtbRequest.assets) {
-        let assets = bid.nativeOrtbRequest.assets;
-        let requestAssets = [];
+        const assets = bid.nativeOrtbRequest.assets;
+        const requestAssets = [];
         for (let i = 0; i < assets.length; i++) {
-          let asset = deepClone(assets[i]);
-          let img = asset.img;
+          const asset = deepClone(assets[i]);
+          const img = asset.img;
           if (img) {
-            let aspectratios = img.ext && img.ext.aspectratios;
+            const aspectratios = img.ext && img.ext.aspectratios;
 
             if (aspectratios) {
-              let ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
-              let ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
+              const ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
+              const ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
               img.wmin = img.wmin || 0;
               img.hmin = ratioHeight * img.wmin / ratioWidth | 0;
             }

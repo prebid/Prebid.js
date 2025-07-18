@@ -9,10 +9,9 @@ import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
-import 'modules/priceFloors.js';
+
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 
 const SIMPLE_BID_REQUEST = {
   bidder: 'escalax',
@@ -192,7 +191,7 @@ describe('escalaxAdapter', function () {
     });
 
     it('should return false when sourceId/accountId is missing', function () {
-      let localbid = Object.assign({}, BANNER_BID_REQUEST);
+      const localbid = Object.assign({}, BANNER_BID_REQUEST);
       delete localbid.params.sourceId;
       delete localbid.params.accountId;
       expect(spec.isBidRequestValid(BANNER_BID_REQUEST)).to.equal(false);
@@ -267,7 +266,7 @@ describe('escalaxAdapter', function () {
 
     it('Empty response must return empty array', function () {
       const emptyResponse = null;
-      let response = spec.interpretResponse(emptyResponse, BANNER_BID_REQUEST);
+      const response = spec.interpretResponse(emptyResponse, BANNER_BID_REQUEST);
 
       expect(response).to.be.an('array').that.is.empty;
     })

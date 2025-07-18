@@ -12,7 +12,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import 'modules/paapi.js';
 
 import {deepClone} from 'src/utils.js';
@@ -188,7 +187,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
           invalidVideoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
@@ -217,7 +216,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
           invalidVideoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
@@ -242,7 +241,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidVideoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
+          const invalidVideoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
           delete invalidVideoBidWithMediaType.params;
           invalidVideoBidWithMediaType.params = {};
           expect(spec.isBidRequestValid(invalidVideoBidWithMediaType)).to.equal(false);
@@ -287,7 +286,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithMediaTypes);
+          const invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithMediaTypes);
           invalidNativeBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false);
         });
@@ -321,7 +320,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithDelDomainAndPlatform);
+          const invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithDelDomainAndPlatform);
           invalidNativeBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false);
         });
@@ -636,7 +635,7 @@ describe('OpenxRtbAdapter', function () {
               }
             }
           });
-          let data = request[0].data;
+          const data = request[0].data;
           expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
@@ -651,7 +650,7 @@ describe('OpenxRtbAdapter', function () {
               }
             }
           });
-          let data = request[0].data;
+          const data = request[0].data;
           expect(data.user.yob).to.equal(1985);
         });
 
@@ -668,7 +667,7 @@ describe('OpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -680,7 +679,7 @@ describe('OpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('pbadslot');
               } else {
@@ -697,7 +696,7 @@ describe('OpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data).to.have.property('pbadslot');
               expect(data.imp[0].ext.data.pbadslot).to.equal('abcd');
             });
@@ -715,7 +714,7 @@ describe('OpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -727,7 +726,7 @@ describe('OpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('adserver');
               } else {
@@ -736,7 +735,7 @@ describe('OpenxRtbAdapter', function () {
             });
 
             it('should send', function() {
-              let adSlotValue = 'abc';
+              const adSlotValue = 'abc';
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -748,7 +747,7 @@ describe('OpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data.adserver.name).to.equal('GAM');
               expect(data.imp[0].ext.data.adserver.adslot).to.equal(adSlotValue);
             });
@@ -766,7 +765,7 @@ describe('OpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -778,7 +777,7 @@ describe('OpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('other');
               } else {
@@ -795,7 +794,7 @@ describe('OpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data.other).to.equal(1234);
             });
           });
@@ -998,7 +997,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should send a coppa flag there is when there is coppa param settings in the bid requests', async function () {
-          let mockConfig = {
+          const mockConfig = {
             coppa: true
           };
 
@@ -1106,13 +1105,24 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            schain: schainConfig
+            ortb2: {source: {
+              schain: schainConfig,
+              ext: {schain: schainConfig}
+            }}
           }];
+
+          // Add schain to mockBidderRequest as well
+          mockBidderRequest.ortb2 = {
+            source: {
+              schain: schainConfig,
+              ext: {schain: schainConfig}
+            }
+          };
         });
 
         it('should send a supply chain object', function () {
           const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain).to.equal(schainConfig);
+          expect(request[0].data.source.ext.schain).to.deep.equal(schainConfig);
         });
 
         it('should send the supply chain object with the right version', function () {
@@ -1947,7 +1957,7 @@ describe('OpenxRtbAdapter', function () {
 
   describe('user sync', function () {
     it('should register the default image pixel if no pixels available', function () {
-      let syncs = spec.getUserSyncs(
+      const syncs = spec.getUserSyncs(
         {pixelEnabled: true},
         []
       );
@@ -1955,7 +1965,7 @@ describe('OpenxRtbAdapter', function () {
     });
 
     it('should register custom syncUrl when exists', function () {
-      let syncs = spec.getUserSyncs(
+      const syncs = spec.getUserSyncs(
         {pixelEnabled: true},
         [{body: {ext: {delDomain: 'www.url.com'}}}]
       );
@@ -1963,7 +1973,7 @@ describe('OpenxRtbAdapter', function () {
     });
 
     it('should register custom syncUrl when exists', function () {
-      let syncs = spec.getUserSyncs(
+      const syncs = spec.getUserSyncs(
         {pixelEnabled: true},
         [{body: {ext: {platform: 'abc'}}}]
       );
@@ -1971,7 +1981,7 @@ describe('OpenxRtbAdapter', function () {
     });
 
     it('when iframe sync is allowed, it should register an iframe sync', function () {
-      let syncs = spec.getUserSyncs(
+      const syncs = spec.getUserSyncs(
         {iframeEnabled: true},
         []
       );
@@ -1979,7 +1989,7 @@ describe('OpenxRtbAdapter', function () {
     });
 
     it('should prioritize iframe over image for user sync', function () {
-      let syncs = spec.getUserSyncs(
+      const syncs = spec.getUserSyncs(
         {iframeEnabled: true, pixelEnabled: true},
         []
       );
@@ -2001,7 +2011,7 @@ describe('OpenxRtbAdapter', function () {
       });
 
       it('when there is a response, it should have the gdpr query params', () => {
-        let [{url}] = spec.getUserSyncs(
+        const [{url}] = spec.getUserSyncs(
           {iframeEnabled: true, pixelEnabled: true},
           [],
           gdprConsent
@@ -2012,7 +2022,7 @@ describe('OpenxRtbAdapter', function () {
       });
 
       it('should not send signals if no consent object is available', function () {
-        let [{url}] = spec.getUserSyncs(
+        const [{url}] = spec.getUserSyncs(
           {iframeEnabled: true, pixelEnabled: true},
           [],
         );
@@ -2030,7 +2040,7 @@ describe('OpenxRtbAdapter', function () {
         uspPixelUrl = `${DEFAULT_SYNC}&us_privacy=${privacyString}`
       });
       it('should send the us privacy string, ', () => {
-        let [{url}] = spec.getUserSyncs(
+        const [{url}] = spec.getUserSyncs(
           {iframeEnabled: true, pixelEnabled: true},
           [],
           undefined,
@@ -2040,7 +2050,7 @@ describe('OpenxRtbAdapter', function () {
       });
 
       it('should not send signals if no consent string is available', function () {
-        let [{url}] = spec.getUserSyncs(
+        const [{url}] = spec.getUserSyncs(
           {iframeEnabled: true, pixelEnabled: true},
           [],
         );

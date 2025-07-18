@@ -1,6 +1,10 @@
 import {prefixLog} from '../utils.js';
 import {ACTIVITY_PARAM_COMPONENT} from './params.js';
 
+/**
+ * @param logger
+ * @return {((function(string, string, function(Object): {allow: boolean, reason?: string}, number=): function(): void)|(function(string, {}): boolean)|*)[]}
+ */
 export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const registry = {};
 
@@ -22,6 +26,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const dupes = {};
   const DEDUPE_INTERVAL = 1000;
 
+  // eslint-disable-next-line no-restricted-syntax
   function logResult({activity, name, allow, reason, component}) {
     const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`;
     const deduping = dupes.hasOwnProperty(msg);

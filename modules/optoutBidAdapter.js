@@ -4,6 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'optout';
+const GVLID = 227;
 
 function getDomain(bidderRequest) {
   return deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
@@ -22,6 +23,7 @@ function getCurrency() {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
 
   isBidRequestValid: function(bid) {
     return !!bid.params.publisher && !!bid.params.adslot;
@@ -63,7 +65,7 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (gdprConsent) {
-      let gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : 0;
+      const gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : 0;
       if (syncOptions.iframeEnabled && (!gdprConsent.gdprApplies || hasPurpose1Consent(gdprConsent))) {
         return [{
           type: 'iframe',

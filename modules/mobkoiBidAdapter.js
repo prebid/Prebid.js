@@ -90,6 +90,33 @@ export const spec = {
     });
     return prebidBidResponse.bids;
   },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+
+    if (!syncOptions.pixelEnabled || !gdprConsent.gdprApplies) {
+      return syncs;
+    }
+
+    serverResponses.forEach(response => {
+      const pixels = deepAccess(response, 'body.ext.pixels');
+      if (!Array.isArray(pixels)) {
+        return;
+      }
+
+      pixels.forEach(pixel => {
+        const [type, url] = pixel;
+        if (type === 'image' && syncOptions.pixelEnabled) {
+          syncs.push({
+            type: 'image',
+            url: url
+          });
+        }
+      });
+    });
+
+    return syncs;
+  }
 };
 
 registerBidder(spec);

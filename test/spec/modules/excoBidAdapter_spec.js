@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER } from '../../../src/mediaTypes';
-import { config } from '../../../src/config';
-import * as utils from '../../../src/utils.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import sinon from 'sinon';
 
 describe('ExcoBidAdapter', function () {
@@ -161,7 +160,7 @@ describe('ExcoBidAdapter', function () {
                 id: 'b7b6eddb-9924-425e-aa52-5eba56689abe',
                 impid: BID.bidId,
                 cpm: 10.56,
-                ad: '<iframe>console.log("hello world")</iframe>',
+                adm: '<iframe>console.log("hello world")</iframe>',
                 lurl: 'https://ads-ssp-stg.hit.buzz/loss?loss=${AUCTION_LOSS}&min_to_win=${AUCTION_MIN_TO_WIN}',
                 nurl: 'http://example.com/win/1234',
                 adomain: ['crest.com'],
@@ -211,11 +210,10 @@ describe('ExcoBidAdapter', function () {
           ],
           mediaType: BANNER
         },
-        ad: '<iframe>console.log("hello world")</iframe>',
+        ad: '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="http://example.com/win/1234"></div><iframe>console.log("hello world")</iframe>',
         netRevenue: true,
         nurl: 'http://example.com/win/1234',
         currency: 'USD',
-        vastXml: undefined,
         adUrl: undefined,
       });
     });
@@ -316,12 +314,13 @@ describe('ExcoBidAdapter', function () {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
 
-    it('Should trigger event if bid nurl', function() {
+    it('Should trigger nurl pixel', function() {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',
         sizes: [[300, 250]],
         nurl: 'http://example.com/win/1234',
+        mediaType: VIDEO,
         params: {
           accountId: 'accountId',
           publisherId: 'publisherId',
@@ -331,6 +330,26 @@ describe('ExcoBidAdapter', function () {
 
       adapter.onBidWon(bid);
       expect(stubbedFetch.callCount).to.equal(1);
+    });
+
+    it('Should trigger nurl pixel with correct parameters', function() {
+      const bid = {
+        bidder: adapter.code,
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        nurl: 'http://example.com/win/1234?ad_auction_won',
+        mediaType: VIDEO,
+        params: {
+          accountId: 'accountId',
+          publisherId: 'publisherId',
+          tagId: 'tagId',
+        }
+      };
+
+      adapter.onBidWon(bid);
+
+      expect(stubbedFetch.callCount).to.equal(1);
+      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won');
     });
 
     it('Should not trigger pixel if no bid nurl', function() {
@@ -347,6 +366,36 @@ describe('ExcoBidAdapter', function () {
 
       adapter.onBidWon(bid);
       expect(stubbedFetch.callCount).to.equal(0);
+    });
+  });
+
+  describe('isDebugEnabled', function () {
+    let originalConfig;
+
+    beforeEach(function () {
+      originalConfig = config.getConfig('debug');
+    });
+
+    afterEach(function () {
+      config.setConfig({ debug: originalConfig });
+    });
+
+    it('should return true if debug is enabled in config', function () {
+      config.setConfig({ debug: true });
+      expect(helpers.isDebugEnabled()).to.be.true;
+    });
+
+    it('should return false if debug is disabled in config', function () {
+      config.setConfig({ debug: false });
+      expect(helpers.isDebugEnabled()).to.be.false;
+    });
+
+    it('should return true if URL contains exco_debug=true', function () {
+      expect(helpers.isDebugEnabled('https://example.com?exco_debug=true')).to.be.true;
+    });
+
+    it('should return false if URL does not contain exco_debug=true', function () {
+      expect(helpers.isDebugEnabled('https://example.com')).to.be.false;
     });
   });
 });

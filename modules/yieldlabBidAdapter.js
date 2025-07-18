@@ -75,8 +75,9 @@ export const spec = {
           query[prop] = bid.params.customParams[prop];
         }
       }
-      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
-        query.schain = createSchainString(bid.schain);
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain && isPlainObject(schain) && Array.isArray(schain.nodes)) {
+        query.schain = createSchainString(schain);
       }
 
       const iabContent = getContentObject(bid);
@@ -194,7 +195,7 @@ export const spec = {
           creativeId: '' + matchedBid.id,
           dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
-          netRevenue: false,
+          netRevenue: matchedBid.netRevenue,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,

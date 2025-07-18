@@ -66,7 +66,7 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     const placement = {
       placementId: bid.params.placementId,
       bidId: bid.bidId,
-      schain: bid.schain || {},
+      schain: bid?.ortb2?.source?.ext?.schain || {},
       bidfloor: getBidFloor(bid)
     };
 
@@ -92,9 +92,9 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
 }
 
 export function interpretResponse(serverResponse) {
-  let response = [];
+  const response = [];
   for (let i = 0; i < serverResponse.body.length; i++) {
-    let resItem = serverResponse.body[i];
+    const resItem = serverResponse.body[i];
     if (isBidResponseValid(resItem)) {
       const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
       resItem.meta = { ...resItem.meta, advertiserDomains };
@@ -120,7 +120,7 @@ export function consentCheck(bidderRequest, req) {
 }
 
 export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint) => {
-  let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
   const isCk2trk = syncEndpoint.includes('ck.2trk.info');
 
   let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;

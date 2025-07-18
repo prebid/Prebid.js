@@ -13,7 +13,7 @@ import {
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import * as utils from 'src/utils.js';
-import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
+import {EVENTS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 import { enrichFPD } from '../../../src/fpd/enrichment.js';
@@ -27,10 +27,10 @@ describe('currency', function () {
   let sandbox;
   let clock;
 
-  let fn = sinon.spy();
+  const fn = sinon.spy();
 
   function makeBid(bidProps) {
-    return Object.assign(createBid(STATUS.GOOD), bidProps);
+    return Object.assign(createBid(), bidProps);
   }
 
   beforeEach(function () {

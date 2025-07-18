@@ -35,9 +35,9 @@ const getBidFloor = (bid) => {
   }
 };
 
-const createBasePlacement = (bid) => {
+const createBasePlacement = (bid, bidderRequest) => {
   const { bidId, mediaTypes, transactionId, userIdAsEids } = bid;
-  const schain = bid.schain || {};
+  const schain = bidderRequest?.ortb2?.source?.ext?.schain || {};
   const bidfloor = getBidFloor(bid);
 
   const placement = {
@@ -198,9 +198,9 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
 
 export function interpretResponseBuilder({addtlBidValidation = (bid) => true} = {}) {
   return function (serverResponse) {
-    let response = [];
+    const response = [];
     for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
+      const resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem) && addtlBidValidation(resItem)) {
         const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
         resItem.meta = { ...resItem.meta, advertiserDomains };
@@ -253,7 +253,7 @@ export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprCons
 export const buildPlacementProcessingFunction = (config) => (bid, bidderRequest) => {
   const addPlacementType = config?.addPlacementType ?? defaultPlacementType;
 
-  const placement = createBasePlacement(bid);
+  const placement = createBasePlacement(bid, bidderRequest);
 
   addPlacementType(bid, bidderRequest, placement);
 

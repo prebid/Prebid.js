@@ -182,7 +182,7 @@ describe('Real time module', function () {
         ]
       };
       validSM.getTargetingData = (adUnits) => {
-        let targeting = {'module1': 'targeting'}
+        const targeting = {'module1': 'targeting'}
         return {
           ad1: targeting,
           ad2: targeting

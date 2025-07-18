@@ -9,9 +9,8 @@ import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
-import {BANNER} from '../../../src/mediaTypes';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -450,9 +449,21 @@ describe('Conversant adapter tests', function() {
   it('Verify supply chain data', () => {
     const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
+
+    // Add schain to bidderRequest
+    bidderRequest.ortb2 = {
+      source: {
+        ext: {schain: schain}
+      }
+    };
+
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({
-        schain: schain
+        ortb2: {
+          source: {
+            ext: {schain: schain}
+          }
+        }
       }, bid);
     });
     const request = spec.buildRequests(bidsWithSchain, bidderRequest);
@@ -594,7 +605,7 @@ describe('Conversant adapter tests', function() {
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {
       // clone bidRequests
-      let requests = utils.deepClone(bidRequests);
+      const requests = utils.deepClone(bidRequests);
 
       const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
 
