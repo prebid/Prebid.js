@@ -399,6 +399,62 @@ describe('SparteoAdapter', function () {
           expect(adapter.interpretResponse(response, request)).to.deep.equal(formattedReponse);
         }
       });
+
+      if (FEATURES.VIDEO) {
+        it('should interprete renderer config', function () {
+          let response = {
+            body: {
+              'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
+              'cur': 'EUR',
+              'seatbid': [
+                {
+                  'seat': 'sparteo',
+                  'group': 0,
+                  'bid': [
+                    {
+                      'id': 'cdbb6982-a269-40c7-84e5-04797f11d87b',
+                      'impid': '5e6f7g8h',
+                      'price': 5,
+                      'ext': {
+                        'prebid': {
+                          'type': 'video',
+                          'cache': {
+                            'vastXml': {
+                              'url': 'https://pbs.tet.com/cache?uuid=1234'
+                            }
+                          },
+                          'renderer': {
+                            'url': 'testVideoPlayer.js',
+                            'options': {
+                              'disableTopBar': true,
+                              'showBigPlayButton': false,
+                              'showProgressBar': 'bar',
+                              'showVolume': false,
+                              'showMute': true,
+                              'allowFullscreen': true
+                            }
+                          }
+                        }
+                      },
+                      'adm': 'tag',
+                      'crid': 'crid',
+                      'w': 640,
+                      'h': 480,
+                      'nurl': 'https://t.bidder.sparteo.com/img'
+                    }
+                  ]
+                }
+              ]
+            }
+          };
+
+          const request = adapter.buildRequests([VALID_BID_BANNER, VALID_BID_VIDEO], BIDDER_REQUEST);
+          let formattedReponse = adapter.interpretResponse(response, request);
+
+          expect(formattedReponse[0].renderer.url).to.equal(response.body.seatbid[0].bid[0].ext.prebid.renderer.url);
+          expect(formattedReponse[0].renderer.config).to.deep.equal(response.body.seatbid[0].bid[0].ext.prebid.renderer);
+        });
+      }
     });
   });
 
