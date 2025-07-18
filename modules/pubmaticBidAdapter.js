@@ -64,7 +64,7 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
-    const { adUnitCode, mediaTypes, rtd } = bidRequest;
+    const { adUnitCode, mediaTypes, rtd, ortb2 } = bidRequest;
     const imp = buildImp(bidRequest, context);
 
     // Check if the imp object does not have banner, video, or native
@@ -73,7 +73,10 @@ const converter = ortbConverter({
       return null;
     }
     if (deals) addPMPDeals(imp, deals);
-    if (dctr) addDealCustomTargetings(imp, dctr);
+    const customTargetings = shouldAddDealTargeting(ortb2);
+    if (dctr || customTargetings) {
+      addDealCustomTargetings(imp, dctr, customTargetings);
+    }
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
@@ -374,14 +377,34 @@ const addJWPlayerSegmentData = (imp, jwplayer) => {
   imp.ext.key_val = imp.ext.key_val ? `${imp.ext.key_val}|${jwPlayerData}` : jwPlayerData;
 };
 
-const addDealCustomTargetings = (imp, dctr) => {
+const addDealCustomTargetings = (imp, dctr, customTargetings) => {
   if (isStr(dctr) && dctr.length > 0) {
     const arr = dctr.split('|').filter(val => val.trim().length > 0);
     dctr = arr.map(val => val.trim()).join('|');
     imp.ext['key_val'] = dctr;
+  }
+  if (customTargetings) {
+    imp.ext = imp.ext || {};
+    const targetingValues = Object.values(customTargetings).filter(Boolean);
+    if (targetingValues.length) {
+      imp.ext['key_val'] = imp.ext['key_val']
+        ? `${imp.ext['key_val']}|${targetingValues.join('|')}`
+        : targetingValues.join('|');
+    }
   } else {
     logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
   }
+}
+
+const shouldAddDealTargeting = (ortb2) => {
+  const imSegmentData = ortb2?.user?.ext?.data?.im_segments;
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  const hasImSegments = imSegmentData && isArray(imSegmentData) && imSegmentData.length;
+  const hasIasBrandSafety = typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length;
+  const result = {};
+  if (hasImSegments) result.im_segments = `im_segments=${imSegmentData.join(',')}`;
+  if (hasIasBrandSafety) result['ias-brand-safety'] = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`).join('|');
+  return Object.keys(result).length ? result : undefined;
 }
 
 const addPMPDeals = (imp, deals) => {
