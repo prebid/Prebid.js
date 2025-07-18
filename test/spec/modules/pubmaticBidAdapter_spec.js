@@ -73,12 +73,12 @@ describe('PubMatic adapter', () => {
     rtd: {
       jwplayer: {
         targeting: {
-            content: {
-              id: 'jwplayer-content-id'
-            },
-            segments: [ 
-              'jwplayer-segment-1', 'jwplayer-segment-2'
-            ]
+          content: {
+            id: 'jwplayer-content-id'
+          },
+          segments: [
+            'jwplayer-segment-1', 'jwplayer-segment-2'
+          ]
         }
       }
     }
