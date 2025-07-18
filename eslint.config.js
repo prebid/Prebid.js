@@ -98,6 +98,7 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       semi: 'off',
+      'no-undef': 2,
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
@@ -120,8 +121,6 @@ module.exports = [
 
       eqeqeq: 'off',
       'no-return-assign': 'off',
-      'no-throw-literal': 'off',
-      'no-undef': 2,
       'no-useless-escape': 'off',
       'no-console': 'error',
       'jsdoc/check-types': 'off',
@@ -144,7 +143,6 @@ module.exports = [
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
-      'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
       'prefer-const': 'off',
