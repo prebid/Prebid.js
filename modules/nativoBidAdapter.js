@@ -804,7 +804,7 @@ export function getPageUrlFromBidRequest(bidRequest) {
 }
 
 export function hasProtocol(url) {
-  const protocolRegexp = /^http[s]?\:/
+  const protocolRegexp = /^http[s]?:/
   return protocolRegexp.test(url)
 }
 

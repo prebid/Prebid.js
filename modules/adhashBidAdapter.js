@@ -117,7 +117,7 @@ function brandSafety(badWords, maxScore) {
     let score = 0;
     const decodedUrl = decodeURI(window.top.location.href.substring(window.top.location.origin.length));
     const wordsAndNumbersInUrl = decodedUrl
-      .replaceAll(/[-,\._/\?=&#%]/g, ' ')
+      .replaceAll(/[-,._/?=&#%]/g, ' ')
       .replaceAll(/\s\s+/g, ' ')
       .toLowerCase()
       .trim();

@@ -121,7 +121,6 @@ module.exports = [
 
       eqeqeq: 'off',
       'no-return-assign': 'off',
-      'no-useless-escape': 'off',
       'no-console': 'error',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
@@ -241,6 +240,7 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      'no-useless-escape': 'off',
       'camelcase': 'off'
     }
   },
