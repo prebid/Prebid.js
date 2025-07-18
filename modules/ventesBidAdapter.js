@@ -185,6 +185,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
       const impId = `${bidId}`;
 
       if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
+      return acc;
     }, []);
 
   return acc.concat(imps);

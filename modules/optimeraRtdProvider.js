@@ -220,7 +220,7 @@ export function setScores(result) {
     window.optimera = window.optimera || {};
     window.optimera.data = window.optimera.data || {};
     window.optimera.insights = window.optimera.insights || {};
-    Object.keys(scores).map((key) => {
+    Object.keys(scores).forEach((key) => {
       if (key !== 'insights') {
         window.optimera.data[key] = scores[key];
       }

@@ -34,6 +34,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
         observer.observe(ph);
         return true;
       }
+      return false;
     });
     if (
       observed.length === adUnits.length ||

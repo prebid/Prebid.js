@@ -245,6 +245,7 @@ export const bidderSpec = {
           data: ''
         };
       }
+      return undefined;
     }).filter(Boolean);
   },
 
