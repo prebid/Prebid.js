@@ -108,7 +108,7 @@ function isValidDchain(bid) {
   let mode: string = MODE.STRICT;
   const dchainConfig = config.getConfig('dchain');
 
-  if (dchainConfig && isStr(dchainConfig.validation) && MODES.indexOf(dchainConfig.validation) != -1) {
+  if (dchainConfig && isStr(dchainConfig.validation) && MODES.indexOf(dchainConfig.validation) !== -1) {
     mode = dchainConfig.validation;
   }
 

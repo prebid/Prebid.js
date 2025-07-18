@@ -179,7 +179,7 @@ export const spec = {
         let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
         const videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
 
-        if (currentBidRequest.params.format == 'inbanner') {
+        if (currentBidRequest.params.format === 'inbanner') {
           videoContext = 'In-Banner';
           videoPlacement = 2;
         }
@@ -269,7 +269,7 @@ export const spec = {
       playerSize = getBiggerSize(bidrequest.sizes);
     }
 
-    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
+    if (typeof serverResponse === 'object' && typeof serverResponse.body === 'string') {
       serverResponse = serverResponse.body;
     }
 
@@ -379,8 +379,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted == 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton == 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
 
   let playerParams = null;
   try {
@@ -450,7 +450,7 @@ export function formatAdHTML(bidrequest, size) {
 }
 
 function getSdkUrl(bidrequest) {
-  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() == 'stg';
+  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
   return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
@@ -527,7 +527,7 @@ function getBidFloor(bid, config) {
   try {
     const bidFloor = bid.getFloor({
       currency: getFloorCurrency(config),
-      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+      mediaType: typeof bid.mediaTypes['banner'] === 'object' ? 'banner' : 'video',
       size: '*',
     });
     return bidFloor.floor;
@@ -658,13 +658,13 @@ function getValueFromKeyInImpressionNode(xmlNode, key) {
     let tempValue = '';
     queries.forEach(item => {
       const split = item.split('=');
-      if (split[0] == key) {
+      if (split[0] === key) {
         tempValue = split[1];
       }
-      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+      if (split[0] === 'reqType' && split[1] === 'AdsDisplayStarted') {
         isAdsDisplayStartedPresent = true;
       }
-      if (split[0] == 'rootViewKey') {
+      if (split[0] === 'rootViewKey') {
         isRootViewKeyPresent = true;
       }
     });

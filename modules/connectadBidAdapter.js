@@ -40,7 +40,7 @@ export const spec = {
       url: bidderRequest.refererInfo?.page,
       referrer: bidderRequest.refererInfo?.ref,
       screensize: getScreenSize(),
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
       language: navigator.language,
       ua: navigator.userAgent,
       pversion: '$prebid.version$',
@@ -195,7 +195,7 @@ export const spec = {
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncEndpoint;
 
-    if (pixelType == 'iframe') {
+    if (pixelType === 'iframe') {
       syncEndpoint = 'https://sync.connectad.io/iFrameSyncer?';
     } else {
       syncEndpoint = 'https://sync.connectad.io/ImageSyncer?';

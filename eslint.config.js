@@ -112,17 +112,17 @@ module.exports = [
           message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
       ],
+      'no-console': 'error',
 
       // Exceptions below this line are temporary (TM), so that eslint can be added into the CI process.
       // Violations of these styles should be fixed, and the exceptions removed over time.
       //
       // See Issue #1111.
       // also see: reality. These are here to stay.
+      // we're working on them though :)
 
-      eqeqeq: 'off',
       'no-return-assign': 'off',
       'no-useless-escape': 'off',
-      'no-console': 'error',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',

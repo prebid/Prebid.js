@@ -97,7 +97,7 @@ export const spec = {
 
     if (mediaTypesBanner) {
       const sizes = mediaTypesBanner.sizes;
-      if (!sizes || parseSizesInput(sizes).length == 0) {
+      if (!sizes || parseSizesInput(sizes).length === 0) {
         logWarn('StackAdapt bidder adapter - banner bid requires bid.mediaTypes.banner.sizes of valid format');
         return false;
       }

@@ -149,6 +149,7 @@ export const spec = {
       payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
+      // eslint-disable-next-line eqeqeq
       payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: bidderRequest.gdprConsent.gdprApplies == true ? 1 : 0});
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {

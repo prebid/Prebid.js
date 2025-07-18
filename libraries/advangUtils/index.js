@@ -133,7 +133,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   let sizes = [];
   const coppa = config.getConfig('coppa');
 
-  if (typeof paramSize !== 'undefined' && paramSize != '') {
+  if (typeof paramSize !== 'undefined' && paramSize !== '') {
     sizes = parseSizes(paramSize);
   } else {
     sizes = getSizes(bid);

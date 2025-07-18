@@ -411,7 +411,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
 
   let ortb2Fragment;
   const getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
-  if (typeof (getContxtfulOrtb2Fragment) == 'function') {
+  if (typeof (getContxtfulOrtb2Fragment) === 'function') {
     ortb2Fragment = getContxtfulOrtb2Fragment(bidders, reqBidsConfigObj);
   } else {
     const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);

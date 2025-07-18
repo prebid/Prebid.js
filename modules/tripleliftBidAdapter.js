@@ -368,7 +368,7 @@ function _buildResponseObject(bidderRequest, bid) {
   const creativeId = bid.crid || '';
   const breq = bidderRequest.bids[bid.imp_id];
 
-  if (bid.cpm != 0 && bid.ad) {
+  if (bid.cpm !== 0 && bid.ad) {
     bidResponse = {
       requestId: breq.bidId,
       cpm: bid.cpm,
@@ -398,7 +398,7 @@ function _buildResponseObject(bidderRequest, bid) {
       bidResponse.meta.advertiserDomains = bid.adomain;
     }
 
-    if (bid.tl_source && bid.tl_source == 'hdx') {
+    if (bid.tl_source && bid.tl_source === 'hdx') {
       if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
         bidResponse.meta.mediaType = 'video'
       } else {
@@ -406,7 +406,7 @@ function _buildResponseObject(bidderRequest, bid) {
       }
     }
 
-    if (bid.tl_source && bid.tl_source == 'tlx') {
+    if (bid.tl_source && bid.tl_source === 'tlx') {
       bidResponse.meta.mediaType = 'native';
     }
 
