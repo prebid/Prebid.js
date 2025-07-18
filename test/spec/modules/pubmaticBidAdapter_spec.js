@@ -535,7 +535,7 @@ describe('PubMatic adapter', () => {
             expect(imp[0]).to.have.property('native');
           });
         });
-       }
+      }
     });
 
     describe('rest of ORTB request', () => {
