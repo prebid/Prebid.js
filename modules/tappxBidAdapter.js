@@ -15,7 +15,7 @@ const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.3';
+const TAPPX_BIDDER_VERSION = '0.1.4';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -398,6 +398,22 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   imp.ext = {};
   imp.ext.bidder = bidder;
+
+  const pbadslot = validBidRequests.ortb2Imp?.ext?.data?.pbadslot;
+  const adslot = validBidRequests.ortb2Imp?.ext?.data?.adserver?.adslot;
+  const adserverName = validBidRequests.ortb2Imp?.ext?.data?.adserver?.name;
+  const gpid = validBidRequests.ortb2Imp?.ext?.gpid;
+  const divid = validBidRequests.ortb2Imp?.ext?.divid;
+
+  if (pbadslot || adslot || adserverName) imp.ext.data = {};
+  if (adslot || adserverName) imp.ext.data.adserver = {};
+
+  if (gpid) imp.ext.gpid = gpid;
+  if (pbadslot) imp.ext.data.pbadslot = pbadslot;
+  if (adslot) imp.ext.data.adserver.adslot = adslot;
+  if (adserverName) imp.ext.data.adserver.name = adserverName;
+  if (divid) imp.ext.divid = divid;
+
   // < Imp object
 
   // > Device object
