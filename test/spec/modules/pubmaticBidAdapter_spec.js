@@ -652,23 +652,53 @@ describe('PubMatic adapter', () => {
           });
 
           it('should enable gzip compression by default', () => {
-            configStub.withArgs('pubmatic').returns({});
+            // No specific configuration set, should use default
             const request = spec.buildRequests(validBidRequests, bidderRequest);
             expect(request.options.endpointCompression).to.be.true;
           });
 
-          it('should respect global pubmatic.gzipEnabled config', () => {
-            configStub.withArgs('pubmatic').returns({ gzipEnabled: false });
-            const request = spec.buildRequests(validBidRequests, bidderRequest);
-            expect(request.options.endpointCompression).to.be.false;
-          });
-
-          it('should prioritize bidder-level gzipEnabled setting over global setting', () => {
-            configStub.withArgs('pubmatic').returns({ gzipEnabled: true });
+          it('should prioritize bidder-level gzipEnabled setting over default', () => {
             const modifiedBidRequests = utils.deepClone(validBidRequests);
             modifiedBidRequests[0].params.gzipEnabled = false;
             const request = spec.buildRequests(modifiedBidRequests, bidderRequest);
             expect(request.options.endpointCompression).to.be.false;
+          });
+
+          it('should respect bidder-specific configuration set via setBidderConfig', () => {
+            // Mock bidder-specific config to return false
+            const bidderConfigStub = sinon.stub(config, 'getBidderConfig');
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: false
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+
+            // Restore the stub
+            bidderConfigStub.restore();
+          });
+
+          it('should prioritize bid-level gzipEnabled setting over bidder-specific configuration', () => {
+            // Mock bidder-specific config to return false
+            const bidderConfigStub = sinon.stub(config, 'getBidderConfig');
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: false
+              }
+            });
+
+            // Set bid-level parameter to true
+            const modifiedBidRequests = utils.deepClone(validBidRequests);
+            modifiedBidRequests[0].params.gzipEnabled = true;
+
+            const request = spec.buildRequests(modifiedBidRequests, bidderRequest);
+            // Should use bid-level setting (true) instead of bidder-specific config (false)
+            expect(request.options.endpointCompression).to.be.true;
+
+            // Restore the stub
+            bidderConfigStub.restore();
           });
         });
 
