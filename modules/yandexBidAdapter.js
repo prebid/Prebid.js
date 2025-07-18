@@ -54,8 +54,15 @@ const DEFAULT_CURRENCY = 'EUR';
  * @type {MediaType[]}
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+
+const ORTB_MTYPES = {
+  BANNER: 1,
+  VIDEO: 2,
+  NATIVE: 4
+};
+
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.5.0';
+const ADAPTER_VERSION = '2.6.0';
 
 const TRACKER_METHODS = {
   img: 1,
@@ -462,15 +469,19 @@ function interpretResponse(serverResponse, { bidRequest }) {
       prBid.lurl = bidReceived.lurl;
     }
 
-    if (bidReceived.adm.indexOf('{') === 0) {
-      prBid.mediaType = NATIVE;
-      prBid.native = interpretNativeAd(bidReceived, price, currency);
-    } else if (bidReceived.adm.indexOf('<VAST') > -1) {
-      prBid.mediaType = VIDEO;
-      prBid.vastXml = bidReceived.adm;
-    } else {
-      prBid.mediaType = BANNER;
-      prBid.ad = bidReceived.adm;
+    switch (bidReceived.mtype) {
+      case ORTB_MTYPES.VIDEO:
+        prBid.mediaType = VIDEO;
+        prBid.vastXml = bidReceived.adm;
+        break;
+      case ORTB_MTYPES.NATIVE:
+        prBid.mediaType = NATIVE;
+        prBid.native = interpretNativeAd(bidReceived, price, currency);
+        break;
+      case ORTB_MTYPES.BANNER:
+        prBid.mediaType = BANNER;
+        prBid.ad = bidReceived.adm;
+        break;
     }
 
     return prBid;
