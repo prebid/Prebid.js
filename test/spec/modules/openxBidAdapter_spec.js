@@ -988,6 +988,35 @@ describe('OpenxRtbAdapter', function () {
             expect(request[1].data.imp[0].ext.consent).to.equal(undefined);
           });
         });
+
+        describe('GPP', function () {
+          it('should send GPP string and GPP section IDs in bid request when available', async function () {
+            bidderRequest.bids = bidRequests;
+            bidderRequest.ortb2 = {
+              regs: {
+                gpp: 'test-gpp-string',
+                gpp_sid: [6]
+              }
+            };
+            const request = spec.buildRequests(bidRequests, bidderRequest);
+            expect(request[0].data.regs.gpp).to.equal('test-gpp-string');
+            expect(request[0].data.regs.gpp_sid).to.deep.equal([6]);
+            expect(request[1].data.regs.gpp).to.equal('test-gpp-string');
+            expect(request[1].data.regs.gpp_sid).to.deep.equal([6]);
+          });
+
+          it('should not send GPP string and GPP section IDs in bid request when not available', async function () {
+            bidderRequest.bids = bidRequests;
+            bidderRequest.ortb2 = {
+              regs: {}
+            };
+            const request = spec.buildRequests(bidRequests, bidderRequest);
+            expect(request[0].data.regs.gpp).to.not.exist;
+            expect(request[0].data.regs.gpp_sid).to.not.exist;
+            expect(request[1].data.regs.gpp).to.not.exist;
+            expect(request[1].data.regs.gpp_sid).to.not.exist;
+          });
+        });
       });
 
       context('coppa', function() {
@@ -2028,6 +2057,106 @@ describe('OpenxRtbAdapter', function () {
         );
         expect(url).to.not.have.string('gdpr_consent=');
         expect(url).to.not.have.string('gdpr=');
+      });
+    });
+
+    describe('when gpp applies', function () {
+      it('should send GPP query params when GPP consent object available', () => {
+        const gppConsent = {
+          gppString: 'gpp-pixel-consent',
+          applicableSections: [6, 7]
+        }
+        const [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          undefined,
+          undefined,
+          gppConsent
+        );
+
+        expect(url).to.have.string(`gpp=gpp-pixel-consent`);
+        expect(url).to.have.string(`gpp_sid=6,7`);
+      });
+
+      it('should send GDPR and GPP query params when both consent objects available', () => {
+        const gdprConsent = {
+          consentString: 'gdpr-pixel-consent',
+          gdprApplies: true
+        }
+        const gppConsent = {
+          gppString: 'gpp-pixel-consent',
+          applicableSections: [6, 7]
+        }
+        const [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          gdprConsent,
+          undefined,
+          gppConsent
+        );
+
+        expect(url).to.have.string(`gdpr_consent=gdpr-pixel-consent`);
+        expect(url).to.have.string(`gdpr=1`);
+        expect(url).to.have.string(`gpp=gpp-pixel-consent`);
+        expect(url).to.have.string(`gpp_sid=6,7`);
+      });
+
+      it('should not send GPP query params when GPP string not available', function () {
+        const gppConsent = {
+          applicableSections: [6, 7]
+        }
+        const [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          undefined,
+          undefined,
+          gppConsent
+        );
+
+        expect(url).to.not.have.string('gpp=');
+        expect(url).to.not.have.string('gpp_sid=');
+      });
+
+      it('should not send GPP query params when GPP section IDs not available', function () {
+        const gppConsent = {
+          gppString: 'gpp-pixel-consent',
+        }
+        const [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          undefined,
+          undefined,
+          gppConsent
+        );
+
+        expect(url).to.not.have.string('gpp=');
+        expect(url).to.not.have.string('gpp_sid=');
+      });
+
+      it('should not send GPP query params when GPP section IDs empty', function () {
+        const gppConsent = {
+          gppString: 'gpp-pixel-consent',
+          applicableSections: []
+        }
+        const [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          undefined,
+          undefined,
+          gppConsent
+        );
+
+        expect(url).to.not.have.string('gpp=');
+        expect(url).to.not.have.string('gpp_sid=');
+      });
+
+      it('should not send GPP query params when GPP consent object not available', function () {
+        const [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [], undefined, undefined, undefined
+        );
+        expect(url).to.not.have.string('gpp=');
+        expect(url).to.not.have.string('gpp_sid=');
       });
     });
 

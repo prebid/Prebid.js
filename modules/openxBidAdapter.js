@@ -207,9 +207,10 @@ function interpretResponse(resp, req) {
  * @param responses
  * @param gdprConsent
  * @param uspConsent
+ * @param gppConsent
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     const queryParamStrings = [];
@@ -220,6 +221,10 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
     }
     if (uspConsent) {
       queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      queryParamStrings.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+      queryParamStrings.push('gpp_sid=' + gppConsent.applicableSections.join(','));
     }
     if (responses.length > 0 && responses[0].body && responses[0].body.ext) {
       const ext = responses[0].body.ext;
