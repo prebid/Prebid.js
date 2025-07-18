@@ -91,10 +91,10 @@ export const spec = {
     return prebidBidResponse.bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
 
-    if (!syncOptions.pixelEnabled || !gdprConsent.gdprApplies) {
+    if (!syncOptions.pixelEnabled) {
       return syncs;
     }
 
