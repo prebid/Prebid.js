@@ -37,8 +37,7 @@ const CUSTOM_PARAMS = {
   'yob': '', // User year of birth
   'lat': '', // User location - Latitude
   'lon': '', // User Location - Longitude
-  'wiid': '', // OpenWrap Wrapper Impression ID
-  'gzipEnabled': '' // Enable/disable gzip compression
+  'wiid': '' // OpenWrap Wrapper Impression ID
 };
 
 const dealChannel = {
@@ -615,10 +614,6 @@ const BB_RENDERER = {
 
 function _parseSlotParam(paramName, paramValue) {
   if (!isStr(paramValue)) {
-    // Special handling for boolean parameters - only for gzipEnabled
-    if (paramName === 'gzipEnabled' && typeof paramValue === 'boolean') {
-      return paramValue;
-    }
     paramValue && logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
@@ -650,25 +645,27 @@ const getPublisherId = (bids) =>
 /**
  * Determines if gzip compression should be enabled for requests
  * Checks in order:
- * 1. Bidder-level setting from bid.params.gzipEnabled
- * 2. Global setting from config.pubmatic.gzipEnabled
- * 3. Default value (true)
- * @param {Object} bid - The bid object
+ * 1. Bidder-specific configuration set via pbjs.setBidderConfig()
+ * 2. Default value (true)
+ * @param {Object} conf - The configuration object containing bid params
  * @returns {boolean} - Whether gzip compression should be enabled
  */
-function getGzipSetting(bid) {
-  // Check bidder-level setting first
-  if (bid && bid.params && typeof bid.params.gzipEnabled === 'boolean') {
-    return bid.params.gzipEnabled;
-  }
+function getGzipSetting(conf) {
+  // Check bidder-specific configuration
+  try {
+    const gzipSetting = deepAccess(config.getBidderConfig(), 'pubmatic.gzipEnabled');
+    if (gzipSetting !== undefined) {
+      const gzipValue = String(gzipSetting).toLowerCase().trim();
+      if (gzipValue === 'true' || gzipValue === 'false') {
+        const parsedValue = gzipValue === 'true';
+        logInfo('PubMatic: Using bidder-specific gzipEnabled setting:', parsedValue);
+        return parsedValue;
+      }
+      logWarn('PubMatic: Invalid gzipEnabled value in bidder config:', gzipSetting);
+    }
+  } catch (e) { logWarn('PubMatic: Error accessing bidder config:', e); }
 
-  // Check bidder-specific configuration set via pbjs.setBidderConfig
-  const bidderConfig = config.getBidderConfig();
-  if (bidderConfig && bidderConfig.pubmatic && typeof bidderConfig.pubmatic.gzipEnabled === 'boolean') {
-    return bidderConfig.pubmatic.gzipEnabled;
-  }
-
-  // Default to true if not specified
+  logInfo('PubMatic: Using default gzipEnabled setting:', DEFAULT_GZIP_ENABLED);
   return DEFAULT_GZIP_ENABLED;
 }
 
@@ -816,7 +813,7 @@ export const spec = {
       data: data,
       bidderRequest: bidderRequest,
       options: {
-        endpointCompression: getGzipSetting(validBidRequests[0])
+        endpointCompression: getGzipSetting(conf)
       },
     };
     return data?.imp?.length ? serverRequest : null;
