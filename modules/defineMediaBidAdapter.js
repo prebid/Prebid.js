@@ -35,9 +35,12 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     return validBidRequests?.map(function(req) {
-      console.log(req)
+      // DeepCopy the request to avoid modifying the original object
       const oneBidRequest = [JSON.parse(JSON.stringify(req))];
-      const ortbRequest = converter.toORTB({oneBidRequest, bidderRequest});
+      const ortbRequest = converter.toORTB({
+        bidderRequest: bidderRequest,
+        bidRequests: oneBidRequest
+      });
 
       const params = oneBidRequest[0].params;
       const isDevMode = Boolean(params?.devMode);
