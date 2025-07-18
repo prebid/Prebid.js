@@ -517,6 +517,11 @@ describe('LiveIntentId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'zetassp': 'bar'}, 'zetassp': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
+  it('should decode a nexxen id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', nexxen: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'nexxen': 'bar'}, 'nexxen': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
   it('should decode a vidazoo id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
@@ -1097,6 +1102,39 @@ describe('LiveIntentId', function() {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'zeta-ssp.liveintent.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('nexxen', function () {
+      const userId = {
+        nexxen: { 'id': 'sample_id' }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.unrulymedia.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('nexxen with ext', function () {
+      const userId = {
+        nexxen: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.unrulymedia.com',
         uids: [{
           id: 'sample_id',
           atype: 3,
