@@ -117,7 +117,9 @@ export const spec = {
         const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
           .filter(key => VIDEO_ORTB_PARAMS.includes(key))
-          .forEach(key => payload.vpl[key] = videoParams[key]);
+          .forEach(key => {
+            payload.vpl[key] = videoParams[key];
+          });
       }
 
       // iab content

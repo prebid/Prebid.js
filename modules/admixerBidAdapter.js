@@ -79,7 +79,9 @@ export const spec = {
     }
     validRequest.forEach((bid) => {
       const imp = {};
-      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      Object.keys(bid).forEach(key => {
+        imp[key] = bid[key];
+      });
       imp.ortb2 && delete imp.ortb2;
       const bidFloor = getBidFloor(bid);
       if (bidFloor) {

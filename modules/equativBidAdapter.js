@@ -114,7 +114,9 @@ export const spec = {
    */
   interpretResponse: (serverResponse, bidRequest) => {
     if (bidRequest.data?.imp?.length) {
-      bidRequest.data.imp.forEach(imp => imp.id = impIdMap[imp.id]);
+      bidRequest.data.imp.forEach(imp => {
+        imp.id = impIdMap[imp.id];
+      });
     }
 
     if (serverResponse.body?.seatbid?.length) {

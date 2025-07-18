@@ -444,7 +444,8 @@ function getRequestCount() {
     return ++requestCounter;
   }
   lastPageUrl = window.location.pathname;
-  return requestCounter = 0;
+  requestCounter = 0;
+  return requestCounter;
 }
 
 function sendTimeoutData(auctionId, auctionTimeout) {

@@ -204,7 +204,9 @@ export const guardTids: any = memoize(({bidderCode}) => {
     // always allow methods (such as getFloor) private access to TIDs
     Object.entries(target)
       .filter(([_, v]) => typeof v === 'function')
-      .forEach(([prop, fn]: [string, AnyFunction]) => proxy[prop] = fn.bind(target));
+      .forEach(([prop, fn]: [string, AnyFunction]) => {
+        proxy[prop] = fn.bind(target);
+      });
     return proxy;
   }
   const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);

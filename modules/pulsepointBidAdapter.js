@@ -96,4 +96,5 @@ const converter = ortbConverter({
     return bidResponse;
   },
 });
+
 registerBidder(spec);

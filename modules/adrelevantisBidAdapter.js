@@ -89,7 +89,9 @@ export const spec = {
       userObj = {};
       Object.keys(userObjBid.params.user)
         .filter(param => USER_PARAMS.includes(param))
-        .forEach(param => userObj[param] = userObjBid.params.user[param]);
+        .forEach(param => {
+          userObj[param] = userObjBid.params.user[param];
+        });
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
@@ -98,7 +100,9 @@ export const spec = {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
@@ -477,7 +481,9 @@ function bidToTag(bid) {
     // place any valid video params on the tag
     Object.keys(bid.params.video)
       .filter(param => VIDEO_TARGETING.includes(param))
-      .forEach(param => tag.video[param] = bid.params.video[param]);
+      .forEach(param => {
+        tag.video[param] = bid.params.video[param];
+      });
   }
 
   if (bid.renderer) {

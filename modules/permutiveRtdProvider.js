@@ -46,7 +46,8 @@ let cachedPermutiveModuleConfig = {}
  */
 function readPermutiveModuleConfigFromCache() {
   const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
-  return cachedPermutiveModuleConfig = liftIntoParams(params)
+  cachedPermutiveModuleConfig = liftIntoParams(params)
+  return cachedPermutiveModuleConfig
 }
 
 /**

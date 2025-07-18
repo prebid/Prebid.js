@@ -265,7 +265,9 @@ export const resetMultiConfig = () => { hasMultibid = false; multiConfig = {}; }
 /**
  * Resets globally stored multibid ad unit bids
  */
-export const resetMultibidUnits = () => multibidUnits = {};
+export const resetMultibidUnits = () => {
+  multibidUnits = {};
+};
 
 /**
  * Set up hooks on init

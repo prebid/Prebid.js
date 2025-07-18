@@ -46,7 +46,9 @@ export const spec = {
     const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
-    validBidRequests.forEach(bid => bid.netRevenue = 'net');
+    validBidRequests.forEach(bid => {
+      bid.netRevenue = 'net';
+    });
 
     const imps = validBidRequests.map((bid, idx) => {
       const imp = {
