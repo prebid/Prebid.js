@@ -37,6 +37,7 @@ export const spec = {
 
       let npi = params.npi || '';
       let dgid = params.dgid || '';
+      let aimOnly = params.aimOnly || '';
       let test = false;
       let testDk = '';
 
@@ -77,7 +78,8 @@ export const spec = {
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined,
         test,
-        testDk
+        testDk,
+        aimOnly
       }
 
       if (
@@ -152,11 +154,12 @@ export const spec = {
 }
 
 function getBidRequestUrl(aimXR, params) {
+  const { npi, dgid, npiHash, testNPI, testDGID, aimOnly, testDk, dtc } = params;
   let path = '/request';
-  if (params && params.dtc) {
+  if (dtc) {
     path = '/dtc-request';
   }
-  if (aimXR || params.npi || params.dgid || params.npiHash || params.testNPI || params.testDGID) {
+  if (aimXR || npi || dgid || npiHash || testNPI || testDGID || aimOnly || testDk) {
     return ENDPOINT_URL + path;
   }
   return GET_IUD_URL + ENDPOINT_URL + path;
