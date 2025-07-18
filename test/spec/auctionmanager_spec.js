@@ -1806,7 +1806,6 @@ describe('auctionmanager.js', function () {
           banner: 'low',
           video: 'medium'
         })).to.equal('medium');
-        ``
         expect(getMediaTypeGranularity('video', undefined, {
           banner: 'low',
           video: 'medium'
