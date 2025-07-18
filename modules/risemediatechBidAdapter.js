@@ -116,8 +116,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     url: ENDPOINT_URL,
     data: request,
     options: {
-        endpointCompression: true
-      },
+      endpointCompression: true
+    },
   };
 };
 
