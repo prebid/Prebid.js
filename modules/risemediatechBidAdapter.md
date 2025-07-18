@@ -7,8 +7,9 @@ Maintainer : prebid@risemediatech.io
 # Description
 Connects to RiseMediaTech Exchange for bids
 RiseMediaTech supports Display & Video(Instream) currently.
-Our legal entity named Rise Media Technologies owns the domain risemediatech.io
 
+This adapter is maintained by Rise Media Technologies, the legal entity behind this implementation. Our official domain is risemediatech.io, which currently redirects to pubrise.ai for operational convenience. We also own the domain risemediatech.com.
+Rise Media Technologies and PubRise are part of the same parent organization.
 # Sample Ad Unit : Banner
 ```
     var adUnits = [
