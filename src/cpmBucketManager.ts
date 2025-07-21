@@ -79,17 +79,17 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
     'max': 0,
   });
 
+  if (cpm > cap.max * granularityMultiplier) {
+    let precision = cap.precision;
+    if (typeof precision === 'undefined') {
+      precision = _defaultPrecision;
+    }
+    return (cap.max * granularityMultiplier).toFixed(precision);
+  }
+
   let bucketFloor = 0;
   const bucket = config.buckets.find(bucket => {
-    if (cpm > cap.max * granularityMultiplier) {
-      // cpm exceeds cap, just return the cap.
-      let precision = bucket.precision;
-      if (typeof precision === 'undefined') {
-        precision = _defaultPrecision;
-      }
-      cpmStr = (bucket.max * granularityMultiplier).toFixed(precision);
-      return true;
-    } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucketFloor * granularityMultiplier) {
+    if (cpm <= bucket.max * granularityMultiplier && cpm >= bucketFloor * granularityMultiplier) {
       bucket.min = bucketFloor;
       return true;
     } else {
