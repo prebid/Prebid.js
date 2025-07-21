@@ -1625,7 +1625,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('requestBids event', () => {
-      beforeEach(() =>  {
+      beforeEach(() => {
         sandbox.stub(events, 'emit');
       });
 
