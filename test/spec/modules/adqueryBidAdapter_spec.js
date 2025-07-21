@@ -1,11 +1,11 @@
 import { expect } from 'chai'
 import { spec } from 'modules/adqueryBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
 describe('adqueryBidAdapter', function () {
   const adapter = newBidder(spec)
-  let bidRequest = {
+  const bidRequest = {
     bidder: 'adquery',
     params: {
       placementId: '6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897',
@@ -18,7 +18,7 @@ describe('adqueryBidAdapter', function () {
     }
   }
 
-  let expectedResponse = {
+  const expectedResponse = {
     'body': {
       'data':
         {
@@ -61,7 +61,7 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('isBidRequestValid', function () {
-    let inValidBid = Object.assign({}, bidRequest)
+    const inValidBid = Object.assign({}, bidRequest)
     delete inValidBid.params
     it('should return true if all params present', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
@@ -136,7 +136,7 @@ describe('adqueryBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(expectedResponse)
+      const result = spec.interpretResponse(expectedResponse)
       expect(result).to.be.an('array')
     })
 
@@ -145,17 +145,17 @@ describe('adqueryBidAdapter', function () {
       expect(newResponse[0].requestId).to.be.equal(1)
     });
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {}
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     })
   })
 
   describe('getUserSyncs', function () {
     it('should return iframe sync', function () {
-      let sync = spec.getUserSyncs(
+      const sync = spec.getUserSyncs(
         {
           iframeEnabled: true,
           pixelEnabled: true,
@@ -172,7 +172,7 @@ describe('adqueryBidAdapter', function () {
       expect(typeof sync[0].url === 'string')
     })
     it('should return image sync', function () {
-      let sync = spec.getUserSyncs(
+      const sync = spec.getUserSyncs(
         {
           iframeEnabled: false,
           pixelEnabled: true,

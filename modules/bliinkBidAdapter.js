@@ -209,7 +209,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     return request;
   });
 
-  let request = {
+  const request = {
     tags,
     pageTitle: document.title,
     pageUrl: deepAccess(bidderRequest, 'refererInfo.page').replace(/\?.*$/, ''),
@@ -275,7 +275,7 @@ const interpretResponse = (serverResponse) => {
  * @return {[{type: string, url: string}]|*[]}
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-  let syncs = [];
+  const syncs = [];
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
     let gdprParams = ''
     let uspConsentStr = ''

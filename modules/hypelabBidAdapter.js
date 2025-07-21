@@ -103,7 +103,7 @@ function getBidFloor(bid, sizes) {
 
   let floor;
 
-  let floorInfo = bid.getFloor({
+  const floorInfo = bid.getFloor({
     currency: 'USD',
     mediaType: 'banner',
     size: sizes.length === 1 ? sizes[0] : '*',

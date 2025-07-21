@@ -1,24 +1,24 @@
 import {
-    deepClone,
-    getDefinedParams,
-    insertHtmlIntoIframe,
-    isArray,
-    isBoolean,
-    isInteger,
-    isNumber,
-    isPlainObject,
-    logError,
-    pick,
-    triggerPixel
+  deepClone,
+  getDefinedParams,
+  insertHtmlIntoIframe,
+  isArray,
+  isBoolean,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  logError,
+  pick,
+  triggerPixel
 } from './utils.js';
 
 import {auctionManager} from './auctionManager.js';
 import {
-    NATIVE_ASSET_TYPES,
-    NATIVE_IMAGE_TYPES,
-    NATIVE_KEYS,
-    NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
-    PREBID_NATIVE_DATA_KEYS_TO_ORTB
+  NATIVE_ASSET_TYPES,
+  NATIVE_IMAGE_TYPES,
+  NATIVE_KEYS,
+  NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
+  PREBID_NATIVE_DATA_KEYS_TO_ORTB
 } from './constants.js';
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
@@ -34,71 +34,71 @@ type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof N
 type LegacyImageAssets = { icon: unknown, image: unknown };
 
 type LegacyImageAssetResponse = {
-    url: string;
-    width: number;
-    height: number;
+  url: string;
+  width: number;
+  height: number;
 }
 
 export type LegacyNativeAssetsResponse = {
-    [K in keyof Omit<LegacyAssets, keyof LegacyImageAssets>]?: string;
+  [K in keyof Omit<LegacyAssets, keyof LegacyImageAssets>]?: string;
 } & {
-    [K in keyof LegacyImageAssets]?: LegacyImageAssetResponse
+  [K in keyof LegacyImageAssets]?: LegacyImageAssetResponse
 };
 
 export type LegacyNativeResponse = LegacyNativeAssetsResponse & {
-    clickUrl?: string;
-    privacyLink?: string;
-    clickTrackers?: string | string[];
-    impressionTrackers?: string | string[];
-    javascriptTrackers?: string | string[];
+  clickUrl?: string;
+  privacyLink?: string;
+  clickTrackers?: string | string[];
+  impressionTrackers?: string | string[];
+  javascriptTrackers?: string | string[];
 };
 
 declare module './bidfactory' {
-    interface NativeBidResponseProperties {
-        native: LegacyNativeResponse & { ortb?: NativeResponse };
-    }
+  interface NativeBidResponseProperties {
+    native: LegacyNativeResponse & { ortb?: NativeResponse };
+  }
 
-    // core will always provide ortb for native responses
+  // core will always provide ortb for native responses
 
-    interface NativeBidProperties {
-        native: LegacyNativeResponse & { ortb: NativeResponse };
-    }
+  interface NativeBidProperties {
+    native: LegacyNativeResponse & { ortb: NativeResponse };
+  }
 }
 
 type LegacyAssetRequest = {
-    required?: boolean;
+  required?: boolean;
 }
 
 export type LegacyNativeRequest = {
-    privacyLink?: LegacyAssetRequest;
-    clickUrl?: LegacyAssetRequest;
-    title?: LegacyAssetRequest & {
-        len?: number;
-    };
-    ext?: Ext;
+  privacyLink?: LegacyAssetRequest;
+  clickUrl?: LegacyAssetRequest;
+  title?: LegacyAssetRequest & {
+    len?: number;
+  };
+  ext?: Ext;
 } & {
-    [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
-        len?: number;
-    }
+  [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
+    len?: number;
+  }
 } & {
-    [K in keyof LegacyImageAssets]?: LegacyAssetRequest & {
-        sizes?: Size | Size[];
-        aspect_ratios?: {
-            min_width: number;
-            min_height: number;
-            ratio_width: number;
-            ratio_height: number;
-        }[];
-    }
+  [K in keyof LegacyImageAssets]?: LegacyAssetRequest & {
+    sizes?: Size | Size[];
+    aspect_ratios?: {
+      min_width: number;
+      min_height: number;
+      ratio_width: number;
+      ratio_height: number;
+    }[];
+  }
 }
 
 export interface NativeMediaType extends LegacyNativeRequest {
-    /**
-     * `type: 'image'` acts as a shortcut for a native request for five assets:
-     * image, title, "sponsored by" data, description (optional), and icon (optional).
-     */
-    type?: keyof typeof SUPPORTED_TYPES
-    ortb?: NativeRequest;
+  /**
+   * `type: 'image'` acts as a shortcut for a native request for five assets:
+   * image, title, "sponsored by" data, description (optional), and icon (optional).
+   */
+  type?: keyof typeof SUPPORTED_TYPES
+  ortb?: NativeRequest;
 }
 
 export const nativeAdapters = [];
@@ -187,10 +187,10 @@ export function processNativeAdUnitParams(params: NativeMediaType): NativeMediaT
 }
 
 declare module './adUnits' {
-    interface AdUnit {
-        nativeParams?: NativeMediaType;
-        nativeOrtbRequest?: NativeRequest;
-    }
+  interface AdUnit {
+    nativeParams?: NativeMediaType;
+    nativeOrtbRequest?: NativeRequest;
+  }
 }
 
 export function decorateAdUnitsWithNativeParams(adUnits: AdUnit[]) {
@@ -296,8 +296,8 @@ export const hasNonNativeBidder = adUnit =>
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
-  let ortbRequest = adUnit.nativeOrtbRequest
-  let ortbResponse = bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
+  const ortbRequest = adUnit.nativeOrtbRequest
+  const ortbResponse = bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
   return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
 }
 
@@ -307,8 +307,8 @@ export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
     return false;
   }
 
-  let requiredAssetIds = bidRequestORTB.assets.filter(asset => asset.required === 1).map(a => a.id);
-  let returnedAssetIds = bidORTB.assets.map(asset => asset.id);
+  const requiredAssetIds = bidRequestORTB.assets.filter(asset => asset.required === 1).map(a => a.id);
+  const returnedAssetIds = bidORTB.assets.map(asset => asset.id);
 
   const match = requiredAssetIds.every(assetId => returnedAssetIds.includes(assetId));
   if (!match) {
@@ -389,7 +389,7 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
         return map
       }, {});
     const masterClickTrackers = nativeResponse.link?.clicktrackers || [];
-    let assetLink = assetIdLinkMap[assetId];
+    const assetLink = assetIdLinkMap[assetId];
     let clickTrackers = masterClickTrackers;
     if (assetLink) {
       clickTrackers = assetLink.clicktrackers || [];
@@ -416,7 +416,7 @@ export function setNativeResponseProperties(bid, adUnit) {
 }
 
 function getNativeAssets(nativeProps, keys, ext = false) {
-  let assets = [];
+  const assets = [];
   Object.entries(nativeProps)
     .filter(([k, v]) => v && ((ext === false && k === 'ext') || keys == null || keys.includes(k)))
     .forEach(([key, value]) => {
@@ -501,7 +501,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
     ver: '1.2',
     assets: []
   };
-  for (let key in legacyNativeAssets) {
+  for (const key in legacyNativeAssets) {
     // skip conversion for non-asset keys
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key as any)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key)) {
@@ -648,8 +648,8 @@ export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
         oldNativeObject.icon = image;
       }
     } else if (asset.data) {
-      let assetType = Object.keys(NATIVE_ASSET_TYPES).find(k => NATIVE_ASSET_TYPES[k] === asset.data.type);
-      let prebidAssetName = Object.keys(PREBID_NATIVE_DATA_KEYS_TO_ORTB).find(k => PREBID_NATIVE_DATA_KEYS_TO_ORTB[k] === assetType);
+      const assetType = Object.keys(NATIVE_ASSET_TYPES).find(k => NATIVE_ASSET_TYPES[k] === asset.data.type);
+      const prebidAssetName = Object.keys(PREBID_NATIVE_DATA_KEYS_TO_ORTB).find(k => PREBID_NATIVE_DATA_KEYS_TO_ORTB[k] === assetType);
       oldNativeObject[prebidAssetName] = {
         required: asset.required ? Boolean(asset.required) : false,
       }
@@ -683,7 +683,7 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
     if (!bidRequests.some(bidRequest => (bidRequest?.mediaTypes || {})[NATIVE]?.ortb)) {
       return bidRequests;
     }
-    let bidRequestsCopy = deepClone(bidRequests);
+    const bidRequestsCopy = deepClone(bidRequests);
     // convert Native ORTB definition to old-style prebid native definition
     for (const bidRequest of bidRequestsCopy) {
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[NATIVE] && bidRequest.mediaTypes[NATIVE].ortb) {

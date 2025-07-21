@@ -296,7 +296,7 @@ describe('Adspirit Bidder Spec', function () {
   });
 
   // getEids function
-    describe('getEids', function () {
+  describe('getEids', function () {
     it('should return userIdAsEids when present', function () {
       const bidRequest = {
         userIdAsEids: [

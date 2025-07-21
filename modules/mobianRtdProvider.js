@@ -59,6 +59,7 @@ export const CONTEXT_KEYS = [
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
+// eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };

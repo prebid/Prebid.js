@@ -5,13 +5,13 @@ import * as refererDetection from 'src/refererDetection.js';
 import * as ajax from 'src/ajax.js';
 import {config} from '../../../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import 'modules/userId/index.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 
-import {hook} from '../../../src/hook';
+import {hook} from '../../../src/hook.js';
 
 describe('The Criteo bidding adapter', function () {
   let sandbox, ajaxStub, logWarnStub;
@@ -1192,7 +1192,7 @@ describe('The Criteo bidding adapter', function () {
           },
         },
       ];
-      let dsa = {
+      const dsa = {
         required: 3,
         pubrender: 0,
         datatopub: 2,
@@ -2432,7 +2432,7 @@ describe('The Criteo bidding adapter', function () {
     }
 
     it('should properly parse a bid response with FLEDGE auction configs', async function () {
-      let auctionConfig1 = {
+      const auctionConfig1 = {
         auctionSignals: {},
         decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
         interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
@@ -2472,7 +2472,7 @@ describe('The Criteo bidding adapter', function () {
         },
         sellerCurrency: 'USD',
       };
-      let auctionConfig2 = {
+      const auctionConfig2 = {
         auctionSignals: {},
         decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
         interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],

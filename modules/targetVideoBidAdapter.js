@@ -136,8 +136,8 @@ export const spec = {
               };
 
               if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
-                let ac = bidderRequest.gdprConsent.addtlConsent;
-                let acStr = ac.substring(ac.indexOf('~') + 1);
+                const ac = bidderRequest.gdprConsent.addtlConsent;
+                const acStr = ac.substring(ac.indexOf('~') + 1);
                 payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
               }
             }

@@ -1,28 +1,28 @@
 interface Command {
-    (): any;
+  (): any;
 }
 
 interface CommandQueue extends Omit<Command[], 'push'> {
-    push(cmd: Command): void;
+  push(cmd: Command): void;
 }
 
 export interface PrebidJS {
-    /**
-     * Command queue. Use cmd.push(function F() { ... }) to queue F until Prebid has loaded.
-     */
-    cmd: CommandQueue,
-    /**
-     * Alias of `cmd`
-     */
-    que: CommandQueue
-    /**
-     * Names of all installed modules.
-     */
-    installedModules: string[]
-    /**
-     * Optional scheduler used by pbYield().
-     */
-    scheduler?: { yield: () => Promise<void> }
+  /**
+   * Command queue. Use cmd.push(function F() { ... }) to queue F until Prebid has loaded.
+   */
+  cmd: CommandQueue,
+  /**
+   * Alias of `cmd`
+   */
+  que: CommandQueue
+  /**
+   * Names of all installed modules.
+   */
+  installedModules: string[]
+  /**
+   * Optional scheduler used by pbYield().
+   */
+  scheduler?: { yield: () => Promise<void> }
 }
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object

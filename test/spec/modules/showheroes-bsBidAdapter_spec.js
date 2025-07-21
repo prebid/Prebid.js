@@ -264,13 +264,13 @@ describe('shBidAdapter', () => {
     }]
 
     it('empty', function () {
-      let result = spec.getUserSyncs({}, []);
+      const result = spec.getUserSyncs({}, []);
 
       expect(result).to.deep.equal([]);
     });
 
     it('iframe', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         iframeEnabled: true
       }, response);
 
@@ -279,7 +279,7 @@ describe('shBidAdapter', () => {
     });
 
     it('pixel', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         pixelEnabled: true
       }, response);
 

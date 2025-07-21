@@ -194,7 +194,7 @@ function _getBidFloor(bid) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

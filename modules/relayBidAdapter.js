@@ -28,7 +28,7 @@ function buildRequests(bidRequests, bidderRequest) {
     return accu;
   }, {});
   // Send one overall request with all grouped bids per accountId
-  let reqs = [];
+  const reqs = [];
   for (const [accountId, accountBidRequests] of Object.entries(groupedByAccountId)) {
     const url = `${ENDPOINT_URL}?a=${accountId}&pb=1&pbv=${prebidVersion}`;
     const data = CONVERTER.toORTB({ bidRequests: accountBidRequests, bidderRequest })
@@ -51,7 +51,7 @@ function isBidRequestValid(bid) {
 };
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  let syncs = []
+  const syncs = []
   for (const response of serverResponses) {
     const responseSyncs = ((((response || {}).body || {}).ext || {}).user_syncs || [])
     // Relay returns user_syncs in the format expected by prebid. If for any

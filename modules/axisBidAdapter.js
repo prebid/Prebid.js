@@ -50,7 +50,7 @@ export const spec = {
   interpretResponse,
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

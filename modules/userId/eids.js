@@ -5,7 +5,7 @@ export const EID_CONFIG = new Map();
 // this function will create an eid object for the given UserId sub-module
 function createEidObject(userIdData, subModuleKey, eidConf) {
   if (eidConf && userIdData) {
-    let eid = {};
+    const eid = {};
     eid.source = isFn(eidConf['getSource']) ? eidConf['getSource'](userIdData) : eidConf['source'];
     const value = isFn(eidConf['getValue']) ? eidConf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {

@@ -1,8 +1,11 @@
+import sinon from 'sinon';
+
 import {
   spec,
   utils,
   DEFAULT_AD_SERVER_BASE_URL
 } from 'modules/mobkoiBidAdapter.js';
+import * as prebidUtils from 'src/utils';
 
 describe('Mobkoi bidding Adapter', function () {
   const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
@@ -13,6 +16,8 @@ describe('Mobkoi bidding Adapter', function () {
   const testTransactionId = 'test-transaction-id';
   const testAdUnitId = 'test-ad-unit-id';
   const testAuctionId = 'test-auction-id';
+
+  let sandbox;
 
   const getOrtb2 = () => ({
     site: {
@@ -91,6 +96,17 @@ describe('Mobkoi bidding Adapter', function () {
       ],
     }
   })
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(prebidUtils, 'logInfo');
+    sandbox.stub(prebidUtils, 'logWarn');
+    sandbox.stub(prebidUtils, 'logError');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid', function () {
     let bid;
@@ -222,5 +238,112 @@ describe('Mobkoi bidding Adapter', function () {
         }).to.throw();
       });
     })
+  })
+
+  describe('getUserSyncs', function () {
+    let syncOptions;
+
+    beforeEach(function () {
+      syncOptions = {
+        pixelEnabled: true,
+        iframeEnabled: false
+      };
+    });
+
+    it('should return empty array when pixelEnabled is false', function () {
+      syncOptions.pixelEnabled = false;
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: { pixels: [['image', 'test-url']] } } }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when GDPR does not apply', function () {
+      const gdprConsent = { gdprApplies: false, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: { pixels: [['image', 'test-url']] } } }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when no pixels in response', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: {} } }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when pixels is not an array', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: { pixels: 'not-an-array' } } }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should process image pixels correctly', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent-string' };
+      const testUrl = 'https://example.com/sync?gdpr=test-consent-string&param=value';
+      const serverResponses = [{
+        body: {
+          ext: {
+            pixels: [
+              ['image', testUrl],
+              ['image', 'https://another.com/pixel']
+            ]
+          }
+        }
+      }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+
+      expect(result).to.have.length(2);
+      expect(result[0]).to.deep.equal({
+        type: 'image',
+        url: 'https://example.com/sync?gdpr=test-consent-string&param=value'
+      });
+      expect(result[1]).to.deep.equal({
+        type: 'image',
+        url: 'https://another.com/pixel'
+      });
+    });
+
+    it('should ignore non-image pixel types', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{
+        body: {
+          ext: {
+            pixels: [
+              ['iframe', 'https://iframe.com/sync'],
+              ['image', 'https://image.com/pixel'],
+              ['unknown', 'https://unknown.com/pixel']
+            ]
+          }
+        }
+      }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+
+      expect(result).to.have.length(1);
+      expect(result[0]).to.deep.equal({
+        type: 'image',
+        url: 'https://image.com/pixel'
+      });
+    });
+
+    it('should handle responses without ext field gracefully', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [
+        { body: {} },
+        { body: { ext: { pixels: [['image', 'https://valid.com/pixel']] } } }
+      ];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+
+      expect(result).to.have.length(1);
+      expect(result[0].url).to.equal('https://valid.com/pixel');
+    });
   })
 })

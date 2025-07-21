@@ -142,10 +142,10 @@ function getContextUrl() {
 }
 
 function getDataForMerge(responseData) {
-  let siteData = {
+  const siteData = {
     name: ORTB2_NAME
   };
-  let userData = {
+  const userData = {
     name: ORTB2_NAME
   };
 
@@ -167,7 +167,7 @@ function getDataForMerge(responseData) {
     }
   }
 
-  let result = {};
+  const result = {};
   if (siteData.segment || siteData.ext) {
     result.site = {
       content: {

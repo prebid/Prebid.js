@@ -114,8 +114,8 @@ describe('alkimiBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let bidRequests = [REQUEST]
-    let requestData = {
+    const bidRequests = [REQUEST]
+    const requestData = {
       refererInfo: {
         page: 'http://test.com/path.html'
       },

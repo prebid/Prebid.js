@@ -26,7 +26,7 @@ describe('pubxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);

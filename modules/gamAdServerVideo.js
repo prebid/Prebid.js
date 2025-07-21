@@ -105,7 +105,7 @@ export function buildGamVideoUrl(options) {
     derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
   }
 
-  let encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
+  const encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
     DEFAULT_GAM_PARAMS,
@@ -228,7 +228,7 @@ function getCustParams(bid, options, urlCustParams) {
   let allTargetingData = {};
   const adUnit = options && options.adUnit;
   if (adUnit) {
-    let allTargeting = targeting.getAllTargeting(adUnit.code);
+    const allTargeting = targeting.getAllTargeting(adUnit.code);
     allTargetingData = (allTargeting) ? allTargeting[adUnit.code] : {};
   }
 
