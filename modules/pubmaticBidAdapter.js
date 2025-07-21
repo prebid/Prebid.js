@@ -642,15 +642,7 @@ const getPublisherId = (bids) =>
     ? bids.find(bid => bid.params?.publisherId?.trim())?.params.publisherId || null
     : null;
 
-/**
- * Determines if gzip compression should be enabled for requests
- * Checks in order:
- * 1. Bidder-specific configuration set via pbjs.setBidderConfig()
- * 2. Default value (true)
- * @param {Object} conf - The configuration object containing bid params
- * @returns {boolean} - Whether gzip compression should be enabled
- */
-function getGzipSetting(conf) {
+function getGzipSetting() {
   // Check bidder-specific configuration
   try {
     const gzipSetting = deepAccess(config.getBidderConfig(), 'pubmatic.gzipEnabled');
@@ -813,7 +805,7 @@ export const spec = {
       data: data,
       bidderRequest: bidderRequest,
       options: {
-        endpointCompression: getGzipSetting(conf)
+        endpointCompression: getGzipSetting()
       },
     };
     return data?.imp?.length ? serverRequest : null;
