@@ -1624,6 +1624,40 @@ describe('Unit: Prebid Module', function () {
       sinon.assert.called(spec.onTimeout);
     });
 
+    describe('requestBids event', () => {
+      beforeEach(() =>  {
+        sandbox.stub(events, 'emit');
+      });
+
+      it('should be emitted with request', async () => {
+        const request = {
+          adUnits
+        }
+        await runAuction(request);
+        sinon.assert.calledWith(events.emit, EVENTS.REQUEST_BIDS, request);
+      });
+
+      it('should provide a request object when not supplied to requestBids()', async () => {
+        $$PREBID_GLOBAL$$.addAdUnits(adUnits);
+        try {
+          await runAuction();
+          sinon.assert.calledWith(events.emit, EVENTS.REQUEST_BIDS, sinon.match({
+            adUnits
+          }));
+        } finally {
+          adUnits.map(au => au.code).forEach($$PREBID_GLOBAL$$.removeAdUnit)
+        }
+      });
+
+      it('should not leak internal state', async () => {
+        const request = {
+          adUnits
+        };
+        await runAuction(Object.assign({}, request));
+        sinon.assert.calledWith(events.emit, EVENTS.REQUEST_BIDS, request);
+      })
+    })
+
     it('should execute `onSetTargeting` after setTargetingForGPTAsync', async function () {
       const bidId = 1;
       const auctionId = 1;

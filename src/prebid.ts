@@ -713,14 +713,13 @@ declare module './events' {
     /**
      * Fired when `requestBids` is called.
      */
-    [REQUEST_BIDS]: [];
+    [REQUEST_BIDS]: [RequestBidsOptions];
   }
 }
 
 export const requestBids = (function() {
   const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions): void {
     let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
-    events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
       adUnitCodes = [adUnitCodes];
@@ -752,13 +751,18 @@ export const requestBids = (function() {
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    const req = options as PrivRequestBidsOptions;
-    const adUnits = req.adUnits || pbjsInstance.adUnits;
-    req.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
+    const adUnits = options.adUnits || pbjsInstance.adUnits;
+    options.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
-    req.metrics = newMetrics();
-    req.metrics.checkpoint('requestBids');
-    req.defer = defer({ promiseFactory: (r) => new Promise(r)})
+    const metrics = newMetrics();
+    metrics.checkpoint('requestBids');
+
+    events.emit(REQUEST_BIDS, options);
+
+    const req = Object.assign({}, options, {
+      metrics,
+      defer: defer({promiseFactory: (r) => new Promise(r)})
+    });
     delegate.call(this, req);
     return req.defer.promise;
   }));
