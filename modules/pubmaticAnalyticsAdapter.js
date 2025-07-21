@@ -315,6 +315,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
 function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.wonBidId;
   const winningBids = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bids[winningBidId];
+  const country = cache.auctions[auctionId]?.ortb2?.user?.ext?.ctr || ''
   if (!winningBids) {
     logWarn(LOG_PRE_FIX + 'Could not find winningBids for : ', auctionId);
     return;
