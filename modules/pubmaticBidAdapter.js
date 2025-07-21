@@ -396,7 +396,7 @@ const addDealCustomTargetings = (imp, dctr, customTargetings) => {
   }
 }
 
-const shouldAddDealTargeting = (ortb2) => {
+export const shouldAddDealTargeting = (ortb2) => {
   const imSegmentData = ortb2?.user?.ext?.data?.im_segments;
   const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
   const hasImSegments = imSegmentData && isArray(imSegmentData) && imSegmentData.length;
