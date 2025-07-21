@@ -221,7 +221,7 @@ describe('native.js', function () {
     let adUnit;
     beforeEach(() => {
       adUnit = {};
-      sinon.stub(auctionManager, 'index').get(() => ({
+      sandbox.stub(auctionManager, 'index').get(() => ({
         getAdUnit: () => adUnit
       }))
     });
