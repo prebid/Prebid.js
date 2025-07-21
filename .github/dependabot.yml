@@ -12,3 +12,6 @@ updates:
     allow:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
