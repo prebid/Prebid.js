@@ -8,4 +8,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-
+    allow:
+      update-types: ["version-update:semver-patch"]
