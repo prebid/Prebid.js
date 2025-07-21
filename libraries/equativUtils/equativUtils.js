@@ -160,7 +160,7 @@ export const PID_STORAGE_NAME = 'eqt_pid';
 
 /**
  * Handles cookie sync logic
- * 
+ *
  * @param syncOptions
  * @param serverResponses
  * @param gdprConsent

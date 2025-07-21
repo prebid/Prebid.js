@@ -124,7 +124,6 @@ export const sharethroughAdapterSpec = {
       mergeDeep(req.device, bidderRequest.ortb2.device);
     }
 
-
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
       req.regs.ext.gdpr = gdprApplies ? 1 : 0;
