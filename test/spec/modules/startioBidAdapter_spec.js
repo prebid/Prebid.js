@@ -287,4 +287,34 @@ describe('Prebid Adapter: Startio', function () {
       });
     }
   });
+
+  describe('getUserSyncs', function() {
+    it('pixelEnabled and iframeEnabled on', function () {
+      let syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const result = spec.getUserSyncs(syncOptions);
+      expect(result).to.have.length(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://sync.intentiq.com/profiles_engine/ProfilesEngineServlet?at=20&mi=10&dpi=1031540622');
+    });
+
+    it('pixelEnabled on', function () {
+      let syncOptions = {pixelEnabled: true, iframeEnabled: false};
+      const result = spec.getUserSyncs(syncOptions);
+      expect(result).to.have.length(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://sync.intentiq.com/profiles_engine/ProfilesEngineServlet?at=20&mi=10&dpi=1031540622');
+    });
+
+    it('iframeEnabled on', function () {
+      let syncOptions = {pixelEnabled: false, iframeEnabled: true};
+      const result = spec.getUserSyncs(syncOptions);
+      expect(result).to.be.undefined;
+    });
+
+    it('pixelEnabled and iframeEnabled off', function () {
+      let syncOptions = {pixelEnabled: false, iframeEnabled: false};
+      const result = spec.getUserSyncs(syncOptions);
+      expect(result).to.be.undefined;
+    });
+  });
 });

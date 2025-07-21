@@ -103,6 +103,15 @@ export const spec = {
   },
 
   onSetTargeting: (bid) => { },
+
+  getUserSyncs: function (syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: 'https://sync.intentiq.com/profiles_engine/ProfilesEngineServlet?at=20&mi=10&dpi=1031540622'
+      }];
+    }
+  },
 };
 
 registerBidder(spec);
