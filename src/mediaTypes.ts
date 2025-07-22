@@ -20,22 +20,22 @@ export interface BaseMediaType {
 }
 
 export interface MediaTypes {
-    /**
-     * Defines properties of a banner ad.
-     */
-    banner?: BannerMediaType;
-    /**
-     * Defines properties of a video ad.
-     */
-    video?: VideoMediaType;
-    /**
-     * Defines properties of a native ad.
-     */
-    native?: NativeMediaType;
-    /**
-     * Defines properties of a audio ad.
-     */
-    audio?: AudioMediaType;
+  /**
+   * Defines properties of a banner ad.
+   */
+  banner?: BannerMediaType;
+  /**
+   * Defines properties of a video ad.
+   */
+  video?: VideoMediaType;
+  /**
+   * Defines properties of a native ad.
+   */
+  native?: NativeMediaType;
+  /**
+   * Defines properties of a audio ad.
+   */
+  audio?: AudioMediaType;
 }
 
 export const NATIVE = 'native';

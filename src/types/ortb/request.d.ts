@@ -24,10 +24,10 @@ export type ORTBImp = Imp & {
     sequence?: number;
   };
   audio?: Imp['audio'] & {
-      /**
-       * @deprecated - use slotinpod instead.
-       */
-      sequence?: number;
+    /**
+     * @deprecated - use slotinpod instead.
+     */
+    sequence?: number;
   },
   ext?: Ext & {
     /**

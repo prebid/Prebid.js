@@ -1,4 +1,4 @@
-import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
+import {isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn} from './utils.js';
 import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';

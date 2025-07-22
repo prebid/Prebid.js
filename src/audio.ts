@@ -1,4 +1,4 @@
-import {isArrayOfNums, isInteger, isPlainObject, logError, logWarn} from './utils.js';
+import {isArrayOfNums, isInteger, logError} from './utils.js';
 import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
@@ -11,24 +11,24 @@ export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
 const ORTB_PARAMS = [
-    [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-    [ 'minduration', isInteger ],
-    [ 'maxduration', isInteger ],
-    [ 'startdelay', isInteger ],
-    [ 'maxseq', isInteger ],
-    [ 'poddur', isInteger ],
-    [ 'protocols', isArrayOfNums ],
-    [ 'sequence', isInteger ], // deprecated
-    [ 'battr', isArrayOfNums ],
-    [ 'maxextended', isInteger ],
-    [ 'minbitrate', isInteger ],
-    [ 'maxbitrate', isInteger ],
-    [ 'delivery', isArrayOfNums ],
-    [ 'api', isArrayOfNums ],
-    [ 'companiontype', isArrayOfNums ],
-    [ 'feed', isInteger ],
-    [ 'stitched', isInteger ],
-    [ 'nvol', isInteger ],
+  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
+  [ 'minduration', isInteger ],
+  [ 'maxduration', isInteger ],
+  [ 'startdelay', isInteger ],
+  [ 'maxseq', isInteger ],
+  [ 'poddur', isInteger ],
+  [ 'protocols', isArrayOfNums ],
+  [ 'sequence', isInteger ], // deprecated
+  [ 'battr', isArrayOfNums ],
+  [ 'maxextended', isInteger ],
+  [ 'minbitrate', isInteger ],
+  [ 'maxbitrate', isInteger ],
+  [ 'delivery', isArrayOfNums ],
+  [ 'api', isArrayOfNums ],
+  [ 'companiontype', isArrayOfNums ],
+  [ 'feed', isInteger ],
+  [ 'stitched', isInteger ],
+  [ 'nvol', isInteger ],
 ] as const;
 
 /**
@@ -41,7 +41,7 @@ export const ORTB_AUDIO_PARAMS = new Map(ORTB_PARAMS);
 export type AudioContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
 export interface AudioMediaType extends BaseMediaType, Pick<ORTBImp['audio'], (typeof ORTB_PARAMS)[number][0]> {
-    context: AudioContext;
+  context: AudioContext;
 }
 
 export function fillAudioDefaults(adUnit: AdUnitDefinition) {}
@@ -61,16 +61,16 @@ export function isValidAudioBid(bid: AudioBid, {index = auctionManager.index} = 
 }
 
 declare module './bidfactory' {
-    interface AudioBidResponseProperties {
-        vastXml?: string;
-        vastUrl?: string;
-    }
+  interface AudioBidResponseProperties {
+    vastXml?: string;
+    vastUrl?: string;
+  }
 }
 
 declare module './hook' {
-    interface NamedHooks {
-        checkAudioBidSetup: typeof checkAudioBidSetup
-    }
+  interface NamedHooks {
+    checkAudioBidSetup: typeof checkAudioBidSetup
+  }
 }
 
 export const checkAudioBidSetup = hook('sync', function(bid: AudioBid, adUnit, audioMediaType, context, useCacheKey) {

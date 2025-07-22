@@ -1,4 +1,4 @@
-import { isArrayOfNums, isInteger, isStr, isPlainObject, logWarn } from './utils.js';
+import { isArrayOfNums, isInteger, isStr } from './utils.js';
 import type {Size} from "./types/common.d.ts";
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {BaseMediaType} from "./mediaTypes.ts";
