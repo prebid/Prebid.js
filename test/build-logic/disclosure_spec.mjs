@@ -23,5 +23,4 @@ describe('getDisclosureUrl', () => {
     const url = await getDisclosureUrl(123, getGvl);
     expect(url).to.not.exist;
   });
-
 });
