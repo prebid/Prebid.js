@@ -4,7 +4,7 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "kubient",
+      "componentName": "rumble",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null

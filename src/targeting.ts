@@ -176,15 +176,15 @@ export interface TargetingControlsConfig {
   /**
    * Selects supported default targeting keys.
    */
-  allowTargetingKeys?: (keyof DefaultTargeting)[];
+  allowTargetingKeys?: (keyof typeof TARGETING_KEYS)[];
   /**
    * Selects targeting keys to be supported in addition to the default ones
    */
-  addTargetingKeys?: (keyof DefaultTargeting)[];
+  addTargetingKeys?: (keyof typeof TARGETING_KEYS)[];
   /**
    * Selects supported default targeting keys.
    */
-  allowSendAllBidsTargetingKeys?: (keyof DefaultTargeting)[];
+  allowSendAllBidsTargetingKeys?: (keyof typeof TARGETING_KEYS)[];
   /**
    * Set to false to prevent custom targeting values from being set for non-winning bids
    */
