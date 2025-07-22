@@ -1,7 +1,8 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isFn, isNumber, isPlainObject, logInfo, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { deepAccess, deepSetValue, isNumber, logInfo, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { Renderer } from '../src/Renderer.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
@@ -37,14 +38,13 @@ const converter = ortbConverter({
 
     // There is no default floor. bidfloor is set only
     // if the priceFloors module is activated and returns a valid floor.
-    const floor = getMinFloor(bidRequest);
+    const floor = getBidFloor(bidRequest);
     if (isNumber(floor)) {
       imp.bidfloor = floor;
     }
 
-    // Add floor price
-    if (bidRequest.params.bidFloor) {
-      imp.bidfloor = parseFloat(bidRequest.params.bidFloor);
+    // Add floor currency
+    if (bidRequest.params.bidFloorCur) {
       imp.bidfloorcur = bidRequest.params.bidFloorCur || DEFAULT_CURRENCY;
     }
 
@@ -303,58 +303,6 @@ export const spec = {
     }
   },
 };
-
-/**
- * Returns floor from priceFloors module or MediaKey default value.
- *
- * @param {*} bid a Prebid.js bid (request) object
- * @param {string} mediaType the mediaType or the wildcard '*'
- * @param {string|Array} size the size array or the wildcard '*'
- * @returns {number|boolean}
- */
-function getFloor(bid, mediaType, size = '*') {
-  if (!isFn(bid.getFloor)) {
-    return false;
-  }
-
-  if (spec.supportedMediaTypes.indexOf(mediaType) === -1) {
-    logWarn(
-      `${BIDDER_CODE}: Unable to detect floor price for unsupported mediaType ${mediaType}. No floor will be used.`
-    );
-
-    return false;
-  }
-
-  const floor = bid.getFloor({
-    currency: DEFAULT_CURRENCY,
-    mediaType,
-    size,
-  });
-
-  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY
-    ? floor.floor
-    : false;
-}
-
-function getMinFloor(bid) {
-  const floors = [];
-
-  for (let mediaType in bid.mediaTypes) {
-    const floor = getFloor(bid, mediaType);
-
-    if (isNumber(floor)) {
-      floors.push(floor);
-    }
-  }
-
-  if (!floors.length) {
-    return false;
-  }
-
-  return floors.reduce((a, b) => {
-    return Math.min(a, b);
-  });
-}
 
 /**
  * Build sync URL with privacy parameters
