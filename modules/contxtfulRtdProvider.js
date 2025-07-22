@@ -41,7 +41,10 @@ const CONTXTFUL_DEFER_DEFAULT = 0;
 // Functions
 let _sm;
 function sm() {
-  return _sm ??= generateUUID();
+  if (_sm == null) {
+    _sm = generateUUID();
+  }
+  return _sm;
 }
 
 const storageManager = getStorageManager({
