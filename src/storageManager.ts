@@ -4,8 +4,10 @@ import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType} from './activit
 import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
 import {
   ACTIVITY_PARAM_ADAPTER_CODE,
-  ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_KEY,
-  ACTIVITY_PARAM_STORAGE_TYPE
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_KEY,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
 } from './activities/params.js';
 
 import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ACCESS_REQUEST_CREDENTIALS} from './activities/activities.js';
@@ -63,7 +65,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    */
   advertiseKeys?: boolean;
 } = {} as any, {isAllowed = isActivityAllowed} = {}) {
-  function isValid(cb, storageType, storageKey) {
+  function isValid(cb, storageType, storageKey, isWrite) {
     let mod = moduleName;
     const curBidder = config.getCurrentBidder();
     if (curBidder && moduleType === MODULE_TYPE_BIDDER && adapterManager.aliasRegistry[curBidder] === moduleName) {
@@ -71,6 +73,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
     }
     const params = {
       [ACTIVITY_PARAM_STORAGE_TYPE]: storageType,
+      [ACTIVITY_PARAM_STORAGE_WRITE]: isWrite,
     };
     if (advertiseKeys && storageKey != null) {
       params[ACTIVITY_PARAM_STORAGE_KEY] = storageKey;
@@ -82,14 +85,14 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
     return cb(result);
   }
 
-  function schedule(operation, storageType, storageKey, done) {
+  function schedule(operation, storageType, storageKey, isWrite, done) {
     if (done && typeof done === 'function') {
       storageCallbacks.push(function() {
-        const result = isValid(operation, storageType, storageKey);
+        let result = isValid(operation, storageType, storageKey, isWrite);
         done(result);
       });
     } else {
-      return isValid(operation, storageType, storageKey);
+      return isValid(operation, storageType, storageKey, isWrite);
     }
   }
 
@@ -105,7 +108,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @param {function} [done]
    */
   const setCookie = function (key, value, expires, sameSite, domain, done) {
-    const cb = function (result) {
+    let cb = function (result) {
       if (result && result.valid) {
         const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
@@ -114,7 +117,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
-    return schedule(cb, STORAGE_TYPE_COOKIES, key, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, key, true, done);
   };
 
   /**
@@ -123,14 +126,14 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @returns {(string|null)}
    */
   const getCookie = function(name, done) {
-    const cb = function (result) {
+    let cb = function (result) {
       if (result && result.valid) {
-        const m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+        let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
         return m ? decodeURIComponent(m[2]) : null;
       }
       return null;
     }
-    return schedule(cb, STORAGE_TYPE_COOKIES, name, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, name, false, done);
   };
 
   /**
@@ -138,13 +141,13 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @returns {boolean}
    */
   const cookiesAreEnabled = function (done) {
-    const cb = function (result) {
+    let cb = function (result) {
       if (result && result.valid) {
         return checkCookieSupport();
       }
       return false;
     }
-    return schedule(cb, STORAGE_TYPE_COOKIES, null, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, null, false, done);
   }
 
   function storageMethods(name) {
@@ -152,7 +155,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
     const backend = () => window[name] as any;
 
     const hasStorage: AcceptsCallback<() => boolean> = function (done) {
-      const cb = function (result) {
+      let cb = function (result) {
         if (result && result.valid) {
           try {
             return !!backend();
@@ -162,13 +165,13 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
         }
         return false;
       }
-      return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, done);
+      return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, false, done);
     } as any;
 
     return {
       [`has${capName}`]: hasStorage,
       [`${name}IsEnabled`](done) {
-        const cb = function (result) {
+        let cb = function (result) {
           if (result && result.valid) {
             try {
               backend().setItem('prebid.cookieTest', '1');
@@ -182,32 +185,32 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
           }
           return false;
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, false, done);
       },
       [`setDataIn${capName}`](key, value, done) {
-        const cb = function (result) {
+        let cb = function (result) {
           if (result && result.valid && hasStorage()) {
             backend().setItem(key, value);
           }
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, true, done);
       },
       [`getDataFrom${capName}`](key, done) {
-        const cb = function (result) {
+        let cb = function (result) {
           if (result && result.valid && hasStorage()) {
             return backend().getItem(key);
           }
           return null;
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, false, done);
       },
       [`removeDataFrom${capName}`](key, done) {
-        const cb = function (result) {
+        let cb = function (result) {
           if (result && result.valid && hasStorage()) {
             backend().removeItem(key);
           }
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, true, done);
       }
     }
   }
@@ -220,7 +223,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @returns {string[]}
    */
   const findSimilarCookies = function(keyLike, done) {
-    const cb = function (result) {
+    let cb = function (result) {
       if (result && result.valid) {
         const all = [];
         if (hasDeviceAccess()) {
@@ -239,7 +242,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
       }
     }
 
-    return schedule(cb, STORAGE_TYPE_COOKIES, keyLike, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, keyLike, false, done);
   }
 
   return {
