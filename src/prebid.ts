@@ -264,7 +264,7 @@ export function validateOrtbFields(adUnit, type, onInvalidParam?) {
             onInvalidParam(key, value, adUnit);
           } else {
             delete params[key];
-            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
+            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.${type}.${key} ORTB property. The property has been removed.`);
           }
         }
       });
