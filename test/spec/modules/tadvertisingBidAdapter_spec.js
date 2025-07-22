@@ -270,15 +270,6 @@ describe('tadvertisingBidAdapter', () => {
       expect(data.imp.banner).to.equal(expected.imp.banner);
     })
 
-    it('should set user.buyeruid when userId.tdid is present', function () {
-      let bidderRequest = getBidderRequest();
-      bidderRequest.bids[0].userId = {tdid: '1234567890'};
-      const request = spec.buildRequests(getBid(), bidderRequest);
-      const data = request.data;
-
-      expect(data.user.buyeruid).to.equal(bidderRequest.bids[0].userId.tdid);
-    })
-
     it('should set imp.0.bidfloor and imp.0.bidfloorcur when bidFloor is present', function () {
       let bidderRequest = getBidderRequest();
       bidderRequest.bids[0].params.bidfloor = 1.5;
@@ -321,6 +312,32 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(data.imp[0].ext.gpid).to.equal(bidderRequest.bids[0].params.placementId);
       expect(data.imp[1].ext.gpid).to.equal(bidderRequest.bids[1].params.placementId);
+    })
+
+    it('should add unified ID info to user.ext.eids in the request', function () {
+      let bidderRequest = getBidderRequest();
+      let bid1 = bidderRequest.bids[0]
+      bid1.userIdAsEids = [
+        {
+          source: 'adserver.org',
+          uids: [
+            {
+              atype: 1,
+              ext: {
+                rtiPartner: 'TDID'
+              },
+              id: '00000000-0000-0000-0000-000000000000'
+            }
+          ]
+        }
+      ];
+
+      const expectedEids = bid1.userIdAsEids
+
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const data = request.data;
+
+      expect(data.user.ext.eids).to.deep.equal(expectedEids)
     })
   });
 

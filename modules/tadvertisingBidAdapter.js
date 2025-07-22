@@ -2,7 +2,6 @@ import {
   deepAccess,
   isEmpty,
   deepSetValue,
-  isStr,
   logWarn,
   replaceAuctionPrice,
   triggerPixel,
@@ -195,10 +194,10 @@ export const spec = {
       deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
     }
 
-    if (isStr(deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
-      data.user = data.user || {};
-      data.user.buyeruid = bidderRequest.bids[0].userId.tdid;
+    if (deepAccess(validBidRequests[0], 'userIdAsEids')) {
+      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
+
     bidderRequest.bids.forEach((bid, index) => {
       pageCache[bid.bidId] = deepAccess(bid, 'ortb2.site.page');
       deepSetValue(data, `imp.${index}.ext.gpid`, bid.params.placementId);
