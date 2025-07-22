@@ -58,7 +58,7 @@ function deserializeMwOlId(mwOlIdStr) {
 }
 
 function serializeMwOlId(mwOlId) {
-  let components = [];
+  const components = [];
 
   if (mwOlId.eid) {
     components.push('eid:' + mwOlId.eid);

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/startioBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
+import {deepClone} from '../../../src/utils.js';
 
 const DEFAULT_REQUEST_DATA = {
   adUnitCode: 'test-div',
@@ -61,6 +62,10 @@ const VALID_MEDIA_TYPES_REQUESTS = {
     },
   }]
 }
+
+const DEFAULT_BIDDER_REQUEST = {
+  refererInfo: { referer: 'https://example.com' },
+};
 
 const VALID_BIDDER_REQUEST = {
   auctionId: '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
@@ -180,16 +185,30 @@ describe('Prebid Adapter: Startio', function () {
       };
       expect(spec.isBidRequestValid(bidRequest)).to.eql(true);
     });
+    it('should verify bidFloorCur for bid request', function () {
+      const bidRequestUSD = {
+        bidder: 'startio',
+        ortb2Imp: {
+          bidfloorcur: 'USD'
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequestUSD)).to.eql(true);
+
+      const bidRequestEUR = {
+        bidder: 'startio',
+        ortb2Imp: {
+          bidfloorcur: 'EUR'
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequestEUR)).to.eql(false);
+    });
   });
 
   describe('buildRequests', function () {
     it('should build request for banner media type', function () {
       const bidRequest = VALID_MEDIA_TYPES_REQUESTS[BANNER][0];
-      const bidderRequest = {
-        refererInfo: { referer: 'https://example.com' },
-      };
 
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const requests = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST);
 
       expect(requests).to.have.lengthOf(1);
       const request = requests[0];
@@ -198,14 +217,81 @@ describe('Prebid Adapter: Startio', function () {
       expect(request.data.imp[0].banner.w).to.equal(300);
       expect(request.data.imp[0].banner.h).to.equal(250);
     });
+
+    it('should provide bidfloor when either bid param or getFloor function exists', function () {
+      let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
+
+      // with no param or getFloor bidfloor is not specified
+      let request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+      expect(request.imp[0].bidfloor).to.not.exist;
+      expect(request.imp[0].bidfloorcur).to.not.exist;
+
+      // with param and no getFloor bidfloor uses value from param
+      bidRequest.params.floor = 1.3;
+      request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+      expect(request.imp[0].bidfloor).to.equal(1.3);
+      expect(request.imp[0].bidfloorcur).to.equal('USD');
+
+      // with param and getFloor bidfloor uses value form getFloor
+      bidRequest.getFloor = () => { return { currency: 'USD', floor: 2.4 }; };
+      request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+      expect(request.imp[0].bidfloor).to.equal(2.4);
+      expect(request.imp[0].bidfloorcur).to.equal('USD');
+    });
+
+    it('should provide us_privacy', function () {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+
+      bidderRequest.uspConsent = '1YYN';
+      const request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+
+      expect(request.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should provide coppa', () => {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+      bidderRequest.ortb2 = {regs: {coppa: 0}};
+      let request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.coppa).to.equal(0);
+
+      bidderRequest.ortb2 = {regs: {coppa: 1}};
+      request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.coppa).to.equal(1);
+    });
+
+    it('should provide blocked parameters', function () {
+      let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+
+      bidRequest.params.bcat = ['IAB25', 'IAB7-39'];
+      bidRequest.params.bapp = ['com.bad.app1'];
+      bidRequest.params.badv = ['competitor1.com', 'badsite1.net'];
+      bidRequest.params.battr = [1, 2];
+
+      let request = spec.buildRequests([bidRequest], bidderRequest)[0].data;
+      expect(request.bcat).to.deep.equal(['IAB25', 'IAB7-39']);
+      expect(request.bapp).to.deep.equal(['com.bad.app1']);
+      expect(request.badv).to.deep.equal(['competitor1.com', 'badsite1.net']);
+      expect(request.imp[0].banner.battr).to.deep.equal([1, 2]);
+
+      bidderRequest.ortb2 = {
+        bcat: ['IAB1', 'IAB2'],
+        bapp: ['com.bad.app2'],
+        badv: ['competitor2.com', 'badsite2.net'],
+        banner: { battr: [3, 4] }
+      };
+      request = spec.buildRequests([bidRequest], bidderRequest)[0].data;
+      expect(request.bcat).to.deep.equal(['IAB1', 'IAB2']);
+      expect(request.bapp).to.deep.equal(['com.bad.app2']);
+      expect(request.badv).to.deep.equal(['competitor2.com', 'badsite2.net']);
+      expect(request.imp[0].banner.battr).to.deep.equal([3, 4]);
+    });
+
     if (FEATURES.VIDEO) {
       it('should build request for video media type', function () {
         const bidRequest = VALID_MEDIA_TYPES_REQUESTS[VIDEO][0];
-        const bidderRequest = {
-          refererInfo: { referer: 'https://example.com' },
-        };
 
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST);
 
         expect(requests).to.have.lengthOf(1);
         const request = requests[0];
@@ -219,11 +305,8 @@ describe('Prebid Adapter: Startio', function () {
     if (FEATURES.NATIVE) {
       it('should build request for native media type', function () {
         const bidRequest = VALID_MEDIA_TYPES_REQUESTS[NATIVE][0];
-        const bidderRequest = {
-          refererInfo: { referer: 'https://example.com' },
-        };
 
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST);
 
         expect(requests).to.have.lengthOf(1);
         const request = requests[0];

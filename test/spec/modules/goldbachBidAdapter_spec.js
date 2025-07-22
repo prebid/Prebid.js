@@ -13,7 +13,7 @@ const ENDPOINT = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
 const ENDPOINT_COOKIESYNC = 'https://goldlayer-api.prod.gbads.net/cookiesync';
 
 /* Eids */
-let eids = [
+const eids = [
   {
     source: 'goldbach.com',
     uids: [
@@ -99,7 +99,7 @@ const validNativeObject = {
 };
 
 /* Minimal validBidRequests */
-let validBidRequests = [
+const validBidRequests = [
   {
     bidder: BIDDER_NAME,
     adUnitCode: 'au-1',
@@ -191,7 +191,7 @@ let validBidRequests = [
 ];
 
 /* Minimal bidderRequest */
-let validBidderRequest = {
+const validBidderRequest = {
   bidderCode: BIDDER_NAME,
   auctionId: '7570fb24-810d-4c26-9f9c-acd0b6977f60',
   bidderRequestId: '7570fb24-811d-4c26-9f9c-acd0b6977f61',
@@ -204,7 +204,7 @@ let validBidderRequest = {
 };
 
 /* OpenRTB response from auction endpoint */
-let validOrtbBidResponse = {
+const validOrtbBidResponse = {
   id: '3d52a1909b972a',
   seatbid: [
     {
@@ -292,7 +292,7 @@ describe('GoldbachBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: BIDDER_NAME,
       params: {
         publisherId: 'de-publisher.ch-ios',
@@ -308,7 +308,7 @@ describe('GoldbachBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         publisherId: undefined
@@ -319,16 +319,16 @@ describe('GoldbachBidAdapter', function () {
 
   describe('buildRequests', function () {
     it('should use defined endpoint', function () {
-      let bidRequests = deepClone(validBidRequests);
-      let bidderRequest = deepClone(validBidderRequest);
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).to.equal(ENDPOINT);
     })
 
     it('should parse all bids to a valid openRTB request', function () {
-      let bidRequests = deepClone(validBidRequests);
-      let bidderRequest = deepClone(validBidderRequest);
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
 
@@ -343,8 +343,8 @@ describe('GoldbachBidAdapter', function () {
 
     if (FEATURES.VIDEO) {
       it('should parse all video bids to valid video imps (use video player size)', async function () {
-        let bidRequests = deepClone(validBidRequests);
-        let bidderRequest = deepClone(validBidderRequest);
+        const bidRequests = deepClone(validBidRequests);
+        const bidderRequest = deepClone(validBidderRequest);
         const request = spec.buildRequests([bidRequests[1]], await addFPDToBidderRequest(bidderRequest));
         const payload = request.data;
 
@@ -356,8 +356,8 @@ describe('GoldbachBidAdapter', function () {
     }
 
     it('should set custom config on request', function () {
-      let bidRequests = deepClone(validBidRequests);
-      let bidderRequest = deepClone(validBidderRequest);
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
 
@@ -365,8 +365,8 @@ describe('GoldbachBidAdapter', function () {
     });
 
     it('should set gdpr on request', function () {
-      let bidRequests = deepClone(validBidRequests);
-      let bidderRequest = deepClone(validBidderRequest);
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
 
@@ -375,8 +375,8 @@ describe('GoldbachBidAdapter', function () {
     });
 
     it('should set custom targeting on request', function () {
-      let bidRequests = deepClone(validBidRequests);
-      let bidderRequest = deepClone(validBidderRequest);
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
 
@@ -387,8 +387,8 @@ describe('GoldbachBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should map response to valid bids (amount)', function () {
-      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
-      let bidResponse = deepClone({body: validOrtbBidResponse});
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      const bidResponse = deepClone({body: validOrtbBidResponse});
       const response = spec.interpretResponse(bidResponse, bidRequest);
 
       expect(response).to.exist;
@@ -399,8 +399,8 @@ describe('GoldbachBidAdapter', function () {
 
     if (FEATURES.VIDEO) {
       it('should attach a custom video renderer ', function () {
-        let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
-        let bidResponse = deepClone({body: validOrtbBidResponse});
+        const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+        const bidResponse = deepClone({body: validOrtbBidResponse});
         bidResponse.body.seatbid[0].bid[1].adm = '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"></VAST>';
         bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
         const response = spec.interpretResponse(bidResponse, bidRequest);
@@ -410,8 +410,8 @@ describe('GoldbachBidAdapter', function () {
       });
 
       it('should set the player accordingly to config', function () {
-        let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
-        let bidResponse = deepClone({body: validOrtbBidResponse});
+        const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+        const bidResponse = deepClone({body: validOrtbBidResponse});
         bidResponse.body.seatbid[0].bid[1].adm = '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"></VAST>';
         bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
         validBidRequests[1].mediaTypes.video.playbackmethod = 1;
@@ -426,8 +426,8 @@ describe('GoldbachBidAdapter', function () {
     }
 
     it('should not attach a custom video renderer when VAST url/xml is missing', function () {
-      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
-      let bidResponse = deepClone({body: validOrtbBidResponse});
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      const bidResponse = deepClone({body: validOrtbBidResponse});
       bidResponse.body.seatbid[0].bid[1].adm = undefined;
       bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
       const response = spec.interpretResponse(bidResponse, bidRequest);
@@ -439,13 +439,13 @@ describe('GoldbachBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('user-syncs with enabled pixel option', function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: 1
           }
         }};
-      let syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const syncOptions = {pixelEnabled: true, iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('image');
@@ -454,13 +454,13 @@ describe('GoldbachBidAdapter', function () {
     });
 
     it('user-syncs with enabled iframe option', function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: 1
           }
         }};
-      let syncOptions = {iframeEnabled: true};
+      const syncOptions = {iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('iframe');
@@ -469,7 +469,7 @@ describe('GoldbachBidAdapter', function () {
     });
 
     it('user-syncs use gdpr signal', function () {
-      let gdprConsent = {
+      const gdprConsent = {
         gdprApplies: true,
         consentString: 'CPwk-qEPwk-qEH6AAAENCZCMAP_AAH_AAAAAI7Nd_X__bX9n-_7_6ft0eY1f9_r37uQzDhfNs-8F3L_W_LwX32E7NF36tq4KmR4ku1bBIQNtHMnUDUmxaolVrzHsak2cpyNKJ_JkknsZe2dYGF9Pn9lD-YKZ7_5_9_f52T_9_9_-39z3_9f___dv_-__-vjf_599n_v9fV_78_Kf9______-____________8Edmu_r__tr-z_f9_9P26PMav-_1793IZhwvm2feC7l_rfl4L77Cdmi79W1cFTI8SXatgkIG2jmTqBqTYtUSq15j2NSbOU5GlE_kyST2MvbOsDC-nz-yh_MFM9_8_-_v87J_-_-__b-57_-v___u3__f__Xxv_8--z_3-vq_9-flP-_______f___________-AA.II7Nd_X__bX9n-_7_6ft0eY1f9_r37uQzDhfNs-8F3L_W_LwX32E7NF36tq4KmR4ku1bBIQNtHMnUDUmxaolVrzHsak2cpyNKJ_JkknsZe2dYGF9Pn9lD-YKZ7_5_9_f52T_9_9_-39z3_9f___dv_-__-vjf_599n_v9fV_78_Kf9______-____________8A',
         vendorData: {
@@ -478,7 +478,7 @@ describe('GoldbachBidAdapter', function () {
           }
         }
       };
-      let synOptions = {pixelEnabled: true, iframeEnabled: true};
+      const synOptions = {pixelEnabled: true, iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
       expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
       expect(userSyncs[0].url).to.contain('xandrId=$UID');

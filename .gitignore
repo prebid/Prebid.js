@@ -86,3 +86,4 @@ typings/
 
 # Webpack cache
 .cache/
+.eslintcache

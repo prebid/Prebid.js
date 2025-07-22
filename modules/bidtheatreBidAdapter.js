@@ -76,7 +76,7 @@ export const spec = {
     }
 
     data.imp.forEach((impObj, index) => {
-      let publisherId = bidRequests[index].params.publisherId;
+      const publisherId = bidRequests[index].params.publisherId;
 
       if (publisherId) {
         deepSetValue(impObj, 'ext.bidder.publisherId', publisherId);

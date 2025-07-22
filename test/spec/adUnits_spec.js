@@ -3,7 +3,7 @@ import 'src/prebid.js';
 describe('Publisher API _ AdUnits', function () {
   var assert = require('chai').assert;
   var expect = require('chai').expect;
-  var pbjsTestOnly = require('../helpers/pbjs-test-only').pbjsTestOnly;
+  var pbjsTestOnly = require('../helpers/pbjs-test-only.js').pbjsTestOnly;
 
   before(function () {
     var adUnits = [{

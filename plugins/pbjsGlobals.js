@@ -1,40 +1,17 @@
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
 const path = require('path');
-const allFeatures = new Set(require('../features.json'));
-
+const {buildOptions} = require('./buildOptions.js');
 const FEATURES_GLOBAL = 'FEATURES';
 
-function featureMap(disable = []) {
-  disable = disable.map((s) => s.toUpperCase());
-  disable.forEach((f) => {
-    if (!allFeatures.has(f)) {
-      throw new Error(`Unrecognized feature: ${f}`)
-    }
-  });
-  disable = new Set(disable);
-  return Object.fromEntries([...allFeatures.keys()].map((f) => [f, !disable.has(f)]));
-}
-
-function getNpmVersion(version) {
-  try {
-    // only use "real" versions (that is, not the -pre ones, they won't be on jsDelivr)
-    return /^([\d.]+)$/.exec(version)[1];
-  } catch (e) {
-    return 'latest';
-  }
-}
-
 module.exports = function(api, options) {
-  const pbGlobal = options.globalVarName || prebid.globalVarName;
-  const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
-  const features = featureMap(options.disableFeatures);
+  const {pbGlobal, defineGlobal, features, distUrlBase, skipCalls} = buildOptions(options);
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
     '$$DEFINE_PREBID_GLOBAL$$': defineGlobal,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
-    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`,
+    '$$PREBID_DIST_URL_BASE$$': distUrlBase,
     '$$LIVE_INTENT_MODULE_MODE$$': (process && process.env && process.env.LiveConnectMode) || 'standard'
   };
 
@@ -52,7 +29,7 @@ module.exports = function(api, options) {
 
   function getModuleName(filename) {
     const modPath = path.parse(path.relative(PREBID_ROOT, filename));
-    if (modPath.ext.toLowerCase() !== '.js') {
+    if (!['.ts', '.js'].includes(modPath.ext.toLowerCase())) {
       return null;
     }
     if (modPath.dir === 'modules') {
@@ -79,6 +56,11 @@ module.exports = function(api, options) {
           } while (path.scope.hasBinding(registerName))
           path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
+        }
+      },
+      ImportDeclaration(path, state) {
+        if (path.node.source.value.endsWith('.ts')) {
+          path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
         }
       },
       StringLiteral(path) {
@@ -131,6 +113,26 @@ module.exports = function(api, options) {
           features.hasOwnProperty(path.node.property.name)
         ) {
           path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
+        }
+      },
+      CallExpression(path) {
+        if (
+              // direct calls, e.g. logMessage()
+              t.isIdentifier(path.node.callee) &&
+              skipCalls.has(path.node.callee.name) ||
+
+              // Member expression calls, e.g. utils.logMessage()
+              t.isMemberExpression(path.node.callee) &&
+              t.isIdentifier(path.node.callee.property) &&
+              skipCalls.has(path.node.callee.property.name)
+        ) {
+          if (t.isExpressionStatement(path.parent)) {
+            path.parentPath.remove();
+          } else {
+            // Fallback to undefined if it's used as part of a larger expression
+            path.replaceWith(t.identifier('undefined'));
+          }
+          path.skip(); // Prevent further traversal
         }
       }
     }

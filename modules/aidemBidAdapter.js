@@ -108,7 +108,7 @@ function recur(obj) {
 }
 
 function getRegs(bidderRequest) {
-  let regs = {};
+  const regs = {};
   const euConsentManagement = bidderRequest.gdprConsent;
   const usConsentManagement = bidderRequest.uspConsent;
   const coppa = config.getConfig('coppa');
@@ -186,7 +186,7 @@ function hasValidVideoParameters(bidRequest) {
   let valid = true;
   const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
   const bidderParameter = deepAccess(bidRequest, 'params.video');
-  for (let property of REQUIRED_VIDEO_PARAMS) {
+  for (const property of REQUIRED_VIDEO_PARAMS) {
     const hasAdUnitParameter = adUnitsParameters.hasOwnProperty(property);
     const hasBidderParameter = bidderParameter && bidderParameter.hasOwnProperty(property);
     if (!hasAdUnitParameter && !hasBidderParameter) {
