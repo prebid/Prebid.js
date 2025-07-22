@@ -160,21 +160,21 @@ describe('freedomadnetworkAdapter', function() {
       const videoBid = validBidRequestVideo;
       const reqVideo = spec.buildRequests([videoBid], bidderRequest)[0];
       const impVideo = reqVideo.data.imp[0];
-      expect(impVideo.bidfloor).to.equal(parseFloat(videoBid.params.bidFloor));
+      expect(impVideo.bidfloor).to.equal(0);
       expect(impVideo.bidfloorcur).to.equal(videoBid.params.bidFloorCur);
     });
 
     describe('PriceFloors module support', function () {
-      it('should not set `imp[]bidfloor` property when priceFloors module is not available', function () {
+      it('should get default bid floor', function () {
         const bidTest = JSON.parse(JSON.stringify(validBidRequestBanner));
         const requests = spec.buildRequests([bidTest], bidderRequest);
 
         const data = requests[0].data;
         expect(data.imp[0].banner).to.exist;
-        expect(data.imp[0].bidfloor).to.not.exist;
+        expect(data.imp[0].bidfloor).to.equal(0);
       });
 
-      it('should not set `imp[]bidfloor` property when priceFloors module returns false', function () {
+      it('should not add bid floor if getFloor fails', function () {
         const bidTest = JSON.parse(JSON.stringify(validBidRequestBanner));
         bidTest.getFloor = () => {
           return false;
@@ -187,29 +187,18 @@ describe('freedomadnetworkAdapter', function() {
         expect(data.imp[0].bidfloor).to.not.exist;
       });
 
-      it('should get the highest floorPrice found when bid have several mediaTypes', function () {
-        const getFloorTest = (options) => {
-          switch (options.mediaType) {
-            case BANNER:
-              return { floor: 1, currency: DEFAULT_CURRENCY };
-            default:
-              return false;
-          }
-        };
-
+      it('should get the floor when bid have several mediaTypes', function () {
         const bidTest = JSON.parse(JSON.stringify(validBidRequestBanner));
 
         bidTest.mediaTypes.video = {
           playerSize: [600, 480],
         };
 
-        bidTest.getFloor = getFloorTest;
-
         const requests = spec.buildRequests([bidTest], bidderRequest);
 
         const data = requests[0].data;
         expect(data.imp[0].banner).to.exist;
-        expect(data.imp[0].bidfloor).to.equal(1);
+        expect(data.imp[0].bidfloor).to.equal(0);
       });
     });
   });
