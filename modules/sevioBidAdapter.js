@@ -163,7 +163,10 @@ export const spec = {
         sizes: bidRequest.sizes,
         mediaTypes: bidRequest.mediaTypes,
         userId: bidRequest.userId,
-        eids: bidRequest.userIdAsEids,
+        eids: (bidRequest.userIdAsEids || []).map(eid => ({
+          source: eid.source,
+          id: eid.uids?.[0]?.id
+        })).filter(eid => eid.source && eid.id),
         fpd: bidRequest.ortb2 || {},
         ads: [
           {
