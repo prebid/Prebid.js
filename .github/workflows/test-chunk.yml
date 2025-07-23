@@ -68,3 +68,11 @@ jobs:
           path: .
           key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
 
+      - name: Verify cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
+          fail-on-cache-miss: true
+
+

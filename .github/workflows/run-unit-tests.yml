@@ -51,6 +51,13 @@ jobs:
           path: .
           key: build-${{ inputs.build-cmd }}-${{ github.run_id }}
 
+      - name: Verify cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: build-${{ inputs.build-cmd }}-${{ github.run_id }}
+          fail-on-cache-miss: true
+
   chunk-1:
     needs: build
     name: Run tests (chunk 1 of 4)

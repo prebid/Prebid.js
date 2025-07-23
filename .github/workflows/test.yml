@@ -61,6 +61,13 @@ jobs:
           path: .
           key: source-${{ github.run_id }}
 
+      - name: Verify cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.run_id }}
+          fail-on-cache-miss: true
+
   lint:
     name: "Run linter"
     needs: checkout
