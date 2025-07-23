@@ -6,11 +6,9 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const CURRENCY = 'EUR';
 const BIDDER_CODE = 'talkads';
-const GVLID = 1074;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
 
   /**
