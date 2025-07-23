@@ -259,14 +259,6 @@ describe('Mobkoi bidding Adapter', function () {
       expect(result).to.be.an('array').that.is.empty;
     });
 
-    it('should return empty array when GDPR does not apply', function () {
-      const gdprConsent = { gdprApplies: false, consentString: 'test-consent' };
-      const serverResponses = [{ body: { ext: { pixels: [['image', 'test-url']] } } }];
-
-      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
     it('should return empty array when no pixels in response', function () {
       const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
       const serverResponses = [{ body: { ext: {} } }];

@@ -9,7 +9,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'retailspot';
-const GVL_ID = 1319;
 
 const DEFAULT_SUBDOMAIN = 'hbapi';
 const PREPROD_SUBDOMAIN = 'hbapi-preprod';
@@ -19,7 +18,6 @@ const DEV_URL = 'http://localhost:3030/';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['rs'], // short code
   /**

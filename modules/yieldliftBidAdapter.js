@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.yieldlift.com/pbjs';
-const GVLID = 866;
 
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -11,7 +10,6 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: 'yieldlift',
-  gvlid: GVLID,
   aliases: ['yl'],
   supportedMediaTypes: [BANNER],
 

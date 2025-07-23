@@ -13,7 +13,6 @@ import { OUTSTREAM, INSTREAM } from '../src/video.js';
  */
 
 const VERSION = '0.3.0';
-const GVLID = 842;
 const NET_REVENUE = true;
 const UNDEFINED = undefined;
 const DEFAULT_CURRENCY = 'USD';
@@ -134,7 +133,6 @@ _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = a
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['pubwise'],
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
