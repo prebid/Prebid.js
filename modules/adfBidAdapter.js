@@ -94,7 +94,7 @@ export const spec = {
       const bidfloor = floorInfo?.floor;
       const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
-      const impExtData = bid.ortb2Imp?.ext?.data;
+      const impExt = bid.ortb2Imp?.ext;
 
       const imp = {
         id: id + 1,
@@ -102,7 +102,7 @@ export const spec = {
         bidfloor,
         bidfloorcur,
         ext: {
-          data: impExtData,
+          ...impExt,
           bidder: {
             inv,
             mname
