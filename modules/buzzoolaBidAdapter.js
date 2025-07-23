@@ -67,7 +67,9 @@ export const spec = {
 
     if (!Array.isArray(response)) response = [];
 
-    data.bids.forEach(bid => requestBids[bid.bidId] = bid);
+    data.bids.forEach(bid => {
+      requestBids[bid.bidId] = bid;
+    });
 
     return response.map(bid => {
       const requestBid = requestBids[bid.requestId];
