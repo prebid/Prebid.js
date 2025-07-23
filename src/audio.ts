@@ -3,7 +3,7 @@ import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 import type {AudioBid} from "./bidfactory.ts";
-import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
+import {type BaseMediaType} from "./mediaTypes.ts";
 import type {ORTBImp} from "./types/ortb/request";
 import type {AdUnitDefinition} from "./adUnits.ts";
 
@@ -18,7 +18,6 @@ const ORTB_PARAMS = [
   [ 'maxseq', isInteger ],
   [ 'poddur', isInteger ],
   [ 'protocols', isArrayOfNums ],
-  [ 'sequence', isInteger ], // deprecated
   [ 'battr', isArrayOfNums ],
   [ 'maxextended', isInteger ],
   [ 'minbitrate', isInteger ],
@@ -38,10 +37,10 @@ const ORTB_PARAMS = [
  */
 export const ORTB_AUDIO_PARAMS = new Map(ORTB_PARAMS);
 
-export type AudioContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
+export type AudioContext = typeof INSTREAM;
 
 export interface AudioMediaType extends BaseMediaType, Pick<ORTBImp['audio'], (typeof ORTB_PARAMS)[number][0]> {
-  context: AudioContext;
+  context?: AudioContext;
 }
 
 export function fillAudioDefaults(adUnit: AdUnitDefinition) {}
