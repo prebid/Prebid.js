@@ -222,7 +222,7 @@ export const cadentAdapter = {
 
 export const spec = {
   code: BIDDER_CODE,
-  alias: ALIASES,
+  aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
