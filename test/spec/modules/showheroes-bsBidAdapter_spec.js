@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/showheroes-bsBidAdapter.js'
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
@@ -90,6 +91,13 @@ const bidRequestBannerV2 = {
 }
 
 describe('shBidAdapter', () => {
+  before(() => {
+    // without this change in the Renderer.js file exception is thrown
+    // because 'adUnits' is undefined, and there is a call that does
+    // 'pbjs.adUnits.find' in the Renderer.js file
+    getGlobal().adUnits = [];
+  });
+
   it('validates request', () => {
     const bid = {
       params: {
