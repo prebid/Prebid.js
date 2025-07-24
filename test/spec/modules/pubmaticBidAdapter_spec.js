@@ -640,6 +640,76 @@ describe('PubMatic adapter', () => {
           expect(request.data).to.have.property('tmax').to.equal(2000);
         });
 
+        describe('Gzip Configuration', () => {
+          let configStub;
+          let bidderConfigStub;
+
+          beforeEach(() => {
+            configStub = sinon.stub(config, 'getConfig');
+            bidderConfigStub = sinon.stub(config, 'getBidderConfig');
+          });
+
+          afterEach(() => {
+            configStub.restore();
+            if (bidderConfigStub && bidderConfigStub.restore) {
+              bidderConfigStub.restore();
+            }
+          });
+
+          it('should enable gzip compression by default', () => {
+            // No specific configuration set, should use default
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.true;
+          });
+
+          it('should respect bidder-specific boolean configuration set via setBidderConfig', () => {
+            // Mock bidder-specific config to return false
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: false
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+
+          it('should handle bidder-specific string configuration ("true")', () => {
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: 'true'
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.true;
+          });
+
+          it('should handle bidder-specific string configuration ("false")', () => {
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: 'false'
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+
+          it('should fall back to default when bidder-specific value is invalid', () => {
+            // Mock bidder-specific config to return invalid value
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: 'invalid'
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            // Should fall back to default (true)
+            expect(request.options.endpointCompression).to.be.true;
+          });
+        });
+
         it('should remove test if pubmaticTest is not set', () => {
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('test').to.equal(undefined);
