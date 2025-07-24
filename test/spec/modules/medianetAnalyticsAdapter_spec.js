@@ -453,7 +453,7 @@ describe('Media.net Analytics Adapter', function () {
       // Set config required for vastTrackerHandler
       config.setConfig({
         cache: {
-          url: 'http://test.cache.url/endpoint'
+          url: 'https://test.cache.url/endpoint'
         }
       });
     });

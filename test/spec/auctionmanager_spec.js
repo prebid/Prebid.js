@@ -273,7 +273,7 @@ describe('auctionmanager.js', function () {
       it('No bidder level configuration defined - default for video', function () {
         config.setConfig({
           cache: {
-            url: 'http://test.cache.url/endpoint'
+            url: 'https://test.cache.url/endpoint'
           }
         });
         $$PREBID_GLOBAL$$.bidderSettings = {};
@@ -366,7 +366,7 @@ describe('auctionmanager.js', function () {
       it('Custom configuration for all bidders with video bid', function () {
         config.setConfig({
           cache: {
-            url: 'http://test.cache.url/endpoint'
+            url: 'https://test.cache.url/endpoint'
           }
         });
         const videoBid = utils.deepClone(bid);
@@ -1968,7 +1968,7 @@ describe('auctionmanager.js', function () {
         doneSpy = sinon.spy();
         config.setConfig({
           cache: {
-            url: 'http://test.cache.url/endpoint'
+            url: 'https://test.cache.url/endpoint'
           }
         });
       });
