@@ -1,5 +1,5 @@
-import * as equativUtils from "../../../../libraries/equativUtils/equativUtils";
-import { storage } from "../../../../modules/equativBidAdapter";
+import * as equativUtils from "../../../../libraries/equativUtils/equativUtils.js";
+import { storage } from "../../../../modules/equativBidAdapter.js";
 
 describe('equativUtils', () => {
   describe('prepareSplitImps', () => {
