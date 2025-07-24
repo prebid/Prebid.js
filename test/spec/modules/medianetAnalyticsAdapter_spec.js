@@ -453,7 +453,7 @@ describe('Media.net Analytics Adapter', function () {
       // Set config required for vastTrackerHandler
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'http://test.cache.url/endpoint'
         }
       });
     });

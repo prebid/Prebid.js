@@ -50,7 +50,7 @@ describe('adpod.js', function () {
       clock = sinon.useFakeTimers();
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'http://test.cache.url/endpoint'
         }
       });
     });
