@@ -522,6 +522,7 @@ describe('Yandex adapter', function () {
               price: 0.3,
               crid: 321,
               adm: '<!-- HTML/JS -->',
+              mtype: 1,
               w: 300,
               h: 250,
               adomain: [
@@ -577,6 +578,7 @@ describe('Yandex adapter', function () {
               impid: 'videoBid1',
               price: 1.50,
               adm: '<VAST version="3.0"></VAST>',
+              mtype: 2,
               w: 640,
               h: 480,
               adomain: ['advertiser.com'],
@@ -682,6 +684,7 @@ describe('Yandex adapter', function () {
                   ],
                   adid: 'yabs.123=',
                   adm: JSON.stringify(nativeAdmResponce),
+                  mtype: 4,
                 },
               ],
             }],
@@ -743,6 +746,7 @@ describe('Yandex adapter', function () {
                     impid: 1,
                     price: 0.3,
                     adm: JSON.stringify(nativeAdmResponse),
+                    mtype: 4,
                   },
                 ],
               },
@@ -782,7 +786,8 @@ describe('Yandex adapter', function () {
               bid: [{
                 impid: 1,
                 price: 0.3,
-                adm: JSON.stringify(nativeAdmResponse)
+                adm: JSON.stringify(nativeAdmResponse),
+                mtype: 4,
               }]
             }]
           }
@@ -809,7 +814,8 @@ describe('Yandex adapter', function () {
               bid: [{
                 impid: 1,
                 price: 0.3,
-                adm: JSON.stringify(nativeAdmResponse)
+                adm: JSON.stringify(nativeAdmResponse),
+                mtype: 4,
               }]
             }]
           }

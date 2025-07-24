@@ -154,7 +154,9 @@ function evaluateSizeConfig(configs) {
         }
         ['labels', 'sizesSupported'].forEach(
           type => (config[type] || []).forEach(
-            thing => results[type][thing] = true
+            thing => {
+              results[type][thing] = true
+            }
           )
         );
       }

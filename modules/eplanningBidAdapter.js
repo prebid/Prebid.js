@@ -213,7 +213,9 @@ function isTestRequest(bidRequests) {
 }
 function getTestConfig(bidRequests) {
   let isv;
-  bidRequests.forEach(br => isv = isv || br.params.isv);
+  bidRequests.forEach(br => {
+    isv = isv || br.params.isv;
+  });
   return {
     t: true,
     isv: (isv || DEFAULT_ISV)

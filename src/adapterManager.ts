@@ -669,7 +669,6 @@ const adapterManager = {
     // handle client adapter requests
     clientBidderRequests.forEach(bidderRequest => {
       bidderRequest.start = timestamp();
-      // TODO : Do we check for bid in pool from here and skip calling adapter again ?
       const adapter = _bidderRegistry[bidderRequest.bidderCode];
       config.runWithBidder(bidderRequest.bidderCode, () => {
         logMessage(`CALLING BIDDER`);

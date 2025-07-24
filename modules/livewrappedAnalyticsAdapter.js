@@ -17,6 +17,7 @@ const ADRENDERFAILEDSENT = 16;
 let initOptions;
 const prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
+const CACHE_CLEANUP_DELAY = BID_WON_TIMEOUT * 3;
 
 const cache = {
   auctions: {}
@@ -189,6 +190,12 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+
+  setTimeout(() => {
+    sentRequests.auctionIds.forEach(id => {
+      delete cache.auctions[id];
+    });
+  }, CACHE_CLEANUP_DELAY);
 };
 
 function getMediaTypeEnum(mediaType) {
@@ -426,5 +433,11 @@ adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
 });
+
+export function getAuctionCache() {
+  return cache.auctions;
+}
+
+export { CACHE_CLEANUP_DELAY };
 
 export default livewrappedAnalyticsAdapter;

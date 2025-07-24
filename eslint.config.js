@@ -99,6 +99,7 @@ module.exports = [
       'comma-dangle': 'off',
       semi: 'off',
       'no-undef': 2,
+      'no-console': 'error',      
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
@@ -121,7 +122,6 @@ module.exports = [
       // also see: reality. These are here to stay.
       // we're working on them though :)
 
-      'no-return-assign': 'off',
       'no-useless-escape': 'off',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
@@ -241,6 +241,7 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      'no-return-assign': 'off',
       'camelcase': 'off'
     }
   },
