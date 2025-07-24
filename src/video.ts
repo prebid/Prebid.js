@@ -7,6 +7,7 @@ import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {Size} from "./types/common.d.ts";
 import type {AdUnitDefinition} from "./adUnits.ts";
+import {getGlobalVarName} from "./options/global.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -169,8 +170,8 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling either prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
-        or local cache with $$PREBID_GLOBAL$$.setConfig({ cache: { useLocal: true }});
+        Try enabling either prebid cache with ${getGlobalVarName()}.setConfig({ cache: {url: "..."} });
+        or local cache with ${getGlobalVarName()}.setConfig({ cache: { useLocal: true }});
       `);
       return false;
     }

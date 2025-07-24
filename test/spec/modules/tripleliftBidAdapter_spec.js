@@ -5,6 +5,7 @@ import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 import prebid from '../../../package.json';
 import * as utils from 'src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
@@ -619,7 +620,7 @@ describe('triplelift adapter', function () {
       sandbox = sinon.createSandbox();
       logErrorSpy = sinon.spy(utils, 'logError');
 
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         triplelift: {
           storageAllowed: true
         }
@@ -628,7 +629,7 @@ describe('triplelift adapter', function () {
     afterEach(() => {
       sandbox.restore();
       utils.logError.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('exists and is an object', function () {

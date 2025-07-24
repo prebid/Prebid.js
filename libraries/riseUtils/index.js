@@ -13,6 +13,7 @@ import {
 import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
 import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
+import {getGlobalVarName} from '../../src/options/global.js';
 
 export const makeBaseSpec = (baseUrl, modes) => {
   return {
@@ -367,7 +368,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
 
   const generalParams = {
     wrapper_type: 'prebidjs',
-    wrapper_vendor: '$$PREBID_GLOBAL$$',
+    wrapper_vendor: getGlobalVarName(),
     wrapper_version: '$prebid.version$',
     adapter_version: adapVer,
     auction_start: bidderRequest.auctionStart,

@@ -6,13 +6,14 @@ import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config as prebidConfig } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
+import {getGlobalVarName} from '../src/options/global.js';
 
 const ANALYTICS_TYPE = 'endpoint';
 const URL = 'https://wba.liadm.com/analytic-events';
 const GVL_ID = 148;
 const ADAPTER_CODE = 'liveintent';
 const { AUCTION_INIT, BID_WON } = EVENTS;
-const INTEGRATION_ID = '$$PREBID_GLOBAL$$';
+const INTEGRATION_ID = getGlobalVarName();
 
 let partnerIdFromUserIdConfig;
 let sendAuctionInitEvents;

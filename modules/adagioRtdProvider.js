@@ -30,6 +30,7 @@ import {
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getGlobalVarName} from '../src/options/global.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -446,7 +447,7 @@ function storeRequestInAdagioNS(bid, config) {
       bidderRequestsCount,
       ortb2: ortb2Data,
       ortb2Imp: ortb2ImpData,
-      localPbjs: '$$PREBID_GLOBAL$$',
+      localPbjs: getGlobalVarName(),
       localPbjsRef: getGlobal(),
       organizationId,
       site

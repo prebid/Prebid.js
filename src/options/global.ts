@@ -11,7 +11,7 @@ export function getGlobalVarName() {
   return globalName;
 }
 
-export function defineGlobal(defineGlobal: boolean | null) {
+export function defineGlobal(defineGlobal?: boolean) {
   if (defineGlobal != null) {
     shouldDefine = defineGlobal;
   }

@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/craftBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('craftAdapter', function () {
   const adapter = newBidder(spec);
@@ -14,7 +15,7 @@ describe('craftAdapter', function () {
 
   describe('isBidRequestValid', function () {
     before(function() {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         craft: {
           storageAllowed: true
         }
@@ -24,7 +25,7 @@ describe('craftAdapter', function () {
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       window.context = this.windowContext;
     });
     const bid = {
@@ -67,14 +68,14 @@ describe('craftAdapter', function () {
 
   describe('buildRequests', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         craft: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const bidRequests = [{
       bidder: 'craft',

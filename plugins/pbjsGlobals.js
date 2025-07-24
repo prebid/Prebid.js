@@ -6,6 +6,7 @@ const FEATURES_GLOBAL = 'FEATURES';
 
 module.exports = function(api, options) {
   const {pbGlobal, defineGlobal, features, distUrlBase, skipCalls} = buildOptions(options);
+
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
@@ -14,6 +15,11 @@ module.exports = function(api, options) {
     '$$PREBID_DIST_URL_BASE$$': distUrlBase,
     '$$LIVE_INTENT_MODULE_MODE$$': (process && process.env && process.env.LiveConnectMode) || 'standard'
   };
+
+  let allowIn = {
+    '$$PREBID_GLOBAL$$': './src/options',
+    '$$DEFINE_PREBID_GLOBAL$$': './src/options',
+  }
 
   let identifierToStringLiteral = [
     '$$REPO_AND_VERSION$$'
@@ -49,6 +55,13 @@ module.exports = function(api, options) {
     }
   }
 
+  function checkAllowedDir(name, filename) {
+    const allowedIn = allowIn[name];
+    if (allowedIn && path.relative(path.resolve(allowedIn), filename).startsWith('..')) {
+      throw new Error(`Macro '${name}' is not allowed outside of ${allowedIn}`)
+    }
+  }
+
   return {
     visitor: {
       Program(path, state) {
@@ -66,9 +79,10 @@ module.exports = function(api, options) {
       },
       ImportDeclaration: translateToJs,
       ExportDeclaration: translateToJs,
-      StringLiteral(path) {
+      StringLiteral(path, state) {
         Object.keys(replace).forEach(name => {
           if (path.node.value.includes(name)) {
+            checkAllowedDir(name, state.filename);
             path.node.value = path.node.value.replace(
               new RegExp(escapeRegExp(name), 'g'),
               replace[name].toString()
@@ -76,12 +90,13 @@ module.exports = function(api, options) {
           }
         });
       },
-      TemplateLiteral(path) {
+      TemplateLiteral(path, state) {
         path.traverse({
           TemplateElement(path) {
             Object.keys(replace).forEach(name => {
               ['raw', 'cooked'].forEach(type => {
                 if (path.node.value[type].includes(name)) {
+                  checkAllowedDir(name, state.filename);
                   path.node.value[type] = path.node.value[type].replace(
                     new RegExp(escapeRegExp(name), 'g'),
                     replace[name]
@@ -92,9 +107,10 @@ module.exports = function(api, options) {
           }
         });
       },
-      Identifier(path) {
+      Identifier(path, state) {
         Object.keys(replace).forEach(name => {
           if (path.node.name === name) {
+            checkAllowedDir(name, state.filename);
             if (identifierToStringLiteral.includes(name)) {
               path.replaceWith(
                 t.StringLiteral(replace[name])
