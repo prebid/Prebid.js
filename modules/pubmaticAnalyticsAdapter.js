@@ -29,6 +29,7 @@ const REQUEST_ERROR = 'request-error';
 const TIMEOUT_ERROR = 'timeout-error';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
+const EMPTY_STRING = '';
 // todo: input profileId and profileVersionId ; defaults to zero or one
 const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
@@ -39,6 +40,7 @@ let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
+let _country = '';
 
 /// /////////// HELPER FUNCTIONS //////////////
 
@@ -274,10 +276,6 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   const { auctionId } = event;
   const auctionCache = cache.auctions[auctionId];
   if (!auctionCache || auctionCache.sent) return;
-  // TODO: Change logic to add ctr
-  const country = event.bidderRequests?.length > 0
-    ? event.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext?.ctr || ''
-    : '';
   // Fetching slotinfo at event level results to undefined so Running loop over the codes to get the GPT slot name.
   Object.entries(auctionCache?.adUnitCodes || {}).forEach(([adUnitCode, adUnit]) => {
     let origAdUnit = getAdUnit(cache.auctions[auctionId]?.origAdUnits, adUnitCode) || {};
@@ -301,7 +299,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   const payload = {
     sd: auctionCache.adUnitCodes,
     fd: getFeatureLevelDetails(auctionCache),
-    rd: { ctr: country || '', ...getRootLevelDetails(auctionCache, auctionId) }
+    rd: { ctr: _country || '', ...getRootLevelDetails(auctionCache, auctionId) }
   };
   auctionCache.sent = true;
 
@@ -315,7 +313,6 @@ function executeBidsLoggerCall(event, highestCpmBids) {
 function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.wonBidId;
   const winningBids = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bids[winningBidId];
-  const country = cache.auctions[auctionId]?.ortb2?.user?.ext?.ctr || ''
   if (!winningBids) {
     logWarn(LOG_PRE_FIX + 'Could not find winningBids for : ', auctionId);
     return;
@@ -336,7 +333,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let auctionCache = cache.auctions[auctionId];
   const payload = {
     fd: getFeatureLevelDetails(auctionCache),
-    rd: { ctr: country || '', ...getRootLevelDetails(auctionCache, auctionId) },
+    rd: { ctr: _country || '', ...getRootLevelDetails(auctionCache, auctionId) },
     sd: {
       adapterName,
       adUnitId,
@@ -350,6 +347,12 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     endpoint: END_POINT_WIN_BID_LOGGER,
     loggerType: 'bid won logger'
   });
+}
+
+function readSaveCountry(e) {
+  _country = e.bidderRequests?.length > 0
+    ? e.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext?.ctr || EMPTY_STRING
+    : EMPTY_STRING;
 }
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
@@ -484,6 +487,7 @@ const eventHandlers = {
   auctionEnd: (args) => {
     // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
     let highestCpmBids = getGlobal().getHighestCpmBids() || [];
+    readSaveCountry(args);
     setTimeout(() => {
       executeBidsLoggerCall.call(this, args, highestCpmBids);
     }, (cache.auctions[args.auctionId]?.bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));

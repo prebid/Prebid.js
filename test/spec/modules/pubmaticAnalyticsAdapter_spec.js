@@ -577,12 +577,52 @@ describe('pubmatic analytics adapter', function () {
         testGroupId: 15
       });
 
+      var mockAuctionEnd = {
+        "auctionId": MOCK.BID_REQUESTED.auctionId,
+        "bidderRequests": [
+            {
+                "bidderCode": "pubmatic",
+                "auctionId": MOCK.BID_REQUESTED.auctionId,
+                "bidderRequestId": MOCK.BID_REQUESTED.bidderRequestId,
+                "bids": [
+                    {
+                        "bidder": "pubmatic",
+                        "auctionId": MOCK.BID_REQUESTED.auctionId,
+                        "adUnitCode": "div2",
+                        "transactionId": "bac39250-1006-42c2-b48a-876203505f95",
+                        "adUnitId": "a36be277-84ce-42aa-b840-e95dbd104a3f",
+                        "sizes": [
+                            [
+                                728,
+                                90
+                            ]
+                        ],
+                        "bidId": "9cfd58f75514bc8",
+                        "bidderRequestId": "857a9c3758c5cc8",
+                        "timeout": 3000
+                    }
+                ],
+                "auctionStart": 1753342540904,
+                "timeout": 3000,
+                "ortb2": {
+                    "source": {},
+                    "user": {
+                        "ext": {
+                            "ctr": "US"
+                        }
+                    }
+                },
+                "start": 1753342540938
+            }
+        ]
+    }
+
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
       events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(AUCTION_END, mockAuctionEnd);
       events.emit(SET_TARGETING, MOCK.SET_TARGETING);
       events.emit(BID_WON, MOCK.BID_WON[0]);
       events.emit(BID_WON, MOCK.BID_WON[1]);
@@ -608,6 +648,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.rd.tgid).to.equal(15);
       expect(data.fd.bdv.lip).to.deep.equal(['pubmaticId']);
       expect(data.rd.s2sls).to.deep.equal(['pubmatic']);
+      expect(data.rd.ctr).to.equal('US');
 
       // floor data in featureList
       expect(data.fd.flr.modelVersion).to.equal('floorModelTest');
@@ -627,14 +668,18 @@ describe('pubmatic analytics adapter', function () {
       expect(data.sd).to.be.an('object');
       expect(Object.keys(data.sd).length).to.equal(2);
 
-      // tracker slot1
-      let firstTracker = requests[0].url;
-      expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
-      data = {};
-      firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
-
-      expect(data.v).to.equal('1');
-      expect(data.psrc).to.equal('web');
+      // tracker slot1 
+      let firstTracker = requests[0];
+      expect(firstTracker.url).to.equal('https://t.pubmatic.com/wt?v=1&psrc=web');
+      let trackerData = getLoggerJsonFromRequest(firstTracker.requestBody);
+      expect(trackerData).to.have.property('sd');
+      expect(trackerData).to.have.property('fd');
+      expect(trackerData).to.have.property('rd');
+      expect(trackerData.rd.pubid).to.equal('9999');
+      expect(trackerData.rd.pid).to.equal('1111');
+      expect(trackerData.rd.pdvid).to.equal('20');
+      expect(trackerData.rd.purl).to.equal('http://www.test.com/page.html');
+      expect(trackerData.rd.ctr).to.equal('US');
     });
 
     it('Logger: log floor fields when prebids floor shows setConfig in location property', function () {
