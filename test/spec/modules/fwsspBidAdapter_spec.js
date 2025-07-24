@@ -83,11 +83,11 @@ describe('fwsspBidAdapter', () => {
         'bidder': 'fwssp',
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
-          'banner': {
-            'sizes': [
-              [300, 250], [300, 600]
-            ]
-          }
+        'banner': {
+          'sizes': [
+            [300, 250], [300, 600]
+          ]
+        }
         },
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
@@ -153,7 +153,7 @@ describe('fwsspBidAdapter', () => {
       expect(actualDataString).to.include('vprn=');
       expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
       expect(actualDataString).to.include('mode=on-demand');
-      expect(actualDataString).to.include(`vclr=js-7.10.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include(`vclr=js-7.10.1-prebid-${pbjs.version};`);
       expect(actualDataString).to.include('_fw_player_width=1920');
       expect(actualDataString).to.include('_fw_player_height=1080');
       expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
@@ -176,7 +176,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.10.1-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -373,7 +373,7 @@ describe('fwsspBidAdapter', () => {
       expect(actualDataString).to.include('vprn=');
       expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
       expect(actualDataString).to.include('mode=live');
-      expect(actualDataString).to.include(`vclr=js-7.10.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include(`vclr=js-7.10.1-prebid-${pbjs.version};`);
       expect(actualDataString).to.include('_fw_player_width=1920');
       expect(actualDataString).to.include('_fw_player_height=1080');
       expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
@@ -399,7 +399,7 @@ describe('fwsspBidAdapter', () => {
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
 
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.1-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -425,7 +425,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest2);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.1-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -488,7 +488,7 @@ describe('fwsspBidAdapter', () => {
           'flags': '+play',
           'videoAssetId': '0',
           'mode': 'live',
-          'vclr': 'js-7.10.0-prebid-',
+          'vclr': 'js-7.10.1-prebid-',
           'timePosition': 120,
           'minD': 30,
           'maxD': 60,
@@ -509,7 +509,7 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: ''
         }
       };
-      expect(getSDKVersion(bid)).to.equal('7.10.0');
+      expect(getSDKVersion(bid)).to.equal('7.10.1');
     });
 
     it('should return the correct sdk version when sdkVersion is higher than the default', () => {
@@ -527,7 +527,7 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: '7.9.0'
         }
       };
-      expect(getSDKVersion(bid)).to.equal('7.10.0');
+      expect(getSDKVersion(bid)).to.equal('7.10.1');
     });
 
     it('should return the default sdk version when sdkVersion is an invalid string', () => {
@@ -536,7 +536,7 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: 'abcdef'
         }
       };
-      expect(getSDKVersion(bid)).to.equal('7.10.0');
+      expect(getSDKVersion(bid)).to.equal('7.10.1');
     });
 
     it('should return the correct sdk version when sdkVersion starts with v', () => {
@@ -555,7 +555,7 @@ describe('fwsspBidAdapter', () => {
 `<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
   <script type='text/javascript'>
     const script = document.createElement('script');
-    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.0/AdManager-prebid.js';
+    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.1/AdManager-prebid.js';
     script.async = true;
 
     const topWindow = function() {
@@ -580,7 +580,10 @@ describe('fwsspBidAdapter', () => {
       startMuted: true,
       playerParams: undefined,
       format: 'outstream',
-      listeners: listeners
+      listeners: listeners,
+      skip: undefined,
+      skipmin: undefined,
+      skipafter: undefined
     };
 
     const timeoutId = setTimeout(() => {
@@ -624,7 +627,7 @@ describe('fwsspBidAdapter', () => {
 `<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
   <script type='text/javascript'>
     const script = document.createElement('script');
-    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.0/AdManager-prebid.js';
+    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.1/AdManager-prebid.js';
     script.async = true;
 
     const topWindow = function() {
@@ -649,7 +652,10 @@ describe('fwsspBidAdapter', () => {
       startMuted: false,
       playerParams: {"test-param":"test-value"},
       format: 'outstream',
-      listeners: listeners
+      listeners: listeners,
+      skip: undefined,
+      skipmin: undefined,
+      skipafter: undefined
     };
 
     const timeoutId = setTimeout(() => {
@@ -697,7 +703,7 @@ describe('fwsspBidAdapter', () => {
 `<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
   <script type='text/javascript'>
     const script = document.createElement('script');
-    script.src = 'https://adm.stg.fwmrm.net/libs/adm/7.10.0/AdManager-prebid.js';
+    script.src = 'https://adm.stg.fwmrm.net/libs/adm/7.10.1/AdManager-prebid.js';
     script.async = true;
 
     const topWindow = function() {
@@ -722,7 +728,10 @@ describe('fwsspBidAdapter', () => {
       startMuted: true,
       playerParams: undefined,
       format: 'outstream',
-      listeners: listeners
+      listeners: listeners,
+      skip: undefined,
+      skipmin: undefined,
+      skipafter: undefined
     };
 
     const timeoutId = setTimeout(() => {
@@ -793,7 +802,10 @@ describe('fwsspBidAdapter', () => {
       startMuted: true,
       playerParams: undefined,
       format: 'outstream',
-      listeners: listeners
+      listeners: listeners,
+      skip: undefined,
+      skipmin: undefined,
+      skipafter: undefined
     };
 
     const timeoutId = setTimeout(() => {
@@ -828,6 +840,158 @@ describe('fwsspBidAdapter', () => {
         params: {
           env: 'stg',
           sdkVersion: '7.11.0'
+        },
+        adUnitCode: 'test'
+      }
+      const actualAdHtml = formatAdHTML(bidRequest, [640, 480], '<VAST></VAST>');
+      expect(actualAdHtml).to.deep.equal(expectedAdHtml)
+    });
+
+    it('should include skip parameters in player config when provided in params', () => {
+      const expectedAdHtml =
+`<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
+  <script type='text/javascript'>
+    const script = document.createElement('script');
+    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.1/AdManager-prebid.js';
+    script.async = true;
+
+    const topWindow = function() {
+      let res = window;
+      try {
+        while (top !== res) {
+          if (res.parent.location.href.length) {
+            res = res.parent;
+          }
+        }
+      } catch (e) {}
+      return res;
+    }();
+    const cache = topWindow.fwssp_cache ? topWindow.fwssp_cache['test'] : null;
+    const vastResponse = cache ? cache.response : null;
+    const listeners = cache ? cache.listeners : null;
+
+    const config = {
+      displayBaseId: 'fwssp_display_base',
+      vastResponse: vastResponse,
+      showMuteButton: false,
+      startMuted: true,
+      playerParams: undefined,
+      format: 'outstream',
+      listeners: listeners,
+      skip: 1,
+      skipmin: 5,
+      skipafter: 10
+    };
+
+    const timeoutId = setTimeout(() => {
+      console.warn('MRM AdManager load timeout: 5000 ms');
+      cleanup();
+    }, 5000);
+
+    script.onload = () => {
+      clearTimeout(timeoutId);
+      this.prebidPlayer = window.tv.freewheel.SDK.newPrebidPlayer(config);
+    };
+
+    script.onerror = (err) => {
+      cleanup();
+      console.warn('MRM AdManager load failed:', err.message);
+    };
+
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      script.remove();
+      var displayBase = document.getElementById('fwssp_display_base');
+      if (displayBase) {
+        displayBase.remove();
+      }
+    };
+
+    document.head.appendChild(script);
+  </script>
+</div>`;
+
+      const bidRequest = {
+        params: {
+          skip: 1,
+          skipmin: 5,
+          skipafter: 10
+        },
+        adUnitCode: 'test'
+      }
+      const actualAdHtml = formatAdHTML(bidRequest, [640, 480], '<VAST></VAST>');
+      expect(actualAdHtml).to.deep.equal(expectedAdHtml)
+    });
+
+    it('should include only defined skip parameters in player config from params', () => {
+      const expectedAdHtml =
+`<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
+  <script type='text/javascript'>
+    const script = document.createElement('script');
+    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.1/AdManager-prebid.js';
+    script.async = true;
+
+    const topWindow = function() {
+      let res = window;
+      try {
+        while (top !== res) {
+          if (res.parent.location.href.length) {
+            res = res.parent;
+          }
+        }
+      } catch (e) {}
+      return res;
+    }();
+    const cache = topWindow.fwssp_cache ? topWindow.fwssp_cache['test'] : null;
+    const vastResponse = cache ? cache.response : null;
+    const listeners = cache ? cache.listeners : null;
+
+    const config = {
+      displayBaseId: 'fwssp_display_base',
+      vastResponse: vastResponse,
+      showMuteButton: false,
+      startMuted: true,
+      playerParams: undefined,
+      format: 'outstream',
+      listeners: listeners,
+      skip: 0,
+      skipmin: undefined,
+      skipafter: 15
+    };
+
+    const timeoutId = setTimeout(() => {
+      console.warn('MRM AdManager load timeout: 5000 ms');
+      cleanup();
+    }, 5000);
+
+    script.onload = () => {
+      clearTimeout(timeoutId);
+      this.prebidPlayer = window.tv.freewheel.SDK.newPrebidPlayer(config);
+    };
+
+    script.onerror = (err) => {
+      cleanup();
+      console.warn('MRM AdManager load failed:', err.message);
+    };
+
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      script.remove();
+      var displayBase = document.getElementById('fwssp_display_base');
+      if (displayBase) {
+        displayBase.remove();
+      }
+    };
+
+    document.head.appendChild(script);
+  </script>
+</div>`;
+
+      const bidRequest = {
+        params: {
+          skip: 0,
+          skipafter: 15
+          // skipmin is intentionally omitted
         },
         adUnitCode: 'test'
       }
