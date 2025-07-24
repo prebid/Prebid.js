@@ -298,7 +298,7 @@ export const spec = {
         meta: { advertiserDomains: getAdvertiserDomain(xmlDoc) },
         dealId: getDealId(xmlDoc),
         campaignId: getCampaignId(xmlDoc),
-        bannerId: getBannerId(xmlDoc)
+        bannerId: getBannerId(xmlDoc),
       };
 
       if (bidrequest.mediaTypes.video) {
@@ -417,7 +417,10 @@ export function formatAdHTML(bidrequest, size) {
       startMuted: ${startMuted},
       playerParams: ${playerParams},
       format: 'outstream',
-      listeners: listeners
+      listeners: listeners,
+      skip: ${bidrequest.params.skip},
+      skipmin: ${bidrequest.params.skipmin},
+      skipafter: ${bidrequest.params.skipafter}
     };
 
     const timeoutId = setTimeout(() => {
@@ -463,7 +466,7 @@ function getSdkUrl(bidrequest) {
  * @returns {string} The SDK version to use, defaults to '7.10.0' if version parsing fails
  */
 export function getSDKVersion(bidRequest) {
-  const DEFAULT = '7.10.0';
+  const DEFAULT = '7.10.1';
 
   try {
     const paramVersion = getSdkVersionFromBidRequest(bidRequest);
