@@ -192,7 +192,14 @@ export function injectOrtbScores(reqBidsConfigObj) {
     adUnit.ortb2Imp = adUnit.ortb2Imp || {};
     adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
     adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
-
+    // Example structure of optimeraTargeting[auCode] and assorted comma separated scoring data:
+    // optimeraTargeting['some-div']:
+    // {
+    //   Z,
+    //   A1,
+    //   L_123,
+    //   0.10,
+    // }
     if (auCode && optimeraTargeting[auCode]) {
       mergeDeep(adUnit.ortb2Imp.ext.data, {
         optimera: optimeraTargeting[auCode]
