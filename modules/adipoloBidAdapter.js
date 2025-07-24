@@ -5,7 +5,7 @@ import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js'
 
 const BIDDER_CODE = 'adipolo';
 const ENDPOINT = 'https://prebid.adipolo.live';
-const GVL_ID = 1456
+const GVL_ID = 1456;
 
 function isBidRequestValid(bid) {
   if (bid && typeof bid.params !== 'object') {
