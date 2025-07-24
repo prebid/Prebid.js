@@ -2,7 +2,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {
   deepAccess,
-  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   isArray,
@@ -489,7 +488,6 @@ function _isViewabilityMeasurable(element) {
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
-  console.log(JSON.stringify(element), w, h, topWin.document.visibilityState);
   return topWin.document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
     : 0;

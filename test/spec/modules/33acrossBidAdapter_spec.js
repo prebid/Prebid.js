@@ -176,7 +176,6 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-
     this.withUspConsent = (consent) => {
       utils.mergeDeep(ttxRequest, {
         regs: {
@@ -844,7 +843,6 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(this.element, { width: 800, height: 800 });
 
-        console.log('right before');
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
@@ -1569,7 +1567,7 @@ describe('33acrossBidAdapter:', function () {
             maxduration: 45,
             placement: 1,
             plcmt: 1,
-            protocols: [2,3],
+            protocols: [2, 3],
             startdelay: -2,
             skip: true,
             skipmin: 5,
