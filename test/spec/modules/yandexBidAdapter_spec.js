@@ -522,6 +522,7 @@ describe('Yandex adapter', function () {
               price: 0.3,
               crid: 321,
               adm: '<!-- HTML/JS -->',
+              mtype: 1,
               w: 300,
               h: 250,
               adomain: [
@@ -529,6 +530,7 @@ describe('Yandex adapter', function () {
               ],
               adid: 'yabs.123=',
               nurl: 'https://example.com/nurl/?price=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}',
+              lurl: 'https://example.com/nurl/?reason=${AUCTION_LOSS}',
             }
           ]
         }],
@@ -555,6 +557,7 @@ describe('Yandex adapter', function () {
       expect(rtbBid.netRevenue).to.equal(true);
       expect(rtbBid.ttl).to.equal(180);
       expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
+      expect(rtbBid.lurl).to.exist;
 
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
@@ -575,6 +578,7 @@ describe('Yandex adapter', function () {
               impid: 'videoBid1',
               price: 1.50,
               adm: '<VAST version="3.0"></VAST>',
+              mtype: 2,
               w: 640,
               h: 480,
               adomain: ['advertiser.com'],
@@ -680,6 +684,7 @@ describe('Yandex adapter', function () {
                   ],
                   adid: 'yabs.123=',
                   adm: JSON.stringify(nativeAdmResponce),
+                  mtype: 4,
                 },
               ],
             }],
@@ -741,6 +746,7 @@ describe('Yandex adapter', function () {
                     impid: 1,
                     price: 0.3,
                     adm: JSON.stringify(nativeAdmResponse),
+                    mtype: 4,
                   },
                 ],
               },
@@ -780,7 +786,8 @@ describe('Yandex adapter', function () {
               bid: [{
                 impid: 1,
                 price: 0.3,
-                adm: JSON.stringify(nativeAdmResponse)
+                adm: JSON.stringify(nativeAdmResponse),
+                mtype: 4,
               }]
             }]
           }
@@ -807,7 +814,8 @@ describe('Yandex adapter', function () {
               bid: [{
                 impid: 1,
                 price: 0.3,
-                adm: JSON.stringify(nativeAdmResponse)
+                adm: JSON.stringify(nativeAdmResponse),
+                mtype: 4,
               }]
             }]
           }

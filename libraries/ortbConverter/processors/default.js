@@ -88,7 +88,9 @@ export const DEFAULT_PROCESSORS = {
           ttl: bid.exp || context.ttl,
           netRevenue: context.netRevenue,
         }).filter(([k, v]) => typeof v !== 'undefined')
-          .forEach(([k, v]) => bidResponse[k] = v);
+          .forEach(([k, v]) => {
+            bidResponse[k] = v;
+          });
         if (!bidResponse.meta) {
           bidResponse.meta = {};
         }
