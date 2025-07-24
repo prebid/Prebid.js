@@ -27,6 +27,7 @@ function isBidRequestValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1456,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT),
