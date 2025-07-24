@@ -56,6 +56,7 @@ const DEBUG_QUERY_PARAM_MAP = {
   'apn_debug_member_id': 'member_id',
   'apn_debug_timeout': 'debug_timeout'
 };
+
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -79,6 +80,7 @@ const VIDEO_MAPPING = {
     'accompanying_content_post_roll': 10
   }
 };
+
 const NATIVE_MAPPING = {
   body: 'description',
   body2: 'desc2',
