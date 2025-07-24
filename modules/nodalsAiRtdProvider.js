@@ -124,7 +124,7 @@ class NodalsAiRtdProvider {
           callback,
           userConsent,
           storedData
-       );
+        );
       } catch (error) {
         logError(`Error getting bid request data: ${error}`);
         callback();
@@ -392,7 +392,9 @@ class NodalsAiRtdProvider {
     try {
       data = JSON.parse(response);
     } catch (error) {
-      throw `Error parsing response: ${error}`;
+      const msg = `Error parsing response: ${error}`;
+      logError(msg);
+      return;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
     this.#loadAdLibraries(data.deps || []);

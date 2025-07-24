@@ -80,7 +80,7 @@ export const spec = {
 
     serverResponse.body.bids.map((bid) => {
       const { cpm, width, height, currency, ad, meta } = bid;
-      let bidResponse = {
+      const bidResponse = {
         requestId: id,
         cpm,
         width,
@@ -132,7 +132,7 @@ export const spec = {
 };
 
 function buildRequestData(bid, bidderRequest) {
-  let payloadObject = buildBaseObject(bid, bidderRequest);
+  const payloadObject = buildBaseObject(bid, bidderRequest);
 
   if (bid.mediaTypes.banner) {
     return buildBannerObject(bid, payloadObject);
@@ -371,7 +371,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
 }
 
 function cleanObject(data) {
-  for (let key in data) {
+  for (const key in data) {
     if (typeof data[key] == 'object') {
       cleanObject(data[key]);
 

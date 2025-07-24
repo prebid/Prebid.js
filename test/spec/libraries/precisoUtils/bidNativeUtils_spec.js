@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import { NATIVE } from '../../../../src/mediaTypes';
-import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils';
+import { NATIVE } from '../../../../src/mediaTypes.js';
+import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils.js';
 
 const DEFAULT_PRICE = 1
 const DEFAULT_BANNER_WIDTH = 300
@@ -36,7 +36,7 @@ describe('bidNativeUtils', function () {
           }],
         }
       }
-      let bid = {
+      const bid = {
         id: '123',
         impid: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
         price: DEFAULT_PRICE,
@@ -48,7 +48,7 @@ describe('bidNativeUtils', function () {
         adomain: [],
       }
 
-      let expectedResponse = {
+      const expectedResponse = {
         requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
         mediaType: NATIVE,
         cpm: DEFAULT_PRICE,
@@ -70,7 +70,7 @@ describe('bidNativeUtils', function () {
         }
       }
 
-      let result = interpretNativeBid(bid);
+      const result = interpretNativeBid(bid);
 
       expect(Object.keys(result)).to.have.members(Object.keys(expectedResponse));
     })

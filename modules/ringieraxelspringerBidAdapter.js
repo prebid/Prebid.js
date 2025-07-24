@@ -292,7 +292,7 @@ const getSlots = (bidRequests) => {
 
 const getGdprParams = (bidderRequest) => {
   const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-  let consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+  const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
   let queryString = '';
   if (gdprApplies !== undefined) {
     queryString += `&gdpr_applies=${encodeURIComponent(gdprApplies)}`;
@@ -339,7 +339,7 @@ const getAdUnitCreFormat = (adUnit) => {
   }
 
   let creFormat = 'html';
-  let mediaTypes = Object.keys(adUnit.mediaTypes);
+  const mediaTypes = Object.keys(adUnit.mediaTypes);
 
   if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
     creFormat = 'native';

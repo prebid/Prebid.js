@@ -366,7 +366,7 @@ describe('NodalsAI RTD Provider', () => {
     describe('when performing requests to the publisher endpoint', () => {
       it('should construct the correct URL to the default origin', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         expect(request.method).to.equal('GET');
@@ -379,7 +379,7 @@ describe('NodalsAI RTD Provider', () => {
         const config = Object.assign({}, validConfig);
         config.params.endpoint = { origin: 'http://localhost:8000' };
         nodalsAiRtdSubmodule.init(config, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         expect(request.method).to.equal('GET');
@@ -390,7 +390,7 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should construct the correct URL with the correct path', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         const requestUrl = new URL(request.url);
@@ -402,7 +402,7 @@ describe('NodalsAI RTD Provider', () => {
           consentString: 'foobarbaz',
         };
         nodalsAiRtdSubmodule.init(validConfig, generateGdprConsent(consentData));
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         const requestUrl = new URL(request.url);
@@ -419,7 +419,7 @@ describe('NodalsAI RTD Provider', () => {
     describe('when handling responses from the publisher endpoint', () => {
       it('should store successful response data in local storage', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         const storedData = JSON.parse(
@@ -438,7 +438,7 @@ describe('NodalsAI RTD Provider', () => {
         config.params.storage = { key: overrideLocalStorageKey };
         nodalsAiRtdSubmodule.init(config, permissiveUserConsent);
         server.respond();
-        let request = server.requests[0];
+        const request = server.requests[0];
         const storedData = JSON.parse(
           nodalsAiRtdSubmodule.storage.getDataFromLocalStorage(overrideLocalStorageKey)
         );

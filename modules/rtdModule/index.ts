@@ -16,7 +16,7 @@ const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-let registeredSubModules = [];
+const registeredSubModules = [];
 export let subModules = [];
 let _moduleConfig: RealTimeDataConfig;
 let _dataProviders = [];
@@ -73,17 +73,17 @@ const setEventsListeners = (function () {
 })();
 
 type RealTimeDataConfig = {
-    dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
-    /**
-     * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
-     */
-    auctionDelay?: number;
+  dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
+  /**
+   * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
+   */
+  auctionDelay?: number;
 }
 
 declare module '../../src/config' {
-    interface Config {
-        [MODULE_NAME]?: RealTimeDataConfig;
-    }
+  interface Config {
+    [MODULE_NAME]?: RealTimeDataConfig;
+  }
 }
 
 export function init(config) {
@@ -117,7 +117,7 @@ function getConsentData() {
  */
 function initSubModules() {
   _userConsent = getConsentData();
-  let subModulesByOrder = [];
+  const subModulesByOrder = [];
   _dataProviders.forEach(provider => {
     const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
     const initResponse = sm && sm.init && sm.init(provider, _userConsent);
@@ -213,7 +213,7 @@ export function getAdUnitTargeting(auction) {
   if (!adUnitCodes) {
     return;
   }
-  let targeting = [];
+  const targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
     const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
     if (smTargeting && typeof smTargeting === 'object') {

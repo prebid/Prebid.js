@@ -46,7 +46,8 @@ let cachedPermutiveModuleConfig = {}
  */
 function readPermutiveModuleConfigFromCache() {
   const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
-  return cachedPermutiveModuleConfig = liftIntoParams(params)
+  cachedPermutiveModuleConfig = liftIntoParams(params)
+  return cachedPermutiveModuleConfig
 }
 
 /**
@@ -164,7 +165,7 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
-  let topicsUserData = []
+  const topicsUserData = []
   for (const [k, value] of Object.entries(topics)) {
     topicsUserData.push({
       name,

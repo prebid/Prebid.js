@@ -1,0 +1,159 @@
+name: Run tests
+
+on:
+  push:
+    branches:
+      - master
+      - '*-legacy'
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: test-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checkout:
+    name: "Check out source and install dependencies"
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.info.outputs.ref }}
+      commit: ${{ steps.info.outputs.commit }}
+      branch: ${{ steps.info.outputs.branch }}
+      fork: ${{ steps.info.outputs.fork }}
+      base-branch: ${{ steps.info.outputs.base-branch }}
+      base-commit: ${{ steps.info.outputs.base-commit }}
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Checkout code (PR)
+        id: checkout-pr
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Checkout code (push)
+        id: checkout-push
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v4
+
+      - name: Commit info
+        id: info
+        run: |
+          echo ref="${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}" >> $GITHUB_OUTPUT
+          echo commit="${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}" >> $GITHUB_OUTPUT
+          echo branch="${{ github.head_ref || github.ref }}" >> $GITHUB_OUTPUT
+          echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
+          echo base-branch="${{ github.event.pull_request.base.ref || github.ref }}" >> $GITHUB_OUTPUT
+          echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache source
+        uses: actions/cache/save@v4
+        with:
+          path: .
+          key: source-${{ github.run_id }}
+
+      - name: Verify cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.run_id }}
+          lookup-only: true
+          fail-on-cache-miss: true
+
+  lint:
+    name: "Run linter"
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore source
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.run_id }}
+          fail-on-cache-miss: true
+      - name: lint
+        run: |
+          npx eslint
+      
+  test-no-features:
+    name: "Unit tests (all features disabled)"
+    needs: checkout
+    uses: ./.github/workflows/run-unit-tests.yml
+    with:
+      build-cmd: npx gulp precompile-all-features-disabled
+      test-cmd: npx gulp test-all-features-disabled-nobuild
+      serialize: false
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  test:
+    name: "Unit tests (all features enabled + coverage)"
+    needs: checkout
+    uses: ./.github/workflows/run-unit-tests.yml
+    with:
+      build-cmd: npx gulp precompile
+      test-cmd: npx gulp test-only-nobuild --browserstack
+      serialize: true
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  test-e2e:
+    name: "End-to-end tests"
+    needs: checkout
+    runs-on: ubuntu-latest
+    concurrency:
+      # see test-chunk.yml for notes on concurrency groups
+      group: browserstack-${{ github.run_id }}
+      cancel-in-progress: false
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore source
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.run_id }}
+          fail-on-cache-miss: true
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npx gulp e2e-test
+
+  coveralls:
+    name: Update coveralls
+    needs: [checkout, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore working directory
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: ${{ needs.test.outputs.wdir }}
+          fail-on-cache-miss: true
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
+          git-commit: ${{ needs.checkout.outputs.commit }}
+          compare-ref: ${{ needs.checkout.outputs.base-branch }}
+          compare-sha: ${{ needs.checkout.outputs.base-commit }}

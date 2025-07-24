@@ -12,39 +12,39 @@ export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
 const ORTB_PARAMS = [
-    [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-    [ 'minduration', isInteger ],
-    [ 'maxduration', isInteger ],
-    [ 'startdelay', isInteger ],
-    [ 'maxseq', isInteger ],
-    [ 'poddur', isInteger ],
-    [ 'protocols', isArrayOfNums ],
-    [ 'w', isInteger ],
-    [ 'h', isInteger ],
-    [ 'podid', isStr ],
-    [ 'podseq', isInteger ],
-    [ 'rqddurs', isArrayOfNums ],
-    [ 'placement', isInteger ], // deprecated, see plcmt
-    [ 'plcmt', isInteger ],
-    [ 'linearity', isInteger ],
-    [ 'skip', value => [1, 0].includes(value) ],
-    [ 'skipmin', isInteger ],
-    [ 'skipafter', isInteger ],
-    [ 'sequence', isInteger ], // deprecated
-    [ 'slotinpod', isInteger ],
-    [ 'mincpmpersec', isNumber ],
-    [ 'battr', isArrayOfNums ],
-    [ 'maxextended', isInteger ],
-    [ 'minbitrate', isInteger ],
-    [ 'maxbitrate', isInteger ],
-    [ 'boxingallowed', isInteger ],
-    [ 'playbackmethod', isArrayOfNums ],
-    [ 'playbackend', isInteger ],
-    [ 'delivery', isArrayOfNums ],
-    [ 'pos', isInteger ],
-    [ 'api', isArrayOfNums ],
-    [ 'companiontype', isArrayOfNums ],
-    [ 'poddedupe', isArrayOfNums ]
+  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
+  [ 'minduration', isInteger ],
+  [ 'maxduration', isInteger ],
+  [ 'startdelay', isInteger ],
+  [ 'maxseq', isInteger ],
+  [ 'poddur', isInteger ],
+  [ 'protocols', isArrayOfNums ],
+  [ 'w', isInteger ],
+  [ 'h', isInteger ],
+  [ 'podid', isStr ],
+  [ 'podseq', isInteger ],
+  [ 'rqddurs', isArrayOfNums ],
+  [ 'placement', isInteger ], // deprecated, see plcmt
+  [ 'plcmt', isInteger ],
+  [ 'linearity', isInteger ],
+  [ 'skip', value => [1, 0].includes(value) ],
+  [ 'skipmin', isInteger ],
+  [ 'skipafter', isInteger ],
+  [ 'sequence', isInteger ], // deprecated
+  [ 'slotinpod', isInteger ],
+  [ 'mincpmpersec', isNumber ],
+  [ 'battr', isArrayOfNums ],
+  [ 'maxextended', isInteger ],
+  [ 'minbitrate', isInteger ],
+  [ 'maxbitrate', isInteger ],
+  [ 'boxingallowed', isInteger ],
+  [ 'playbackmethod', isArrayOfNums ],
+  [ 'playbackend', isInteger ],
+  [ 'delivery', isArrayOfNums ],
+  [ 'pos', isInteger ],
+  [ 'api', isArrayOfNums ],
+  [ 'companiontype', isArrayOfNums ],
+  [ 'poddedupe', isArrayOfNums ]
 ] as const;
 
 /**
@@ -57,46 +57,46 @@ export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
 export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
 export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], (typeof ORTB_PARAMS)[number][0]> {
-    context: VideoContext;
-    playerSize?: Size | Size[];
+  context: VideoContext;
+  playerSize?: Size | Size[];
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {
-    const video = adUnit?.mediaTypes?.video;
-    if (video != null) {
-        if (video.plcmt == null) {
-            if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
-                video.plcmt = 4;
-            } else if (video.playbackmethod?.some?.(method => [2, 6].includes(method))) {
-                video.plcmt = 2;
-            }
-        }
-        const playerSize = isArrayOfNums(video.playerSize, 2)
-            ? video.playerSize
-            : Array.isArray(video.playerSize) && isArrayOfNums(video.playerSize[0]) ? video.playerSize[0] : null;
-        const size: [number, number] = isNumber(video.w) && isNumber(video.h) ? [video.w, video.h] : null;
-        let conflict = false;
-        if (playerSize == null) {
-            if (size != null) {
-                if (video.playerSize != null) {
-                    conflict = true;
-                } else {
-                    video.playerSize = [size];
-                }
-            }
-        } else {
-            ['w', 'h'].forEach((prop, i) => {
-                if (video[prop] != null && video[prop] !== playerSize[i]) {
-                    conflict = true;
-                } else {
-                    video[prop] = playerSize[i];
-                }
-            })
-        }
-        if (conflict) {
-            logWarn(`Ad unit "${adUnit.code} has conflicting playerSize and w/h`, adUnit)
-        }
+  const video = adUnit?.mediaTypes?.video;
+  if (video != null) {
+    if (video.plcmt == null) {
+      if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
+        video.plcmt = 4;
+      } else if (video.playbackmethod?.some?.(method => [2, 6].includes(method))) {
+        video.plcmt = 2;
+      }
     }
+    const playerSize = isArrayOfNums(video.playerSize, 2)
+      ? video.playerSize
+      : Array.isArray(video.playerSize) && isArrayOfNums(video.playerSize[0]) ? video.playerSize[0] : null;
+    const size: [number, number] = isNumber(video.w) && isNumber(video.h) ? [video.w, video.h] : null;
+    let conflict = false;
+    if (playerSize == null) {
+      if (size != null) {
+        if (video.playerSize != null) {
+          conflict = true;
+        } else {
+          video.playerSize = [size];
+        }
+      }
+    } else {
+      ['w', 'h'].forEach((prop, i) => {
+        if (video[prop] != null && video[prop] !== playerSize[i]) {
+          conflict = true;
+        } else {
+          video[prop] = playerSize[i];
+        }
+      })
+    }
+    if (conflict) {
+      logWarn(`Ad unit "${adUnit.code} has conflicting playerSize and w/h`, adUnit)
+    }
+  }
 }
 
 /**
@@ -150,16 +150,16 @@ export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = 
 }
 
 declare module './bidfactory' {
-    interface VideoBidResponseProperties {
-        vastXml?: string;
-        vastUrl?: string;
-    }
+  interface VideoBidResponseProperties {
+    vastXml?: string;
+    vastUrl?: string;
+  }
 }
 
 declare module './hook' {
-    interface NamedHooks {
-        checkVideoBidSetup: typeof checkVideoBidSetup
-    }
+  interface NamedHooks {
+    checkVideoBidSetup: typeof checkVideoBidSetup
+  }
 }
 
 export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {

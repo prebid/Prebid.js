@@ -15,7 +15,7 @@ describe('mediaforce bid adapter', function () {
   });
 
   function getLanguage() {
-    let language = navigator.language ? 'language' : 'userLanguage';
+    const language = navigator.language ? 'language' : 'userLanguage';
     return navigator[language].split('-')[0];
   }
 
@@ -36,19 +36,19 @@ describe('mediaforce bid adapter', function () {
     });
 
     it('should return false when params are not passed', function () {
-      let bid = utils.deepClone(defaultBid);
+      const bid = utils.deepClone(defaultBid);
       delete bid.params;
       assert.equal(spec.isBidRequestValid(bid), false);
     });
 
     it('should return false when valid params are not passed', function () {
-      let bid = utils.deepClone(defaultBid);
+      const bid = utils.deepClone(defaultBid);
       bid.params = {placement_id: '', publisher_id: ''};
       assert.equal(spec.isBidRequestValid(bid), false);
     });
 
     it('should return true when valid params are passed', function () {
-      let bid = utils.deepClone(defaultBid);
+      const bid = utils.deepClone(defaultBid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
@@ -239,18 +239,18 @@ describe('mediaforce bid adapter', function () {
       const bid = utils.deepClone(defaultBid);
       bid.mediaTypes.audio = { size: [300, 250] };
 
-      let bidRequests = [bid];
-      let bidderRequest = {
+      const bidRequests = [bid];
+      const bidderRequest = {
         bids: bidRequests,
         refererInfo: refererInfo,
         timeout: timeout,
         auctionId: auctionId,
       };
 
-      let [request] = spec.buildRequests(bidRequests, bidderRequest);
-      let data = JSON.parse(request.data);
+      const [request] = spec.buildRequests(bidRequests, bidderRequest);
+      const data = JSON.parse(request.data);
 
-      let expectedDataCopy = utils.deepClone(createExpectedData());
+      const expectedDataCopy = utils.deepClone(createExpectedData());
       assert.exists(data.id);
 
       expectedDataCopy.id = data.id
@@ -258,7 +258,7 @@ describe('mediaforce bid adapter', function () {
     });
 
     it('should return proper request url: no refererInfo', function () {
-      let [request] = spec.buildRequests([defaultBid]);
+      const [request] = spec.buildRequests([defaultBid]);
       assert.equal(request.url, requestUrl);
     });
 
@@ -296,22 +296,22 @@ describe('mediaforce bid adapter', function () {
     });
 
     it('should return proper banner imp', function () {
-      let bid = utils.deepClone(defaultBid);
+      const bid = utils.deepClone(defaultBid);
       bid.params.bidfloor = 0;
 
-      let bidRequests = [bid];
-      let bidderRequest = {
+      const bidRequests = [bid];
+      const bidderRequest = {
         bids: bidRequests,
         refererInfo: refererInfo,
         timeout: timeout,
         auctionId: auctionId,
       };
 
-      let [request] = spec.buildRequests(bidRequests, bidderRequest);
+      const [request] = spec.buildRequests(bidRequests, bidderRequest);
 
-      let data = JSON.parse(request.data);
+      const data = JSON.parse(request.data);
 
-      let expectedDataCopy = utils.deepClone(createExpectedData());
+      const expectedDataCopy = utils.deepClone(createExpectedData());
       assert.exists(data.id);
 
       expectedDataCopy.id = data.id
@@ -320,15 +320,15 @@ describe('mediaforce bid adapter', function () {
     });
 
     it('multiple sizes', function () {
-      let bid = utils.deepClone(defaultBid);
+      const bid = utils.deepClone(defaultBid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 600], [300, 250]],
         }
       };
 
-      let [request] = spec.buildRequests([bid]);
-      let data = JSON.parse(request.data);
+      const [request] = spec.buildRequests([bid]);
+      const data = JSON.parse(request.data);
       assert.deepEqual(data.imp[0].banner, {w: 300, h: 600, format: [{w: 300, h: 250}]});
     });
 
@@ -342,14 +342,14 @@ describe('mediaforce bid adapter', function () {
     });
 
     it('should return proper requests for multiple imps', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         bids: multiBid,
         refererInfo: refererInfo,
         timeout: timeout,
         auctionId: auctionId,
       };
 
-      let requests = spec.buildRequests(multiBid, bidderRequest);
+      const requests = spec.buildRequests(multiBid, bidderRequest);
       assert.equal(requests.length, 2);
       requests.forEach((req) => {
         req.data = JSON.parse(req.data);
@@ -458,7 +458,7 @@ describe('mediaforce bid adapter', function () {
     });
 
     it('successfull response', function () {
-      let bid = {
+      const bid = {
         price: 3,
         w: 100,
         id: '65599d0a-42d2-446a-9d39-6086c1433ffe',
@@ -473,7 +473,7 @@ describe('mediaforce bid adapter', function () {
         adm: `<a href="${baseUrl}/click2/"><img width=100 height=100 src="${baseUrl}/image2"></a>`
       };
 
-      let response = {
+      const response = {
         body: {
           seatbid: [{
             bid: [bid]
@@ -483,7 +483,7 @@ describe('mediaforce bid adapter', function () {
         }
       };
 
-      let bids = spec.interpretResponse(response);
+      const bids = spec.interpretResponse(response);
       assert.deepEqual(bids, ([{
         ad: bid.adm,
         cpm: bid.price,
@@ -504,17 +504,17 @@ describe('mediaforce bid adapter', function () {
 
   describe('interpretResponse() native as object', function () {
     it('successfull response', function () {
-      let titleText = 'Colorado Drivers With No DUI\'s Getting A Pay Day on Friday';
-      let imgData = {
+      const titleText = 'Colorado Drivers With No DUI\'s Getting A Pay Day on Friday';
+      const imgData = {
         url: `${baseUrl}/image`,
         w: 1200,
         h: 627
       };
-      let nativeLink = `${baseUrl}/click/`;
-      let nativeTracker = `${baseUrl}/imp-image`;
-      let sponsoredByValue = 'Comparisons.org';
-      let bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
-      let bid = {
+      const nativeLink = `${baseUrl}/click/`;
+      const nativeTracker = `${baseUrl}/imp-image`;
+      const sponsoredByValue = 'Comparisons.org';
+      const bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
+      const bid = {
         price: 3,
         id: '65599d0a-42d2-446a-9d39-6086c1433ffe',
         burl: `${baseUrl}/burl/\${AUCTION_PRICE}`,
@@ -549,7 +549,7 @@ describe('mediaforce bid adapter', function () {
         }
       };
 
-      let response = {
+      const response = {
         body: {
           seatbid: [{
             bid: [bid]
@@ -559,7 +559,7 @@ describe('mediaforce bid adapter', function () {
         }
       };
 
-      let bids = spec.interpretResponse(response);
+      const bids = spec.interpretResponse(response);
       assert.deepEqual(bids, ([{
         native: {
           clickUrl: nativeLink,
@@ -590,17 +590,17 @@ describe('mediaforce bid adapter', function () {
 
   describe('interpretResponse() native as string', function () {
     it('successfull response', function () {
-      let titleText = 'Colorado Drivers With No DUI\'s Getting A Pay Day on Friday';
-      let imgData = {
+      const titleText = 'Colorado Drivers With No DUI\'s Getting A Pay Day on Friday';
+      const imgData = {
         url: `${baseUrl}/image`,
         w: 1200,
         h: 627
       };
-      let nativeLink = `${baseUrl}/click/`;
-      let nativeTracker = `${baseUrl}/imp-image`;
-      let sponsoredByValue = 'Comparisons.org';
-      let bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
-      let adm = JSON.stringify({
+      const nativeLink = `${baseUrl}/click/`;
+      const nativeTracker = `${baseUrl}/imp-image`;
+      const sponsoredByValue = 'Comparisons.org';
+      const bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
+      const adm = JSON.stringify({
         native: {
           link: {url: nativeLink},
           assets: [{
@@ -621,7 +621,7 @@ describe('mediaforce bid adapter', function () {
           ver: '1'
         }
       });
-      let bid = {
+      const bid = {
         price: 3,
         id: '65599d0a-42d2-446a-9d39-6086c1433ffe',
         burl: `${baseUrl}/burl/\${AUCTION_PRICE}`,
@@ -633,7 +633,7 @@ describe('mediaforce bid adapter', function () {
         adm: adm
       };
 
-      let response = {
+      const response = {
         body: {
           seatbid: [{
             bid: [bid]
@@ -643,7 +643,7 @@ describe('mediaforce bid adapter', function () {
         }
       };
 
-      let bids = spec.interpretResponse(response);
+      const bids = spec.interpretResponse(response);
       assert.deepEqual(bids, ([{
         native: {
           clickUrl: nativeLink,
@@ -724,8 +724,8 @@ describe('mediaforce bid adapter', function () {
       utils.triggerPixel.restore();
     });
     it('should expand price macros in burl', function () {
-      let burl = 'burl&s=${AUCTION_PRICE}';
-      let bid = {
+      const burl = 'burl&s=${AUCTION_PRICE}';
+      const bid = {
         bidder: 'mediaforce',
         width: 300,
         height: 250,

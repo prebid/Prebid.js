@@ -1,6 +1,6 @@
 import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {deepClone} from '../../../src/utils';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {deepClone} from '../../../src/utils.js';
 import {expect} from 'chai';
 
 describe('Zeta Ssp Bid Adapter', function () {
@@ -559,7 +559,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
   describe('buildRequests: GPP', function() {
     it('Request params check with GPP Consent', function () {
-      let bidRequest = {
+      const bidRequest = {
         gppConsent: {
           'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
           'fullGppData': {
@@ -596,21 +596,21 @@ describe('Zeta Ssp Bid Adapter', function () {
           'apiVersion': 1
         }
       };
-      let request = spec.buildRequests(bannerRequest, bidRequest);
-      let data = JSON.parse(request.data);
+      const request = spec.buildRequests(bannerRequest, bidRequest);
+      const data = JSON.parse(request.data);
       expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
 
     it('Request params check without GPP Consent', function () {
-      let bidRequest = {};
-      let request = spec.buildRequests(bannerRequest, bidRequest);
-      let data = JSON.parse(request.data);
+      const bidRequest = {};
+      const request = spec.buildRequests(bannerRequest, bidRequest);
+      const data = JSON.parse(request.data);
       expect(data.regs).to.equal(undefined);
     });
 
     it('Request params check with GPP Consent read from ortb2', function () {
-      let bidRequest = {
+      const bidRequest = {
         ortb2: {
           regs: {
             'gpp': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
@@ -620,8 +620,8 @@ describe('Zeta Ssp Bid Adapter', function () {
           }
         }
       };
-      let request = spec.buildRequests(bannerRequest, bidRequest);
-      let data = JSON.parse(request.data);
+      const request = spec.buildRequests(bannerRequest, bidRequest);
+      const data = JSON.parse(request.data);
       expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });

@@ -5,7 +5,7 @@ import {
   spec,
   resetUserSync
 } from 'modules/underdogmediaBidAdapter.js';
-import { config } from '../../../src/config';
+import { config } from '../../../src/config.js';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;
@@ -52,7 +52,7 @@ describe('UnderdogMedia adapter', function () {
   describe('implementation', function () {
     describe('for requests', function () {
       it('should accept valid bid', function () {
-        let validBid = {
+        const validBid = {
           bidder: 'underdogmedia',
           params: {
             siteId: '12143'
@@ -72,7 +72,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should reject invalid bid missing sizes', function () {
-        let invalidBid = {
+        const invalidBid = {
           bidder: 'underdogmedia',
           params: {
             siteId: '12143',
@@ -84,7 +84,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should reject invalid bid missing siteId', function () {
-        let invalidBid = {
+        const invalidBid = {
           bidder: 'underdogmedia',
           params: {},
           mediaTypes: {
@@ -102,7 +102,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('request data should contain sid', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           bidId: '3c9408cdbf2f68',
           bidder: 'underdogmedia',
           mediaTypes: {
@@ -124,7 +124,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('request data should contain sizes', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           bidId: '3c9408cdbf2f68',
           mediaTypes: {
             banner: {
@@ -148,7 +148,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('request data should contain gdpr info', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           bidId: '3c9408cdbf2f68',
           mediaTypes: {
             banner: {
@@ -173,7 +173,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should not build a request if no vendorConsent', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           bidId: '3c9408cdbf2f68',
           mediaTypes: {
             banner: {
@@ -191,7 +191,7 @@ describe('UnderdogMedia adapter', function () {
           adUnitCode: '/123456/header-bid-tag-1'
         }];
 
-        let bidderRequest = {
+        const bidderRequest = {
           timeout: 3000,
           gdprConsent: {
             gdprApplies: 1,
@@ -209,7 +209,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should properly build a request if no vendorConsent but no gdprApplies', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           bidId: '3c9408cdbf2f68',
           mediaTypes: {
             banner: {
@@ -227,7 +227,7 @@ describe('UnderdogMedia adapter', function () {
           adUnitCode: '/123456/header-bid-tag-1'
         }];
 
-        let bidderRequest = {
+        const bidderRequest = {
           timeout: 3000,
           gdprConsent: {
             gdprApplies: 0,
@@ -250,7 +250,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should properly build a request if gdprConsent empty', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           bidId: '3c9408cdbf2f68',
           mediaTypes: {
             banner: {
@@ -268,7 +268,7 @@ describe('UnderdogMedia adapter', function () {
           adUnitCode: '/123456/header-bid-tag-1'
         }];
 
-        let bidderRequest = {
+        const bidderRequest = {
           timeout: 3000,
           gdprConsent: {}
         }
@@ -287,7 +287,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have correct number of placements', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -360,7 +360,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have correct adUnitCode for each placement', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -435,7 +435,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have gpid if it exists', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -464,7 +464,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('gpid should be undefined if it does not exists', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -488,7 +488,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have productId equal to 1 if the productId is standard', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -513,7 +513,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have productId equal to 2 if the productId is adhesion', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -538,7 +538,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('productId should default to 1 if it is not defined', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -562,7 +562,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have correct sizes for multiple placements', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -640,7 +640,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have ref if it exists', function () {
-        let bidderRequest = {
+        const bidderRequest = {
           timeout: 3000,
           gdprConsent: {
             gdprApplies: 1,
@@ -662,7 +662,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('ref should be undefined if it does not exist', function () {
-        let bidderRequest = {
+        const bidderRequest = {
           timeout: 3000,
           gdprConsent: {
             gdprApplies: 1,
@@ -695,7 +695,7 @@ describe('UnderdogMedia adapter', function () {
       })
 
       it('should have pubcid if it exists', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -728,7 +728,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('pubcid should be undefined if it does not exist', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -757,7 +757,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have unifiedId if tdid if it exists', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -790,7 +790,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('unifiedId should be undefined if tdid does not exist', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -819,7 +819,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should have correct viewability information', function () {
-        let bidRequests = [{
+        const bidRequests = [{
           adUnitCode: 'div-gpt-ad-1460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
@@ -850,7 +850,7 @@ describe('UnderdogMedia adapter', function () {
 
     describe('bid responses', function () {
       it('should return complete bid response', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             mids: [{
               ad_code_html: 'ad_code_html',
@@ -891,7 +891,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should return empty bid response if mids empty', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             mids: []
           }
@@ -903,7 +903,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should return empty bid response on incorrect size', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             mids: [{
               ad_code_html: 'ad_code_html',
@@ -923,7 +923,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should return empty bid response on 0 cpm', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             mids: [{
               ad_code_html: 'ad_code_html',
@@ -943,7 +943,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('should return empty bid response if no ad in response', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             mids: [{
               ad_code_html: '',
@@ -963,7 +963,7 @@ describe('UnderdogMedia adapter', function () {
       });
 
       it('ad html string should contain the notification urls', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             mids: [{
               ad_code_html: 'ad_cod_html',

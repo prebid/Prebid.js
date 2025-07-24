@@ -139,8 +139,8 @@ export const spec = {
   },
 
   buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
-    let format = [];
-    let imps = [];
+    const format = [];
+    const imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length !== 2) {
         return;
@@ -174,7 +174,7 @@ export const spec = {
   },
 
   buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
-    let imps = [];
+    const imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
         return;
@@ -217,7 +217,9 @@ export const spec = {
   setValidVideoParams: function (sourceObj, destObj) {
     Object.keys(sourceObj)
       .filter(param => VIDEO_PARAMS.includes(param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
-      .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
+      .forEach(param => {
+        destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10);
+      });
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const updateMacros = (bid, r) => {
@@ -228,7 +230,7 @@ export const spec = {
       return;
     }
     const {id, seatbid: seatbids} = serverResponse.body;
-    let bids = [];
+    const bids = [];
     if (id && seatbids) {
       seatbids.forEach(seatbid => {
         seatbid.bid.forEach(bid => {
@@ -337,7 +339,7 @@ function getBidFloor(bid, mediaType, size) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
   }
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType,
     size

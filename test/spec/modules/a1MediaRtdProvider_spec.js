@@ -77,7 +77,7 @@ describe('a1MediaRtdProvider', function() {
         expect(subModuleObj.init(configWithoutParams)).to.be.true;
         expect(getStorageData(A1_SEG_KEY)).to.not.equal('');
       })
-      it('fails initalize publisher sied segment is not exist', function() {
+      it('fails to initialize when publisher side segment does not exist', function() {
         expect(subModuleObj.init(configWithoutParams)).to.be.false;
         expect(getStorageData(A1_SEG_KEY)).to.equal('');
       })
