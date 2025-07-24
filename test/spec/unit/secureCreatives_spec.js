@@ -580,6 +580,15 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
 
+    it('should find elements for ad units that are not GPT slots', () => {
+      resizeRemoteCreative({
+        adUnitCode: 'adUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
+    });
+
     it('should not resize interstitials', () => {
       resizeRemoteCreative({
         instl: true,
