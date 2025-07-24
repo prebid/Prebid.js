@@ -1,29 +1,17 @@
 import fs from 'fs';
+import {getGvl, isValidGvlId} from './gvl.mjs';
 
-const GVL_URL = 'https://vendor-list.consensu.org/v3/vendor-list.json';
 const LOCAL_DISCLOSURE_PATTERN = /^local:\/\//;
 const LOCAL_DISCLOSURE_PATH = './metadata/disclosures/'
 const LOCAL_DISCLOSURES_URL = 'https://cdn.jsdelivr.net/gh/prebid/Prebid.js/metadata/disclosures/';
 
-export const getGvl = (() => {
-  let gvl;
-  return function () {
-    if (gvl == null) {
-      gvl = fetch(GVL_URL)
-        .then(resp => resp.json())
-        .catch((err) => {
-          gvl = null;
-          return Promise.reject(err);
-        });
-    }
-    return gvl;
-  };
-})();
+const PARSE_ERROR_LINES = 20;
 
-export function getDisclosureUrl(gvlId) {
-  return getGvl().then(gvl => {
-    return gvl.vendors[gvlId]?.deviceStorageDisclosureUrl;
-  });
+
+export async function getDisclosureUrl(gvlId, gvl = getGvl) {
+  if (await isValidGvlId(gvlId, gvl)) {
+    return (await gvl()).vendors[gvlId]?.deviceStorageDisclosureUrl;
+  }
 }
 
 function parseDisclosure(payload) {
@@ -44,12 +32,6 @@ class TemporaryFailure {
   }
 }
 
-/**
- *
- * @param url
- * @param intervals
- * @param retry
- */
 function retryOn5xx(url, intervals = [500, 2000], retry = -1) {
   return fetch(url)
     .then(resp => resp.status >= 500 ? new TemporaryFailure(resp) : resp)
@@ -58,9 +40,10 @@ function retryOn5xx(url, intervals = [500, 2000], retry = -1) {
       if (response instanceof TemporaryFailure) {
         retry += 1;
         if (intervals.length === retry) {
-          console.error(`Could not fetch "${url}"`, response.response);
+          console.error(`Could not fetch "${url}" (max retries exceeded)`, response.response);
           return Promise.reject(response.response);
         } else {
+          console.warn(`Could not fetch "${url}", retrying in ${intervals[retry]}ms...`, response.response)
           return new Promise((resolve) => setTimeout(resolve, intervals[retry]))
             .then(() => retryOn5xx(url, intervals, retry));
         }
@@ -92,6 +75,18 @@ function readFile(fileName) {
   })
 }
 
+const errors = [];
+
+export function logErrorSummary() {
+  if (errors.length > 0) {
+    console.error('Some disclosures could not be determined:\n')
+  }
+  errors.forEach(({error, type, metadata}) => {
+    console.error(` - ${type} failed for "${metadata.componentType}.${metadata.componentName}" (gvl id: ${metadata.gvlid}, disclosureURL: "${metadata.disclosureURL}"), error: `, error);
+    console.error('');
+  })
+}
+
 export const fetchDisclosure = (() => {
   const disclosures = {};
   return function (metadata) {
@@ -114,12 +109,31 @@ export const fetchDisclosure = (() => {
           try {
             return parseDisclosure(disclosure);
           } catch (e) {
-            console.error(`Could not parse disclosure for ${metadata.componentName}`, disclosure);
+            disclosure = JSON.stringify(disclosure, null, 2).split('\n');
+            console.error(
+              `Could not parse disclosure for ${metadata.componentName}:`,
+              disclosure
+                .slice(0, PARSE_ERROR_LINES)
+                .concat(disclosure.length > PARSE_ERROR_LINES ? [`[ ... ${disclosure.length - PARSE_ERROR_LINES} lines omitted ... ]`] : [])
+                .join('\n')
+            );
+            errors.push({
+              metadata,
+              error: e,
+              type: 'parse'
+            })
+            return null;
           }
-        }).catch((err) => {
+        })
+        .catch((err) => {
+          errors.push({
+            error: err,
+            metadata,
+            type: 'fetch'
+          })
           console.error(`Could not fetch disclosure for "${metadata.componentName}"`, err);
           return null;
-        });
+        })
     }
     return disclosures[url];
   }

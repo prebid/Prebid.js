@@ -197,8 +197,8 @@ const initializeQueue = () => {
 
 // ANALYTICS ADAPTER
 
-let baseAdapter = adapter({analyticsType: 'bundle'});
-let atmtdAdapter = Object.assign({}, baseAdapter, {
+const baseAdapter = adapter({analyticsType: 'bundle'});
+const atmtdAdapter = Object.assign({}, baseAdapter, {
 
   disableAnalytics() {
     baseAdapter.disableAnalytics.apply(this, arguments);

@@ -51,7 +51,7 @@ export const helper = {
       return bid.params.bidfloor ? bid.params.bidfloor : null;
     }
 
-    let bidFloor = bid.getFloor({
+    const bidFloor = bid.getFloor({
       mediaType: '*',
       size: '*',
       currency: 'USD'
@@ -184,7 +184,7 @@ export const spec = {
         }
       }
 
-      let eids = [];
+      const eids = [];
       if (bidRequest && bidRequest.userId) {
         addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
         addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
@@ -215,7 +215,7 @@ export const spec = {
     }
 
     const bids = response.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
-    let outBids = [];
+    const outBids = [];
 
     bids.forEach(bid => {
       const outBid = {
@@ -261,7 +261,7 @@ export const spec = {
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;
     }
-    let gdpr = gdprApplies ? 1 : 0;
+    const gdpr = gdprApplies ? 1 : 0;
 
     if (gdprApplies && gdprConsent.consentString) {
       consentString = encodeURIComponent(gdprConsent.consentString);

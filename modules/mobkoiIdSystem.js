@@ -105,21 +105,25 @@ export const utils = {
       '&cookieName=sas_uid';
 
     /**
-     * Listen for messages from the iframe
+     * Listen for messages from the iframe with automatic cleanup
      */
-    window.addEventListener('message', function(event) {
+    const messageHandler = function(event) {
       switch (event.data.type) {
         case 'MOBKOI_PIXEL_SYNC_COMPLETE':
           const sasUid = event.data.syncData;
           logInfo('Parent window Sync completed. SAS ID:', sasUid);
+          window.removeEventListener('message', messageHandler);
           onCompleteCallback(sasUid);
           break;
         case 'MOBKOI_PIXEL_SYNC_ERROR':
           logError('Parent window Sync failed:', event.data.error);
+          window.removeEventListener('message', messageHandler);
           onCompleteCallback(null);
           break;
       }
-    });
+    };
+
+    window.addEventListener('message', messageHandler);
 
     insertUserSyncIframe(url, () => {
       logInfo('insertUserSyncIframe loaded');

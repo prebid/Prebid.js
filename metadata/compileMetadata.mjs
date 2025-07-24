@@ -5,7 +5,10 @@ import moduleMetadata from './modules.json' with {type: 'json'};
 import coreMetadata from './core.json' with {type: 'json'};
 
 import overrides from './overrides.mjs';
-import {fetchDisclosure, getDisclosureUrl} from './storageDisclosure.mjs';
+import {fetchDisclosure, getDisclosureUrl, logErrorSummary} from './storageDisclosure.mjs';
+import {isValidGvlId} from './gvl.mjs';
+
+const MAX_DISCLOSURE_AGE_DAYS = 14;
 
 function matches(moduleName, moduleSuffix) {
   moduleSuffix = moduleSuffix.toLowerCase();
@@ -23,14 +26,54 @@ const modules = {
   RtdProvider: 'rtd'
 };
 
-async function metadataFor(metas) {
+function previousDisclosure(moduleName, {componentType, componentName, disclosureURL}) {
+  return new Promise((resolve, reject) => {
+    function noPreviousDisclosure() {
+      console.info(`No previously fetched disclosure available for "${componentType}.${componentName}" (url: ${disclosureURL})`);
+      resolve(null);
+    }
+    fs.readFile(moduleMetadataPath(moduleName), (err, data) => {
+      if (err) {
+        err.code === 'ENOENT' ? noPreviousDisclosure() : reject(err);
+      } else {
+        try {
+          const disclosure = JSON.parse(data.toString()).disclosures?.[disclosureURL];
+          if (disclosure == null || disclosure.disclosures == null) {
+            noPreviousDisclosure();
+          } else {
+            const disclosureAgeDays = ((new Date()).getTime() - new Date(disclosure.timestamp).getTime()) /
+              (1000 * 60  * 60 * 24);
+            if (disclosureAgeDays <= MAX_DISCLOSURE_AGE_DAYS) {
+              console.info(`Using previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
+              resolve(disclosure)
+            } else {
+              console.warn(`Previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${Math.floor(disclosureAgeDays)} days) and won't be reused`);
+              resolve(null);
+            }
+          }
+        } catch (e) {
+          reject(e);
+        }
+      }
+    })
+  })
+
+}
+
+async function metadataFor(moduleName, metas) {
   const disclosures = {};
   for (const meta of metas) {
     if (meta.disclosureURL == null && meta.gvlid != null) {
       meta.disclosureURL = await getDisclosureUrl(meta.gvlid);
     }
     if (meta.disclosureURL) {
-      const disclosure = await fetchDisclosure(meta);
+      const disclosure = {
+        timestamp: new Date().toISOString(),
+        disclosures: await fetchDisclosure(meta)
+      };
+      if (disclosure.disclosures == null) {
+        Object.assign(disclosure, await previousDisclosure(moduleName, meta));
+      }
       disclosures[meta.disclosureURL] = disclosure;
     }
   }
@@ -56,11 +99,37 @@ async function compileCoreMetadata() {
   return Object.keys(modules);
 }
 
+function moduleMetadataPath(moduleName) {
+  return path.resolve(`./metadata/modules/${moduleName}.json`);
+}
+
 async function updateModuleMetadata(moduleName, metadata) {
   fs.writeFileSync(
-    path.resolve(`./metadata/modules/${moduleName}.json`),
-    JSON.stringify(await metadataFor(metadata), null, 2)
+    moduleMetadataPath(moduleName),
+    JSON.stringify(await metadataFor(moduleName, metadata), null, 2)
   );
+}
+
+async function validateGvlIds() {
+  let invalid = false;
+  (await Promise.all(
+    moduleMetadata
+      .components
+      .filter(({gvlid}) => gvlid != null)
+      .map(({componentName, componentType, gvlid}) => isValidGvlId(gvlid).then(valid => ({
+        valid,
+        componentName,
+        componentType,
+        gvlid
+      })))
+  )).filter(({valid}) => !valid)
+    .forEach(({componentName, componentType, gvlid}) => {
+      console.error(`"${componentType}.${componentName}" provides a GVL ID that is deleted or missing: ${gvlid}`)
+      invalid = true;
+    })
+  if (invalid) {
+    throw new Error('One or more GVL IDs are invalid')
+  }
 }
 
 async function compileModuleMetadata() {
@@ -109,8 +178,10 @@ async function compileModuleMetadata() {
 
 
 export default async function compileMetadata() {
+  await validateGvlIds();
   const allModules = new Set((await compileCoreMetadata())
     .concat(await compileModuleMetadata()));
+  logErrorSummary();
   fs.readdirSync('./metadata/modules')
     .map(name => path.parse(name))
     .filter(({name}) => !allModules.has(name))

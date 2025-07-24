@@ -264,7 +264,7 @@ export const bidderSpec = {
     const response = serverResponse.body;
     const isNative = response.pbtypeId === 1;
     return response.tiles.map(tile => {
-      let bid = {
+      const bid = {
         requestId: response.ireqId,
         width: response.imageWidth,
         height: response.imageHeight,

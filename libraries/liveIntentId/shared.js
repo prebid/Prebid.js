@@ -129,6 +129,10 @@ function composeIdObject(value) {
     result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
+  if (value.nexxen) {
+    result.nexxen = { 'id': value.nexxen, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
   return result
 }
 
@@ -304,6 +308,18 @@ export const eids = {
   },
   'vidazoo': {
     source: 'liveintent.vidazoo.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'nexxen': {
+    source: 'liveintent.unrulymedia.com',
     atype: 3,
     getValue: function(data) {
       return data.id;

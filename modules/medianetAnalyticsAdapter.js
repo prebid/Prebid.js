@@ -165,7 +165,7 @@ function getQueryString(auctionObj, adUnitCode, logType, winningBidObj) {
   const commonParams = getCommonParams(auctionObj, adUnitCode, logType);
   const bidParams = getBidParams(auctionObj, adUnitCode, winningBidObj);
   const queryString = formatQS(commonParams);
-  let bidStrings = bidParams.map((bid) => `&${formatQS(bid)}`).join('');
+  const bidStrings = bidParams.map((bid) => `&${formatQS(bid)}`).join('');
   return `${queryString}${bidStrings}`;
 }
 
@@ -352,11 +352,11 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
 
   const markValidBidsAsWinners = (winnersAdIds) => {
     winnersAdIds.forEach((adId) => {
-        const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
-        if (winnerBid) {
-          winnerBid.iwb = 1;
-        }
-      });
+      const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
+      if (winnerBid) {
+        winnerBid.iwb = 1;
+      }
+    });
   };
 
   const checkWinnersForIwb = (winner, winningBidObj) => {
@@ -520,7 +520,7 @@ function getDfpCurrencyInfo(bidResponse) {
  */
 function getCommonParams(auctionObj, adUnitCode, logType) {
   const adSlotObj = auctionObj.adSlots[adUnitCode] || {};
-  let commonParams = Object.assign(
+  const commonParams = Object.assign(
     { lgtp: logType },
     pick(mnetGlobals.configuration, KeysMap.Log.Globals),
     pick(auctionObj, KeysMap.Log.Auction),
@@ -836,7 +836,7 @@ const eventListeners = {
   [LoggingEvents.STALE_RENDER]: staleRenderHandler,
 };
 
-let medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+const medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   getlogsQueue() {
     return mnetGlobals.logsQueue;
   },

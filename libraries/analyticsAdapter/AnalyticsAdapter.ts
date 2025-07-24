@@ -45,17 +45,17 @@ export type AnalyticsProvider = string;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AnalyticsProviderConfig {
-    /**
-     * Adapter-specific config types - to be extended in the adapters
-     */
+  /**
+   * Adapter-specific config types - to be extended in the adapters
+   */
 }
 
 export type DefaultOptions = {
-    /**
-     * Sampling rate, expressed as a number between 0 and 1. Data is collected only on this ratio of browser sessions.
-     * Defaults to 1
-     */
-    sampling?: number;
+  /**
+   * Sampling rate, expressed as a number between 0 and 1. Data is collected only on this ratio of browser sessions.
+   * Defaults to 1
+   */
+  sampling?: number;
 }
 
 export type AnalyticsConfig<P extends AnalyticsProvider> = (
@@ -64,26 +64,26 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
     /**
      * Analytics adapter code
      */
-    provider: P;
-    /**
-     * Event whitelist; if provided, only these events will be forwarded to the adapter
-     */
-    includeEvents?: (keyof events.Events)[];
-    /**
-     * Event blacklist; if provided, these events will not be forwarded to the adapter
-     */
-    excludeEvents?: (keyof events.Events)[];
-    /**
-     * Adapter specific options
-     */
-    options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
-}
+      provider: P;
+      /**
+       * Event whitelist; if provided, only these events will be forwarded to the adapter
+       */
+      includeEvents?: (keyof events.Events)[];
+      /**
+       * Event blacklist; if provided, these events will not be forwarded to the adapter
+       */
+      excludeEvents?: (keyof events.Events)[];
+      /**
+       * Adapter specific options
+       */
+      options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
+    }
 
 export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }: {
-    analyticsType?: AnalyticsType;
-    url?: string;
-    global?: string;
-    handler?: any;
+  analyticsType?: AnalyticsType;
+  url?: string;
+  global?: string;
+  handler?: any;
 }) {
   const queue = [];
   let handlers;
@@ -146,9 +146,9 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   });
 
   function _track(arg) {
-      const {eventType, args} = arg;
+    const {eventType, args} = arg;
     if (this.getAdapterType() === BUNDLE) {
-        (window[global] as any)(handler, eventType, args);
+      (window[global] as any)(handler, eventType, args);
     }
 
     if (this.getAdapterType() === ENDPOINT) {

@@ -591,6 +591,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "theads",
+      "aliasOf": "admixer",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
       "gvlid": 1210,
@@ -2525,7 +2532,7 @@
       "componentType": "bidder",
       "componentName": "kubient",
       "aliasOf": null,
-      "gvlid": 794,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3230,6 +3237,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "oprx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "opsco",
       "aliasOf": null,
       "gvlid": null,
@@ -3727,6 +3741,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "robustApps",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "robusta",
       "aliasOf": null,
       "gvlid": null,
@@ -3769,6 +3790,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "rumble",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "scattered",
       "aliasOf": null,
       "gvlid": 1179,
@@ -3800,6 +3828,13 @@
       "componentName": "setupad",
       "aliasOf": null,
       "gvlid": 1241,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "sevio",
+      "aliasOf": null,
+      "gvlid": "1393",
       "disclosureURL": null
     },
     {
@@ -4212,7 +4247,7 @@
       "componentType": "bidder",
       "componentName": "themoneytizer",
       "aliasOf": "themoneytizer",
-      "gvlid": 1265,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4765,6 +4800,12 @@
       "componentName": "chromeAi",
       "gvlid": null,
       "disclosureURL": "local://modules/chromeAiRtdProvider.json"
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "humansecurityMalvDefense",
+      "gvlid": null,
+      "disclosureURL": null
     },
     {
       "componentType": "rtd",

@@ -120,7 +120,7 @@ export const spec = {
       if (nativeMediaType) {
         payload.context = 'native';
         payload.nativeParams = nativeMediaType;
-        let sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
+        const sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
@@ -215,7 +215,7 @@ export const spec = {
     const syncs = [];
 
     if (syncOptions.iframeEnabled) {
-      let params = [];
+      const params = [];
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined

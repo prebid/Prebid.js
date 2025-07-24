@@ -133,7 +133,9 @@ export function prepareSplitImps(imps, bid, currency, impIdMap, adapter) {
         ['banner', 'bannerTemp'],
         ['native', 'nativeTemp'],
         ['video', 'videoTemp']
-      ].forEach(([name, tempName]) => obj = cleanObject(obj, name, tempName));
+      ].forEach(([name, tempName]) => {
+        obj = cleanObject(obj, name, tempName);
+      });
 
       if (obj.banner || obj.video || obj.native) {
         const id = makeId();

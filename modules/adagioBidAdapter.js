@@ -642,11 +642,11 @@ export const spec = {
         bidRequest.gpid = gpid;
       }
 
-      let instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
       if (instl !== undefined) {
         bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
       }
-      let rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      const rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
       if (rwdd !== undefined) {
         bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
       }
@@ -658,7 +658,12 @@ export const spec = {
         adunit_position: deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position', null)
       }
       // Clean the features object from null or undefined values.
-      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => (v == null ? a : (a[k] = v, a)), {})
+      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
+        if (v != null) {
+          a[k] = v;
+        }
+        return a;
+      }, {})
 
       // Remove some params that are not needed on the server side.
       delete bidRequest.params.siteId;
@@ -741,7 +746,7 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     try {
       const response = serverResponse.body;
       if (response) {
