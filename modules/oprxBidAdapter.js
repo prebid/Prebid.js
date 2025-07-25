@@ -14,9 +14,7 @@ export const spec = {
   buildRequests(bidRequests, bidderRequest) {
     if (!bidRequests?.length) return [];
 
-    const bid = bidRequests[0];
     const endpoint = `https://pb.optimizerx.com/pb`;
-
     const converter = converterInstance || defaultConverter;
 
     const requestData = converter.toORTB({
@@ -28,9 +26,9 @@ export const spec = {
       method: 'POST',
       url: endpoint,
       data: requestData,
-      options: { 
+      options: {
         contentType: 'application/json;charset=utf-8',
-        withCredentials: false 
+        withCredentials: false
       }
     }];
   },
