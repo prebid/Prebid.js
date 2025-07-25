@@ -18,7 +18,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
   const regionMap = {
     eu: 'ortb-eu',
-    us_east: 'lb',
+    'us-east': 'lb',
     apac: 'ortb-apac'
   };
 
