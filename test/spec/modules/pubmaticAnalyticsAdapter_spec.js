@@ -354,6 +354,10 @@ describe('pubmatic analytics adapter', function () {
         testGroupId: 15
       });
 
+      if (typeof $$PREBID_GLOBAL$$.getUserIds !== 'function') {
+        $$PREBID_GLOBAL$$.getUserIds = function() { return {}; };
+      }
+
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -553,11 +557,9 @@ describe('pubmatic analytics adapter', function () {
         ]
       };
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'adUnits').value([{
-        bids: [{
-          userId: mockUserIds
-        }]
-      }]);
+      sandbox.stub($$PREBID_GLOBAL$$, 'getUserIds').callsFake(() => {
+        return mockUserIds;
+      });
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
         if (key === 'userSync') return mockUserSync;
