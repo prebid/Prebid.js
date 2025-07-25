@@ -38,9 +38,15 @@ const cstgApiUrl = 'https://prod.euid.eu/v2/token/client-generate';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = (token) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
 const makeOptoutResponseBody = (token) => btoa(JSON.stringify({ status: 'optout', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
-const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidIdentityContainer(token));
-const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidOptoutContainer(token));
-const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
+function findEuid(bid) {
+  return (bid?.userIdAsEids ?? []).find(e => e.source === 'euid.eu');
+}
+const expectToken = (bid, token) => {
+  const eid = findEuid(bid);
+  expect(eid && eid.uids[0].id).to.equal(token);
+};
+const expectOptout = (bid) => expect(findEuid(bid)).to.be.undefined;
+const expectNoIdentity = (bid) => expect(findEuid(bid)).to.be.undefined;
 
 describe('EUID module', function() {
   let suiteSandbox, restoreSubtleToUndefined = false;
