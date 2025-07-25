@@ -14,7 +14,6 @@ import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
-
 let SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
 
 const BIDDER_CODE = 'admatic';

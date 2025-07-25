@@ -6,7 +6,6 @@ import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
-  
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -81,7 +80,6 @@ export function onBidWon(bid) {
 }
 
 export function macroReplace(adm, cpm) {
-  
   let replacedadm = replaceAuctionPrice(adm, cpm);
 
   return replacedadm;
@@ -93,9 +91,7 @@ function mapImpression(slot, bidderRequest) {
     bidFloor: getBidFloor(slot),
   };
 
-
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
-
     imp.native = mapNative(slot)
   } else {
     imp.banner = mapBanner(slot)
@@ -104,10 +100,8 @@ function mapImpression(slot, bidderRequest) {
 }
 
 function mapNative(slot) {
-
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
     let request = {
-      
       assets: slot.nativeOrtbRequest.assets || slot.nativeParams.ortb.assets,
       ver: '1.2'
     };
@@ -120,7 +114,6 @@ function mapNative(slot) {
 function mapBanner(slot) {
   if (slot.mediaTypes.banner) {
     let format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
-
       return { w: size[0], h: size[1] }
     });
 
@@ -140,7 +133,6 @@ export function buildBidResponse(serverResponse) {
         return;
       }
       if (serverBid.adm.indexOf('{') === 0) {
-
         let interpretedBid = interpretNativeBid(serverBid);
 
         bids.push(interpretedBid
@@ -165,97 +157,3 @@ export function buildBidResponse(serverResponse) {
   });
   return bids;
 }
-
-// export function interpretNativeAd(adm) {
-//   try {
-//     // logInfo('adm::' + adm);
-//     const native = JSON.parse(adm).native;
-//     if (native) {
-//       const result = {
-//         clickUrl: encodeURI(native.link.url),
-//         impressionTrackers: native.eventtrackers[0].url,
-//       };
-//       if (native.link.clicktrackers[0]) {
-//         result.clickTrackers = native.link.clicktrackers[0];
-//       }
-
-//       native.assets.forEach(asset => {
-//         switch (asset.id) {
-//           case OPENRTB.NATIVE.ASSET_ID.TITLE:
-//             result.title = deepAccess(asset, 'title.text');
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.IMAGE:
-//             result.image = {
-//               url: encodeURI(asset.img.url),
-//               width: deepAccess(asset, 'img.w'),
-//               height: deepAccess(asset, 'img.h')
-//             };
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.ICON:
-//             result.icon = {
-//               url: encodeURI(asset.img.url),
-//               width: deepAccess(asset, 'img.w'),
-//               height: deepAccess(asset, 'img.h')
-//             };
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.DATA:
-//             result.body = deepAccess(asset, 'data.value');
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-//             result.sponsoredBy = deepAccess(asset, 'data.value');
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.CTA:
-//             result.cta = deepAccess(asset, 'data.value');
-//             break;
-//         }
-//       });
-//       return result;
-//     }
-//   } catch (error) {
-//     logInfo('Error in bidUtils interpretNativeAd' + error);
-//   }
-// }
-
-// export const OPENRTB = {
-//   NATIVE: {
-//     IMAGE_TYPE: {
-//       ICON: 1,
-//       MAIN: 3,
-//     },
-//     ASSET_ID: {
-//       TITLE: 1,
-//       IMAGE: 2,
-//       ICON: 3,
-//       BODY: 4,
-//       SPONSORED: 5,
-//       CTA: 6
-//     },
-//     DATA_ASSET_TYPE: {
-//       SPONSORED: 1,
-//       DESC: 2,
-//       CTA_TEXT: 12,
-//     },
-//   }
-// };
-
-// /**
-//  * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
-//  * @returns {object} Prebid native bidObject
-//  */
-// export function interpretNativeBid(serverBid) {
-//   return {
-//     requestId: serverBid.impid,
-//     mediaType: NATIVE,
-//     cpm: serverBid.price,
-//     creativeId: serverBid.adid || serverBid.crid,
-//     width: 1,
-//     height: 1,
-//     ttl: 56,
-//     meta: {
-//       advertiserDomains: serverBid.adomain
-//     },
-//     netRevenue: true,
-//     currency: 'USD',
-//     native: interpretNativeAd(macroReplace(serverBid.adm, serverBid.price))
-//   }
-// }

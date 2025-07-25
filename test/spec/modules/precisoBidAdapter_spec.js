@@ -56,7 +56,6 @@ describe('PrecisoAdapter', function () {
 
   };
 
-
   let nativeBid = {
     precisoBid: true,
     bidId: '23fhj33i987f',
@@ -170,7 +169,6 @@ describe('PrecisoAdapter', function () {
       const data = serverRequest.data;
       expect(data.device).to.be.undefined;
     });
-
 
     let ServeNativeRequest = spec.buildRequests([nativeBid]);
 
