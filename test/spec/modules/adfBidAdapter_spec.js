@@ -218,42 +218,21 @@ describe('Adf adapter', function () {
     });
 
     it('should send info about device', function () {
-      config.setConfig({
-        device: { w: 100, h: 100 }
-      });
       const validBidRequests = [{
         bidId: 'bidId',
         params: { mid: '1000' }
       }];
-      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-
-      assert.equal(request.device.ua, navigator.userAgent);
-      assert.equal(request.device.w, 100);
-      assert.equal(request.device.h, 100);
-    });
-
-    it('should merge ortb2.device info', function () {
-      config.setConfig({
-        device: { w: 100, h: 100 }
-      });
-      const validBidRequests = [{
-        bidId: 'bidId',
-        params: { mid: '1000' }
-      }];
-      const ortb2 = { device: { ua: 'customUA', w: 200, geo: { lat: 1, lon: 1 } } };
+      const ortb2 = { device: { ua: 'customUA', h: 100, w: 100, geo: { lat: 1, lon: 1 } } };
       const request = JSON.parse(spec.buildRequests(validBidRequests, { ortb2, refererInfo: { page: 'page' } }).data);
 
       assert.equal(request.device.ua, 'customUA');
-      assert.equal(request.device.w, 200);
+      assert.equal(request.device.w, 100);
       assert.equal(request.device.h, 100);
       assert.deepEqual(request.device.geo, { lat: 1, lon: 1 });
     });
 
     it('should send app info', function () {
-      config.setConfig({
-        app: { id: 'appid' },
-      });
-      const ortb2 = { app: { name: 'appname' } };
+      const ortb2 = { app: { id: 'appid', name: 'appname' } };
       const validBidRequests = [{
         bidId: 'bidId',
         params: { mid: '1000' },
@@ -267,17 +246,11 @@ describe('Adf adapter', function () {
     });
 
     it('should send info about the site', function () {
-      config.setConfig({
+      const ortb2 = {
         site: {
           id: '123123',
           publisher: {
-            domain: 'publisher.domain.com'
-          }
-        },
-      });
-      const ortb2 = {
-        site: {
-          publisher: {
+            domain: 'publisher.domain.com',
             name: 'publisher\'s name'
           }
         }
@@ -291,12 +264,12 @@ describe('Adf adapter', function () {
       const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
+        id: '123123',
         page: refererInfo.page,
         publisher: {
           domain: 'publisher.domain.com',
           name: 'publisher\'s name'
-        },
-        id: '123123'
+        }
       });
     });
 
