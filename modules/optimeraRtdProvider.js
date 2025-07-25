@@ -1,11 +1,8 @@
 /**
- * This module adds optimera provider to the real time data module
- * The {@link module:modules/realTimeData} module is required
- *
- * The module will fetch targeting values from the Optimera server
- * and apply the tageting to each ad request. These values are created
- * from the Optimera Mesaurement script which is installed on the
- * Publisher's site.
+ * This module adds Optimera as a Real-Time Data provider to Prebid.
+ * It fetches targeting scores from Optimera’s service and injects them into:
+ * - ORTB2 impression-level objects (`ortb2Imp.ext.data.optimera`)
+ * - Legacy key-value targeting returned via `getTargetingData`
  *
  * @module modules/optimeraRtdProvider
  * @requires module:modules/realTimeData
@@ -17,9 +14,10 @@
  * @property {string} optimeraKeyName
  * @property {string} device
  * @property {string} apiVersion
+ * @property {string} transmitWithBidRequests
  */
 
-import { logInfo, logError } from '../src/utils.js';
+import { logInfo, logError, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
@@ -30,167 +28,84 @@ import { ajaxBuilder } from '../src/ajax.js';
 /** @type {ModuleParams} */
 let _moduleParams = {};
 
-/**
- * Default Optimera Key Name
- * This can default to hb_deal_optimera for publishers
- * who used the previous Optimera Bidder Adapter.
- * @type {string}
- */
+// Default key name used in legacy targeting
+/** @type {string} */
 export let optimeraKeyName = 'hb_deal_optimera';
 
-/**
- * Optimera Score File Base URL.
- * This is the base URL for the data endpoint request to fetch
- * the targeting values.
- * @type {string}
- */
+/** @type {Object<string, string>} */
 export const scoresBaseURL = {
   v0: 'https://dyv1bugovvq1g.cloudfront.net/',
   v1: 'https://v1.oapi26b.com/',
 };
 
-/**
- * Optimera Score File URL.
- * @type {string}
- */
+/** @type {string} */
 export let scoresURL;
 
-/**
- * Optimera Client ID.
- * @type {string}
- */
+/** @type {string} */
 export let clientID;
 
-/**
- * Optional device parameter.
- * @type {string}
- */
+/** @type {string} */
 export let device = 'default';
 
-/**
- * Optional apiVersion parameter.
- * @type {string}
- */
+/** @type {string} */
 export let apiVersion = 'v0';
 
-/**
- * Targeting object for all ad positions.
- * @type {string}
- */
+/** @type {string} */
+export let transmitWithBidRequests = 'allow';
+
+/** @type {Object<string, any>} */
 export let optimeraTargeting = {};
 
-/**
- * Flag to indicateo if a new score file should be fetched.
- * @type {string}
- */
+/** @type {boolean} */
 export let fetchScoreFile = true;
 
-/**
- * Make the request for the Score File.
- */
-export function scoreFileRequest() {
-  logInfo('Fetch Optimera score file.');
-  const ajax = ajaxBuilder();
-  ajax(scoresURL,
-    {
-      success: (res, req) => {
-        if (req.status === 200) {
-          try {
-            setScores(res);
-          } catch (err) {
-            logError('Unable to parse Optimera Score File.', err);
-          }
-        } else if (req.status === 403) {
-          logError('Unable to fetch the Optimera Score File - 403');
-        }
-      },
-      error: () => {
-        logError('Unable to fetch the Optimera Score File.');
-      }
-    });
-}
+/** @type {RtdSubmodule} */
+export const optimeraSubmodule = {
+  name: 'optimeraRTD',
+  init: init,
+  getBidRequestData: fetchScores,
+  getTargetingData: returnTargetingData,
+};
 
 /**
- * Apply the Optimera targeting to the ad slots.
- */
-export function returnTargetingData(adUnits, config) {
-  const targeting = {};
-  try {
-    adUnits.forEach((adUnit) => {
-      if (optimeraTargeting[adUnit]) {
-        targeting[adUnit] = {};
-        targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]];
-      }
-    });
-  } catch (err) {
-    logError('error', err);
-  }
-  logInfo('Apply Optimera targeting');
-  return targeting;
-}
-
-/**
- * Fetch a new score file when an auction starts.
- * Only fetch the new file if a new score file is needed.
- */
-export function onAuctionInit(auctionDetails, config, userConsent) {
-  setScoresURL();
-  if (fetchScoreFile) {
-    scoreFileRequest();
-  }
-}
-
-/**
- * Initialize the Module.
- * moduleConfig.params.apiVersion can be either v0 or v1.
+ * Initializes the module with publisher-provided params.
+ * @param {{params: ModuleParams}} moduleConfig
+ * @returns {boolean}
  */
 export function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.clientID) {
     clientID = _moduleParams.clientID;
-    if (_moduleParams.optimeraKeyName) {
-      optimeraKeyName = (_moduleParams.optimeraKeyName);
-    }
-    if (_moduleParams.device) {
-      device = _moduleParams.device;
-    }
+    if (_moduleParams.optimeraKeyName) optimeraKeyName = _moduleParams.optimeraKeyName;
+    if (_moduleParams.device) device = _moduleParams.device;
     if (_moduleParams.apiVersion) {
       apiVersion = (_moduleParams.apiVersion.includes('v1', 'v0')) ? _moduleParams.apiVersion : 'v0';
     }
+    if (_moduleParams.transmitWithBidRequests) {
+      transmitWithBidRequests = _moduleParams.transmitWithBidRequests;
+    }
     setScoresURL();
-    scoreFileRequest();
     return true;
   }
-  if (!_moduleParams.clientID) {
-    logError('Optimera clientID is missing in the Optimera RTD configuration.');
-  }
+  logError('Optimera clientID is missing in the Optimera RTD configuration.');
   return false;
 }
 
 /**
- * Set the score file url.
- *
- * This fully-formed URL is for the data endpoint request to fetch
- * the targeting values. This is not a js library, rather JSON
- * which has the targeting values for the page.
- *
- * The score file url is based on the web page url. If the new score file URL
- * has been updated, set the fetchScoreFile flag to true to is can be fetched.
- *
+ * Builds the URL for the score file based on config and location.
  */
 export function setScoresURL() {
   const optimeraHost = window.location.host;
   const optimeraPathName = window.location.pathname;
-  const baseUrl = scoresBaseURL[apiVersion] ? scoresBaseURL[apiVersion] : scoresBaseURL.v0;
-  let newScoresURL;
+  const baseUrl = scoresBaseURL[apiVersion] || scoresBaseURL.v0;
 
+  let newScoresURL;
   if (apiVersion === 'v1') {
     newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
   } else {
     const encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
       .replaceAll('%2F', '/')
       .replaceAll('%20', '+');
-
     newScoresURL = `${baseUrl}${clientID}/${encoded}.js`;
   }
 
@@ -203,24 +118,56 @@ export function setScoresURL() {
 }
 
 /**
- * Set the scores for the device if given.
- * Add data and insights to the winddow.optimera object.
- *
- * @param {*} result
- * @returns {string} JSON string of Optimera Scores.
+ * Called by Prebid before auction. Fetches Optimera scores and injects into ORTB2.
+ * @param {object} reqBidsConfigObj
+ * @param {function} callback
+ * @param {object} config
+ * @param {object} userConsent
+ */
+export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
+  const ajax = ajaxBuilder();
+  ajax(scoresURL, {
+    success: (res, req) => {
+      if (req.status === 200) {
+        try {
+          setScores(res);
+          if (transmitWithBidRequests === 'allow') {
+            injectOrtbScores(reqBidsConfigObj);
+          }
+          callback();
+        } catch (err) {
+          logError('Unable to parse Optimera Score File.', err);
+          callback();
+        }
+      } else if (req.status === 403) {
+        logError('Unable to fetch the Optimera Score File - 403');
+        callback();
+      }
+    },
+    error: () => {
+      logError('Unable to fetch the Optimera Score File.');
+      callback();
+    }
+  });
+}
+
+/**
+ * Parses Optimera score file and updates global and window-scoped values.
+ * @param {string} result
  */
 export function setScores(result) {
   let scores = {};
   try {
     scores = JSON.parse(result);
-    if (device !== 'default' && scores.device[device]) {
+    if (device !== 'default' && scores.device && scores.device[device]) {
       scores = scores.device[device];
     }
     logInfo(scores);
+    // Store globally for debug/legacy/measurement script access
     window.optimera = window.optimera || {};
     window.optimera.data = window.optimera.data || {};
     window.optimera.insights = window.optimera.insights || {};
-    Object.keys(scores).map((key) => {
+    Object.keys(scores).forEach((key) => {
       if (key !== 'insights') {
         window.optimera.data[key] = scores[key];
       }
@@ -231,34 +178,55 @@ export function setScores(result) {
   } catch (e) {
     logError('Optimera score file could not be parsed.');
   }
+
   optimeraTargeting = scores;
 }
 
-/** @type {RtdSubmodule} */
-export const optimeraSubmodule = {
-  /**
-   * used to link submodule with realTimeData
-   * @type {string}
-   */
-  name: 'optimeraRTD',
-  /**
-   * get data when an auction starts
-   * @function
-   */
-  onAuctionInitEvent: onAuctionInit,
-  /**
-   * get data and send back to realTimeData module
-   * @function
-   */
-  getTargetingData: returnTargetingData,
-  init,
-};
-
 /**
- * Register the Sub Module.
+ * Injects ORTB2 slot-level targeting into adUnits[].ortb2Imp.ext.data.optimera
+ * @param {object} reqBidsConfigObj
  */
-function registerSubModule() {
-  submodule('realTimeData', optimeraSubmodule);
+export function injectOrtbScores(reqBidsConfigObj) {
+  reqBidsConfigObj.adUnits.forEach((adUnit) => {
+    const auCode = adUnit.code;
+    adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+    adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+    adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
+    // Example structure of optimeraTargeting[auCode] and assorted comma separated scoring data:
+    // optimeraTargeting['some-div']:
+    // {
+    //   Z,
+    //   A1,
+    //   L_123,
+    //   0.10,
+    // }
+    if (auCode && optimeraTargeting[auCode]) {
+      mergeDeep(adUnit.ortb2Imp.ext.data, {
+        optimera: optimeraTargeting[auCode]
+      });
+    }
+  });
 }
 
-registerSubModule();
+/**
+ * Provides legacy KVP-based targeting using hb_deal_optimera or a custom key
+ * @param {Array<string>} adUnits
+ * @returns {Object<string, Object<string, Array<string>>>}
+ */
+export function returnTargetingData(adUnits) {
+  const targeting = {};
+  try {
+    adUnits.forEach((adUnit) => {
+      if (optimeraTargeting[adUnit]) {
+        targeting[adUnit] = {};
+        targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]];
+      }
+    });
+  } catch (err) {
+    logError('Optimera RTD targeting error', err);
+  }
+  return targeting;
+}
+
+// Register the RTD module with Prebid core
+submodule('realTimeData', optimeraSubmodule);
