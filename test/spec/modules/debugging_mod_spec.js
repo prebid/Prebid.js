@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {BidInterceptor} from '../../../modules/debugging/bidInterceptor.js';
+import {makebidInterceptor} from '../../../modules/debugging/bidInterceptor.js';
 import {
-  bidderBidInterceptor,
+  makeBidderBidInterceptor,
   disableDebugging,
   getConfig,
   sessionLoader,
@@ -16,15 +16,18 @@ import {
   addBidResponseBound,
   addBidResponseHook,
 } from '../../../modules/debugging/legacy.js';
-
+import * as utils from '../../../src/utils.js';
 import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
 import {prefixLog} from '../../../src/utils.js';
 import {createBid} from '../../../src/bidfactory.js';
+import {VIDEO, BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import {Renderer} from '../../../src/Renderer.js';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;
   beforeEach(() => {
     mockSetTimeout = sinon.stub().callsFake((fn) => fn());
+    const BidInterceptor = makebidInterceptor({utils, VIDEO, BANNER, NATIVE, Renderer})
     interceptor = new BidInterceptor({setTimeout: mockSetTimeout, logger: prefixLog('TEST')});
   });
 
@@ -348,19 +351,20 @@ describe('Debugging config', () => {
   it('should behave gracefully when sessionStorage throws', () => {
     const logError = sinon.stub();
     const getStorage = () => { throw new Error() };
-    getConfig({enabled: false}, {getStorage, logger: {logError}, hook});
+    getConfig({enabled: false}, {getStorage, logger: {logError}, hook, utils});
     expect(logError.called).to.be.true;
   });
 });
 
 describe('bidderBidInterceptor', () => {
-  let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, addPaapiConfig, wrapped;
+  let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, addPaapiConfig, wrapped, bidderBidInterceptor;
 
   function interceptorArgs({spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {}} = {}) {
     return [next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, Object.assign({onCompletion}, cbs)];
   }
 
   beforeEach(() => {
+    bidderBidInterceptor = makeBidderBidInterceptor({utils});
     next = sinon.spy();
     wrapped = false;
     wrapCallback = sinon.stub().callsFake(cb => {
@@ -487,7 +491,7 @@ describe('pbsBidInterceptor', () => {
     interceptResults = [EMPTY_INT_RES, EMPTY_INT_RES];
   });
 
-  const pbsBidInterceptor = makePbsInterceptor({createBid});
+  const pbsBidInterceptor = makePbsInterceptor({createBid, utils});
   function callInterceptor() {
     return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid});
   }
@@ -614,7 +618,7 @@ describe('bid overrides', function () {
     it('should happen when enabled with setConfig', function () {
       getConfig({
         enabled: true
-      }, {config, hook, logger});
+      }, {config, hook, logger, utils});
 
       expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
       expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
