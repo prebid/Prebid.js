@@ -86,7 +86,7 @@ describe('bid interceptor', () => {
     });
 
     it('should pass extra arguments to property function matchers', () => {
-      let matchDef = {
+      const matchDef = {
         key: sinon.stub(),
         outer: {inner: {key: sinon.stub()}}
       };
@@ -99,7 +99,7 @@ describe('bid interceptor', () => {
     });
 
     it('should pass extra arguments to single-function matcher', () => {
-      let matchDef = sinon.stub();
+      const matchDef = sinon.stub();
       setRules({when: matchDef});
       const args = [{}, {}, {}];
       interceptor.match(...args);
@@ -593,7 +593,7 @@ describe('bid overrides', function () {
   const logger = prefixLog('TEST');
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -646,7 +646,7 @@ describe('bid overrides', function () {
     let bids;
 
     beforeEach(function () {
-      let baseBid = {
+      const baseBid = {
         'bidderCode': 'rubicon',
         'width': 970,
         'height': 250,
@@ -670,7 +670,7 @@ describe('bid overrides', function () {
 
     function run(overrides) {
       mockBids.forEach(bid => {
-        let next = (adUnitCode, bid) => {
+        const next = (adUnitCode, bid) => {
           bids.push(bid);
         };
         addBidResponseHook.bind({overrides, logger})(next, bid.adUnitCode, bid);
@@ -754,7 +754,7 @@ describe('bid overrides', function () {
     let bidderRequests;
 
     beforeEach(function () {
-      let baseBidderRequest = {
+      const baseBidderRequest = {
         'bidderCode': 'rubicon',
         'bids': [{
           'width': 970,
@@ -779,7 +779,7 @@ describe('bid overrides', function () {
     });
 
     function run(overrides) {
-      let next = (b) => {
+      const next = (b) => {
         bidderRequests = b;
       };
       addBidderRequestsHook.bind({overrides, logger})(next, mockBidRequests);

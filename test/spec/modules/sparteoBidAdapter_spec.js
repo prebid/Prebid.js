@@ -59,6 +59,7 @@ const VALID_REQUEST_BANNER = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -71,6 +72,7 @@ const VALID_REQUEST_BANNER = {
         'sparteo': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
             'formats': ['corner']
           }
         }
@@ -80,7 +82,8 @@ const VALID_REQUEST_BANNER = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -94,6 +97,7 @@ const VALID_REQUEST_VIDEO = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -112,7 +116,8 @@ const VALID_REQUEST_VIDEO = {
         'pbadslot': 'video',
         'sparteo': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
           }
         }
       }
@@ -121,7 +126,8 @@ const VALID_REQUEST_VIDEO = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -135,6 +141,7 @@ const VALID_REQUEST = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -147,11 +154,13 @@ const VALID_REQUEST = {
         'sparteo': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
             'formats': ['corner']
           }
         }
       }
     }, {
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -170,7 +179,8 @@ const VALID_REQUEST = {
         'pbadslot': 'video',
         'sparteo': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
           }
         }
       }
@@ -179,7 +189,8 @@ const VALID_REQUEST = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -209,14 +220,14 @@ describe('SparteoAdapter', function () {
       });
 
       it('should return false because the networkId is missing', function () {
-        let wrongBid = deepClone(VALID_BID_BANNER);
+        const wrongBid = deepClone(VALID_BID_BANNER);
         delete wrongBid.params.networkId;
 
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });
 
       it('should return false because the banner size is missing', function () {
-        let wrongBid = deepClone(VALID_BID_BANNER);
+        const wrongBid = deepClone(VALID_BID_BANNER);
 
         wrongBid.mediaTypes.banner.sizes = '123456';
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
@@ -226,7 +237,7 @@ describe('SparteoAdapter', function () {
       });
 
       it('should return false because the video player size paramater is missing', function () {
-        let wrongBid = deepClone(VALID_BID_VIDEO);
+        const wrongBid = deepClone(VALID_BID_VIDEO);
 
         wrongBid.mediaTypes.video.playerSize = '123456';
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
@@ -265,15 +276,15 @@ describe('SparteoAdapter', function () {
       }
 
       it('should return the right formatted request with endpoint test', function() {
-        let endpoint = 'https://bid-test.sparteo.com/auction';
+        const endpoint = 'https://bid-test.sparteo.com/auction';
 
-        let bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
+        const bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
           params: {
             endpoint: endpoint
           }
         });
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST));
+        const requests = mergeDeep(deepClone(VALID_REQUEST));
 
         const request = adapter.buildRequests(bids, BIDDER_REQUEST);
         requests.url = endpoint;
@@ -287,7 +298,7 @@ describe('SparteoAdapter', function () {
   describe('interpretResponse', function() {
     describe('Check method return', function () {
       it('should return the right formatted response', function() {
-        let response = {
+        const response = {
           body: {
             'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
             'cur': 'EUR',
@@ -340,7 +351,7 @@ describe('SparteoAdapter', function () {
           });
         }
 
-        let formattedReponse = [
+        const formattedReponse = [
           {
             requestId: '1a2b3c4d',
             seatBidId: 'cdbb6982-a269-40c7-84e5-04797f11d87a',
@@ -354,7 +365,7 @@ describe('SparteoAdapter', function () {
             ttl: TTL,
             mediaType: 'banner',
             meta: {},
-            ad: 'script<div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.bidder.sparteo.com/img\"></div>'
+            ad: '<div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.bidder.sparteo.com/img\"></div>script'
           }
         ];
 
@@ -394,7 +405,7 @@ describe('SparteoAdapter', function () {
   describe('onBidWon', function() {
     describe('Check methods succeed', function () {
       it('should not throw error', function() {
-        let bids = [
+        const bids = [
           {
             requestId: '1a2b3c4d',
             seatBidId: 'cdbb6982-a269-40c7-84e5-04797f11d87a',

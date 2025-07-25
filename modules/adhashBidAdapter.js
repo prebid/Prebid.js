@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { includes } from '../src/polyfill.js';
+
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const VERSION = '3.6';
@@ -42,9 +42,9 @@ function brandSafety(badWords, maxScore) {
 
   /**
    * Calculates the scoring for each bad word with dimishing returns
-   * @param {integer} points points that this word costs
-   * @param {integer} occurrences number of occurrences
-   * @returns {float} final score
+   * @param {number} points points that this word costs
+   * @param {number} occurrences number of occurrences
+   * @returns {number} final score
    */
   const scoreCalculator = (points, occurrences) => {
     let positive = true;
@@ -64,7 +64,7 @@ function brandSafety(badWords, maxScore) {
    * @param {string} rule rule type (full, partial, starts, ends, regexp)
    * @param {string} decodedWord decoded word
    * @param {string} wordsToMatch list of all words on the page separated by delimiters
-   * @returns {object|boolean} matched rule and occurances. If nothing is matched returns false
+   * @returns {object|boolean} matched rule and occurrences. If nothing is matched returns false
    */
   const wordsMatchedWithRule = function (rule, decodedWord, wordsToMatch) {
     if (!wordsToMatch) {
@@ -159,7 +159,7 @@ export const spec = {
     try {
       const { publisherId, platformURL, bidderURL } = bid.params;
       return (
-        (includes(Object.keys(bid.mediaTypes), BANNER) || includes(Object.keys(bid.mediaTypes), VIDEO)) &&
+        (Object.keys(bid.mediaTypes).includes(BANNER) || Object.keys(bid.mediaTypes).includes(VIDEO)) &&
         typeof publisherId === 'string' &&
         publisherId.length === 42 &&
         typeof platformURL === 'string' &&
@@ -190,7 +190,7 @@ export const spec = {
       const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
       const index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
       const size = validBidRequests[i].sizes[index].join('x');
-      const creativeData = includes(Object.keys(validBidRequests[i].mediaTypes), VIDEO) ? {
+      const creativeData = Object.keys(validBidRequests[i].mediaTypes).includes(VIDEO) ? {
         size: 'preroll',
         position: validBidRequests[i].adUnitCode,
         playerSize: size
@@ -268,14 +268,14 @@ export const spec = {
 
     if (storage.localStorageIsEnabled()) {
       const prefix = request.bidRequest.params.prefix || 'adHash';
-      let recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
+      const recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
       recentAdsPrebid.push([
         (new Date().getTime() / 1000) | 0,
         responseBody.creatives[0].advertiserId,
         responseBody.creatives[0].budgetId,
         responseBody.creatives[0].expectedHashes.length ? responseBody.creatives[0].expectedHashes[0] : '',
       ]);
-      let recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
+      const recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
       storage.setDataInLocalStorage(prefix + 'recentAdsPrebid', recentAdsPrebidFinal);
     }
 
@@ -298,14 +298,14 @@ export const spec = {
         advertiserDomains: responseBody.advertiserDomains ? [responseBody.advertiserDomains] : []
       }
     };
-    if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && includes(Object.keys(request.bidRequest.mediaTypes), BANNER)) {
+    if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
       response = Object.assign({
         ad:
         `<div id="${oneTimeId}"></div>
         <script src="${bidderURL}/static/scripts/creative.min.js"></script>
         <script>callAdvertiser(${bidderResponse},['${oneTimeId}'],${requestData},${publisherURL})</script>`
       }, response);
-    } else if (includes(Object.keys(request.bidRequest.mediaTypes), VIDEO)) {
+    } else if (Object.keys(request.bidRequest.mediaTypes).includes(VIDEO)) {
       response = Object.assign({
         vastUrl: responseBody.creatives[0].vastURL,
         mediaType: VIDEO

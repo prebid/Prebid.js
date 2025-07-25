@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { assert } from 'chai';
+import { expect, assert } from 'chai';
+
 import { newConfig } from 'src/config.js';
 
 const utils = require('src/utils');
@@ -345,6 +345,14 @@ describe('config API', function () {
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
 
+  it('sets auctionOptions suppressExpiredRender', function () {
+    const auctionOptionsConfig = {
+      'suppressExpiredRender': true
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
   it('should log warning for the wrong value passed to auctionOptions', function () {
     setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);
@@ -367,6 +375,15 @@ describe('config API', function () {
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressStaleRender must be of type boolean';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions suppress expired render', function () {
+    setConfig({ auctionOptions: {
+      'suppressExpiredRender': 'test',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options suppressExpiredRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
@@ -555,7 +572,9 @@ describe('config API', function () {
     mergeBidderConfig('invalid object');
     expect(logErrorSpy.calledOnce).to.equal(true);
     const error = 'setBidderConfig bidder options must be an object';
-    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    const errObj = logErrorSpy.firstCall.args[0];
+    expect(errObj).to.be.instanceOf(Error);
+    expect(errObj.message).to.equal(error, 'expected error was logged');
   });
 
   it('should log error for empty bidders array', function () {
@@ -575,7 +594,9 @@ describe('config API', function () {
     });
     expect(logErrorSpy.calledOnce).to.equal(true);
     const error = 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
-    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    const errObj = logErrorSpy.firstCall.args[0];
+    expect(errObj).to.be.instanceOf(Error);
+    expect(errObj.message).to.equal(error, 'expected error was logged');
   });
 
   it('should log error for nonexistent config object', function () {
@@ -584,7 +605,9 @@ describe('config API', function () {
     });
     expect(logErrorSpy.calledOnce).to.equal(true);
     const error = 'setBidderConfig bidder options must contain a config object';
-    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    const errObj = logErrorSpy.firstCall.args[0];
+    expect(errObj).to.be.instanceOf(Error);
+    expect(errObj.message).to.equal(error, 'expected error was logged');
   });
 
   it('should merge without array duplication', function() {
@@ -648,8 +671,8 @@ describe('config API', function () {
     };
     mergeConfig(rtd);
 
-    let ortb2Config = getConfig('ortb2');
-    let bidderTimeout = getConfig('bidderTimeout');
+    const ortb2Config = getConfig('ortb2');
+    const bidderTimeout = getConfig('bidderTimeout');
 
     expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
     expect(ortb2Config.site.content.data).to.deep.include.members([siteObj1]);

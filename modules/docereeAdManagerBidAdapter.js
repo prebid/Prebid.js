@@ -3,11 +3,13 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'docereeadmanager';
 const END_POINT = 'https://dai.doceree.com/drs/quest';
+const GVLID = 1063;
 
 export const spec = {
   code: BIDDER_CODE,
   url: '',
   supportedMediaTypes: [BANNER],
+  gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
     const { placementId } = bid.params;
@@ -70,10 +72,31 @@ export const spec = {
   },
 };
 
+export function getPageUrl() {
+  let url = '';
+  try {
+    url = window.location.href;
+  } catch (error) {
+  }
+  return url;
+}
+
+const handleConsent = (consentValue) => {
+  try {
+    if (consentValue === 0 || consentValue === '0') {
+      consentValue = '0';
+    }
+  } catch (error) {
+
+  }
+  return consentValue;
+}
+
 export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
     return false;
   }
+
   const { bidId, params } = bid;
   const { placementId, publisherUrl } = params;
   const {
@@ -88,14 +111,15 @@ export function getPayload(bid, userData, bidderRequest) {
     city,
     state,
     zipcode,
-    hashedNPI,
     hashedhcpid,
     hashedemail,
     hashedmobile,
     country,
+    hashedNPI,
     organization,
     platformUid,
-    mobile
+    mobile,
+    userconsent
   } = userData;
 
   const data = {
@@ -109,19 +133,18 @@ export function getPayload(bid, userData, bidderRequest) {
     city: city || '',
     state: state || '',
     zipcode: zipcode || '',
-    hashedNPI: hashedNPI || '',
     pb: 1,
     adunit: placementId || '',
     requestId: bidId || '',
-    hashedhcpid: hashedhcpid || '',
+    hashedhcpid: hashedhcpid || hashedNPI || '',
     hashedemail: hashedemail || '',
     hashedmobile: hashedmobile || '',
     country: country || '',
     organization: organization || '',
     dob: dob || '',
-    userconsent: 1,
+    upref: handleConsent(userconsent) || '',
     mobile: mobile || '',
-    pageurl: publisherUrl || ''
+    pageurl: getPageUrl() || publisherUrl || ''
   };
 
   try {

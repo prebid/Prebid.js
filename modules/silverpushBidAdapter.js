@@ -1,4 +1,3 @@
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { mergeDeep } from '../src/utils.js';
@@ -6,6 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
 import { ajax } from '../src/ajax.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'silverpush';
 const bidderConfig = 'sp_pb_ortb';
@@ -65,7 +65,7 @@ export const CONVERTER = ortbConverter({
       imp = buildBannerImp(bidRequest, imp);
     }
 
-    const bidFloor = getBidFloor(bidRequest);
+    const bidFloor = getBidFloor(bidRequest, bidRequest.bidderRequest);
 
     utils.deepSetValue(imp, 'bidfloor', bidFloor);
 
@@ -84,7 +84,7 @@ export const CONVERTER = ortbConverter({
       }
     })
 
-    let userAgent = navigator.userAgent;
+    const userAgent = navigator.userAgent;
     utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
     utils.deepSetValue(req, 'device.devicetype', _isMobile() ? 1 : _isConnectedTV() ? 3 : 2);
 
@@ -141,7 +141,7 @@ function isBidRequestValid(bidRequest) {
 }
 
 function isPublisherIdValid(bidRequest) {
-  let pubId = utils.deepAccess(bidRequest, 'params.publisherId');
+  const pubId = utils.deepAccess(bidRequest, 'params.publisherId');
   return (pubId != null && utils.isStr(pubId) && pubId != '');
 }
 
@@ -159,9 +159,9 @@ function isValidVideoRequest(bidRequest) {
 }
 
 function buildRequests(validBids, bidderRequest) {
-  let videoBids = validBids.filter(bid => isVideoBid(bid));
-  let bannerBids = validBids.filter(bid => isBannerBid(bid));
-  let requests = [];
+  const videoBids = validBids.filter(bid => isVideoBid(bid));
+  const bannerBids = validBids.filter(bid => isBannerBid(bid));
+  const requests = [];
 
   bannerBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -216,7 +216,8 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: REQUEST_URL,
-    data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
+    data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } }),
+    bidderRequest
   }
 }
 
@@ -247,8 +248,8 @@ function buildVideoOutstreamResponse(bidResponse, context) {
   return {...bidResponse};
 }
 
-function getBidFloor(bid) {
-  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+function getBidFloor(bid, bidderRequest) {
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
   if (typeof bid.getFloor !== 'function') {
     return utils.deepAccess(bid, 'params.bidFloor', 0.05);
@@ -259,7 +260,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*',
   });
-  return bidFloor.floor;
+  return bidFloor?.floor;
 }
 
 function _renderer(bid) {
@@ -272,7 +273,7 @@ function _renderer(bid) {
       });
 
       try {
-        let vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
+        const vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
         spoplayer.load(vastUrlbt).then(function() {
           window.spoplayer = spoplayer;
         }).catch(function(reason) {

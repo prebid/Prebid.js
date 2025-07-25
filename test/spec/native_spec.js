@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import {
   fireNativeTrackers,
-  getNativeTargeting,
   nativeBidIsValid,
   getAssetMessage,
   getAllAssetsMessage,
@@ -21,8 +20,8 @@ import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
-import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
-import {deepClone} from '../../src/utils.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from '../../src/creativeRenderers.js';
+import {deepSetValue} from '../../src/utils.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -201,165 +200,6 @@ describe('native.js', function () {
     sandbox.restore();
   });
 
-  it('gets native targeting keys', function () {
-    const targeting = getNativeTargeting(bid);
-    expect(targeting[NATIVE_KEYS.title]).to.equal(bid.native.title);
-    expect(targeting[NATIVE_KEYS.body]).to.equal(bid.native.body);
-    expect(targeting[NATIVE_KEYS.clickUrl]).to.equal(
-      bid.native.clickUrl
-    );
-    expect(targeting.hb_native_foo).to.equal(bid.native.foo);
-  });
-
-  it('can get targeting from null native keys', () => {
-    const targeting = getNativeTargeting({...bid, native: {...bid.native, displayUrl: null}});
-    expect(targeting.hb_native_displayurl).to.not.be.ok;
-  })
-
-  it('sends placeholders for configured assets', function () {
-    const adUnit = {
-      adUnitId: 'au',
-      nativeParams: {
-        body: { sendId: true },
-        clickUrl: { sendId: true },
-        ext: {
-          foo: {
-            sendId: false,
-          },
-          baz: {
-            sendId: true,
-          },
-        },
-      },
-    };
-    const targeting = getNativeTargeting(bid, deps(adUnit));
-
-    expect(targeting[NATIVE_KEYS.title]).to.equal(bid.native.title);
-    expect(targeting[NATIVE_KEYS.body]).to.equal(
-      'hb_native_body:123'
-    );
-    expect(targeting[NATIVE_KEYS.clickUrl]).to.equal(
-      'hb_native_linkurl:123'
-    );
-    expect(targeting.hb_native_foo).to.equal(bid.native.ext.foo);
-    expect(targeting.hb_native_baz).to.equal('hb_native_baz:123');
-  });
-
-  it('sends placeholdes targetings with ortb native response', function () {
-    const targeting = getNativeTargeting(completeNativeBid);
-
-    expect(targeting[NATIVE_KEYS.title]).to.equal('Native Creative');
-    expect(targeting[NATIVE_KEYS.body]).to.equal('Cool description great stuff');
-    expect(targeting[NATIVE_KEYS.clickUrl]).to.equal('https://www.link.example');
-  });
-
-  it('should only include native targeting keys with values', function () {
-    const adUnit = {
-      adUnitId: 'au',
-      nativeParams: {
-        body: { sendId: true },
-        clickUrl: { sendId: true },
-        ext: {
-          foo: {
-            required: false,
-          },
-          baz: {
-            required: false,
-          },
-        },
-      },
-    };
-
-    const targeting = getNativeTargeting(bidWithUndefinedFields, deps(adUnit));
-
-    expect(Object.keys(targeting)).to.deep.equal([
-      NATIVE_KEYS.title,
-      NATIVE_KEYS.sponsoredBy,
-      NATIVE_KEYS.clickUrl,
-      'hb_native_foo',
-    ]);
-  });
-
-  it('should only include targeting that has sendTargetingKeys set to true', function () {
-    const adUnit = {
-      adUnitId: 'au',
-      nativeParams: {
-        image: {
-          required: true,
-          sizes: [150, 50],
-        },
-        title: {
-          required: true,
-          len: 80,
-          sendTargetingKeys: true,
-        },
-        sendTargetingKeys: false,
-      },
-    };
-    const targeting = getNativeTargeting(bid, deps(adUnit));
-
-    expect(Object.keys(targeting)).to.deep.equal([NATIVE_KEYS.title]);
-  });
-
-  it('should only include targeting if sendTargetingKeys not set to false', function () {
-    const adUnit = {
-      adUnitId: 'au',
-      nativeParams: {
-        image: {
-          required: true,
-          sizes: [150, 50],
-        },
-        title: {
-          required: true,
-          len: 80,
-        },
-        body: {
-          required: true,
-        },
-        clickUrl: {
-          required: true,
-        },
-        icon: {
-          required: false,
-          sendTargetingKeys: false,
-        },
-        cta: {
-          required: false,
-          sendTargetingKeys: false,
-        },
-        sponsoredBy: {
-          required: false,
-          sendTargetingKeys: false,
-        },
-        privacyLink: {
-          required: false,
-          sendTargetingKeys: false,
-        },
-        ext: {
-          foo: {
-            required: false,
-            sendTargetingKeys: true,
-          },
-        },
-      },
-    };
-    const targeting = getNativeTargeting(bid, deps(adUnit));
-
-    expect(Object.keys(targeting)).to.deep.equal([
-      NATIVE_KEYS.title,
-      NATIVE_KEYS.body,
-      NATIVE_KEYS.image,
-      NATIVE_KEYS.clickUrl,
-      'hb_native_foo',
-    ]);
-  });
-
-  it('should include rendererUrl in targeting', function () {
-    const rendererUrl = 'https://www.renderer.com/';
-    const targeting = getNativeTargeting({...bid, native: {...bid.native, rendererUrl: {url: rendererUrl}}}, deps({}));
-    expect(targeting[NATIVE_KEYS.rendererUrl]).to.eql(rendererUrl);
-  });
-
   it('fires impression trackers', function () {
     fireNativeTrackers({}, bid);
     sinon.assert.calledOnce(triggerPixelStub);
@@ -390,7 +230,8 @@ describe('native.js', function () {
       'returns native data': {
         renderDataHook(next, bidResponse) {
           next.bail({
-            native: getNativeRenderingData(bidResponse, adUnit)
+            native: getNativeRenderingData(bidResponse, adUnit),
+            rendererVersion: 'native-render-version'
           });
         },
         renderSourceHook(next) {
@@ -421,8 +262,9 @@ describe('native.js', function () {
         function checkRenderer(message) {
           if (withRenderer) {
             expect(message.renderer).to.eql('mock-native-renderer')
+            expect(message.rendererVersion).to.eql(PUC_MIN_VERSION);
             Object.entries(message).forEach(([key, val]) => {
-              if (!['native', 'adId', 'message', 'assets', 'renderer'].includes(key)) {
+              if (!['native', 'adId', 'message', 'assets', 'renderer', 'rendererVersion'].includes(key)) {
                 expect(message.native[key]).to.eql(val);
               }
             })
@@ -647,6 +489,14 @@ describe('native.js', function () {
       expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
       expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
+    ['img.type', 'title.text', 'data.type'].forEach(prop => {
+      it(`does not choke when the request does not have ${prop}, but the response does`, () => {
+        const request = {ortb: {assets: [{id: 1}]}};
+        const response = {ortb: {assets: [{id: 1}]}};
+        deepSetValue(response, `assets.0.${prop}`, 'value');
+        toLegacyResponse(response, request);
+      })
+    })
   });
 
   describe('setNativeResponseProperties', () => {
@@ -704,7 +554,7 @@ describe('native.js', function () {
 
 describe('validate native openRTB', function () {
   it('should validate openRTB request', function () {
-    let openRTBNativeRequest = { assets: [] };
+    const openRTBNativeRequest = { assets: [] };
     // assets array can't be empty
     expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
     openRTBNativeRequest.assets.push({
@@ -754,7 +604,7 @@ describe('validate native openRTB', function () {
         },
       ],
     };
-    let openRTBBid = {
+    const openRTBBid = {
       assets: [
         {
           id: 1,
@@ -800,7 +650,7 @@ describe('validate native', function () {
     },
   };
 
-  let validBid = {
+  const validBid = {
     adId: 'abc123',
     requestId: 'test_bid_id',
     adUnitId: 'test_adunit',
@@ -827,7 +677,7 @@ describe('validate native', function () {
     },
   };
 
-  let noIconDimBid = {
+  const noIconDimBid = {
     adId: 'abc234',
     requestId: 'test_bid_id',
     adUnitId: 'test_adunit',
@@ -850,7 +700,7 @@ describe('validate native', function () {
     },
   };
 
-  let noImgDimBid = {
+  const noImgDimBid = {
     adId: 'abc345',
     requestId: 'test_bid_id',
     adUnitId: 'test_adunit',

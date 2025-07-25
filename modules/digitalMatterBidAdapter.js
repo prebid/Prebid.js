@@ -1,14 +1,16 @@
-import {deepAccess, deepSetValue, getDNT, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
+import {deepAccess, deepSetValue, getDNT, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'digitalMatter';
+const GVLID = 1345;
 const ENDPOINT_URL = 'https://adx.digitalmatter.services/'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   aliases: ['dichange', 'digitalmatter'],
   bidParameters: ['accountId', 'siteId'],
@@ -34,7 +36,7 @@ export const spec = {
     }
 
     const device = getDevice(common.device);
-    const schain = getByKey(validBidRequests, 'schain');
+    const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
     const eids = getByKey(validBidRequests, 'userIdAsEids');
     const currency = config.getConfig('currency')
     const cur = currency && [currency];
@@ -154,8 +156,8 @@ export const spec = {
             const userSync = response.body.ext.usersync;
 
             userSync.forEach((element) => {
-              let url = element.url;
-              let type = element.type;
+              const url = element.url;
+              const type = element.type;
 
               if (url) {
                 if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
@@ -176,7 +178,7 @@ export const spec = {
   }
 }
 
-let usersSynced = false;
+const usersSynced = false;
 
 function hasBannerMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
@@ -187,9 +189,11 @@ function getDevice(data) {
   if (!dnt) {
     dnt = getDNT() ? 1 : 0;
   }
+  const { innerWidth, innerHeight } = getWinDimensions();
+
   return {
-    w: data.w || window.innerWidth,
-    h: data.h || window.innerHeight,
+    w: data.w || innerWidth,
+    h: data.h || innerHeight,
     ua: data.ua || navigator.userAgent,
     dnt: dnt,
     language: data.language || navigator.language,

@@ -4,7 +4,8 @@ import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
-import { __TEST__ } from '../../../modules/cleanioRtdProvider.js';
+import { __CLEANIO_TEST__ } from '../../../modules/cleanioRtdProvider.js';
+import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 
 const {
   readConfig,
@@ -14,7 +15,7 @@ const {
   bidWrapStepAugmentHtml,
   bidWrapStepProtectByWrapping,
   beforeInit,
-} = __TEST__;
+} = __CLEANIO_TEST__;
 
 sinon.assert.expose(chai.assert, { prefix: 'sinon' });
 
@@ -67,10 +68,10 @@ describe('clean.io RTD module', function () {
     });
 
     it('pageInitStepProtectPage() should insert script element', function() {
-      pageInitStepProtectPage(fakeScriptURL);
+      pageInitStepProtectPage(fakeScriptURL, 'clean.io');
 
       sinon.assert.calledOnce(loadExternalScriptStub);
-      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, 'clean.io');
+      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'clean.io');
     });
   });
 
@@ -99,7 +100,7 @@ describe('clean.io RTD module', function () {
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Submodule execution', function() {
     let submoduleStub;
     let insertElementStub;
     beforeEach(function () {
@@ -139,7 +140,7 @@ describe('clean.io RTD module', function () {
       const { init, onBidResponseEvent } = getModule();
       expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
       sinon.assert.calledOnce(loadExternalScriptStub);
-      sinon.assert.calledWith(loadExternalScriptStub, 'https://abc1234567890.cloudfront.net/script.js', 'clean.io');
+      sinon.assert.calledWith(loadExternalScriptStub, 'https://abc1234567890.cloudfront.net/script.js', MODULE_TYPE_RTD, 'clean.io');
 
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});

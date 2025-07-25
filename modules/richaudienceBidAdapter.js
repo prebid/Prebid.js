@@ -1,9 +1,9 @@
-import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
+import {deepAccess, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -11,7 +11,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: ['ra'],
+  aliases: [{code: 'ra', gvlid: 108}],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
@@ -36,7 +36,7 @@ export const spec = {
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
+        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -48,13 +48,13 @@ export const spec = {
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: bidderRequest.timeout || 600,
-        user: raiSetEids(bid),
+        eids: deepAccess(bid, 'userIdAsEids') ? bid.userIdAsEids : [],
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
-        schain: bid.schain,
+        kws: bid.params.keywords,
+        schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
         userData: deepAccess(bid, 'ortb2.user.data')
@@ -118,7 +118,9 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        meta: response.adomain,
+        meta: {
+          advertiserDomains: [response.adomain[0]]
+        },
         dealId: response.dealId
       };
 
@@ -209,7 +211,7 @@ export const spec = {
   },
 
   onTimeout: function (data) {
-    let url = raiGetTimeoutURL(data);
+    const url = raiGetTimeoutURL(data);
     if (url) {
       triggerPixel(url);
     }
@@ -264,30 +266,6 @@ function raiGetVideoInfo(bid) {
   return videoData;
 }
 
-function raiSetEids(bid) {
-  let eids = [];
-
-  if (bid && bid.userId) {
-    raiSetUserId(bid, eids, 'id5-sync.com', deepAccess(bid, `userId.id5id.uid`));
-    raiSetUserId(bid, eids, 'pubcommon', deepAccess(bid, `userId.pubcid`));
-    raiSetUserId(bid, eids, 'criteo.com', deepAccess(bid, `userId.criteoId`));
-    raiSetUserId(bid, eids, 'liveramp.com', deepAccess(bid, `userId.idl_env`));
-    raiSetUserId(bid, eids, 'liveintent.com', deepAccess(bid, `userId.lipb.lipbid`));
-    raiSetUserId(bid, eids, 'adserver.org', deepAccess(bid, `userId.tdid`));
-  }
-
-  return eids;
-}
-
-function raiSetUserId(bid, eids, source, value) {
-  if (isStr(value)) {
-    eids.push({
-      userId: value,
-      source: source
-    });
-  }
-}
-
 function renderer(bid) {
   bid.renderer.push(() => {
     renderAd(bid)
@@ -295,14 +273,8 @@ function renderer(bid) {
 }
 
 function renderAd(bid) {
-  let raOutstreamHBPassback = `${bid.vastXml}`;
-  let raPlayerHB = {
-    config: bid.params[0].player != undefined ? {
-      end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
-      init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
-      skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
-    } : {end: 'close', init: 'close', skin: 'light'},
-    pid: bid.params[0].pid,
+  const raOutstreamHBPassback = `${bid.vastXml}`;
+  const raPlayerHB = {
     adUnit: bid.adUnitCode
   };
 
@@ -328,7 +300,7 @@ function raiSetPbAdSlot(bid) {
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
-    let raiSync = {};
+    const raiSync = {};
     if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
       raConfig = config.getConfig('userSync').filterSettings
       if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
@@ -350,7 +322,7 @@ function raiGetFloor(bid, config) {
     if (bid.params.bidfloor != null) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
-      let floorSpec = bid.getFloor({
+      const floorSpec = bid.getFloor({
         currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
         mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
@@ -365,7 +337,7 @@ function raiGetFloor(bid, config) {
 }
 
 function raiGetTimeoutURL(data) {
-  let {params, timeout} = data[0]
+  const {params, timeout} = data[0]
   let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
 
   url = url.replace('[timeout_publisher]', timeout)
@@ -377,6 +349,6 @@ function raiGetTimeoutURL(data) {
 }
 
 function setDSA(bid) {
-  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  const dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
   return dsa;
 }

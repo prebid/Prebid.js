@@ -4,7 +4,8 @@ import * as utils from 'src/utils.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
-const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 
 describe('SSPBC adapter', function () {
   function prepareTestData() {
@@ -533,7 +534,7 @@ describe('SSPBC adapter', function () {
 
   describe('isBidRequestValid', function () {
     const { bids } = prepareTestData();
-    let bid = bids[0];
+    const bid = bids[0];
 
     it('should always return true whether bid has params (standard) or not (OneCode)', function () {
       assert(spec.isBidRequestValid(bid));
@@ -649,6 +650,25 @@ describe('SSPBC adapter', function () {
       expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
       expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
     });
+
+    it('should send supply chain data', function () {
+      const supplyChain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'first-seller.com',
+            sid: '00001',
+            hp: 1
+          },
+        ]
+      }
+      const bidWithSupplyChain = Object.assign(bids[0], { ortb2: { source: { ext: { schain: supplyChain } } } });
+      const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest);
+      const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false };
+
+      expect(payloadWithSupplyChain.source).to.have.property('schain').that.has.keys('ver', 'complete', 'nodes');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -660,13 +680,13 @@ describe('SSPBC adapter', function () {
     const requestNative = spec.buildRequests([bid_native], bidRequestNative);
 
     it('should handle nobid responses', function () {
-      let result = spec.interpretResponse(emptyResponse, request);
+      const result = spec.interpretResponse(emptyResponse, request);
       expect(result.length).to.equal(0);
     });
 
     it('should create bids from non-empty responses', function () {
-      let result = spec.interpretResponse(serverResponse, request);
-      let resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
+      const result = spec.interpretResponse(serverResponse, request);
+      const resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
 
       expect(result.length).to.equal(bids.length);
       expect(resultSingle.length).to.equal(1);
@@ -674,36 +694,36 @@ describe('SSPBC adapter', function () {
     });
 
     it('should create bid from OneCode (parameter-less) request, if response contains siteId', function () {
-      let resultOneCode = spec.interpretResponse(serverResponseOneCode, requestOneCode);
+      const resultOneCode = spec.interpretResponse(serverResponseOneCode, requestOneCode);
 
       expect(resultOneCode.length).to.equal(1);
       expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls');
     });
 
     it('should not create bid from OneCode (parameter-less) request, if response does not contain siteId', function () {
-      let resultOneCodeNoMatch = spec.interpretResponse(serverResponse, requestOneCode);
+      const resultOneCodeNoMatch = spec.interpretResponse(serverResponse, requestOneCode);
 
       expect(resultOneCodeNoMatch.length).to.equal(0);
     });
 
     it('should handle a partial response', function () {
-      let resultPartial = spec.interpretResponse(serverResponseSingle, request);
+      const resultPartial = spec.interpretResponse(serverResponseSingle, request);
       expect(resultPartial.length).to.equal(1);
     });
 
     it('should not alter HTML from response', function () {
-      let resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
-      let adcode = resultSingle[0].ad;
+      const resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
+      const adcode = resultSingle[0].ad;
 
       expect(adcode).to.be.equal(serverResponseSingle.body.seatbid[0].bid[0].adm);
     });
 
     it('should create a correct video bid', function () {
-      let resultVideo = spec.interpretResponse(serverResponseVideo, requestVideo);
+      const resultVideo = spec.interpretResponse(serverResponseVideo, requestVideo);
 
       expect(resultVideo.length).to.equal(1);
 
-      let videoBid = resultVideo[0];
+      const videoBid = resultVideo[0];
       expect(videoBid).to.have.keys('adType', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl', 'vurls');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
@@ -713,17 +733,17 @@ describe('SSPBC adapter', function () {
     });
 
     it('should create a correct native bid', function () {
-      let resultNative = spec.interpretResponse(serverResponseNative, requestNative);
+      const resultNative = spec.interpretResponse(serverResponseNative, requestNative);
 
       expect(resultNative.length).to.equal(1);
 
-      let nativeBid = resultNative[0];
+      const nativeBid = resultNative[0];
       expect(nativeBid).to.have.keys('cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls');
       expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers', 'clickTrackers');
     });
 
     it('should reject responses that are not HTML, VATS/VPAID or native', function () {
-      let resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle);
+      const resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle);
 
       expect(resultIncorrect.length).to.equal(0);
     });
@@ -737,32 +757,37 @@ describe('SSPBC adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    let syncResultAll = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
-    let syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
-    let syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
+    const syncResultAll = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+    const syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+    const syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
-    it('should provide correct url, if frame sync is allowed', function () {
+    it('should provide correct iframe url, if frame sync is allowed', function () {
       expect(syncResultAll).to.have.length(1);
-      expect(syncResultAll[0].url).to.have.string(SYNC_URL);
+      expect(syncResultAll[0].url).to.have.string(SYNC_URL_IFRAME);
     });
 
-    it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.have.length(0);
+    it('should provide correct image url, if image sync is allowed', function () {
+      expect(syncResultImage).to.have.length(1);
+      expect(syncResultImage[0].url).to.have.string(SYNC_URL_IMAGE);
+    });
+
+    it('should send no syncs, if no sync is allowed', function () {
+      expect(syncResultNone).to.have.length(0);
       expect(syncResultNone).to.have.length(0);
     });
   });
 
   describe('onBidWon', function () {
     it('should generate no notification if bid is undefined', function () {
-      let notificationPayload = spec.onBidWon();
+      const notificationPayload = spec.onBidWon();
       expect(notificationPayload).to.be.undefined;
     });
 
     it('should generate notification with event name and request/adUnit data, if correct bid is provided. Should also contain site/slot data as arrays.', function () {
       const { bids } = prepareTestData();
-      let bid = bids[0];
+      const bid = bids[0];
 
-      let notificationPayload = spec.onBidWon(bid);
+      const notificationPayload = spec.onBidWon(bid);
       expect(notificationPayload).to.have.property('event').that.equals('bidWon');
       expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
@@ -773,15 +798,15 @@ describe('SSPBC adapter', function () {
 
   describe('onBidBillable', function () {
     it('should generate no notification if bid is undefined', function () {
-      let notificationPayload = spec.onBidBillable();
+      const notificationPayload = spec.onBidBillable();
       expect(notificationPayload).to.be.undefined;
     });
 
     it('should generate notification with event name and request/adUnit data, if correct bid is provided. Should also contain site/slot data as arrays.', function () {
       const { bids } = prepareTestData();
-      let bid = bids[0];
+      const bid = bids[0];
 
-      let notificationPayload = spec.onBidBillable(bid);
+      const notificationPayload = spec.onBidBillable(bid);
       expect(notificationPayload).to.have.property('event').that.equals('bidBillable');
       expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
@@ -792,8 +817,8 @@ describe('SSPBC adapter', function () {
 
   describe('onTimeout', function () {
     it('should generate no notification if timeout data is undefined / has no bids', function () {
-      let notificationPayloadUndefined = spec.onTimeout();
-      let notificationPayloadNoBids = spec.onTimeout([]);
+      const notificationPayloadUndefined = spec.onTimeout();
+      const notificationPayloadNoBids = spec.onTimeout([]);
 
       expect(notificationPayloadUndefined).to.be.undefined;
       expect(notificationPayloadNoBids).to.be.undefined;
@@ -801,7 +826,7 @@ describe('SSPBC adapter', function () {
 
     it('should generate single notification for any number of timeouted bids', function () {
       const { bids_timeouted } = prepareTestData();
-      let notificationPayload = spec.onTimeout(bids_timeouted);
+      const notificationPayload = spec.onTimeout(bids_timeouted);
 
       expect(notificationPayload).to.have.property('event').that.equals('timeout');
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);

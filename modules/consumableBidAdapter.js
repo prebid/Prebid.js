@@ -33,12 +33,13 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests An array of bids
+   * @param {Object} bidderRequest The bidder's request info.
    * @return ServerRequest Info describing the request to the server.
    */
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let ret = {
+    const ret = {
       method: 'POST',
       url: '',
       data: '',
@@ -81,8 +82,9 @@ export const spec = {
       data.ccpa = bidderRequest.uspConsent;
     }
 
-    if (bidderRequest && bidderRequest.schain) {
-      data.schain = bidderRequest.schain;
+    const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      data.schain = schain;
     }
 
     if (config.getConfig('coppa')) {
@@ -128,7 +130,7 @@ export const spec = {
     let bids;
     let bidId;
     let bidObj;
-    let bidResponses = [];
+    const bidResponses = [];
 
     bids = bidRequest.bidRequest;
 
@@ -300,6 +302,7 @@ function retrieveAd(decision, unitId, unitName) {
 function handleEids(data, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);
   } else {
     deepSetValue(data, 'user.eids', undefined);
@@ -313,7 +316,7 @@ function getBidFloor(bid, sizes) {
 
   let floor;
 
-  let floorInfo = bid.getFloor({
+  const floorInfo = bid.getFloor({
     currency: 'USD',
     mediaType: bid.mediaTypes.video ? 'video' : 'banner',
     size: sizes.length === 1 ? sizes[0] : '*'

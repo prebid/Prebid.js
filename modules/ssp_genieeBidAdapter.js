@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -15,7 +14,8 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
-// export const ENDPOINT_USERSYNC = '';
+export const USER_SYNC_ENDPOINT_IMAGE = 'https://cs.gssprt.jp/yie/ld/mcs';
+export const USER_SYNC_ENDPOINT_IFRAME = 'https://cs.gssprt.jp/yie/ld';
 const SUPPORTED_MEDIA_TYPES = [ BANNER ];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
@@ -124,11 +124,24 @@ function hasParamsNotBlankString(params, key) {
   );
 }
 
+export const buildExtuidQuery = ({id5, imuId}) => {
+  const params = [
+    ...(id5 ? [`id5:${id5}`] : []),
+    ...(imuId ? [`im:${imuId}`] : []),
+  ];
+
+  const queryString = params.join('\t');
+  if (!queryString) return null;
+  return queryString;
+}
+
 /**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
+  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
+
   const data = {
     zoneid: bid.params.zoneId,
     cb: Math.floor(Math.random() * 99999999999),
@@ -144,7 +157,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     ua: navigator.userAgent,
     tpaf: 1,
     cks: 1,
-    ib: 0,
+    ...(gpid ? { gpid } : {}),
   };
 
   try {
@@ -212,9 +225,11 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     }
   }
 
-  // imuid
-  const imuidQuery = getImuidAsQueryParameter();
-  if (imuidQuery) data.extuid = imuidQuery;
+  // imuid, id5
+  const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
+  const imuId = utils.deepAccess(bid, 'userId.imuid');
+  const extuidQuery = buildExtuidQuery({id5, imuId});
+  if (extuidQuery) data.extuid = extuidQuery;
 
   // makeUAQuery
   // To avoid double encoding, not using encodeURIComponent here
@@ -308,24 +323,6 @@ function makeBidResponseAd(innerHTML) {
   return '<body marginwidth="0" marginheight="0">' + innerHTML + '</body>';
 }
 
-/**
- * add imuid script tag
- */
-function appendImuidScript() {
-  const scriptEl = document.createElement('script');
-  scriptEl.src = '//dmp.im-apps.net/scripts/im-uid-hook.js?cid=3929';
-  scriptEl.async = true;
-  document.body.appendChild(scriptEl);
-}
-
-/**
- * return imuid strings as query parameters
- */
-function getImuidAsQueryParameter() {
-  const imuid = storage.getCookie('_im_uid.3929');
-  return imuid ? 'im:' + imuid : ''; // To avoid double encoding, not using encodeURIComponent here
-}
-
 function getUserAgent() {
   return storage.getDataFromLocalStorage('key') || null;
 }
@@ -404,8 +401,6 @@ export const spec = {
       return bidResponses;
     }
 
-    appendImuidScript();
-
     const zoneId = bidderRequest.bid.params.zoneId;
     let successBid;
     successBid = serverResponse.body || {};
@@ -418,14 +413,37 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return syncs;
 
-    // if we need user sync, we add this part after preparing the endpoint
-    /* if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: ENDPOINT_USERSYNC
+    serverResponses.forEach((serverResponse) => {
+      if (!serverResponse?.body) return;
+
+      const bids = Object.values(serverResponse.body).filter(Boolean);
+      if (!bids.length) return;
+
+      bids.forEach(bid => {
+        if (syncOptions.iframeEnabled && bid.cs_url) {
+          syncs.push({ type: 'iframe', url: USER_SYNC_ENDPOINT_IFRAME + bid.cs_url });
+          return;
+        }
+
+        if (syncOptions.pixelEnabled && bid.adm) {
+          const decodedAdm = decodeURIComponent(bid.adm)
+          const reg = new RegExp('https:\\\\/\\\\/cs.gssprt.jp\\\\/yie\\\\/ld\\\\/mcs\\?([^\\\\"]+)\\\\"', 'g');
+          const csQuery = Array.from(decodedAdm.matchAll(reg), (match) => match[1]);
+          if (!csQuery.length) {
+            return;
+          }
+
+          csQuery.forEach((query) => {
+            syncs.push({
+              type: 'image',
+              url: USER_SYNC_ENDPOINT_IMAGE + '?' + query
+            });
+          });
+        }
       });
-    } */
+    });
 
     return syncs;
   },

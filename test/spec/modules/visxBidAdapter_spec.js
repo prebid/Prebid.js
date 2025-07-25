@@ -5,6 +5,8 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { mergeDeep } from '../../../src/utils.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -16,7 +18,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'visx',
       'params': {
         'uid': 903536
@@ -33,7 +35,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -42,7 +44,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when uid can not be parsed as number', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 'sdvsdv'
@@ -51,7 +53,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should fail on invalid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -63,7 +65,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should pass on valid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -140,7 +142,7 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'visx',
         'params': {
@@ -355,8 +357,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'GBP' : 'USD');
+      config.setConfig({currency: {bidderCurrencyDefault: {visx: 'GBP'}}})
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -410,66 +411,22 @@ describe('VisxAdapter', function () {
         }
       });
 
-      getConfigStub.restore();
+      config.resetConfig();
     });
 
     it('should add currency from currency.adServerCurrency', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? '' : 'USD');
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
+      setCurrencyConfig({ adServerCurrency: 'USD' })
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const request = spec.buildRequests(bidRequests, res);
+        const payload = parseRequest(request.url);
+        expect(payload).to.be.an('object');
+        expect(payload).to.have.property('auids', '903535,903535,903536,903537');
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
-      expect(postData).to.deep.equal({
-        'id': '22edbae2733bf6',
-        'imp': expectedFullImps,
-        'tmax': 3000,
-        'cur': ['USD'],
-        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {
-          'domain': 'localhost:9999',
-          'publisher': {
-            'domain': 'localhost:9999'
-          },
-          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
-        },
-        'device': {
-          'w': 1259,
-          'h': 934,
-          'dnt': 0,
-          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'language': 'tr',
-          'sua': {
-            'source': 1,
-            'platform': {
-              'brand': 'macOS'
-            },
-            'browsers': [
-              {
-                'brand': 'Chromium',
-                'version': [ '124' ]
-              },
-              {
-                'brand': 'Google Chrome',
-                'version': [ '124' ]
-              },
-              {
-                'brand': 'Not-A.Brand',
-                'version': [ '99' ]
-              }
-            ],
-            'mobile': 0
-          },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
-        },
+        const postData = request.data;
+        expect(postData).to.be.an('object');
+        expect(postData.cur).to.deep.equal(['USD']);
+        setCurrencyConfig({})
       });
-
-      getConfigStub.restore();
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
@@ -640,7 +597,7 @@ describe('VisxAdapter', function () {
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
-        Object.assign({schain: schainObject}, bidRequests[0]),
+        Object.assign({ortb2: {source: {ext: {schain: schainObject}}}}, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
@@ -944,7 +901,7 @@ describe('VisxAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    it('should send requst for banner bid', function () {
+    it('should send request for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -1099,7 +1056,7 @@ describe('VisxAdapter', function () {
     let documentStub;
 
     before(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('visx-adunit-code-1').returns({
         id: 'visx-adunit-code-1'
@@ -1995,7 +1952,7 @@ describe('VisxAdapter', function () {
       return { path, query };
     }
     it('should call iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -2011,7 +1968,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should call image', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 

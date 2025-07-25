@@ -6,7 +6,7 @@ import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
-  logInfo('validBidRequests ::' + JSON.stringify(validBidRequests));
+  
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -81,7 +81,9 @@ export function onBidWon(bid) {
 }
 
 export function macroReplace(adm, cpm) {
+  
   let replacedadm = replaceAuctionPrice(adm, cpm);
+
   return replacedadm;
 }
 
@@ -91,7 +93,9 @@ function mapImpression(slot, bidderRequest) {
     bidFloor: getBidFloor(slot),
   };
 
+
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
+
     imp.native = mapNative(slot)
   } else {
     imp.banner = mapBanner(slot)
@@ -100,8 +104,10 @@ function mapImpression(slot, bidderRequest) {
 }
 
 function mapNative(slot) {
+
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
     let request = {
+      
       assets: slot.nativeOrtbRequest.assets || slot.nativeParams.ortb.assets,
       ver: '1.2'
     };
@@ -114,6 +120,7 @@ function mapNative(slot) {
 function mapBanner(slot) {
   if (slot.mediaTypes.banner) {
     let format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
+
       return { w: size[0], h: size[1] }
     });
 
@@ -125,8 +132,7 @@ function mapBanner(slot) {
 
 export function buildBidResponse(serverResponse) {
   const responseBody = serverResponse.body;
-  logInfo('Bid Response::' + responseBody.toString());
-  logInfo('Bid Response obj::' + JSON.stringify(responseBody));
+
   const bids = [];
   responseBody.seatbid.forEach(seat => {
     seat.bid.forEach(serverBid => {
@@ -134,7 +140,9 @@ export function buildBidResponse(serverResponse) {
         return;
       }
       if (serverBid.adm.indexOf('{') === 0) {
+
         let interpretedBid = interpretNativeBid(serverBid);
+
         bids.push(interpretedBid
         );
       } else {

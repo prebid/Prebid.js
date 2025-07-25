@@ -1,6 +1,6 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
@@ -47,14 +47,34 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo 
  */
 
 const BIDDER_CODE = 'yandex';
-const BIDDER_URL = 'https://bs.yandex.ru/prebid';
+const BIDDER_URL = 'https://yandex.ru/ads/prebid';
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
 /**
  * @type {MediaType[]}
  */
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+
+const ORTB_MTYPES = {
+  BANNER: 1,
+  VIDEO: 2,
+  NATIVE: 4
+};
+
 const SSP_ID = 10500;
+const ADAPTER_VERSION = '2.6.0';
+
+const TRACKER_METHODS = {
+  img: 1,
+  js: 2,
+};
+
+const TRACKER_EVENTS = {
+  impression: 1,
+  'viewable-mrc50': 2,
+  'viewable-mrc100': 3,
+  'viewable-video50': 4,
+};
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
@@ -128,7 +148,7 @@ export const spec = {
       timeout = bidderRequest.timeout;
     }
 
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
@@ -139,6 +159,7 @@ export const spec = {
       const queryParams = {
         'imp-id': impId,
         'target-ref': targetRef || ortb2?.site?.domain,
+        'adapter-version': ADAPTER_VERSION,
         'ssp-id': SSP_ID,
       };
 
@@ -153,6 +174,9 @@ export const spec = {
         id: impId,
         banner: mapBanner(bidRequest),
         native: mapNative(bidRequest),
+        video: mapVideo(bidRequest),
+        displaymanager: 'Prebid.js',
+        displaymanagerver: '$prebid.version$',
       };
 
       const bidfloor = getBidfloor(bidRequest);
@@ -174,6 +198,13 @@ export const spec = {
         user: ortb2?.user,
         device: ortb2?.device,
       };
+
+      if (!data?.site?.content?.language) {
+        const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
+        if (documentLang) {
+          deepSetValue(data, 'site.content.language', documentLang);
+        }
+      }
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {
@@ -294,6 +325,30 @@ function mapBanner(bidRequest) {
 }
 
 /**
+ * Maps video parameters from bid request to OpenRTB video object.
+ * @param {ExtendedBidRequest} bidRequest
+ */
+function mapVideo(bidRequest) {
+  const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoParams) {
+    const { sizes, playerSize } = videoParams;
+
+    const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
+
+    const [firstSize] = format || [];
+
+    delete videoParams.sizes;
+
+    return {
+      ...videoParams,
+      w: firstSize?.w,
+      h: firstSize?.h,
+      format,
+    };
+  }
+}
+
+/**
  * @param {ExtendedBidRequest} bidRequest
  */
 function mapNative(bidRequest) {
@@ -311,10 +366,13 @@ function mapNative(bidRequest) {
     });
 
     return {
-      ver: 1.1,
+      ver: 1.2,
       request: JSON.stringify({
-        ver: 1.1,
-        assets
+        ver: 1.2,
+        assets,
+        eventtrackers: [
+          { event: TRACKER_EVENTS.impression, methods: [TRACKER_METHODS.img] },
+        ],
       }),
     };
   }
@@ -376,7 +434,7 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 function interpretResponse(serverResponse, { bidRequest }) {
-  let response = serverResponse.body;
+  const response = serverResponse.body;
   if (!response.seatbid) {
     return [];
   }
@@ -390,7 +448,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
   return bidsReceived.map(bidReceived => {
     const price = bidReceived.price;
     /** @type {Bid} */
-    let prBid = {
+    const prBid = {
       requestId: bidRequest.bidId,
       cpm: price,
       currency: currency,
@@ -407,12 +465,23 @@ function interpretResponse(serverResponse, { bidRequest }) {
       }
     };
 
-    if (bidReceived.adm.indexOf('{') === 0) {
-      prBid.mediaType = NATIVE;
-      prBid.native = interpretNativeAd(bidReceived, price, currency);
-    } else {
-      prBid.mediaType = BANNER;
-      prBid.ad = bidReceived.adm;
+    if (bidReceived.lurl) {
+      prBid.lurl = bidReceived.lurl;
+    }
+
+    switch (bidReceived.mtype) {
+      case ORTB_MTYPES.VIDEO:
+        prBid.mediaType = VIDEO;
+        prBid.vastXml = bidReceived.adm;
+        break;
+      case ORTB_MTYPES.NATIVE:
+        prBid.mediaType = NATIVE;
+        prBid.native = interpretNativeAd(bidReceived, price, currency);
+        break;
+      case ORTB_MTYPES.BANNER:
+        prBid.mediaType = BANNER;
+        prBid.ad = bidReceived.adm;
+        break;
     }
 
     return prBid;
@@ -446,9 +515,22 @@ function interpretNativeAd(bidReceived, price, currency) {
       }
     });
 
-    result.impressionTrackers = _map(native.imptrackers, (tracker) =>
+    const impressionTrackers = _map(native.imptrackers || [], (tracker) =>
       replaceAuctionPrice(tracker, price, currency)
     );
+
+    _each(native.eventtrackers || [], (eventtracker) => {
+      if (
+        eventtracker.event === TRACKER_EVENTS.impression &&
+        eventtracker.method === TRACKER_METHODS.img
+      ) {
+        impressionTrackers.push(
+          replaceAuctionPrice(eventtracker.url, price, currency)
+        );
+      }
+    });
+
+    result.impressionTrackers = impressionTrackers;
 
     return result;
   } catch (e) {}

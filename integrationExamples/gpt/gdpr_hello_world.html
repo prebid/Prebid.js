@@ -13,7 +13,7 @@
     <script src="//cdn.iubenda.com/cs/tcf/beta/stub.js"></script>
     <script async src="//cdn.iubenda.com/cs/beta/iubenda_cs.js"></script>
     <script async src="../../build/dev/prebid.js"></script>
-    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
 
       <script>
         var PREBID_TIMEOUT = 700;
@@ -70,10 +70,14 @@
           if (pbjs.adserverRequestSent) return;
           pbjs.adserverRequestSent = true;
           googletag.cmd.push(function() {
-            pbjs.que.push(function() {
-              pbjs.setTargetingForGPTAsync();
+            if (pbjs.libLoaded) {
+              pbjs.que.push(function() {
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
+              });
+            } else {
               googletag.pubads().refresh();
-            });
+            }
           });
         }
 

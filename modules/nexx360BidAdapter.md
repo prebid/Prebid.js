@@ -10,7 +10,7 @@ Maintainer: gabriel@nexx360.io
 
 Connects to Nexx360 network for bids.
 
-To use us as a bidder you must have an account and an active "tagId" on our Nexx360 platform.
+To use us as a bidder you must have an account and an active "tagId"  or "placement" on our Nexx360 platform.
 
 # Test Parameters
 
@@ -30,8 +30,7 @@ var adUnits = [
       bids: [{
          bidder: 'nexx360',
          params: {
-            account: '1067',
-            tagId: 'luvxjvgn'
+            tagId: 'testnexx'
          }
        }]
    },
@@ -51,8 +50,7 @@ var adUnits = [
         bids: [{
             bidder: 'nexx360',
             params: {
-               account: '1067',
-               tagId: 'luvxjvgn'
+              tagId: 'testnexx'
             }
         }]
     };

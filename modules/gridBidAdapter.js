@@ -7,7 +7,8 @@ import {
   mergeDeep,
   logWarn,
   isNumber,
-  isStr
+  isStr,
+  isPlainObject
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -114,7 +115,7 @@ export const spec = {
         bidderRequestId = bid.bidderRequestId;
       }
       if (!schain) {
-        schain = bid.schain;
+        schain = bid?.ortb2?.source?.ext?.schain;
       }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
@@ -131,7 +132,7 @@ export const spec = {
         content = jwTargeting.content;
       }
 
-      let impObj = {
+      const impObj = {
         id: bidId.toString(),
         tagid: (secid || uid).toString(),
         ext: {
@@ -144,7 +145,7 @@ export const spec = {
         }
 
         if (ortb2Imp.ext) {
-          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.pbadslot?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
+          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
           if (ortb2Imp.ext.data) {
             impObj.ext.data = ortb2Imp.ext.data;
           }
@@ -183,8 +184,10 @@ export const spec = {
               wrapper_version: '$prebid.version$'
             }
           };
-          if (bid.schain) {
-            reqSource.ext.schain = bid.schain;
+          // Check for schain in the new location
+          const schain = bid?.ortb2?.source?.ext?.schain;
+          if (schain) {
+            reqSource.ext.schain = schain;
           }
           const request = {
             id: bid.bidderRequestId && bid.bidderRequestId.toString(),
@@ -273,6 +276,11 @@ export const spec = {
       if (ortb2UserExtDevice) {
         userExt = userExt || {};
         userExt.device = { ...ortb2UserExtDevice };
+      }
+
+      // if present, add device data object from ortb2 to the request
+      if (bidderRequest?.ortb2?.device) {
+        request.device = bidderRequest.ortb2.device;
       }
 
       if (userIdAsEids && userIdAsEids.length) {
@@ -404,7 +412,7 @@ export const spec = {
         }
         return '';
       });
-      let currentSource = sources[i] || sp;
+      const currentSource = sources[i] || sp;
       const urlWithParams = url + (url.indexOf('?') > -1 ? '&' : '?') + 'no_mapping=1' + (currentSource ? `&sp=${currentSource}` : '');
       return {
         method: 'POST',
@@ -503,7 +511,7 @@ function _getFloor (mediaTypes, bid) {
       size: bid.sizes.map(([w, h]) => ({w, h}))
     });
 
-    if (typeof floorInfo === 'object' &&
+    if (isPlainObject(floorInfo) &&
       floorInfo.currency === 'USD' &&
       !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(floor, parseFloat(floorInfo.floor));
@@ -618,8 +626,8 @@ function createBannerRequest(bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
-  let format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
-  let result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  const format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
+  const result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
     result.format = format
