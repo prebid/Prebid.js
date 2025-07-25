@@ -564,7 +564,8 @@ const VALID_PAYLOAD_INVALID_BIDFLOOR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -598,7 +599,8 @@ const VALID_PAYLOAD_INVALID_BIDFLOOR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -665,7 +667,8 @@ const VALID_PAYLOAD_NATIVE = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -699,7 +702,8 @@ const VALID_PAYLOAD_NATIVE = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -767,7 +771,8 @@ const VALID_PAYLOAD = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -800,7 +805,8 @@ const VALID_PAYLOAD = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -871,7 +877,8 @@ const VALID_PAYLOAD_WITH_USERID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -906,7 +913,8 @@ const VALID_PAYLOAD_WITH_USERID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -975,7 +983,8 @@ const VALID_PAYLOAD_WITH_USERIDASEIDS = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1010,7 +1019,8 @@ const VALID_PAYLOAD_WITH_USERIDASEIDS = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1092,7 +1102,8 @@ const VALID_PAYLOAD_WITH_CRID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1127,7 +1138,8 @@ const VALID_PAYLOAD_WITH_CRID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1197,7 +1209,8 @@ const VALID_PAYLOAD_PAAPI = {
           }
         },
         'viewability': 1,
-        'visibility': 1
+        'visibility': 1,
+        'adUnitCode': 'div-gpt-ad-1460505748561-0'
       },
       'all': {
         'cid': 'customer_id',
@@ -1741,7 +1754,8 @@ const VALID_PAYLOAD_FOR_GDPR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1774,7 +1788,8 @@ const VALID_PAYLOAD_FOR_GDPR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1858,7 +1873,8 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1891,7 +1907,8 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,

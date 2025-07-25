@@ -500,12 +500,16 @@ function openRtbImpression(bidRequest) {
   const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
     .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
-    .forEach(param => imp.video[param] = mediaTypesParams[param]);
+    .forEach(param => {
+      imp.video[param] = mediaTypesParams[param];
+    });
 
   const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
     .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
-    .forEach(param => imp.video[param] = videoParams[param]);
+    .forEach(param => {
+      imp.video[param] = videoParams[param];
+    });
 
   if (imp.video.skippable) {
     imp.video.skip = 1;
@@ -577,7 +581,9 @@ function openRtbSite(bidRequest, bidderRequest) {
   if (siteParams) {
     Object.keys(siteParams)
       .filter(param => OPENRTB_VIDEO_SITEPARAMS.includes(param))
-      .forEach(param => result[param] = siteParams[param]);
+      .forEach(param => {
+        result[param] = siteParams[param];
+      });
   }
   return result;
 }

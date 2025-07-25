@@ -5,14 +5,21 @@ import { deepAccess, deepSetValue, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'mobkoi';
 const GVL_ID = 898;
-export const DEFAULT_AD_SERVER_BASE_URL = 'https://adserver.maximus.mobkoi.com';
+// IntegrationType is defined in the backend
+const INTEGRATION_TYPE_PREBID_JS = 'pbjs';
+
+/**
+ * The default integration endpoint that the bid requests will be sent to.
+ */
+export const DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT = 'https://pbjs.mobkoi.com/bid';
 
 const PUBLISHER_PARAMS = {
   /**
    * !IMPORTANT: This value must match the value in mobkoiAnalyticsAdapter.js
-   * The name of the parameter that the publisher can use to specify the ad server endpoint.
+   * The name of the parameter that the publisher can use to specify the integration endpoint.
+   * It defines the endpoint that the bid requests will be sent to (including the path. e.g. https://pbjs.mobkoi.com/bid).
    */
-  PARAM_NAME_AD_SERVER_BASE_URL: 'adServerBaseUrl',
+  PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
   PARAM_NAME_PLACEMENT_ID: 'placementId',
 }
 
@@ -26,10 +33,11 @@ export const converter = ortbConverter({
     const prebidBidRequest = context.bidRequests[0];
 
     ortbRequest.id = utils.getOrtbId(prebidBidRequest);
-    deepSetValue(ortbRequest, 'site.publisher.ext.adServerBaseUrl', utils.getAdServerEndpointBaseUrl(prebidBidRequest));
+    deepSetValue(ortbRequest, 'site.publisher.ext.integrationBaseUrl', utils.getIntegrationEndpoint(prebidBidRequest));
     // We only support one impression per request.
     deepSetValue(ortbRequest, 'imp.0.tagid', utils.getPlacementId(prebidBidRequest));
     deepSetValue(ortbRequest, 'user.eids', context.bidRequests[0].userIdAsEids || []);
+    deepSetValue(ortbRequest, 'ext.mobkoi.integration_type', INTEGRATION_TYPE_PREBID_JS);
 
     return ortbRequest;
   },
@@ -63,11 +71,11 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests(prebidBidRequests, prebidBidderRequest) {
-    const adServerEndpoint = utils.getAdServerEndpointBaseUrl(prebidBidderRequest) + '/bid';
+    const integrationEndpoint = utils.getIntegrationEndpoint(prebidBidderRequest);
 
     return {
       method: 'POST',
-      url: adServerEndpoint,
+      url: integrationEndpoint,
       options: {
         contentType: 'application/json',
       },
@@ -91,10 +99,10 @@ export const spec = {
     return prebidBidResponse.bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
 
-    if (!syncOptions.pixelEnabled || !gdprConsent.gdprApplies) {
+    if (!syncOptions.pixelEnabled) {
       return syncs;
     }
 
@@ -123,31 +131,31 @@ registerBidder(spec);
 
 export const utils = {
   /**
-   * !IMPORTANT: Make sure the implementation of this function matches getAdServerEndpointBaseUrl
+   * !IMPORTANT: Make sure the implementation of this function matches getIntegrationEndpoint
    * in both adapters.
-   * Obtain the Ad Server Base URL from the given Prebid object.
+   * Obtain the Integration Base URL from the given Prebid object.
    * @param {*} bid Prebid Bidder Request Object or Prebid Bid Response/Request
    * or ORTB Request/Response Object
-   * @returns {string} The Ad Server Base URL
+   * @returns {string} The Integration Base URL
    */
-  getAdServerEndpointBaseUrl (bid) {
+  getIntegrationEndpoint (bid) {
     // Fields that would be automatically set if the publisher set it via pbjs.setBidderConfig.
-    const ortbPath = `site.publisher.ext.${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}`;
+    const ortbPath = `site.publisher.ext.${PUBLISHER_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`;
     const prebidPath = `ortb2.${ortbPath}`;
 
     // Fields that would be set by the publisher in the bid
     // configuration object in ad unit.
-    const paramPath = `params.${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}`;
+    const paramPath = `params.${PUBLISHER_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`;
     const bidRequestFirstBidParam = `bids.0.${paramPath}`;
 
-    const adServerBaseUrl =
+    const integrationBaseUrl =
       deepAccess(bid, paramPath) ||
       deepAccess(bid, bidRequestFirstBidParam) ||
       deepAccess(bid, prebidPath) ||
       deepAccess(bid, ortbPath) ||
-      DEFAULT_AD_SERVER_BASE_URL;
+      DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT;
 
-    return adServerBaseUrl;
+    return integrationBaseUrl;
   },
 
   /**

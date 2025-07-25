@@ -742,7 +742,7 @@ export type Schema1FloorData = FloorsDef & BaseFloorData & {
 
 export type Schema2FloorData = BaseFloorData & {
   floorsSchemaVersion: 2;
-  modelGrups: (FloorsDef & {
+  modelGroups: (FloorsDef & {
     /**
      * Used by the module to determine when to apply the specific model.
      */
@@ -768,7 +768,7 @@ export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> 
    * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
    */
   floorMin?: number;
-  enforcement?: Pick<Schema2FloorData['modelGrups'][0], 'noFloorSignalBidders'> & {
+  enforcement?: Pick<Schema2FloorData['modelGroups'][0], 'noFloorSignalBidders'> & {
     /**
      * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
      * matched rules and suppress any bids not exceeding a matching floor.

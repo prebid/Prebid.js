@@ -11,11 +11,6 @@ exports.config = {
   specs: [
     './test/spec/e2e/**/*.spec.js',
   ],
-  exclude: [
-    // TODO: decipher original intent for "longform" tests
-    // they all appear to be almost exact copies
-    './test/spec/e2e/longform/**/*'
-  ],
   logLevel: 'info', // put option here: info | trace | debug | warn| error | silent
   bail: 1,
   waitforTimeout: 60000, // Default timeout for all waitFor* commands.

@@ -6,7 +6,8 @@
       "componentType": "bidder",
       "componentName": "videoreach",
       "aliasOf": null,
-      "gvlid": 547
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

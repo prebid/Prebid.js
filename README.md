@@ -24,7 +24,7 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 ## Usage (as a npm dependency)
 
 **Note**: versions prior to v10 required some Babel plugins to be configured when used as an NPM dependency -
-refer to [v9 README](https://github.com/prebid/Prebid.js/blob/9.43.0/README.md)
+refer to [v9 README](https://github.com/prebid/Prebid.js/blob/9.43.0/README.md).
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -164,19 +164,6 @@ Since version 7.2.0, you may instruct the build to exclude code for some feature
 
 ```
 gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
-```
-
-Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
-
-```javascript
-  {
-    test: /.js$/,
-    include: new RegExp(`\\${path.sep}prebid\\.js`),
-    use: {
-      loader: 'babel-loader',
-      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
-    }
-  }
 ```
 
 Features that can be disabled this way are:

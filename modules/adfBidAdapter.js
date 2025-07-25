@@ -3,12 +3,9 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, getWinDimensions, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
-import {config} from '../src/config.js';
+import {deepAccess, deepClone, deepSetValue, getWinDimensions, parseSizesInput, setOnAny} from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-
-const { getConfig } = config;
 
 const BIDDER_CODE = 'adf';
 const GVLID = 50;
@@ -34,27 +31,16 @@ export const spec = {
 
     const commonFpd = bidderRequest.ortb2 || {};
     const user = commonFpd.user || {};
-
-    if (typeof getConfig('app') === 'object') {
-      app = getConfig('app') || {};
-      if (commonFpd.app) {
-        mergeDeep(app, commonFpd.app);
-      }
+    if (typeof commonFpd.app === 'object') {
+      app = commonFpd.app || {};
     } else {
-      site = getConfig('site') || {};
-      if (commonFpd.site) {
-        mergeDeep(site, commonFpd.site);
-      }
-
+      site = commonFpd.site || {};
       if (!site.page) {
         site.page = bidderRequest.refererInfo.page;
       }
     }
 
-    const device = getConfig('device') || {};
-    if (commonFpd.device) {
-      mergeDeep(device, commonFpd.device);
-    }
+    const device = commonFpd.device || {};
     const { innerWidth, innerHeight } = getWinDimensions();
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;
@@ -94,7 +80,7 @@ export const spec = {
       const bidfloor = floorInfo?.floor;
       const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
-      const impExtData = bid.ortb2Imp?.ext?.data;
+      const impExt = bid.ortb2Imp?.ext;
 
       const imp = {
         id: id + 1,
@@ -102,7 +88,7 @@ export const spec = {
         bidfloor,
         bidfloorcur,
         ext: {
-          data: impExtData,
+          ...impExt,
           bidder: {
             inv,
             mname
