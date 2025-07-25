@@ -138,7 +138,7 @@ describe('AppStockSSPBidAdapter', function () {
     });
 
     it('Returns valid EAST URL', function () {
-      bids[0].params.region = 'us';
+      bids[0].params.region = 'us-east';
       serverRequest = spec.buildRequests(bids, bidderRequest);
       expect(serverRequest.url).to.equal('https://lb.al-ad.com/pbjs');
     });
