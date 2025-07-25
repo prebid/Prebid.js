@@ -1291,7 +1291,7 @@ describe('ID5 ID System', function () {
       let testObj = {...storedObject, universal_uid: 'ID5*test123'};
       id5System.id5IdSubmodule.decode(testObj, config);
 
-      verifyTagging('id5_id', 'y');
+      verifyTagging('id', 'y');
     })
 
     it('should set GAM targeting for ab tag with control value', function () {
@@ -1299,7 +1299,7 @@ describe('ID5 ID System', function () {
       let testObj = {...storedObject, ab_testing: {result: 'control'}};
       id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
 
-      verifyTagging('id5_ab', 'c');
+      verifyTagging('ab', 'c');
     })
 
     it('should set GAM targeting for ab tag with normal value', function () {
@@ -1307,7 +1307,7 @@ describe('ID5 ID System', function () {
       let testObj = {...storedObject, ab_testing: {result: 'normal'}};
       id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
 
-      verifyTagging('id5_ab', 'n');
+      verifyTagging('ab', 'n');
     })
 
     it('should set GAM targeting for enrich tag with enriched=true', function () {
@@ -1315,7 +1315,7 @@ describe('ID5 ID System', function () {
       let testObj = {...storedObject, enrichment: {enriched: true}};
       id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
 
-      verifyTagging('id5_enrich', 'y');
+      verifyTagging('enrich', 'y');
     })
 
     it('should set GAM targeting for enrich tag with enrichment_selected=true', function () {
@@ -1323,7 +1323,7 @@ describe('ID5 ID System', function () {
       let testObj = {...storedObject, enrichment: {enrichment_selected: true}};
       id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
 
-      verifyTagging('id5_enrich', 's');
+      verifyTagging('enrich', 's');
     })
 
     it('should set GAM targeting for enrich tag with enrichment_selected=false', function () {
@@ -1331,7 +1331,7 @@ describe('ID5 ID System', function () {
       let testObj = {...storedObject, enrichment: {enrichment_selected: false}};
       id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
 
-      verifyTagging('id5_enrich', 'c');
+      verifyTagging('enrich', 'c');
     })
 
     it('should set GAM targeting for multiple tags when all conditions are met', function () {
