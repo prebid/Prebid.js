@@ -200,7 +200,7 @@ describe('tercept analytics adapter', function () {
               ]
             },
             'start': 1576823893838
-          }          
+          }
         ],
         'noBids': [],
         'bidsReceived': [],
@@ -326,7 +326,7 @@ describe('tercept analytics adapter', function () {
           ]
         },
         'start': 1576823893838
-      },      
+      },
       'bidAdjustment': {
         'bidderCode': 'appnexus',
         'width': 300,
@@ -734,9 +734,6 @@ describe('tercept analytics adapter', function () {
           "sizes": "300x250,300x600",
           "renderStatus": 2,
           "requestTimestamp": 1576823893838,
-          "host": "localhost",
-          "path": "/context.html",
-          "search": "",
           "creativeId": 96846035,
           "currency": "USD",
           "cpm": 0.5,
@@ -754,9 +751,6 @@ describe('tercept analytics adapter', function () {
           "transactionId": "d99d90e0-663a-459d-8c87-4c92ce6a527c",
           "sizes": "300x250,300x600",
           "renderStatus": 5,
-          "host": "localhost",
-          "path": "/context.html",
-          "search": "",
           "responseTimestamp": 1753444800000
         }
       ],
@@ -963,7 +957,10 @@ describe('tercept analytics adapter', function () {
         'renderStatus': 4,
         'timeToRespond': 212,
         'requestTimestamp': 1576823893838,
-        'responseTimestamp': 1576823894050
+        'responseTimestamp': 1576823894050,
+        "host": "localhost",
+        "path": "/context.html",
+        "search": "",
       },
       'initOptions': initOptions
     }
@@ -985,7 +982,6 @@ describe('tercept analytics adapter', function () {
     });
 
     it('builds and sends auction data', function () {
-      debugger;
       // Step 1: Send auction init event
       events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 

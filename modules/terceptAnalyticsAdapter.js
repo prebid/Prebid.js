@@ -61,10 +61,7 @@ function mapBidRequests(params) {
         transactionId: bid.transactionId,
         sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
         renderStatus: 1,
-        requestTimestamp: params.auctionStart,
-        host: window.location.hostname,
-        path: window.location.pathname,
-        search: window.location.search
+        requestTimestamp: params.auctionStart
       });
     });
   }
@@ -111,7 +108,10 @@ function mapBidResponse(bidResponse, status) {
       renderStatus: 4,
       timeToRespond: bidResponse.timeToRespond,
       requestTimestamp: bidResponse.requestTimestamp,
-      responseTimestamp: bidResponse.responseTimestamp
+      responseTimestamp: bidResponse.responseTimestamp,
+      host: window.location.hostname,
+      path: window.location.pathname,
+      search: window.location.search
     }
   }
 }
