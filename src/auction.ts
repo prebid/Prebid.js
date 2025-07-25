@@ -18,7 +18,7 @@ import {config} from './config.js';
 import {userSync} from './userSync.js';
 import {hook, ignoreCallbackArg} from './hook.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO} from './mediaTypes.js';
+import {AUDIO, VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
@@ -504,8 +504,8 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       const bidResponse = getPreparedBidForAuction(bid);
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
-      if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
-        tryAddVideoBid(auctionInstance, bidResponse, done);
+      if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
+        tryAddVideoAudioBid(auctionInstance, bidResponse, done);
       } else {
         if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
@@ -589,7 +589,7 @@ export function addBidToAuction(auctionInstance, bidResponse: Bid) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
+function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
   let addBid = true;
 
   const videoMediaType = index.getMediaTypes({
@@ -605,7 +605,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   } = config.getConfig('cache') || {};
 
   if (useLocal) {
-    // stores video bid vast as local blob in the browser
+    // stores video/audio bid vast as local blob in the browser
     storeLocally(bidResponse);
   } else if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
@@ -624,7 +624,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
 }
 
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO || FEATURES.AUDIO) {
     batchAndStore(auctionInstance, bidResponse, afterBidAdded);
   }
 }, 'callPrebidCache');

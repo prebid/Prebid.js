@@ -23,6 +23,7 @@ export type ORTBImp = Imp & {
      */
     sequence?: number;
   };
+  audio?: Imp['audio'],
   ext?: Ext & {
     /**
      * Transaction ID for this imp. Unique for each impression opportunity (slot & auction)

@@ -1,8 +1,8 @@
-import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/video.js';
+import {fillVideoDefaults, isValidVideoBid} from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
-import { syncOrtb2 } from '../../src/prebid.js';
+import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
 
 describe('video.js', function () {
   let sandbox;
@@ -204,7 +204,7 @@ describe('video.js', function () {
         code: 'adUnitCode',
         mediaTypes: { video: mt }
       };
-      validateOrtbVideoFields(adUnit);
+      validateOrtbFields(adUnit, 'video');
 
       expect(adUnit.mediaTypes.video).to.eql(expected);
       sinon.assert.callCount(utils.logWarn, 1);
@@ -213,11 +213,11 @@ describe('video.js', function () {
     it('Early return when 1st param is not a plain object', () => {
       sandbox.spy(utils, 'logWarn');
 
-      validateOrtbVideoFields();
-      validateOrtbVideoFields([]);
-      validateOrtbVideoFields(null);
-      validateOrtbVideoFields('hello');
-      validateOrtbVideoFields(() => {});
+      validateOrtbFields(undefined, 'video');
+      validateOrtbFields([], 'video');
+      validateOrtbFields(null, 'video');
+      validateOrtbFields('hello', 'video');
+      validateOrtbFields(() => {}, 'video');
 
       sinon.assert.callCount(utils.logWarn, 5);
     });
@@ -234,7 +234,7 @@ describe('video.js', function () {
           }
         }
       };
-      validateOrtbVideoFields(adUnit, onInvalidParam);
+      validateOrtbFields(adUnit, 'video', onInvalidParam);
 
       sinon.assert.calledOnce(onInvalidParam);
       sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
