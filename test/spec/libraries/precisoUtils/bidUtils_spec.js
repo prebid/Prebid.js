@@ -10,7 +10,7 @@ const TESTDOMAIN = 'test.org'
 const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
 
 describe('bidUtils', function () {
-  const bid = {
+  let bid = {
     bidId: '23fhj33i987f',
     bidder: BIDDER_CODE,
     buyerUid: 'testuid',

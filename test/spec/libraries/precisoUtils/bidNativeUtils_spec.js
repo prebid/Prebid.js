@@ -36,7 +36,8 @@ describe('bidNativeUtils', function () {
           }],
         }
       }
-      const bid = {
+      let bid = {
+
         id: '123',
         impid: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
         price: DEFAULT_PRICE,
@@ -48,7 +49,8 @@ describe('bidNativeUtils', function () {
         adomain: [],
       }
 
-      const expectedResponse = {
+      let expectedResponse = {
+
         requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
         mediaType: NATIVE,
         cpm: DEFAULT_PRICE,
@@ -70,7 +72,7 @@ describe('bidNativeUtils', function () {
         }
       }
 
-      const result = interpretNativeBid(bid);
+      let result = interpretNativeBid(bid);
 
       expect(Object.keys(result)).to.have.members(Object.keys(expectedResponse));
     })
