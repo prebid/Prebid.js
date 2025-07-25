@@ -117,7 +117,7 @@ describe('33acrossBidAdapter:', function () {
           video: {
             w: 300,
             h: 250,
-            plcmt: 2,
+            plcmt: 4,
             ...params
           }
         });
@@ -408,6 +408,7 @@ describe('33acrossBidAdapter:', function () {
         bid.mediaTypes.video = {
           playerSize: [[300, 250]],
           context: 'outstream',
+          plcmt: 4,
           ...params
         };
       });
@@ -1628,27 +1629,6 @@ describe('33acrossBidAdapter:', function () {
       });
 
       context('and context is outstream', function() {
-        it('builds siab request with video only with default params', function() {
-          const bidRequests = new BidRequestsBuilder()
-            .withVideo({
-              context: 'outstream'
-            })
-            .build();
-          const ttxRequest = new TtxRequestBuilder()
-            .withVideo()
-            .withProduct('siab')
-            .build();
-
-          // No placement specified, final value should default to 2.
-          ttxRequest.imp[0].video.plcmt = 2;
-
-          const serverRequest = this.buildServerRequest(ttxRequest);
-          const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-          validateBuiltServerRequest(builtServerRequest, serverRequest);
-        });
-
         it('builds siab request with video params passed', function() {
           const bidRequests = new BidRequestsBuilder()
             .withVideo({
@@ -1667,28 +1647,6 @@ describe('33acrossBidAdapter:', function () {
           const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
-        });
-
-        context('and the placement is specified in the DEPRECATED `placement` field', function() {
-          it('sets the recent `plcmt` field', function() {
-            const bidRequests = new BidRequestsBuilder()
-              .withVideo({
-                context: 'outstream',
-                placement: 3,
-                playbackmethod: [2]
-              })
-              .build();
-            const serverRequest = this.buildServerRequest(
-              new TtxRequestBuilder()
-                .withVideo({plcmt: 3, placement: 3, playbackmethod: [2]})
-                .withProduct('siab')
-                .build()
-            );
-            const bidderRequest = this.buildBidderRequest(bidRequests);
-            const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-            validateBuiltServerRequest(builtServerRequest, serverRequest);
-          });
         });
       });
     });
@@ -1754,18 +1712,15 @@ describe('33acrossBidAdapter:', function () {
           const bidRequests = (
             new BidRequestsBuilder()
               .withBanner()
-              .withVideo({context: 'instream'})
+              .withVideo({context: 'instream', plcmt: 2})
               .build()
           );
 
           const ttxRequest = new TtxRequestBuilder()
             .withBanner()
-            .withVideo()
+            .withVideo({ plcmt: 2 })
             .withProduct('siab')
             .build();
-
-          ttxRequest.imp[0].video.plcmt = 2;
-
           const serverRequest = this.buildServerRequest(ttxRequest);
           const bidderRequest = this.buildBidderRequest(bidRequests);
           const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);

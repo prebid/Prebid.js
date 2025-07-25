@@ -406,23 +406,7 @@ function _buildBannerORTB(bidRequest) {
   };
 }
 
-// Placement Inference Rules:
-// - If no placement is defined then default to 2 (In Banner)
-// - If the old deprecated field is defined, use its value for the recent placement field
-const calculateVideoPlcmtAttribute = (placement) => {
-  const IN_BANNER_PLACEMENT_VALUE = 2;
-
-  if (placement) {
-    logWarn('[33Across Adapter] The ORTB field `placement` is deprecated, please use `plcmt` instead');
-
-    return placement;
-  }
-
-  return IN_BANNER_PLACEMENT_VALUE;
-}
-
 // BUILD REQUESTS: VIDEO
-
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
@@ -444,8 +428,6 @@ function _buildVideoORTB(bidRequest) {
       video[param] = videoParams[param];
     }
   });
-
-  video.plcmt ??= calculateVideoPlcmtAttribute(video.placement);
 
   if (_getProduct(bidRequest) === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
