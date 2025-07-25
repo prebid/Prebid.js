@@ -8,7 +8,7 @@ import {
 import * as prebidUtils from 'src/utils';
 
 describe('Mobkoi bidding Adapter', function () {
-  const testIntegrationBaseUrl = 'http://test.integrationBaseUrl.com';
+  const testIntegrationEndpoint = 'http://test.integration.endpoint.com/bid';
   const testRequestId = 'test-request-id';
   const testPlacementId = 'mobkoiPlacementId';
   const testBidId = 'test-bid-id';
@@ -22,7 +22,7 @@ describe('Mobkoi bidding Adapter', function () {
   const getOrtb2 = () => ({
     site: {
       publisher: {
-        ext: { integrationEndpoint: testIntegrationBaseUrl }
+        ext: { integrationEndpoint: testIntegrationEndpoint }
       }
     }
   })
@@ -37,7 +37,7 @@ describe('Mobkoi bidding Adapter', function () {
     auctionId: testAuctionId,
     ortb2: getOrtb2(),
     params: {
-      integrationEndpoint: testIntegrationBaseUrl,
+      integrationEndpoint: testIntegrationEndpoint,
       placementId: testPlacementId
     }
   })
@@ -153,7 +153,8 @@ describe('Mobkoi bidding Adapter', function () {
       delete bidderRequest.bids[0].params.integrationEndpoint;
 
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT + '/bid');
+      expect(request.url).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT);
+      expect(request.url).to.include('/bid');
     });
 
     it('should set ext.mobkoi.integration_type to "pbjs" in the ORTB request', function () {
@@ -203,7 +204,7 @@ describe('Mobkoi bidding Adapter', function () {
     describe('getIntegrationEndpoint', function () {
       it('should return the integrationEndpoint from the given object', function () {
         expect(utils.getIntegrationEndpoint(bidderRequest))
-          .to.equal(testIntegrationBaseUrl);
+          .to.equal(testIntegrationEndpoint);
       });
 
       it('should return default prod integration endpoint when integrationEndpoint is missing in params and ortb2', function () {
