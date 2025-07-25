@@ -452,7 +452,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site.content = validateAppendObject('object', allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
-      siteContentDataArray.every(dataObject => {
+      siteContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
@@ -468,7 +468,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
   if (appContentObject && isPlainObject(appContentObject)) {
     if (appContentDataArray && isArray(appContentDataArray)) {
-      appContentDataArray.every(dataObject => {
+      appContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];

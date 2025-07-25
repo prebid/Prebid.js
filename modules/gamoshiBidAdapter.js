@@ -195,7 +195,7 @@ export const spec = {
       }
 
       if (rtbBidRequest.imp.length === 0) {
-        return;
+        return undefined;
       }
 
       return {
