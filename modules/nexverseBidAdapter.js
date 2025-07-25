@@ -3,11 +3,10 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
-import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
-import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid, getBidFloor } from '../libraries/nexverseUtils/index.js';
+import { getDeviceType } from '../libraries/userAgentUtils/index.js';
+import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid, getBidFloor, getOsInfo } from '../libraries/nexverseUtils/index.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import { getOsVersion } from '../libraries/advangUtils/index.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'nexverse';
@@ -282,6 +281,8 @@ function buildOpenRtbRequest(bid, bidderRequest) {
   let gender = bid.params.gender || ''
   let keywords = bid.params.keywords || ''
 
+  let osInfo = getOsInfo();
+
   // Construct the OpenRTB request object
   const openRtbRequest = {
     id: bidderRequest.auctionId ?? generateUUID(),
@@ -294,8 +295,8 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     device: {
       ua: navigator.userAgent,
       devicetype: getDeviceType(), // 1 = Mobile/Tablet, 2 = Desktop
-      os: getOS(),
-      osv: getOsVersion(),
+      os: osInfo.os,
+      osv: osInfo.osv,
       make: navigator.vendor || '',
       model: getDeviceModel(),
       connectiontype: getConnectionType(), // Include connection type
