@@ -15,20 +15,23 @@ export const spec = {
     if (!bidRequests?.length) return [];
 
     const bid = bidRequests[0];
-    const endpoint = `https://pb.optimizerx.com?placement_id=${bid.params.placement_id}&npi=${bid.params.npi}`;
+    const endpoint = `https://pb.optimizerx.com/pb`;
 
     const converter = converterInstance || defaultConverter;
 
     const requestData = converter.toORTB({
-      bRequests: bidRequests,
-      brRequest: bidderRequest,
+      bidderRequest,
+      bidRequests,
     });
 
     return [{
       method: 'POST',
       url: endpoint,
       data: requestData,
-      options: { contentType: 'application/json;charset=utf-8' }
+      options: { 
+        contentType: 'application/json;charset=utf-8',
+        withCredentials: false 
+      }
     }];
   },
 
