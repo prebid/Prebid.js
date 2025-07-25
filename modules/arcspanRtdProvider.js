@@ -39,13 +39,13 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
   var _v1s = [];
   var _v2 = [];
   var arcobj1 = window.arcobj1;
-  if (typeof arcobj1 != 'undefined') {
-    if (typeof arcobj1.page_iab_codes.text != 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.text); }
-    if (typeof arcobj1.page_iab_codes.images != 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.images); }
-    if (typeof arcobj1.page_iab.text != 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.text); }
-    if (typeof arcobj1.page_iab.images != 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.images); }
-    if (typeof arcobj1.page_iab_newcodes.text != 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.text])]; }
-    if (typeof arcobj1.page_iab_newcodes.images != 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.images])]; }
+  if (typeof arcobj1 !== 'undefined') {
+    if (typeof arcobj1.page_iab_codes.text !== 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.text); }
+    if (typeof arcobj1.page_iab_codes.images !== 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.images); }
+    if (typeof arcobj1.page_iab.text !== 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.text); }
+    if (typeof arcobj1.page_iab.images !== 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.images); }
+    if (typeof arcobj1.page_iab_newcodes.text !== 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.text])]; }
+    if (typeof arcobj1.page_iab_newcodes.images !== 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.images])]; }
 
     var _content = {};
     _content.data = [];

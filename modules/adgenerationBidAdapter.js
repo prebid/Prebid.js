@@ -247,7 +247,7 @@ function createNativeAd(nativeAd, beaconUrl) {
     native.clickUrl = nativeAd.link.url;
     native.clickTrackers = nativeAd.link.clicktrackers || [];
     native.impressionTrackers = nativeAd.imptrackers || [];
-    if (beaconUrl && beaconUrl != '') {
+    if (beaconUrl && beaconUrl !== '') {
       native.impressionTrackers.push(beaconUrl);
     }
   }

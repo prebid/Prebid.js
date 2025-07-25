@@ -578,7 +578,7 @@ describe('onetag', function () {
               }
               if (size !== null) {
                 const keys = Object.keys(size);
-                if (keys.length == 0) {
+                if (keys.length === 0) {
                   return true;
                 }
                 expect(size).to.have.keys('width', 'height');

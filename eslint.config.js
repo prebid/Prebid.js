@@ -119,8 +119,8 @@ module.exports = [
       //
       // See Issue #1111.
       // also see: reality. These are here to stay.
+      // we're working on them though :)
 
-      eqeqeq: 'off',
       'no-useless-escape': 'off',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',

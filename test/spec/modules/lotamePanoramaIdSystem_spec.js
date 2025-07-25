@@ -32,7 +32,7 @@ describe('LotameId', function() {
       'removeDataFromLocalStorage'
     );
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
-    if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+    if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
       requestHost = 'https://c.ltmsphrcl.net/id';
     } else {
       requestHost = 'https://id.crwdcntrl.net/id';

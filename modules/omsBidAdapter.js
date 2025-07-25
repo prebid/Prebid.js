@@ -151,7 +151,7 @@ function isBidRequestValid(bid) {
 
 function interpretResponse(serverResponse) {
   let response = [];
-  if (!serverResponse.body || typeof serverResponse.body != 'object') {
+  if (!serverResponse.body || typeof serverResponse.body !== 'object') {
     logWarn('OMS server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return response;
   }
