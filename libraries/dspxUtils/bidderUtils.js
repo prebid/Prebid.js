@@ -21,7 +21,7 @@ export function fillUsersIds(bidRequest, payload) {
       did_pubcid: 'pubcid.org',
       did_cruid: 'criteo.com',
       did_tdid: 'adserver.org',
-      did_pbmid: 'regexp:[esp\.]*pubmatic\.com',
+      did_pbmid: 'regexp:[esp\\.]*pubmatic\\.com',
       did_id5: 'id5-sync.com',
       did_uqid: 'utiq.com',
       did_id5_linktype: ['id5-sync.com', function (e) {

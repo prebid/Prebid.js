@@ -204,7 +204,7 @@ function onBidWon(bid) {
     ad_id: deepAccess(bid, 'adId'),
     ad_unit_code: deepAccess(bid, 'adUnitCode'),
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
   const burl = `https://${bidDomain}/tr/v1/prebid/win.gif?${query}`;
   triggerPixel(burl);
@@ -219,7 +219,7 @@ function onTimeout(data) {
     ad_unit_code: deepAccess(data, '0.adUnitCode'),
     version: ADAPTER_VERSION,
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
   const timeoutUrl = `https://${bidDomain}/tr/v1/prebid/timeout.gif?${query}`;
   triggerPixel(timeoutUrl);
