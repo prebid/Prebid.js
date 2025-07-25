@@ -1,12 +1,14 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
-import { replaceAuctionPrice, deepAccess } from '../../src/utils.js';
+import { replaceAuctionPrice, deepAccess, logInfo } from '../../src/utils.js';
 import { ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
+  logInfo('validBidRequests ::' + JSON.stringify(validBidRequests));
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+  logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
   let req = {
     id: validBidRequests[0].auctionId,
@@ -123,6 +125,8 @@ function mapBanner(slot) {
 
 export function buildBidResponse(serverResponse) {
   const responseBody = serverResponse.body;
+  logInfo('Bid Response::' + responseBody.toString());
+  logInfo('Bid Response obj::' + JSON.stringify(responseBody));
   const bids = [];
   responseBody.seatbid.forEach(seat => {
     seat.bid.forEach(serverBid => {
