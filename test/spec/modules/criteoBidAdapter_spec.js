@@ -665,6 +665,14 @@ describe('The Criteo bidding adapter', function () {
         apiVersion: 1,
       },
     };
+    const defaultBidRequests = [{
+      bidder: 'criteo',
+      adUnitCode: 'bid-123',
+      mediaTypes: {
+        banner: { sizes: [[728, 90]] }
+      },
+      params: {}
+    }]
 
     let sandbox, localStorageIsEnabledStub;
 
@@ -1996,6 +2004,27 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = request.data;
       expect(ortbRequest.device.ext.cdep).to.equal('cookieDeprecationLabel');
     });
+
+    it('should interpret correctly gzip configuration given as a string', async function() {
+      config.setConfig({criteo: {gzipEnabled: 'false'}});
+
+      const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest))
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should interpret correctly gzip configuration given as a boolean', async function () {
+      config.setConfig({criteo: {gzipEnabled: false}});
+
+      const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest))
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should default to true when it receives an invalid configuration', async function () {
+      config.setConfig({criteo: {gzipEnabled: 'randomString'}});
+
+      const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest))
+      expect(request.options.endpointCompression).to.be.true;
+    })
   });
 
   describe('interpretResponse', function () {
