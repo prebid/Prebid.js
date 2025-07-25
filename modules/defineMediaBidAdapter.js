@@ -49,7 +49,7 @@ export const spec = {
       utils.deepSetValue(ortbRequest, 'source.schain.complete', 1);
       utils.deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
 
-      utils.logInfo(`[${BIDDER_CODE}] Mapped ORTB Request from`, oneBidRequest, ' to ', ortbRequest);
+      utils.logInfo(`[${BIDDER_CODE}] Mapped ORTB Request from`, oneBidRequest, ' to ', ortbRequest, ' with bidderRequest ', bidderRequest);
       return {
         method: METHOD,
         url: endpointUrl,
