@@ -1,7 +1,8 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn, isStr } from '../src/utils.js';
+import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
+import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 
 const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
@@ -139,33 +140,6 @@ function clean(obj) {
   }
 }
 
-const addDealCustomTargetings = (imp, dctr) => {
-  if (isStr(dctr) && dctr.length > 0) {
-    const arr = dctr.split('|').filter(val => val.trim().length > 0);
-    dctr = arr.map(val => val.trim()).join('|');
-    imp.ext['key_val'] = dctr;
-  } else {
-    logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-  }
-}
-
-const addPMPDeals = (imp, deals) => {
-  if (!isArray(deals)) {
-    logWarn(`${LOG_WARN_PREFIX}Error: bid.params.deals should be an array of strings.`);
-    return;
-  }
-  deals.forEach(deal => {
-    if (typeof deal === 'string' && deal.length > 3) {
-      if (!imp.pmp) {
-        imp.pmp = { private_auction: 0, deals: [] };
-      }
-      imp.pmp.deals.push({ id: deal });
-    } else {
-      logWarn(`${LOG_WARN_PREFIX}Error: deal-id present in array bid.params.deals should be a string with more than 3 characters length, deal-id ignored: ${deal}`);
-    }
-  });
-}
-
 function buildImpression(bid) {
   let impression = {};
   const floor = getFloor(bid);
@@ -185,10 +159,10 @@ function buildImpression(bid) {
     impression['video'] = _buildVideo(bid);
   }
   if (deepAccess(bid, 'params.deals')) {
-    addPMPDeals(impression, deepAccess(bid, 'params.deals'));
+    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX);
   }
   if (deepAccess(bid, 'params.dctr')) {
-    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'));
+    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX);
   }
   return impression;
 }
