@@ -8,11 +8,16 @@ import { EVENTS } from 'src/constants.js';
 const events = require('src/events');
 
 describe('tercept analytics adapter', function () {
+  let clock;
+
   beforeEach(function () {
+    // Freeze time at a fixed date/time
+    clock = sinon.useFakeTimers(new Date('2025-07-25T12:00:00Z').getTime());
     sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(function () {
+    clock.restore();
     events.getEvents.restore();
   });
 
@@ -135,6 +140,66 @@ describe('tercept analytics adapter', function () {
               ]
             },
             'start': 1576823893838
+          },
+          {
+            'bidderCode': 'ix',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'bidderRequestId': '181df4d465699c',
+            'bids': [
+              {
+                'bidder': 'ix',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                },
+                'mediaTypes': {
+                  'banner': {
+                    'sizes': [
+                      [
+                        300,
+                        250
+                      ],
+                      [
+                        300,
+                        600
+                      ]
+                    ]
+                  }
+                },
+                'adUnitCode': 'div-gpt-ad-1460505748561-0',
+                'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                'bidId': '9424dea605368f',
+                'bidderRequestId': '181df4d465699c',
+                'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+                'src': 'client',
+                'bidRequestsCount': 1,
+                'bidderRequestsCount': 1,
+                'bidderWinsCount': 0
+              }
+            ],
+            'auctionStart': 1576823893836,
+            'timeout': 1000,
+            'refererInfo': {
+              'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+              'reachedTop': true,
+              'numIframes': 0,
+              'stack': [
+                'http://observer.com/integrationExamples/gpt/hello_world.html'
+              ]
+            },
+            'start': 1576823893838
           }
         ],
         'noBids': [],
@@ -202,6 +267,66 @@ describe('tercept analytics adapter', function () {
         },
         'start': 1576823893838
       },
+      'bidRequested2': {
+        'bidderCode': 'ix',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'bidderRequestId': '181df4d465699c',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': 13144370
+            },
+            'crumbs': {
+              'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': 'd99d90e0-663a-459d-8c87-4c92ce6a527c',
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'bidId': '9424dea605368f',
+            'bidderRequestId': '181df4d465699c',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0
+          }
+        ],
+        'auctionStart': 1576823893836,
+        'timeout': 1000,
+        'refererInfo': {
+          'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+          'reachedTop': true,
+          'numIframes': 0,
+          'stack': [
+            'http://observer.com/integrationExamples/gpt/hello_world.html'
+          ]
+        },
+        'start': 1576823893838
+      },
       'bidAdjustment': {
         'bidderCode': 'appnexus',
         'width': 300,
@@ -231,6 +356,33 @@ describe('tercept analytics adapter', function () {
         'requestTimestamp': 1576823893838,
         'bidder': 'appnexus',
         'timeToRespond': 212
+      },
+      'noBid': {
+        'bidder': 'ix',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ]
+          }
+        },
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'transactionId': 'd99d90e0-663a-459d-8c87-4c92ce6a527c',
+        'sizes': [[300, 250]],
+        'bidId': '9424dea605368f',
+        'bidderRequestId': '181df4d465699c',
+        'auctionId': '86e005fa-1900-4782-b6df-528500f09128',
+        'src': 's2s',
+        'bidRequestsCount': 1,
+        'bidderRequestsCount': 1,
+        'bidderWinsCount': 0
       },
       'bidTimeout': [
       ],
@@ -572,39 +724,46 @@ describe('tercept analytics adapter', function () {
     const location = utils.getWindowLocation();
 
     const expectedAfterBid = {
-      'bids': [
+      "bids": [
         {
-          'adUnitCode': 'div-gpt-ad-1460505748561-0',
-          'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
-          'bidId': '263efc09896d0c',
-          'bidderCode': 'appnexus',
-          'cpm': 0.5,
-          'creativeId': 96846035,
-          'currency': 'USD',
-          'mediaType': 'banner',
-          'netRevenue': true,
-          'renderStatus': 2,
-          'requestId': '155975c76e13b1',
-          'requestTimestamp': 1576823893838,
-          'responseTimestamp': 1576823894050,
-          'sizes': '300x250,300x600',
-          'statusMessage': 'Bid available',
-          'timeToRespond': 212
+          "bidderCode": "appnexus",
+          "bidId": "263efc09896d0c",
+          "adUnitCode": "div-gpt-ad-1460505748561-0",
+          "requestId": "155975c76e13b1",
+          "auctionId": "db377024-d866-4a24-98ac-5e430f881313",
+          "sizes": "300x250,300x600",
+          "renderStatus": 2,
+          "requestTimestamp": 1576823893838,
+          "creativeId": 96846035,
+          "currency": "USD",
+          "cpm": 0.5,
+          "netRevenue": true,
+          "mediaType": "banner",
+          "statusMessage": "Bid available",
+          "timeToRespond": 212,
+          "responseTimestamp": 1576823894050
+        },
+        {
+          "bidderCode": "ix",
+          "adUnitCode": "div-gpt-ad-1460505748561-0",
+          "requestId": "181df4d465699c",
+          "auctionId": "86e005fa-1900-4782-b6df-528500f09128",
+          "transactionId": "d99d90e0-663a-459d-8c87-4c92ce6a527c",
+          "sizes": "300x250,300x600",
+          "renderStatus": 5,
+          "responseTimestamp": 1753444800000
         }
       ],
-      'auctionInit': {
-        'host': location.host,
-        'path': location.pathname,
-        'search': location.search,
-        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
-        'timestamp': 1576823893836,
-        'auctionStatus': 'inProgress',
-        'adUnits': [
+      "auctionInit": {
+        "auctionId": "db377024-d866-4a24-98ac-5e430f881313",
+        "timestamp": 1576823893836,
+        "auctionStatus": "inProgress",
+        "adUnits": [
           {
-            'code': 'div-gpt-ad-1460505748561-0',
-            'mediaTypes': {
-              'banner': {
-                'sizes': [
+            "code": "div-gpt-ad-1460505748561-0",
+            "mediaTypes": {
+              "banner": {
+                "sizes": [
                   [
                     300,
                     250
@@ -616,18 +775,18 @@ describe('tercept analytics adapter', function () {
                 ]
               }
             },
-            'bids': [
+            "bids": [
               {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': 13144370
+                "bidder": "appnexus",
+                "params": {
+                  "placementId": 13144370
                 },
-                'crumbs': {
-                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                "crumbs": {
+                  "pubcid": "ff4002c4-ce05-4a61-b4ef-45a3cd93991a"
                 }
               }
             ],
-            'sizes': [
+            "sizes": [
               [
                 300,
                 250
@@ -637,29 +796,29 @@ describe('tercept analytics adapter', function () {
                 600
               ]
             ],
-            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+            "transactionId": "6d275806-1943-4f3e-9cd5-624cbd05ad98"
           }
         ],
-        'adUnitCodes': [
-          'div-gpt-ad-1460505748561-0'
+        "adUnitCodes": [
+          "div-gpt-ad-1460505748561-0"
         ],
-        'bidderRequests': [
+        "bidderRequests": [
           {
-            'bidderCode': 'appnexus',
-            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
-            'bidderRequestId': '155975c76e13b1',
-            'bids': [
+            "bidderCode": "appnexus",
+            "auctionId": "db377024-d866-4a24-98ac-5e430f881313",
+            "bidderRequestId": "155975c76e13b1",
+            "bids": [
               {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': 13144370
+                "bidder": "appnexus",
+                "params": {
+                  "placementId": 13144370
                 },
-                'crumbs': {
-                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                "crumbs": {
+                  "pubcid": "ff4002c4-ce05-4a61-b4ef-45a3cd93991a"
                 },
-                'mediaTypes': {
-                  'banner': {
-                    'sizes': [
+                "mediaTypes": {
+                  "banner": {
+                    "sizes": [
                       [
                         300,
                         250
@@ -671,9 +830,9 @@ describe('tercept analytics adapter', function () {
                     ]
                   }
                 },
-                'adUnitCode': 'div-gpt-ad-1460505748561-0',
-                'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
-                'sizes': [
+                "adUnitCode": "div-gpt-ad-1460505748561-0",
+                "transactionId": "6d275806-1943-4f3e-9cd5-624cbd05ad98",
+                "sizes": [
                   [
                     300,
                     250
@@ -683,34 +842,102 @@ describe('tercept analytics adapter', function () {
                     600
                   ]
                 ],
-                'bidId': '263efc09896d0c',
-                'bidderRequestId': '155975c76e13b1',
-                'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
-                'src': 'client',
-                'bidRequestsCount': 1,
-                'bidderRequestsCount': 1,
-                'bidderWinsCount': 0
+                "bidId": "263efc09896d0c",
+                "bidderRequestId": "155975c76e13b1",
+                "auctionId": "db377024-d866-4a24-98ac-5e430f881313",
+                "src": "client",
+                "bidRequestsCount": 1,
+                "bidderRequestsCount": 1,
+                "bidderWinsCount": 0
               }
             ],
-            'auctionStart': 1576823893836,
-            'timeout': 1000,
-            'refererInfo': {
-              'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
-              'reachedTop': true,
-              'numIframes': 0,
-              'stack': [
-                'http://observer.com/integrationExamples/gpt/hello_world.html'
+            "auctionStart": 1576823893836,
+            "timeout": 1000,
+            "refererInfo": {
+              "referer": "http://observer.com/integrationExamples/gpt/hello_world.html",
+              "reachedTop": true,
+              "numIframes": 0,
+              "stack": [
+                "http://observer.com/integrationExamples/gpt/hello_world.html"
               ]
             },
-            'start': 1576823893838
+            "start": 1576823893838
+          },
+          {
+            "bidderCode": "ix",
+            "auctionId": "db377024-d866-4a24-98ac-5e430f881313",
+            "bidderRequestId": "181df4d465699c",
+            "bids": [
+              {
+                "bidder": "ix",
+                "params": {
+                  "placementId": 13144370
+                },
+                "crumbs": {
+                  "pubcid": "ff4002c4-ce05-4a61-b4ef-45a3cd93991a"
+                },
+                "mediaTypes": {
+                  "banner": {
+                    "sizes": [
+                      [
+                        300,
+                        250
+                      ],
+                      [
+                        300,
+                        600
+                      ]
+                    ]
+                  }
+                },
+                "adUnitCode": "div-gpt-ad-1460505748561-0",
+                "transactionId": "6d275806-1943-4f3e-9cd5-624cbd05ad98",
+                "sizes": [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                "bidId": "9424dea605368f",
+                "bidderRequestId": "181df4d465699c",
+                "auctionId": "db377024-d866-4a24-98ac-5e430f881313",
+                "src": "client",
+                "bidRequestsCount": 1,
+                "bidderRequestsCount": 1,
+                "bidderWinsCount": 0
+              }
+            ],
+            "auctionStart": 1576823893836,
+            "timeout": 1000,
+            "refererInfo": {
+              "referer": "http://observer.com/integrationExamples/gpt/hello_world.html",
+              "reachedTop": true,
+              "numIframes": 0,
+              "stack": [
+                "http://observer.com/integrationExamples/gpt/hello_world.html"
+              ]
+            },
+            "start": 1576823893838
           }
         ],
-        'noBids': [],
-        'bidsReceived': [],
-        'winningBids': [],
-        'timeout': 1000,
+        "noBids": [],
+        "bidsReceived": [],
+        "winningBids": [],
+        "timeout": 1000,
+        "host": "localhost:9876",
+        "path": "/context.html",
+        "search": ""
       },
-      'initOptions': initOptions
+      "initOptions": {
+        "pubId": "1",
+        "pubKey": "ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==",
+        "hostName": "us-central1-quikr-ebay.cloudfunctions.net",
+        "pathName": "/prebid-analytics"
+      }
     };
 
     const expectedAfterBidWon = {
@@ -730,7 +957,10 @@ describe('tercept analytics adapter', function () {
         'renderStatus': 4,
         'timeToRespond': 212,
         'requestTimestamp': 1576823893838,
-        'responseTimestamp': 1576823894050
+        'responseTimestamp': 1576823894050,
+        "host": "localhost",
+        "path": "/context.html",
+        "search": "",
       },
       'initOptions': initOptions
     }
@@ -755,16 +985,20 @@ describe('tercept analytics adapter', function () {
       // Step 1: Send auction init event
       events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 
-      // Step 2: Send bid requested event
+      // Step 2: Send bid requested events
       events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested2']);
 
       // Step 3: Send bid response event
       events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
 
-      // Step 4: Send bid time out event
+      // Step 4: Send no bid response event
+      events.emit(EVENTS.NO_BID, prebidEvent['noBid']);
+
+      // Step 5: Send bid time out event
       events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
 
-      // Step 5: Send auction end event
+      // Step 6: Send auction end event
       events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
       expect(server.requests.length).to.equal(1);
@@ -773,7 +1007,7 @@ describe('tercept analytics adapter', function () {
 
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
-      // Step 6: Send auction bid won event
+      // Step 7: Send auction bid won event
       events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
 
       expect(server.requests.length).to.equal(2);
