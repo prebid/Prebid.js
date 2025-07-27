@@ -1,7 +1,6 @@
 import {
   deepAccess,
   deepSetValue,
-  getDNT,
   isArray,
   isFn,
   isNumber,
@@ -11,7 +10,6 @@ import {
   logWarn,
   mergeDeep
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -24,8 +22,8 @@ const ENDPOINTS = {
 };
 const GVLID = 644;
 
-const DEFAULT_TTL = 360;
-const MAX_TMAX = 1000;
+const DEFAULT_TTL = 360;    // Default TTL for bid responses in seconds (6 minutes)
+const MAX_TMAX = 1000;      // Maximum timeout for bid requests in milliseconds (1 second)
 const TRANSLATOR = ortb25Translator();
 
 /**
@@ -43,22 +41,6 @@ const CONVERTER = ortbConverter({
 });
 
 export const helper = {
-  /**
-   * Determines if the current window is the top frame
-   * @returns {number} 1 if top frame, 0 otherwise
-   */
-  getTopFrame: function () {
-    try {
-      return window.top === window ? 1 : 0;
-    } catch (e) {
-    }
-    return 0;
-  },
-
-  startsWith: function (str, search) {
-    return str.substr(0, search.length) === search;
-  },
-
   /**
    * Determines the media type from bid extension data
    * @param {Object} bid - The bid object
@@ -92,15 +74,6 @@ export const helper = {
     }
     return null;
   },
-  getDeviceType() {
-    if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
-      return 5; // 'tablet'
-    }
-    if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
-      return 4; // 'mobile'
-    }
-    return 2; // 'desktop'
-  },
   getUserSyncParams(gdprConsent, uspConsent, gppConsent) {
     let params = {
       'gdpr': 0,
@@ -128,19 +101,6 @@ export const helper = {
     }
     return params;
   },
-  addExternalUserId(eids, value, source, rtiPartner) {
-    if (isStr(value)) {
-      eids.push({
-        source,
-        uids: [{
-          id: value,
-          ext: {
-            rtiPartner
-          }
-        }]
-      });
-    }
-  },
   replaceMacros(url, macros) {
     return url
       .replace('[GDPR]', macros['gdpr'])
@@ -149,40 +109,7 @@ export const helper = {
       .replace('[GPP_SID]', macros['gpp_sid'])
       .replace('[GPP]', macros['gpp']);
   },
-  addRequestEids(eids, inRequest) {
-    inRequest.forEach(({ source, uids = []}) => {
-      try {
-        const hasUID = uids.length > 0 && uids[0].id;
-        if (hasUID) {
-          logWarn('Gamoshi: uidData.id is missing for source:', source, uids);
-          return;
-        }
-        if (!isStr(source) || !source.trim()) {
-          logWarn('Gamoshi: Invalid source:', source, uids);
-          return;
-        }
-        if (eids.filter(eid => eid.source === source).length > 0) {
-          logWarn('Gamoshi: Duplicate source found:', source, uids);
-          return;
-        }
-        let firstUid = uids[0];
-        eids.push({
-          source: source,
-          uids: [{
-            id: firstUid.id,
-            atype: firstUid.atype || 1, // Default to 1 if atype is not provided
-            ext: {
-              rtiPartner: firstUid.ext?.rtiPartner || ''
-            }
-          }],
-        });
-      } catch (e) {
-      // Log any errors encountered during processing
-        logWarn('Gamoshi: error reading eid:', { source, uids }, e);
-      }
-    });
-    return eids;
-  }, getWidthAndHeight(input) {
+  getWidthAndHeight(input) {
     let width, height;
 
     if (Array.isArray(input) && typeof input[0] === 'number' && typeof input[1] === 'number') {
@@ -231,9 +158,6 @@ export const spec = {
           return;
         }
         bidRequest.mediaTypes.mediaType = type;
-        if (!bidderRequest.timeout || bidderRequest.timeout > MAX_TMAX) {
-          bidderRequest.timeout = MAX_TMAX;
-        }
         const bidderCode = bidderRequest.bidderCode || 'gamoshi';
         const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidderCode] || 'https://rtb.gamoshi.io';
         const rtbEndpoint = `${baseEndpoint}/r/${supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
@@ -259,68 +183,19 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse && serverResponse.body;
-    if (!response || !response.seatbid || !Array.isArray(response.seatbid) ||
-      response.seatbid.length === 0) {
-      logWarn("Gamoshi: Invalid response format or empty seatbid array");
+    if (!response) {
       return [];
     }
-    let seats = response.seatbid.filter(seatBid => {
-      if (!seatBid.bid || !Array.isArray(seatBid.bid) || seatBid.bid.length === 0) {
-        logWarn('Gamoshi: Empty bid array in seatbid', seatBid);
-        return false;
-      }
-      return true;
-    });
-    if (seats.length === 0) {
-      return [];
-    }
-    const bids = [];
-    if (response && Array.isArray(response.seatbid)) {
-      response.seatbid.forEach(seatBid => {
-        if (seatBid && Array.isArray(seatBid.bid)) {
-          bids.push(...seatBid.bid);
-        }
-      });
-    }
-    let outBids = [];
-    bids.forEach(bid => {
-      const outBid = {
-        requestId: bidRequest.bidRequest.bidId,
-        cpm: bid.price,
-        width: bid.w,
-        height: bid.h,
-        ttl: DEFAULT_TTL,
-        creativeId: bid.crid || bid.adid,
-        netRevenue: true,
-        currency: bid.cur || response.cur,
-        mediaType: helper.getMediaType(bid),
-      };
 
-      if (bid.adomain && bid.adomain.length) {
-        outBid.meta = {
-          advertiserDomains: bid.adomain
-        }
-      }
-      if (bid.ext && bid.ext.video) {
-        outBid.meta = {
-          ...outBid.meta,
-          ...bid.ext.video
-        };
-      }
-      if (deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
-        if (outBid.mediaType === BANNER) {
-          outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
-        } else if (outBid.mediaType === VIDEO) {
-          const context = deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context') || '';
-          outBids.push(Object.assign({}, outBid, {
-            vastUrl: bid.ext.vast_url,
-            vastXml: bid.adm,
-            renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
-          }));
-        }
-      }
-    });
-    return outBids;
+    try {
+      return CONVERTER.fromORTB({
+        response: serverResponse.body,
+        request: bidRequest.data
+      }).bids || [];
+    } catch (error) {
+      logError('Gamoshi: Error processing ORTB response:', error);
+      return [];
+    }
   },
   getUserSyncs (syncOptcions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
@@ -388,21 +263,6 @@ function renderOutstream(bid) {
   });
 }
 
-function getGdprConsent(bidderRequest) {
-  const gdprConsent = bidderRequest.gdprConsent;
-
-  if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
-    return {
-      consent_string: gdprConsent.consentString,
-      consent_required: gdprConsent.gdprApplies
-    };
-  }
-
-  return {
-    consent_required: false,
-    consent_string: '',
-  };
-}
 /**
  * Builds an impression object for the ORTB 2.5 request.
  *
@@ -488,106 +348,17 @@ function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
   const bidRequest = context.bidRequests[0];
   const supplyPartnerId = bidRequest.params.supplyPartnerId || bidRequest.params.supply_partner_id || bidRequest.params.inventory_id;
-  // Site/page info
-  if (!request.site) request.site = {};
-  request.site.domain = deepAccess(bidderRequest, 'refererInfo.domain') || document.location.host;
-  request.site.page = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(bidderRequest, 'refererInfo.location');
-  request.site.ref = deepAccess(bidderRequest, 'refererInfo.ref') || request.site.page;
-  request.device = {
-    ua: navigator.userAgent,
-    devicetype: helper.getDeviceType(),
-    dnt: getDNT() ? 1 : 0,
-    h: screen.height,
-    w: screen.width,
-    language: navigator.language
-  };
 
-  // Add user IDs
-  let eids = [];
-  if (bidRequest && bidRequest.userId) {
-    helper.addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
-    helper.addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
-    helper.addExternalUserId(eids, deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 'idl');
-    helper.addExternalUserId(eids, deepAccess(bidRequest, `userId.criteoid`), 'criteo.com', 'criteo');
-    helper.addExternalUserId(eids, deepAccess(bidRequest, 'userId.pubcid'), 'pubcid.org', 'shared_id');
-  }
-
-  if (bidRequest.userIdAsEids && Array.isArray(bidRequest.userIdAsEids)) {
-    bidderRequest.userIdAsEids.forEach(e => {
-      if (e.source && e.uids && e.uids.length > 0) {
-        if (eids.filter(eid => eid.source === e.source).length > 0) {
-          logWarn('Gamoshi: Duplicate source found:', e.source, e.uids);
-          return;
-        }
-        eids.push({
-          source: e.source,
-          uids: e.uids.filter(uids => uids.id != null).map(uid => {
-            let uidData = {
-              id: uid.id,
-              atype: uid.atype || 1, // Default to 1 if atype is not provided
-            };
-            if (uid.ext?.rtiPartner && uid.ext.rtiPartner !== '') {
-              uidData.ext = {'rtiPartner': uid.ext.rtiPartner};
-            }
-            return uidData;
-          })
-        });
-      }
-    });
-  }
-
-  if (bidRequest.ortb2?.user?.ext?.eids) {
-    eids = helper.addRequestEids(eids, bidRequest.ortb2.user.ext.eids);
-  }
-  if (eids.length > 0) {
-    deepSetValue(request, 'user.ext.eids', eids);
-  }
-
-  // Add consent data
-  const gdprConsent = getGdprConsent(bidderRequest);
-  deepSetValue(request, 'ext.gdpr_consent', gdprConsent);
-  deepSetValue(request, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
-  deepSetValue(request, 'user.ext.consent', gdprConsent.consent_string);
-
-  if (bidderRequest && bidderRequest.uspConsent) {
-    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-  }
-
-  // Add GPP support
-  if (bidderRequest.gppConsent) {
-    deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString);
-    deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.gppConsent.applicableSections);
-  }
-
-  if (config.getConfig("coppa") === true || (bidderRequest.ortb2?.regs?.coppa && bidderRequest.ortb2.regs.coppa === 1)) {
-    deepSetValue(request, 'regs.coppa', 1);
-  }
-
-  // Add ortb2 first party data
-  if (bidderRequest.ortb2?.site) {
-    mergeDeep(request.site, bidderRequest.ortb2.site);
-  }
-
-  if (bidderRequest.ortb2?.app) {
-    if (!request.app) request.app = {};
-    mergeDeep(request.app, bidderRequest.ortb2.app);
-  }
-
-  if (bidderRequest.ortb2?.user) {
-    if (!request.user) request.user = {};
-    mergeDeep(request.user, bidderRequest.ortb2.user);
-  }
-
-  // Supply chain
-  const schain = bidRequest?.ortb2?.source?.ext?.schain;
-  if (schain) {
-    deepSetValue(request, 'source.ext.schain', schain);
+  // Cap the timeout to Gamoshi's maximum
+  if (request.tmax && request.tmax > MAX_TMAX) {
+    request.tmax = MAX_TMAX;
   }
 
   // Gamoshi-specific parameters
   deepSetValue(request, 'ext.gamoshi', {
     supplyPartnerId: supplyPartnerId
   });
+
   request = TRANSLATOR(request);
   return request;
 }
@@ -617,9 +388,11 @@ function bidResponse(buildBidResponse, bid, context) {
     bidResponse.vastUrl = bid.ext?.vast_url;
     bidResponse.vastXml = bid.adm;
 
-    const videoContext = deepAccess(bidResponse, 'context.bidRequest.mediaTypes.video.context');
+    // Get video context from the original bid request
+    const bidRequest = context.bidRequest || context.bidRequests?.[0];
+    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
     if (videoContext === 'outstream') {
-      bidResponse.renderer = newRenderer(bidResponse.context.bidRequest, bid);
+      bidResponse.renderer = newRenderer(bidRequest, bid);
     }
 
     // Add video-specific meta data
@@ -628,6 +401,11 @@ function bidResponse(buildBidResponse, bid, context) {
         ...bidResponse.meta,
         ...bid.ext.video
       };
+    }
+  } else if (mediaType === BANNER) {
+    // Ensure banner ad content is available
+    if (bid.adm && !bidResponse.ad) {
+      bidResponse.ad = bid.adm;
     }
   }
   return bidResponse;
