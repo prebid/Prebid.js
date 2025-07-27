@@ -43,6 +43,12 @@ module.exports = function(api, options) {
     return null;
   }
 
+  function translateToJs(path, state) {
+    if (path.node.source?.value?.endsWith('.ts')) {
+      path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+    }
+  }
+
   return {
     visitor: {
       Program(path, state) {
@@ -58,11 +64,8 @@ module.exports = function(api, options) {
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
-      ImportDeclaration(path, state) {
-        if (path.node.source.value.endsWith('.ts')) {
-          path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
-        }
-      },
+      ImportDeclaration: translateToJs,
+      ExportDeclaration: translateToJs,
       StringLiteral(path) {
         Object.keys(replace).forEach(name => {
           if (path.node.value.includes(name)) {

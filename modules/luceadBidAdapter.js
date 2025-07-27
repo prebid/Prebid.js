@@ -7,7 +7,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getUniqueIdentifierStr, deepSetValue, logInfo} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 
-const gvlid = 1309;
 const bidderCode = 'lucead';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
@@ -179,7 +178,6 @@ function onTimeout(timeoutData) {
 
 export const spec = {
   code: bidderCode,
-  gvlid,
   aliases,
   isBidRequestValid,
   buildRequests,
