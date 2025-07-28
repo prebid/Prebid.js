@@ -568,9 +568,24 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
-export function addIdData({ortb2Fragments}) {
+export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
+  
+  // Set bid.userId for backward compatibility with tests
+  if (adUnits && Array.isArray(adUnits) && adUnits.length) {
+    const globalIds = getIds(initializedSubmodules.global);
+    adUnits.forEach(adUnit => {
+      if (adUnit.bids && Array.isArray(adUnit.bids)) {
+        adUnit.bids.forEach(bid => {
+          const bidderIds = Object.assign({}, globalIds, getIds(initializedSubmodules.bidder[bid.bidder] ?? {}));
+          if (Object.keys(bidderIds).length > 0) {
+            bid.userId = bidderIds;
+          }
+        });
+      }
+    });
+  }
 }
 
 const INIT_CANCELED = {};
