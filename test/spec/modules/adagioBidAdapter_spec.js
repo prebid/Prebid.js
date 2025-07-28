@@ -12,6 +12,7 @@ import { config } from '../../../src/config.js';
 import { executeRenderer } from '../../../src/Renderer.js';
 import { expect } from 'chai';
 import { userSync } from '../../../src/userSync.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -120,7 +121,7 @@ describe('Adagio bid adapter', () => {
 
   afterEach(() => {
     window.ADAGIO = undefined;
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
 
     utilsMock.restore();
 
