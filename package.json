@@ -14,7 +14,8 @@
     "./metadata/*.js": "./dist/src/metadata/modules/*.js",
     "./metadata/*.json": "./metadata/modules/*.json",
     "./metadata/*": "./dist/src/metadata/modules/*.js",
-    "./customize/*": "./customize/*"
+    "./customize/*.mjs": "./customize/*.mjs",
+    "./customize/*": "./customize/*.mjs"
   },
   "scripts": {
     "serve": "gulp serve",
