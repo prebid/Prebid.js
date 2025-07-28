@@ -234,7 +234,7 @@ describe('auctionmanager.js', function () {
       if (bid.mediaType === 'video') {
         expected[TARGETING_KEYS.UUID] = bid.videoCacheKey;
         expected[TARGETING_KEYS.CACHE_ID] = bid.videoCacheKey;
-        expected[TARGETING_KEYS.CACHE_HOST] = 'prebid.adnxs.com';
+        expected[TARGETING_KEYS.CACHE_HOST] = 'test.cache.url';
       }
       if (!keys) {
         return expected;
@@ -274,7 +274,7 @@ describe('auctionmanager.js', function () {
       it('No bidder level configuration defined - default for video', function () {
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+            url: 'https://test.cache.url/endpoint'
           }
         });
         getGlobal().bidderSettings = {};
@@ -367,7 +367,7 @@ describe('auctionmanager.js', function () {
       it('Custom configuration for all bidders with video bid', function () {
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+            url: 'https://test.cache.url/endpoint'
           }
         });
         const videoBid = utils.deepClone(bid);
@@ -1969,7 +1969,7 @@ describe('auctionmanager.js', function () {
         doneSpy = sinon.spy();
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+            url: 'https://test.cache.url/endpoint'
           }
         });
       });

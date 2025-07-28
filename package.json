@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.5.0-pre",
+  "version": "10.6.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {

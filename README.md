@@ -197,19 +197,6 @@ Since version 7.2.0, you may instruct the build to exclude code for some feature
 gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
 ```
 
-Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
-
-```javascript
-  {
-    test: /.js$/,
-    include: new RegExp(`\\${path.sep}prebid\\.js`),
-    use: {
-      loader: 'babel-loader',
-      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
-    }
-  }
-```
-
 Features that can be disabled this way are:
 
  - `VIDEO` - support for video bids;
