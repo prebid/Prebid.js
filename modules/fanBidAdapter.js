@@ -206,7 +206,7 @@ export const spec = {
         url: NETWORK_ENDPOINTS[network] || DEFAULT_ENDPOINT,
         data,
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: false
         },
         bids
