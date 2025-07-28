@@ -60,7 +60,7 @@ module.exports = [
       // do not lint build-related stuff
       '*.js',
       'metadata/**/*',
-      'options/**/*',
+      'customize/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
     ],
