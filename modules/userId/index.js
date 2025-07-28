@@ -571,7 +571,7 @@ export function enrichEids(ortb2Fragments) {
 export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
-  
+
   // Set bid.userId for backward compatibility with tests
   if (adUnits && Array.isArray(adUnits) && adUnits.length) {
     const globalIds = getIds(initializedSubmodules.global);
