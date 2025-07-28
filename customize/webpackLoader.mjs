@@ -1,9 +1,5 @@
 import { getBuildOptions, getBuildOptionsModule } from './buildOptions.mjs'
 
-/**
- *
- * @param source
- */
 export default async function (source) {
   if (this.resourcePath !== getBuildOptionsModule()) {
     return source
