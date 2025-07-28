@@ -28,7 +28,6 @@ describe('ID5 ID System', function () {
     logInfoStub.restore();
   });
   const ID5_MODULE_NAME = 'id5Id';
-  const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
   const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
   const ID5_TEST_PARTNER_ID = 173;
@@ -167,7 +166,7 @@ describe('ID5 ID System', function () {
     return {
       name: ID5_MODULE_NAME,
       params: {
-        partner
+        partner: partner
       },
       storage: {
         name: storageName,
@@ -1203,6 +1202,137 @@ describe('ID5 ID System', function () {
       });
     });
   });
+
+  describe('Decode should also update GAM tagging if configured', function () {
+    let origGoogletag, setTargetingStub, storedObject;
+    const targetingEnabledConfig = getId5FetchConfig();
+    targetingEnabledConfig.params.gamTargetingPrefix = 'id5';
+
+    beforeEach(function () {
+      // Save original window.googletag if it exists
+      origGoogletag = window.googletag;
+      setTargetingStub = sinon.stub();
+      window.googletag = {
+        cmd: [],
+        pubads: function () {
+          return {
+            setTargeting: setTargetingStub
+          };
+        }
+      };
+      sinon.spy(window.googletag, 'pubads');
+      storedObject = utils.deepClone(ID5_STORED_OBJ);
+    });
+
+    afterEach(function () {
+      // Restore original window.googletag
+      if (origGoogletag) {
+        window.googletag = origGoogletag;
+      } else {
+        delete window.googletag;
+      }
+      id5System.id5IdSubmodule._reset()
+    });
+
+    function verifyTagging(tagName, tagValue) {
+      verifyMultipleTagging({[tagName]: tagValue})
+    }
+
+    function verifyMultipleTagging(tagsObj) {
+      expect(window.googletag.cmd.length).to.be.at.least(1);
+      window.googletag.cmd.forEach(cmd => cmd());
+
+      const tagCount = Object.keys(tagsObj).length;
+      expect(setTargetingStub.callCount).to.equal(tagCount);
+
+      for (const [tagName, tagValue] of Object.entries(tagsObj)) {
+        const fullTagName = `${targetingEnabledConfig.params.gamTargetingPrefix}_${tagName}`;
+
+        const matchingCall = setTargetingStub.getCalls().find(call => call.args[0] === fullTagName);
+        expect(matchingCall, `Tag ${fullTagName} was not set`).to.exist;
+        expect(matchingCall.args[1]).to.equal(tagValue);
+      }
+
+      window.googletag.cmd = [];
+      setTargetingStub.reset();
+      window.googletag.pubads.resetHistory();
+    }
+
+    it('should not set GAM targeting if it is not enabled', function () {
+      id5System.id5IdSubmodule.decode(storedObject, getId5FetchConfig());
+      expect(window.googletag.cmd).to.have.lengthOf(0)
+    })
+
+    it('should set GAM targeting for id tag when universal_uid starts with ID5*', function () {
+      // Setup
+      let config = utils.deepClone(getId5FetchConfig());
+      config.params.gamTargetingPrefix = "id5";
+      let testObj = {...storedObject, universal_uid: 'ID5*test123'};
+      id5System.id5IdSubmodule.decode(testObj, config);
+
+      verifyTagging('id', 'y');
+    })
+
+    it('should set GAM targeting for ab tag with control value', function () {
+      // Setup
+      let testObj = {...storedObject, ab_testing: {result: 'control'}};
+      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
+
+      verifyTagging('ab', 'c');
+    })
+
+    it('should set GAM targeting for ab tag with normal value', function () {
+      // Setup
+      let testObj = {...storedObject, ab_testing: {result: 'normal'}};
+      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
+
+      verifyTagging('ab', 'n');
+    })
+
+    it('should set GAM targeting for enrich tag with enriched=true', function () {
+      // Setup
+      let testObj = {...storedObject, enrichment: {enriched: true}};
+      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
+
+      verifyTagging('enrich', 'y');
+    })
+
+    it('should set GAM targeting for enrich tag with enrichment_selected=true', function () {
+      // Setup
+      let testObj = {...storedObject, enrichment: {enrichment_selected: true}};
+      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
+
+      verifyTagging('enrich', 's');
+    })
+
+    it('should set GAM targeting for enrich tag with enrichment_selected=false', function () {
+      // Setup
+      let testObj = {...storedObject, enrichment: {enrichment_selected: false}};
+      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
+
+      verifyTagging('enrich', 'c');
+    })
+
+    it('should set GAM targeting for multiple tags when all conditions are met', function () {
+      // Setup
+      let testObj = {
+        ...storedObject,
+        universal_uid: 'ID5*test123',
+        ab_testing: {result: 'normal'},
+        enrichment: {enriched: true}
+      };
+
+      // Call decode once with the combined test object
+      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
+
+      // Verify all tags were set correctly
+      verifyMultipleTagging({
+        'id': 'y',
+        'ab': 'n',
+        'enrich': 'y'
+      });
+    })
+  })
 
   describe('A/B Testing', function () {
     const expectedDecodedObjectWithIdAbOff = {id5id: {uid: ID5_STORED_ID, ext: {linkType: ID5_STORED_LINK_TYPE}}};
