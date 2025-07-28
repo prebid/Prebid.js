@@ -31,6 +31,7 @@ describe('IdentityLinkId tests', function () {
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
     storage.setCookie('_lr_env', testEnvelope, 'Thu, 01 Jan 1970 00:00:01 GMT');
+    storage.removeDataFromLocalStorage('_lr_env');
   });
 
   afterEach(function () {

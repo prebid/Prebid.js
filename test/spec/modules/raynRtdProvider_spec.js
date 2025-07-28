@@ -222,10 +222,15 @@ describe('rayn RTD Submodule', function () {
   });
 
   describe('Alter Bid Requests', function () {
+    let logMessageSpy;
+    beforeEach(() => {
+      logMessageSpy = sinon.spy(utils, 'logMessage');
+    })
+    afterEach(() => {
+      logMessageSpy.restore();
+    })
     it('should update reqBidsConfigObj and execute callback', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
-
       getDataFromLocalStorageStub
         .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
         .returns(JSON.stringify(TEST_SEGMENTS));
@@ -235,14 +240,11 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from localStorage: ${JSON.stringify(TEST_SEGMENTS)}`);
-
-      logMessageSpy.restore();
+      sinon.assert.calledWith(logMessageSpy, sinon.match.any, `Segtax data from localStorage: ${JSON.stringify(TEST_SEGMENTS)}`)
     });
 
     it('should update reqBidsConfigObj and execute callback using user segments from localStorage', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
       const testSegments = {
         4: {
           3: ['4', '17', '72', '612']
@@ -267,14 +269,11 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from localStorage: ${JSON.stringify(testSegments)}`);
-
-      logMessageSpy.restore();
+      sinon.assert.calledWith(logMessageSpy, sinon.match.any, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`)
     });
 
     it('should update reqBidsConfigObj and execute callback using persona segment from localStorage', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
       const testSegments = {
         103015: ['agdv23', 'avscg3']
       };
@@ -288,14 +287,11 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from localStorage: ${JSON.stringify(testSegments)}`);
-
-      logMessageSpy.restore();
+      sinon.assert.calledWith(logMessageSpy, sinon.match.any, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`)
     });
 
     it('should update reqBidsConfigObj and execute callback using segments from raynJS', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
 
       getDataFromLocalStorageStub
         .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
@@ -306,14 +302,11 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`No segtax data`);
-
-      logMessageSpy.restore();
+      sinon.assert.calledWith(logMessageSpy, sinon.match.any, `No segtax data`)
     });
 
     it('should update reqBidsConfigObj and execute callback using audience from localStorage', function (done) {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
       const testSegments = {
         6: {
           4: ['3', '27', '177']
@@ -363,10 +356,13 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       setTimeout(() => {
-        expect(callbackSpy.calledOnce).to.be.true;
-        expect(logErrorSpy.lastCall.lastArg).to.equal(rejectError);
-        logErrorSpy.restore();
-        done();
+        try {
+          expect(callbackSpy.calledOnce).to.be.true;
+          expect(logErrorSpy.calledWith('RaynJS: ', rejectError)).to.be.true;
+        } finally {
+          logErrorSpy.restore();
+          done();
+        }
       }, 0)
     });
   });

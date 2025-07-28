@@ -207,6 +207,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   // don't send empty requests
   adUnitsCopy = adUnitsCopy.filter(adUnit => {
+    if (s2sConfig.filterBidderlessCalls) {
+      if (adUnit.bids.length === 1 && adUnit.bids[0].bidder == null) return false;
+    }
     return adUnit.bids.length !== 0 || adUnit.s2sBid != null;
   });
   return {adUnits: adUnitsCopy, hasModuleBids};
