@@ -131,79 +131,79 @@ describe('Deepintent adapter', function () {
   describe('validations', function () {
     it('validBid : tagId is passed', function () {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: '1232'
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          tagId: '1232'
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('invalidBid : tagId is not passed', function () {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            h: 200,
-            w: 300
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          h: 200,
+          w: 300
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('invalidBid : tagId is not a string', function () {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: 12345
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          tagId: 12345
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('should check for context if video is present', function() {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: '12345',
-            video: {
-              mimes: ['video/mp4', 'video/x-flv'],
-              skippable: true,
-            }
-          },
-          mediaTypes: {
-            video: {
-              playerSize: [640, 480],
-              context: 'instream'
-            }
-          },
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          tagId: '12345',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+          }
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+            context: 'instream'
+          }
+        },
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
     });
     it('should error out if context is not present and is Video', function() {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: '12345',
-            video: {
-              mimes: ['video/mp4', 'video/x-flv'],
-              skippable: true,
-            }
-          },
-          mediaTypes: {
-            video: {
-              playerSize: [640, 480]
-            }
-          },
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          tagId: '12345',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+          }
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480]
+          }
+        },
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     })
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {
       const oRequest = utils.deepClone(request);
-        const bidRequest = spec.buildRequests(request);
+      const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {

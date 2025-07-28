@@ -25,17 +25,17 @@ export const dep = {
 const oneClient = clientSectionChecker('FPD')
 
 export interface FirstPartyDataConfig {
-    /**
-     * High entropy UA client hints to request.
-     * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
-     */
-    uaHints?: string[]
+  /**
+   * High entropy UA client hints to request.
+   * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
+   */
+  uaHints?: string[]
 }
 
 declare module '../config' {
-    interface Config {
-        firstPartyData?: FirstPartyDataConfig;
-    }
+  interface Config {
+    firstPartyData?: FirstPartyDataConfig;
+  }
 }
 
 /**

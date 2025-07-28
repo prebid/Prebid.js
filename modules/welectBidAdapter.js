@@ -41,9 +41,9 @@ export const spec = {
     let catData = null
     if (bidderRequest?.ortb2?.site) {
       catData = {
-          pagecat: bidderRequest.ortb2.site.pagecat || [],
-          sectioncat: bidderRequest.ortb2.site.sectioncat || [],
-          sitecat: bidderRequest.ortb2.site.cat || [],
+        pagecat: bidderRequest.ortb2.site.pagecat || [],
+        sectioncat: bidderRequest.ortb2.site.sectioncat || [],
+        sitecat: bidderRequest.ortb2.site.cat || [],
       }
     }
 

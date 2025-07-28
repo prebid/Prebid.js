@@ -133,13 +133,13 @@ describe('lemmaDigitalBidAdapter', function () {
     describe('Bid validations', function () {
       it('valid bid case', function () {
         const validBid = {
-            bidder: 'lemmadigital',
-            params: {
-              pubId: 1001,
-              adunitId: 1
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'lemmadigital',
+          params: {
+            pubId: 1001,
+            adunitId: 1
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
       it('invalid bid case', function () {
@@ -148,49 +148,49 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('invalid bid case: pubId not passed', function () {
         const validBid = {
-            bidder: 'lemmadigital',
-            params: {
-              adunitId: 1
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'lemmadigital',
+          params: {
+            adunitId: 1
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: pubId is not number', function () {
         const validBid = {
-            bidder: 'lemmadigital',
-            params: {
-              pubId: '301',
-              adunitId: 1
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'lemmadigital',
+          params: {
+            pubId: '301',
+            adunitId: 1
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: adunitId is not passed', function () {
         const validBid = {
-            bidder: 'lemmadigital',
-            params: {
-              pubId: 1001
-            }
-          };
-          const isValid = spec.isBidRequestValid(validBid);
+          bidder: 'lemmadigital',
+          params: {
+            pubId: 1001
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: video bid request mimes is not passed', function () {
         let validBid = {
-            bidder: 'lemmadigital',
-            params: {
-              pubId: 1001,
-              adunitId: 1,
-              video: {
-                skippable: true,
-                minduration: 5,
-                maxduration: 30
-              }
+          bidder: 'lemmadigital',
+          params: {
+            pubId: 1001,
+            adunitId: 1,
+            video: {
+              skippable: true,
+              minduration: 5,
+              maxduration: 30
             }
-          };
-          let isValid = spec.isBidRequestValid(validBid);
+          }
+        };
+        let isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
         validBid.params.video.mimes = [];
         isValid = spec.isBidRequestValid(validBid);

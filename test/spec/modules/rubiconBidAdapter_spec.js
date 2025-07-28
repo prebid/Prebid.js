@@ -19,6 +19,7 @@ import 'modules/multibid/index.js';
 import adapterManager from 'src/adapterManager.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import { deepClone } from '../../../src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -487,7 +488,7 @@ describe('the rubicon adapter', function () {
     config.resetConfig();
     resetRubiConf();
     resetImpIdMap();
-    delete $$PREBID_GLOBAL$$.installedModules;
+    delete getGlobal().installedModules;
   });
 
   describe('MAS mapping / ordering', function () {
@@ -1039,13 +1040,13 @@ describe('the rubicon adapter', function () {
                   'ext': { 'segtax': 1 },
                   'segment': [
                     { 'id': '987' }
-        ]
-      }, {
-        'name': 'www.dataprovider1.com',
-        'ext': { 'segtax': 2 },
-        'segment': [
-          { 'id': '432' }
-        ]
+                  ]
+                }, {
+                  'name': 'www.dataprovider1.com',
+                  'ext': { 'segtax': 2 },
+                  'segment': [
+                    { 'id': '432' }
+                  ]
                 }, {
                   'name': 'www.dataprovider1.com',
                   'ext': { 'segtax': 5 },
@@ -2165,7 +2166,7 @@ describe('the rubicon adapter', function () {
             expect(imp.ext.prebid.bidder.rubicon.video.skipafter).to.equal(15);
             expect(post.ext.prebid.auctiontimestamp).to.equal(1472239426000);
             // should contain version
-            expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: $$PREBID_GLOBAL$$.version});
+            expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: getGlobal().version});
             expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
             // EIDs should exist
             expect(post.user.ext).to.have.property('eids').that.is.an('array');
@@ -2379,7 +2380,7 @@ describe('the rubicon adapter', function () {
 
           it('should pass client analytics to PBS endpoint if all modules included', function () {
             const bidderRequest = createVideoBidderRequest();
-            $$PREBID_GLOBAL$$.installedModules = [];
+            getGlobal().installedModules = [];
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const payload = request.data;
 
@@ -2389,7 +2390,7 @@ describe('the rubicon adapter', function () {
 
           it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
             const bidderRequest = createVideoBidderRequest();
-            $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
+            getGlobal().installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const payload = request.data;
 
@@ -2399,7 +2400,7 @@ describe('the rubicon adapter', function () {
 
           it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
             const bidderRequest = createVideoBidderRequest();
-            $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter'];
+            getGlobal().installedModules = ['rubiconBidAdapter'];
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const payload = request.data;
 

@@ -572,7 +572,9 @@ describe('config API', function () {
     mergeBidderConfig('invalid object');
     expect(logErrorSpy.calledOnce).to.equal(true);
     const error = 'setBidderConfig bidder options must be an object';
-    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    const errObj = logErrorSpy.firstCall.args[0];
+    expect(errObj).to.be.instanceOf(Error);
+    expect(errObj.message).to.equal(error, 'expected error was logged');
   });
 
   it('should log error for empty bidders array', function () {
@@ -592,7 +594,9 @@ describe('config API', function () {
     });
     expect(logErrorSpy.calledOnce).to.equal(true);
     const error = 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
-    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    const errObj = logErrorSpy.firstCall.args[0];
+    expect(errObj).to.be.instanceOf(Error);
+    expect(errObj.message).to.equal(error, 'expected error was logged');
   });
 
   it('should log error for nonexistent config object', function () {
@@ -601,7 +605,9 @@ describe('config API', function () {
     });
     expect(logErrorSpy.calledOnce).to.equal(true);
     const error = 'setBidderConfig bidder options must contain a config object';
-    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    const errObj = logErrorSpy.firstCall.args[0];
+    expect(errObj).to.be.instanceOf(Error);
+    expect(errObj.message).to.equal(error, 'expected error was logged');
   });
 
   it('should merge without array duplication', function() {

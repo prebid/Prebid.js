@@ -172,7 +172,7 @@ export function validateFpd(fpd, path = '', parent = '') {
       modified = (mapping.type === 'object' && !mapping.isArray)
         ? validateFpd(fpd[key], path + key + '.children.', parent + key + '.')
         : (mapping.isArray && mapping.childType)
-          ? filterArrayData(fpd[key], { type: mapping.childType, isArray: mapping.childisArray }, path + key, parent + key) : fpd[key];
+            ? filterArrayData(fpd[key], { type: mapping.childType, isArray: mapping.childisArray }, path + key, parent + key) : fpd[key];
 
       // Check if modified data has data and return
       (!isEmptyData(modified)) ? result[key] = modified
@@ -201,9 +201,9 @@ function runValidations(data) {
 }
 
 declare module '../../src/fpd/enrichment' {
-    interface FirstPartyDataConfig {
-        skipValidations?: boolean;
-    }
+  interface FirstPartyDataConfig {
+    skipValidations?: boolean;
+  }
 }
 
 /**

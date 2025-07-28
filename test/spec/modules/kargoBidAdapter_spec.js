@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/kargoBidAdapter.js';
 import { config } from 'src/config.js';
 import { getStorageManager } from 'src/storageManager.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 const utils = require('src/utils');
 const STORAGE = getStorageManager({bidderCode: 'kargo'});
 
@@ -149,8 +150,8 @@ describe('kargo adapter tests', function() {
   }
 
   beforeEach(function() {
-    oldBidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    oldBidderSettings = getGlobal().bidderSettings;
+    getGlobal().bidderSettings = {
       kargo: { storageAllowed: true }
     };
 
@@ -210,7 +211,7 @@ describe('kargo adapter tests', function() {
   afterEach(function() {
     sandbox.restore();
     clock.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = oldBidderSettings;
+    getGlobal().bidderSettings = oldBidderSettings;
   });
 
   describe('gvlid', function() {
@@ -254,13 +255,13 @@ describe('kargo adapter tests', function() {
 
   describe('buildRequests', function() {
     let bids;
-      let bidderRequest;
-      let undefinedCurrency;
-      let noAdServerCurrency;
-      let nonUSDAdServerCurrency;
-      let cookies = [];
-      let localStorageItems = [];
-      let session_id = null;
+    let bidderRequest;
+    let undefinedCurrency;
+    let noAdServerCurrency;
+    let nonUSDAdServerCurrency;
+    let cookies = [];
+    let localStorageItems = [];
+    let session_id = null;
 
     before(function() {
       sinon.spy(spec, 'buildRequests');

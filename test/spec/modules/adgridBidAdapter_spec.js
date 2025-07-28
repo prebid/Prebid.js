@@ -563,11 +563,11 @@ describe('adgrid bid adapter tests', () => {
       var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
-      it('Verifies user sync with no bid body response', () => {
-        let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-        expect(syncs).to.eql([]);
-        syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-        expect(syncs).to.eql([]);
-      });
+    it('Verifies user sync with no bid body response', () => {
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.eql([]);
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.eql([]);
+    });
   });
 });

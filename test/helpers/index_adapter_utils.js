@@ -137,8 +137,7 @@ function compareOnKeys(lhs, rhs) {
   }
 
   for (let key in rhs) {
-    if (key in lhs) {
-    } else {
+    if (!(key in lhs)) {
       ronly.push(rhs[key]);
     }
   }

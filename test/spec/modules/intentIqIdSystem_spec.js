@@ -190,7 +190,7 @@ describe('IntentIQ tests', function () {
     intentIqIdSubmodule.getId({params: {
       partner: 10,
       browserBlackList: usedBrowser
-      }
+    }
     });
     const currentBrowserLowerCase = detectBrowser();
 
@@ -433,7 +433,7 @@ describe('IntentIQ tests', function () {
     intentIqIdSubmodule.getId({params: {
       partner: 10,
       browserBlackList: 'chrome'
-      }
+    }
     });
 
     const at20request = server.requests[0];
@@ -449,7 +449,7 @@ describe('IntentIQ tests', function () {
     intentIqIdSubmodule.getId({params: {
       partner: 10,
       browserBlackList: 'chrome'
-      }
+    }
     });
 
     const at20request = server.requests[0];

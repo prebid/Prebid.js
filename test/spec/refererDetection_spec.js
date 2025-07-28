@@ -13,7 +13,7 @@ describe('Referer detection', () => {
     describe('No iframes', () => {
       it('Should return the current window location and no canonical URL', () => {
         const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page',
@@ -31,7 +31,7 @@ describe('Referer detection', () => {
 
       it('Should return the current window location and a canonical URL', () => {
         const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page',
@@ -50,7 +50,7 @@ describe('Referer detection', () => {
       it('Should set page and canonical to pageUrl value set in config if present, even if canonical url is also present in head', () => {
         config.setConfig({'pageUrl': 'https://www.set-from-config.com/path'});
         const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page',
@@ -69,7 +69,7 @@ describe('Referer detection', () => {
       it('Should set page with query params if canonical url is present without query params but the current page does have them', () => {
         config.setConfig({'pageUrl': 'https://www.set-from-config.com/path'});
         const testWindow = buildWindowTree(['https://example.com/some/page?query1=123&query2=456'], 'https://othersite.com/', 'https://example.com/canonical/page');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page?query1=123&query2=456',
@@ -89,7 +89,7 @@ describe('Referer detection', () => {
     describe('Friendly iframes', () => {
       it('Should return the top window location and no canonical URL', () => {
         const testWindow = buildWindowTree(['https://example.com/some/page', 'https://example.com/other/page', 'https://example.com/third/page'], 'https://othersite.com/');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page',
@@ -111,7 +111,7 @@ describe('Referer detection', () => {
 
       it('Should return the top window location and a canonical URL', () => {
         const testWindow = buildWindowTree(['https://example.com/some/page', 'https://example.com/other/page', 'https://example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page',
@@ -135,7 +135,7 @@ describe('Referer detection', () => {
         config.setConfig({'pageUrl': 'https://testurl.com'});
 
         const testWindow = buildWindowTree(['https://example.com/some/page', 'https://example.com/other/page', 'https://example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
-          const result = detectReferer(testWindow)();
+        const result = detectReferer(testWindow)();
 
         sinon.assert.match(result, {
           topmostLocation: 'https://example.com/some/page',
@@ -160,7 +160,7 @@ describe('Referer detection', () => {
   describe('Cross-origin scenarios', () => {
     it('Should return the top URL and no canonical URL with one cross-origin iframe', () => {
       const testWindow = buildWindowTree(['https://example.com/some/page', 'https://safe.frame/ad'], 'https://othersite.com/', 'https://canonical.example.com/');
-        const result = detectReferer(testWindow)();
+      const result = detectReferer(testWindow)();
 
       sinon.assert.match(result, {
         location: 'https://example.com/some/page',
@@ -181,7 +181,7 @@ describe('Referer detection', () => {
 
     it('Should return the top URL and no canonical URL with one cross-origin iframe and one friendly iframe', () => {
       const testWindow = buildWindowTree(['https://example.com/some/page', 'https://safe.frame/ad', 'https://safe.frame/ad'], 'https://othersite.com/', 'https://canonical.example.com/');
-        const result = detectReferer(testWindow)();
+      const result = detectReferer(testWindow)();
 
       sinon.assert.match(result, {
         topmostLocation: 'https://example.com/some/page',
@@ -203,7 +203,7 @@ describe('Referer detection', () => {
 
     it('Should return the second iframe location with three cross-origin windows and no ancestorOrigins', () => {
       const testWindow = buildWindowTree(['https://example.com/some/page', 'https://safe.frame/ad', 'https://otherfr.ame/ad'], 'https://othersite.com/', 'https://canonical.example.com/');
-        const result = detectReferer(testWindow)();
+      const result = detectReferer(testWindow)();
 
       sinon.assert.match(result, {
         topmostLocation: 'https://safe.frame/ad',
@@ -225,7 +225,7 @@ describe('Referer detection', () => {
 
     it('Should return the top window origin with three cross-origin windows with ancestorOrigins', () => {
       const testWindow = buildWindowTree(['https://example.com/some/page', 'https://safe.frame/ad', 'https://otherfr.ame/ad'], 'https://othersite.com/', 'https://canonical.example.com/', true);
-        const result = detectReferer(testWindow)();
+      const result = detectReferer(testWindow)();
 
       sinon.assert.match(result, {
         topmostLocation: 'https://example.com/',

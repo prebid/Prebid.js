@@ -7,324 +7,324 @@ import {parseDomain} from '../../../src/refererDetection.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
-      bidder: 'adkernel',
-      params: {zoneId: 1, host: 'rtb.adkernel.com'},
-      adUnitCode: 'ad-unit-1',
-      bidId: 'Bid_01',
-      bidderRequestId: 'req-001',
-      auctionId: 'auc-001',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 200]],
-          pos: 1
-        }
-      },
-      ortb2Imp: {
-        battr: [6, 7, 9],
-        pos: 2
+    bidder: 'adkernel',
+    params: {zoneId: 1, host: 'rtb.adkernel.com'},
+    adUnitCode: 'ad-unit-1',
+    bidId: 'Bid_01',
+    bidderRequestId: 'req-001',
+    auctionId: 'auc-001',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 200]],
+        pos: 1
       }
-    }; const bid2_zone2 = {
-      bidder: 'adkernel',
-      params: {zoneId: 2, host: 'rtb.adkernel.com'},
-      adUnitCode: 'ad-unit-2',
-      bidId: 'Bid_02',
-      bidderRequestId: 'req-001',
-      auctionId: 'auc-001',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
+    },
+    ortb2Imp: {
+      battr: [6, 7, 9],
+      pos: 2
+    }
+  }; const bid2_zone2 = {
+    bidder: 'adkernel',
+    params: {zoneId: 2, host: 'rtb.adkernel.com'},
+    adUnitCode: 'ad-unit-2',
+    bidId: 'Bid_02',
+    bidderRequestId: 'req-001',
+    auctionId: 'auc-001',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    },
+    userIdAsEids: [
+      {
+        source: 'crwdcntrl.net',
+        uids: [
+          {atype: 1, id: '97d09fbba28542b7acbb6317c9534945a702b74c5993c352f332cfe83f40cdd9'}
+        ]
+      }
+    ]
+  }; const bid3_host2 = {
+    bidder: 'adkernel',
+    params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
+    adUnitCode: 'ad-unit-2',
+    bidId: 'Bid_02',
+    bidderRequestId: 'req-001',
+    auctionId: 'auc-001',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    }
+  }; const bid_without_zone = {
+    bidder: 'adkernel',
+    params: {host: 'rtb-private.adkernel.com'},
+    adUnitCode: 'ad-unit-1',
+    bidId: 'Bid_W',
+    bidderRequestId: 'req-002',
+    auctionId: 'auc-002',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    }
+  }; const bid_without_host = {
+    bidder: 'adkernel',
+    params: {zoneId: 1},
+    adUnitCode: 'ad-unit-1',
+    bidId: 'Bid_W',
+    bidderRequestId: 'req-002',
+    auctionId: 'auc-002',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    }
+  }; const bid_with_wrong_zoneId = {
+    bidder: 'adkernel',
+    params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
+    adUnitCode: 'ad-unit-2',
+    bidId: 'Bid_02',
+    bidderRequestId: 'req-002',
+    auctionId: 'auc-002',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    }
+  }; const bid_video = {
+    bidder: 'adkernel',
+    transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
+    bidId: 'Bid_Video',
+    bidderRequestId: '18b2a61ea5d9a7',
+    auctionId: 'de45acf1-9109-4e52-8013-f2b7cf5f6766',
+    params: {
+      zoneId: 1,
+      host: 'rtb.adkernel.com',
+    },
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [[640, 480]],
+        api: [1, 2],
+        placement: 1,
+        plcmt: 1,
+        skip: 1,
+        pos: 1
+      }
+    },
+    adUnitCode: 'ad-unit-1'
+  }; const bid_multiformat = {
+    bidder: 'adkernel',
+    params: {zoneId: 1, host: 'rtb.adkernel.com'},
+    mediaTypes: {
+      banner: {sizes: [[300, 250], [300, 200]]},
+      video: {context: 'instream', playerSize: [[640, 480]]}
+    },
+    adUnitCode: 'ad-unit-1',
+    transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
+    bidId: 'Bid_01',
+    bidderRequestId: 'req-001',
+    auctionId: 'auc-001'
+  };
+  const bid_native = {
+    bidder: 'adkernel',
+    params: {zoneId: 1, host: 'rtb.adkernel.com'},
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+          len: 80
+        },
+        body: {
+          required: true
+        },
+        body2: {
+          required: true
+        },
+        icon: {
+          required: true,
+          aspect_ratios: [{min_width: 50, min_height: 50}]
+        },
+        image: {
+          required: true,
+          sizes: [300, 200]
+        },
+        clickUrl: {
+          required: true
+        },
+        rating: {
+          required: false
+        },
+        price: {
+          required: false
+        },
+        privacyLink: {
+          required: false
+        },
+        cta: {
+          required: false
+        },
+        sponsoredBy: {
+          required: false
+        },
+        displayUrl: {
+          required: false
         }
-      },
-      userIdAsEids: [
+      }
+    },
+    nativeOrtbRequest: {
+      ver: '1.2',
+      assets: [
         {
-          source: 'crwdcntrl.net',
-          uids: [
-            {atype: 1, id: '97d09fbba28542b7acbb6317c9534945a702b74c5993c352f332cfe83f40cdd9'}
-          ]
+          id: 0, required: 1, title: {len: 80}
+        }, {
+          id: 1, required: 1, data: {type: 2}},
+        {
+          id: 2, required: 1, data: {type: 10}
+        }, {
+          id: 3, required: 1, img: {type: 1, wmin: 50, hmin: 50}
+        }, {
+          id: 4, required: 1, img: {type: 3, w: 300, h: 200}
+        }, {
+          id: 5, required: 0, data: {type: 3}
+        }, {
+          id: 6, required: 0, data: {type: 6}
+        }, {
+          id: 7, required: 0, data: {type: 12}
+        }, {
+          id: 8, required: 0, data: {type: 1}
+        }, {
+          id: 9, required: 0, data: {type: 11}
         }
-      ]
-    }; const bid3_host2 = {
-      bidder: 'adkernel',
-      params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
-      adUnitCode: 'ad-unit-2',
-      bidId: 'Bid_02',
-      bidderRequestId: 'req-001',
-      auctionId: 'auc-001',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      }
-    }; const bid_without_zone = {
-      bidder: 'adkernel',
-      params: {host: 'rtb-private.adkernel.com'},
-      adUnitCode: 'ad-unit-1',
-      bidId: 'Bid_W',
-      bidderRequestId: 'req-002',
-      auctionId: 'auc-002',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      }
-    }; const bid_without_host = {
-      bidder: 'adkernel',
-      params: {zoneId: 1},
-      adUnitCode: 'ad-unit-1',
-      bidId: 'Bid_W',
-      bidderRequestId: 'req-002',
-      auctionId: 'auc-002',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      }
-    }; const bid_with_wrong_zoneId = {
-      bidder: 'adkernel',
-      params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
-      adUnitCode: 'ad-unit-2',
-      bidId: 'Bid_02',
-      bidderRequestId: 'req-002',
-      auctionId: 'auc-002',
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90]]
-        }
-      }
-    }; const bid_video = {
-      bidder: 'adkernel',
-      transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
-      bidId: 'Bid_Video',
-      bidderRequestId: '18b2a61ea5d9a7',
-      auctionId: 'de45acf1-9109-4e52-8013-f2b7cf5f6766',
-      params: {
-        zoneId: 1,
-        host: 'rtb.adkernel.com',
-      },
-      mediaTypes: {
-        video: {
-          context: 'instream',
-          playerSize: [[640, 480]],
-          api: [1, 2],
-          placement: 1,
-          plcmt: 1,
-          skip: 1,
-          pos: 1
-        }
-      },
-      adUnitCode: 'ad-unit-1'
-    }; const bid_multiformat = {
-      bidder: 'adkernel',
-      params: {zoneId: 1, host: 'rtb.adkernel.com'},
-      mediaTypes: {
-        banner: {sizes: [[300, 250], [300, 200]]},
-        video: {context: 'instream', playerSize: [[640, 480]]}
-      },
-      adUnitCode: 'ad-unit-1',
-      transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
-      bidId: 'Bid_01',
-      bidderRequestId: 'req-001',
-      auctionId: 'auc-001'
-    };
-    const bid_native = {
-      bidder: 'adkernel',
-      params: {zoneId: 1, host: 'rtb.adkernel.com'},
-      mediaTypes: {
-        native: {
-          title: {
-            required: true,
-            len: 80
-          },
-          body: {
-            required: true
-          },
-          body2: {
-            required: true
-          },
-          icon: {
-            required: true,
-            aspect_ratios: [{min_width: 50, min_height: 50}]
-          },
-          image: {
-            required: true,
-            sizes: [300, 200]
-          },
-          clickUrl: {
-            required: true
-          },
-          rating: {
-            required: false
-          },
-          price: {
-            required: false
-          },
-          privacyLink: {
-            required: false
-          },
-          cta: {
-            required: false
-          },
-          sponsoredBy: {
-            required: false
-          },
-          displayUrl: {
-            required: false
-          }
-        }
-      },
-      nativeOrtbRequest: {
-        ver: '1.2',
-        assets: [
-          {
-            id: 0, required: 1, title: {len: 80}
-          }, {
-            id: 1, required: 1, data: {type: 2}},
-          {
-            id: 2, required: 1, data: {type: 10}
-          }, {
-            id: 3, required: 1, img: {type: 1, wmin: 50, hmin: 50}
-          }, {
-            id: 4, required: 1, img: {type: 3, w: 300, h: 200}
-          }, {
-            id: 5, required: 0, data: {type: 3}
-          }, {
-            id: 6, required: 0, data: {type: 6}
-          }, {
-            id: 7, required: 0, data: {type: 12}
-          }, {
-            id: 8, required: 0, data: {type: 1}
-          }, {
-            id: 9, required: 0, data: {type: 11}
-          }
-        ],
-        privacy: 1
-      },
-      adUnitCode: 'ad-unit-1',
-      transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
-      bidId: 'Bid_01',
-      bidderRequestId: 'req-001',
-      auctionId: 'auc-001'
-    };
+      ],
+      privacy: 1
+    },
+    adUnitCode: 'ad-unit-1',
+    transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
+    bidId: 'Bid_01',
+    bidderRequestId: 'req-001',
+    auctionId: 'auc-001'
+  };
 
   const bannerBidResponse = {
-      id: 'bid1',
-      seatbid: [{
-        bid: [{
-          id: '1',
-          impid: 'Bid_01',
-          crid: '100_001',
-          price: 3.01,
-          nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
-          adm: '<!-- admarkup here -->',
-          w: 300,
-          h: 250,
-          dealid: 'deal',
-          mtype: 1
-        }]
-      }],
-      ext: {
-        adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
-      }
-    }; const videoBidResponse = {
-      id: '47ce4badcf7482',
-      seatbid: [{
-        bid: [{
-          id: 'sZSYq5zYMxo_0',
-          impid: 'Bid_Video',
-          crid: '100_003',
-          price: 0.00145,
-          adid: '158801',
-          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855',
-          mtype: 2
-        }]
-      }],
-    }; const videoBidResponseWithAdm = {
-      id: '47ce4badcf7482',
-      seatbid: [{
-        bid: [{
-          id: 'sZSYq5zYMxo_0',
-          impid: 'Bid_Video',
-          crid: '100_003',
-          price: 0.00145,
-          adid: '158801',
-          adm: '<VAST></VAST>',
-          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0',
-          cid: '16855',
-          mtype: 2
-        }]
-      }],
-    };
-    const usersyncOnlyResponse = {
-      id: 'nobid1',
-      ext: {
-        adk_usersync: [{type: 2, url: 'https://adk.sync.com/sync'}]
-      }
-    }; const nativeResponse = {
-      id: '56fbc713-b737-4651-9050-13376aed9818',
-      seatbid: [{
-        bid: [{
-          id: 'someid_01',
-          impid: 'Bid_01',
-          price: 2.25,
-          adid: '4',
-          adm: JSON.stringify({
-            native: {
-              assets: [
-                {id: 0, title: {text: 'Title'}},
-                {id: 3, data: {value: 'Description'}},
-                {id: 4, data: {value: 'Additional description'}},
-                {id: 1, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50}},
-                {id: 2, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200}},
-                {id: 5, data: {value: 'Sponsor.com'}},
-                {id: 14, data: {value: 'displayurl.com'}}
-              ],
-              link: {url: 'http://rtb.com/click?i=pTuOlf5KHUo_0'},
-              imptrackers: ['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']
-            }
-          }),
-          adomain: ['displayurl.com'],
-          cat: ['IAB1-4', 'IAB8-16', 'IAB25-5'],
-          cid: '1',
-          crid: '4',
-          mtype: 4,
-          ext: {
-            'advertiser_id': 777,
-            'advertiser_name': 'advertiser',
-            'agency_name': 'agency'
+    id: 'bid1',
+    seatbid: [{
+      bid: [{
+        id: '1',
+        impid: 'Bid_01',
+        crid: '100_001',
+        price: 3.01,
+        nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
+        adm: '<!-- admarkup here -->',
+        w: 300,
+        h: 250,
+        dealid: 'deal',
+        mtype: 1
+      }]
+    }],
+    ext: {
+      adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
+    }
+  }; const videoBidResponse = {
+    id: '47ce4badcf7482',
+    seatbid: [{
+      bid: [{
+        id: 'sZSYq5zYMxo_0',
+        impid: 'Bid_Video',
+        crid: '100_003',
+        price: 0.00145,
+        adid: '158801',
+        nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
+        cid: '16855',
+        mtype: 2
+      }]
+    }],
+  }; const videoBidResponseWithAdm = {
+    id: '47ce4badcf7482',
+    seatbid: [{
+      bid: [{
+        id: 'sZSYq5zYMxo_0',
+        impid: 'Bid_Video',
+        crid: '100_003',
+        price: 0.00145,
+        adid: '158801',
+        adm: '<VAST></VAST>',
+        nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0',
+        cid: '16855',
+        mtype: 2
+      }]
+    }],
+  };
+  const usersyncOnlyResponse = {
+    id: 'nobid1',
+    ext: {
+      adk_usersync: [{type: 2, url: 'https://adk.sync.com/sync'}]
+    }
+  }; const nativeResponse = {
+    id: '56fbc713-b737-4651-9050-13376aed9818',
+    seatbid: [{
+      bid: [{
+        id: 'someid_01',
+        impid: 'Bid_01',
+        price: 2.25,
+        adid: '4',
+        adm: JSON.stringify({
+          native: {
+            assets: [
+              {id: 0, title: {text: 'Title'}},
+              {id: 3, data: {value: 'Description'}},
+              {id: 4, data: {value: 'Additional description'}},
+              {id: 1, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50}},
+              {id: 2, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200}},
+              {id: 5, data: {value: 'Sponsor.com'}},
+              {id: 14, data: {value: 'displayurl.com'}}
+            ],
+            link: {url: 'http://rtb.com/click?i=pTuOlf5KHUo_0'},
+            imptrackers: ['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']
           }
-        }]
-      }],
-      bidid: 'pTuOlf5KHUo',
-      cur: 'EUR'
-    };
-    const multiformat_response = {
-      id: '47ce4badcf7482',
-      seatbid: [{
-        bid: [{
-          id: 'sZSYq5zYMxo_0',
-          impid: 'Bid_01b__mf',
-          crid: '100_003',
-          price: 0.00145,
-          adid: '158801',
-          adm: '<!-- admarkup -->',
-          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855',
-          mtype: 1
-        }, {
-          id: 'sZSYq5zYMxo_1',
-          impid: 'Bid_01v__mf',
-          crid: '100_003',
-          price: 0.25,
-          adid: '158801',
-          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_1&f=nurl',
-          cid: '16855',
-          mtype: 2
-        }]
-      }],
-      bidid: 'pTuOlf5KHUo',
-      cur: 'USD'
-    };
+        }),
+        adomain: ['displayurl.com'],
+        cat: ['IAB1-4', 'IAB8-16', 'IAB25-5'],
+        cid: '1',
+        crid: '4',
+        mtype: 4,
+        ext: {
+          'advertiser_id': 777,
+          'advertiser_name': 'advertiser',
+          'agency_name': 'agency'
+        }
+      }]
+    }],
+    bidid: 'pTuOlf5KHUo',
+    cur: 'EUR'
+  };
+  const multiformat_response = {
+    id: '47ce4badcf7482',
+    seatbid: [{
+      bid: [{
+        id: 'sZSYq5zYMxo_0',
+        impid: 'Bid_01b__mf',
+        crid: '100_003',
+        price: 0.00145,
+        adid: '158801',
+        adm: '<!-- admarkup -->',
+        nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
+        cid: '16855',
+        mtype: 1
+      }, {
+        id: 'sZSYq5zYMxo_1',
+        impid: 'Bid_01v__mf',
+        crid: '100_003',
+        price: 0.25,
+        adid: '158801',
+        nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_1&f=nurl',
+        cid: '16855',
+        mtype: 2
+      }]
+    }],
+    bidid: 'pTuOlf5KHUo',
+    cur: 'USD'
+  };
 
   var sandbox;
   beforeEach(function () {

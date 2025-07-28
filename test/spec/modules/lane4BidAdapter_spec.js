@@ -142,32 +142,32 @@ describe('lane4 adapter', function () {
   describe('validations', function () {
     it('isBidValid : placement_id is passed', function () {
       const bid = {
-          bidder: 'lane4',
-          params: {
-            placement_id: 110044
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'lane4',
+        params: {
+          placement_id: 110044
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('isBidValid : placement_id is not passed', function () {
       const bid = {
-          bidder: 'lane4',
-          params: {
-            width: 300,
-            height: 250,
-            domain: '',
-            bid_floor: 0.5
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'lane4',
+        params: {
+          width: 300,
+          height: 250,
+          domain: '',
+          bid_floor: 0.5
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
   });
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
-        const bidRequest = spec.buildRequests(bannerRequest);
+      const bidRequest = spec.buildRequests(bannerRequest);
       expect(bannerRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
@@ -234,7 +234,7 @@ describe('lane4 adapter', function () {
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
-        const bidRequest = spec.buildRequests(nativeRequest);
+      const bidRequest = spec.buildRequests(nativeRequest);
       expect(nativeRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {

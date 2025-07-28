@@ -83,32 +83,32 @@ describe('relevatehealth adapter', function() {
   describe('validations', function() {
     it('isBidValid : placement_id is passed', function() {
       const bid = {
-          bidder: 'relevatehealth',
-          params: {
-            placement_id: 110011
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'relevatehealth',
+        params: {
+          placement_id: 110011
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('isBidValid : placement_id is not passed', function() {
       const bid = {
-          bidder: 'relevatehealth',
-          params: {
-            width: 160,
-            height: 600,
-            domain: '',
-            bid_floor: 0.5
-          }
-        };
-        const isValid = spec.isBidRequestValid(bid);
+        bidder: 'relevatehealth',
+        params: {
+          width: 160,
+          height: 600,
+          domain: '',
+          bid_floor: 0.5
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
   });
   describe('Validate Request', function() {
     it('Immutable bid request validate', function() {
       const _Request = utils.deepClone(request);
-        const bidRequest = spec.buildRequests(request);
+      const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function() {

@@ -13,9 +13,9 @@ import {
   pick,
   uniques
 } from '../src/utils.js';
-import type {SlotMatchingFn} from "../src/targeting.ts";
-import type {AdUnitCode} from "../src/types/common.d.ts";
-import type {AdUnit} from "../src/adUnits.ts";
+import type {SlotMatchingFn} from '../src/targeting.ts';
+import type {AdUnitCode} from '../src/types/common.d.ts';
+import type {AdUnit} from '../src/adUnits.ts';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig: any = {};
@@ -80,7 +80,7 @@ export const appendGptSlots = adUnits => {
 
   const adUnitPaths = {};
 
-  window.googletag.pubads().getSlots().forEach(slot => {
+  window.googletag.pubads().getSlots().forEach((slot: googletag.Slot) => {
     const matchingAdUnitCode = Object.keys(adUnitMap).find(customGptSlotMatching
       ? customGptSlotMatching(slot)
       : isAdUnitCodeMatchingSlot(slot));
@@ -116,7 +116,7 @@ const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
   }
 
   // find all GPT slots with this name
-  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adUnitPath);
+  var gptSlots = window.googletag.pubads().getSlots().filter((slot: googletag.Slot) => slot.getAdUnitPath() === adUnitPath);
 
   if (gptSlots.length === 0) {
     return; // should never happen
@@ -169,38 +169,38 @@ const setPpsConfigFromTargetingSet = (next, targetingSet) => {
 };
 
 type GPTPreAuctionConfig = {
-    /**
-     * allows turning off of module. Default value is true
-     */
-    enabled?: boolean;
-    /**
-     * If true, use default behavior for determining GPID and PbAdSlot. Defaults to false.
-     */
-    useDefaultPreAuction?: boolean;
-    customGptSlotMatching?: SlotMatchingFn;
-    /**
-     * @param adUnitCode Ad unit code
-     * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
-     * @returns pbadslot for the ad unit
-     */
-    customPbAdSlot?: (adUnitCode: AdUnitCode, adServerAdSlot: string) => string;
-    /**
-     * @param adUnit An ad unit object
-     * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
-     * @param gptAdUnitPath GPT ad unit path for the slot matching the PBJS ad unit
-     * @returns GPID for the ad unit
-     */
-    customPreAuction?: (adUnit: AdUnit, adServerAdSlot: string, gptAdUnitPath: string) => string;
-    /**
-     * Removes extra network IDs when Multiple Customer Management is active. Default is false.
-     */
-    mcmEnabled?: boolean;
+  /**
+   * allows turning off of module. Default value is true
+   */
+  enabled?: boolean;
+  /**
+   * If true, use default behavior for determining GPID and PbAdSlot. Defaults to false.
+   */
+  useDefaultPreAuction?: boolean;
+  customGptSlotMatching?: SlotMatchingFn;
+  /**
+   * @param adUnitCode Ad unit code
+   * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
+   * @returns pbadslot for the ad unit
+   */
+  customPbAdSlot?: (adUnitCode: AdUnitCode, adServerAdSlot: string) => string;
+  /**
+   * @param adUnit An ad unit object
+   * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
+   * @param gptAdUnitPath GPT ad unit path for the slot matching the PBJS ad unit
+   * @returns GPID for the ad unit
+   */
+  customPreAuction?: (adUnit: AdUnit, adServerAdSlot: string, gptAdUnitPath: string) => string;
+  /**
+   * Removes extra network IDs when Multiple Customer Management is active. Default is false.
+   */
+  mcmEnabled?: boolean;
 }
 
 declare module '../src/config' {
-    interface Config {
-        gptPreAuction?: GPTPreAuctionConfig;
-    }
+  interface Config {
+    gptPreAuction?: GPTPreAuctionConfig;
+  }
 }
 
 const handleSetGptConfig = moduleConfig => {

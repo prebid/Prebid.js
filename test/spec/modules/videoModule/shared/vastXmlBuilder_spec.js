@@ -1,6 +1,7 @@
 import { buildVastWrapper, getVastNode, getAdNode, getWrapperNode, getAdSystemNode,
   getAdTagUriNode, getErrorNode, getImpressionNode } from 'libraries/video/shared/vastXmlBuilder.js';
 import { expect } from 'chai';
+import {getGlobal} from '../../../../../src/prebidGlobal.js';
 
 describe('buildVastWrapper', function () {
   it('should include impression and error nodes when requested', function () {
@@ -11,7 +12,7 @@ describe('buildVastWrapper', function () {
       'impressionId123',
       'http://wwww.testUrl.com/error.jpg'
     );
-    expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${$$PREBID_GLOBAL$$.version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI><Impression id="impressionId123"><![CDATA[http://wwww.testUrl.com/impression.jpg]]></Impression><Error><![CDATA[http://wwww.testUrl.com/error.jpg]]></Error></Wrapper></Ad></VAST>`);
+    expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${getGlobal().version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI><Impression id="impressionId123"><![CDATA[http://wwww.testUrl.com/impression.jpg]]></Impression><Error><![CDATA[http://wwww.testUrl.com/error.jpg]]></Error></Wrapper></Ad></VAST>`);
   });
 
   it('should omit error nodes when excluded', function () {
@@ -21,7 +22,7 @@ describe('buildVastWrapper', function () {
       'http://wwww.testUrl.com/impression.jpg',
       'impressionId123',
     );
-    expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${$$PREBID_GLOBAL$$.version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI><Impression id="impressionId123"><![CDATA[http://wwww.testUrl.com/impression.jpg]]></Impression></Wrapper></Ad></VAST>`);
+    expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${getGlobal().version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI><Impression id="impressionId123"><![CDATA[http://wwww.testUrl.com/impression.jpg]]></Impression></Wrapper></Ad></VAST>`);
   });
 
   it('should omit impression nodes when excluded', function () {
@@ -29,7 +30,7 @@ describe('buildVastWrapper', function () {
       'adId123',
       'http://wwww.testUrl.com/redirectUrl.xml',
     );
-    expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${$$PREBID_GLOBAL$$.version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI></Wrapper></Ad></VAST>`);
+    expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${getGlobal().version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI></Wrapper></Ad></VAST>`);
   });
 });
 

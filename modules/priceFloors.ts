@@ -240,24 +240,24 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 }
 
 type GetFloorParams = {
-    currency?: Currency | '*';
-    mediaType?: MediaType | '*';
-    size?: Size | '*';
+  currency?: Currency | '*';
+  mediaType?: MediaType | '*';
+  size?: Size | '*';
 }
 
 declare module '../src/adapterManager' {
-    interface BaseBidRequest {
-        getFloor: typeof getFloor;
-    }
+  interface BaseBidRequest {
+    getFloor: typeof getFloor;
+  }
 }
 
 declare module '../src/bidderSettings' {
-    interface BidderSettings<B extends BidderCode> {
-        /**
-         * Inverse of bidCpmAdjustment
-         */
-        inverseBidAdjustment?: (floor: number, bidRequest: BidRequest<B>, params: {[K in keyof GetFloorParams]?: Exclude<GetFloorParams[K], '*'>}) => number;
-    }
+  interface BidderSettings<B extends BidderCode> {
+    /**
+     * Inverse of bidCpmAdjustment
+     */
+    inverseBidAdjustment?: (floor: number, bidRequest: BidRequest<B>, params: {[K in keyof GetFloorParams]?: Exclude<GetFloorParams[K], '*'>}) => number;
+  }
 }
 
 /**
@@ -265,7 +265,7 @@ declare module '../src/bidderSettings' {
  * and matching it to a rule for the current auction
  */
 export function getFloor(requestParams: GetFloorParams = {currency: 'USD', mediaType: '*', size: '*'}) {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const bidRequest = this;
   const floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
@@ -680,143 +680,143 @@ export function generateAndHandleFetch(floorEndpoint) {
  * @summary Updates our allowedFields and fieldMatchingFunctions with the publisher defined new ones
  */
 function addFieldOverrides(overrides) {
-    Object.keys(overrides).forEach((override: any) => {
-        // we only add it if it is not already in the allowed fields and if the passed in value is a function
-        if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
-            (allowedFields as any).push(override);
-            fieldMatchingFunctions[override] = overrides[override];
-        }
-    });
+  Object.keys(overrides).forEach((override: any) => {
+    // we only add it if it is not already in the allowed fields and if the passed in value is a function
+    if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
+      (allowedFields as any).push(override);
+      fieldMatchingFunctions[override] = overrides[override];
+    }
+  });
 }
 
 type FloorsDef = {
+  /**
+   * Optional atribute used to signal to the Floor Provider’s Analytics adapter their floors are being applied.
+   * They can opt to log only floors that are applied when they are the provider. If floorProvider is supplied in
+   * both the top level of the floors object and within the data object, the data object’s configuration shall prevail.
+   */
+  floorProvider?: string;
+  /**
+   * Currency of floor data. Floor Module will convert currency where necessary.
+   */
+  currency?: Currency;
+  /**
+   * Used by floor providers to train on model version performance.
+   * The expectation is a floor provider’s analytics adapter will pass the model verson back for algorithm training.
+   */
+  modelVersion?: string;
+  schema: {
     /**
-     * Optional atribute used to signal to the Floor Provider’s Analytics adapter their floors are being applied.
-     * They can opt to log only floors that are applied when they are the provider. If floorProvider is supplied in
-     * both the top level of the floors object and within the data object, the data object’s configuration shall prevail.
+     * Character separating the floor keys. Default is "|".
      */
-    floorProvider?: string;
-    /**
-     * Currency of floor data. Floor Module will convert currency where necessary.
-     */
-    currency?: Currency;
-    /**
-     * Used by floor providers to train on model version performance.
-     * The expectation is a floor provider’s analytics adapter will pass the model verson back for algorithm training.
-     */
-    modelVersion?: string;
-    schema: {
-        /**
-         * Character separating the floor keys. Default is "|".
-         */
-        delimiter?: string;
-        fields: (DefaultField | string)[]
-    };
-    /**
-     * Floor used if no matching rules are found.
-     */
-    default?: number;
-    /**
-     * Map from delimited field of attribute values to a floor value.
-     */
-    values: {
-        [rule: string]: number;
-    }
+    delimiter?: string;
+    fields: (DefaultField | string)[]
+  };
+  /**
+   * Floor used if no matching rules are found.
+   */
+  default?: number;
+  /**
+   * Map from delimited field of attribute values to a floor value.
+   */
+  values: {
+    [rule: string]: number;
+  }
 }
 
 type BaseFloorData = {
-    /**
-     * Epoch timestamp associated with modelVersion.
-     * Can be used to track model creation of floor file for post auction analysis.
-     */
-    modelTimestamp?: string;
-    /**
-     * skipRate is a number between 0 and 100 to determine when to skip all floor logic, where 0 is always use floor data and 100 is always skip floor data.
-     */
-    skipRate?: number;
+  /**
+   * Epoch timestamp associated with modelVersion.
+   * Can be used to track model creation of floor file for post auction analysis.
+   */
+  modelTimestamp?: string;
+  /**
+   * skipRate is a number between 0 and 100 to determine when to skip all floor logic, where 0 is always use floor data and 100 is always skip floor data.
+   */
+  skipRate?: number;
 }
 
 export type Schema1FloorData = FloorsDef & BaseFloorData & {
-    floorsSchemaVersion?: 1;
+  floorsSchemaVersion?: 1;
 }
 
 export type Schema2FloorData = BaseFloorData & {
-    floorsSchemaVersion: 2;
-    modelGrups: (FloorsDef & {
-        /**
-         * Used by the module to determine when to apply the specific model.
-         */
-        modelWeight: number;
-        /**
-         * This is an array of bidders for which to avoid sending floors.
-         * This is useful for bidders where the publisher has established different floor rules in their systems.
-         */
-        noFloorSignalBidders?: BidderCode[];
-    })[]
+  floorsSchemaVersion: 2;
+  modelGroups: (FloorsDef & {
+    /**
+     * Used by the module to determine when to apply the specific model.
+     */
+    modelWeight: number;
+    /**
+     * This is an array of bidders for which to avoid sending floors.
+     * This is useful for bidders where the publisher has established different floor rules in their systems.
+     */
+    noFloorSignalBidders?: BidderCode[];
+  })[]
 }
 
 declare module '../src/adUnits' {
-    interface AdUnitDefinition {
-        floors?: Partial<Schema1FloorData>;
-    }
+  interface AdUnitDefinition {
+    floors?: Partial<Schema1FloorData>;
+  }
 }
 
 export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> & {
-    enabled?: boolean;
+  enabled?: boolean;
+  /**
+   * The mimimum CPM floor used by the Price Floors Module.
+   * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
+   */
+  floorMin?: number;
+  enforcement?: Pick<Schema2FloorData['modelGroups'][0], 'noFloorSignalBidders'> & {
     /**
-     * The mimimum CPM floor used by the Price Floors Module.
-     * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
+     * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
+     * matched rules and suppress any bids not exceeding a matching floor.
+     * If set to false, the Price Floors Module will still provide floors for bid adapters, there will be no floor enforcement.
      */
-    floorMin?: number;
-    enforcement?: Pick<Schema2FloorData['modelGrups'][0], 'noFloorSignalBidders'> & {
-        /**
-         * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
-         * matched rules and suppress any bids not exceeding a matching floor.
-         * If set to false, the Price Floors Module will still provide floors for bid adapters, there will be no floor enforcement.
-         */
-        enforceJS?: boolean;
-        /**
-         * If set to true (the default), the Price Floors Module will signal to Prebid Server to pass floors to it’s bid
-         * adapters and enforce floors.
-         * If set to false, the pbjs should still pass matched bid request floor data to PBS, however no enforcement will take place.
-         */
-        enforcePBS?: boolean;
-        /**
-         * Enforce floors for deal bid requests. Default is false.
-         */
-        floorDeals?: boolean;
-        /**
-         * If true (the default), the Price Floors Module will use the bidAdjustment function to adjust the floor
-         * per bidder.
-         * If false (or no bidAdjustment function is provided), floors will not be adjusted.
-         * Note: Setting this parameter to false may have unexpected results, such as signaling a gross floor when
-         * expecting net or vice versa.
-         */
-        bidAdjustment?: boolean;
-    }
+    enforceJS?: boolean;
     /**
-     * Map from custom field name to a function generating that field's value for either a bid or a bid request.
+     * If set to true (the default), the Price Floors Module will signal to Prebid Server to pass floors to it’s bid
+     * adapters and enforce floors.
+     * If set to false, the pbjs should still pass matched bid request floor data to PBS, however no enforcement will take place.
      */
-    additionalSchemaFields?: {
-        [field: string]: (bidRequest?: BidRequest<BidderCode>, bid?: Bid) => string
-    }
+    enforcePBS?: boolean;
     /**
-     * How long (in milliseconds) auctions should be delayed to wait for dynamic floor data.
+     * Enforce floors for deal bid requests. Default is false.
      */
-    auctionDelay?: number;
-    endpoint?: {
-        /**
-         * URL of endpoint to retrieve dynamic floor data.
-         */
-        url: string;
-    };
-    data?: Schema1FloorData | Schema2FloorData;
+    floorDeals?: boolean;
+    /**
+     * If true (the default), the Price Floors Module will use the bidAdjustment function to adjust the floor
+     * per bidder.
+     * If false (or no bidAdjustment function is provided), floors will not be adjusted.
+     * Note: Setting this parameter to false may have unexpected results, such as signaling a gross floor when
+     * expecting net or vice versa.
+     */
+    bidAdjustment?: boolean;
+  }
+  /**
+   * Map from custom field name to a function generating that field's value for either a bid or a bid request.
+   */
+  additionalSchemaFields?: {
+    [field: string]: (bidRequest?: BidRequest<BidderCode>, bid?: Bid) => string
+  }
+  /**
+   * How long (in milliseconds) auctions should be delayed to wait for dynamic floor data.
+   */
+  auctionDelay?: number;
+  endpoint?: {
+    /**
+     * URL of endpoint to retrieve dynamic floor data.
+     */
+    url: string;
+  };
+  data?: Schema1FloorData | Schema2FloorData;
 }
 
 declare module '../src/config' {
-    interface Config {
-        floors?: FloorsConfig;
-    }
+  interface Config {
+    floors?: FloorsConfig;
+  }
 }
 
 /**
@@ -874,19 +874,19 @@ export function handleSetFloorsConfig(config) {
 }
 
 export type BidFloorData = {
-    floorValue: number;
-    floorRule: string;
-    floorRuleValue: number;
-    floorCurrency: Currency;
-    cpmAfterAdjustments: number;
-    enforcements: FloorsConfig['enforcement'];
-    matchedFields: { [fieldName: string ]: string }
+  floorValue: number;
+  floorRule: string;
+  floorRuleValue: number;
+  floorCurrency: Currency;
+  cpmAfterAdjustments: number;
+  enforcements: FloorsConfig['enforcement'];
+  matchedFields: { [fieldName: string ]: string }
 }
 
 declare module '../src/bidfactory' {
-    interface BaseBid {
-        floorData?: BidFloorData
-    }
+  interface BaseBid {
+    floorData?: BidFloorData
+  }
 }
 
 /**

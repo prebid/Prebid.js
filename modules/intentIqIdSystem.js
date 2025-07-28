@@ -140,8 +140,8 @@ function appendPartnersFirstParty (url, configParams) {
 
   if (partnerClientIdType === -1) return url;
   if (partnerClientId !== '') {
-      url = url + '&pcid=' + partnerClientId;
-      url = url + '&idtype=' + partnerClientIdType;
+    url = url + '&pcid=' + partnerClientId;
+    url = url + '&idtype=' + partnerClientIdType;
   }
   return url;
 }

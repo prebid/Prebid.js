@@ -15,6 +15,7 @@ import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
+import {getGlobal} from '../../../../src/prebidGlobal.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -556,7 +557,7 @@ describe('targeting tests', function () {
       let bidderSettingsStorage;
 
       before(function() {
-        bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+        bidderSettingsStorage = getGlobal().bidderSettings;
       });
 
       beforeEach(function () {
@@ -572,7 +573,7 @@ describe('targeting tests', function () {
       });
 
       after(function() {
-        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+        getGlobal().bidderSettings = bidderSettingsStorage;
         enableSendAllBids = false;
       })
 
@@ -583,7 +584,7 @@ describe('targeting tests', function () {
       });
 
       it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
-        $$PREBID_GLOBAL$$.bidderSettings = {
+        getGlobal().bidderSettings = {
           standard: {
             allowZeroCpmBids: true
           }
@@ -1565,15 +1566,15 @@ describe('targeting tests', function () {
       ]
     });
 
-      it('can find slots by ad unit path', () => {
-        const paths = ['slot/1', 'slot/2']
-        expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
-      })
+    it('can find slots by ad unit path', () => {
+      const paths = ['slot/1', 'slot/2']
+      expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
+    })
 
-      it('can find slots by ad element ID', () => {
-        const elementIds = ['div-1', 'div-2']
-        expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
-      })
+    it('can find slots by ad element ID', () => {
+      const elementIds = ['div-1', 'div-2']
+      expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
+    })
 
     it('returns empty list on no match', () => {
       expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], null, () => slots)).to.eql({

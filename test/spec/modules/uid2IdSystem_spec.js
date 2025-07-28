@@ -253,9 +253,9 @@ describe(`UID2 module`, function () {
       config.setConfig(makePrebidConfig(legacyConfigParams));
       const bid2 = await runAuction();
 
-        const first = findUid2(bid);
-        const second = findUid2(bid2);
-        expect(first && second && first.uids[0].id).to.equal(second.uids[0].id);
+      const first = findUid2(bid);
+      const second = findUid2(bid2);
+      expect(first && second && first.uids[0].id).to.equal(second.uids[0].id);
     });
   });
 

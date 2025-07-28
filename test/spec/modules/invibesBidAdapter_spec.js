@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import { config } from 'src/config.js';
 import {spec, resetInvibes, stubDomainOptions, readGdprConsent, storage} from 'modules/invibesBidAdapter.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -180,7 +181,7 @@ describe('invibesBidAdapter:', function () {
     config.setConfig({
       deviceAccess: true
     });
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       invibes: {
         storageAllowed: true
       }
@@ -191,7 +192,7 @@ describe('invibesBidAdapter:', function () {
 
   beforeEach(function () {
     resetInvibes();
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       invibes: {
         storageAllowed: true
       }
@@ -202,7 +203,7 @@ describe('invibesBidAdapter:', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     this.cStub1.restore();
     sandbox.restore();
   });
@@ -339,7 +340,7 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends bid request to default endpoint 1 via GET', function () {
-    const request = spec.buildRequests([{
+      const request = spec.buildRequests([{
         bidId: 'b1',
         bidder: BIDDER_CODE,
         params: {
@@ -1259,7 +1260,7 @@ describe('invibesBidAdapter:', function () {
         AuctionStartTime: Date.now(),
         CreativeHtml: '<!-- Creative -->'
       },
-    UseAdUnitCode: true
+      UseAdUnitCode: true
     };
 
     var buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {

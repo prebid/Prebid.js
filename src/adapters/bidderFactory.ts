@@ -1,8 +1,8 @@
 import Adapter from '../adapter.js';
 import adapterManager, {
-    type BidderRequest,
-    type BidRequest,
-    type ClientBidderRequest
+  type BidderRequest,
+  type BidRequest,
+  type ClientBidderRequest
 } from '../adapterManager.js';
 import {config} from '../config.js';
 import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
@@ -98,59 +98,59 @@ const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'cur
 const TIDS = ['auctionId', 'transactionId'];
 
 export interface AdapterRequest {
-    url: string;
-    data: any;
-    method?: 'GET' | 'POST';
-    options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean };
+  url: string;
+  data: any;
+  method?: 'GET' | 'POST';
+  options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean };
 }
 
 export interface ServerResponse {
-    body: any;
-    headers: {
-        get(header: string): string;
-    }
+  body: any;
+  headers: {
+    get(header: string): string;
+  }
 }
 
 export interface ExtendedResponse {
-    bids?: BidResponse[]
+  bids?: BidResponse[]
 }
 
 export type AdapterResponse = BidResponse | BidResponse[] | ExtendedResponse;
 
 export type BidderError<B extends BidderCode> = {
-    error: XHR;
-    bidderRequest: BidderRequest<B>;
+  error: XHR;
+  bidderRequest: BidderRequest<B>;
 }
 
 export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
-    code: BIDDER;
-    supportedMediaTypes?: readonly MediaType[];
-    aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
-    isBidRequestValid(request: BidRequest<BIDDER>): boolean;
-    buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
-    interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
-    onBidWon?: (bid: Bid) => void;
-    onBidBillable?: (bid: Bid) => void;
-    onBidderError?: (error: BidderError<BIDDER>) => void;
-    onBidViewable?: (bid: Bid) => void;
-    onSetTargeting?: (bid: Bid) => void;
-    onAdRenderSucceeded?: (bid: Bid) => void;
-    onDataDeletionRequest?: (bidderRequests: BidderRequest<BIDDER>[], cmpRegisterDeletionResponse: any) => void;
-    onTimeout?: (bidRequests: (BidRequest<BIDDER> & { timeout: number })[]) => void;
-    getUserSyncs?: (
-        syncOptions: {
-            iframeEnabled: boolean;
-            pixelEnabled: boolean;
-        },
-        responses: ServerResponse[],
-        gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
-        uspConsent: null | ConsentData[typeof CONSENT_USP],
-        gppConsent: null | ConsentData[typeof CONSENT_GPP]
-    ) => ({ type: SyncType, url: string })[];
+  code: BIDDER;
+  supportedMediaTypes?: readonly MediaType[];
+  aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
+  isBidRequestValid(request: BidRequest<BIDDER>): boolean;
+  buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
+  interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
+  onBidWon?: (bid: Bid) => void;
+  onBidBillable?: (bid: Bid) => void;
+  onBidderError?: (error: BidderError<BIDDER>) => void;
+  onBidViewable?: (bid: Bid) => void;
+  onSetTargeting?: (bid: Bid) => void;
+  onAdRenderSucceeded?: (bid: Bid) => void;
+  onDataDeletionRequest?: (bidderRequests: BidderRequest<BIDDER>[], cmpRegisterDeletionResponse: any) => void;
+  onTimeout?: (bidRequests: (BidRequest<BIDDER> & { timeout: number })[]) => void;
+  getUserSyncs?: (
+    syncOptions: {
+      iframeEnabled: boolean;
+      pixelEnabled: boolean;
+    },
+    responses: ServerResponse[],
+    gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
+    uspConsent: null | ConsentData[typeof CONSENT_USP],
+    gppConsent: null | ConsentData[typeof CONSENT_GPP]
+  ) => ({ type: SyncType, url: string })[];
 }
 
 export type BidAdapter = {
-    callBids: ReturnType<typeof newBidder>['callBids']
+  callBids: ReturnType<typeof newBidder>['callBids']
 }
 
 /**
@@ -204,7 +204,9 @@ export const guardTids: any = memoize(({bidderCode}) => {
     // always allow methods (such as getFloor) private access to TIDs
     Object.entries(target)
       .filter(([_, v]) => typeof v === 'function')
-      .forEach(([prop, fn]: [string, AnyFunction]) => proxy[prop] = fn.bind(target));
+      .forEach(([prop, fn]: [string, AnyFunction]) => {
+        proxy[prop] = fn.bind(target);
+      });
     return proxy;
   }
   const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
@@ -227,22 +229,22 @@ export const guardTids: any = memoize(({bidderCode}) => {
 });
 
 declare module '../events' {
-    interface Events {
-        /**
-         * Fired once for each bidder in each auction (or twice if the bidder is configured for both client and s2s),
-         * after processing for that bidder (for that auction) is complete.
-         */
-        [EVENTS.BIDDER_DONE]: [BidderRequest<BidderCode>];
-        /**
-         * Fired just before a client bid adapter makes an HTTP request to its exchange.
-         */
-        [EVENTS.BEFORE_BIDDER_HTTP]: [BidderRequest<BidderCode>, AdapterRequest]
-        /**
-         * Fired when a bid adapter's HTTP request results in something other than HTTP 2xx or 304.
-         * In the case of Prebid Server, this is repeated for each s2s bidder.
-         */
-        [EVENTS.BIDDER_ERROR]: [BidderError<BidderCode>];
-    }
+  interface Events {
+    /**
+     * Fired once for each bidder in each auction (or twice if the bidder is configured for both client and s2s),
+     * after processing for that bidder (for that auction) is complete.
+     */
+    [EVENTS.BIDDER_DONE]: [BidderRequest<BidderCode>];
+    /**
+     * Fired just before a client bid adapter makes an HTTP request to its exchange.
+     */
+    [EVENTS.BEFORE_BIDDER_HTTP]: [BidderRequest<BidderCode>, AdapterRequest]
+    /**
+     * Fired when a bid adapter's HTTP request results in something other than HTTP 2xx or 304.
+     * In the case of Prebid Server, this is repeated for each s2s bidder.
+     */
+    [EVENTS.BIDDER_ERROR]: [BidderError<BidderCode>];
+  }
 }
 
 /**
@@ -258,12 +260,12 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
     },
     registerSyncs,
     callBids: function(
-        bidderRequest: ClientBidderRequest<B>,
-        addBidResponse: AddBidResponse,
-        done: () => void,
-        ajax: Ajax,
-        onTimelyResponse: (bidder: BidderCode) => void,
-        configEnabledCallback: <T extends AnyFunction>(fn: T) => Wraps<T>
+      bidderRequest: ClientBidderRequest<B>,
+      addBidResponse: AddBidResponse,
+      done: () => void,
+      ajax: Ajax,
+      onTimelyResponse: (bidder: BidderCode) => void,
+      configEnabledCallback: <T extends AnyFunction>(fn: T) => Wraps<T>
     ) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
@@ -394,43 +396,43 @@ const RESPONSE_PROPS = ['bids', 'paapi']
  * @param wrapCallback a function used to wrap every callback (for the purpose of `config.currentBidder`)
  */
 export const processBidderRequests = hook('async', function<B extends BidderCode>(
-    spec: BidderSpec<B>,
-    bids: BidRequest<B>[],
-    bidderRequest: ClientBidderRequest<B>,
-    ajax: Ajax,
-    wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
-    {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
-        /**
-         * invoked once for each HTTP request built by the adapter - with the raw request
-         */
-        onRequest: (request: AdapterRequest) => void;
-        /**
-         * invoked once on each successful HTTP response - with the raw response
-         */
-        onResponse: (response: ServerResponse) => void;
-        /**
-         * invoked once for each HTTP error - with status description and response
-         */
-        onError: (errorMessage: string, xhr: XHR) => void;
-        /**
-         *  invoked once for each bid in the response - with the bid as returned by interpretResponse
-         */
-        onBid: (bid: BidResponse) => void;
-        /**
-         * invoked once with each member of the adapter response's 'paapi' array.
-         */
-        onPaapi: (paapi: unknown) => void;
-        /**
-         * invoked once when all bid requests have been processed
-         */
-        onCompletion: () => void;
-}) {
+  spec: BidderSpec<B>,
+  bids: BidRequest<B>[],
+  bidderRequest: ClientBidderRequest<B>,
+  ajax: Ajax,
+  wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
+  {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
+    /**
+     * invoked once for each HTTP request built by the adapter - with the raw request
+     */
+    onRequest: (request: AdapterRequest) => void;
+    /**
+     * invoked once on each successful HTTP response - with the raw response
+     */
+    onResponse: (response: ServerResponse) => void;
+    /**
+     * invoked once for each HTTP error - with status description and response
+     */
+    onError: (errorMessage: string, xhr: XHR) => void;
+    /**
+     *  invoked once for each bid in the response - with the bid as returned by interpretResponse
+     */
+    onBid: (bid: BidResponse) => void;
+    /**
+     * invoked once with each member of the adapter response's 'paapi' array.
+     */
+    onPaapi: (paapi: unknown) => void;
+    /**
+     * invoked once when all bid requests have been processed
+     */
+    onCompletion: () => void;
+  }) {
   const metrics = adapterMetrics(bidderRequest);
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
   const tidGuard = guardTids(bidderRequest);
   let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))) as AdapterRequest[];
   if (!Array.isArray(requests)) {
-      requests = [requests];
+    requests = [requests];
   }
 
   if (!requests || requests.length === 0) {
@@ -612,12 +614,12 @@ export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
 }, 'addPaapiConfig');
 
 declare module '../bidfactory' {
-    interface BannerBidProperties {
-        width?: number;
-        height?: number;
-        wratio?: number;
-        hratio?: number;
-    }
+  interface BannerBidProperties {
+    width?: number;
+    height?: number;
+    wratio?: number;
+    hratio?: number;
+  }
 }
 
 // check that the bid has a width and height set

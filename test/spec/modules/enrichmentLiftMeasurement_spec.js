@@ -36,20 +36,20 @@ describe('enrichmentLiftMeasurement', () => {
       return fixedRandoms[callIndex++];
     });
     config.setConfig({ enrichmentLiftMeasurement: {
-        modules: modulesConfig
+      modules: modulesConfig
     }});
 
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
-        results.push(getCalculatedSubmodules(modulesConfig));
+      results.push(getCalculatedSubmodules(modulesConfig));
     }
     modulesConfig.forEach((idSystem) => {
-        const passedIdSystemsCount = results.filter((execution) => {
-            const item = execution.find(({name}) => idSystem.name === name)
-            return item?.enabled
-        }).length
-        const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
-        expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
+      const passedIdSystemsCount = results.filter((execution) => {
+        const item = execution.find(({name}) => idSystem.name === name)
+        return item?.enabled
+      }).length
+      const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
+      expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
     });
 
     mathRandomStub.restore();

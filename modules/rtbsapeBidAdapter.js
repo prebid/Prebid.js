@@ -71,7 +71,9 @@ export const spec = {
     }
 
     const bids = {};
-    bidRequest.data.bids.forEach(bid => bids[bid.bidId] = bid);
+    bidRequest.data.bids.forEach(bid => {
+      bids[bid.bidId] = bid;
+    });
 
     return serverResponse.body.bids
       .filter(bid => typeof (bid.meta || {}).advertiserDomains !== 'undefined')

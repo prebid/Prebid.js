@@ -65,7 +65,7 @@ export function fillUsersIds(bidRequest, payload) {
               payload[paramName] = eid.uids[0].id;
             }
           } else {
-             payload[paramName] = func(eid);
+            payload[paramName] = func(eid);
           }
         }
       }

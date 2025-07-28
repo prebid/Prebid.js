@@ -324,8 +324,8 @@ export const spec = {
       const type = syncOptions.pixelEnabled
         ? "image"
         : null ?? syncOptions.iframeEnabled
-        ? "iframe"
-        : null;
+          ? "iframe"
+          : null;
       if (type) {
         syncs.push({
           type: type,

@@ -75,22 +75,22 @@ describe('adLoader', function () {
 
   it('attaches passed attributes to a script', function () {
     const doc = {
-        createElement: function () {
-          return {
-            setAttribute: function (key, value) {
-              this[key] = value;
-            }
-          }
-        },
-        getElementsByTagName: function() {
-          return {
-            firstChild: {
-              insertBefore: function() {}
-            }
+      createElement: function () {
+        return {
+          setAttribute: function (key, value) {
+            this[key] = value;
           }
         }
-      };
-      const attrs = {'z': 'A', 'y': 2};
+      },
+      getElementsByTagName: function() {
+        return {
+          firstChild: {
+            insertBefore: function() {}
+          }
+        }
+      }
+    };
+    const attrs = {'z': 'A', 'y': 2};
     const script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);

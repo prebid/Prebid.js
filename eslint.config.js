@@ -61,6 +61,7 @@ module.exports = [
       // do not lint build-related stuff
       '*.js',
       'metadata/**/*',
+      'customize/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
     ],
@@ -99,6 +100,8 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       semi: 'off',
+      'no-undef': 2,
+      'no-console': 'error',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
@@ -120,11 +123,7 @@ module.exports = [
       // also see: reality. These are here to stay.
 
       eqeqeq: 'off',
-      'no-return-assign': 'off',
-      'no-throw-literal': 'off',
-      'no-undef': 2,
       'no-useless-escape': 'off',
-      'no-console': 'error',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -145,7 +144,6 @@ module.exports = [
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
-      'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
       'prefer-const': 'off',
@@ -163,7 +161,6 @@ module.exports = [
       '@stylistic/multiline-ternary': 'off',
       '@stylistic/computed-property-spacing': 'off',
       '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/indent': 'off',
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
       '@stylistic/object-property-newline': 'off',
@@ -249,8 +246,8 @@ module.exports = [
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      'camelcase': 'off',
-      'no-global-assign': 'off'
+      'no-return-assign': 'off',
+      'camelcase': 'off'
     }
   },
   {

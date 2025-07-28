@@ -81,55 +81,55 @@ describe('stvAdapter', function() {
         'userIdAsEids': [
           {
             'source': 'id5-sync.com',
-        'uids': [{
+            'uids': [{
               'id': '1234',
               'ext': {
                 'linkType': 'abc'
               }
             }]
-      },
+          },
           {
             'source': 'netid.de',
-        'uids': [{
+            'uids': [{
               'id': '2345'
             }]
-      },
+          },
           {
             'source': 'uidapi.com',
-        'uids': [{
+            'uids': [{
               'id': '3456'
             }]
-      },
+          },
           {
             'source': 'pubcid.org',
-        'uids': [{
+            'uids': [{
               'id': '4567'
             }]
-      },
+          },
           {
             'source': 'liveramp.com',
-        'uids': [{
+            'uids': [{
               'id': '5678'
             }]
-      },
+          },
           {
             'source': 'criteo.com',
-        'uids': [{
+            'uids': [{
               'id': '6789'
             }]
-      },
+          },
           {
             'source': 'utiq.com',
-        'uids': [{
+            'uids': [{
               'id': '7890'
             }]
-      },
+          },
           {
             'source': 'euid.eu',
-        'uids': [{
+            'uids': [{
               'id': '8901'
             }]
-      }
+          }
         ]
       },
       {
@@ -147,55 +147,55 @@ describe('stvAdapter', function() {
         'userIdAsEids': [
           {
             'source': 'id5-sync.com',
-        'uids': [{
+            'uids': [{
               'id': '1234',
               'ext': {
                 'linkType': 'abc'
               }
             }]
-      },
+          },
           {
             'source': 'netid.de',
-        'uids': [{
+            'uids': [{
               'id': '2345'
             }]
-      },
+          },
           {
             'source': 'uidapi.com',
-        'uids': [{
+            'uids': [{
               'id': '3456'
             }]
-      },
+          },
           {
             'source': 'pubcid.org',
-        'uids': [{
+            'uids': [{
               'id': '4567'
             }]
-      },
+          },
           {
             'source': 'liveramp.com',
-        'uids': [{
+            'uids': [{
               'id': '5678'
             }]
-      },
+          },
           {
             'source': 'criteo.com',
-        'uids': [{
+            'uids': [{
               'id': '6789'
             }]
-      },
+          },
           {
             'source': 'utiq.com',
-        'uids': [{
+            'uids': [{
               'id': '7890'
             }]
-      },
+          },
           {
             'source': 'euid.eu',
-        'uids': [{
+            'uids': [{
               'id': '8901'
             }]
-      }
+          }
         ]
       }, {
         'bidder': 'stv',
