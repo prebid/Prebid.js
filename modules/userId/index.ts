@@ -2,7 +2,6 @@
  * This module adds User ID support to prebid.js
  * @module modules/userId
  */
-/// <reference types="google-publisher-tag" />
 
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
@@ -701,6 +700,7 @@ function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
   }
+
   const providers: googletag.secureSignals.SecureSignalProvider[] = window.googletag.secureSignalProviders = (window.googletag.secureSignalProviders || []) as googletag.secureSignals.SecureSignalProvider[];
   const existingIds = new Set(providers.map(p => 'id' in p ? p.id : p.networkCode));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');

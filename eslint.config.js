@@ -98,6 +98,8 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       semi: 'off',
+      'no-undef': 2,
+      'no-console': 'error',      
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
@@ -119,11 +121,7 @@ module.exports = [
       // also see: reality. These are here to stay.
 
       eqeqeq: 'off',
-      'no-return-assign': 'off',
-      'no-throw-literal': 'off',
-      'no-undef': 2,
       'no-useless-escape': 'off',
-      'no-console': 'error',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -242,6 +240,7 @@ module.exports = [
       'no-unused-expressions': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      'no-return-assign': 'off',
       'camelcase': 'off'
     }
   },

@@ -12,7 +12,6 @@ const SYNC_URL = 'https://mfx.mobilefuse.com/usync';
 export const spec = {
   code: 'mobilefuse',
   supportedMediaTypes: [BANNER, VIDEO],
-  gvlid: 909,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

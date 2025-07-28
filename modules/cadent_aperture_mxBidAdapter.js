@@ -19,10 +19,10 @@ const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
-  { code: 'emx_digital', gvlid: 183 },
-  { code: 'cadent', gvlid: 183 },
-  { code: 'emxdigital', gvlid: 183 },
-  { code: 'cadentaperturemx', gvlid: 183 },
+  { code: 'emx_digital'},
+  { code: 'cadent'},
+  { code: 'emxdigital'},
+  { code: 'cadentaperturemx'},
 ];
 
 const EIDS_SUPPORTED = [
@@ -222,8 +222,7 @@ export const cadentAdapter = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 183,
-  alias: ALIASES,
+  aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {

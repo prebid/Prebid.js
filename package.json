@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.3.0-pre",
+  "version": "10.6.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -65,9 +65,8 @@
     "babel-plugin-istanbul": "^6.1.1",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
-    "coveralls-next": "^4.2.1",
     "deep-equal": "^2.0.3",
-    "eslint": "^9.22.0",
+    "eslint": "^9.31.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsdoc": "^50.6.6",
     "execa": "^1.0.0",

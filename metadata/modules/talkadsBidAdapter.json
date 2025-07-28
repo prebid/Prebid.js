@@ -6,7 +6,8 @@
       "componentType": "bidder",
       "componentName": "talkads",
       "aliasOf": null,
-      "gvlid": 1074
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

@@ -580,6 +580,46 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
 
+    it('should find correct apn tag based on adUnitCode', () => {
+      window.apntag = {
+        getTag: sinon.stub()
+      };
+      const apnTag = {
+        targetId: 'apnAdUnitId',
+      }
+      window.apntag.getTag.withArgs('apnAdUnit').returns(apnTag);
+
+      resizeRemoteCreative({
+        adUnitCode: 'apnAdUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(window.apntag.getTag, 'apnAdUnit');
+      sinon.assert.calledWith(document.getElementById, 'apnAdUnitId');
+    });
+
+    it('should find elements for ad units that are not GPT slots', () => {
+      resizeRemoteCreative({
+        adUnitCode: 'adUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
+    });
+
+    it('should find elements for ad units that are not apn tags', () => {
+      window.apntag = {
+        getTag: sinon.stub().returns(null)
+      };
+      resizeRemoteCreative({
+        adUnitCode: 'adUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(window.apntag.getTag, 'adUnit');
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
+    });
+
     it('should not resize interstitials', () => {
       resizeRemoteCreative({
         instl: true,
