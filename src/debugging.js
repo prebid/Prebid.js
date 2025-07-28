@@ -6,7 +6,8 @@ import {createBid} from './bidfactory.js';
 import {loadExternalScript} from './adloader.js';
 import {PbPromise} from './utils/promise.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
-import {getGlobalVarName} from './options/global.js';
+
+import {getDistUrlBase, getGlobalVarName} from './buildOptions.js';
 
 export const DEBUG_KEY = `__${getGlobalVarName()}_debugging__`;
 
@@ -30,7 +31,7 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
           if (alreadyInstalled()) {
             resolve();
           } else {
-            const url = '$$PREBID_DIST_URL_BASE$$debugging-standalone.js';
+            const url = `${getDistUrlBase()}debugging-standalone.js`;
             logMessage(`Debugging module not installed, loading it from "${url}"...`);
             getGlobal()._installDebugging = true;
             script(url).then(() => {

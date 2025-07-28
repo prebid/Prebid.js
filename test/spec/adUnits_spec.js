@@ -1,6 +1,7 @@
 import 'src/prebid.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import {getGlobalVarName} from '../../src/options/global.js';
+
+import {getGlobalVarName} from '../../src/buildOptions.js';
 
 describe('Publisher API _ AdUnits', function () {
   var assert = require('chai').assert;

@@ -180,7 +180,7 @@ function generateGlobalDef(options) {
 function generateBuildOptions(options = {}) {
   return function (done) {
     options = buildOptions(getDefaults(options));
-    import('./options/buildOptions.mjs').then(({getBuildOptionsModule}) => {
+    import('./customize/buildOptions.mjs').then(({getBuildOptionsModule}) => {
       const dest = getBuildOptionsModule();
       if (!fs.existsSync(path.dirname(dest))) {
         fs.mkdirSync(path.dirname(dest), {recursive: true});

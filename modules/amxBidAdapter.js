@@ -16,7 +16,8 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {getGlobalVarName} from '../src/options/global.js';
+
+import {getGlobalVarName} from '../src/buildOptions.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });

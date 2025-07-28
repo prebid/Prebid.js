@@ -12,7 +12,7 @@ module.exports = function(api, options) {
     '$$PREBID_GLOBAL$$': false,
     '$$DEFINE_PREBID_GLOBAL$$': false,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
-    '$$PREBID_DIST_URL_BASE$$': distUrlBase,
+    '$$PREBID_DIST_URL_BASE$$': false,
     '$$LIVE_INTENT_MODULE_MODE$$': (process && process.env && process.env.LiveConnectMode) || 'standard'
   };
 
@@ -52,7 +52,7 @@ module.exports = function(api, options) {
 
   function checkMacroAllowed(name) {
     if (replace[name] === false) {
-      throw new Error(`The macro ${name} should no longer be used; look for a replacement in src/options`)
+      throw new Error(`The macro ${name} should no longer be used; look for a replacement in src/buildOptions.ts`)
     }
   }
 

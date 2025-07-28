@@ -6,7 +6,8 @@ import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config as prebidConfig } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
-import {getGlobalVarName} from '../src/options/global.js';
+
+import {getGlobalVarName} from '../src/buildOptions.js';
 
 const ANALYTICS_TYPE = 'endpoint';
 const URL = 'https://wba.liadm.com/analytic-events';

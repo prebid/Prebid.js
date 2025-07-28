@@ -6,7 +6,8 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import {getGlobalVarName} from '../../../src/options/global.js';
+
+import {getGlobalVarName} from '../../../src/buildOptions.js';
 
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = `<script src='https://assets.a-mo.net/tmode.v1.js'></script>`;

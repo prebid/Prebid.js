@@ -65,7 +65,8 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
-import {getGlobalVarName} from "./options/global.ts";
+
+import {getGlobalVarName} from "./buildOptions.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;

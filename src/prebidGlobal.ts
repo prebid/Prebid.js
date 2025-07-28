@@ -1,4 +1,4 @@
-import {shouldDefineGlobal, getGlobalVarName} from "./options/global.ts";
+import {getGlobalVarName, shouldDefineGlobal} from "./buildOptions.ts";
 
 interface Command {
   (): any;
