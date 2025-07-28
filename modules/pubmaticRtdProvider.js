@@ -4,6 +4,7 @@ import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../libraries/pubmaticUtils/pubmaticUtils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { setBidderOptimisationConfig, getBidderDecision } from '../libraries/pubmaticUtils/bidderOptimisation.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -361,6 +362,27 @@ function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit
   return { bidStatus, baseValue, multiplier };
 }
 
+/**
+ * Filter out specified bidders from adUnits with matching code
+ * @param {Array} bidderList - List of bidder names to be filtered out
+ * @param {Object} reqBidsConfigObj - The bid request configuration object
+ * @param {string} adUnitCode - The code of the adUnit to filter bidders from
+ */
+export const filterBidders = (bidderList, reqBidsConfigObj, adUnitCode) => {
+  // Validate inputs
+  if (!bidderList || !Array.isArray(bidderList) || bidderList.length === 0 ||
+      !reqBidsConfigObj || !reqBidsConfigObj.adUnits || !Array.isArray(reqBidsConfigObj.adUnits)) {
+    return;
+  }
+  // Find the adUnit with the matching code
+  const adUnit = reqBidsConfigObj.adUnits.find(unit => unit.code === adUnitCode);
+
+  // If adUnit exists and has bids array, filter out the specified bidders
+  if (adUnit && adUnit.bids && Array.isArray(adUnit.bids)) {
+    adUnit.bids = adUnit.bids.filter(bid => !bidderList.includes(bid.bidder));
+  }
+};
+
 // Getter Functions
 export const getTimeOfDay = () => getCurrentTimeOfDay();
 export const getBrowser = () => getBrowserType();
@@ -449,12 +471,22 @@ export const getRtdConfig = async (publisherId, profileId) => {
         logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicFloors config: ${error}`);
       }
     }
+
+    if (apiResponse.plugins?.dynamicBidderOptimisation) {
+      try {
+       setBidderOptimisationConfig(apiResponse.plugins.dynamicBidderOptimisation.data);
+       logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicBidderOptimisation config set successfully`);
+      } catch (error) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicBidderOptimisation config: ${error}`);
+      }
+    }
   }
 };
 
 export const fetchData = async (publisherId, profileId) => {
     try {
-      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
+      //const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
+      const url = 'https://hbopenbid.pubmatic.com/yieldModuleConfigApi';
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -509,9 +541,20 @@ const init = (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   _ymConfigPromise.then(() => {
-        const hookConfig = {
-            reqBidsConfigObj,
-            context: this,
+    const decision = getBidderDecision({
+      auctionId: reqBidsConfigObj?.auctionId,
+      browser: getBrowserType(),
+      reqBidsConfigObj
+    });
+   console.log('Decision for bidder optimisation', decision);
+   for(const [adUnitCode, bidderList] of Object.entries(decision?.excludedBiddersByAdUnit)) {
+    filterBidders(bidderList, reqBidsConfigObj, adUnitCode);
+   }
+   console.log('RequestBid after exclusion of bidders ', reqBidsConfigObj);
+
+    const hookConfig = {
+      reqBidsConfigObj,
+      context: this,
             nextFn: () => true,
             haveExited: false,
             timer: null
