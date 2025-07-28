@@ -101,8 +101,12 @@ function buildRequests(bidReqs, bidderRequest) {
     };
 
     if (bidderRequest?.gdprConsent) {
-      deepSetValue(payload, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
-      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.gdpr', +bidderRequest.gdprConsent.gdprApplies);
+      deepSetValue(payload, 'user.consent', bidderRequest.gdprConsent.consentString);
+    }
+
+    if (bidderRequest?.uspConsent) {
+      deepSetValue(payload, 'regs.us_privacy', bidderRequest.uspConsent);
     }
 
     const gpp = _getGpp(bidderRequest)
