@@ -12,12 +12,13 @@ import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 
 import {hook} from '../../../src/hook.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('The Criteo bidding adapter', function () {
   let sandbox, ajaxStub, logWarnStub;
 
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       criteo: {
         storageAllowed: true
       }
@@ -30,7 +31,7 @@ describe('The Criteo bidding adapter', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     global.Criteo = undefined;
     try {
       sandbox?.restore();

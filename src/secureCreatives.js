@@ -162,12 +162,18 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      return getDfpElementId(adId);
-    } else if (isApnGetTagDefined()) {
-      return getAstElementId(adUnitCode);
-    } else {
-      return adUnitCode;
+      const dfpId = getDfpElementId(adId);
+      if (dfpId) {
+        return dfpId;
+      }
     }
+    if (isApnGetTagDefined()) {
+      const apnId = getAstElementId(adUnitCode);
+      if (apnId) {
+        return apnId;
+      }
+    }
+    return adUnitCode;
   }
 
   function getDfpElementId(adId) {
