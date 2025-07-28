@@ -26,7 +26,8 @@ var adUnits = [
           ext: {
             param1: 'loremipsum',
             param2: 'dolorsitamet'
-          }
+          },
+          placementId: 'testBanner'
         }
       }
     ]

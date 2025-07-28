@@ -35,7 +35,8 @@ const BID = {
     'ext': {
       'param1': 'loremipsum',
       'param2': 'dolorsitamet'
-    }
+    },
+    'placementId': 'testBanner'
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
   'sizes': [[300, 250], [300, 600]],
@@ -67,7 +68,8 @@ const VIDEO_BID = {
     'subDomain': SUB_DOMAIN,
     'cId': '635509f7ff6642d368cb9837',
     'pId': '59ac17c192832d0011283fe3',
-    'bidFloor': 0.1
+    'bidFloor': 0.1,
+    'placementId': 'testBanner'
   },
   'sizes': [[545, 307]],
   'mediaTypes': {
@@ -356,6 +358,7 @@ describe('programmaticXBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          placementId: "testBanner",
           userData: [],
           coppa: 0
         }
@@ -424,6 +427,7 @@ describe('programmaticXBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          placementId: "testBanner",
           userData: [],
           coppa: 0
         }
