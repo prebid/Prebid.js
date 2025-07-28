@@ -15,6 +15,7 @@ import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
+import {getGlobal} from '../../../../src/prebidGlobal.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -556,7 +557,7 @@ describe('targeting tests', function () {
       let bidderSettingsStorage;
 
       before(function() {
-        bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+        bidderSettingsStorage = getGlobal().bidderSettings;
       });
 
       beforeEach(function () {
@@ -572,7 +573,7 @@ describe('targeting tests', function () {
       });
 
       after(function() {
-        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+        getGlobal().bidderSettings = bidderSettingsStorage;
         enableSendAllBids = false;
       })
 
@@ -583,7 +584,7 @@ describe('targeting tests', function () {
       });
 
       it('targeting should allow a 0 cpm with targetingControls.allowZeroCpmBids set to true', function () {
-        $$PREBID_GLOBAL$$.bidderSettings = {
+        getGlobal().bidderSettings = {
           standard: {
             allowZeroCpmBids: true
           }
