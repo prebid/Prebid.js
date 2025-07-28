@@ -30,6 +30,7 @@ const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js');
 const MSG_VIDEO_PLCMT_MISSING = 'Video.plcmt param missing';
 const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const DEFAULT_TTL = 360;
+const DEFAULT_GZIP_ENABLED = true;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -641,6 +642,25 @@ const getPublisherId = (bids) =>
     ? bids.find(bid => bid.params?.publisherId?.trim())?.params.publisherId || null
     : null;
 
+function getGzipSetting() {
+  // Check bidder-specific configuration
+  try {
+    const gzipSetting = deepAccess(config.getBidderConfig(), 'pubmatic.gzipEnabled');
+    if (gzipSetting !== undefined) {
+      const gzipValue = String(gzipSetting).toLowerCase().trim();
+      if (gzipValue === 'true' || gzipValue === 'false') {
+        const parsedValue = gzipValue === 'true';
+        logInfo('PubMatic: Using bidder-specific gzipEnabled setting:', parsedValue);
+        return parsedValue;
+      }
+      logWarn('PubMatic: Invalid gzipEnabled value in bidder config:', gzipSetting);
+    }
+  } catch (e) { logWarn('PubMatic: Error accessing bidder config:', e); }
+
+  logInfo('PubMatic: Using default gzipEnabled setting:', DEFAULT_GZIP_ENABLED);
+  return DEFAULT_GZIP_ENABLED;
+}
+
 const _handleCustomParams = (params, conf) => {
   Object.keys(CUSTOM_PARAMS).forEach(key => {
     const value = params[key];
@@ -785,7 +805,7 @@ export const spec = {
       data: data,
       bidderRequest: bidderRequest,
       options: {
-        endpointCompression: true
+        endpointCompression: getGzipSetting()
       },
     };
     return data?.imp?.length ? serverRequest : null;
