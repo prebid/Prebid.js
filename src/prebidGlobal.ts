@@ -1,4 +1,4 @@
-import {defineGlobal, getGlobalVarName} from "./options/global.ts";
+import {shouldDefineGlobal, getGlobalVarName} from "./options/global.ts";
 
 interface Command {
   (): any;
@@ -28,7 +28,7 @@ export interface PrebidJS {
 }
 
 // if the global already exists in global document scope, use it, if not, create the object
-const scope: any = !defineGlobal() ? {} : window;
+const scope: any = !shouldDefineGlobal() ? {} : window;
 const global: PrebidJS = scope[getGlobalVarName()] = scope[getGlobalVarName()] || {};
 global.cmd = global.cmd || [];
 global.que = global.que || [];

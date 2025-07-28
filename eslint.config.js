@@ -60,6 +60,7 @@ module.exports = [
       // do not lint build-related stuff
       '*.js',
       'metadata/**/*',
+      'options/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
     ],
@@ -99,7 +100,7 @@ module.exports = [
       'comma-dangle': 'off',
       semi: 'off',
       'no-undef': 2,
-      'no-console': 'error',      
+      'no-console': 'error',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
