@@ -64,7 +64,7 @@ If you're using Webpack, you can use the `prebid.js/customize/webpackLoader` loa
 
 | Name | Type | Description | Default | 
 | ---- | ---- | ----------- | ------- |
-| globalVarName | String | Prebid global variable name | `'pbjs'` | 
+| globalVarName | String | Prebid global variable name | `"pbjs"` | 
 | defineGlobal | Boolean | If false, do not set a global variable | `true` | 
 | distUrlBase |  String | Base URL to use for dynamically loaded modules (e.g. debugging-standalone.js) | `"https://cdn.jsdelivr.net/npm/prebid.js/dist/chunks/"` |
 
