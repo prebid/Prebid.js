@@ -86,10 +86,11 @@ function nobidBuildRequests(bids, bidderRequest) {
       return gppConsent;
     }
     var schain = function(bids) {
-      if (bids && bids.length > 0) {
-        return bids[0].schain
+      try {
+        return bids[0]?.ortb2?.source?.ext?.schain;
+      } catch (e) {
+        return null;
       }
-      return null;
     }
     var coppa = function() {
       if (config.getConfig('coppa') === true) {
@@ -133,9 +134,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     var getEIDs = function(eids) {
       if (isArray(eids) && eids.length > 0) {
-        let src = [];
+        const src = [];
         eids.forEach((eid) => {
-          let ids = [];
+          const ids = [];
           if (eid.uids) {
             eid.uids.forEach(value => {
               ids.push({'id': value.id + ''});
@@ -240,7 +241,7 @@ function nobidBuildRequests(bids, bidderRequest) {
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
   }
-  let ublock = nobidGetCookie('_ublock');
+  const ublock = nobidGetCookie('_ublock');
   if (ublock) {
     log('Request blocked for user. hours: ', ublock);
     return false;
@@ -354,7 +355,7 @@ window.nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag() tag NOT FOUND *ERROR*', id);
 }
 window.addEventListener('message', function (event) {
-  let key = event.message ? 'message' : 'data';
+  const key = event.message ? 'message' : 'data';
   var msg = '' + event[key];
   if (msg.substring(0, 'nbTagRenderer.requestAdMarkup|'.length) === 'nbTagRenderer.requestAdMarkup|') {
     log('Prebid received nbTagRenderer.requestAdMarkup event');
@@ -479,7 +480,7 @@ export const spec = {
         url: 'https://public.servenobid.com/sync.html' + params
       }];
     } else if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      let syncs = [];
+      const syncs = [];
       if (serverResponses[0].body.syncs && serverResponses[0].body.syncs.length > 0) {
         serverResponses[0].body.syncs.forEach(element => {
           syncs.push({

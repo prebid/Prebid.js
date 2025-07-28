@@ -35,24 +35,24 @@ describe('Ampliffy bid adapter Test', function () {
                     <Extensions><Extension type="geo"><Country>ES</Country></Extension></Extensions>
                   </Ads>`;
   const xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
-  let companion = xml.getElementsByTagName('Companion')[0];
-  let htmlResource = companion.getElementsByTagName('HTMLResource')[0];
-  let htmlContent = document.createElement('html');
+  const companion = xml.getElementsByTagName('Companion')[0];
+  const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
+  const htmlContent = document.createElement('html');
   htmlContent.innerHTML = htmlResource.textContent;
 
   describe('Is allowed to bid up', function () {
     it('Should return true using a URL that is in domainMap', () => {
-      let allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://testSports.com?id=131313&text=aaaaa&foo=foo');
+      const allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://testSports.com?id=131313&text=aaaaa&foo=foo');
       expect(allowedToBidUp).to.be.true;
     })
 
     it('Should return false using an url that is not in domainMap', () => {
-      let allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://test.com');
+      const allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://test.com');
       expect(allowedToBidUp).to.be.false;
     })
 
     it('Should return false using an url that is excluded.', () => {
-      let allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://www.no-allowed.com/busqueda/sexo/sexo?test=1#item1');
+      const allowedToBidUp = isAllowedToBidUp(htmlContent, 'https://www.no-allowed.com/busqueda/sexo/sexo?test=1#item1');
       expect(allowedToBidUp).to.be.false;
     })
   })
@@ -314,7 +314,7 @@ describe('Ampliffy bid adapter Test', function () {
     });
   })
   describe('Interpret response', function () {
-    let bidRequest = {
+    const bidRequest = {
       bidRequest: {
         adUnitCode: 'div-gpt-ad-1460505748561-0',
         auctionId: '469bb2e2-351f-4d01-b782-cdbca5e3e0ed',
@@ -350,7 +350,7 @@ describe('Ampliffy bid adapter Test', function () {
     };
 
     it('Should extract a CPM and currency from the xml', () => {
-      let cpmData = parseXML(xml);
+      const cpmData = parseXML(xml);
       expect(cpmData).to.not.be.a('null');
       expect(cpmData.cpm).to.equal('.23');
       expect(cpmData.currency).to.equal('USD');
@@ -384,7 +384,7 @@ describe('Ampliffy bid adapter Test', function () {
                         </Wrapper>
                        </Ad>
                       </VAST>`;
-      let serverResponse = {
+      const serverResponse = {
         'body': xmlStr1,
       }
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
@@ -415,14 +415,14 @@ describe('Ampliffy bid adapter Test', function () {
                           </Wrapper>
                          </Ad>
                         </VAST>`;
-      let serverResponse = {
+      const serverResponse = {
         'body': xmlStr1,
       }
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).to.equal(0);
     })
     it('It should return a banner ad.', () => {
-      let serverResponse = {
+      const serverResponse = {
         'body': xmlStr,
       }
       setCurrentURL('https://www.sports.com');
@@ -432,7 +432,7 @@ describe('Ampliffy bid adapter Test', function () {
       expect(bidResponses[0].ad).not.to.be.null;
     })
     it('It should return a video ad.', () => {
-      let serverResponse = {
+      const serverResponse = {
         'body': xmlStr,
       }
       setCurrentURL('https://www.sports.com');

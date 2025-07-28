@@ -10,6 +10,7 @@ const REFERRER2 = 'https://referer2';
 const COOKIE_DEPRECATION_LABEL = 'test';
 const CONSENT_STRING = 'AAAAAAAAA==';
 const API_KEY = 'PA-XXXXXX';
+const GPID = '/11223344/AdUnit#300x250';
 
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
@@ -17,7 +18,7 @@ describe('Missena Adapter', function () {
       storageAllowed: true,
     },
   };
-  let sandbox = sinon.sandbox.create();
+  const sandbox = sinon.createSandbox();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
   const viewport = { width: getWinDimensions().innerWidth, height: getWinDimensions().innerHeight };
@@ -27,21 +28,28 @@ describe('Missena Adapter', function () {
     bidder: 'missena',
     bidId: bidId,
     mediaTypes: { banner: { sizes: [[1, 1]] } },
+    ortb2Imp: {
+      ext: { gpid: GPID },
+    },
     ortb2: {
       device: {
         ext: { cdep: COOKIE_DEPRECATION_LABEL },
+      },
+      source: {
+        ext: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+            },
+          },
+        },
       },
     },
     params: {
       apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
-    },
-    schain: {
-      validation: 'strict',
-      config: {
-        ver: '1.0',
-      },
     },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
@@ -80,7 +88,7 @@ describe('Missena Adapter', function () {
       user: {
         ext: { consent: CONSENT_STRING },
       },
-      device: {        
+      device: {
         w: screen.width,
         h: screen.height,
         ext: { cdep: COOKIE_DEPRECATION_LABEL },
@@ -170,6 +178,11 @@ describe('Missena Adapter', function () {
       expect(payload.ortb2.user.ext.consent).to.equal(CONSENT_STRING);
       expect(payload.ortb2.regs.ext.gdpr).to.equal(1);
     });
+
+    it('should forward GPID from ortb2Imp into ortb2.ext', function () {
+      expect(payload.ortb2.ext.gpid).to.equal(GPID);
+    });
+
     it('should send floor data', function () {
       expect(payload.floor).to.equal(3.5);
       expect(payload.floor_currency).to.equal('EUR');

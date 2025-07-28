@@ -1,9 +1,12 @@
 import {
   buildUrl,
+  deepAccess,
   formatQS,
   generateUUID,
   getWinDimensions,
+  isEmpty,
   isFn,
+  isStr,
   logInfo,
   safeJSONParse,
   triggerPixel,
@@ -68,12 +71,20 @@ function toPayload(bidRequest, bidderRequest) {
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
   payload.currency = getCurrencyFromBidderRequest(bidderRequest);
-  payload.schain = bidRequest.schain;
+  payload.schain = bidRequest?.ortb2?.source?.ext?.schain;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
   payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
-  payload.ortb2 = bidderRequest.ortb2;
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  payload.ortb2 = {
+    ...(bidderRequest.ortb2 || {}),
+    ext: {
+      ...(bidderRequest.ortb2?.ext || {}),
+      ...(isStr(gpid) && !isEmpty(gpid) ? { gpid } : {}),
+    },
+  };
 
   return {
     method: 'POST',

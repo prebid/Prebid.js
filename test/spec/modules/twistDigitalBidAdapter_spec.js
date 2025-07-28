@@ -7,8 +7,8 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {config} from '../../../src/config.js';
 import {deepSetValue} from 'src/utils.js';
 import {
   extractPID,
@@ -298,7 +298,7 @@ describe('TwistDigitalBidAdapter', function () {
           storageAllowed: true,
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
@@ -585,7 +585,7 @@ describe('TwistDigitalBidAdapter', function () {
       });
     });
 
-    it('should return seperated requests for video and banner if singleRequest is true', function () {
+    it('should return separated requests for video and banner if singleRequest is true', function () {
       config.setConfig({
         bidderTimeout: 3000,
         twistdigital: {

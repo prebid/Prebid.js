@@ -7,9 +7,9 @@ import { server } from '../../mocks/xhr.js';
 import 'src/prebid.js';
 import { getGlobal } from 'src/prebidGlobal';
 
-let events = require('src/events');
-let ajax = require('src/ajax');
-let utils = require('src/utils');
+const events = require('src/events');
+const ajax = require('src/ajax');
+const utils = require('src/utils');
 
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
 const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Mobile/15E148 Safari/604.1';
@@ -290,7 +290,7 @@ describe('pubmatic analytics adapter', function () {
 
   beforeEach(function () {
     setUADefault();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     requests = server.requests;
 
@@ -364,9 +364,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(1); // only logger is fired
-      let request = requests[0];
+      const request = requests[0];
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
       expect(data.pdvid).to.equal('20');
@@ -502,14 +502,14 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(2); // logger as well as tracker is fired
-      let request = requests[1]; // logger is executed late, trackers execute first
+      const request = requests[1]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
       expect(data.pdvid).to.equal('20');
 
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
       expect(data.pubid).to.equal('9999');
@@ -540,6 +540,30 @@ describe('pubmatic analytics adapter', function () {
     it('Logger: best case + win tracker', function() {
       this.timeout(5000)
 
+      const mockUserIds = {
+        'pubmaticId': 'test-pubmaticId'
+      };
+
+      const mockUserSync = {
+        userIds: [
+          {
+            name: 'pubmaticId',
+            storage: { name: 'pubmaticId', type: 'cookie&html5' }
+          }
+        ]
+      };
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'adUnits').value([{
+        bids: [{
+          userId: mockUserIds
+        }]
+      }]);
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+        if (key === 'userSync') return mockUserSync;
+        return null;
+      });
+
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
@@ -560,7 +584,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
@@ -582,6 +606,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.ffs).to.equal(1);
       expect(data.fsrc).to.equal(2);
       expect(data.fp).to.equal('pubmatic');
+      expect(data.lip).to.deep.equal(['pubmaticId']);
       // slot 1
       expect(data.s[0].sn).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].fskp).to.equal(0);
@@ -647,7 +672,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].pb).to.equal(1.50);
 
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -704,10 +729,10 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
 
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
 
       expect(data.pubid).to.equal('9999');
       expect(data.fmv).to.equal(undefined);
@@ -748,10 +773,10 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
 
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
 
       expect(data.pubid).to.equal('9999');
       expect(data.fmv).to.equal('floorModelTest');
@@ -788,7 +813,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
@@ -825,7 +850,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].frv).to.equal(1.1);
       expect(data.s[1].ps[0].pb).to.equal(1.50);
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -869,7 +894,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
@@ -899,7 +924,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].ocpm).to.equal(100);
       expect(data.s[0].ps[0].ocry).to.equal('JPY');
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -925,8 +950,8 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
-      let request = requests[1]; // logger is executed late, trackers execute first
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[1]; // logger is executed late, trackers execute first
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.ctr).not.to.be.null;
       expect(data.tgid).to.equal(0);// test group id should be an INT between 0-15 else set to 0
       expect(data.ffs).to.equal(1);
@@ -971,8 +996,8 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
 
       expect(requests.length).to.equal(1); // 1 logger and 0 win-tracker
-      let request = requests[0];
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[0];
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
       expect(data.s[1].ps).to.be.an('array');
@@ -1014,8 +1039,8 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
 
       expect(requests.length).to.equal(1); // 1 logger and 0 win-tracker
-      let request = requests[0];
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[0];
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.ffs).to.equal(1);
       expect(data.fsrc).to.equal(2);
       expect(data.fp).to.equal('pubmatic');
@@ -1080,9 +1105,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
       expect(data.s[1].ps).to.be.an('array');
@@ -1129,7 +1154,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.ffs).to.equal(1);
@@ -1167,7 +1192,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].pb).to.equal(1.50);
       expect(data.dvc).to.deep.equal({'plt': 2});
       // respective tracker slot
-      let firstTracker = requests[1].url;
+      const firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1193,7 +1218,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
@@ -1227,7 +1252,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].frv).to.equal(1.1);
       expect(data.s[1].ps[0].pb).to.equal(1.50);
       // respective tracker slot
-      let firstTracker = requests[1].url;
+      const firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1249,7 +1274,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.ffs).to.equal(1);
@@ -1286,7 +1311,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].frv).to.equal(1.1);
       expect(data.s[1].ps[0].pb).to.equal(1.50);
       // respective tracker slot
-      let firstTracker = requests[1].url;
+      const firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1311,7 +1336,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
@@ -1342,7 +1367,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       // respective tracker slot
-      let firstTracker = requests[1].url;
+      const firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1367,9 +1392,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
-      let request = requests[1]; // logger is executed late, trackers execute first
+      const request = requests[1]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.ffs).to.equal(1);
       expect(data.fsrc).to.equal(2);
       expect(data.fp).to.equal('pubmatic');
@@ -1434,7 +1459,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
@@ -1523,7 +1548,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].pb).to.equal(1.50);
 
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1565,7 +1590,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
@@ -1651,7 +1676,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocry).to.equal('USD');
 
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1694,7 +1719,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s).to.be.an('array');
@@ -1709,7 +1734,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].origbidid).to.equal('partnerImpressionID-2');
 
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1741,7 +1766,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s).to.be.an('array');
@@ -1756,7 +1781,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].origbidid).to.equal('3bd4ebb1c900e2');
 
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);

@@ -12,11 +12,16 @@ describe('Dmd ID System', function () {
   };
 
   beforeEach(function () {
+    if (utils.logError.restore && utils.logError.restore.sinon) {
+      utils.logError.restore();
+    }
     logErrorStub = sinon.stub(utils, 'logError');
   });
 
   afterEach(function () {
-    logErrorStub.restore();
+    if (logErrorStub && logErrorStub.restore) {
+      logErrorStub.restore();
+    }
   });
 
   it('should log an error if no configParams were passed into getId', function () {
@@ -48,12 +53,12 @@ describe('Dmd ID System', function () {
   });
 
   it('should return dmdId if valid dmd-dgid passed into decode', function () {
-    let data = { 'dmdId': 'U12345' };
+    const data = { 'dmdId': 'U12345' };
     expect(dmdIdSubmodule.decode('U12345')).to.deep.equal(data);
   });
 
   it('should return cacheObj if cacheObj is passed into getId', function () {
-    let data = { 'dmdId': 'U12345' };
+    const data = { 'dmdId': 'U12345' };
     expect(dmdIdSubmodule.getId(config, {}, { cookie: 'dmd-dgid' })).to.deep.equal({ cookie: 'dmd-dgid' });
     expect(server.requests.length).to.eq(0);
   });

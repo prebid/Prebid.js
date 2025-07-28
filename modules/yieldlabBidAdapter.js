@@ -1,6 +1,5 @@
 import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { } from '../src/polyfill.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -76,8 +75,9 @@ export const spec = {
           query[prop] = bid.params.customParams[prop];
         }
       }
-      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
-        query.schain = createSchainString(bid.schain);
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain && isPlainObject(schain) && Array.isArray(schain.nodes)) {
+        query.schain = createSchainString(schain);
       }
 
       const iabContent = getContentObject(bid);
@@ -195,7 +195,7 @@ export const spec = {
           creativeId: '' + matchedBid.id,
           dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
-          netRevenue: false,
+          netRevenue: matchedBid.netRevenue,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
@@ -421,7 +421,8 @@ function createSchainString(schain) {
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : '';
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
   const nodesString = schain.nodes.reduce((acc, node) => {
-    return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
+    acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
+    return acc;
   }, '');
   return `${ver},${complete}${nodesString}`;
 }
@@ -450,7 +451,7 @@ function getContentObject(bid) {
  * Creates a string for iab_content object by
  * 1. flatten the iab content object
  * 2. encoding the values
- * 3. joining array of defined keys ('keyword', 'cat') into one value seperated with '|'
+ * 3. joining array of defined keys ('keyword', 'cat') into one value separated with '|'
  * 4. encoding the whole string
  * @param {Object} iabContent
  * @returns {String}

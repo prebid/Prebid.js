@@ -15,11 +15,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
-
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io',
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
 };
+const GVLID = 644;
 
 const DEFAULT_TTL = 360;
 
@@ -51,7 +51,7 @@ export const helper = {
       return bid.params.bidfloor ? bid.params.bidfloor : null;
     }
 
-    let bidFloor = bid.getFloor({
+    const bidFloor = bid.getFloor({
       mediaType: '*',
       size: '*',
       currency: 'USD'
@@ -67,6 +67,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
+  gvlid: GVLID,
   aliases: ['gambid', 'cleanmedianet'],
   supportedMediaTypes: ['banner', 'video'],
 
@@ -112,8 +113,9 @@ export const spec = {
       deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
       deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consent_string);
 
-      if (validBidRequests[0].schain) {
-        deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
+      const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        deepSetValue(rtbBidRequest, 'source.ext.schain', schain);
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
@@ -182,7 +184,7 @@ export const spec = {
         }
       }
 
-      let eids = [];
+      const eids = [];
       if (bidRequest && bidRequest.userId) {
         addExternalUserId(eids, deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
         addExternalUserId(eids, deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
@@ -213,7 +215,7 @@ export const spec = {
     }
 
     const bids = response.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
-    let outBids = [];
+    const outBids = [];
 
     bids.forEach(bid => {
       const outBid = {
@@ -259,7 +261,7 @@ export const spec = {
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;
     }
-    let gdpr = gdprApplies ? 1 : 0;
+    const gdpr = gdprApplies ? 1 : 0;
 
     if (gdprApplies && gdprConsent.consentString) {
       consentString = encodeURIComponent(gdprConsent.consentString);

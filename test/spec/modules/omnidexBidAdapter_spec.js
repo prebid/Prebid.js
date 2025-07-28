@@ -7,8 +7,8 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {config} from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -273,7 +273,7 @@ describe('OmnidexBidAdapter', function () {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
     });
 

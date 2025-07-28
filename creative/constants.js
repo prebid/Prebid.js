@@ -1,4 +1,3 @@
-
 // eslint-disable-next-line prebid/validate-imports
 import {AD_RENDER_FAILED_REASON, EVENTS, MESSAGES} from '../src/constants.js';
 

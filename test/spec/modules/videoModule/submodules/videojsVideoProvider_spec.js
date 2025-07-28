@@ -2,13 +2,14 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
-import { getWinDimensions } from '../../../../../src/utils';
+import { getWinDimensions } from '../../../../../src/utils.js';
 
-const {VideojsProvider, utils} = require('modules/videojsVideoProvider');
+const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modules/videojsVideoProvider');
 
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION
 } = require('libraries/video/constants/ortb.js');
+const { PLAYBACK_MODE } = require('libraries/video/constants/constants.js');
 
 const videojs = require('video.js').default;
 require('videojs-playlist').default;
@@ -25,6 +26,9 @@ describe('videojsProvider', function () {
     beforeEach(() => {
       config = {};
       document.body.innerHTML = '';
+      adState = adStateFactory();
+      timeState = timeStateFactory();
+      callbackStorage = {};
     });
 
     it('should trigger failure when videojs is missing', function () {
@@ -71,17 +75,20 @@ describe('videojsProvider', function () {
       expect(mockVideojs.calledOnce).to.be.true
     });
 
-    it('should not reinstantiate the player', function () {
+    it('should not reinstantiate the player', function (done) {
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
-      const player = videojs(div, {})
-      config.playerConfig = {};
-      config.divId = 'test-div'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
-      provider.init();
-      expect(videojs.getPlayer('test-div')).to.be.equal(player)
-      videojs.getPlayer('test-div').dispose()
+      const player = videojs(div, {});
+      player.ready(() => {
+        config.playerConfig = {};
+        config.divId = 'test-div';
+        const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+        provider.init();
+        expect(videojs.getPlayer('test-div')).to.be.equal(player);
+        videojs.getPlayer('test-div').dispose();
+        done();
+      });
     });
 
     it('should trigger setup complete when player is already insantiated', function () {
@@ -115,6 +122,9 @@ describe('videojsProvider', function () {
       <video preload id='test' width="${200}" height="${100}">
       <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
       </video>`;
+      adState = adStateFactory();
+      timeState = timeStateFactory();
+      callbackStorage = {};
     });
 
     afterEach(() => {
@@ -166,7 +176,7 @@ describe('videojsProvider', function () {
         }
       }
 
-      let provider = VideojsProvider(config, videojs, null, null, null, utils);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const video = provider.getOrtbVideo();
 
@@ -175,7 +185,7 @@ describe('videojsProvider', function () {
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
     });
     //
-    // We can't determine what type of outstream play is occuring
+    // We can't determine what type of outstream play is occurring
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
@@ -390,6 +400,104 @@ describe('utils', function() {
       it('should parse first index when arg is array', function () {
         expect(utils.getMediaUrl(['test.url.1', 'test.url.2'])).to.be.equal('test.url.1');
       });
+    });
+  });
+
+  describe('Ad Helpers', function () {
+    it('should change ad tag url and request ads', function () {
+      const div = document.createElement('div');
+      div.setAttribute('id', 'test-ad');
+      document.body.appendChild(div);
+
+      const stubPlayer = {
+        ima: {changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: {settings: {}}},
+        ready: (cb) => cb(),
+        on: () => {},
+        off: () => {},
+        autoplay: () => false,
+        muted: () => false,
+        canPlayType: () => '',
+        currentHeight: () => 0,
+        currentWidth: () => 0,
+        src: () => '',
+        dispose: () => {}
+      };
+      const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
+      stubVjs.VERSION = '7.20.0';
+      stubVjs.players = {};
+      const provider = VideojsProvider({divId: 'test-ad'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
+      provider.init();
+      provider.setAdTagUrl('tag');
+      expect(stubPlayer.ima.changeAdTag.calledWith('tag')).to.be.true;
+      expect(stubPlayer.ima.requestAds.called).to.be.true;
+    });
+
+    it('should update vast xml and request ads', function () {
+      const div = document.createElement('div');
+      div.setAttribute('id', 'test-xml');
+      document.body.appendChild(div);
+
+      const stubPlayer = {
+        ima: {changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: {settings: {}}},
+        ready: (cb) => cb(),
+        on: () => {},
+        off: () => {},
+        autoplay: () => false,
+        muted: () => false,
+        canPlayType: () => '',
+        currentHeight: () => 0,
+        currentWidth: () => 0,
+        src: () => '',
+        dispose: () => {}
+      };
+      const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
+      stubVjs.VERSION = '7.20.0';
+      stubVjs.players = {};
+      const provider = VideojsProvider({divId: 'test-xml'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
+      provider.init();
+      provider.setAdXml('<VAST/>');
+      expect(stubPlayer.ima.controller.settings.adsResponse).to.equal('<VAST/>');
+      expect(stubPlayer.ima.requestAds.called).to.be.true;
+    });
+  });
+
+  describe('State Factories', function () {
+    it('should set playback mode based on duration', function () {
+      const ts = timeStateFactory();
+      ts.updateForTimeEvent({currentTime: 1, duration: 10});
+      expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.VOD);
+      ts.updateForTimeEvent({currentTime: 1, duration: 0});
+      expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.LIVE);
+      ts.updateForTimeEvent({currentTime: 1, duration: -1});
+      expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.DVR);
+    });
+
+    it('should populate ad state from event', function () {
+      const as = adStateFactory();
+      as.updateForEvent({
+        adId: '1',
+        adSystem: 'sys',
+        advertiserName: 'adv',
+        clickThroughUrl: 'clk',
+        creativeId: 'c1',
+        dealId: 'd1',
+        description: 'desc',
+        linear: true,
+        mediaUrl: 'media',
+        title: 't',
+        universalAdIdValue: 'u',
+        contentType: 'ct',
+        adWrapperIds: ['w1'],
+        skippable: true,
+        skipTimeOffset: 5,
+        adPodInfo: {podIndex: 0, totalAds: 2, adPosition: 1, timeOffset: 0}
+      });
+      const state = as.getState();
+      expect(state.adId).to.equal('1');
+      expect(state.skipafter).to.equal(5);
+      expect(state.adPodCount).to.equal(2);
+      expect(state.adPodIndex).to.equal(0);
+      expect(state.offset).to.be.undefined;
     });
   });
 })

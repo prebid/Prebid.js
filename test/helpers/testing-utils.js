@@ -1,4 +1,3 @@
- 
 const {expect} = require('chai');
 const DEFAULT_TIMEOUT = 2000;
 const utils = {
@@ -8,12 +7,12 @@ const utils = {
     return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`
   },
   waitForElement: async function(elementRef, time = DEFAULT_TIMEOUT) {
-    let element = $(elementRef);
+    const element = $(elementRef);
     await element.waitForExist({timeout: time});
   },
   switchFrame: async function(frameRef) {
-    let iframe = await $(frameRef);
-    browser.switchToFrame(iframe);
+    const iframe = await $(frameRef);
+    browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
     await browser.url(url);
@@ -38,10 +37,9 @@ const utils = {
         it(`should render GAM creative`, async () => {
           await utils.switchFrame(expectGAMCreative);
           const creative = [
-            '> a > img', // banner
-            '> div[class="card"]' // native
-          ].map((child) => `body > div[class="GoogleActiveViewElement"] ${child}`)
-            .join(', ');
+            'a > img', // banner
+            'div[class="card"]' // native
+          ].join(', ');
           const existing = await $(creative).isExisting();
           expect(existing).to.be.true;
         });

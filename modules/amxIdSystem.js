@@ -142,7 +142,6 @@ export const amxIdSubmodule = {
                 logError(`${NAME} invalid response`, responseText);
               }
             }
-
             done(null);
           },
         },

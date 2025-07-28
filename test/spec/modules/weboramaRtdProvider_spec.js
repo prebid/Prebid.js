@@ -264,7 +264,7 @@ describe('weboramaRtdProvider', function() {
     let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
 
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
 
@@ -323,7 +323,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -410,7 +410,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=datasource%3AdocId&url=https%3A%2F%2Fprebid.org&');
@@ -497,7 +497,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=datasource%3AdocId&url=https%3A%2F%2Fprebid.org&');
@@ -730,7 +730,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -856,7 +856,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1000,7 +1000,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1143,7 +1143,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1226,7 +1226,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1313,7 +1313,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1404,7 +1404,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1518,7 +1518,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.test.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/lassoBidAdapter.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
 const GET_IUD_URL = 'https://secure.adnxs.com/getuid?';
@@ -272,7 +272,7 @@ describe('lassoBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         bidid: '123456789',
         id: '33302780340222111',
@@ -296,7 +296,7 @@ describe('lassoBidAdapter', function () {
     };
 
     it('should get the correct bid response', function () {
-      let expectedResponse = {
+      const expectedResponse = {
         requestId: '123456789',
         bidId: '123456789',
         cpm: 1,
@@ -315,7 +315,7 @@ describe('lassoBidAdapter', function () {
           mediaType: 'banner'
         }
       };
-      let result = spec.interpretResponse(serverResponse);
+      const result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse));
     });
   });

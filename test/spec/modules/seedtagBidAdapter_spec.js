@@ -448,7 +448,10 @@ describe('Seedtag Adapter', function () {
 
         // duplicate
         const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
-        bidRequests[0].schain = schain;
+        bidRequests[0].ortb2 = bidRequests[0].ortb2 || {};
+        bidRequests[0].ortb2.source = bidRequests[0].ortb2.source || {};
+        bidRequests[0].ortb2.source.ext = bidRequests[0].ortb2.source.ext || {};
+        bidRequests[0].ortb2.source.ext.schain = schain;
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
 

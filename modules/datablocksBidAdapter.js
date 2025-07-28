@@ -104,7 +104,7 @@ export const spec = {
     let stored = false;
 
     // CREATE 1 YEAR EXPIRY DATE
-    let d = new Date();
+    const d = new Date();
     d.setTime(Date.now() + (365 * 24 * 60 * 60 * 1000));
 
     // TRY TO STORE IN COOKIE
@@ -138,13 +138,13 @@ export const spec = {
   // STORE SYNCS IN STORAGE
   store_syncs: function(syncs) {
     if (storage.localStorageIsEnabled) {
-      let syncObj = {};
+      const syncObj = {};
       syncs.forEach(sync => {
         syncObj[sync.id] = sync.uid;
       });
 
       // FETCH EXISTING SYNCS AND MERGE NEW INTO STORAGE
-      let storedSyncs = this.get_syncs();
+      const storedSyncs = this.get_syncs();
       storage.setDataInLocalStorage('_db_syncs', JSON.stringify(Object.assign(storedSyncs, syncObj)));
 
       return true;
@@ -154,7 +154,7 @@ export const spec = {
   // GET SYNCS FROM STORAGE
   get_syncs: function() {
     if (storage.localStorageIsEnabled) {
-      let syncData = storage.getDataFromLocalStorage('_db_syncs');
+      const syncData = storage.getDataFromLocalStorage('_db_syncs');
       if (syncData) {
         return JSON.parse(syncData);
       } else {
@@ -177,7 +177,7 @@ export const spec = {
       }
 
       // SETUP THE TIMER TO FIRE BACK THE DATA
-      let scope = this;
+      const scope = this;
       this.db_obj.metrics_timer = setTimeout(function() {
         scope.send_metrics();
       }, this.db_obj.metrics_queue_time);
@@ -201,8 +201,8 @@ export const spec = {
 
   // GET BASIC CLIENT INFORMATION
   get_client_info: function () {
-    let botTest = new BotClientTests();
-    let win = getWindowTop();
+    const botTest = new BotClientTests();
+    const win = getWindowTop();
     const windowDimensions = getWinDimensions();
     return {
       'wiw': windowDimensions.innerWidth,
@@ -229,7 +229,7 @@ export const spec = {
       this.db_obj.vis_run = true;
 
       // ADD GPT EVENT LISTENERS
-      let scope = this;
+      const scope = this;
       if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
@@ -279,8 +279,8 @@ export const spec = {
             }
             if (aRatios && aRatios[0]) {
               aRatios = aRatios[0];
-              let wmin = aRatios.min_width || 0;
-              let hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+              const wmin = aRatios.min_width || 0;
+              const hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
               assetObj.wmin = wmin;
               assetObj.hmin = hmin;
             }
@@ -305,11 +305,11 @@ export const spec = {
         }
       }
     }
-    let imps = [];
+    const imps = [];
     // ITERATE THE VALID REQUESTS AND GENERATE IMP OBJECT
     validRequests.forEach(bidRequest => {
       // BUILD THE IMP OBJECT
-      let imp = {
+      const imp = {
         id: bidRequest.bidId,
         tagid: bidRequest.params.tagid || bidRequest.adUnitCode,
         placement_id: bidRequest.params.placement_id || 0,
@@ -329,7 +329,7 @@ export const spec = {
 
       // BUILD THE SIZES
       if (deepAccess(bidRequest, `mediaTypes.banner`)) {
-        let sizes = getAdUnitSizes(bidRequest);
+        const sizes = getAdUnitSizes(bidRequest);
         if (sizes.length) {
           imp.banner = {
             w: sizes[0][0],
@@ -353,11 +353,11 @@ export const spec = {
     }
 
     // GENERATE SITE OBJECT
-    let site = {
+    const site = {
       domain: window.location.host,
       // TODO: is 'page' the right value here?
       page: bidderRequest.refererInfo.page,
-      schain: validRequests[0].schain || {},
+      schain: validRequests[0]?.ortb2?.source?.ext?.schain || {},
       ext: {
         p_domain: bidderRequest.refererInfo.domain,
         rt: bidderRequest.refererInfo.reachedTop,
@@ -373,13 +373,13 @@ export const spec = {
     }
 
     // ADD META KEYWORDS IF FOUND
-    let keywords = document.getElementsByTagName('meta')['keywords'];
+    const keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
       site.keywords = keywords.content;
     }
 
     // GENERATE DEVICE OBJECT
-    let device = {
+    const device = {
       ip: 'peer',
       ua: window.navigator.userAgent,
       js: 1,
@@ -396,8 +396,8 @@ export const spec = {
       }
     };
 
-    let sourceId = validRequests[0].params.source_id || 0;
-    let host = validRequests[0].params.host || 'prebid.dblks.net';
+    const sourceId = validRequests[0].params.source_id || 0;
+    const host = validRequests[0].params.host || 'prebid.dblks.net';
 
     // RETURN WITH THE REQUEST AND PAYLOAD
     return {
@@ -418,8 +418,8 @@ export const spec = {
   // INITIATE USER SYNCING
   getUserSyncs: function(options, rtbResponse, gdprConsent) {
     const syncs = [];
-    let bidResponse = rtbResponse?.[0]?.body ?? null;
-    let scope = this;
+    const bidResponse = rtbResponse?.[0]?.body ?? null;
+    const scope = this;
 
     // LISTEN FOR SYNC DATA FROM IFRAME TYPE SYNC
     window.addEventListener('message', function (event) {
@@ -432,7 +432,7 @@ export const spec = {
     });
 
     // POPULATE GDPR INFORMATION
-    let gdprData = {
+    const gdprData = {
       gdpr: 0,
       gdprConsent: ''
     }
@@ -465,8 +465,8 @@ export const spec = {
     function addParams(sync) {
       // PARSE THE URL
       try {
-        let url = new URL(sync.url);
-        let urlParams = {};
+        const url = new URL(sync.url);
+        const urlParams = {};
         for (const [key, value] of url.searchParams.entries()) {
           urlParams[key] = value;
         };
@@ -547,19 +547,19 @@ export const spec = {
       return result;
     }
 
-    let bids = [];
-    let resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
+    const bids = [];
+    const resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
-      let resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
+      const resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
 
-      let mediaType = deepAccess(bid, 'ext.mtype') || '';
+      const mediaType = deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
         case 'banner':
           bids.push(Object.assign({}, resultItem, {mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm}));
           break;
 
         case 'native':
-          let nativeResult = JSON.parse(bid.adm);
+          const nativeResult = JSON.parse(bid.adm);
           bids.push(Object.assign({}, resultItem, {mediaType: NATIVE, native: parseNative(nativeResult.native)}));
           break;
 
@@ -590,7 +590,7 @@ export class BotClientTests {
         let response = false;
 
         if (window && document) {
-          let results = [
+          const results = [
             'webdriver' in window,
             '_Selenium_IDE_Recorder' in window,
             'callSelenium' in window,

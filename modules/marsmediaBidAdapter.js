@@ -1,4 +1,3 @@
-
 'use strict';
 import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -11,13 +10,14 @@ function MarsmediaAdapter() {
   this.aliases = ['mars'];
   this.supportedMediaTypes = [VIDEO, BANNER];
 
-  let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
-  let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
-  let SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
-  let SUPPORTED_VIDEO_DELIVERY = [1];
-  let SUPPORTED_VIDEO_API = [1, 2, 5];
-  let slotsToBids = {};
-  let version = '2.5';
+  this.gvlid = 776;
+  const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
+  const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
+  const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
+  const SUPPORTED_VIDEO_DELIVERY = [1];
+  const SUPPORTED_VIDEO_API = [1, 2, 5];
+  const slotsToBids = {};
+  const version = '2.5';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -44,7 +44,7 @@ function MarsmediaAdapter() {
       impObj.secure = isSecure;
 
       if (deepAccess(BRs[i], 'mediaTypes.banner') || deepAccess(BRs[i], 'mediaType') === 'banner') {
-        let banner = frameBanner(BRs[i]);
+        const banner = frameBanner(BRs[i]);
         if (banner) {
           impObj.banner = banner;
         }
@@ -96,8 +96,8 @@ function MarsmediaAdapter() {
   }
 
   function getValidSizeSet(dimensionList) {
-    let w = parseInt(dimensionList[0]);
-    let h = parseInt(dimensionList[1]);
+    const w = parseInt(dimensionList[0]);
+    const h = parseInt(dimensionList[1]);
     // clever check for NaN
     if (! (w !== w || h !== h)) {  // eslint-disable-line
       return [w, h];
@@ -189,7 +189,7 @@ function MarsmediaAdapter() {
   }
 
   function frameBid(BRs, bidderRequest) {
-    let bid = {
+    const bid = {
       id: BRs[0].bidderRequestId,
       imp: frameImp(BRs, bidderRequest),
       site: frameSite(bidderRequest),
@@ -207,8 +207,9 @@ function MarsmediaAdapter() {
         }
       }
     };
-    if (BRs[0].schain) {
-      deepSetValue(bid, 'source.ext.schain', BRs[0].schain);
+    const schain = BRs[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(bid, 'source.ext.schain', schain);
     }
     if (bidderRequest.uspConsent) {
       deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent)
@@ -229,7 +230,7 @@ function MarsmediaAdapter() {
   }
 
   this.buildRequests = function (BRs, bidderRequest) {
-    let fallbackZoneId = getFirstParam('zoneId', BRs);
+    const fallbackZoneId = getFirstParam('zoneId', BRs);
     if (fallbackZoneId === undefined || BRs.length < 1) {
       return [];
     }
@@ -274,11 +275,11 @@ function MarsmediaAdapter() {
 
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
-    let bids = [];
+    const bids = [];
     let i = 0;
 
     if (responses.seatbid) {
-      let temp = [];
+      const temp = [];
       for (i = 0; i < responses.seatbid.length; i++) {
         for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
           temp.push(responses.seatbid[i].bid[j]);
@@ -288,9 +289,9 @@ function MarsmediaAdapter() {
     }
 
     for (i = 0; i < responses.length; i++) {
-      let bid = responses[i];
-      let bidRequest = slotsToBids[bid.impid];
-      let bidResponse = {
+      const bid = responses[i];
+      const bidRequest = slotsToBids[bid.impid];
+      const bidResponse = {
         requestId: bidRequest.bidId,
         cpm: parseFloat(bid.price),
         width: bid.w,

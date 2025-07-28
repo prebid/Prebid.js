@@ -4,9 +4,9 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { setConfig } from 'modules/currency.js';
 
-let events = require('src/events');
-let utils = require('src/utils');
-let adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
+const utils = require('src/utils');
+const adapterManager = require('src/adapterManager').default;
 
 const {
   AUCTION_INIT,
@@ -292,9 +292,9 @@ describe('Adnuntius analytics adapter', function () {
   let clock;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
-    let element = {
+    const element = {
       getAttribute: function() {
         return 'adunitid';
       }
@@ -336,7 +336,7 @@ describe('Adnuntius analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
+      const request = server.requests[0];
 
       expect(request.url).to.equal('https://analytics.adnuntius.com/prebid');
 
@@ -385,7 +385,7 @@ describe('Adnuntius analytics adapter', function () {
 
       expect(server.requests.length).to.equal(1);
 
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('adnuntius');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
@@ -424,8 +424,8 @@ describe('Adnuntius analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
-      let message = JSON.parse(request.requestBody);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
 
       expect(message.gdpr.length).to.equal(1);
       expect(message.gdpr[0].gdprApplies).to.equal(true);
@@ -456,8 +456,8 @@ describe('Adnuntius analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
-      let message = JSON.parse(request.requestBody);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
 
       expect(message.wins.length).to.equal(1);
       expect(message.wins[0].rUp).to.equal('rUpObject');
@@ -490,7 +490,7 @@ describe('Adnuntius analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
+      const request = server.requests[0];
 
       expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
     });
@@ -524,8 +524,8 @@ describe('Adnuntius analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
-      let message = JSON.parse(request.requestBody);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
 
       expect(message.ext).to.not.equal(null);
       expect(message.ext.testparam).to.equal(123);

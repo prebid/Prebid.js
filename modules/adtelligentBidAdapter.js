@@ -32,8 +32,8 @@ const HOST_GETTERS = {
   indicue: () => 'ghb.console.indicue.com',
   stellormedia: () => 'ghb.ads.stellormedia.com'}
 const getUri = function (bidderCode) {
-  let bidderWithoutSuffix = bidderCode.split('_')[0];
-  let getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
+  const bidderWithoutSuffix = bidderCode.split('_')[0];
+  const getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
   return PROTOCOL + getter() + AUCTION_PATH
 }
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
@@ -69,6 +69,7 @@ export const spec = {
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
+
     return _map(bidChunks, (bids) => {
       return {
         data: Object.assign({}, tag, { BidRequests: bids }),
@@ -129,10 +130,10 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = createTag(bidRequests, adapterRequest);
+
   if (window.adtDmp && window.adtDmp.ready) {
     tag.DMPId = window.adtDmp.getUID();
   }
-
   if (adapterRequest.gppConsent) {
     tag.GPP = adapterRequest.gppConsent.gppString;
     tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString();
@@ -140,12 +141,18 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.GPP = adapterRequest.ortb2.regs.gpp;
     tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
   }
+  const ageVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
+
+  if (ageVerification) {
+    tag.AgeVerification = ageVerification;
+  }
 
   // end publisher env
   const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);
+
     bids.push(bid);
   }
 
@@ -160,6 +167,7 @@ function bidToTag(bidRequests, adapterRequest) {
 function prepareBidRequests(bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
@@ -174,12 +182,19 @@ function prepareBidRequests(bidReq) {
   if (bidReq.params.vpb_placement_id) {
     bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
   }
+
+  if (gpid) {
+    bidReqParams.GPID = gpid;
+  }
+
   if (mediaType === VIDEO) {
     const context = deepAccess(bidReq, 'mediaTypes.video.context');
+
     if (context === ADPOD) {
       bidReqParams.Adpod = deepAccess(bidReq, 'mediaTypes.video');
     }
   }
+
   return bidReqParams;
 }
 

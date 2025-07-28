@@ -7,7 +7,7 @@ import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
-import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
+import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter.js';
 import {FIRST_PARTY_KEY, PREBID, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
@@ -19,7 +19,6 @@ const version = VERSION;
 const REPORT_ENDPOINT = 'https://reports.intentiq.com/report';
 const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 const REPORT_SERVER_ADDRESS = 'https://test-reports.intentiq.com/report';
-
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -58,7 +57,7 @@ const getUserConfigWithReportingServerAddress = () => [
   }
 ];
 
-let wonRequest = {
+const wonRequest = {
   'bidderCode': 'pubmatic',
   'width': 728,
   'height': 90,
@@ -141,19 +140,19 @@ describe('IntentIQ tests all', function () {
   it('should send POST request with payload in request body if reportMethod is POST', function () {
     const [userConfig] = getUserConfig();
     userConfig.params.reportMethod = 'POST';
-  
+
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
-  
+
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-  
+
     events.emit(EVENTS.BID_WON, wonRequest);
-  
+
     const request = server.requests[0];
-  
+
     const expectedData = preparePayload(wonRequest);
     const expectedPayload = `["${btoa(JSON.stringify(expectedData))}"]`;
-  
+
     expect(request.method).to.equal('POST');
     expect(request.requestBody).to.equal(expectedPayload);
   });
@@ -162,25 +161,25 @@ describe('IntentIQ tests all', function () {
     const [userConfig] = getUserConfig();
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
-  
+
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     events.emit(EVENTS.BID_WON, wonRequest);
-  
+
     const request = server.requests[0];
-  
+
     expect(request.method).to.equal('GET');
-  
+
     const url = new URL(request.url);
     const payloadEncoded = url.searchParams.get('payload');
     const decoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
-  
+
     const expected = preparePayload(wonRequest);
-  
+
     expect(decoded.partnerId).to.equal(expected.partnerId);
     expect(decoded.adType).to.equal(expected.adType);
     expect(decoded.prebidAuctionId).to.equal(expected.prebidAuctionId);
   });
-  
+
   it('IIQ Analytical Adapter bid win report', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876'});
@@ -430,8 +429,8 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should include source parameter in report URL', function () {
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(defaultData));  
-    
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(defaultData));
+
     events.emit(EVENTS.BID_WON, wonRequest);
     const request = server.requests[0];
 
@@ -462,17 +461,17 @@ describe('IntentIQ tests all', function () {
       parameterValue: 'Lee',
       destination: [0, 0, 1]
     }];
-  
+
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(userConfig);
-  
+
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     events.emit(EVENTS.BID_WON, wonRequest);
-  
+
     const request = server.requests[0];
     expect(request.url).to.include('general=Lee');
   });
-  
+
   it('should not send additionalParams in report if value is too large', function () {
     const longVal = 'x'.repeat(5000000);
     const userConfig = getUserConfig();
@@ -481,21 +480,21 @@ describe('IntentIQ tests all', function () {
       parameterValue: longVal,
       destination: [0, 0, 1]
     }];
-  
+
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(userConfig);
-  
+
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     events.emit(EVENTS.BID_WON, wonRequest);
-  
+
     const request = server.requests[0];
     expect(request.url).not.to.include('general');
-  });  
+  });
   it('should include spd parameter from LS in report URL', function () {
     const spdObject = { foo: 'bar', value: 42 };
     const expectedSpdEncoded = encodeURIComponent(JSON.stringify(spdObject));
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));  
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     events.emit(EVENTS.BID_WON, wonRequest);
@@ -510,7 +509,7 @@ describe('IntentIQ tests all', function () {
     const spdObject = 'server provided data';
     const expectedSpdEncoded = encodeURIComponent(spdObject);
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));  
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     events.emit(EVENTS.BID_WON, wonRequest);

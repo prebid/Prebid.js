@@ -112,8 +112,9 @@ export const spec = {
       payload.regs.ext.uspIab = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         payload.schain = schain;
       }
@@ -297,13 +298,17 @@ function enrichSlotWithFloors(slot, bidRequest) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
         const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER }));
+        bannerSizes.forEach(bannerSize => {
+          slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER });
+        });
       }
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
+        videoSizes.forEach(videoSize => {
+          slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO });
+        });
       }
 
       if (bidRequest.mediaTypes?.native) {
@@ -372,13 +377,13 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  const videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  const nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
+  const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    let mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
+    const mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
     return mediaTypesSizes
       .reduce(function (acc, currSize) {
         if (isArray(currSize)) {
