@@ -720,20 +720,32 @@ declare module './events' {
 }
 
 export const requestBids = (function() {
-  const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions): void {
-    let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
-    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+
+  function filterAdUnits(adUnits, adUnitCodes) {
     if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
       adUnitCodes = [adUnitCodes];
     }
-    if (adUnitCodes && adUnitCodes.length) {
-      // if specific adUnitCodes supplied filter adUnits for those codes
-      adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
+    if (adUnitCodes == null || (Array.isArray(adUnitCodes) && adUnitCodes.length === 0)) {
+      return {
+        included: adUnits,
+        excluded: [],
+        adUnitCodes: adUnits.map(au => au.code).filter(uniques)
+      }
     } else {
-      // otherwise derive adUnitCodes from adUnits
-      adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+      adUnitCodes = adUnitCodes.filter(uniques);
+      return Object.assign({
+        adUnitCodes
+      }, adUnits.reduce(({included, excluded}, adUnit) => {
+        (adUnitCodes.includes(adUnit.code) ? included : excluded).push(adUnit);
+        return {included, excluded};
+      }, {included: [], excluded: []}))
     }
-    adUnitCodes = adUnitCodes.filter(uniques);
+  }
+
+  const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions): void {
+    let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
+    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+    ({included: adUnits, adUnitCodes} = filterAdUnits(adUnits, adUnitCodes));
     let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
@@ -759,9 +771,21 @@ export const requestBids = (function() {
     const metrics = newMetrics();
     metrics.checkpoint('requestBids');
 
-    events.emit(REQUEST_BIDS, options);
+    const {included, excluded, adUnitCodes} = filterAdUnits(adUnits, options.adUnitCodes);
+
+    events.emit(REQUEST_BIDS, Object.assign(options, {
+      adUnits: included,
+      adUnitCodes
+    }));
+
+    // ad units that were filtered out are re-included here, then filtered out again in `delegate`
+    // this is to avoid breaking requestBids hook that expect all ad units in the request (such as priceFloors)
 
     const req = Object.assign({}, options, {
+      adUnits: options.adUnits.slice().concat(excluded),
+      // because of this double filtering logic, it's not clear
+      // what it means for an event handler to modify adUnitCodes - so don't allow it
+      adUnitCodes,
       metrics,
       defer: defer({promiseFactory: (r) => new Promise(r)})
     });
