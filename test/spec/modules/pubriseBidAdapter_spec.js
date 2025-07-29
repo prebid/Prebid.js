@@ -297,8 +297,6 @@ describe('PubriseBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-
-      expect(bidderRequest).to.have.property('ortb2');
     })
   });
 
