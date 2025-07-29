@@ -5,8 +5,6 @@ import {
   getWindowSelf,
   getWindowTop,
   isArray,
-  isFn,
-  isPlainObject,
   logError,
   logWarn
 } from '../src/utils.js';
@@ -14,6 +12,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getBidFloor} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -58,7 +57,7 @@ function buildRequests(bidReqs, bidderRequest) {
         },
         tagid: String(bid.adUnitCode)
       };
-      const bidFloor = _getBidFloor(bid);
+      const bidFloor = getBidFloor(bid);
       if (bidFloor) {
         imp.bidfloor = bidFloor;
       }
@@ -184,22 +183,6 @@ function _isIframe() {
   } catch (e) {
     return true;
   }
-}
-
-function _getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.bidFloor ? bid.params.bidFloor : null;
-  }
-
-  const floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
 }
 
 registerBidder(spec);

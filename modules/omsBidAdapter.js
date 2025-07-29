@@ -6,8 +6,6 @@ import {
   logWarn,
   createTrackPixelHtml,
   getWindowSelf,
-  isFn,
-  isPlainObject,
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
@@ -18,6 +16,7 @@ import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getBidFloor} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -71,7 +70,7 @@ function buildRequests(bidReqs, bidderRequest) {
         }
       }
 
-      const bidFloor = _getBidFloor(bid);
+      const bidFloor = getBidFloor(bid);
 
       if (bidFloor) {
         imp.bidfloor = bidFloor;
@@ -289,20 +288,6 @@ function _isIframe() {
   } catch (e) {
     return true;
   }
-}
-
-function _getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.bidFloor ? bid.params.bidFloor : null;
-  }
-
-  const floor = bid.getFloor({
-    currency: 'USD', mediaType: '*', size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
 }
 
 registerBidder(spec);
