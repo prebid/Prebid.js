@@ -51,7 +51,7 @@ export const spec = {
         test = true;
       }
 
-       if (params.testDk) {
+      if (params.testDk) {
         testDk = params.testDk;
         test = true;
       }
