@@ -1,6 +1,5 @@
 import * as utils from 'src/utils.js';
-import analyticsAdapter from 'modules/rivrAnalyticsAdapter.js';
-import {
+import analyticsAdapter, {
   sendImpressions,
   handleClickEventWithClosureScope,
   createUnOptimisedParamsField,
@@ -14,14 +13,14 @@ import {
   getCookie,
   storeAndReturnRivrUsrIdCookie,
   arrayDifference,
-  activelyWaitForBannersToRender,
-} from 'modules/rivrAnalyticsAdapter.js';
+  activelyWaitForBannersToRender} from 'modules/rivrAnalyticsAdapter.js';
+
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('../../../src/events');
+const events = require('../../../src/events.js');
 
 describe('RIVR Analytics adapter', () => {
   const EXPIRING_QUEUE_TIMEOUT = 4000;
@@ -93,7 +92,7 @@ describe('RIVR Analytics adapter', () => {
   });
 
   it('Firing an event when rivraddon context is not defined it should do nothing', () => {
-    let rivraddonsGetContextStub = sandbox.stub(window.rivraddon.analytics, 'getContext');
+    const rivraddonsGetContextStub = sandbox.stub(window.rivraddon.analytics, 'getContext');
     rivraddonsTrackPbjsEventStub = sandbox.stub(window.rivraddon.analytics, 'trackPbjsEvent');
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);

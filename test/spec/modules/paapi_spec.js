@@ -73,7 +73,7 @@ describe('paapi module', () => {
       })
       function getWrappedAjax() {
         let wrappedAjax;
-        let next = sinon.stub().callsFake((spec, bids, br, ajax) => {
+        const next = sinon.stub().callsFake((spec, bids, br, ajax) => {
           wrappedAjax = ajax;
         });
         adAuctionHeadersHook(next, {}, [], bidderRequest, ajax);

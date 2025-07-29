@@ -7,11 +7,11 @@
  * [['a', 'b'], ['c', 'd'], ['e']]
  */
 export function chunk(array, size) {
-  let newArray = [];
+  const newArray = [];
 
   for (let i = 0; i < Math.ceil(array.length / size); i++) {
-    let start = i * size;
-    let end = start + size;
+    const start = i * size;
+    const end = start + size;
     newArray.push(array.slice(start, end));
   }
 

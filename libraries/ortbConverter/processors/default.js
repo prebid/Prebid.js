@@ -52,16 +52,6 @@ export const DEFAULT_PROCESSORS = {
       // populates imp.banner
       fn: fillBannerImp
     },
-    pbadslot: {
-      // removes imp.ext.data.pbaslot if it's not a string
-      // TODO: is this needed?
-      fn(imp) {
-        const pbadslot = imp.ext?.data?.pbadslot;
-        if (!pbadslot || typeof pbadslot !== 'string') {
-          delete imp.ext?.data?.pbadslot;
-        }
-      }
-    },
     secure: {
       // should set imp.secure to 1 unless publisher has set it
       fn(imp, bidRequest) {
@@ -98,7 +88,9 @@ export const DEFAULT_PROCESSORS = {
           ttl: bid.exp || context.ttl,
           netRevenue: context.netRevenue,
         }).filter(([k, v]) => typeof v !== 'undefined')
-          .forEach(([k, v]) => bidResponse[k] = v);
+          .forEach(([k, v]) => {
+            bidResponse[k] = v;
+          });
         if (!bidResponse.meta) {
           bidResponse.meta = {};
         }

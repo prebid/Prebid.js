@@ -304,7 +304,7 @@ describe('FPD enrichment', () => {
   });
 
   describe('privacy sandbox cookieDeprecationLabel', () => {
-    let isAllowed, cdep, shouldCleanupNav = false;
+    let isAllowed; let cdep; let shouldCleanupNav = false;
 
     before(() => {
       if (!navigator.cookieDeprecationLabel) {

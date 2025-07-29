@@ -5,6 +5,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'luponmedia';
+const GVLID = 1132;
 const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
 
 const buildServerUrl = (keyId) => {
@@ -69,6 +70,7 @@ export const converter = ortbConverter({
 });
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
     return keyIdRegex.test(bid?.params?.keyId);
@@ -103,7 +105,7 @@ export const spec = {
     return converter.fromORTB({response: response.body, request: request.data}).bids;
   },
   getUserSyncs: function (syncOptions, responses) {
-    let allUserSyncs = [];
+    const allUserSyncs = [];
 
     if (hasSynced) {
       return allUserSyncs;
@@ -124,7 +126,7 @@ export const spec = {
         const response = csResp.body.ext.usersyncs;
         const bidders = response.bidder_status;
 
-        for (let synci in bidders) {
+        for (const synci in bidders) {
           const thisSync = bidders[synci];
 
           if (!thisSync.no_cookie) {

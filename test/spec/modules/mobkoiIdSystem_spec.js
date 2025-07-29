@@ -2,14 +2,14 @@ import sinon from 'sinon';
 import {
   mobkoiIdSubmodule,
   storage,
-  PROD_AD_SERVER_BASE_URL,
+  PROD_PREBID_JS_INTEGRATION_BASE_URL,
   EQUATIV_NETWORK_ID,
   utils as mobkoiUtils
 } from 'modules/mobkoiIdSystem';
 import * as prebidUtils from 'src/utils';
 
 const TEST_SAS_ID = 'test-sas-id';
-const TEST_AD_SERVER_BASE_URL = 'https://mocha.test.adserver.com';
+const TEST_INTEGRATION_ENDPOINT = 'https://mocha.test.integration.com';
 const TEST_CONSENT_STRING = 'test-consent-string';
 
 function decodeFullUrl(url) {
@@ -123,24 +123,24 @@ describe('mobkoiIdSystem', function () {
   });
 
   describe('utils.buildEquativPixelUrl', function () {
-    it('should use the provided adServerBaseUrl URL from syncUserOptions', function () {
+    it('should use the provided integrationEndpoint URL from syncUserOptions', function () {
       const gdprConsent = {
         gdprApplies: true,
         consentString: TEST_CONSENT_STRING
       };
       const syncUserOptions = {
         params: {
-          adServerBaseUrl: TEST_AD_SERVER_BASE_URL
+          integrationEndpoint: TEST_INTEGRATION_ENDPOINT
         }
       };
 
       const url = mobkoiUtils.buildEquativPixelUrl(syncUserOptions, gdprConsent);
       const decodedUrl = decodeFullUrl(url);
 
-      expect(decodedUrl).to.include(TEST_AD_SERVER_BASE_URL);
+      expect(decodedUrl).to.include(TEST_INTEGRATION_ENDPOINT);
     });
 
-    it('should use the PROD ad server endpoint if adServerBaseUrl is not provided', function () {
+    it('should use the PROD integration endpoint if integrationEndpoint is not provided', function () {
       const syncUserOptions = {};
       const gdprConsent = {
         gdprApplies: true,
@@ -150,7 +150,7 @@ describe('mobkoiIdSystem', function () {
       const url = mobkoiUtils.buildEquativPixelUrl(syncUserOptions, gdprConsent);
       const decodedUrl = decodeFullUrl(url);
 
-      expect(decodedUrl).to.include(PROD_AD_SERVER_BASE_URL);
+      expect(decodedUrl).to.include(PROD_PREBID_JS_INTEGRATION_BASE_URL);
     });
 
     it('should contains the Equativ network ID', function () {
@@ -168,7 +168,7 @@ describe('mobkoiIdSystem', function () {
     it('should contain a consent string', function () {
       const syncUserOptions = {
         params: {
-          adServerBaseUrl: TEST_AD_SERVER_BASE_URL
+          integrationEndpoint: TEST_INTEGRATION_ENDPOINT
         }
       };
       const consentObject = {
@@ -188,7 +188,7 @@ describe('mobkoiIdSystem', function () {
     it('should set empty string to gdpr_consent when GDPR is not applies', function () {
       const syncUserOptions = {
         params: {
-          adServerBaseUrl: TEST_AD_SERVER_BASE_URL
+          integrationEndpoint: TEST_INTEGRATION_ENDPOINT
         }
       };
       const gdprConsent = {
@@ -206,7 +206,7 @@ describe('mobkoiIdSystem', function () {
     it('should contain SAS ID marco', function () {
       const syncUserOptions = {
         params: {
-          adServerBaseUrl: TEST_AD_SERVER_BASE_URL
+          integrationEndpoint: TEST_INTEGRATION_ENDPOINT
         }
       };
       const gdprConsent = {
