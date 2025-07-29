@@ -720,7 +720,6 @@ declare module './events' {
 }
 
 export const requestBids = (function() {
-
   function filterAdUnits(adUnits, adUnitCodes) {
     if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
       adUnitCodes = [adUnitCodes];
