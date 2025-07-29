@@ -35,7 +35,7 @@ describe('PubWise Prebid Analytics', function () {
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
-    clock = sandbox.useFakeTimers();
+    clock = sandbox.useFakeTimers({shouldClearNativeTimers: true});
     sandbox.stub(events, 'getEvents').returns([]);
 
     requests = server.requests;
