@@ -66,6 +66,8 @@ import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
 
+import {getGlobalVarName} from "./buildOptions.ts";
+
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
 
@@ -370,7 +372,7 @@ function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
 
 function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
   return function (...args) {
-    logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
+    logInfo(`Invoking ${getGlobalVarName()}.${name}`, args);
     return fn.apply(this, args);
   }
 }
@@ -994,7 +996,7 @@ const enableAnalyticsCb = hook('async', function (config) {
   if (config && !isEmpty(config)) {
     adapterManager.enableAnalytics(config);
   } else {
-    logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
+    logError(`${getGlobalVarName()}.enableAnalytics should be called with option {}`);
   }
 }, 'enableAnalyticsCb');
 
@@ -1010,7 +1012,7 @@ function aliasBidder(bidderCode: BidderCode, alias: BidderCode, options?: AliasB
   if (bidderCode && alias) {
     adapterManager.aliasBidAdapter(bidderCode, alias, options);
   } else {
-    logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
+    logError('bidderCode and alias must be passed as arguments', `${getGlobalVarName()}.aliasBidder`);
   }
 }
 addApiMethod('aliasBidder', aliasBidder);
@@ -1145,7 +1147,7 @@ function quePush(command) {
       logError('Error processing command :', e.message, e.stack);
     }
   } else {
-    logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
+    logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
   }
 }
 

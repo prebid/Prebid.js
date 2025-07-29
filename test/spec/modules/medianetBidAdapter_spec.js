@@ -5,8 +5,9 @@ import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
 import {resetWinDimensions} from '../../../src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
-$$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
+getGlobal().version = getGlobal().version || 'version';
 const VALID_BID_REQUEST = [{
   'bidder': 'medianet',
   'params': {
@@ -564,7 +565,8 @@ const VALID_PAYLOAD_INVALID_BIDFLOOR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -598,7 +600,8 @@ const VALID_PAYLOAD_INVALID_BIDFLOOR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -665,7 +668,8 @@ const VALID_PAYLOAD_NATIVE = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -699,7 +703,8 @@ const VALID_PAYLOAD_NATIVE = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -767,7 +772,8 @@ const VALID_PAYLOAD = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -800,7 +806,8 @@ const VALID_PAYLOAD = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -871,7 +878,8 @@ const VALID_PAYLOAD_WITH_USERID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -906,7 +914,8 @@ const VALID_PAYLOAD_WITH_USERID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -975,7 +984,8 @@ const VALID_PAYLOAD_WITH_USERIDASEIDS = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1010,7 +1020,8 @@ const VALID_PAYLOAD_WITH_USERIDASEIDS = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1092,7 +1103,8 @@ const VALID_PAYLOAD_WITH_CRID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1127,7 +1139,8 @@ const VALID_PAYLOAD_WITH_CRID = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1197,7 +1210,8 @@ const VALID_PAYLOAD_PAAPI = {
           }
         },
         'viewability': 1,
-        'visibility': 1
+        'visibility': 1,
+        'adUnitCode': 'div-gpt-ad-1460505748561-0'
       },
       'all': {
         'cid': 'customer_id',
@@ -1741,7 +1755,8 @@ const VALID_PAYLOAD_FOR_GDPR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1774,7 +1789,8 @@ const VALID_PAYLOAD_FOR_GDPR = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1858,7 +1874,8 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-0'
     },
     'banner': [{
       'w': 300,
@@ -1891,7 +1908,8 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
           y: 100
         }
       },
-      'display_count': 1
+      'display_count': 1,
+      'adUnitCode': 'div-gpt-ad-1460505748561-123'
     },
     'banner': [{
       'w': 300,
@@ -1959,7 +1977,7 @@ describe('Media.net bid adapter', function () {
 
   describe('buildRequests', function () {
     beforeEach(function () {
-      $$PREBID_GLOBAL$$.medianetGlobals = {};
+      getGlobal().medianetGlobals = {};
 
       const documentStub = sandbox.stub(document, 'getElementById');
       const boundingRect = {
@@ -2389,7 +2407,7 @@ describe('Media.net bid adapter', function () {
           'floor': 1
         }
       };
-      $$PREBID_GLOBAL$$.medianetGlobals = {};
+      getGlobal().medianetGlobals = {};
 
       const documentStub = sandbox.stub(document, 'getElementById');
       const boundingRect = {

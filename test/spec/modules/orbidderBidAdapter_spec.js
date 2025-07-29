@@ -3,6 +3,7 @@ import { spec } from 'modules/orbidderBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as _ from 'lodash';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -214,7 +215,7 @@ describe('orbidderBidAdapter', () => {
     });
 
     it('contains prebid version parameter', () => {
-      expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
+      expect(request.data.v).to.equal(getGlobal().version);
     });
 
     it('banner: sends correct bid parameters', () => {
@@ -223,7 +224,7 @@ describe('orbidderBidAdapter', () => {
 
       const expectedBidRequest = deepClone(defaultBidRequestBanner);
       expectedBidRequest.pageUrl = 'https://localhost:9876/';
-      expectedBidRequest.v = $$PREBID_GLOBAL$$.version;
+      expectedBidRequest.v = getGlobal().version;
       expect(request.data).to.deep.equal(expectedBidRequest);
     });
 
@@ -233,7 +234,7 @@ describe('orbidderBidAdapter', () => {
 
       const expectedBidRequest = deepClone(defaultBidRequestNative);
       expectedBidRequest.pageUrl = 'https://localhost:9876/';
-      expectedBidRequest.v = $$PREBID_GLOBAL$$.version;
+      expectedBidRequest.v = getGlobal().version;
       expect(nativeRequest.data).to.deep.equal(expectedBidRequest);
     });
 

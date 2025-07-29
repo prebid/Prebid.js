@@ -29,9 +29,9 @@ import {
   uniques,
 } from './utils.js';
 import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
-import type {Bid} from "./bidfactory.ts";
-import type {AdUnitCode, ByAdUnit, Identifier} from "./types/common.d.ts";
-import type {DefaultTargeting} from "./auction.ts";
+import type {Bid} from './bidfactory.ts';
+import type {AdUnitCode, ByAdUnit, Identifier} from './types/common.d.ts';
+import type {DefaultTargeting} from './auction.ts';
 
 var pbTargetingKeys = [];
 
@@ -176,15 +176,15 @@ export interface TargetingControlsConfig {
   /**
    * Selects supported default targeting keys.
    */
-  allowTargetingKeys?: (keyof DefaultTargeting)[];
+  allowTargetingKeys?: (keyof typeof TARGETING_KEYS)[];
   /**
    * Selects targeting keys to be supported in addition to the default ones
    */
-  addTargetingKeys?: (keyof DefaultTargeting)[];
+  addTargetingKeys?: (keyof typeof TARGETING_KEYS)[];
   /**
    * Selects supported default targeting keys.
    */
-  allowSendAllBidsTargetingKeys?: (keyof DefaultTargeting)[];
+  allowSendAllBidsTargetingKeys?: (keyof typeof TARGETING_KEYS)[];
   /**
    * Set to false to prevent custom targeting values from being set for non-winning bids
    */
@@ -519,7 +519,8 @@ export function newTargeting(auctionManager) {
   function convertKeysToQueryForm(keyMap) {
     return Object.keys(keyMap).reduce(function (queryString, key) {
       const encodedKeyPair = `${key}%3d${encodeURIComponent(keyMap[key])}%26`;
-      return queryString += encodedKeyPair;
+      queryString += encodedKeyPair;
+      return queryString;
     }, '');
   }
 

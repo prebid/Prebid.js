@@ -5,6 +5,7 @@ import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
@@ -1045,11 +1046,11 @@ describe('MediaFuseAdapter', function () {
     let bidderSettingsStorage;
 
     before(function() {
-      bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+      bidderSettingsStorage = getGlobal().bidderSettings;
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+      getGlobal().bidderSettings = bidderSettingsStorage;
     });
 
     const response = {
@@ -1152,7 +1153,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         mediafuse: {
           allowZeroCpmBids: true
         }

@@ -91,7 +91,9 @@ export const PBS_PROCESSORS = {
           const value = deepAccess(ortbResponse, `ext.${serverName}.${context.bidderRequest.bidderCode}`);
           if (value) {
             context.bidderRequest[clientName] = value;
-            context.bidRequests.forEach(bid => bid[clientName] = value);
+            context.bidRequests.forEach(bid => {
+              bid[clientName] = value;
+            });
           }
         })
       }

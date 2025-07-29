@@ -3,12 +3,12 @@ import sinon from 'sinon';
 import {
   spec,
   utils,
-  DEFAULT_AD_SERVER_BASE_URL
+  DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT
 } from 'modules/mobkoiBidAdapter.js';
 import * as prebidUtils from 'src/utils';
 
 describe('Mobkoi bidding Adapter', function () {
-  const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
+  const testIntegrationEndpoint = 'http://test.integration.endpoint.com/bid';
   const testRequestId = 'test-request-id';
   const testPlacementId = 'mobkoiPlacementId';
   const testBidId = 'test-bid-id';
@@ -22,7 +22,7 @@ describe('Mobkoi bidding Adapter', function () {
   const getOrtb2 = () => ({
     site: {
       publisher: {
-        ext: { adServerBaseUrl: testAdServerBaseUrl }
+        ext: { integrationEndpoint: testIntegrationEndpoint }
       }
     }
   })
@@ -37,7 +37,7 @@ describe('Mobkoi bidding Adapter', function () {
     auctionId: testAuctionId,
     ortb2: getOrtb2(),
     params: {
-      adServerBaseUrl: testAdServerBaseUrl,
+      integrationEndpoint: testIntegrationEndpoint,
       placementId: testPlacementId
     }
   })
@@ -140,20 +140,27 @@ describe('Mobkoi bidding Adapter', function () {
       expect(ortbData.id).to.equal(bidderRequest.bidderRequestId);
     });
 
-    it('should obtain adServerBaseUrl from ad unit params if the value does not exist in ortb2', function () {
-      delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
+    it('should obtain integrationEndpoint from ad unit params if the value does not exist in ortb2', function () {
+      delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const ortbData = request.data;
 
-      expect(ortbData.site.publisher.ext.adServerBaseUrl).to.equal(bidderRequest.bids[0].params.adServerBaseUrl);
+      expect(ortbData.site.publisher.ext.integrationBaseUrl).to.equal(bidderRequest.bids[0].params.integrationEndpoint);
     });
 
-    it('should use the pro server url when the ad server base url is not set', function () {
-      delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
-      delete bidderRequest.bids[0].params.adServerBaseUrl;
+    it('should use the pro server url when the integration endpoint is not set', function () {
+      delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
+      delete bidderRequest.bids[0].params.integrationEndpoint;
 
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal(DEFAULT_AD_SERVER_BASE_URL + '/bid');
+      expect(request.url).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT);
+      expect(request.url).to.include('/bid');
+    });
+
+    it('should set ext.mobkoi.integration_type to "pbjs" in the ORTB request', function () {
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const ortbData = request.data;
+      expect(ortbData).to.have.nested.property('ext.mobkoi.integration_type', 'pbjs');
     });
   });
 
@@ -194,17 +201,17 @@ describe('Mobkoi bidding Adapter', function () {
       bidderRequest = getBidderRequest();
     });
 
-    describe('getAdServerEndpointBaseUrl', function () {
-      it('should return the adServerBaseUrl from the given object', function () {
-        expect(utils.getAdServerEndpointBaseUrl(bidderRequest))
-          .to.equal(testAdServerBaseUrl);
+    describe('getIntegrationEndpoint', function () {
+      it('should return the integrationEndpoint from the given object', function () {
+        expect(utils.getIntegrationEndpoint(bidderRequest))
+          .to.equal(testIntegrationEndpoint);
       });
 
-      it('should return default prod ad server url when adServerBaseUrl is missing in params and ortb2', function () {
-        delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
-        delete bidderRequest.bids[0].params.adServerBaseUrl;
+      it('should return default prod integration endpoint when integrationEndpoint is missing in params and ortb2', function () {
+        delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
+        delete bidderRequest.bids[0].params.integrationEndpoint;
 
-        expect(utils.getAdServerEndpointBaseUrl(bidderRequest)).to.equal(DEFAULT_AD_SERVER_BASE_URL);
+        expect(utils.getIntegrationEndpoint(bidderRequest)).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT);
       });
     })
 
@@ -253,14 +260,6 @@ describe('Mobkoi bidding Adapter', function () {
     it('should return empty array when pixelEnabled is false', function () {
       syncOptions.pixelEnabled = false;
       const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
-      const serverResponses = [{ body: { ext: { pixels: [['image', 'test-url']] } } }];
-
-      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
-    it('should return empty array when GDPR does not apply', function () {
-      const gdprConsent = { gdprApplies: false, consentString: 'test-consent' };
       const serverResponses = [{ body: { ext: { pixels: [['image', 'test-url']] } } }];
 
       const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);

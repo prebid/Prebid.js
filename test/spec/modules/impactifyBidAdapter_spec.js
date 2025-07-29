@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -25,7 +26,7 @@ describe('ImpactifyAdapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       impactify: {
         storageAllowed: true
       }
@@ -37,7 +38,7 @@ describe('ImpactifyAdapter', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     document.body.appendChild.restore();
     sandbox.restore();
   });

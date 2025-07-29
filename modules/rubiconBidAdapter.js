@@ -161,7 +161,9 @@ var sizeMap = {
   712: '340x430'
 };
 
-_each(sizeMap, (item, key) => sizeMap[item] = key);
+_each(sizeMap, (item, key) => {
+  sizeMap[item] = key;
+});
 
 export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
@@ -983,10 +985,10 @@ function applyFPD(bidRequest, mediaType, data) {
     // add dsa signals
     if (dsa && Object.keys(dsa).length) {
       pick(dsa, [
-        'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
-        'dsarequired', (required) => data['dsarequired'] = required,
-        'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
-        'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
+        'dsainfo', (dsainfo) => { data['dsainfo'] = dsainfo; },
+        'dsarequired', (required) => { data['dsarequired'] = required; },
+        'pubrender', (pubrender) => { data['dsapubrender'] = pubrender; },
+        'datatopub', (datatopub) => { data['dsadatatopubs'] = datatopub; },
         'transparency', (transparency) => {
           if (Array.isArray(transparency) && transparency.length) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
@@ -1007,7 +1009,8 @@ function applyFPD(bidRequest, mediaType, data) {
                 param += '~~'
               }
 
-              return param += `${domain}~${dsaParamArray.join('_')}`;
+              param += `${domain}~${dsaParamArray.join('_')}`;
+              return param;
             }, '');
           }
         }
@@ -1024,8 +1027,8 @@ function applyFPD(bidRequest, mediaType, data) {
     if (clientHints && rubiConf.chEnabled !== false) {
       // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
       pick(clientHints, [
-        'architecture', arch => data.m_ch_arch = arch,
-        'bitness', bitness => data.m_ch_bitness = bitness,
+        'architecture', arch => { data.m_ch_arch = arch; },
+        'bitness', bitness => { data.m_ch_bitness = bitness; },
         'browsers', browsers => {
           if (!Array.isArray(browsers)) return;
           // reduce down into ua and full version list attributes
@@ -1040,8 +1043,8 @@ function applyFPD(bidRequest, mediaType, data) {
           data.m_ch_ua = ua?.join?.(',');
           data.m_ch_full_ver = fullVer?.join?.(',');
         },
-        'mobile', isMobile => data.m_ch_mobile = `?${isMobile}`,
-        'model', model => data.m_ch_model = model,
+        'mobile', isMobile => { data.m_ch_mobile = `?${isMobile}`; },
+        'model', model => { data.m_ch_model = model; },
         'platform', platform => {
           data.m_ch_platform = platform?.brand;
           data.m_ch_platform_ver = platform?.version?.join?.('.');
@@ -1180,8 +1183,12 @@ function bidType(bid, log = false) {
   return bidTypes;
 }
 
-export const resetRubiConf = () => rubiConf = {};
-export const resetImpIdMap = () => impIdMap = {};
+export const resetRubiConf = () => {
+  rubiConf = {};
+};
+export const resetImpIdMap = () => {
+  impIdMap = {};
+};
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
@@ -1297,7 +1304,11 @@ export function encodeParam(key, param) {
  * @returns {Array}
  */
 function partitionArray(array, size) {
-  return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
 }
 
 var hasSynced = false;

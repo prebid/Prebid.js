@@ -56,8 +56,7 @@ describe('PrecisoAdapter', function () {
 
   };
 
-  const nativeBid = {
-
+  let nativeBid = {
     precisoBid: true,
     bidId: '23fhj33i987f',
     bidder: 'precisonat',
@@ -171,7 +170,8 @@ describe('PrecisoAdapter', function () {
       expect(data.device).to.be.undefined;
     });
 
-    const ServeNativeRequest = spec.buildRequests([nativeBid]);
+    let ServeNativeRequest = spec.buildRequests([nativeBid]);
+
     it('Creates a valid nativeServerRequest object ', function () {
       expect(ServeNativeRequest).to.exist;
       expect(ServeNativeRequest.method).to.exist;
@@ -182,7 +182,7 @@ describe('PrecisoAdapter', function () {
     });
 
     it('should extract the native params', function () {
-      const nativeData = ServeNativeRequest.data;
+      let nativeData = ServeNativeRequest.data;
       const asset = JSON.parse(nativeData.imp[0].native.request).assets[0]
       expect(asset).to.deep.equal({
         id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
@@ -269,7 +269,7 @@ describe('PrecisoAdapter', function () {
           }],
         }
       }
-      const nativeResponse = {
+      let nativeResponse = {
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
         seatbid: [
           {
@@ -291,7 +291,7 @@ describe('PrecisoAdapter', function () {
         ],
       }
 
-      const expectedNativeResponse = [
+      let expectedNativeResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
           mediaType: NATIVE,
@@ -317,7 +317,8 @@ describe('PrecisoAdapter', function () {
           }
         }
       ]
-      const result = spec.interpretResponse({ body: nativeResponse });
+
+      let result = spec.interpretResponse({ body: nativeResponse });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedNativeResponse[0]));
     })
   })
