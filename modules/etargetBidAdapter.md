@@ -21,7 +21,7 @@ Banner and video formats are supported.
                    {
                        bidder: "etarget",
                        params: {
-                           country: 1, // required; available country values: 1 (SK), 2 (CZ), 3 (HU), 4 (RO), 5 (RS), 6 (BG), 7 (PL), 8 (HR), 9 (AT), 11 (DE)
+                           country: 1, // required; available country values: 1 (SK), 2 (CZ), 3 (HU), 4 (RO), 5 (RS), 6 (BG), 7 (PL), 8 (HR), 9 (AT), 11 (DE), 255 (EN)
                            refid: '12345' // required; this ID is available in your publisher dashboard at https://partner.etarget.sk/
                        }
                    }
