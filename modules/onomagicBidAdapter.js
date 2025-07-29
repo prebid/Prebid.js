@@ -13,6 +13,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -41,7 +42,7 @@ function buildRequests(bidReqs, bidderRequest) {
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
       const element = document.getElementById(bid.adUnitCode);
-      const minSize = _getMinSize(processedSizes);
+      const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
         ? _getViewability(element, getWindowTop(), minSize)
         : 'na';
@@ -183,10 +184,6 @@ function _isIframe() {
   } catch (e) {
     return true;
   }
-}
-
-function _getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
 function _getBidFloor(bid) {

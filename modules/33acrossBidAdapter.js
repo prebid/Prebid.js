@@ -16,6 +16,7 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -449,7 +450,7 @@ function _buildBannerORTB(bidRequest) {
     format = sizes;
   }
 
-  const minSize = _getMinSize(sizes);
+  const minSize = getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable(element)
     ? _getViewability(element, getWindowTop(), minSize)
@@ -578,10 +579,6 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 function _getAdSlotHTMLElement(adUnitCode) {
   return document.getElementById(adUnitCode) ||
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
-}
-
-function _getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
 /**
