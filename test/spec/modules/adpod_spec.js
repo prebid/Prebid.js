@@ -50,7 +50,7 @@ describe('adpod.js', function () {
       clock = sinon.useFakeTimers();
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'https://test.cache.url/endpoint'
         }
       });
     });
@@ -945,7 +945,7 @@ describe('adpod.js', function () {
       bailResult = null;
       config.setConfig({
         cache: {
-          url: 'http://test.cache.url/endpoint'
+          url: 'https://test.cache.url/endpoint'
         },
         adpod: {
           brandCategoryExclusion: true
@@ -974,7 +974,7 @@ describe('adpod.js', function () {
     it('returns true when adpod bid is properly setup', function() {
       config.setConfig({
         cache: {
-          url: 'http://test.cache.url/endpoint'
+          url: 'https://test.cache.url/endpoint'
         },
         adpod: {
           brandCategoryExclusion: false

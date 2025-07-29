@@ -6,7 +6,8 @@
       "componentType": "bidder",
       "componentName": "ucfunnel",
       "aliasOf": null,
-      "gvlid": 607
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

@@ -7,18 +7,6 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 describe('conceptxBidAdapter', function () {
   const URL = 'https://conceptx.cncpt-central.com/openrtb';
 
-  // before(() => {
-
-  // });
-
-  // after(() => {
-  //   // $$PREBID_GLOBAL$$.bidderSettings = {};
-  // });
-
-  // afterEach(function () {
-  //   config.resetConfig();
-  // });
-
   const ENDPOINT_URL = `${URL}`;
   const ENDPOINT_URL_CONSENT = `${URL}?gdpr_applies=true&consentString=ihaveconsented`;
   const adapter = newBidder(spec);
