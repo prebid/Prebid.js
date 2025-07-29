@@ -98,9 +98,6 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
-const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 // ORTB2 device types according to the OpenRTB specification
@@ -484,18 +481,6 @@ export const spec = {
   }
 };
 
-function strIsAppnexusViewabilityScript(str) {
-  if (!str || str === '') return false;
-
-  const regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
-  const viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
-
-  const regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
-  const fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
-
-  return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
-}
-
 function formatRequest(payload, bidderRequest) {
   let request = [];
   const options = {
@@ -671,7 +656,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const nativeAd = rtbBid.rtb[NATIVE];
     let viewScript;
 
-    if (strIsAppnexusViewabilityScript(rtbBid.viewability.config)) {
+    if (rtbBid.viewability?.config.includes('dom_id=%native_dom_id%')) {
       const prebidParams = 'pbjs_adid=' + adId + ';pbjs_auc=' + bidRequest.adUnitCode;
       viewScript = rtbBid.viewability.config.replace('dom_id=%native_dom_id%', prebidParams);
     }

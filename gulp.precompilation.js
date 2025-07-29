@@ -15,17 +15,21 @@ const {buildOptions} = require('./plugins/buildOptions.js');
 // do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
 const PRECOMP_TASKS = new Map();
 
-function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
+function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) {
   if (dev && distUrlBase == null) {
     distUrlBase = argv.distUrlBase || '/build/dev/'
   }
+  return {
+    disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
+    distUrlBase: distUrlBase ?? argv.distUrlBase,
+    ES5: argv.ES5
+  }
+}
+
+function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
   const key = `${distUrlBase}::${disableFeatures}`;
   if (!PRECOMP_TASKS.has(key)) {
-    const babelConfig = require('./babelConfig.js')({
-      disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
-      prebidDistUrlBase: distUrlBase ?? argv.distUrlBase,
-      ES5: argv.ES5
-    });
+    const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
     const precompile = function () {
       // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`
       return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(precompile)})
@@ -173,9 +177,23 @@ function generateGlobalDef(options) {
   }
 }
 
+function generateBuildOptions(options = {}) {
+  return function (done) {
+    options = buildOptions(getDefaults(options));
+    import('./customize/buildOptions.mjs').then(({getBuildOptionsModule}) => {
+      const dest = getBuildOptionsModule();
+      if (!fs.existsSync(path.dirname(dest))) {
+        fs.mkdirSync(path.dirname(dest), {recursive: true});
+      }
+      fs.writeFile(dest, `export default ${JSON.stringify(options, null, 2)}`, done);
+    })
+  }
+
+}
+
 function precompile(options = {}) {
   return gulp.series([
-    gulp.parallel(['ts', generateMetadataModules]),
+    gulp.parallel(['ts', generateMetadataModules, generateBuildOptions(options)]),
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
     gulp.parallel([publicModules, generateCoreSummary, generateModuleSummary, generateGlobalDef(options)])
   ]);
