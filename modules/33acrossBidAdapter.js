@@ -17,6 +17,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {isIframe} from '../libraries/omsUtils/index.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -545,7 +546,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
 
 // BUILD REQUESTS: VIEWABILITY
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
@@ -594,14 +595,6 @@ function contributeViewability(viewabilityAmount) {
       }
     }
   };
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
 }
 
 // **************************** INTERPRET RESPONSE ******************************** //

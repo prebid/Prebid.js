@@ -2,7 +2,6 @@ import {
   _each,
   createTrackPixelHtml, getBidIdParameter,
   getUniqueIdentifierStr,
-  getWindowSelf,
   getWindowTop,
   isArray,
   logError,
@@ -12,7 +11,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getBidFloor} from '../libraries/omsUtils/index.js';
+import {getBidFloor, isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -168,21 +167,13 @@ function _getAdMarkup(bid) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
   return getWindowTop().document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
     : 0;
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
 }
 
 registerBidder(spec);

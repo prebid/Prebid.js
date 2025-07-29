@@ -1,4 +1,4 @@
-import {isFn, isPlainObject} from '../../src/utils.js';
+import {getWindowSelf, getWindowTop, isFn, isPlainObject} from '../../src/utils.js';
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
@@ -12,4 +12,12 @@ export function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
+}
+
+export function isIframe() {
+  try {
+    return getWindowSelf() !== getWindowTop();
+  } catch (e) {
+    return true;
+  }
 }

@@ -5,7 +5,6 @@ import {
   logError,
   logWarn,
   createTrackPixelHtml,
-  getWindowSelf,
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
@@ -16,7 +15,7 @@ import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getBidFloor} from '../libraries/omsUtils/index.js';
+import {getBidFloor, isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -266,7 +265,7 @@ function _getAdMarkup(bid) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, {w, h} = {}) {
@@ -279,14 +278,6 @@ function _extractGpidData(bid) {
     adserverName: bid?.ortb2Imp?.ext?.data?.adserver?.name,
     adslot: bid?.ortb2Imp?.ext?.data?.adserver?.adslot,
     pbadslot: bid?.ortb2Imp?.ext?.data?.pbadslot,
-  }
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
   }
 }
 
