@@ -411,10 +411,10 @@ describe('secureCreatives', () => {
         return receive(ev).then(() => {
           sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
           return receive(ev);
-          }).then(() => {
-            expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
-          });
+        }).then(() => {
+          expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
         });
+      });
 
       it('should fire BID_WON when no asset is requested', () => {
         pushBidResponseToAuction({});

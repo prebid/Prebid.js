@@ -2072,7 +2072,7 @@ describe('VisxAdapter', function () {
       if (getDataFromLocalStorageStub) {
         getDataFromLocalStorageStub.restore();
       }
-        getGlobal().bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should not pass user id if both cookies and local storage are not available', function () {

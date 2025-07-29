@@ -160,9 +160,9 @@ describe('adhashBidAdapter', function () {
     };
 
     afterEach(function() {
-    if (bodyStub) {
-      bodyStub.restore();
-    }
+      if (bodyStub) {
+        bodyStub.restore();
+      }
     });
 
     it('should interpret the response correctly', function () {

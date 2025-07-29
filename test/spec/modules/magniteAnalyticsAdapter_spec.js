@@ -2454,8 +2454,8 @@ describe('magnite analytics adapter', function () {
       });
     });
 
-      it('does general rejection', () => {
-        bidRejectedArgs.rejectionReason = 'this bid is rejected';
+    it('does general rejection', () => {
+      bidRejectedArgs.rejectionReason = 'this bid is rejected';
 
       runBidRejectedAuction();
       const message = JSON.parse(server.requests[0].requestBody);
