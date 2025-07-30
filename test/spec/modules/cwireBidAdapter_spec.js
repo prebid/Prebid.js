@@ -150,7 +150,7 @@ describe("C-WIRE bid adapter", () => {
 
       expect(el).to.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq("400px");
-      !expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
+      expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
     });
     afterEach(function () {
       sandbox.restore();

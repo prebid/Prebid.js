@@ -2066,8 +2066,12 @@ describe('VisxAdapter', function () {
     afterEach(() => {
       cookiesAreEnabledStub.restore();
       localStorageIsEnabledStub.restore();
-      getCookieStub && getCookieStub.restore();
-      getDataFromLocalStorageStub && getDataFromLocalStorageStub.restore();
+      if (getCookieStub) {
+        getCookieStub.restore();
+      }
+      if (getDataFromLocalStorageStub) {
+        getDataFromLocalStorageStub.restore();
+      }
       getGlobal().bidderSettings = {};
     });
 
