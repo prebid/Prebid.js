@@ -226,16 +226,16 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   it('has return data and correct length', () => {
     const requests = spec.buildRequests(mockBidRequest, mockReferer);
     expect(requests).to.be.an('array');
-    expect(requests).to.have.lengthOf(mockBidRequest.length);
-    expect(requests[0]).to.be.an('object');
+    expect(requests[0].data).to.have.lengthOf(mockBidRequest.length);
+    expect(requests[0].data).to.be.an('array');
   });
   it('correct request URL', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
-    expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
+    expect(request.data[0].url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
   });
   it('correct request method', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
-    expect(request.method).to.be.equal(`POST`);
+    expect(request.data[0].method).to.be.equal(`POST`);
   });
   it('correct request data structure', () => {
     const requests = spec.buildRequests(mockBidRequest, mockReferer);
@@ -262,7 +262,7 @@ describe('SmartyTechDSPAdapter: buildRequests banner custom size', () => {
   });
 
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    const data = spec.buildRequests(mockBidRequest, mockReferer)[0].data;
     data.forEach((request, index) => {
       expect(request.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
     })
@@ -278,7 +278,7 @@ describe('SmartyTechDSPAdapter: buildRequests video custom size', () => {
   });
 
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    const data = spec.buildRequests(mockBidRequest, mockReferer)[0].data;
     data.forEach((request, index) => {
       expect(request.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
     })
@@ -293,7 +293,7 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
   beforeEach(() => {
     const brData = mockBidRequestListData('banner', 2, []);
     mockReferer = mockRefererData();
-    request = spec.buildRequests(brData, mockReferer);
+    request = spec.buildRequests(brData, mockReferer)[0];
     mockBidRequest = {
       data: brData
     }
@@ -339,7 +339,7 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
   beforeEach(() => {
     const brData = mockBidRequestListData('video', 2, []);
     mockReferer = mockRefererData();
-    request = spec.buildRequests(brData, mockReferer);
+    request = spec.buildRequests(brData, mockReferer)[0];
     mockBidRequest = {
       data: brData
     }
