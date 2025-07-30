@@ -225,7 +225,9 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   });
   it('has return data and correct length', () => {
     const requests = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request).not.null;
+    expect(requests).to.be.an('array');
+    expect(requests).to.have.lengthOf(mockBidRequest.length);
+    expect(requests[0]).to.be.an('object');
   });
   it('correct request URL', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
@@ -239,16 +241,14 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
     const requests = spec.buildRequests(mockBidRequest, mockReferer);
     requests.forEach((request, index) => {
       const payload = request.data;
-      expect(payload).to.be.an('object');
-      const bidDataArray = payload.BidRequests;
-      expect(bidDataArray).to.be.an('array').with.lengthOf(1);
-      const bidData = bidDataArray[0];
-      const originalBid = mockBidRequest[index];
-      expect(bidData.adUnitCode).to.equal(originalBid.adUnitCode);
-      expect(bidData.banner).to.deep.equal(originalBid.mediaTypes.banner);
-      expect(bidData.bidId).to.equal(originalBid.bidId);
-      expect(bidData.endpointId).to.equal(originalBid.params.endpointId);
-      expect(bidData.referer).to.equal(mockReferer.refererInfo.page);
+      expect(payload).to.be.an('array');
+
+      const bidData = payload[0];
+      expect(bidData.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
+      expect(bidData.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
+      expect(bidData.bidId).to.be.equal(mockBidRequest[index].bidId);
+      expect(bidData.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
+      expect(bidData.referer).to.be.equal(mockReferer.refererInfo.page);
     });
   });
 });

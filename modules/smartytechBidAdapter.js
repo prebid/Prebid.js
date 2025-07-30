@@ -91,7 +91,7 @@ export const spec = {
       pathname: ENDPOINT_PATH,
     });
 
-    const adapterSettings = config.getConfig(bidderRequest.bidderCode)
+    const adapterSettings = config.getConfig(BIDDER_CODE);
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
     const bidChunks = chunk(bidRequests, chunkSize);
     return _map(bidChunks, (bids) => {
