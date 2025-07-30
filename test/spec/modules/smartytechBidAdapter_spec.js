@@ -231,11 +231,11 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   });
   it('correct request URL', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
-    expect(request.data[0].url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
+    expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
   });
   it('correct request method', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
-    expect(request.data[0].method).to.be.equal(`POST`);
+    expect(request.method).to.be.equal(`POST`);
   });
   it('correct request data structure', () => {
     const requests = spec.buildRequests(mockBidRequest, mockReferer);
