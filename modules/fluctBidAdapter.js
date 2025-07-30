@@ -84,7 +84,7 @@ export const spec = {
         });
       }
       if (bidderRequest.ortb2?.user?.ext?.data?.im_segments) {
-        deepSetValue(data,'params.kv.imsids', bidderRequest.ortb2.user.ext.data.im_segments);
+        deepSetValue(data, 'params.kv.imsids', bidderRequest.ortb2.user.ext.data.im_segments);
       }
       data.sizes = [];
       _each(request.sizes, (size) => {
