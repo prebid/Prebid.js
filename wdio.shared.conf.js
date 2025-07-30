@@ -19,7 +19,7 @@ exports.config = {
   logLevel: 'info', // put option here: info | trace | debug | warn| error | silent
   bail: 1,
   waitforTimeout: 60000, // Default timeout for all waitFor* commands.
-  connectionRetryTimeout: 120000, // allow BrowserStack more time to start the session
+  connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
   connectionRetryCount: 3, // additional retries for transient session issues
   framework: 'mocha',
   mochaOpts: {
