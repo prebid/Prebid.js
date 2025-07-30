@@ -6,6 +6,7 @@ import type {AudioBid} from "./bidfactory.ts";
 import {type BaseMediaType} from "./mediaTypes.ts";
 import type {ORTBImp} from "./types/ortb/request";
 import type {AdUnitDefinition} from "./adUnits.ts";
+import {getGlobalVarName} from "./buildOptions.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -79,8 +80,8 @@ export const checkAudioBidSetup = hook('sync', function(bid: AudioBid, adUnit, a
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling either prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
-        or local cache with $$PREBID_GLOBAL$$.setConfig({ cache: { useLocal: true }});
+        Try enabling either prebid cache with ${getGlobalVarName()}.setConfig({ cache: {url: "..."} });
+        or local cache with ${getGlobalVarName()}.setConfig({ cache: { useLocal: true }});
       `);
       return false;
     }
