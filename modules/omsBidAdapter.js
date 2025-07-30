@@ -5,9 +5,6 @@ import {
   logError,
   logWarn,
   createTrackPixelHtml,
-  getWindowSelf,
-  isFn,
-  isPlainObject,
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
@@ -17,6 +14,8 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getBidFloor, isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -45,7 +44,7 @@ function buildRequests(bidReqs, bidderRequest) {
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
       const element = document.getElementById(bid.adUnitCode);
-      const minSize = _getMinSize(processedSizes);
+      const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
       const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
       const gpidData = _extractGpidData(bid);
@@ -70,7 +69,7 @@ function buildRequests(bidReqs, bidderRequest) {
         }
       }
 
-      const bidFloor = _getBidFloor(bid);
+      const bidFloor = getBidFloor(bid);
 
       if (bidFloor) {
         imp.bidfloor = bidFloor;
@@ -101,8 +100,12 @@ function buildRequests(bidReqs, bidderRequest) {
     };
 
     if (bidderRequest?.gdprConsent) {
-      deepSetValue(payload, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
-      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.gdpr', +bidderRequest.gdprConsent.gdprApplies);
+      deepSetValue(payload, 'user.consent', bidderRequest.gdprConsent.consentString);
+    }
+
+    if (bidderRequest?.uspConsent) {
+      deepSetValue(payload, 'regs.us_privacy', bidderRequest.uspConsent);
     }
 
     const gpp = _getGpp(bidderRequest)
@@ -262,7 +265,7 @@ function _getAdMarkup(bid) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, {w, h} = {}) {
@@ -276,32 +279,6 @@ function _extractGpidData(bid) {
     adslot: bid?.ortb2Imp?.ext?.data?.adserver?.adslot,
     pbadslot: bid?.ortb2Imp?.ext?.data?.pbadslot,
   }
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
-}
-
-function _getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
-}
-
-function _getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.bidFloor ? bid.params.bidFloor : null;
-  }
-
-  const floor = bid.getFloor({
-    currency: 'USD', mediaType: '*', size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
 }
 
 registerBidder(spec);
