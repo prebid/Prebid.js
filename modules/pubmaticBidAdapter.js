@@ -7,6 +7,7 @@ import { isViewabilityMeasurable, getViewability } from '../libraries/percentInV
 import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
+import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -73,8 +74,8 @@ const converter = ortbConverter({
     if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
       return null;
     }
-    if (deals) addPMPDeals(imp, deals);
-    if (dctr) addDealCustomTargetings(imp, dctr);
+    if (deals) addPMPDeals(imp, deals, LOG_WARN_PREFIX);
+    if (dctr) addDealCustomTargetings(imp, dctr, LOG_WARN_PREFIX);
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
@@ -374,33 +375,6 @@ const addJWPlayerSegmentData = (imp, jwplayer) => {
   imp.ext = imp.ext || {};
   imp.ext.key_val = imp.ext.key_val ? `${imp.ext.key_val}|${jwPlayerData}` : jwPlayerData;
 };
-
-const addDealCustomTargetings = (imp, dctr) => {
-  if (isStr(dctr) && dctr.length > 0) {
-    const arr = dctr.split('|').filter(val => val.trim().length > 0);
-    dctr = arr.map(val => val.trim()).join('|');
-    imp.ext['key_val'] = dctr;
-  } else {
-    logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-  }
-}
-
-const addPMPDeals = (imp, deals) => {
-  if (!isArray(deals)) {
-    logWarn(`${LOG_WARN_PREFIX}Error: bid.params.deals should be an array of strings.`);
-    return;
-  }
-  deals.forEach(deal => {
-    if (typeof deal === 'string' && deal.length > 3) {
-      if (!imp.pmp) {
-        imp.pmp = { private_auction: 0, deals: [] };
-      }
-      imp.pmp.deals.push({ id: deal });
-    } else {
-      logWarn(`${LOG_WARN_PREFIX}Error: deal-id present in array bid.params.deals should be a string with more than 3 characters length, deal-id ignored: ${deal}`);
-    }
-  });
-}
 
 const updateRequestExt = (req, bidderRequest) => {
   const allBiddersList = ['all'];
