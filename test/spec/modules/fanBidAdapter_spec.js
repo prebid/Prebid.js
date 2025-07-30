@@ -135,7 +135,7 @@ describe('freedomadnetworkAdapter', function() {
       const reqTest = requests.find(r => r.url === 'http://localhost:8001/ortb');
       expect(reqTest).to.exist;
       expect(reqTest.method).to.equal('POST');
-      expect(reqTest.options.contentType).to.equal('application/json');
+      expect(reqTest.options.contentType).to.equal('text/plain');
       expect(reqTest.options.withCredentials).to.be.false;
 
       // The data payload should have 'imp' array with one impression
