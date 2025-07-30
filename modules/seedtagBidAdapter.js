@@ -130,7 +130,7 @@ function buildBidRequest(validBidRequest) {
     requestCount: validBidRequest.bidRequestsCount || 1,
   };
 
-  if (hasVideoMediaType(validBidRequest)) {
+  if (hasVideoMediaType(validBidRequest) && hasMandatoryVideoParams(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
   }
 
@@ -147,7 +147,7 @@ function buildBidRequest(validBidRequest) {
  */
 function getVideoParams(validBidRequest) {
   const videoParams = validBidRequest.mediaTypes.video || {};
-  if (videoParams.playerSize) {
+  if (videoParams.playerSize && isArray(videoParams.playerSize) && videoParams.playerSize.length > 0) {
     videoParams.w = videoParams.playerSize[0][0];
     videoParams.h = videoParams.playerSize[0][1];
   }
