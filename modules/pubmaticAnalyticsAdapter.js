@@ -100,7 +100,6 @@ function copyRequiredBidDetails(bid) {
     'adapterCode',
     'bidId',
     'adUnitId', () => bid.adUnitCode,
-    'owAdUnitId', () => getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.gptSlot || bid.adUnitCode,
     'status', () => NO_BID, // default a bid to NO_BID until response is received or bid is timed out
     'finalSource as source',
     'params',
