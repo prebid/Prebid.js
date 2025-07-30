@@ -1,6 +1,7 @@
 import {_map, buildUrl, deepAccess} from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'smartytech';
@@ -90,7 +91,9 @@ export const spec = {
       pathname: ENDPOINT_PATH,
     });
 
-    const bidChunks = chunk(bidRequests, 1);
+    const adapterSettings = config.getConfig(bidderRequest.bidderCode)
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+    const bidChunks = chunk(bidRequests, chunkSize);
     return _map(bidChunks, (bids) => {
       return {
         data: Object.assign({}, {}, { BidRequests: bids }),

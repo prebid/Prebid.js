@@ -223,27 +223,35 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
     mockBidRequest = mockBidRequestListData('banner', 8, []);
     mockReferer = mockRefererData();
   });
-  it('has return data', () => {
-    const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request).not.null;
+  it('has return data and correct length', () => {
+    const requests = spec.buildRequests(mockBidRequest, mockReferer);
+    expect(requests).to.be.an('array');
+    expect(requests).to.have.lengthOf(mockBidRequest.length);
+    expect(requests[0]).to.be.an('object');
   });
   it('correct request URL', () => {
-    const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`)
+    const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
+    expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
   });
   it('correct request method', () => {
-    const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request.method).to.be.equal(`POST`)
+    const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
+    expect(request.method).to.be.equal(`POST`);
   });
-  it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
-    data.forEach((request, index) => {
-      expect(request.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
-      expect(request.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
-      expect(request.bidId).to.be.equal(mockBidRequest[index].bidId);
-      expect(request.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
-      expect(request.referer).to.be.equal(mockReferer.refererInfo.page);
-    })
+  it('correct request data structure', () => {
+    const requests = spec.buildRequests(mockBidRequest, mockReferer);
+    requests.forEach((request, index) => {
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      const bidDataArray = payload.BidRequests;
+      expect(bidDataArray).to.be.an('array').with.lengthOf(1);
+      const bidData = bidDataArray[0];
+      const originalBid = mockBidRequest[index];
+      expect(bidData.adUnitCode).to.equal(originalBid.adUnitCode);
+      expect(bidData.banner).to.deep.equal(originalBid.mediaTypes.banner);
+      expect(bidData.bidId).to.equal(originalBid.bidId);
+      expect(bidData.endpointId).to.equal(originalBid.params.endpointId);
+      expect(bidData.referer).to.equal(mockReferer.refererInfo.page);
+    });
   });
 });
 
