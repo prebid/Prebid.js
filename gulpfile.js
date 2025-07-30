@@ -533,8 +533,8 @@ gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist));
-gulp.task('build-release', gulp.series('build', 'update-browserslist', 'setup-npmignore'));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
+gulp.task('build-release', gulp.series('build', updateCreativeExample, 'update-browserslist', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
