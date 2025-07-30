@@ -144,7 +144,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
-    const element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+    const element = getElementByAdUnit(elmType + '[id]:not([style*="display: none"])');
     if (element) {
       const elementStyle = element.style;
       elementStyle.width = getDimension(width)
