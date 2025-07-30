@@ -809,7 +809,7 @@ export function groupBy(xs, key) {
  * @return If object is valid
  */
 export function isValidMediaTypes(mediaTypes) {
-  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
+  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video', 'audio'];
   const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
 
   const types = Object.keys(mediaTypes);
