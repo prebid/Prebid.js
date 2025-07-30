@@ -1,6 +1,7 @@
-import {buildUrl, deepAccess} from '../src/utils.js'
+import {_map, buildUrl, deepAccess} from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -89,11 +90,15 @@ export const spec = {
       pathname: ENDPOINT_PATH,
     });
 
-    return {
-      method: 'POST',
-      url: adPartnerRequestUrl,
-      data: bidRequests
-    };
+    const bidChunks = chunk(bidRequests, 1);
+    return _map(bidChunks, (bids) => {
+      return {
+        data: bids,
+        bidderRequest,
+        method: 'POST',
+        url: adPartnerRequestUrl
+      };
+    })
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
@@ -102,7 +107,7 @@ export const spec = {
     }
 
     const validBids = bidRequest.data;
-    const keys = Object.keys(serverResponse.body)
+    const keys = Object.keys(serverResponse.body);
     const responseBody = serverResponse.body;
 
     return keys.filter(key => {
@@ -143,6 +148,6 @@ export const spec = {
     return bidObject;
   },
 
-}
+};
 
 registerBidder(spec);
