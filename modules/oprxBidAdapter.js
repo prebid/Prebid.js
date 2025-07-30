@@ -51,6 +51,7 @@ const defaultConverter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    imp.ext = {bidder: bidRequest.params};
     if (bidRequest.params.bid_floor) {
       imp.bidfloor = bidRequest.params.bid_floor;
     }
