@@ -24,4 +24,9 @@ module.exports = {
   output: {
     path: path.resolve('./build/creative'),
   },
+  module: {
+    rules: [{
+      use: 'source-map-loader'
+    }]
+  }
 }
