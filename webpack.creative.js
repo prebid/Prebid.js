@@ -4,6 +4,7 @@ const helpers = require('./gulpHelpers.js');
 module.exports = {
   mode: 'production',
   context: helpers.getPrecompiledPath(),
+  devtool: false,
   resolve: {
     modules: [
       helpers.getPrecompiledPath(),

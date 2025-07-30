@@ -485,17 +485,13 @@ function watchTaskMaker(options = {}) {
   if (options.livereload == null) {
     options.livereload = true;
   }
-  options.alsoWatch = options.alsoWatch || [];
-
   return function watch(done) {
-    gulp.watch(helpers.getSourcePatterns().concat(
-      helpers.getIgnoreSources().map(src => `!${src}`)
-    ), babelPrecomp(options));
+    gulp.watch(helpers.getSourcePatterns(), {delay: 200}, precompile(options));
+
     gulp.watch([
       helpers.getPrecompiledPath('**/*.js'),
-        ...helpers.getIgnoreSources().map(src => `!${helpers.getPrecompiledPath(src)}`),
       `!${helpers.getPrecompiledPath('test/**/*')}`,
-    ], options.task());
+    ], {delay: 2000}, options.task());
 
     startLocalServer(options);
 
@@ -503,8 +499,8 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-const watch = watchTaskMaker({task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp.series('build-bundle-dev')});
+const watch = watchTaskMaker({task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev-no-precomp', test))});
+const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp.series('build-bundle-dev-no-precomp')});
 
 // support tasks
 gulp.task(lint);

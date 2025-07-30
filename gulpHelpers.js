@@ -22,9 +22,6 @@ const SOURCE_FOLDERS = [
   'test',
   'public'
 ]
-const IGNORE_SOURCES = [
-  'libraries/creative-renderer-*/**/*',
-]
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -43,9 +40,6 @@ module.exports = {
   },
   getSourcePatterns() {
     return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`])
-  },
-  getIgnoreSources() {
-    return IGNORE_SOURCES
   },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
