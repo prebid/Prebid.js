@@ -969,7 +969,6 @@ describe('BLIINK Adapter buildRequests', function () {
     it(test.title, () => {
       const res = test.args.fn;
       expect(res).to.eql(test.want);
-      test.args.after;
     });
   }
 });
