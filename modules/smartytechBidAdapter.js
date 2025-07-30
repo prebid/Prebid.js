@@ -96,7 +96,7 @@ export const spec = {
     const bidChunks = chunk(bidRequests, chunkSize);
     return _map(bidChunks, (bids) => {
       return {
-        data: Object.assign({}, {}, { BidRequests: bids }),
+        data: bids,
         bidderRequest,
         method: 'POST',
         url: adPartnerRequestUrl

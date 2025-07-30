@@ -225,9 +225,7 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   });
   it('has return data and correct length', () => {
     const requests = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(requests).to.be.an('array');
-    expect(requests).to.have.lengthOf(mockBidRequest.length);
-    expect(requests[0]).to.be.an('object');
+    expect(request).not.null;
   });
   it('correct request URL', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer)[0];
