@@ -141,6 +141,14 @@ module.exports = {
     return path.resolve(filePath ? path.join(PRECOMPILED_PATH, filePath) : PRECOMPILED_PATH)
   },
 
+  getCreativeRendererPath(renderer) {
+    let path = 'creative-renderers';
+    if (renderer != null) {
+      path = `${path}/${renderer}.js`;
+    }
+    return this.getPrecompiledPath(path);
+  },
+
   getBuiltModules: function(dev, externalModules) {
     var modules = this.getModuleNames(externalModules);
     if (Array.isArray(externalModules)) {

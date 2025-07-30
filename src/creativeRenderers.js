@@ -1,6 +1,7 @@
 import {PbPromise} from './utils/promise.js';
 import {createInvisibleIframe} from './utils.js';
-import {RENDERER} from '../libraries/creative-renderer-display/renderer.js';
+// eslint-disable-next-line prebid/validate-imports
+import {RENDERER} from '../creative-renderers/display.js';
 import {hook} from './hook.js';
 
 // the minimum rendererVersion that will be used by PUC
