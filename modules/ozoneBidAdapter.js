@@ -79,7 +79,7 @@ export const spec = {
       logError(err1.replace('{param}', 'publisherId'), adUnitCode);
       return false;
     }
-    if (!(bid.params.publisherId).toString().match(/^[a-zA-Z0-9\-]{12}$/)) {
+    if (!(bid.params.publisherId).toString().match(/^[a-zA-Z0-9-]{12}$/)) {
       logError(`${vf} : publisherId must be /^[a-zA-Z0-9\\-]{12}$/`, adUnitCode);
       return false;
     }

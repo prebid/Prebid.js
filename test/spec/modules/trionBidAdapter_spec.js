@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter.js';
 import {deepClone} from 'src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const CONSTANTS = require('src/constants.js');
 const adloader = require('src/adloader');
@@ -71,7 +72,7 @@ describe('Trion adapter tests', function () {
 
   beforeEach(function () {
     // adapter = trionAdapter.createNew();
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       trion: {
         storageAllowed: true
       }
@@ -80,7 +81,7 @@ describe('Trion adapter tests', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     document.body.appendChild.restore();
   });
 

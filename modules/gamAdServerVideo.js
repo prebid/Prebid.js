@@ -26,6 +26,8 @@ import {DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams} from '../libraries/gamUtil
 import { vastLocalCache } from '../src/videoCache.js';
 import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
+
+import {getGlobalVarName} from '../src/buildOptions.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -74,7 +76,7 @@ export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
  */
 export function buildGamVideoUrl(options) {
   if (!options.params && !options.url) {
-    logError(`A params object or a url is required to use $$PREBID_GLOBAL$$.adServers.gam.buildVideoUrl`);
+    logError(`A params object or a url is required to use ${getGlobalVarName()}.adServers.gam.buildVideoUrl`);
     return;
   }
 

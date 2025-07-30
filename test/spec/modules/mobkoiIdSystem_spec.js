@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import {
   mobkoiIdSubmodule,
   storage,
-  PROD_PREBID_JS_INTEGRATION_ENDPOINT,
+  PROD_PREBID_JS_INTEGRATION_BASE_URL,
   EQUATIV_NETWORK_ID,
   utils as mobkoiUtils
 } from 'modules/mobkoiIdSystem';
@@ -150,7 +150,7 @@ describe('mobkoiIdSystem', function () {
       const url = mobkoiUtils.buildEquativPixelUrl(syncUserOptions, gdprConsent);
       const decodedUrl = decodeFullUrl(url);
 
-      expect(decodedUrl).to.include(PROD_PREBID_JS_INTEGRATION_ENDPOINT);
+      expect(decodedUrl).to.include(PROD_PREBID_JS_INTEGRATION_BASE_URL);
     });
 
     it('should contains the Equativ network ID', function () {

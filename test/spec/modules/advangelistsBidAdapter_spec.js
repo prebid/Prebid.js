@@ -57,7 +57,7 @@ describe('advangelistsBidAdapter', function () {
     it('should have domain in request', function () {
       const bidRequest = bidRequests[0];
       const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
-      expect(requests[0].data.site.domain).length !== 0;
+      expect(requests[0].data.site.domain).to.have.length.above(0);
     });
   });
 

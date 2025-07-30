@@ -2,6 +2,9 @@ import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, l
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
+import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
+
+const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
@@ -154,6 +157,12 @@ function buildImpression(bid) {
   }
   if (deepAccess(bid, 'mediaTypes.video')) {
     impression['video'] = _buildVideo(bid);
+  }
+  if (deepAccess(bid, 'params.deals')) {
+    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX);
+  }
+  if (deepAccess(bid, 'params.dctr')) {
+    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX);
   }
   return impression;
 }
