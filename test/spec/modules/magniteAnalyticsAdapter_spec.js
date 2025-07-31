@@ -390,6 +390,8 @@ describe('magnite analytics adapter', function () {
     localStorageIsEnabledStub.restore();
     removeDataFromLocalStorageStub.restore();
     magniteAdapter.disableAnalytics();
+    clock.runAll();
+    clock.restore();
   });
 
   it('should require accountId', function () {
