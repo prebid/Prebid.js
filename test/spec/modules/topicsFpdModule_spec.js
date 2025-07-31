@@ -17,7 +17,16 @@ import {sandbox} from 'sinon';
 import {registerActivityControl} from '../../../src/activities/rules.js';
 
 describe('topics', () => {
+  let unregister, accessDeviceRule;
+  before(() => {
+    unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => accessDeviceRule(params),  0)
+  });
+  after(() => {
+    unregister()
+  });
+
   beforeEach(() => {
+    accessDeviceRule = () => ({allow: true});
     reset();
   });
 
@@ -296,25 +305,21 @@ describe('topics', () => {
     });
 
     it('does not load frames when accessDevice is not allowed', () => {
-      const unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', ({component}) => {
+      accessDeviceRule = ({component}) => {
         if (component === 'bidder.mockBidder') {
           return {allow: false}
         }
-      });
-      try {
-        const doc = {
-          createElement: sinon.stub(),
-          browsingTopics: true,
-          featurePolicy: {
-            allowsFeature: () => true
-          }
-        }
-        doc.createElement = sinon.stub();
-        loadTopicsForBidders(doc);
-        sinon.assert.notCalled(doc.createElement);
-      } finally {
-        unregister();
       }
+      const doc = {
+        createElement: sinon.stub(),
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature: () => true
+        }
+      }
+      doc.createElement = sinon.stub();
+      loadTopicsForBidders(doc);
+      sinon.assert.notCalled(doc.createElement);
     })
   });
 
@@ -420,13 +425,6 @@ describe('topics', () => {
         });
       });
 
-      before(() => {
-        const unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', () => ({allow: true}),  0)
-        after(() => {
-          unregister()
-        });
-      });
-
       beforeEach(() => {
         // init iframe logic so  that the receiveMessage origin check passes
         loadTopicsForBidders({
@@ -460,108 +458,107 @@ describe('topics', () => {
       });
     });
   });
-});
+  describe('handles fetch request for topics api headers', () => {
+    let stubbedFetch;
+    const storage = getCoreStorageManager('topicsFpd');
 
-describe('handles fetch request for topics api headers', () => {
-  let stubbedFetch;
-  const storage = getCoreStorageManager('topicsFpd');
-
-  beforeEach(() => {
-    stubbedFetch = sinon.stub(window, 'fetch');
-    reset();
-  });
-
-  afterEach(() => {
-    stubbedFetch.restore();
-    storage.removeDataFromLocalStorage(topicStorageName);
-    config.resetConfig();
-  });
-
-  it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
-    config.setConfig({
-      userSync: {
-        topics: {
-          maxTopicCaller: 3,
-          bidders: [
-            {
-              bidder: 'pubmatic',
-              fetchUrl: 'http://localhost:3000/topics-server.js'
-            }
-          ],
-        },
-      }
+    beforeEach(() => {
+      stubbedFetch = sinon.stub(window, 'fetch');
+      reset();
     });
 
-    stubbedFetch.returns(Promise.resolve(true));
-
-    loadTopicsForBidders({
-      browsingTopics: true,
-      featurePolicy: {
-        allowsFeature() { return true }
-      }
-    });
-    sinon.assert.calledOnce(stubbedFetch);
-    stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
-  });
-
-  it('should not make a fetch call when a fetchUrl is not present for a selected bidder', () => {
-    config.setConfig({
-      userSync: {
-        topics: {
-          maxTopicCaller: 3,
-          bidders: [
-            {
-              bidder: 'pubmatic'
-            }
-          ],
-        },
-      }
+    afterEach(() => {
+      stubbedFetch.restore();
+      storage.removeDataFromLocalStorage(topicStorageName);
+      config.resetConfig();
     });
 
-    loadTopicsForBidders({
-      browsingTopics: true,
-      featurePolicy: {
-        allowsFeature() { return true }
-      }
-    });
-    sinon.assert.notCalled(stubbedFetch);
-  });
+    it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
+      config.setConfig({
+        userSync: {
+          topics: {
+            maxTopicCaller: 3,
+            bidders: [
+              {
+                bidder: 'pubmatic',
+                fetchUrl: 'http://localhost:3000/topics-server.js'
+              }
+            ],
+          },
+        }
+      });
 
-  it('a fetch request should not be made if the configured fetch rate duration has not yet passed', () => {
-    const storedSegments = JSON.stringify(
-      [['pubmatic', {
-        '2206021246': {
-          'ext': {'segtax': 600, 'segclass': '2206021246'},
-          'segment': [{'id': '243'}, {'id': '265'}],
-          'name': 'ads.pubmatic.com'
-        },
-        'lastUpdated': new Date().getTime()
-      }]]
-    );
+      stubbedFetch.returns(Promise.resolve(true));
 
-    storage.setDataInLocalStorage(topicStorageName, storedSegments);
-
-    config.setConfig({
-      userSync: {
-        topics: {
-          maxTopicCaller: 3,
-          bidders: [
-            {
-              bidder: 'pubmatic',
-              fetchUrl: 'http://localhost:3000/topics-server.js',
-              fetchRate: 1 // in days.  1 fetch per day
-            }
-          ],
-        },
-      }
+      loadTopicsForBidders({
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature() { return true }
+        }
+      });
+      sinon.assert.calledOnce(stubbedFetch);
+      stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
     });
 
-    loadTopicsForBidders({
-      browsingTopics: true,
-      featurePolicy: {
-        allowsFeature() { return true }
-      }
+    it('should not make a fetch call when a fetchUrl is not present for a selected bidder', () => {
+      config.setConfig({
+        userSync: {
+          topics: {
+            maxTopicCaller: 3,
+            bidders: [
+              {
+                bidder: 'pubmatic'
+              }
+            ],
+          },
+        }
+      });
+
+      loadTopicsForBidders({
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature() { return true }
+        }
+      });
+      sinon.assert.notCalled(stubbedFetch);
     });
-    sinon.assert.notCalled(stubbedFetch);
+
+    it('a fetch request should not be made if the configured fetch rate duration has not yet passed', () => {
+      const storedSegments = JSON.stringify(
+        [['pubmatic', {
+          '2206021246': {
+            'ext': {'segtax': 600, 'segclass': '2206021246'},
+            'segment': [{'id': '243'}, {'id': '265'}],
+            'name': 'ads.pubmatic.com'
+          },
+          'lastUpdated': new Date().getTime()
+        }]]
+      );
+
+      storage.setDataInLocalStorage(topicStorageName, storedSegments);
+
+      config.setConfig({
+        userSync: {
+          topics: {
+            maxTopicCaller: 3,
+            bidders: [
+              {
+                bidder: 'pubmatic',
+                fetchUrl: 'http://localhost:3000/topics-server.js',
+                fetchRate: 1 // in days.  1 fetch per day
+              }
+            ],
+          },
+        }
+      });
+
+      loadTopicsForBidders({
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature() { return true }
+        }
+      });
+      sinon.assert.notCalled(stubbedFetch);
+    });
   });
 });
