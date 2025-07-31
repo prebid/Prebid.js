@@ -19,7 +19,7 @@ import {registerActivityControl} from '../../../src/activities/rules.js';
 describe('topics', () => {
   let unregister, accessDeviceRule;
   before(() => {
-    unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => accessDeviceRule(params),  0)
+    unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => accessDeviceRule(params), 0)
   });
   after(() => {
     unregister()
