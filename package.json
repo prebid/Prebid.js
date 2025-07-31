@@ -13,7 +13,9 @@
     "./modules/*": "./dist/src/public/*.js",
     "./metadata/*.js": "./dist/src/metadata/modules/*.js",
     "./metadata/*.json": "./metadata/modules/*.json",
-    "./metadata/*": "./dist/src/metadata/modules/*.js"
+    "./metadata/*": "./dist/src/metadata/modules/*.js",
+    "./customize/*.mjs": "./customize/*.mjs",
+    "./customize/*": "./customize/*.mjs"
   },
   "scripts": {
     "serve": "gulp serve",
@@ -66,6 +68,7 @@
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
     "deep-equal": "^2.0.3",
+    "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint": "^9.31.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsdoc": "^50.6.6",
