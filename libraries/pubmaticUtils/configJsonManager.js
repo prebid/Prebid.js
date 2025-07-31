@@ -1,11 +1,12 @@
 // configManager.js
-import { logError } from '../../src/utils.js';
-import { isPlainObject, isEmpty } from '../../src/utils.js';
+import { isPlainObject, isEmpty, logError } from '../../src/utils.js';
 
-let config = {};
+let _ymConfig = {};
+export const getYMConfig = () => _ymConfig;
+export const setYMConfig = (config) => { _ymConfig = config; }
 let country;
 
-export const CONSTANTS = Object.freeze({ 
+export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Config-Manager: ',
   ENDPOINTS: {
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
@@ -18,10 +19,9 @@ export const CONSTANTS = Object.freeze({
  * @returns {Object} - Config manager functions
  */
 export function ConfigJsonManager() {
-  
   return {
     fetchConfig,
-    getConfig,
+    getYMConfig,
     get country() { return country; }
   };
 }
@@ -34,44 +34,36 @@ export function ConfigJsonManager() {
  */
 export async function fetchConfig(publisherId, profileId) {
   try {
-    //const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
+    // const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
     const url = `https://hbopenbid.pubmatic.com/yieldModuleConfigApi`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: Not ok`);
       return null;
     }
-    
+
     // Extract country code if available
     const cc = response.headers?.get('country_code');
     country = cc ? cc.split(',')?.map(code => code.trim())[0] : "IN";
-    
-    // Parse the JSON response
-    const profileConfigs = await response.json();
 
-    if (!isPlainObject(profileConfigs) || isEmpty(profileConfigs)) {
+    // Parse the JSON response
+    const ymConfigs = await response.json();
+
+    if (!isPlainObject(ymConfigs) || isEmpty(ymConfigs)) {
       logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
       return null;
     }
-    
+
     // Store the configuration
-    config = profileConfigs;
-    
+    setYMConfig(ymConfigs);
+
     return {
-      config: profileConfigs,
+      ymConfigs,
       country
     };
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`);
     return null;
   }
-}
-
-/**
- * Get the current configuration
- * @returns {Object} - Current configuration
- */
-export function getConfig() {
-  return config;
 }

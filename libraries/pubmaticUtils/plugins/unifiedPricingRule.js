@@ -1,3 +1,4 @@
+// plugins/unifiedPricingRule.js
 import { ConfigJsonManager } from '../configJsonManager.js';
 import { logError, logInfo } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -20,7 +21,7 @@ const CONSTANTS = Object.freeze({
     PM_YM_BID_S: 'pm_ym_bid_s' // Bid status (0: No bid, 1: Won, 2: Floored)
   }
 });
-export const getProfileConfigs = () => ConfigJsonManager().getConfig();
+export const getProfileConfigs = () => ConfigJsonManager().getYMConfig();
 
 /**
  * Initialize the floor provider
@@ -43,6 +44,8 @@ export async function processBidRequest(reqBidsConfigObj) {
 /**
  * Get targeting data
  * @param {Array} adUnitCodes - Ad unit codes
+ * @param {Object} config - Module configuration
+ * @param {Object} userConsent - User consent data
  * @param {Object} auction - Auction object
  * @returns {Object} - Targeting data
  */
@@ -111,7 +114,6 @@ export const UnifiedPricingRule = {
   processBidRequest,
   getTargeting
 };
-
 
 // Find all bids for a specific ad unit
 function findBidsForAdUnit(auction, code) {

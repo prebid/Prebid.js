@@ -1,9 +1,8 @@
-// plugins/bidderOptimization/index.js
+// plugins/bidderOptimization.js
 import { setBidderOptimisationConfig, getBidderDecision } from '../bidderOptimisation.js';
-import { getBrowserType } from '../pubmaticUtils.js';                        
+import { getBrowserType } from '../pubmaticUtils.js';
 import { logInfo, logError } from '../../../src/utils.js';
 
-let config = null;
 const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Bidder-Optimization: '
 });
@@ -14,7 +13,6 @@ const CONSTANTS = Object.freeze({
  * @returns {Promise<boolean>} - Promise resolving to initialization status
  */
 export async function init(bidderOptimisationConfig) {
-  
   // Process bidder optimization configuration
   try {
     setBidderOptimisationConfig(bidderOptimisationConfig);
@@ -22,7 +20,7 @@ export async function init(bidderOptimisationConfig) {
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error setting bidder optimization config: ${error}`);
   }
-  
+
   return true;
 }
 
@@ -38,7 +36,7 @@ export async function processBidRequest(reqBidsConfigObj) {
       browser: getBrowserType(),
       reqBidsConfigObj
     });
-    
+
     // Apply bidder decisions
     if (decision && decision.excludedBiddersByAdUnit) {
       for (const [adUnitCode, bidderList] of Object.entries(decision.excludedBiddersByAdUnit)) {
@@ -46,7 +44,7 @@ export async function processBidRequest(reqBidsConfigObj) {
       }
       logInfo(`${CONSTANTS.LOG_PRE_FIX} Applied bidder optimization decisions`);
     }
-    
+
     return reqBidsConfigObj;
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error in bidder optimization: ${error}`);
