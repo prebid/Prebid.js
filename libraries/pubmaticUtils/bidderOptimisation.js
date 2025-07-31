@@ -70,18 +70,18 @@ export function setBidderOptimisationConfig(cfg) {
  * @param {Object} context  { domain, mediaType, browser, adUnitCode, auctionId }
  * @returns {Object} { excludedBidders, clientBidders, serverBidders, clientSequence, skipped }
  */
-/**
- * Helper to derive adUnitCode if not provided, mimicking priceFloors logic
- * Uses auctionManager index to resolve from bidRequest or bidResponse
- * @param {Object} bidRequest
- * @param {Object} bidResponse
- */
-function deriveAdUnitCode(bidRequest, bidResponse) {
-  if (bidRequest?.adUnitCode) return bidRequest.adUnitCode;
-  if (bidResponse?.adUnitCode) return bidResponse.adUnitCode;
-  const adUnit = bidResponse ? auctionManager.index.getAdUnit(bidResponse) : null;
-  return adUnit?.code || '*';
-}
+// /**
+//  * Helper to derive adUnitCode if not provided, mimicking priceFloors logic
+//  * Uses auctionManager index to resolve from bidRequest or bidResponse
+//  * @param {Object} bidRequest
+//  * @param {Object} bidResponse
+//  */
+// function deriveAdUnitCode(bidRequest, bidResponse) {
+//   if (bidRequest?.adUnitCode) return bidRequest.adUnitCode;
+//   if (bidResponse?.adUnitCode) return bidResponse.adUnitCode;
+//   const adUnit = bidResponse ? auctionManager.index.getAdUnit(bidResponse) : null;
+//   return adUnit?.code || '*';
+// }
 
 /**
  * Derive mediaType if not supplied.
@@ -131,7 +131,7 @@ export function getBidderDecision(context = {}) {
 
   // If multiple adUnits, build decision map per adUnit for excluded bidders
   const adUnitsArr = context.reqBidsConfigObj?.adUnits;
-  let excludedByAdUnit = undefined;
+  let excludedByAdUnit;
   if (Array.isArray(adUnitsArr) && adUnitsArr.length) {
     excludedByAdUnit = {};
     adUnitsArr.forEach(au => {
@@ -144,7 +144,7 @@ export function getBidderDecision(context = {}) {
       excludedByAdUnit[au.code] = rule?.excludedBidders ?? _optConfig.default.excludedBidders;
     });
   }
-  
+
   const auctionRule = getFirstMatchingValue(
     prep.auctionValues,
     _optConfig.schema.auctionKeyFields,
@@ -219,7 +219,6 @@ function getFirstMatchingValue(valuesMap, keyFieldOrder, ctx, delim) {
   }
   return undefined;
 }
-
 
 function generatePossibleEnumerations(arrayOfFields, delimiter) {
   return arrayOfFields

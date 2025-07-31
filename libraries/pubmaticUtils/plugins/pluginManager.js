@@ -35,19 +35,19 @@ function register(name, plugin) {
 
 /**
  * Initialize all registered plugins with their specific config
- * @param {Object} config - Configuration object
+ * @param {Object} configJson - Configuration object
  * @returns {Promise} - Promise resolving when all plugins are initialized
  */
-async function initialize(result) {
+async function initialize(configJson) {
   const initPromises = [];
-  
+
   // Initialize each plugin with its specific config
   for (const [name, plugin] of plugins.entries()) {
-    if (result.config.plugins && result.config.plugins[name] && plugin.init) {
-      initPromises.push(plugin.init(result.config.plugins[name]));
+    if (configJson.ymConfigs.plugins && configJson.ymConfigs.plugins[name] && plugin.init) {
+      initPromises.push(plugin.init(configJson.ymConfigs.plugins[name]));
     }
   }
-  
+
   return Promise.all(initPromises);
 }
 
@@ -59,12 +59,12 @@ async function initialize(result) {
  */
 async function executeHook(hookName, ...args) {
   const results = {};
-  
+
   for (const [name, plugin] of plugins.entries()) {
     if (typeof plugin[hookName] === 'function') {
       results[name] = await plugin[hookName](...args);
     }
   }
-  
+
   return results;
 }

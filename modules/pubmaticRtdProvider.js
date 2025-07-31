@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, isStr, isFn, mergeDeep } from '../src/utils.js';
+import { logError, isStr, mergeDeep } from '../src/utils.js';
 
 import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js';
 import { ConfigJsonManager } from '../libraries/pubmaticUtils/configJsonManager.js';
@@ -52,15 +52,14 @@ const init = (config, _userConsent) => {
     return false;
   }
 
-
   // Fetch configuration and initialize plugins
   _ymConfigPromise = configManager.fetchConfig(publisherId, profileId)
-    .then(result => {
-      if (!result) {
+    .then(configJson => {
+      if (!configJson) {
         return Promise.reject(new Error('Failed to fetch configuration'));
       }
 
-      return pluginManager.initialize(result);
+      return pluginManager.initialize(configJson);
     });
 
   return true;
@@ -108,7 +107,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   const results = pluginManager.executeHook('getTargeting', adUnitCodes, config, userConsent, auction);
   // As of now only unified pricing rule is implemented
-  return results?.['unifiedPricingRule'] || {}; 
+  return results?.['unifiedPricingRule'] || {};
 };
 
 export const pubmaticSubmodule = {
