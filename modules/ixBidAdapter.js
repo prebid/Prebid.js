@@ -1704,8 +1704,7 @@ export const spec = {
     validBidRequests.forEach((validBidRequest) => {
       const adUnitMediaTypes = Object.keys(deepAccess(validBidRequest, 'mediaTypes', {}));
 
-      for (let index = 0; index < adUnitMediaTypes.length; index++) {
-        const mediaType = adUnitMediaTypes[index];
+      for (const mediaType of adUnitMediaTypes) {
         switch (mediaType) {
           case BANNER:
             createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidderRequest);
