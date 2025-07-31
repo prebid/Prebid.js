@@ -387,6 +387,8 @@ describe('r2b2 Analytics', function () {
     getGlobalStub.restore();
     ajaxStub.restore();
     r2b2Analytics.disableAnalytics();
+    clock.runAll();
+    clock.restore();
   });
 
   describe('config', () => {
