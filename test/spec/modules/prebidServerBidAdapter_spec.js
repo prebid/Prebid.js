@@ -1817,7 +1817,7 @@ describe('S2S Adapter', function () {
         }
       };
 
-      $$PREBID_GLOBAL$$.aliasBidder('mockBidder', aliasBidder.bidder);
+      getGlobal().aliasBidder('mockBidder', aliasBidder.bidder);
 
       const request = utils.deepClone(REQUEST);
       request.ad_units[0].bids = [aliasBidder];
@@ -1843,7 +1843,7 @@ describe('S2S Adapter', function () {
       request.ad_units[0].bids = [aliasBidder];
 
       // TODO: stub this
-      $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias);
+      getGlobal().aliasBidder('appnexus', alias);
       adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: 'foobar'}], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
@@ -1919,7 +1919,7 @@ describe('S2S Adapter', function () {
       request.ad_units[0].bids = [aliasBidder];
 
       // TODO: stub this
-      $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias, { skipPbsAliasing: true });
+      getGlobal().aliasBidder('appnexus', alias, { skipPbsAliasing: true });
       adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: aliasBidder.bidder}], addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);

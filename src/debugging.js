@@ -10,7 +10,9 @@ import * as utils from './utils.js';
 import {BANNER, NATIVE, VIDEO} from './mediaTypes.js';
 import {Renderer} from './Renderer.js';
 
-export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
+import {getDistUrlBase, getGlobalVarName} from './buildOptions.js';
+
+export const DEBUG_KEY = `__${getGlobalVarName()}_debugging__`;
 
 function isDebuggingInstalled() {
   return getGlobal().installedModules.includes('debugging');
@@ -32,7 +34,7 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
           if (alreadyInstalled()) {
             resolve();
           } else {
-            const url = '$$PREBID_DIST_URL_BASE$$debugging-standalone.js';
+            const url = `${getDistUrlBase()}debugging-standalone.js`;
             logMessage(`Debugging module not installed, loading it from "${url}"...`);
             getGlobal()._installDebugging = true;
             script(url).then(() => {

@@ -5,6 +5,7 @@ import * as utils from 'src/utils';
 import * as sinon from 'sinon';
 import 'modules/consentManagementTcf.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
@@ -124,7 +125,7 @@ describe('tpmnAdapterTests', function () {
   let sandbox = sinon.createSandbox();
   let getCookieStub;
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       tpmn: {
         storageAllowed: true
       }
@@ -136,7 +137,7 @@ describe('tpmnAdapterTests', function () {
   afterEach(function () {
     sandbox.restore();
     getCookieStub.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
   });
 
   describe('isBidRequestValid()', function () {
