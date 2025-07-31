@@ -214,7 +214,7 @@ export const getOsInfo = () => {
   }
 
   if (/Mac OS X/.test(ua)) {
-    const match = ua.match(/Mac OS X (\d+[_\.]\d+[_\.]?\d*)/);
+    const match = ua.match(/Mac OS X (\d+[_.]\d+[_.]?\d*)/);
     const osv = match?.[1]?.replace(/_/g, '.');
     return { os: "Mac OS", osv };
   }
