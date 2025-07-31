@@ -310,6 +310,8 @@ describe('pubmatic analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
+    clock.runAll();
+    clock.restore();
   });
 
   it('should require publisherId', function () {

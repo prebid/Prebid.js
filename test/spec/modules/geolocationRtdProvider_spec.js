@@ -67,6 +67,11 @@ describe('Geolocation RTD Provider', function () {
       geolocationSubmodule.init(rtdConfig);
     });
 
+    afterEach(() => {
+      clock.runAll();
+      clock.restore();
+    });
+
     it('init should return true', function () {
       expect(geolocationSubmodule.init({})).is.true;
     });
