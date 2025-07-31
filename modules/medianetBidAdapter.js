@@ -22,6 +22,7 @@ import {errorLogger} from '../libraries/medianetUtils/logger.js';
 import {GLOBAL_VENDOR_ID, MEDIANET} from '../libraries/medianetUtils/constants.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -285,9 +286,6 @@ function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);
-}
-function getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
 function getSlotVisibility(topLeft, size) {

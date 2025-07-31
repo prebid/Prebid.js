@@ -1239,7 +1239,7 @@ describe('bidderFactory', () => {
     afterEach(function () {
       ajaxStub.restore();
       logErrorSpy.restore();
-      indexStub.restore;
+      indexStub.restore();
     });
 
     if (FEATURES.NATIVE) {

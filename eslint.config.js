@@ -3,6 +3,7 @@ const lintImports = require('eslint-plugin-import')
 const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
+const chaiFriendly = require('eslint-plugin-chai-friendly');
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
@@ -122,7 +123,6 @@ module.exports = [
       // also see: reality. These are here to stay.
 
       eqeqeq: 'off',
-      'no-useless-escape': 'off',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -228,6 +228,9 @@ module.exports = [
   },
   {
     files: sourcePattern('test'),
+    plugins: {
+      'chai-friendly': chaiFriendly
+    },
     languageOptions: {
       globals: {
         ...globals.mocha,
@@ -236,11 +239,13 @@ module.exports = [
       }
     },
     rules: {
-      // tests were not subject to many rules and they are now a nightmare
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
+      'chai-friendly/no-unused-expressions': 'error',
+      // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      'no-useless-escape': 'off',
       'no-return-assign': 'off',
       'camelcase': 'off'
     }
