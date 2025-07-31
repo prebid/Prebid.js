@@ -12,7 +12,9 @@ import {config} from 'src/config.js';
 import {deepClone, safeJSONParse} from '../../../src/utils.js';
 import {getCoreStorageManager} from 'src/storageManager.js';
 import * as activities from '../../../src/activities/rules.js';
-import {ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
+import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
+import {sandbox} from 'sinon';
+import {registerActivityControl} from '../../../src/activities/rules.js';
 
 describe('topics', () => {
   beforeEach(() => {
@@ -292,6 +294,28 @@ describe('topics', () => {
         sinon.assert.notCalled(doc.createElement);
       });
     });
+
+    it('does not load frames when accessDevice is not allowed', () => {
+      const unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', ({component}) => {
+        if (component === 'bidder.mockBidder') {
+          return {allow: false}
+        }
+      });
+      try {
+        const doc = {
+          createElement: sinon.stub(),
+          browsingTopics: true,
+          featurePolicy: {
+            allowsFeature: () => true
+          }
+        }
+        doc.createElement = sinon.stub();
+        loadTopicsForBidders(doc);
+        sinon.assert.notCalled(doc.createElement);
+      } finally {
+        unregister();
+      }
+    })
   });
 
   describe('getCachedTopics()', () => {
@@ -393,6 +417,13 @@ describe('topics', () => {
               ],
             },
           }
+        });
+      });
+
+      before(() => {
+        const unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', () => ({allow: true}),  0)
+        after(() => {
+          unregister()
         });
       });
 
