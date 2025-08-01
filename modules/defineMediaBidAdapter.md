@@ -3,7 +3,7 @@
 ```
 Module Name:  Define Media Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   n.leidig@definemedia.de
+Maintainer:   m.klumpp@definemedia.de
 ```
 
 # Description
