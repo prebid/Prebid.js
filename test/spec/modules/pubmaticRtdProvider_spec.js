@@ -889,9 +889,7 @@ describe('Pubmatic RTD Provider', () => {
       expect(result['div3']).to.have.property('pm_ym_flrs', 1);
       expect(result['div3']).to.have.property('pm_ym_flrv', '32.00');
       expect(result['div3']).to.have.property('pm_ym_bid_s', 2);
-
       getGlobalStub.restore();
-
     });
 
     describe('should handle the no bid scenario correctly', function () {
@@ -1241,6 +1239,5 @@ describe('Pubmatic RTD Provider', () => {
         getFloorSpy.restore();
       });
     });
-
   });
 });
