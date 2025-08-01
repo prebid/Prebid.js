@@ -350,6 +350,10 @@ describe('pubmatic analytics adapter', function () {
         testGroupId: 15
       });
 
+      if (getGlobal().getUserIds !== 'function') {
+        getGlobal().getUserIds = function() { return {}; };
+      }
+
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -560,11 +564,9 @@ describe('pubmatic analytics adapter', function () {
         ]
       };
 
-      sandbox.stub(getGlobal(), 'adUnits').value([{
-        bids: [{
-          userId: mockUserIds
-        }]
-      }]);
+      sandbox.stub(getGlobal(), 'getUserIds').callsFake(() => {
+        return mockUserIds;
+      });
 
       sandbox.stub(getGlobal(), 'getConfig').callsFake((key) => {
         if (key === 'userSync') return mockUserSync;
