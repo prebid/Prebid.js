@@ -298,8 +298,6 @@ describe('VisibleMeasuresBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-
-      bidderRequest.ortb2;
     })
   });
 

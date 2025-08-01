@@ -7,8 +7,8 @@ import { server } from '../../mocks/xhr.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import 'src/prebid.js';
 
-let events = require('src/events');
-let utils = require('src/utils');
+const events = require('src/events');
+const utils = require('src/utils');
 
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
 const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Mobile/15E148 Safari/604.1';
@@ -304,6 +304,8 @@ describe('pubmatic analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
+    clock.runAll();
+    clock.restore();
   });
 
   it('should require publisherId', function () {
@@ -340,7 +342,7 @@ describe('pubmatic analytics adapter', function () {
     it('Pubmatic Won: No tracker fired', function () {
       this.timeout(5000)
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake(() => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake(() => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
@@ -358,9 +360,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(1); // only logger is fired
-      let request = requests[0];
+      const request = requests[0];
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -475,7 +477,7 @@ describe('pubmatic analytics adapter', function () {
 
       this.timeout(5000)
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [APPNEXUS_BID]
       });
 
@@ -501,9 +503,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(2); // logger as well as tracker is fired
-      let request = requests[1]; // logger is executed late, trackers execute first
+      const request = requests[1]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
 
       // check mandatory fields
       expect(data).to.have.property('sd');
@@ -519,7 +521,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.sd['/19968336/header-bid-tag-0'].bids['2ecff0db240757'][0].adapterCode).to.equal('appnexus');
       expect(data.sd['/19968336/header-bid-tag-0'].bids['2ecff0db240757'][0].bidderCode).to.equal('appnexus');
 
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
       expect(data.rd.pubid).to.equal('9999');
@@ -558,18 +560,18 @@ describe('pubmatic analytics adapter', function () {
         ]
       };
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'adUnits').value([{
+      sandbox.stub(getGlobal(), 'adUnits').value([{
         bids: [{
           userId: mockUserIds
         }]
       }]);
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getConfig').callsFake((key) => {
         if (key === 'userSync') return mockUserSync;
         return null;
       });
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
@@ -629,9 +631,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
 
       // check mandatory fields
       expect(data).to.have.property('sd');
@@ -669,9 +671,9 @@ describe('pubmatic analytics adapter', function () {
       expect(Object.keys(data.sd).length).to.equal(2);
 
       // tracker slot1 
-      let firstTracker = requests[0];
+      const firstTracker = requests[0];
       expect(firstTracker.url).to.equal('https://t.pubmatic.com/wt?v=1&psrc=web');
-      let trackerData = getLoggerJsonFromRequest(firstTracker.requestBody);
+      const trackerData = getLoggerJsonFromRequest(firstTracker.requestBody);
       expect(trackerData).to.have.property('sd');
       expect(trackerData).to.have.property('fd');
       expect(trackerData).to.have.property('rd');
@@ -688,7 +690,7 @@ describe('pubmatic analytics adapter', function () {
 
       this.timeout(5000)
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
@@ -708,10 +710,10 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
 
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -740,7 +742,7 @@ describe('pubmatic analytics adapter', function () {
       bidCopy.cpm = bidCopy.originalCpm * 2; //  bidCpmAdjustment => bidCpm * 2
       this.timeout(5000)
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [bidCopy, MOCK.BID_RESPONSE[1]]
       });
 
@@ -757,7 +759,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(3000 + 2000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
 
@@ -790,7 +792,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.sd['/19968336/header-bid-tag-0'].bids['2ecff0db240757'][0].bidResponse.bidGrossCpmUSD).to.equal(1.23);
       expect(data.sd['/19968336/header-bid-tag-0'].bids['2ecff0db240757'][0].bidResponse.bidPriceUSD).to.equal(2.46);
       // tracker slot1
-      let firstTracker = requests[0].url;
+      const firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -830,7 +832,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
@@ -884,8 +886,8 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
-      let request = requests[1]; // logger is executed late, trackers execute first
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[1]; // logger is executed late, trackers execute first
+      const data = getLoggerJsonFromRequest(request.requestBody);
 
       // check mandatory fields
       expect(data).to.have.property('sd');
@@ -914,8 +916,8 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
 
       expect(requests.length).to.equal(1); // 1 logger and 0 win-tracker
-      let request = requests[0];
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[0];
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -934,7 +936,7 @@ describe('pubmatic analytics adapter', function () {
     it('Logger: post-timeout check with bid response', function () {
       // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[1]]
       });
 
@@ -946,8 +948,8 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
 
       expect(requests.length).to.equal(1); // 1 logger and 0 win-tracker
-      let request = requests[0];
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[0];
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -1000,9 +1002,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -1037,7 +1039,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
 
@@ -1073,7 +1075,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.sd['/19968336/header-bid-tag-1'].bidWonAdId).to.equal('fake_ad_id_2');
       expect(data.sd['/19968336/header-bid-tag-1'].bids['3bd4ebb1c900e2'][0].bidResponse.adserverTargeting.hb_pb).to.equal(1.5);
 
-      let firstTracker = requests[1].url;
+      const firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1100,7 +1102,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
@@ -1117,7 +1119,7 @@ describe('pubmatic analytics adapter', function () {
      expect(data.sd['/19968336/header-bid-tag-1'].bids['3bd4ebb1c900e2'][0].bidResponse.floorData.floorValue).to.equal(1.1);
 
       // respective tracker slot
-      let firstTracker = requests[1].url;
+      const firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
       data = {};
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
@@ -1140,7 +1142,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
@@ -1201,9 +1203,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -1242,7 +1244,7 @@ describe('pubmatic analytics adapter', function () {
     it('Logger: to handle floor rejected bids', function () {
       this.timeout(5000)
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
@@ -1257,9 +1259,9 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
-      let request = requests[1]; // logger is executed late, trackers execute first
+      const request = requests[1]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');
@@ -1303,7 +1305,7 @@ describe('pubmatic analytics adapter', function () {
       MOCK.BID_REQUESTED['bids'][0]['bidderCode'] = 'pubmatic_alias';
       adapterManager.aliasRegistry['pubmatic_alias'] = 'pubmatic';
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
@@ -1323,7 +1325,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
@@ -1426,7 +1428,7 @@ describe('pubmatic analytics adapter', function () {
 
     it('Logger: best case + win tracker in case of GroupM as alternate bidder', function () {
       MOCK.BID_REQUESTED['bids'][0]['bidderCode'] = 'groupm';
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
@@ -1446,7 +1448,7 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
-      let request = requests[2]; // logger is executed late, trackers execute first
+      const request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
       // check mandatory fields
@@ -1554,10 +1556,10 @@ describe('pubmatic analytics adapter', function () {
 
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(1);
-      let request = requests[0];
-      let data = getLoggerJsonFromRequest(request.requestBody);
+      const request = requests[0];
+      const data = getLoggerJsonFromRequest(request.requestBody);
       // Verify display manager
-      expect(data.rd.dm).to.equal('Prebid.js');
+      expect(data.rd.dm).to.equal(DISPLAY_MANAGER);
       // Verify display manager version using global Prebid version
       expect(data.rd.dmv).to.equal('$prebid.version$' || '-1');
     });

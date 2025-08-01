@@ -14,6 +14,7 @@ import {
   isFn,
   isGptPubadsDefined,
   isNumber,
+  isPlainObject,
   logError,
   logInfo,
   logMessage,
@@ -52,8 +53,8 @@ import {
   renderIfDeferred
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults, ORTB_VIDEO_PARAMS, validateOrtbVideoFields} from './video.js';
-import {ORTB_BANNER_PARAMS, validateOrtbBannerFields} from './banner.js';
+import {fillVideoDefaults, ORTB_VIDEO_PARAMS} from './video.js';
+import {ORTB_BANNER_PARAMS} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
@@ -65,6 +66,9 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
+import {ORTB_AUDIO_PARAMS, fillAudioDefaults} from './audio.ts';
+
+import {getGlobalVarName} from "./buildOptions.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -199,8 +203,15 @@ function validateBannerMediaType(adUnit: AdUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
-  validateOrtbBannerFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'banner');
   syncOrtb2(validatedAdUnit, 'banner')
+  return validatedAdUnit;
+}
+
+function validateAudioMediaType(adUnit: AdUnit) {
+  const validatedAdUnit = deepClone(adUnit);
+  validateOrtbFields(validatedAdUnit, 'audio');
+  syncOrtb2(validatedAdUnit, 'audio');
   return validatedAdUnit;
 }
 
@@ -223,9 +234,43 @@ function validateVideoMediaType(adUnit: AdUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
-  validateOrtbVideoFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'video');
   syncOrtb2(validatedAdUnit, 'video');
   return validatedAdUnit;
+}
+
+export function validateOrtbFields(adUnit, type, onInvalidParam?) {
+  const mediaTypes = adUnit?.mediaTypes || {};
+  const params = mediaTypes[type];
+
+  const ORTB_PARAMS = {
+    banner: ORTB_BANNER_PARAMS,
+    audio: ORTB_AUDIO_PARAMS,
+    video: ORTB_VIDEO_PARAMS
+  }[type]
+
+  if (!isPlainObject(params)) {
+    logWarn(`validateOrtb${type}Fields: ${type}Params must be an object.`);
+    return;
+  }
+
+  if (params != null) {
+    Object.entries(params)
+      .forEach(([key, value]: any) => {
+        if (!ORTB_PARAMS.has(key)) {
+          return
+        }
+        const isValid = ORTB_PARAMS.get(key)(value);
+        if (!isValid) {
+          if (typeof onInvalidParam === 'function') {
+            onInvalidParam(key, value, adUnit);
+          } else {
+            delete params[key];
+            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.${type}.${key} ORTB property. The property has been removed.`);
+          }
+        }
+      });
+  }
 }
 
 function validateNativeMediaType(adUnit: AdUnit) {
@@ -330,6 +375,10 @@ if (FEATURES.VIDEO) {
   Object.assign(adUnitSetupChecks, { validateVideoMediaType });
 }
 
+if (FEATURES.AUDIO) {
+  Object.assign(adUnitSetupChecks, { validateAudioMediaType });
+}
+
 export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition[]) {
   const validatedAdUnits = [];
 
@@ -338,7 +387,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
     if (adUnit == null) return;
 
     const mediaTypes = adUnit.mediaTypes;
-    let validatedBanner, validatedVideo, validatedNative;
+    let validatedBanner, validatedVideo, validatedNative, validatedAudio;
 
     if (mediaTypes.banner) {
       validatedBanner = validateBannerMediaType(adUnit);
@@ -354,7 +403,11 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
-    const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative);
+    if (FEATURES.AUDIO && mediaTypes.audio) {
+      validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateAudioMediaType(adUnit);
+    }
+
+    const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative, validatedAudio);
 
     validatedAdUnits.push(validatedAdUnit);
   });
@@ -366,11 +419,14 @@ function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
+  if (FEATURES.AUDIO) {
+    adUnits.forEach(au => fillAudioDefaults(au))
+  }
 }
 
 function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
   return function (...args) {
-    logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
+    logInfo(`Invoking ${getGlobalVarName()}.${name}`, args);
     return fn.apply(this, args);
   }
 }
@@ -990,7 +1046,7 @@ const enableAnalyticsCb = hook('async', function (config) {
   if (config && !isEmpty(config)) {
     adapterManager.enableAnalytics(config);
   } else {
-    logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
+    logError(`${getGlobalVarName()}.enableAnalytics should be called with option {}`);
   }
 }, 'enableAnalyticsCb');
 
@@ -1006,7 +1062,7 @@ function aliasBidder(bidderCode: BidderCode, alias: BidderCode, options?: AliasB
   if (bidderCode && alias) {
     adapterManager.aliasBidAdapter(bidderCode, alias, options);
   } else {
-    logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
+    logError('bidderCode and alias must be passed as arguments', `${getGlobalVarName()}.aliasBidder`);
   }
 }
 addApiMethod('aliasBidder', aliasBidder);
@@ -1141,7 +1197,7 @@ function quePush(command) {
       logError('Error processing command :', e.message, e.stack);
     }
   } else {
-    logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
+    logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
   }
 }
 
