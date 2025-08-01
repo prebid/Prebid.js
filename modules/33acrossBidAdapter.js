@@ -16,6 +16,8 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {isIframe} from '../libraries/omsUtils/index.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -316,9 +318,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
     }
   };
 
-  if (firstBidRequest.schain) {
+  if (firstBidRequest.ortb2?.source?.ext?.schain) {
     ttxRequest.source = setExtensions(ttxRequest.source, {
-      'schain': firstBidRequest.schain
+      'schain': firstBidRequest.ortb2.source.ext.schain
     });
   }
 
@@ -449,7 +451,7 @@ function _buildBannerORTB(bidRequest) {
     format = sizes;
   }
 
-  const minSize = _getMinSize(sizes);
+  const minSize = getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable(element)
     ? _getViewability(element, getWindowTop(), minSize)
@@ -544,7 +546,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
 
 // BUILD REQUESTS: VIEWABILITY
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
@@ -580,10 +582,6 @@ function _getAdSlotHTMLElement(adUnitCode) {
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
-function _getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
-}
-
 /**
  * Viewability contribution to request..
  */
@@ -597,14 +595,6 @@ function contributeViewability(viewabilityAmount) {
       }
     }
   };
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
 }
 
 // **************************** INTERPRET RESPONSE ******************************** //

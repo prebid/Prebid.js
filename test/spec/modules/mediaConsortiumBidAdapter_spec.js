@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec, OPTIMIZATIONS_STORAGE_KEY, getOptimizationsFromLocalStorage } from 'modules/mediaConsortiumBidAdapter.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BANNER_BID = {
   adUnitCode: 'dfp_ban_atf',
@@ -81,7 +82,7 @@ describe('Media Consortium Bid Adapter', function () {
   })
 
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       mediaConsortium: {
         storageAllowed: true
       }
@@ -89,7 +90,7 @@ describe('Media Consortium Bid Adapter', function () {
   })
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
   })
 
   describe('buildRequests', function () {

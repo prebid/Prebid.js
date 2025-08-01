@@ -209,8 +209,12 @@ function configModeCombined(url, partner) {
       mode: 'COMBINED'
     }
   }
-  url && (conf.params.url = url);
-  partner && (conf.params.partner = partner);
+  if (url) {
+    conf.params.url = url;
+  }
+  if (partner) {
+    conf.params.partner = partner;
+  }
 
   return conf;
 }

@@ -39,7 +39,7 @@ const vr = {
 describe('resetdigitalBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  let bannerRequest = {
+  const bannerRequest = {
     bidId: '123',
     transactionId: '456',
     mediaTypes: {
@@ -52,7 +52,7 @@ describe('resetdigitalBidAdapter', function () {
     }
   }
 
-  let videoRequest = {
+  const videoRequest = {
     bidId: 'abc',
     transactionId: 'def',
     mediaTypes: {
@@ -82,7 +82,7 @@ describe('resetdigitalBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bannerRequest ], { refererInfo: { } })
+    const req = spec.buildRequests([ bannerRequest ], { refererInfo: { } })
     let rdata
 
     it('should return request object', function () {
@@ -109,11 +109,11 @@ describe('resetdigitalBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should form compliant banner bid object response', function () {
-      let ir = spec.interpretResponse(br, bannerRequest)
+      const ir = spec.interpretResponse(br, bannerRequest)
 
       expect(ir.length).to.equal(1)
 
-      let en = ir[0]
+      const en = ir[0]
 
       expect(en.requestId != null &&
             en.cpm != null && typeof en.cpm === 'number' &&
@@ -124,11 +124,11 @@ describe('resetdigitalBidAdapter', function () {
       ).to.be.true
     })
     it('should form compliant video object response', function () {
-      let ir = spec.interpretResponse(vr, videoRequest)
+      const ir = spec.interpretResponse(vr, videoRequest)
 
       expect(ir.length).to.equal(1)
 
-      let en = ir[0]
+      const en = ir[0]
 
       expect(en.requestId != null &&
             en.cpm != null && typeof en.cpm === 'number' &&
@@ -142,14 +142,14 @@ describe('resetdigitalBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return iframe sync', function () {
-      let sync = spec.getUserSyncs({ iframeEnabled: true }, [br])
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, [br])
       expect(sync.length).to.equal(1)
       expect(sync[0].type === 'iframe')
       expect(typeof sync[0].url === 'string')
     })
 
     it('should return pixel sync', function () {
-      let sync = spec.getUserSyncs({ pixelEnabled: true }, [br])
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, [br])
       expect(sync.length).to.equal(1)
       expect(sync[0].type === 'image')
       expect(typeof sync[0].url === 'string')

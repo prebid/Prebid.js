@@ -38,7 +38,7 @@ describe('The video cache', function () {
     beforeEach(function () {
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'https://test.cache.url/endpoint'
         }
       })
     });
@@ -160,9 +160,9 @@ describe('The video cache', function () {
       store(bids, function () { });
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.url.should.equal('https://test.cache.url/endpoint');
       request.requestHeaders['Content-Type'].should.equal('text/plain');
-      let payload = {
+      const payload = {
         puts: [{
           type: 'xml',
           value: vastXml1,
@@ -181,7 +181,7 @@ describe('The video cache', function () {
     it('should include additional params in request payload should config.cache.vasttrack be true', () => {
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          url: 'https://test.cache.url/endpoint',
           vasttrack: true
         }
       });
@@ -210,9 +210,9 @@ describe('The video cache', function () {
       store(bids, function () { });
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.url.should.equal('https://test.cache.url/endpoint');
       request.requestHeaders['Content-Type'].should.equal('text/plain');
-      let payload = {
+      const payload = {
         puts: [{
           type: 'xml',
           value: vastXml1,
@@ -238,7 +238,7 @@ describe('The video cache', function () {
     it('should include additional params in request payload should config.cache.vasttrack be true - with timestamp', () => {
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          url: 'https://test.cache.url/endpoint',
           vasttrack: true
         }
       });
@@ -281,9 +281,9 @@ describe('The video cache', function () {
 
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.url.should.equal('https://test.cache.url/endpoint');
       request.requestHeaders['Content-Type'].should.equal('text/plain');
-      let payload = {
+      const payload = {
         puts: [{
           type: 'xml',
           value: vastXml1,
@@ -312,17 +312,17 @@ describe('The video cache', function () {
       it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
         const mockAfterBidAdded = function() {};
         let callback = null;
-        let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+        const mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
 
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache',
+            url: 'https://test.cache.url/endpoint',
             batchSize: 3,
             batchTimeout: 20
           }
         });
 
-        let stubCache = sinon.stub();
+        const stubCache = sinon.stub();
         const batchAndStore = batchingCache(mockTimeout, stubCache);
         for (let i = 0; i < 3; i++) {
           batchAndStore({}, {}, mockAfterBidAdded);
@@ -344,7 +344,7 @@ describe('The video cache', function () {
 
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.url.should.equal('https://test.cache.url/endpoint');
       request.requestHeaders['Content-Type'].should.equal('text/plain');
 
       JSON.parse(request.requestBody).should.deep.equal({
@@ -435,7 +435,7 @@ describe('The getCache function', function () {
   beforeEach(function () {
     config.setConfig({
       cache: {
-        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        url: 'https://test.cache.url/endpoint'
       }
     })
   });
@@ -447,6 +447,6 @@ describe('The getCache function', function () {
   it('should return the expected URL', function () {
     const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
     const url = getCacheUrl(uuid);
-    url.should.equal(`https://prebid.adnxs.com/pbc/v1/cache?uuid=${uuid}`);
+    url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
   });
 })
