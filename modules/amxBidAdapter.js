@@ -17,6 +17,8 @@ import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
+import {getGlobalVarName} from '../src/buildOptions.js';
+
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
@@ -343,7 +345,7 @@ export const spec = {
       trc: fbid.bidRequestsCount || 0,
       tm: isTrue(testMode),
       V: '$prebid.version$',
-      vg: '$$PREBID_GLOBAL$$',
+      vg: getGlobalVarName(),
       i: testMode && tagId != null ? tagId : getID(loc),
       l: {},
       f: 0.01,
@@ -551,7 +553,7 @@ export const spec = {
           U: getUIDSafe(),
           re: ref,
           V: '$prebid.version$',
-          vg: '$$PREBID_GLOBAL$$',
+          vg: getGlobalVarName(),
         };
       }
 

@@ -344,6 +344,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   if (dsa) {
     data.dsa = dsa;
   }
+  if (params.placementId) {
+    data.placementId = params.placementId;
+  }
 
   _each(ext, (value, key) => {
     data['ext.' + key] = value;

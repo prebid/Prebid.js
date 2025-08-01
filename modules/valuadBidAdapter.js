@@ -6,27 +6,19 @@ import {
   deepSetValue,
   logInfo,
   triggerPixel,
-  getWindowSelf,
   getWindowTop
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
 import { getBoundingBox, percentInView } from '../libraries/percentInView/percentInView.js';
+import {isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
-}
-
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {

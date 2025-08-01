@@ -29,6 +29,7 @@ import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 import {sandbox} from 'sinon';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -233,7 +234,7 @@ describe('auctionmanager.js', function () {
       if (bid.mediaType === 'video') {
         expected[TARGETING_KEYS.UUID] = bid.videoCacheKey;
         expected[TARGETING_KEYS.CACHE_ID] = bid.videoCacheKey;
-        expected[TARGETING_KEYS.CACHE_HOST] = 'prebid.adnxs.com';
+        expected[TARGETING_KEYS.CACHE_HOST] = 'test.cache.url';
       }
       if (!keys) {
         return expected;
@@ -252,7 +253,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('No bidder level configuration defined - default', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       const expected = getDefaultExpected(bid);
       // remove hb_cache_host from expected
       delete expected.hb_cache_host;
@@ -273,10 +274,10 @@ describe('auctionmanager.js', function () {
       it('No bidder level configuration defined - default for video', function () {
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+            url: 'https://test.cache.url/endpoint'
           }
         });
-        $$PREBID_GLOBAL$$.bidderSettings = {};
+        getGlobal().bidderSettings = {};
         const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
@@ -288,7 +289,7 @@ describe('auctionmanager.js', function () {
     }
 
     it('Custom configuration for all bidders', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           standard: {
             adserverTargeting: [
@@ -366,14 +367,14 @@ describe('auctionmanager.js', function () {
       it('Custom configuration for all bidders with video bid', function () {
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+            url: 'https://test.cache.url/endpoint'
           }
         });
         const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
 
-        $$PREBID_GLOBAL$$.bidderSettings =
+        getGlobal().bidderSettings =
           {
             standard: {
               adserverTargeting: [
@@ -459,7 +460,7 @@ describe('auctionmanager.js', function () {
     }
 
     it('Custom configuration for one bidder', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           appnexus: {
             adserverTargeting: [
@@ -498,7 +499,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('Custom configuration for one bidder - not matched', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           nonExistentBidder: {
             adserverTargeting: [
@@ -546,14 +547,14 @@ describe('auctionmanager.js', function () {
         }
       });
 
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       const expected = getDefaultExpected(bid);
       const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           appnexus: {
             bidCpmAdjustment: function (bidCpm) {
@@ -601,7 +602,7 @@ describe('auctionmanager.js', function () {
 
       assert.equal(bid.cpm, 0.5);
 
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           standard: {
             bidCpmAdjustment: function (bidCpm) {
@@ -615,7 +616,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           appnexus: {
             bidCpmAdjustment: function (bidCpm) {
@@ -678,7 +679,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('sendStandardTargeting=false, and inherit custom', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           appnexus: {
             sendStandardTargeting: false,
@@ -711,7 +712,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('suppressEmptyKeys=true', function() {
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           standard: {
             suppressEmptyKeys: true,
@@ -746,7 +747,7 @@ describe('auctionmanager.js', function () {
 
       assert.equal(bid.cpm, 0.5);
 
-      $$PREBID_GLOBAL$$.bidderSettings =
+      getGlobal().bidderSettings =
         {
           brealtime: {
             bidCpmAdjustment: function (bidCpm, bidObj) {
@@ -782,7 +783,7 @@ describe('auctionmanager.js', function () {
       assert.equal(bid.cpm, 0);
 
       // reset bidderSettings so we don't mess up further tests
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
   });
 
@@ -1806,7 +1807,6 @@ describe('auctionmanager.js', function () {
           banner: 'low',
           video: 'medium'
         })).to.equal('medium');
-        ``
         expect(getMediaTypeGranularity('video', undefined, {
           banner: 'low',
           video: 'medium'
@@ -1968,7 +1968,7 @@ describe('auctionmanager.js', function () {
         doneSpy = sinon.spy();
         config.setConfig({
           cache: {
-            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+            url: 'https://test.cache.url/endpoint'
           }
         });
       });
