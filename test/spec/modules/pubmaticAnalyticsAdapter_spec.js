@@ -667,7 +667,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.fd.flr.floorProvider).to.equal('pubmatic');
       expect(data.fd.flr.location).to.equal('fetch');
       expect(data.fd.flr.skipRate).to.equal(0);
-      expect(data.fd.flr.skipped).to.equal(false);;
+      expect(data.fd.flr.skipped).to.equal(false);
 
       expect(data.sd).to.be.an('object');
       expect(Object.keys(data.sd).length).to.equal(2);
@@ -735,7 +735,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.fd.flr.floorProvider).to.equal('pubmatic');
       expect(data.fd.flr.location).to.equal('fetch');
       expect(data.fd.flr.skipRate).to.equal(0);
-      expect(data.fd.flr.skipped).to.equal(false);;
+      expect(data.fd.flr.skipped).to.equal(false);
     });
 
     // done
@@ -858,7 +858,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.fd.flr.floorProvider).to.equal('pubmatic');
       expect(data.fd.flr.location).to.equal('fetch');
       expect(data.fd.flr.skipRate).to.equal(0);
-      expect(data.fd.flr.skipped).to.equal(false);;
+      expect(data.fd.flr.skipped).to.equal(false);
       expect(data.sd).to.be.an('object');
       expect(Object.keys(data.sd).length).to.equal(2);
       expect(data.sd['/19968336/header-bid-tag-0'].bids['2ecff0db240757'][0].bidResponse.bidGrossCpmUSD).to.equal(1);
