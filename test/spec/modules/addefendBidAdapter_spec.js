@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/addefendBidAdapter.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('addefendBidAdapter', () => {
   const defaultBidRequest = {
@@ -66,7 +67,7 @@ describe('addefendBidAdapter', () => {
     });
 
     it('contains prebid version parameter', () => {
-      expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
+      expect(request.data.v).to.equal(getGlobal().version);
     });
 
     it('contains correct referer', () => {

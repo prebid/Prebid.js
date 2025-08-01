@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp, shouldAddDealTargeting } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
@@ -52,7 +52,14 @@ describe('PubMatic adapter', () => {
         connectiontype: 6
       },
       site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
-      source: {}
+      source: {},
+      user: {
+        ext: {
+          data: {
+            im_segments: ['segment1', 'segment2']
+          }
+        }
+      }
     },
     ortb2Imp: {
       ext: {
@@ -163,7 +170,14 @@ describe('PubMatic adapter', () => {
         connectiontype: 6
       },
       site: {domain: 'ebay.com', page: 'https://ebay.com'},
-      source: {}
+      source: {},
+      user: {
+        ext: {
+          data: {
+            im_segments: ['segment1', 'segment2']
+          }
+        }
+      }
     },
     timeout: 2000,
 
@@ -300,6 +314,14 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('ext').to.have.property('key_val');
       });
 
+      it('adds key_val when dctr is missing but RTD provides custom targeting via ortb2', () => {
+        delete validBidRequests[0].params.dctr;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const { imp } = request?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext').to.have.property('key_val');
+      });
+
       it('should set w and h to the primary size for banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -411,6 +433,15 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos');
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
+
+      it('should include custom targeting data in imp.ext when provided by RTD', () => {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const { imp } = request?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext');
+        expect(imp[0].ext).to.have.property('key_val');
+        expect(imp[0].ext.key_val).to.deep.equal('im_segments=segment1,segment2');
+      })
 
       if (FEATURES.VIDEO) {
         describe('VIDEO', () => {
@@ -536,6 +567,72 @@ describe('PubMatic adapter', () => {
           });
         });
       }
+      describe('ShouldAddDealTargeting', () => {
+        it('should return im_segment targeting', () => {
+          const ortb2 = {
+            user: {
+              ext: {
+                data: {
+                  im_segments: ['segment1', 'segment2']
+                }
+              }
+            }
+          };
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.have.property('im_segments');
+          expect(result.im_segments).to.deep.equal('im_segments=segment1,segment2');
+        });
+        it('should return ias-brand-safety targeting', () => {
+          const ortb2 = {
+            site: {
+              ext: {
+                data: {
+                  'ias-brand-safety': {
+                    'content': 'news',
+                    'sports': 'cricket',
+                    'cricket': 'player'
+                  }
+                }
+              }
+            }
+          };
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.have.property('ias-brand-safety');
+          expect(result['ias-brand-safety']).to.deep.equal('content=news|sports=cricket|cricket=player');
+        });
+        it('should return undefined if no targeting is present', () => {
+          const ortb2 = {};
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.be.undefined;
+        });
+        it('should return both im_segment and ias-brand-safety targeting', () => {
+          const ortb2 = {
+            user: {
+              ext: {
+                data: {
+                  im_segments: ['segment1', 'segment2']
+                }
+              }
+            },
+            site: {
+              ext: {
+                data: {
+                  'ias-brand-safety': {
+                    'content': 'news',
+                    'sports': 'cricket',
+                    'cricket': 'player'
+                  }
+                }
+              }
+            }
+          };
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.have.property('im_segments');
+          expect(result.im_segments).to.deep.equal('im_segments=segment1,segment2');
+          expect(result).to.have.property('ias-brand-safety');
+          expect(result['ias-brand-safety']).to.deep.equal('content=news|sports=cricket|cricket=player');
+        });
+      })
     });
 
     describe('rest of ORTB request', () => {

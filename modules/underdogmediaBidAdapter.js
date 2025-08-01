@@ -1,7 +1,6 @@
 import {
   deepAccess,
   flatten,
-  getWindowSelf,
   getWindowTop,
   isGptPubadsDefined,
   logInfo,
@@ -13,6 +12,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import {isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -265,15 +265,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
+  return !isIframe() && element !== null
 }
 
 function _getViewability(element, topWin, {

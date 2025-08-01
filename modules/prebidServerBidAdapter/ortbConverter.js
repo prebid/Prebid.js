@@ -217,7 +217,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => ({
                 bidders: [req.bidderCode],
-                schain: req?.bids?.[0]?.ortb2?.source?.schain
+                schain: req?.bids?.[0]?.ortb2?.source?.ext?.schain
               })))
             .filter(({bidders, schain}) => bidders?.length > 0 && schain)
             .reduce((chains, {bidders, schain}) => {
