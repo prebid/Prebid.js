@@ -35,16 +35,16 @@ function register(name, plugin) {
 
 /**
  * Initialize all registered plugins with their specific config
- * @param {Object} configJson - Configuration object
+ * @param {Object} configJsonManager - Configuration JSON manager object
  * @returns {Promise} - Promise resolving when all plugins are initialized
  */
-async function initialize(configJson) {
+async function initialize(configJsonManager) {
   const initPromises = [];
 
   // Initialize each plugin with its specific config
   for (const [name, plugin] of plugins.entries()) {
-    if (configJson.ymConfigs.plugins && configJson.ymConfigs.plugins[name] && plugin.init) {
-      initPromises.push(plugin.init(configJson.ymConfigs.plugins[name]));
+    if (plugin.init) {
+      initPromises.push(plugin.init(name, configJsonManager));
     }
   }
 

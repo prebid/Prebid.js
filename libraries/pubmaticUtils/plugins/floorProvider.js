@@ -3,7 +3,6 @@ import { logInfo, logError, isFn, logMessage } from '../../../src/utils.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../../userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../pubmaticUtils.js';
 import { config as conf } from '../../../src/config.js';
-import { ConfigJsonManager } from '../configJsonManager.js';
 
 /**
  * This RTD module has a dependency on the priceFloors module.
@@ -15,18 +14,24 @@ let _floorConfig = null;
 export const getFloorConfig = () => _floorConfig;
 export const setFloorsConfig = (config) => { _floorConfig = config; }
 
+let _configJsonManager = null;
+export const getConfigJsonManager = () => _configJsonManager;
+export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; }
+
 export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Floor-Provider: '
 });
 
 /**
  * Initialize the floor provider
- * @param {Object} floorProviderConfig - Floor provider configuration
+ * @param {Object} pluginName - Plugin name
+ * @param {Object} configJsonManager - Configuration JSON manager object
  * @returns {Promise<boolean>} - Promise resolving to initialization status
  */
-export async function init(floorProviderConfig) {
+export async function init(pluginName, configJsonManager) {
   // Process floor-specific configuration
-  setFloorsConfig(floorProviderConfig);
+  setFloorsConfig(configJsonManager.getConfigByName(pluginName));
+  setConfigJsonManager(configJsonManager);
   if (!isFn(continueAuction)) {
     logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
     return false;
@@ -107,7 +112,7 @@ export const getTimeOfDay = () => getCurrentTimeOfDay();
 export const getBrowser = () => getBrowserType();
 export const getOs = () => getOS().toString();
 export const getDeviceType = () => fetchDeviceType().toString();
-export const getCountry = () => ConfigJsonManager.country;
+export const getCountry = () => getConfigJsonManager().country;
 export const getBidder = (request) => request?.bidder;
 export const getUtm = () => getUtmValue();
 

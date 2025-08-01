@@ -2,7 +2,6 @@ import { submodule } from '../src/hook.js';
 import { logError, isStr, mergeDeep } from '../src/utils.js';
 
 import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js';
-import { ConfigJsonManager } from '../libraries/pubmaticUtils/configJsonManager.js';
 import { FloorProvider } from '../libraries/pubmaticUtils/plugins/floorProvider.js';
 import { BidderOptimization } from '../libraries/pubmaticUtils/plugins/bidderOptimization.js';
 import { UnifiedPricingRule } from '../libraries/pubmaticUtils/plugins/unifiedPricingRule.js';
@@ -18,14 +17,80 @@ import { UnifiedPricingRule } from '../libraries/pubmaticUtils/plugins/unifiedPr
 export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
   REAL_TIME_MODULE: 'realTimeData',
-  LOG_PRE_FIX: 'PubMatic-Rtd-Provider: '
+  LOG_PRE_FIX: 'PubMatic-Rtd-Provider: ',
+  ENDPOINTS: {
+    BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
+    CONFIGS: 'config.json'
+  }
 });
 
 export let _ymConfigPromise = null;
 
+export function ConfigJsonManager() {
+  let _ymConfig = {};
+  const getYMConfig = () => _ymConfig;
+  const setYMConfig = (config) => { _ymConfig = config; }
+  let country;
+
+  /**
+   * Fetch configuration from the server
+   * @param {string} publisherId - Publisher ID
+   * @param {string} profileId - Profile ID
+   * @returns {Promise<Object>} - Promise resolving to the config object
+   */
+  async function fetchConfig(publisherId, profileId) {
+    try {
+      // const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
+      const url = `https://hbopenbid.pubmatic.com/yieldModuleConfigApi`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: Not ok`);
+        return null;
+      }
+
+      // Extract country code if available
+      const cc = response.headers?.get('country_code');
+      country = cc ? cc.split(',')?.map(code => code.trim())[0] : "IN";
+
+      // Parse the JSON response
+      const ymConfigs = await response.json();
+
+      if (!isPlainObject(ymConfigs) || isEmpty(ymConfigs)) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
+        return null;
+      }
+
+      // Store the configuration
+      setYMConfig(ymConfigs);
+
+      return true;
+    } catch (error) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Get configuration by name
+   * @param {string} name - Plugin name
+   * @returns {Object} - Plugin configuration
+   */
+  const getConfigByName = (name) => {
+    return getYMConfig()?.plugins?.[name];
+  }
+
+  return {
+    fetchConfig,
+    getYMConfig,
+    getConfigByName,
+    get country() { return country; }
+  };
+}
+
 // Create core components
 const pluginManager = PluginManager();
-const configManager = ConfigJsonManager();
+const configJsonManager = ConfigJsonManager();
 
 // Register plugins
 pluginManager.register('dynamicFloors', FloorProvider);
@@ -53,13 +118,13 @@ const init = (config, _userConsent) => {
   }
 
   // Fetch configuration and initialize plugins
-  _ymConfigPromise = configManager.fetchConfig(publisherId, profileId)
-    .then(configJson => {
-      if (!configJson) {
+  _ymConfigPromise = configJsonManager.fetchConfig(publisherId, profileId)
+    .then(success => {
+      if (!success) {
         return Promise.reject(new Error('Failed to fetch configuration'));
       }
 
-      return pluginManager.initialize(configJson);
+      return pluginManager.initialize(configJsonManager);
     });
 
   return true;
@@ -74,7 +139,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
     return pluginManager.executeHook('processBidRequest', reqBidsConfigObj);
   }).then(() => {
     // Apply country information if available
-    const country = configManager.country;
+    const country = configJsonManager.country;
     if (country) {
       const ortb2 = {
         user: {
