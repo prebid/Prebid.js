@@ -25,9 +25,9 @@ export const spec = {
   },
 
   buildRequests(bids, bidderRequest) {
-    let requests = [];
-    let videoBids = bids.filter(bid => isVideoBidValid(bid));
-    let bannerBids = bids.filter(bid => isBannerBidValid(bid));
+    const requests = [];
+    const videoBids = bids.filter(bid => isVideoBidValid(bid));
+    const bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
       pubid = getVideoBidParam(bid, 'pubid');
       requests.push({
@@ -51,10 +51,10 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, { bidRequest }) {
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (response !== null && isEmpty(response) === false) {
       if (isVideoBid(bidRequest)) {
-        let bidResponse = {
+        const bidResponse = {
           requestId: response.id,
           cpm: response.seatbid[0].bid[0].price,
           width: response.seatbid[0].bid[0].w,

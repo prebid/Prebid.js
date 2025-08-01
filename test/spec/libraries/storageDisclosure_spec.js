@@ -22,7 +22,9 @@ describe('storageDisclosure', () => {
       moduleMeta = {
         module: {
           disclosures: {
-            url: identifiers
+            url: {
+              disclosures: identifiers
+            }
           }
         }
       }
@@ -34,16 +36,20 @@ describe('storageDisclosure', () => {
     moduleMeta = {
       module1: {
         disclosures: {
-          url1: [
-            {identifier: 'foo'}
-          ]
+          url1: {
+            disclosures: [
+              {identifier: 'foo'}
+            ]
+          }
         }
       },
       module2: {
         disclosures: {
-          url2: [
-            {identifier: 'bar'}
-          ]
+          url2: {
+            disclosures: [
+              {identifier: 'bar'}
+            ]
+          }
         }
       }
     }
@@ -63,9 +69,11 @@ describe('storageDisclosure', () => {
 
   it('should group by disclosure URL', () => {
     const disclosures = {
-      url: [
-        {identifier: 'foo'}
-      ]
+      url: {
+        disclosures: [
+          {identifier: 'foo'}
+        ]
+      }
     }
     moduleMeta = {
       module1: {

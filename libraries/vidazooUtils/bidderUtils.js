@@ -260,7 +260,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  let data = {
+  const data = {
     url: encodeURIComponent(topWindowUrl),
     uqs: getTopWindowQueryParams(),
     cb: Date.now(),
@@ -344,6 +344,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   if (dsa) {
     data.dsa = dsa;
   }
+  if (params.placementId) {
+    data.placementId = params.placementId;
+  }
 
   _each(ext, (value, key) => {
     data['ext.' + key] = value;
@@ -362,7 +365,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     const reqBidId = request?.data?.bidId;
     const {results} = serverResponse.body;
 
-    let output = [];
+    const output = [];
 
     try {
       results.forEach((result, i) => {

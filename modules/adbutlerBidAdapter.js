@@ -83,7 +83,7 @@ export const spec = {
       return [];
     }
 
-    let advertiserDomains = [];
+    const advertiserDomains = [];
 
     if (response.advertiser?.domain) {
       advertiserDomains.push(response.advertiser.domain);

@@ -5,7 +5,7 @@ import { internal } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
-import { resetWinDimensions } from '../../../src/utils';
+import { resetWinDimensions } from '../../../src/utils.js';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -1347,7 +1347,7 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .build();
 
-        let copyBidRequest = utils.deepClone(bidRequests);
+        const copyBidRequest = utils.deepClone(bidRequests);
         const bidRequestsWithGpid = copyBidRequest.map(function(bidRequest, index) {
           return {
             ...bidRequest,

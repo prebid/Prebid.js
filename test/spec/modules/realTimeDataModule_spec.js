@@ -104,7 +104,9 @@ describe('Real time module', function () {
         mod = attachRealTimeDataProvider({name: 'mockRtd', gvlid: 123});
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
-        mod && mod();
+        if (mod) {
+          mod();
+        }
       }
     })
   })
@@ -182,7 +184,7 @@ describe('Real time module', function () {
         ]
       };
       validSM.getTargetingData = (adUnits) => {
-        let targeting = {'module1': 'targeting'}
+        const targeting = {'module1': 'targeting'}
         return {
           ad1: targeting,
           ad2: targeting

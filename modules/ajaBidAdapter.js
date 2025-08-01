@@ -194,7 +194,7 @@ export const spec = {
 }
 
 function pickAdFormats(bidRequest) {
-  let sizes = bidRequest.sizes || []
+  const sizes = bidRequest.sizes || []
   sizes.push(...(bidRequest.mediaTypes?.banner?.sizes || []))
 
   const adFormatIDs = [];

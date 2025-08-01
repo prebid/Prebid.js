@@ -17,11 +17,11 @@ export const spec = {
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
-    let requests = [];
+    const requests = [];
 
     bidRequests.map(bidRequest => {
-      let {itemId} = bidRequest.params;
-      let requestData = {
+      const {itemId} = bidRequest.params;
+      const requestData = {
         id: generateUUID(),
         imp: [cookingImp(bidRequest)],
         device: bidRequest.ortb2?.device,
@@ -38,17 +38,17 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse, serverRequest) => {
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (!response.seatbid) {
       return [];
     }
 
-    let rtbBids = response.seatbid
+    const rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
       .reduce((a, b) => a.concat(b), []);
 
-    let data = rtbBids.map(rtbBid => {
-      let prBid = {
+    const data = rtbBids.map(rtbBid => {
+      const prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
         creativeId: rtbBid.crid,
@@ -86,7 +86,7 @@ export const spec = {
 registerBidder(spec);
 
 function cookingImp(bidReq) {
-  let imp = {};
+  const imp = {};
   if (bidReq) {
     const bidfloor = getBidFloor(bidReq);
     if (bidfloor) {
@@ -115,7 +115,7 @@ function getBidFloor(bidRequest) {
   let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
 
   if (!bidfloor && isFn(bidRequest.getFloor)) {
-    let floor = bidRequest.getFloor({
+    const floor = bidRequest.getFloor({
       currency: 'USD',
       mediaType: '*',
       size: '*'

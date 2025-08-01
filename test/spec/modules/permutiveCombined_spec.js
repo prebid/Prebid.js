@@ -14,7 +14,7 @@ import {
 } from 'modules/permutiveRtdProvider.js'
 import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
-import { permutiveIdentityManagerIdSubmodule } from '../../../modules/permutiveIdentityManagerIdSystem'
+import { permutiveIdentityManagerIdSubmodule } from '../../../modules/permutiveIdentityManagerIdSystem.js'
 
 describe('permutiveRtdProvider', function () {
   beforeEach(function () {
@@ -30,7 +30,7 @@ describe('permutiveRtdProvider', function () {
   })
 
   describe('permutiveSubmodule', function () {
-    it('should initalise and return true', function () {
+    it('should initialise and return true', function () {
       expect(permutiveSubmodule.init()).to.equal(true)
     })
   })

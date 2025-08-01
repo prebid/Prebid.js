@@ -32,7 +32,7 @@ export const internal = {
   mappedParams: {}
 }
 
-let r2b2Error = function(message, params) {
+const r2b2Error = function(message, params) {
   logError(message, params, BIDDER_CODE)
 }
 
@@ -118,7 +118,7 @@ function setUpRenderer(adUnitCode, bid) {
       return sourceDocument;
     }
   }
-  let renderer = Renderer.install({
+  const renderer = Renderer.install({
     url: RENDERER_URL,
     config: config,
     id: bid.requestId,
@@ -128,7 +128,7 @@ function setUpRenderer(adUnitCode, bid) {
   renderer.setRender(function (bid, doc) {
     doc = renderDoc || doc;
     window.R2B2 = window.R2B2 || {};
-    let main = window.R2B2;
+    const main = window.R2B2;
     main.HB = main.HB || {};
     main.HB.Render = main.HB.Render || {};
     main.HB.Render.queue = main.HB.Render.queue || [];
@@ -169,7 +169,7 @@ function createPrebidResponseBid(requestImp, bidResponse, serverResponse, bids) 
   const bidId = requestImp.id;
   const adUnitCode = bids[0].adUnitCode;
   const mediaType = bidResponse.ext.prebid.type;
-  let bidOut = {
+  const bidOut = {
     requestId: bidId,
     cpm: bidResponse.price,
     creativeId: bidResponse.crid,
@@ -228,20 +228,20 @@ export const spec = {
 
   interpretResponse: function(serverResponse, request) {
     // r2b2Error('error message', {params: 1});
-    let prebidResponses = [];
+    const prebidResponses = [];
 
     const response = serverResponse.body;
     if (!response || !response.seatbid || !response.seatbid[0] || !response.seatbid[0].bid) {
       return prebidResponses;
     }
-    let requestImps = request.data.imp || [];
+    const requestImps = request.data.imp || [];
     try {
       response.seatbid.forEach(seat => {
-        let bids = seat.bid;
+        const bids = seat.bid;
 
-        for (let responseBid of bids) {
-          let responseImpId = responseBid.impid;
-          let requestCurrentImp = requestImps.find((requestImp) => requestImp.id === responseImpId);
+        for (const responseBid of bids) {
+          const responseImpId = responseBid.impid;
+          const requestCurrentImp = requestImps.find((requestImp) => requestImp.id === responseImpId);
           if (!requestCurrentImp) {
             r2b2Error('Cant match bid response.', {impid: Boolean(responseBid.impid)});
             continue;// Skip this iteration if there's no match
@@ -302,7 +302,7 @@ export const spec = {
     triggerEvent(URL_EVENT_ON_TIMEOUT, getIdsFromBids(bids))
   },
   onBidderError: function(params) {
-    let { bidderRequest } = params;
+    const { bidderRequest } = params;
     triggerEvent(URL_EVENT_ON_BIDDER_ERROR, getIdsFromBids(bidderRequest.bids))
   }
 }

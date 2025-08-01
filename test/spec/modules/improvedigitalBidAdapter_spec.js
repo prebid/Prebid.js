@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
 import {config} from 'src/config.js';
 import {deepClone} from 'src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import {deepSetValue} from '../../../src/utils';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import {deepSetValue} from '../../../src/utils.js';
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';
@@ -21,7 +21,7 @@ describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
   const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
   const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
-  const PB_ENDPOINT = 'pb'; []
+  const PB_ENDPOINT = 'pb';
   const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
   const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
@@ -396,7 +396,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
       // getFloor defined -> use it over bidFloor
-      let getFloorResponse = { currency: 'USD', floor: 3 };
+      const getFloorResponse = { currency: 'USD', floor: 3 };
       bidRequest.getFloor = () => getFloorResponse;
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
       expect(payload.imp[0].bidfloor).to.equal(3);
@@ -521,8 +521,8 @@ describe('Improve Digital Adapter Tests', function () {
         const videoTestInvParam = Object.assign({}, videoTest);
         videoTestInvParam.blah = 1;
         bidRequest.params.video = videoTestInvParam;
-        let request = spec.buildRequests([bidRequest], {})[0];
-        let payload = JSON.parse(request.data);
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
         expect(payload.imp[0].video.blah).not.to.exist;
       });
 
@@ -670,8 +670,8 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should not set site when app is defined in FPD', function () {
       const ortb2 = {app: {content: 'XYZ'}};
-      let request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
-      let payload = JSON.parse(request.data);
+      const request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
+      const payload = JSON.parse(request.data);
       expect(payload.site).does.not.exist;
       expect(payload.app).does.exist;
       expect(payload.app.content).does.exist.and.equal('XYZ');
@@ -801,7 +801,7 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
       try {
-        spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[0];
+        spec.buildRequests([bidRequest, bidRequest2], bidderRequest);
       } catch (e) {
         expect(e.name).to.exist.equal('Error')
         expect(e.message).to.exist.equal(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`)
@@ -1348,7 +1348,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should attach usp consent to iframe sync url', function () {
       spec.buildRequests([simpleBidRequest], bidderRequest);
-      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, null, uspConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, null, uspConsent);
       expect(syncs).to.deep.equal([{ type: 'iframe', url: `${basicIframeSyncUrl}&us_privacy=${uspConsent}` }]);
     });
 
@@ -1374,8 +1374,8 @@ describe('Improve Digital Adapter Tests', function () {
       spec.buildRequests([simpleBidRequest], {});
       const rawResponse = deepClone(serverResponse)
       deepSetValue(rawResponse, 'body.ext.responsetimemillis', {a: 1, b: 1, c: 1, d: 1, e: 1})
-      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [rawResponse]);
-      let url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e'
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [rawResponse]);
+      const url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e'
       expect(syncs).to.deep.equal([{ type: 'iframe', url }]);
     });
   });

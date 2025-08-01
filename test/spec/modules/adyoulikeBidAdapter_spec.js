@@ -566,7 +566,7 @@ describe('Adyoulike Adapter', function () {
   ];
   const adapter = newBidder(spec);
 
-  let getEndpoint = (dc = defaultDC) => `https://${dc}.omnitagjs.com/hb-api/prebid`;
+  const getEndpoint = (dc = defaultDC) => `https://${dc}.omnitagjs.com/hb-api/prebid`;
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -575,7 +575,7 @@ describe('Adyoulike Adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-1',
@@ -586,7 +586,7 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    let bidWSize = {
+    const bidWSize = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-1',
@@ -597,7 +597,7 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    let nativeBid = {
+    const nativeBid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-1',
@@ -625,14 +625,14 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.sizes;
 
       expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placement': 0
@@ -666,9 +666,9 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should add gdpr/usp consent information and SChain to the request', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let uspConsentData = '1YCC';
-      let bidderRequest = {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const uspConsentData = '1YCC';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -692,9 +692,9 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should not set a default value for gdpr consentRequired', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let uspConsentData = '1YCC';
-      let bidderRequest = {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const uspConsentData = '1YCC';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -715,7 +715,7 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should add eids eids information to the request', function () {
-      let bidRequest = bidRequestWithSinglePlacement;
+      const bidRequest = bidRequestWithSinglePlacement;
       bidRequest[0].userIdAsEids = [{
         'source': 'pubcid.org',
         'uids': [{
@@ -820,24 +820,24 @@ describe('Adyoulike Adapter', function () {
 
     it('handles 204 responses', function () {
       serverResponse.body = '';
-      let result = spec.interpretResponse(serverResponse, []);
+      const result = spec.interpretResponse(serverResponse, []);
       expect(result).deep.equal([]);
     });
 
     it('handles nobid responses', function () {
-      let response = [{
+      const response = [{
         BidID: '123dfsdf',
         Attempt: '32344fdse1',
         Placement: '12df1'
       }];
       serverResponse.body = response;
-      let result = spec.interpretResponse(serverResponse, []);
+      const result = spec.interpretResponse(serverResponse, []);
       expect(result).deep.equal([]);
     });
 
     it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
+      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0.5);
@@ -849,7 +849,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
+      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
 
       expect(result.length).to.equal(2);
 
@@ -866,7 +866,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with Native from ad markup', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
 
       expect(result.length).to.equal(1);
 
@@ -875,7 +875,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with Native ad', function () {
       serverResponse.body = responseWithSingleNative;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
 
       expect(result.length).to.equal(1);
 
@@ -890,7 +890,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive Vast reponse with Video ad', function () {
       serverResponse.body = responseWithSingleVideo;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
+      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result).to.deep.equal(videoResult);

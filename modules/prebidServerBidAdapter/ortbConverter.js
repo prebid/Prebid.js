@@ -59,7 +59,7 @@ const PBS_CONVERTER = ortbConverter({
     if (!imps.length) {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
     } else {
-      let {s2sBidRequest} = context;
+      const {s2sBidRequest} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = Math.floor(s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout));
@@ -217,7 +217,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => ({
                 bidders: [req.bidderCode],
-                schain: req?.bids?.[0]?.ortb2?.source?.schain
+                schain: req?.bids?.[0]?.ortb2?.source?.ext?.schain
               })))
             .filter(({bidders, schain}) => bidders?.length > 0 && schain)
             .reduce((chains, {bidders, schain}) => {
