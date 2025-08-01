@@ -259,8 +259,8 @@ function makeOutstreamRenderer(bidId, adUnitCode, localPlayerConfiguration = {},
     loaded: false,
     config: {
       selector: formatSelector(adUnitCode),
-      ...localPlayerConfiguration,
-      ...remotePlayerConfiguration
+      ...remotePlayerConfiguration,
+      ...localPlayerConfiguration
     },
   })
 
