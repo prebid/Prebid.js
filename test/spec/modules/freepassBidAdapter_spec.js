@@ -13,11 +13,16 @@ describe('FreePass adapter', function () {
   describe('isBidRequestValid', function () {
     const bid = {
       bidder: 'freepass',
-      userId: {
-        freepassId: {
-          userId: 'fpid'
-        }
-      },
+      userIdAsEids: [{
+        source: 'freepass.jp',
+        uids: [{
+          id: 'commonIdValue',
+          ext: {
+            userId: 'fpid',
+            ip: '172.21.0.1'
+          }
+        }]
+      }],
       adUnitCode: 'adunit-code',
       params: {
         publisherId: 'publisherIdValue'
@@ -29,13 +34,13 @@ describe('FreePass adapter', function () {
     });
 
     it('should return false when adUnitCode is missing', function () {
-      let localBid = Object.assign({}, bid);
+      const localBid = Object.assign({}, bid);
       delete localBid.adUnitCode;
       expect(spec.isBidRequestValid(localBid)).to.equal(false);
     });
 
     it('should return false when params.publisherId is missing', function () {
-      let localBid = Object.assign({}, bid);
+      const localBid = Object.assign({}, bid);
       delete localBid.params.publisherId;
       expect(spec.isBidRequestValid(localBid)).to.equal(false);
     });
@@ -46,13 +51,16 @@ describe('FreePass adapter', function () {
     beforeEach(function () {
       bidRequests = [{
         'bidder': 'freepass',
-        'userId': {
-          'freepassId': {
-            'userIp': '172.21.0.1',
-            'userId': '56c4c789-71ce-46f5-989e-9e543f3d5f96',
-            'commonId': 'commonIdValue'
-          }
-        },
+        'userIdAsEids': [{
+          source: 'freepass.jp',
+          uids: [{
+            id: 'commonIdValue',
+            ext: {
+              userId: '56c4c789-71ce-46f5-989e-9e543f3d5f96',
+              ip: '172.21.0.1'
+            }
+          }]
+        }],
         'adUnitCode': 'adunit-code',
         'params': {
           'publisherId': 'publisherIdValue'
@@ -65,6 +73,12 @@ describe('FreePass adapter', function () {
       const bidRequest = spec.buildRequests([], bidderRequest);
       expect(bidRequest).to.be.an('array');
       expect(bidRequest.length).to.equal(0);
+    });
+
+    it('should handle missing userIdAsEids gracefully', function () {
+      const localBidRequests = [JSON.parse(JSON.stringify(bidRequests[0]))];
+      delete localBidRequests[0].userIdAsEids;
+      expect(() => spec.buildRequests(localBidRequests, bidderRequest)).to.not.throw();
     });
 
     it('should return a valid bid request object', function () {
@@ -93,8 +107,8 @@ describe('FreePass adapter', function () {
     });
 
     it('should skip freepass commonId when not available', function () {
-      let localBidRequests = [Object.assign({}, bidRequests[0])];
-      delete localBidRequests[0].userId.freepassId.commonId;
+      const localBidRequests = [JSON.parse(JSON.stringify(bidRequests[0]))];
+      localBidRequests[0].userIdAsEids[0].uids[0].id = undefined;
       const bidRequest = spec.buildRequests(localBidRequests, bidderRequest);
       const ortbData = bidRequest.data;
       expect(ortbData.user).to.be.an('object');
@@ -112,8 +126,8 @@ describe('FreePass adapter', function () {
     });
 
     it('should skip IP information when not available', function () {
-      let localBidRequests = [Object.assign({}, bidRequests[0])];
-      delete localBidRequests[0].userId.freepassId.userIp;
+      const localBidRequests = [JSON.parse(JSON.stringify(bidRequests[0]))];
+      delete localBidRequests[0].userIdAsEids[0].uids[0].ext.ip;
       const bidRequest = spec.buildRequests(localBidRequests, bidderRequest);
       const ortbData = bidRequest.data;
       expect(ortbData.device).to.be.an('object');
@@ -133,7 +147,7 @@ describe('FreePass adapter', function () {
 
     it('it should add publisher related information w/ publisherUrl', function () {
       const PUBLISHER_URL = 'publisherUrlValue';
-      let localBidRequests = [Object.assign({}, bidRequests[0])];
+      const localBidRequests = [Object.assign({}, bidRequests[0])];
       localBidRequests[0].params.publisherUrl = PUBLISHER_URL;
       const bidRequest = spec.buildRequests(localBidRequests, bidderRequest);
       const ortbData = bidRequest.data;
@@ -156,13 +170,16 @@ describe('FreePass adapter', function () {
       bidRequests = [{
         'bidId': '28ffdf2a952532',
         'bidder': 'freepass',
-        'userId': {
-          'freepassId': {
-            'userIp': '172.21.0.1',
-            'userId': '56c4c789-71ce-46f5-989e-9e543f3d5f96',
-            'commonId': 'commonIdValue'
-          }
-        },
+        'userIdAsEids': [{
+          source: 'freepass.jp',
+          uids: [{
+            id: 'commonIdValue',
+            ext: {
+              userId: '56c4c789-71ce-46f5-989e-9e543f3d5f96',
+              ip: '172.21.0.1'
+            }
+          }]
+        }],
         'adUnitCode': 'adunit-code',
         'params': {
           'publisherId': 'publisherIdValue'

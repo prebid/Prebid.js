@@ -26,6 +26,12 @@ describe("lockr AIM ID System", function () {
     hook.ready();
   });
 
+  afterEach(() => {
+    coreStorage.removeDataFromLocalStorage(LIVE_RAMP_COOKIE);
+    coreStorage.removeDataFromLocalStorage(UID2_COOKIE);
+    coreStorage.removeDataFromLocalStorage(ID5_COOKIE);
+  });
+
   describe("Check for invalid publisher config and GDPR", function () {
     it("Should fail for invalid config", async function () {
       // no Config

@@ -44,7 +44,7 @@ export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation
     return fn.call(this, adUnitCode, bid, reject);
   }
 
-  let localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
+  const localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
 
   if (bid.meta && !bid.meta.adServerCatId) {
     let mapping = storage.getDataFromLocalStorage(localStorageKey);

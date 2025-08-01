@@ -32,7 +32,7 @@ function isHex(s) {
 }
 
 function publinkIdUrl(params, consentData, storedId) {
-  let url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
+  const url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
     mpn: 'Prebid.js',
     mpv: '$prebid.version$',
@@ -70,9 +70,9 @@ function publinkIdUrl(params, consentData, storedId) {
 function makeCallback(config = {}, consentData, storedId) {
   return function(prebidCallback) {
     const options = {method: 'GET', withCredentials: true};
-    let handleResponse = function(responseText, xhr) {
+    const handleResponse = function(responseText, xhr) {
       if (xhr.status === 200) {
-        let response = JSON.parse(responseText);
+        const response = JSON.parse(responseText);
         if (response) {
           prebidCallback(response.publink);
         }

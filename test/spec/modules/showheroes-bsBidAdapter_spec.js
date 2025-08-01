@@ -1,10 +1,10 @@
 import { expect } from 'chai'
 import { spec } from 'modules/showheroes-bsBidAdapter.js'
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import { VIDEO } from 'src/mediaTypes.js'
 
 const bidderRequest = {
@@ -79,7 +79,25 @@ const bidRequestOutstreamV2 = {
   }
 }
 
+const bidRequestBannerV2 = {
+  ...bidRequestCommonParamsV2,
+  ...{
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      }
+    }
+  }
+}
+
 describe('shBidAdapter', () => {
+  before(() => {
+    // without this change in the Renderer.js file exception is thrown
+    // because 'adUnits' is undefined, and there is a call that does
+    // 'pbjs.adUnits.find' in the Renderer.js file
+    getGlobal().adUnits = [];
+  });
+
   it('validates request', () => {
     const bid = {
       params: {
@@ -99,10 +117,18 @@ describe('shBidAdapter', () => {
       bids: [bidRequestVideoV2],
       ...bidderRequest,
       ...gdpr,
-      ...schain,
       ...{uspConsent: uspConsent},
+      ortb2: {
+        source: {
+          ext: {schain: schain.schain.config}
+        }
+      }
     };
-    bidRequest.schain = schain.schain.config;
+    bidRequest.ortb2 = {
+      source: {
+        ext: {schain: schain.schain.config}
+      }
+    };
     const getFloorResponse = {currency: 'EUR', floor: 3};
     bidRequest.getFloor = () => getFloorResponse;
     const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(fullRequest));
@@ -110,7 +136,7 @@ describe('shBidAdapter', () => {
     expect(payload.regs.ext.gdpr).to.eql(Number(gdpr.gdprConsent.gdprApplies));
     expect(payload.regs.ext.us_privacy).to.eql(uspConsent);
     expect(payload.user.ext.consent).to.eql(gdpr.gdprConsent.consentString);
-    expect(payload.source.ext.schain).to.eql(bidRequest.schain);
+    expect(payload.source.ext.schain).to.deep.equal(bidRequest.ortb2.source.ext.schain);
     expect(payload.test).to.eql(0);
     expect(payload.imp[0].bidfloor).eql(3);
     expect(payload.imp[0].bidfloorcur).eql('EUR');
@@ -132,6 +158,7 @@ describe('shBidAdapter', () => {
           adm: vastXml,
           impid: '38b373e1e31c18',
           crid: 'c_38b373e1e31c18',
+          mtype: 2, // 2 = video
           adomain: adomain,
           ext: {
             callbacks: {
@@ -242,6 +269,58 @@ describe('shBidAdapter', () => {
         expect(bid.vastUrl).to.eql(vastUrl);
       })
     }
+
+    it('should get correct bid response when type is banner', function () {
+      const request = spec.buildRequests([bidRequestBannerV2], bidderRequest);
+      const bannerResponse = {
+        cur: 'EUR',
+        seatbid: [{
+          bid: [{
+            price: 1,
+            w: 300,
+            h: 250,
+            adm: '<div>test banner</div>',
+            impid: '38b373e1e31c18',
+            crid: 'c_38b373e1e31c18',
+            mtype: 1, // 1 = banner
+            adomain: adomain,
+            ext: {
+              callbacks: {
+                won: [callback_won],
+              },
+              extra: 'test',
+            },
+          }],
+          seat: 'showheroes',
+        }]
+      };
+
+      const expectedResponse = [
+        {
+          cpm: 1,
+          creativeId: 'c_38b373e1e31c18',
+          creative_id: 'c_38b373e1e31c18',
+          currency: 'EUR',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          netRevenue: true,
+          requestId: '38b373e1e31c18',
+          ttl: 300,
+          meta: {
+            advertiserDomains: adomain,
+          },
+          ad: '<div>test banner</div>',
+          callbacks: {
+            won: [callback_won],
+          },
+          extra: 'test',
+        }
+      ];
+
+      const result = spec.interpretResponse({ 'body': bannerResponse }, request);
+      expect(result).to.deep.equal(expectedResponse);
+    })
   });
 
   describe('getUserSyncs', function () {
@@ -257,13 +336,13 @@ describe('shBidAdapter', () => {
     }]
 
     it('empty', function () {
-      let result = spec.getUserSyncs({}, []);
+      const result = spec.getUserSyncs({}, []);
 
       expect(result).to.deep.equal([]);
     });
 
     it('iframe', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         iframeEnabled: true
       }, response);
 
@@ -272,7 +351,7 @@ describe('shBidAdapter', () => {
     });
 
     it('pixel', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         pixelEnabled: true
       }, response);
 

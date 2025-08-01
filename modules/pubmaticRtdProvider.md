@@ -6,7 +6,7 @@
 
 ## Description
 
-The PubMatic RTD module fetches pricing floor data and updates the Price Floors Module based on user's context in real-time as per Price Floors Modules Floor Data Provider Interface guidelines [Dynamic Floor Data Provider](https://docs.prebid.org/dev-docs/modules/floors.html#floor-data-provider-interface).
+The PubMatic RTD module provides dynamic yield optimization by fetching real-time pricing floor data and generating targeting data for ad server integration and reporting. The module integrates with Prebid's Price Floors system as per [Dynamic Floor Data Provider](https://docs.prebid.org/dev-docs/modules/floors.html#floor-data-provider-interface) guidelines.
 
 ## Usage
 
@@ -66,7 +66,17 @@ pbjs.setConfig({
 | params.publisherId | String  | Publisher ID                                                   |                            |
 | params.profileId   | String  | Profile ID                                                     |                            |
 
+## Targeting Keys
+
+The module sets the following targeting keys for ad server integration and reporting:
+
+| Key | Description | Values |
+| :-- | :---------- | :----- |
+| pm_ym_flrs | Whether RTD floor was applied to the auction | 0 (not applied)/1 (applied) |
+| pm_ym_flrv | Floor value after applying dynamic multipliers | Decimal value (e.g., "1.25") |
+| pm_ym_bid_s | Bid outcome status | 0 (no bid), 1 (won), 2 (floored) |
+
 
 ## What Should Change in the Bid Request?
 
-There are no direct changes in the bid request due to our RTD module, but floor configuration will be set using the price floors module. These changes will be reflected in adunit bids or bidder requests as floor data.
+The RTD module applies dynamic floor configuration through the Price Floors module, which affects floor values in bid requests. Additionally, the module generates targeting data that is made available to the ad server.

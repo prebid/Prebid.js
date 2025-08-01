@@ -31,6 +31,8 @@ import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagio
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
+import {getGlobalVarName} from '../src/buildOptions.js';
+
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
@@ -446,7 +448,7 @@ function storeRequestInAdagioNS(bid, config) {
       bidderRequestsCount,
       ortb2: ortb2Data,
       ortb2Imp: ortb2ImpData,
-      localPbjs: '$$PREBID_GLOBAL$$',
+      localPbjs: getGlobalVarName(),
       localPbjsRef: getGlobal(),
       organizationId,
       site
@@ -522,7 +524,7 @@ function getSlotPosition(divId) {
         return '';
       }
 
-      let box = getBoundingClientRect(domElement);
+      const box = getBoundingClientRect(domElement);
 
       const windowDimensions = getWinDimensions();
 
