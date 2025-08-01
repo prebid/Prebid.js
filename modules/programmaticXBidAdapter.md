@@ -1,79 +1,36 @@
 # Overview
 
-```
-Module Name: ProgrammaticX Bidder Adapter
-Module Type: ProgrammaticX Bidder Adapter
-Maintainer: pxteam@programmaticx.ai
-```
+**Module Name:** ProgrammaticX Bidder Adapter
+
+**Module Type:** Bidder Adapter
+
+**Maintainer:** pxteam@programmaticx.ai
 
 # Description
 
-Connects to ProgrammaticX Bidder exchange for bids.
-ProgrammaticX Bidder bid adapter supports Banner, Video (instream and outstream) and Native.
+Module that connects to ProgrammaticX's Open RTB demand sources.
 
 # Test Parameters
-```
-    var adUnits = [
-                // Will return static test banner
-                {
-                    code: 'adunit1',
-                    mediaTypes: {
-                        banner: {
-                            sizes: [ [300, 250], [320, 50] ],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'programmaticX',
-                            params: {
-                                placementId: 'testBanner',
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit2',
-                    mediaTypes: {
-                        video: {
-                            playerSize: [ [640, 480] ],
-                            context: 'instream',
-                            minduration: 5,
-                            maxduration: 60,
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'programmaticX',
-                            params: {
-                                placementId: 'testVideo',
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit3',
-                    mediaTypes: {
-                        native: {
-                            title: {
-                                required: true
-                            },
-                            body: {
-                                required: true
-                            },
-                            icon: {
-                                required: true,
-                                size: [64, 64]
-                            }
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'programmaticX',
-                            params: {
-                                placementId: 'testNative',
-                            }
-                        }
-                    ]
-                }
-            ];
+```js
+var adUnits = [
+  {
+    code: 'test-ad',
+    sizes: [[300, 250]],
+    bids: [
+      {
+        bidder: 'programmaticX',
+        params: {
+          cId: '562524b21b1c1f08117fc7f9',
+          pId: '59ac17c192832d0011283fe3',
+          bidFloor: 0.0001,
+          ext: {
+            param1: 'loremipsum',
+            param2: 'dolorsitamet'
+          },
+          placementId: 'testBanner'
+        }
+      }
+    ]
+  }
+];
 ```

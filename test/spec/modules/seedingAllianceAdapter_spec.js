@@ -2,6 +2,7 @@
 import {assert, expect} from 'chai';
 import {getStorageManager} from 'src/storageManager.js';
 import {spec} from 'modules/seedingAllianceBidAdapter.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('SeedingAlliance adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -88,7 +89,7 @@ describe('SeedingAlliance adapter', function () {
 
     it('should return an empty array if local storage is not enabled', function () {
       localStorageIsEnabledStub.returns(false);
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -99,7 +100,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an empty array if local storage is enabled but storageAllowed is false', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -111,7 +112,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return a non empty array if local storage is enabled and storageAllowed is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
@@ -123,7 +124,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an array containing the nativendoUserEid', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }

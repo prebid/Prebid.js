@@ -5,8 +5,9 @@ import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
 import {resetWinDimensions} from '../../../src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
-$$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
+getGlobal().version = getGlobal().version || 'version';
 const VALID_BID_REQUEST = [{
   'bidder': 'medianet',
   'params': {
@@ -1976,7 +1977,7 @@ describe('Media.net bid adapter', function () {
 
   describe('buildRequests', function () {
     beforeEach(function () {
-      $$PREBID_GLOBAL$$.medianetGlobals = {};
+      getGlobal().medianetGlobals = {};
 
       const documentStub = sandbox.stub(document, 'getElementById');
       const boundingRect = {
@@ -2406,7 +2407,7 @@ describe('Media.net bid adapter', function () {
           'floor': 1
         }
       };
-      $$PREBID_GLOBAL$$.medianetGlobals = {};
+      getGlobal().medianetGlobals = {};
 
       const documentStub = sandbox.stub(document, 'getElementById');
       const boundingRect = {

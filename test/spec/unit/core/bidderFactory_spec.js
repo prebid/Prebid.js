@@ -15,6 +15,7 @@ import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
 import * as activityRules from 'src/activities/rules.js';
 import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../../../../src/activities/activities.js';
+import {getGlobal} from '../../../../src/prebidGlobal.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -503,11 +504,11 @@ describe('bidderFactory', () => {
       describe('browsingTopics ajax option', () => {
         let transmitUfpdAllowed, bidder, origBS;
         before(() => {
-          origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
+          origBS = getGlobal().bidderSettings;
         })
 
         after(() => {
-          window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
+          getGlobal().bidderSettings = origBS;
         });
 
         beforeEach(() => {
@@ -542,7 +543,7 @@ describe('bidderFactory', () => {
         }).forEach(([t, [topicsHeader, enabled]]) => {
           describe(`when bidderSettings.topicsHeader is ${t}`, () => {
             beforeEach(() => {
-              window.$$PREBID_GLOBAL$$.bidderSettings = {
+              getGlobal().bidderSettings = {
                 [CODE]: {
                   topicsHeader: topicsHeader
                 }
@@ -550,7 +551,7 @@ describe('bidderFactory', () => {
             });
 
             afterEach(() => {
-              delete window.$$PREBID_GLOBAL$$.bidderSettings[CODE];
+              delete getGlobal().bidderSettings[CODE];
             });
 
             Object.entries({
@@ -1238,7 +1239,7 @@ describe('bidderFactory', () => {
     afterEach(function () {
       ajaxStub.restore();
       logErrorSpy.restore();
-      indexStub.restore;
+      indexStub.restore();
     });
 
     if (FEATURES.NATIVE) {
@@ -1737,7 +1738,7 @@ describe('bidderFactory', () => {
     let debugTurnedOnStub;
 
     before(() => {
-      origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
+      origBS = getGlobal().bidderSettings;
     });
 
     beforeEach(() => {
@@ -1772,7 +1773,7 @@ describe('bidderFactory', () => {
       if (doneStub.restore) doneStub.restore();
       getParameterByNameStub.restore();
       debugTurnedOnStub.restore();
-      window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
+      getGlobal().bidderSettings = origBS;
     });
 
     it('should send a gzip compressed payload when gzip is supported and enabled', function (done) {
