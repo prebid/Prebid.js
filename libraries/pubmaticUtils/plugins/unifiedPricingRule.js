@@ -1,5 +1,4 @@
 // plugins/unifiedPricingRule.js
-import { ConfigJsonManager } from '../configJsonManager.js';
 import { logError, logInfo } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
@@ -21,14 +20,20 @@ const CONSTANTS = Object.freeze({
     PM_YM_BID_S: 'pm_ym_bid_s' // Bid status (0: No bid, 1: Won, 2: Floored)
   }
 });
-export const getProfileConfigs = () => ConfigJsonManager().getYMConfig();
+export const getProfileConfigs = () => getConfigJsonManager().getYMConfig();
+
+let _configJsonManager = null;
+export const getConfigJsonManager = () => _configJsonManager;
+export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; }
 
 /**
  * Initialize the floor provider
- * @param {Object} config - Configuration object
+ * @param {Object} pluginName - Plugin name
+ * @param {Object} configJsonManager - Configuration JSON manager object
  * @returns {Promise<boolean>} - Promise resolving to initialization status
  */
-export async function init(config) {
+export async function init(pluginName, configJsonManager) {
+  setConfigJsonManager(configJsonManager);
   return true;
 }
 

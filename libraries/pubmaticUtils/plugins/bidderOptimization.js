@@ -9,13 +9,14 @@ const CONSTANTS = Object.freeze({
 
 /**
  * Initialize the bidder optimization plugin
- * @param {Object} bidderOptimisationConfig - Bidder optimization configuration
+ * @param {Object} pluginName - Plugin name
+ * @param {Object} configJsonManager - Configuration JSON manager object
  * @returns {Promise<boolean>} - Promise resolving to initialization status
  */
-export async function init(bidderOptimisationConfig) {
+export async function init(pluginName, configJsonManager) {
   // Process bidder optimization configuration
   try {
-    setBidderOptimisationConfig(bidderOptimisationConfig);
+    setBidderOptimisationConfig(configJsonManager.getConfigByName(pluginName));
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration set successfully`);
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error setting bidder optimization config: ${error}`);
