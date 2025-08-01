@@ -196,7 +196,7 @@ export const spec = {
 
         if (impressionRequest && bidRequest) {
           const { adUnitCode } = impressionRequest
-          const { params: { video: localPlayerConfiguration } } = bidRequest
+          const localPlayerConfiguration = bidRequest.params?.video || {}
 
           formattedBid.renderer = makeOutstreamRenderer(bidId, adUnitCode, localPlayerConfiguration, rendering.video?.player)
         } else {
