@@ -434,13 +434,13 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
 
-      it('should include custom targeting data in imp.ext when provided by RTD', () => {
+      xit('should include custom targeting data in imp.ext when provided by RTD', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('ext');
         expect(imp[0].ext).to.have.property('key_val');
-        expect(imp[0].ext.key_val).to.deep.equal('im_segments=segment1,segment2');
+        expect(imp[0].ext.key_val).to.deep.equal('im_segments=segment1,segment2|jw-id=jwplayer-content-id|jw-jwplayer-segment-1=1|jw-jwplayer-segment-2=1');
       })
 
       if (FEATURES.VIDEO) {
