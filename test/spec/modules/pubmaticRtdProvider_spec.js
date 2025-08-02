@@ -830,7 +830,7 @@ describe('Pubmatic RTD Provider', () => {
                     return [];
                 }
             };
-            
+
             // Stub getGlobal to return our mock object
             const getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns(mockPbjs);
 
@@ -865,8 +865,7 @@ describe('Pubmatic RTD Provider', () => {
                             "floorValue": 5,
                             "floorRule": "banner|*|*|div2|*|*|*|*|*",
                             "floorRuleValue": 5,
-                            "floorCurrency": "USD",
-                            
+                            "floorCurrency": "USD"
                         },
                         "bidder": "appnexus",
                     }
@@ -879,9 +878,7 @@ describe('Pubmatic RTD Provider', () => {
 
             // Restore the original value
             setProfileConfigs(originalProfileConfigs);
-           
             // Check the test results
-
             expect(result['div2']).to.have.property('pm_ym_flrs', 1);
             expect(result['div2']).to.have.property('pm_ym_flrv', '5.50');
             expect(result['div2']).to.have.property('pm_ym_bid_s', 1);
@@ -891,7 +888,6 @@ describe('Pubmatic RTD Provider', () => {
             expect(result['div3']).to.have.property('pm_ym_bid_s', 2);
 
             getGlobalStub.restore();
-
         });
 
         describe('should handle the no bid scenario correctly', function () {
@@ -1241,6 +1237,5 @@ describe('Pubmatic RTD Provider', () => {
                 getFloorSpy.restore();
             });
         });
-
     });
 });
