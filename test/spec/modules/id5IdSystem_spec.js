@@ -929,7 +929,7 @@ describe('ID5 ID System', function () {
   });
 
   describe('Request Bids Hook', function () {
-    let adUnits;
+    let adUnits, ortb2Fragments;
     let sandbox;
 
     beforeEach(function () {
@@ -940,6 +940,9 @@ describe('ID5 ID System', function () {
       coreStorage.removeDataFromLocalStorage(`${id5System.ID5_STORAGE_NAME}_last`);
       coreStorage.setDataInLocalStorage(id5System.ID5_STORAGE_NAME + '_cst', getConsentHash());
       adUnits = [getAdUnitMock()];
+      ortb2Fragments = {
+        global: {}
+      }
     });
     afterEach(function () {
       events.getEvents.restore();
@@ -958,24 +961,18 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, () => {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
-              expect(bid.userId.id5id.uid).is.equal(ID5_STORED_ID);
-              expect(bid.userIdAsEids[0]).is.eql({
-                source: ID5_SOURCE,
-                uids: [{
-                  id: ID5_STORED_ID,
-                  atype: 1,
-                  ext: {
-                    linkType: ID5_STORED_LINK_TYPE
-                  }
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[0]).is.eql({
+            source: ID5_SOURCE,
+            uids: [{
+              id: ID5_STORED_ID,
+              atype: 1,
+              ext: {
+                linkType: ID5_STORED_LINK_TYPE
+              }
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
 
       it('should add stored EUID from cache to bids', function (done) {
@@ -986,25 +983,19 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.euid`);
-              expect(bid.userId.euid.uid).is.equal(EUID_STORED_ID);
-              expect(bid.userIdAsEids[0].uids[0].id).is.equal(ID5_STORED_ID);
-              expect(bid.userIdAsEids[1]).is.eql({
-                source: EUID_SOURCE,
-                uids: [{
-                  id: EUID_STORED_ID,
-                  atype: 3,
-                  ext: {
-                    provider: ID5_SOURCE
-                  }
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[0].uids[0].id).is.equal(ID5_STORED_ID);
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
+            source: EUID_SOURCE,
+            uids: [{
+              id: EUID_STORED_ID,
+              atype: 3,
+              ext: {
+                provider: ID5_SOURCE
+              }
+            }]
           });
           done();
-        }, {adUnits});
+        }, {ortb2Fragments});
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids', function (done) {
@@ -1015,21 +1006,15 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
-              expect(bid.userId.trueLinkId.uid).is.equal(TRUE_LINK_STORED_ID);
-              expect(bid.userIdAsEids[1]).is.eql({
-                source: TRUE_LINK_SOURCE,
-                uids: [{
-                  id: TRUE_LINK_STORED_ID,
-                  atype: 1
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
+            source: TRUE_LINK_SOURCE,
+            uids: [{
+              id: TRUE_LINK_STORED_ID,
+              atype: 1
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
     });
 
@@ -1072,25 +1057,16 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
         const id5IdEidUid = IDS_ID5ID.eid.uids[0];
         startAuctionHook(wrapAsyncExpects(done, () => {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
-              expect(bid.userId.id5id).is.eql({
-                uid: id5IdEidUid.id,
-                ext: id5IdEidUid.ext
-              });
-              expect(bid.userIdAsEids[0]).is.eql({
-                source: IDS_ID5ID.eid.source,
-                uids: [{
-                  id: id5IdEidUid.id,
-                  atype: id5IdEidUid.atype,
-                  ext: id5IdEidUid.ext
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[0]).is.eql({
+            source: IDS_ID5ID.eid.source,
+            uids: [{
+              id: id5IdEidUid.id,
+              atype: id5IdEidUid.atype,
+              ext: id5IdEidUid.ext
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
       it('should add stored EUID from cache to bids - from ids', function (done) {
         storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify({
@@ -1106,19 +1082,11 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, () => {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.euid`);
-              expect(bid.userId.euid).is.eql({
-                uid: IDS_EUID.eid.uids[0].id,
-                ext: IDS_EUID.eid.uids[0].ext
-              });
-              expect(bid.userIdAsEids[0]).is.eql(IDS_ID5ID.eid);
-              expect(bid.userIdAsEids[1]).is.eql(IDS_EUID.eid);
-            });
-          });
+          const eids = ortb2Fragments.global.user.ext.eids;
+          expect(eids[0]).is.eql(IDS_ID5ID.eid);
+          expect(eids[1]).is.eql(IDS_EUID.eid);
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids - from ids', function (done) {
@@ -1135,15 +1103,9 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
-              expect(bid.userId.trueLinkId.uid).is.eql(IDS_TRUE_LINK_ID.eid.uids[0].id);
-              expect(bid.userIdAsEids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
-            });
-          });
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
 
       it('should add other id from cache to bids', function (done) {
@@ -1176,25 +1138,19 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.otherId`);
-              expect(bid.userId.otherId.uid).is.eql('other-id-value');
-              expect(bid.userIdAsEids[1]).is.eql({
-                source: 'other-id.com',
-                inserter: 'id5-sync.com',
-                uids: [{
-                  id: 'other-id-value',
-                  atype: 2,
-                  ext: {
-                    provider: 'id5-sync.com'
-                  }
-                }]
-              });
-            });
+          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
+            source: 'other-id.com',
+            inserter: 'id5-sync.com',
+            uids: [{
+              id: 'other-id-value',
+              atype: 2,
+              ext: {
+                provider: 'id5-sync.com'
+              }
+            }]
           });
           done();
-        }), {adUnits});
+        }), {ortb2Fragments});
       });
     });
   });
