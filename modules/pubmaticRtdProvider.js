@@ -541,14 +541,28 @@ const init = (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   _ymConfigPromise.then(() => {
+    console.time('BidderDecision');
     const decision = getBidderDecision({
       auctionId: reqBidsConfigObj?.auctionId,
       browser: getBrowserType(),
       reqBidsConfigObj
     });
+    console.timeEnd('BidderDecision');
    console.log('Decision for bidder optimisation', decision);
-   for(const [adUnitCode, bidderList] of Object.entries(decision?.excludedBiddersByAdUnit)) {
-    filterBidders(bidderList, reqBidsConfigObj, adUnitCode);
+   if(!decision?.skipped){
+    for(const [adUnitCode, bidderList] of Object.entries(decision?.excludedBiddersByAdUnit)) {
+      filterBidders(bidderList, reqBidsConfigObj, adUnitCode);
+    }
+   }else {
+    //BO is skipped, set in ortb2 to use in reporting
+    const ortb2 = {
+      ext: {
+        bo_skipped: true,
+      }
+    }
+    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+      [CONSTANTS.SUBMODULE_NAME]: ortb2
+    });
    }
    console.log('RequestBid after exclusion of bidders ', reqBidsConfigObj);
 

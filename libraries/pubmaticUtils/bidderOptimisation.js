@@ -55,13 +55,34 @@ const _auctionDataCache = {};
  *
  * @param {Object} cfg The JSON using the two-map schema of “Approach A”.
  */
+function pickRandomModel(modelGroups) {
+  const valid = modelGroups.filter(m => typeof m.modelWeight === 'number' && m.modelWeight > 0);
+  const weightSum = valid.reduce((s, m) => s + m.modelWeight, 0);
+  if (!weightSum) return valid[0] || modelGroups[0];
+  let rnd = Math.floor(Math.random() * weightSum) + 1;
+  for (let m of valid) {
+    rnd -= m.modelWeight;
+    if (rnd <= 0) return m;
+  }
+  return valid[0] || modelGroups[0];
+}
+
 export function setBidderOptimisationConfig(cfg) {
   if (!cfg || typeof cfg !== 'object') {
     logWarn(`${MODULE_NAME}: invalid config supplied`, cfg);
     return;
   }
-  _optConfig = normaliseConfig(cfg);
-  logInfo(`${MODULE_NAME}: setBidderOptimisationConfig config loaded - version %s`, _optConfig.modelVersion);
+  // Handle multiple models with weights
+  let modelCfg = cfg;
+  if (Array.isArray(cfg.modelGroups) && cfg.modelGroups.length) {
+    modelCfg = pickRandomModel(cfg.modelGroups);
+  }
+  // inherit top-level skipRate if present
+  if (cfg.skipRate != null && modelCfg.skipRate == null) {
+    modelCfg.skipRate = cfg.skipRate;
+  }
+  _optConfig = normaliseConfig(modelCfg);
+  logInfo(`${MODULE_NAME}: setBidderOptimisationConfig config Decision loaded - version %s`, _optConfig.modelVersion);
 }
 
 /**
@@ -119,7 +140,7 @@ export function getBidderDecision(context = {}) {
 
   // Random skip handling – same semantics as priceFloors
   if (shouldSkip(_optConfig.skipRate)) {
-    return { ..._optConfig.default, skipped: true };
+    return { skipped: true };
   }
 
   // Pull / build auction-level prepared data once per auction
