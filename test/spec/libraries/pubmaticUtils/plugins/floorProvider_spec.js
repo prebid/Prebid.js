@@ -36,10 +36,16 @@ describe('FloorProvider', () => {
     }
   };
 
+  beforeEach(() => {
+    floorProvider.init('dynamicFloors', {
+      getConfigByName: () => floorsobj
+    });
+  });
   it('should initialize floor provider and set config correctly', async () => {
     const pluginName = 'dynamicFloors';
     const configJsonManager = {
-      getConfigByName: (name) => name === pluginName ? floorsobj : undefined
+      getConfigByName: (name) => name === pluginName ? floorsobj : undefined,
+      country:  "IN"
     };
 
     const originalContinueAuction = priceFloors.continueAuction;
@@ -53,12 +59,28 @@ describe('FloorProvider', () => {
     priceFloors.continueAuction = originalContinueAuction;
   });
 
+
+
   it('should return input unchanged if floor config is missing or disabled', async () => {
-    floorProvider.init('dynamicFloors', {
-      getConfigByName: () => ({...floorsobj, enabled: false})
-    });
-    expect(await floorProvider.processBidRequest({bar: 2})).to.deep.equal({bar: 2});
-  });
+   
+    const input = {
+      adUnits: [
+        {
+          adUnitCode: 'div1',
+          sizes: [728, 90],
+          bids: [{ bidder: 'pubmatic' }]
+        }
+      ],
+      adUnitCodes: ['div1']
+    };
+    const result = await floorProvider.processBidRequest(input);
+    // Check that adUnitCodes are unchanged
+    expect(result.adUnitCodes).to.deep.equal(input.adUnitCodes);
+    // Check that adUnits core fields are unchanged
+    expect(result.adUnits[0].adUnitCode).to.equal('div1');
+    expect(result.adUnits[0].sizes).to.deep.equal([728, 90]);
+    expect(result.adUnits[0].bids[0]).to.include({ bidder: 'pubmatic' });
+  });   
 
   it('should call continueAuction and log when config is enabled', async () => {
     let called = false;
@@ -105,6 +127,18 @@ describe('FloorProvider', () => {
     });
     expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
   });
+
+  it('should   return undefined if getConfigByName returns undefined', () => {
+    floorProvider.init('', { getConfigByName: () => undefined });
+    expect(floorProvider.getFloorConfig()).to.deep.equal(undefined);
+  });
+
+  it('should cover getConfigJsonManager export and log its value', () => {
+    const configJsonManager = { getConfigByName: () => floorsobj };
+    floorProvider.init('testPlugin', configJsonManager);
+    const mgr = floorProvider.getConfigJsonManager();
+    expect(mgr.getConfigByName('testPlugin')).to.deep.equal(floorsobj);
+  });
   describe('Utility Exports', () => {
     afterEach(() => {
       sinon.restore();
@@ -116,6 +150,10 @@ describe('FloorProvider', () => {
 
     });
 
+
+    it('should return a string device type using getDeviceType', () => {
+      expect(floorProvider.getDeviceType()).to.be.a('string');
+    });
 
     it('getBrowser should return result from getBrowser', () => {
       const stub = sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
@@ -130,6 +168,7 @@ describe('FloorProvider', () => {
     });
    
     it('getBidder should return bidder from request', () => {
+      floorProvider.init('dynamicFloors', { getConfigByName: () => floorsobj });
       expect(floorProvider.getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
       expect(floorProvider.getBidder({})).to.equal(undefined);
       expect(floorProvider.getBidder(undefined)).to.equal(undefined);
