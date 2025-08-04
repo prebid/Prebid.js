@@ -105,6 +105,7 @@ describe('Targeting lock', () => {
       });
 
       it('should unregister when disabled', () => {
+        lock.lock(targeting);
         config.resetConfig();
         sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded')
       })
