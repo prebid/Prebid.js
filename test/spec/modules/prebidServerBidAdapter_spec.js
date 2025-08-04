@@ -2491,14 +2491,16 @@ describe('S2S Adapter', function () {
       const bidRequest = utils.deepClone(BID_REQUESTS);
       bidRequest[0].bids[0].ortb2 = {
         source: {
-          schain: {
-            complete: 1,
-            nodes: [{
-              asi: 'test.com',
-              hp: 1,
-              sid: '11111'
-            }],
-            ver: '1.0'
+          ext: {
+            schain: {
+              complete: 1,
+              nodes: [{
+                asi: 'test.com',
+                hp: 1,
+                sid: '11111'
+              }],
+              ver: '1.0'
+            }
           }
         }
       };
@@ -2585,14 +2587,16 @@ describe('S2S Adapter', function () {
       const bidRequest = utils.deepClone(BID_REQUESTS);
       bidRequest[0].bids[0].ortb2 = {
         source: {
-          schain: {
-            complete: 1,
-            nodes: [{
-              asi: 'test.com',
-              hp: 1,
-              sid: '11111'
-            }],
-            ver: '1.0'
+          ext: {
+            schain: {
+              complete: 1,
+              nodes: [{
+                asi: 'test.com',
+                hp: 1,
+                sid: '11111'
+              }],
+              ver: '1.0'
+            }
           }
         }
       };
