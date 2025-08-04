@@ -20,7 +20,7 @@ const CONSTANTS = Object.freeze({
     PM_YM_BID_S: 'pm_ym_bid_s' // Bid status (0: No bid, 1: Won, 2: Floored)
   }
 });
-export const getProfileConfigs = () => getConfigJsonManager().getYMConfig();
+export const getProfileConfigs = () => getConfigJsonManager()?.getYMConfig();
 
 let _configJsonManager = null;
 export const getConfigJsonManager = () => _configJsonManager;
