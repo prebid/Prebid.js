@@ -1151,6 +1151,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "newdream",
+      "aliasOf": "appnexus",
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "matomy",
       "aliasOf": "appnexus",
       "gvlid": 32,
@@ -5566,6 +5573,11 @@
     {
       "componentType": "analytics",
       "componentName": "adnuntius",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "adplus",
       "gvlid": null
     },
     {

@@ -412,7 +412,7 @@ describe('secureCreatives', () => {
           sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
           return receive(ev);
         }).then(() => {
-          stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
+          expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
         });
       });
 
