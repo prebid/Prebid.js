@@ -668,7 +668,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.sd).to.be.an('object');
       expect(Object.keys(data.sd).length).to.equal(2);
 
-      // tracker slot1 
+      // tracker slot1
       let firstTracker = requests[0];
       expect(firstTracker.url).to.equal('https://t.pubmatic.com/wt?v=1&psrc=web');
       let trackerData = getLoggerJsonFromRequest(firstTracker.requestBody);
