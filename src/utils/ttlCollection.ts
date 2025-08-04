@@ -133,6 +133,18 @@ export function ttlCollection<T>(
     add(item: T) {
       !items.has(item) && items.set(item, mkEntry(item));
     },
+    delete(item: T) {
+      const toBeDeleted = items.get(item);
+      if (toBeDeleted) {
+        for (let i = 0; i < pendingPurge.length && pendingPurge[i].expiry <= toBeDeleted.expiry; i++) {
+          if (pendingPurge[i] === toBeDeleted) {
+            pendingPurge.splice(i, 1);
+            break;
+          }
+        }
+      }
+      return items.delete(item);
+    },
     /**
      * Clear this collection.
      */

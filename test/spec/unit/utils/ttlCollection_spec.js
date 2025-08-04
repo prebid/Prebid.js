@@ -9,6 +9,13 @@ describe('ttlCollection', () => {
     expect(coll.toArray()).to.eql([1, 2]);
   });
 
+  it('can remove items', () => {
+    const coll = ttlCollection();
+    coll.add(1);
+    coll.delete(1);
+    expect(coll.toArray()).to.eql([]);
+  })
+
   it('can clear', () => {
     const coll = ttlCollection();
     coll.add('item');
@@ -83,6 +90,19 @@ describe('ttlCollection', () => {
             sinon.assert.calledWith(cb, i2);
           })
         });
+
+        it('should not fire onExpiry for items that are deleted', () => {
+          const i = {ttl: 1000, foo: 'bar'};
+          coll.add(i);
+          const cb = sinon.stub();
+          coll.onExpiry(cb);
+          return waitForPromises().then(() => {
+            clock.tick(1100);
+            coll.delete(i);
+            clock.tick(SLACK);
+            sinon.assert.notCalled(cb);
+          })
+        })
 
         it('should allow unregistration of onExpiry callbacks', () => {
           const cb = sinon.stub();
