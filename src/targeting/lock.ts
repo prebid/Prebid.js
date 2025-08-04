@@ -1,7 +1,6 @@
 import type {TargetingMap} from "../targeting.ts";
 import {config} from "../config.ts";
 import {ttlCollection} from "../utils/ttlCollection.ts";
-import type {Bid} from "../bidfactory.ts";
 import {isGptPubadsDefined} from "../utils.js";
 import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 
@@ -76,6 +75,3 @@ export function targetingLock() {
 }
 
 export const lock = targetingLock();
-export function isBidNotLocked(bid: Bid): boolean {
-  return !lock.isLocked(bid.adserverTargeting);
-}
