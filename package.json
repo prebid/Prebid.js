@@ -130,7 +130,7 @@
     "videojs-ima": "^2.3.0",
     "videojs-playlist": "^5.0.0",
     "webdriver": "^9.15.0",
-    "webdriverio": "^9.0.9",
+    "webdriverio": "^9.18.4",
     "webpack": "^5.70.0",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-manifest-plugin": "^5.0.0",
