@@ -7,16 +7,18 @@ Maintainer: header-bidding@pubmatic.com
 ```
 
 ## How to configure?
+
 ```
 pbjs.enableAnalytics({
     provider: 'pubmatic',
     options: {
-        "publisherId": 12345 // please contact PubMatic to get a publisherId for yourself
+        "publisherId": "12345" // please contact PubMatic to get a publisherId for yourself
     }
 });
 ```
 
 ## Limitations:
+
 - Supports only Banner and Video media-type
 - Does not supports Native media type
 - Does not supports instream-video creative-render tracker
