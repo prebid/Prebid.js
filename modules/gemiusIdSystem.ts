@@ -1,7 +1,10 @@
 import { logInfo, logError, isStr, getWindowTop, canAccessWindowTop, getWindowSelf } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
+import { AllConsentData } from "../src/consentHandler.ts";
 
-const MODULE_NAME = 'gemiusId';
+import type { IdProviderSpec } from './userId/spec.ts';
+
+const MODULE_NAME = 'gemiusId' as const;
 const GVLID = 328;
 const REQUIRED_PURPOSES = [1, 2, 3, 4, 7, 8, 9, 10];
 const LOG_PREFIX = 'Gemius User ID: ';
@@ -10,7 +13,12 @@ const WAIT_FOR_PRIMARY_SCRIPT_MAX_TRIES = 8;
 const WAIT_FOR_PRIMARY_SCRIPT_INITIAL_WAIT_MS = 50;
 const GEMIUS_CMD_TIMEOUT = 8000;
 
-function getPrimaryScriptWindow() {
+type SerializableId = string | Record<string, unknown>;
+type PrimaryScriptWindow = Window & {
+  gemius_cmd: (action: string, callback: (ruid: string, desc: { status: string }) => void) => void;
+};
+
+function getTopAccessibleWindow(): Window {
   if (canAccessWindowTop()) {
     return getWindowTop();
   }
@@ -18,10 +26,10 @@ function getPrimaryScriptWindow() {
   return getWindowSelf();
 }
 
-function retrieveId(primaryScriptWindow, callback) {
+function retrieveId(primaryScriptWindow: PrimaryScriptWindow, callback: (id: SerializableId) => void): void {
   let resultResolved = false;
-  let timeoutId = null;
-  const setResult = function (...args) {
+  let timeoutId: number | null = null;
+  const setResult = function (id?: SerializableId): void {
     if (resultResolved) {
       return;
     }
@@ -31,7 +39,7 @@ function retrieveId(primaryScriptWindow, callback) {
       clearTimeout(timeoutId);
       timeoutId = null;
     }
-    callback(...args);
+    callback(id);
   }
 
   timeoutId = setTimeout(() => {
@@ -58,18 +66,18 @@ function retrieveId(primaryScriptWindow, callback) {
   }
 }
 
-export const gemiusIdSubmodule = {
+export const gemiusIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
   name: MODULE_NAME,
   gvlid: GVLID,
   decode(value) {
-    if (isStr(value?.id)) {
-      return { [MODULE_NAME]: value.id };
+    if (isStr(value?.['id'])) {
+      return {[MODULE_NAME]: value['id']};
     }
     return undefined;
   },
-  getId(_, {gdpr: consentData} = {}) {
+  getId(_, {gdpr: consentData}: Partial<AllConsentData> = {}) {
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-      if (REQUIRED_PURPOSES.some(purposeId => !consentData.vendorData?.purpose?.consents?.[purposeId])) {
+      if (REQUIRED_PURPOSES.some(purposeId => !(consentData.vendorData?.purpose as any)?.consents?.[purposeId])) {
         logInfo(LOG_PREFIX + 'getId, no consent');
         return {id: {id: null}};
       }
@@ -78,17 +86,17 @@ export const gemiusIdSubmodule = {
     logInfo(LOG_PREFIX + 'getId');
     return {
       callback: function (callback) {
-        const win = getPrimaryScriptWindow();
+        const win = getTopAccessibleWindow();
 
         (function waitForPrimaryScript(tryCount = 1, nextWaitTime = WAIT_FOR_PRIMARY_SCRIPT_INITIAL_WAIT_MS) {
-          if (typeof win.gemius_cmd !== 'undefined') {
-            retrieveId(win, callback);
+          if (typeof win['gemius_cmd'] !== 'undefined') {
+            retrieveId(win as PrimaryScriptWindow, callback);
           }
 
           if (tryCount < WAIT_FOR_PRIMARY_SCRIPT_MAX_TRIES) {
             setTimeout(() => waitForPrimaryScript(tryCount + 1, nextWaitTime * 2), nextWaitTime);
           } else {
-            callback();
+            callback(undefined);
           }
         })();
       }
@@ -97,7 +105,7 @@ export const gemiusIdSubmodule = {
   eids: {
     [MODULE_NAME]: {
       source: 'gemius.com',
-      atype: 1,
+      atype: '1',
     },
   }
 };

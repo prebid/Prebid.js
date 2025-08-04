@@ -1,4 +1,4 @@
-import { gemiusIdSubmodule } from 'modules/gemiusIdSystem.js';
+import { gemiusIdSubmodule } from 'modules/gemiusIdSystem.ts';
 import * as utils from 'src/utils.js';
 
 describe('GemiusId module', function () {
@@ -29,7 +29,7 @@ describe('GemiusId module', function () {
     it('should have correct eids configuration', function () {
       expect(gemiusIdSubmodule.eids.gemiusId).to.deep.include({
         source: 'gemius.com',
-        atype: 1
+        atype: '1'
       });
     });
 
