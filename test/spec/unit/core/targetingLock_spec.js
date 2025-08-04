@@ -2,10 +2,11 @@ import {targetingLock} from '../../../../src/targeting/lock.js';
 import {config} from 'src/config.js';
 
 describe('Targeting lock', () => {
-  let lock, clock, targeting;
+  let lock, clock, targeting, sandbox;
   beforeEach(() => {
+    sandbox = sinon.createSandbox();
     lock = targetingLock();
-    clock = sinon.useFakeTimers();
+    clock = sandbox.useFakeTimers();
     targeting = {
       k1: 'foo',
       k2: 'bar'
@@ -13,7 +14,7 @@ describe('Targeting lock', () => {
   });
   afterEach(() => {
     config.resetConfig();
-    clock.restore();
+    sandbox.restore();
   });
 
   it('does not lock by default', () => {
@@ -74,6 +75,15 @@ describe('Targeting lock', () => {
       let origGpt, eventHandlers, pubads;
       before(() => {
         origGpt = window.googletag;
+        window.googletag = {
+          pubads: () => pubads
+        };
+      });
+      after(() => {
+        window.googletag = origGpt;
+      });
+
+      beforeEach(() => {
         eventHandlers = {};
         pubads = {
           getSlots: () => [],
@@ -82,13 +92,7 @@ describe('Targeting lock', () => {
           },
           removeEventListener: sinon.stub()
         }
-        window.googletag = {
-          pubads: () => pubads
-        };
-      });
-      after(() => {
-        window.googletag = origGpt;
-      });
+      })
 
       it('should unlock on slotRenderEnded', () => {
         lock.lock(targeting);
@@ -103,7 +107,6 @@ describe('Targeting lock', () => {
       it('should unregister when disabled', () => {
         config.resetConfig();
         sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded')
-        expect(pubads.removeEventListener)
       })
     });
   });

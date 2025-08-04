@@ -51,13 +51,14 @@ export function targetingLock() {
     return [
       () => {
         if (keys != null && !enabled && isGptPubadsDefined()) {
-          googletag.pubads().addEventListener('slotRenderEnded', onGptRender)
+          googletag.pubads().addEventListener?.('slotRenderEnded', onGptRender)
           enabled = true;
         }
       },
       () => {
         if (enabled && isGptPubadsDefined()) {
-          googletag.pubads().removeEventListener('slotRenderEnded', onGptRender)
+          googletag.pubads().removeEventListener?.('slotRenderEnded', onGptRender)
+          enabled = false;
         }
       }
     ]
