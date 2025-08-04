@@ -18,6 +18,15 @@ type PrimaryScriptWindow = Window & {
   gemius_cmd: (action: string, callback: (ruid: string, desc: { status: string }) => void) => void;
 };
 
+declare module './userId/spec' {
+  interface UserId {
+    gemiusId: string;
+  }
+  interface ProvidersToId {
+    gemiusId: 'gemiusId';
+  }
+}
+
 function getTopAccessibleWindow(): Window {
   if (canAccessWindowTop()) {
     return getWindowTop();
