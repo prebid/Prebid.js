@@ -108,7 +108,10 @@ export class ConsentHandler<T> {
   }
 
   getConsentData(): T {
-    return this.#data;
+    if (this.#enabled) {
+      return this.#data;
+    }
+    return null;
   }
 
   get hash() {

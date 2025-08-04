@@ -168,6 +168,8 @@ export function configParser(
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
       requestBidsHook = null;
     }
+    consentDataHandler.reset();
+    logInfo(`${displayName} consentManagement module has been disabled...`)
   }
 
   return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {
