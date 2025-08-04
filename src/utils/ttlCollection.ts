@@ -133,6 +133,9 @@ export function ttlCollection<T>(
     add(item: T) {
       !items.has(item) && items.set(item, mkEntry(item));
     },
+    has(item: T) {
+      return items.has(item);
+    },
     delete(item: T) {
       const toBeDeleted = items.get(item);
       if (toBeDeleted) {
