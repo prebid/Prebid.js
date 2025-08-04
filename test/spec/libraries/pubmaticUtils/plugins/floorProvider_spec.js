@@ -14,6 +14,7 @@ describe('FloorProvider', () => {
       multiplier: { win: 4, floored: 10, nobid: 100 }
     },
     config: {
+      endpoint: 'https://pubmatic.com/floor',
       enforcement: { floorDeals: false, enforceJS: false },
       floorMin: 0.22,
       skipRate: 0,
@@ -28,25 +29,10 @@ describe('FloorProvider', () => {
         fields: ['mediaType','size','domain','adUnitCode','deviceType','timeOfDay','browser','os','utm', 'country','bidder']
       },
       values: {
-        "banner|728x90|127.0.0.1|div1|1|morning|IN|MH|0|1|0": 1.1111,
-        "banner|728x90|127.0.0.1|div1|1|morning|IN|MH|0|1|1": 2.2222,
-        "banner|300x250|localhost|div1|0|afternoon|9|1|1|IN|pubmatic": 0.321,
         "banner|728x90|localhost|div1|0|afternoon|9|1|0|IN|pubmatic": 9.234,
-        "banner|728x90|localhost|div1|0|afternoon|9|1|1|IN|pubmatic": 9.432,
-        "banner|300x250|localhost|div1|0|afternoon|9|1|0|IN|pubmatic": 3.1,
-        "banner|300x250|localhost|div-gpt-ad-1460505748561-0|0|morning|3|1|0": 0.123,
-        "banner|300x250|localhost|div-gpt-ad-1460505748561-0|0|morning|2|1|0": 0.123456,
-        "banner|300x250|localhost|div-gpt-ad-1460505748561-0|0|morning|11|1|1|US|pubmatic": 0.321,
-        "banner|728x90|localhost|div-gpt-ad-1460505748561-1|0|morning|11|1|0|US|pubmatic": 9.234,
-        "banner|728x90|localhost|div-gpt-ad-1460505748561-1|0|morning|11|1|1|US|pubmatic": 9.432,
-        "banner|300x250|localhost|div-gpt-ad-1460505748561-0|0|morning|11|1|0|US|pubmatic": 3.1,
-        "banner|300x250|localhost|div-gpt-ad-1460505748561-0|0|afternoon|11|1|1|US|pubmatic": 0.321,
-        "banner|728x90|localhost|div-gpt-ad-1460505748561-1|0|afternoon|11|1|0|US|pubmatic": 9.234,
-        "banner|728x90|localhost|div-gpt-ad-1460505748561-1|0|afternoon|11|1|1|US|pubmatic": 9.432,
-        "banner|300x250|localhost|div-gpt-ad-1460505748561-0|0|afternoon|11|1|0|US|pubmatic": 3.1
       },
       default: 0.23,
-      userIds: ['id5id', 'pubcid', 'criteoId', 'tdid', 'lotamePanoramaId', '33acrossId', 'idl_env', 'pairId', 'uid2', 'publinkId']
+      userIds: ['id5id']
     }
   };
 
@@ -56,24 +42,18 @@ describe('FloorProvider', () => {
       getConfigByName: (name) => name === pluginName ? floorsobj : undefined
     };
 
-    // Ensure continueAuction is a function
     const originalContinueAuction = priceFloors.continueAuction;
     priceFloors.continueAuction = function() { return true; };
 
-    // Act
     const result = await floorProvider.init(pluginName, configJsonManager);
 
-    // Assert
     expect(result).to.be.true;
     expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
 
-    // Restore
     priceFloors.continueAuction = originalContinueAuction;
   });
 
   it('should return input unchanged if floor config is missing or disabled', async () => {
-
-    // Disabled config
     floorProvider.init('dynamicFloors', {
       getConfigByName: () => ({...floorsobj, enabled: false})
     });
@@ -117,4 +97,44 @@ describe('FloorProvider', () => {
   it('getTargeting should return undefined or do nothing', () => {
     expect(floorProvider.getTargeting([], {}, {}, {})).to.be.undefined;
   });
+
+  // Additional test cases for one-liner exports
+  it('should return correct floor config using getFloorConfig', () => {
+    floorProvider.init('dynamicFloors', {
+      getConfigByName: () => floorsobj
+    });
+    expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
+  });
+  describe('Utility Exports', () => {
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('getTimeOfDay should return result from getCurrentTimeOfDay', () => {
+      const stub = sinon.stub(pubmaticUtils, 'getCurrentTimeOfDay').returns('evening');
+      expect(floorProvider.getTimeOfDay()).to.equal('evening');
+
+    });
+
+
+    it('getBrowser should return result from getBrowser', () => {
+      const stub = sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
+      expect(floorProvider.getBrowser()).to.equal('Chrome');
+  
+    });
+
+    it('getUtm should return result from getUtmValue', () => {
+      const stub = sinon.stub(pubmaticUtils, 'getUtmValue').returns('evening');
+      expect(floorProvider.getUtm()).to.equal('evening');
+
+    });
+   
+    it('getBidder should return bidder from request', () => {
+      expect(floorProvider.getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
+      expect(floorProvider.getBidder({})).to.equal(undefined);
+      expect(floorProvider.getBidder(undefined)).to.equal(undefined);
+    });
+
+  });
+
 });
