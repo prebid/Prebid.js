@@ -52,18 +52,18 @@ const MEDIATYPE = {
 
 // TODO : Remove - Once BM calculation moves to Server Side
 const BROWSER_MAP = [
-  { value: /(firefox)\/([\w\.]+)/i, key: 12 }, // Firefox
-  { value: /\b(?:crios)\/([\w\.]+)/i, key: 1 }, // Chrome for iOS
-  { value: /edg(?:e|ios|a)?\/([\w\.]+)/i, key: 2 }, // Edge
-  { value: /(opera|opr)(?:.+version\/|[\/ ]+)([\w\.]+)/i, key: 3 }, // Opera
-  { value: /(?:ms|\()(ie) ([\w\.]+)|(?:trident\/[\w\.]+)/i, key: 4 }, // Internet Explorer
-  { value: /fxios\/([-\w\.]+)/i, key: 5 }, // Firefox for iOS
-  { value: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, key: 6 }, // Facebook In-App Browser
-  { value: / wv\).+(chrome)\/([\w\.]+)/i, key: 7 }, // Chrome WebView
-  { value: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, key: 8 }, // Android Browser
-  { value: /(chrome|chromium|crios)\/v?([\w\.]+)/i, key: 9 }, // Chrome
-  { value: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, key: 10 }, // Safari Mobile
-  { value: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, key: 11 }, // Safari
+  { value: /(firefox)\/([\w.]+)/i, key: 12 }, // Firefox
+  { value: /\b(?:crios)\/([\w.]+)/i, key: 1 }, // Chrome for iOS
+  { value: /edg(?:e|ios|a)?\/([\w.]+)/i, key: 2 }, // Edge
+  { value: /(opera|opr)(?:.+version\/|[/ ]+)([\w.]+)/i, key: 3 }, // Opera
+  { value: /(?:ms|\()(ie) ([\w.]+)|(?:trident\/[\w.]+)/i, key: 4 }, // Internet Explorer
+  { value: /fxios\/([-\w.]+)/i, key: 5 }, // Firefox for iOS
+  { value: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w.]+);)/i, key: 6 }, // Facebook In-App Browser
+  { value: / wv\).+(chrome)\/([\w.]+)/i, key: 7 }, // Chrome WebView
+  { value: /droid.+ version\/([\w.]+)\b.+(?:mobile safari|safari)/i, key: 8 }, // Android Browser
+  { value: /(chrome|chromium|crios)\/v?([\w.]+)/i, key: 9 }, // Chrome
+  { value: /version\/([\w.,]+) .*mobile\/\w+ (safari)/i, key: 10 }, // Safari Mobile
+  { value: /version\/([\w(.|,]+) .*(mobile ?safari|safari)/i, key: 11 }, // Safari
 ];
 
 /// /////////// VARIABLES //////////////
@@ -104,11 +104,11 @@ function setMediaTypes(types, bid) {
   if (typeof types === 'object') {
     if (!bid.sizes) {
       bid.dimensions = [];
-      _each(types, (type) =>
+      _each(types, (type) => {
         bid.dimensions = bid.dimensions.concat(
           type.sizes.map(sizeToDimensions)
-        )
-      );
+        );
+      });
     }
     return Object.keys(types).filter(validMediaType);
   }

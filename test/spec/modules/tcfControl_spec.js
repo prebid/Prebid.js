@@ -130,7 +130,11 @@ describe('gdpr enforcement', function () {
   })
 
   function expectAllow(allow, ruleResult) {
-    allow ? expect(ruleResult).to.not.exist : sinon.assert.match(ruleResult, {allow: false});
+    if (allow) {
+      expect(ruleResult).to.not.exist;
+    } else {
+      sinon.assert.match(ruleResult, {allow: false});
+    }
   }
 
   beforeEach(() => {

@@ -24,7 +24,7 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 ## Usage (as a npm dependency)
 
 **Note**: versions prior to v10 required some Babel plugins to be configured when used as an NPM dependency -
-refer to [v9 README](https://github.com/prebid/Prebid.js/blob/9.43.0/README.md)
+refer to [v9 README](https://github.com/prebid/Prebid.js/blob/9.43.0/README.md). See also [customize build options](#customize-options)
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -55,6 +55,37 @@ declare global {
     }
 }
 ```
+
+<a id="customize-options"></a>
+
+### Customize build options
+
+If you're using Webpack, you can use the `prebid.js/customize/webpackLoader` loader to set the following options:
+
+| Name | Type | Description | Default | 
+| ---- | ---- | ----------- | ------- |
+| globalVarName | String | Prebid global variable name | `"pbjs"` | 
+| defineGlobal | Boolean | If false, do not set a global variable | `true` | 
+| distUrlBase |  String | Base URL to use for dynamically loaded modules (e.g. debugging-standalone.js) | `"https://cdn.jsdelivr.net/npm/prebid.js/dist/chunks/"` |
+
+For example, to set a custom global variable name:
+
+```javascript
+// webpack.conf.js
+module.exports = {
+  module: {
+    rules: [
+      {
+        loader: 'prebid.js/customize/webpackLoader',
+        options: {
+          globalVarName: 'myCustomGlobal'
+        }
+      },
+    ]
+  }
+}
+```
+
 
 <a name="Install"></a>
 
@@ -164,19 +195,6 @@ Since version 7.2.0, you may instruct the build to exclude code for some feature
 
 ```
 gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
-```
-
-Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
-
-```javascript
-  {
-    test: /.js$/,
-    include: new RegExp(`\\${path.sep}prebid\\.js`),
-    use: {
-      loader: 'babel-loader',
-      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
-    }
-  }
 ```
 
 Features that can be disabled this way are:

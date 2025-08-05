@@ -14,7 +14,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
-const GVLID = 607;
 const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
@@ -24,7 +23,6 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**

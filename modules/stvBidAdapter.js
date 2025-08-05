@@ -103,7 +103,9 @@ export const spec = {
         const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
           .filter(key => Object.keys(VIDEO_ORTB_PARAMS).includes(key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
-          .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
+          .forEach(key => {
+            payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key];
+          });
       }
       if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }
 
