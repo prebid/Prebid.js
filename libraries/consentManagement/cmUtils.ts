@@ -167,9 +167,10 @@ export function configParser(
       getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
       requestBidsHook = null;
+      // Reseting respective consent data handler
+      consentDataHandler.reset();
+      logInfo(`${displayName} consentManagement module has been diactivated...`)
     }
-    consentDataHandler.reset();
-    logInfo(`${displayName} consentManagement module has been disabled...`)
   }
 
   return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {
