@@ -40,8 +40,7 @@ export function ConfigJsonManager() {
    */
   async function fetchConfig(publisherId, profileId) {
     try {
-      // const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
-      const url = `https://hbopenbid.pubmatic.com/yieldModuleConfigApi`;
+      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;      
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -170,9 +169,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @return {Object} - Targeting data for ad units
  */
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
-  const results = pluginManager.executeHook('getTargeting', adUnitCodes, config, userConsent, auction);
-  // As of now only unified pricing rule is implemented
-  return results?.['unifiedPricingRule'] || {};
+  return pluginManager.executeHook('getTargeting', adUnitCodes, config, userConsent, auction);
 };
 
 export const pubmaticSubmodule = {
