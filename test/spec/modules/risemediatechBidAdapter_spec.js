@@ -110,7 +110,6 @@ describe('RiseMediaTech adapter', () => {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
-
     it('should return false for video request with width <= 0', () => {
       const invalidBid = {
         ...validBidRequest,
@@ -125,7 +124,6 @@ describe('RiseMediaTech adapter', () => {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
-
     it('should return false for video request with height <= 0', () => {
       const invalidBid = {
         ...validBidRequest,
@@ -139,7 +137,6 @@ describe('RiseMediaTech adapter', () => {
       };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
-
 
     it('should return false for video bid request with invalid width', () => {
       const invalidVideoRequest = {
