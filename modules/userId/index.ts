@@ -32,6 +32,7 @@ import {
   logError,
   logInfo,
   logWarn,
+  mergeDeep
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, delay, PbPromise} from '../../src/utils/promise.js';
@@ -622,6 +623,35 @@ function aliasEidsHook(next, bidderRequests) {
   next(bidderRequests);
 }
 
+export function adUnitEidsHook(next, auction) {
+  // for backwards-compat, add `userIdAsEids` to ad units' bid objects
+  // before auction events are fired
+  // these are computed similarly to bid requests' `ortb2`, but unlike them,
+  // they are not subject to the same activity checks (since they are not intended for bid adapters)
+
+  const eidsByBidder = {};
+  const globalEids = auction.getFPD()?.global?.user?.ext?.eids ?? [];
+  function getEids(bidderCode) {
+    if (bidderCode == null) return globalEids;
+    if (!eidsByBidder.hasOwnProperty(bidderCode)) {
+      eidsByBidder[bidderCode] = mergeDeep(
+        {eids: []},
+        {eids: globalEids},
+        {eids: auction.getFPD()?.bidder?.[bidderCode]?.user?.ext?.eids ?? []}
+      ).eids;
+    }
+    return eidsByBidder[bidderCode];
+  }
+  auction.getAdUnits()
+    .flatMap(au => au.bids)
+    .forEach(bid => {
+      const eids = getEids(bid.bidder);
+      if (eids.length > 0) {
+        bid.userIdAsEids = eids;
+      }
+    });
+  next(auction);
+}
 /**
  * Is startAuctionHook added
  * @returns {boolean}
