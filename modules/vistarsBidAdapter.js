@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { deepSetValue, replaceAuctionPrice, deepClone, deepAccess } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getUserSyncs } from '../libraries/vizionikUtils/vizionikUtils.js';
 
 const BIDDER_CODE = 'vistars';
 const DEFAULT_ENDPOINT = 'ex-asr.vistarsagency.com';
@@ -77,32 +77,7 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-
-    if (!hasPurpose1Consent(gdprConsent)) {
-      return syncs;
-    }
-
-    let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
-    if (typeof gdprConsent?.gdprApplies === 'boolean') {
-      params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `//${SYNC_ENDPOINT}/match/sp.ifr?${params}`
-      });
-    }
-
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: `//${SYNC_ENDPOINT}/match/sp?${params}`
-      });
-    }
-
-    return syncs;
+    return getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_ENDPOINT)
   },
 
   supportedMediaTypes: [ BANNER, VIDEO ]
