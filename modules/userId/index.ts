@@ -31,8 +31,7 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn,
-  mergeDeep
+  logWarn, mergeDeep
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, delay, PbPromise} from '../../src/utils/promise.js';
@@ -53,6 +52,7 @@ import {
   ACTIVITY_PARAM_STORAGE_TYPE,
   ACTIVITY_PARAM_STORAGE_WRITE
 } from '../../src/activities/params.js';
+import {beforeInitAuction} from '../../src/auction.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -630,14 +630,14 @@ export function adUnitEidsHook(next, auction) {
   // they are not subject to the same activity checks (since they are not intended for bid adapters)
 
   const eidsByBidder = {};
-  const globalEids = auction.getFPD()?.global?.user?.ext?.eids ?? [];
+  const globalEids = auction.getFPD().global?.user?.ext?.eids ?? [];
   function getEids(bidderCode) {
     if (bidderCode == null) return globalEids;
     if (!eidsByBidder.hasOwnProperty(bidderCode)) {
       eidsByBidder[bidderCode] = mergeDeep(
         {eids: []},
         {eids: globalEids},
-        {eids: auction.getFPD()?.bidder?.[bidderCode]?.user?.ext?.eids ?? []}
+        {eids: auction.getFPD().bidder?.[bidderCode]?.user?.ext?.eids ?? []}
       ).eids;
     }
     return eidsByBidder[bidderCode];
@@ -1270,6 +1270,7 @@ export function init(config, {mkDelay = delay} = {}) {
     }
   });
   adapterManager.makeBidRequests.after(aliasEidsHook);
+  beforeInitAuction.before(adUnitEidsHook);
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   addApiMethod('getUserIds', getUserIds);
