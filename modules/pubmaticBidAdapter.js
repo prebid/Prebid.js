@@ -66,7 +66,7 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
-    const { adUnitCode, mediaTypes, rtd } = bidRequest;
+    const { adUnitCode, mediaTypes, rtd, ortb2 } = bidRequest;
     const imp = buildImp(bidRequest, context);
 
     // Check if the imp object does not have banner, video, or native
@@ -76,6 +76,16 @@ const converter = ortbConverter({
     }
     if (deals) addPMPDeals(imp, deals, LOG_WARN_PREFIX);
     if (dctr) addDealCustomTargetings(imp, dctr, LOG_WARN_PREFIX);
+    const customTargetings = shouldAddDealTargeting(ortb2);
+    if (customTargetings) {
+      imp.ext = imp.ext || {};
+      const targetingValues = Object.values(customTargetings).filter(Boolean);
+      if (targetingValues.length) {
+        imp.ext['key_val'] = imp.ext['key_val']
+          ? `${imp.ext['key_val']}|${targetingValues.join('|')}`
+          : targetingValues.join('|');
+      }
+    }
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
@@ -158,6 +168,17 @@ const converter = ortbConverter({
     }
   }
 });
+
+export const shouldAddDealTargeting = (ortb2) => {
+  const imSegmentData = ortb2?.user?.ext?.data?.im_segments;
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  const hasImSegments = imSegmentData && isArray(imSegmentData) && imSegmentData.length;
+  const hasIasBrandSafety = typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length;
+  const result = {};
+  if (hasImSegments) result.im_segments = `im_segments=${imSegmentData.join(',')}`;
+  if (hasIasBrandSafety) result['ias-brand-safety'] = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`).join('|');
+  return Object.keys(result).length ? result : undefined;
+}
 
 export function _calculateBidCpmAdjustment(bid) {
   if (!bid) return;

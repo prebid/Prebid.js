@@ -1704,8 +1704,8 @@ export const spec = {
     validBidRequests.forEach((validBidRequest) => {
       const adUnitMediaTypes = Object.keys(deepAccess(validBidRequest, 'mediaTypes', {}));
 
-      for (const type in adUnitMediaTypes) {
-        switch (adUnitMediaTypes[type]) {
+      for (const mediaType of adUnitMediaTypes) {
+        switch (mediaType) {
           case BANNER:
             createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidderRequest);
             break;
@@ -1716,7 +1716,7 @@ export const spec = {
             createNativeImps(validBidRequest, nativeImps)
             break;
           default:
-            logWarn(`IX Bid Adapter: ad unit mediaTypes ${type} is not supported`)
+            logWarn(`IX Bid Adapter: ad unit mediaTypes ${mediaType} is not supported`)
         }
       }
     });

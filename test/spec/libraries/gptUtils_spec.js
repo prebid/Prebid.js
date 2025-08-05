@@ -15,5 +15,7 @@ describe('gptUtils', () => {
     const second = gptUtils.getGptSlotInfoForAdUnitCode('code');
     expect(first).to.deep.equal({ gptSlot: 'code', divId: 'div-id' });
     expect(second).to.deep.equal(first);
+    const third = gptUtils.getGptSlotInfoForAdUnitCode('code1'); // not found
+    expect(third).to.deep.equal({});
   });
 });
