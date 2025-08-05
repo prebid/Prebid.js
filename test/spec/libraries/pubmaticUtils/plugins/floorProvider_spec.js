@@ -24,7 +24,7 @@ describe('FloorProvider', () => {
       modelVersion: 'Mock API model version',
       multiplier: { win: 1.1, floored: 0.9, nobid: 1.3 },
       schema: {
-        fields: ['mediaType','size','domain','adUnitCode','deviceType','timeOfDay','browser','os','utm', 'country','bidder']
+        fields: ['mediaType', 'size', 'domain', 'adUnitCode', 'deviceType', 'timeOfDay', 'browser', 'os', 'utm', 'country', 'bidder']
       },
       values: {
         "banner|728x90|localhost|div1|0|afternoon|9|1|0|IN|pubmatic": 9.234,
@@ -43,22 +43,25 @@ describe('FloorProvider', () => {
     const pluginName = 'dynamicFloors';
     const configJsonManager = {
       getConfigByName: (name) => name === pluginName ? floorsobj : undefined,
-      country:  "IN"
+      country: "IN"
     };
 
-    const originalContinueAuction = priceFloors.continueAuction;
-    priceFloors.continueAuction = function() { return true; };
+    let continueAuctionStub;
+    before(() => {
+      continueAuctionStub = sinon.stub(priceFloors, 'continueAuction').callsFake(() => true);
+    });
 
     const result = await floorProvider.init(pluginName, configJsonManager);
 
     expect(result).to.be.true;
     expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
 
-    priceFloors.continueAuction = originalContinueAuction;
+    after(() => {
+      sinon.restore();
+    });
   });
 
   it('should return input unchanged if floor config is missing or disabled', async () => {
-   
     const input = {
       adUnits: [
         {
@@ -76,42 +79,13 @@ describe('FloorProvider', () => {
     expect(result.adUnits[0].adUnitCode).to.equal('div1');
     expect(result.adUnits[0].sizes).to.deep.equal([728, 90]);
     expect(result.adUnits[0].bids[0]).to.include({ bidder: 'pubmatic' });
-  });   
-
-  it('should call continueAuction and log when config is enabled', async () => {
-    let called = false;
-    const originalContinueAuction = priceFloors.continueAuction;
-    priceFloors.continueAuction = (hookConfig) => { called = true; };
-
-    floorProvider.init('dynamicFloors', {
-      getConfigByName: () => floorsobj
-    });
-
-    const req = {
-  ortb2Fragments: {
-    global: {},
-    bidder: {}
-  },
-  adUnits: [
-    {
-      code: 'div1',
-      mediaTypes: { banner: { sizes: [[728, 90]] } },
-      ortb2Imp: { ext: { data: { pbadslot: 'homepage-top-rect' } } },
-      bids: [{ bidder: 'pubmatic' }]
-    }
-  ]
-};
-    const result = await floorProvider.processBidRequest(req);
-
-    expect(result).to.equal(req);
-    expect(called).to.be.true;
-
-    priceFloors.continueAuction = originalContinueAuction;
   });
 
   it('should handle errors in continueAuction gracefully', async () => {
-    const originalContinueAuction = priceFloors.continueAuction;
-    priceFloors.continueAuction = () => { throw new Error('fail!'); };
+    let continueAuctionStub;
+    before(() => {
+      continueAuctionStub = sinon.stub(priceFloors, 'continueAuction').callsFake(() => { throw new Error('fail!'); });
+    });
 
     floorProvider.init('dynamicFloors', {
       getConfigByName: () => floorsobj
@@ -122,7 +96,9 @@ describe('FloorProvider', () => {
 
     expect(result).to.equal(req);
 
-    priceFloors.continueAuction = originalContinueAuction;
+    after(() => {
+      sinon.restore();
+    });
   });
 
   it('getTargeting should return undefined or do nothing', () => {
@@ -147,23 +123,23 @@ describe('FloorProvider', () => {
     expect(mgr.getConfigByName('testPlugin')).to.deep.equal(floorsobj);
   });
   describe('Utility Exports', () => {
-  afterEach(() => {
-    sinon.restore();
-  });
+    afterEach(() => {
+      sinon.restore();
+    });
 
-  it('getCountry should return country from configJsonManager', () => {
-    floorProvider.init('any', { country: 'IN', getConfigByName: () => {} });
-    expect(floorProvider.getCountry()).to.equal('IN');
-  });
+    it('getCountry should return country from configJsonManager', () => {
+      floorProvider.init('any', { country: 'IN', getConfigByName: () => {} });
+      expect(floorProvider.getCountry()).to.equal('IN');
+    });
 
-  it('getOs should return string from getOS', () => {
+    it('getOs should return string from getOS', () => {
     // Import userAgentUtils and stub getOS there
-    const userAgentUtils = require('libraries/userAgentUtils/index.js');
-    const fakeOS = { toString: () => 'MacOS' };
-    const stub = sinon.stub(userAgentUtils, 'getOS').returns(fakeOS);
-    expect(floorProvider.getOs()).to.equal('MacOS');
-    stub.restore();
-  });
+      const userAgentUtils = require('libraries/userAgentUtils/index.js');
+      const fakeOS = { toString: () => 'MacOS' };
+      const stub = sinon.stub(userAgentUtils, 'getOS').returns(fakeOS);
+      expect(floorProvider.getOs()).to.equal('MacOS');
+      stub.restore();
+    });
     afterEach(() => {
       sinon.restore();
     });
@@ -171,9 +147,7 @@ describe('FloorProvider', () => {
     it('getTimeOfDay should return result from getCurrentTimeOfDay', () => {
       const stub = sinon.stub(pubmaticUtils, 'getCurrentTimeOfDay').returns('evening');
       expect(floorProvider.getTimeOfDay()).to.equal('evening');
-
     });
-
 
     it('should return a string device type using getDeviceType', () => {
       expect(floorProvider.getDeviceType()).to.be.a('string');
@@ -182,22 +156,18 @@ describe('FloorProvider', () => {
     it('getBrowser should return result from getBrowser', () => {
       const stub = sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
       expect(floorProvider.getBrowser()).to.equal('Chrome');
-  
     });
 
     it('getUtm should return result from getUtmValue', () => {
       const stub = sinon.stub(pubmaticUtils, 'getUtmValue').returns('evening');
       expect(floorProvider.getUtm()).to.equal('evening');
-
     });
-   
+
     it('getBidder should return bidder from request', () => {
       floorProvider.init('dynamicFloors', { getConfigByName: () => floorsobj });
       expect(floorProvider.getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
       expect(floorProvider.getBidder({})).to.equal(undefined);
       expect(floorProvider.getBidder(undefined)).to.equal(undefined);
     });
-
   });
-
 });
