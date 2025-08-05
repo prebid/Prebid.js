@@ -76,9 +76,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    return getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_ENDPOINT)
-  },
+  getUserSyncs: getUserSyncs(SYNC_ENDPOINT),
 
   supportedMediaTypes: [ BANNER, VIDEO ]
 }
