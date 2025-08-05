@@ -630,14 +630,14 @@ export function adUnitEidsHook(next, auction) {
   // they are not subject to the same activity checks (since they are not intended for bid adapters)
 
   const eidsByBidder = {};
-  const globalEids = auction.getFPD().global?.user?.ext?.eids ?? [];
+  const globalEids = auction.getFPD()?.global?.user?.ext?.eids ?? [];
   function getEids(bidderCode) {
     if (bidderCode == null) return globalEids;
     if (!eidsByBidder.hasOwnProperty(bidderCode)) {
       eidsByBidder[bidderCode] = mergeDeep(
         {eids: []},
         {eids: globalEids},
-        {eids: auction.getFPD().bidder?.[bidderCode]?.user?.ext?.eids ?? []}
+        {eids: auction.getFPD()?.bidder?.[bidderCode]?.user?.ext?.eids ?? []}
       ).eids;
     }
     return eidsByBidder[bidderCode];
