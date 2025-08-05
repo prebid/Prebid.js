@@ -60,6 +60,18 @@ export const allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domai
 type DefaultField = { [K in (typeof allowedFields)[number]]: K extends string ? K : never}[(typeof allowedFields)[number]];
 
 /**
+ * @summary Checks if a field is a valid user ID tier field (userId.tierName)
+ */
+const isUidFieldMap = {};
+function isUserIdTierField(field: string): boolean {
+  if (typeof field !== 'string') return false;
+  if (field in isUidFieldMap) return isUidFieldMap[field];
+  const isUid = field.startsWith('userId.');
+  isUidFieldMap[field] = isUid;
+  return isUid;
+}
+
+/**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
  */
 let fetching = false;
@@ -103,7 +115,33 @@ const getHostname = (() => {
   }
 })();
 
-// First look into bidRequest!
+/**
+ * @summary Check if a bidRequest contains any user IDs from the specified tiers
+ * Returns an object with keys like 'userId.tierName' with boolean values (0/1)
+ */
+export function resolveTierUserIds(tiers, bidRequest) {
+  if (!tiers || !bidRequest?.userIdAsEid?.length) {
+    return {};
+  }
+
+  // Get all available EID sources from the bidRequest (single pass)
+  const availableSources = bidRequest.userIdAsEid.reduce((acc: Set<string>, eid: { source?: string }) => {
+    if (eid?.source) {
+      acc.add(eid.source);
+    }
+    return acc;
+  }, new Set());
+
+  // For each tier, check if any of its sources are available
+  return Object.entries(tiers).reduce((result, [tierName, sources]) => {
+    const hasAnyIdFromTier = Array.isArray(sources) &&
+      sources.some(source => availableSources.has(source));
+
+    result[`userId.${tierName}`] = hasAnyIdFromTier ? 1 : 0;
+    return result;
+  }, {});
+}
+
 function getGptSlotFromAdUnit(adUnitId, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit({adUnitId});
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
@@ -133,9 +171,25 @@ export const fieldMatchingFunctions = {
  */
 function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
   if (!floorFields.length) return [];
+
+  // Get userId tier values if needed
+  let userIdTierValues = {};
+  const userIdFields = floorFields.filter(isUserIdTierField);
+  if (userIdFields.length > 0 && _floorsConfig.userIds) {
+    userIdTierValues = resolveTierUserIds(_floorsConfig.userIds, bidObject);
+  }
+
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
-    const exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    let exactMatch: string;
+    // Handle userId tier fields
+    if (isUserIdTierField(field)) {
+      exactMatch = String(userIdTierValues[field] ?? '*');
+    } else {
+      // Standard fields use the field matching functions
+      exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    }
+
     // storing exact matches as lowerCase since we want to compare case insensitively
     accum.push(exactMatch === '*' ? ['*'] : [exactMatch.toLowerCase(), '*']);
     return accum;
@@ -481,7 +535,7 @@ export function continueAuction(hookConfig) {
 
 function validateSchemaFields(fields) {
   if (Array.isArray(fields) && fields.length > 0) {
-    if (fields.every(field => allowedFields.includes(field))) {
+    if (fields.every(field => allowedFields.includes(field) || isUserIdTierField(field))) {
       return true;
     } else {
       logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
@@ -768,6 +822,13 @@ export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> 
    * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
    */
   floorMin?: number;
+  /**
+   * Configuration for user ID tiers. Each tier is an array of EID sources
+   * that will be matched against available EIDs in the bid request.
+   */
+  userIds?: {
+    [tierName: string]: string[];
+  };
   enforcement?: Pick<Schema2FloorData['modelGroups'][0], 'noFloorSignalBidders'> & {
     /**
      * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
@@ -830,6 +891,7 @@ export function handleSetFloorsConfig(config) {
     'floorProvider', floorProvider => deepAccess(config, 'data.floorProvider', floorProvider),
     'endpoint', endpoint => endpoint || {},
     'skipRate', () => !isNaN(deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
+    'userIds', validateUserIdsConfig,
     'enforcement', enforcement => pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
@@ -1085,3 +1147,16 @@ registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
 registerOrtbProcessor({type: IMP, name: 'extBidfloor', fn: setGranularBidfloors, priority: -10})
 registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
 registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});
+
+/**
+ * Validate userIds config: must be an object with array values
+ */
+function validateUserIdsConfig(userIds: Record<string, unknown>): Record<string, unknown> {
+  if (!userIds || typeof userIds !== 'object') return {};
+  // Check if userIds is an object with array values
+  const invalidKey = Object.entries(userIds).find(([, value]) => !Array.isArray(value));
+  if (invalidKey) {
+    return {};
+  }
+  return userIds;
+}
