@@ -168,6 +168,7 @@ export function configParser(
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
       requestBidsHook = null;
       // Reseting respective consent data handler
+      consentDataHandler.removeCmpEventListener();
       consentDataHandler.reset();
       logInfo(`${displayName} consentManagement module has been diactivated...`)
     }

@@ -42,9 +42,11 @@ export class ConsentHandler<T> {
   #ready;
   #dirty = true;
   #hash;
+  #listenerId: string | null = null;
+  #cmpApi: any = null;
   generatedTime: number;
   hashFields;
-
+ 
   constructor() {
     this.reset();
   }
@@ -53,6 +55,36 @@ export class ConsentHandler<T> {
     this.#ready = true;
     this.#data = data;
     this.#defer.resolve(data);
+  }
+
+  /**
+   * Set CMP API reference
+   * @param cmpApi - CMP API reference
+   */
+  setCmpApi(cmpApi: any) {
+    this.#cmpApi = cmpApi;
+  }
+
+  /**
+   * Get CMP API reference
+   */
+  getCmpApi() {
+    return this.#cmpApi;
+  }
+
+  /**
+   * Set CMP listener ID
+   * @param listenerId - Unique identifier for the CMP listener
+   */
+  setCmpListenerId(listenerId: string) {
+    this.#listenerId = listenerId;
+  }
+
+  /**
+   * Get CMP listener ID
+   */
+  getCmpListenerId() {
+    return this.#listenerId;
   }
 
   /**
@@ -124,6 +156,11 @@ export class ConsentHandler<T> {
 }
 
 class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP>> {
+  /**
+   * Remove CMP event listener using CMP API
+   * This will be just a placeholder for now as we don't have any removeEventListener for USP
+   */
+  removeCmpEventListener() {}
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
@@ -136,6 +173,20 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
 
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
   hashFields = ['gdprApplies', 'consentString']
+  /**
+   * Remove CMP event listener using CMP API
+   */
+  removeCmpEventListener() {
+    if (this.getCmpApi() && this.getCmpListenerId()) {
+      const apiVersion = this.getConsentData()?.apiVersion || 2;
+      this.getCmpApi()('removeEventListener', apiVersion, function (data: boolean, success: boolean) {
+        if (success) {
+          this.setCmpApi(null);
+          this.setCmpListenerId(null);  
+        }
+      }, this.getCmpListenerId());
+    }
+  }
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
@@ -151,6 +202,19 @@ class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GD
 
 class GppConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GPP>> {
   hashFields = ['applicableSections', 'gppString'];
+  /**
+   * Remove CMP event listener using CMP API
+   */
+  removeCmpEventListener() {
+    if (this.getCmpApi() && this.getCmpListenerId()) {
+      this.getCmpApi()('removeEventListener', function (data: boolean, success: boolean) {
+        if (data) {
+          this.setCmpApi(null);
+          this.setCmpListenerId(null);  
+        }
+      }, this.getCmpListenerId());
+    }
+  }
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {

@@ -101,6 +101,7 @@ export class GPPClient {
         logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
       }
       this.initialized = true;
+      gppDataHandler.setCmpApi(this.cmp);
       this.cmp({
         command: 'addEventListener',
         callback: (event, success) => {
@@ -109,6 +110,9 @@ export class GPPClient {
           } else if (event?.pingData?.cmpStatus === 'error') {
             this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event));
           } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {
+            if(event?.listenerId !== null && event?.listenerId !== undefined){
+              gppDataHandler.setCmpListenerId(event?.listenerId);          
+            }
             this.#resolve(this.updateConsent(event.pingData));
           }
           // NOTE: according to https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md,
