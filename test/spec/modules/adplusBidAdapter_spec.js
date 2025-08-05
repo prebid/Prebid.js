@@ -3,7 +3,7 @@ import { spec, BIDDER_CODE, ADPLUS_ENDPOINT, } from 'modules/adplusBidAdapter.js
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import { adplusIdSystemSubmodule } from '../../../modules/adplusIdSystem';
+import { adplusIdSystemSubmodule } from '../../../modules/adplusIdSystem.js';
 import { init, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { server } from 'test/mocks/xhr.js';
 
