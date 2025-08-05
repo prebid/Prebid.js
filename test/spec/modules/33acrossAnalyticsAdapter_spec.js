@@ -17,6 +17,7 @@ describe('33acrossAnalyticsAdapter:', function () {
     sandbox = sinon.createSandbox({
       useFakeTimers: {
         now: new Date(2023, 3, 3, 0, 1, 33, 425),
+        shouldClearNativeTimers: true
       },
     });
 

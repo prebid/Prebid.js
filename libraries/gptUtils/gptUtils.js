@@ -1,5 +1,5 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../../src/utils.js';
+import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques, isEmpty} from '../../src/utils.js';
 
 const slotInfoCache = new Map();
 
@@ -55,7 +55,7 @@ export function getGptSlotInfoForAdUnitCode(adUnitCode) {
       divId: matchingSlot.getSlotElementId()
     };
   }
-  slotInfoCache.set(adUnitCode, info);
+  !isEmpty(info) && slotInfoCache.set(adUnitCode, info);
   return info;
 }
 

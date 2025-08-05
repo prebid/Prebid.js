@@ -16,6 +16,7 @@ import {expect} from 'chai';
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
 import {PUC_MIN_VERSION} from 'src/creativeRenderers.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
   let sandbox;
@@ -109,7 +110,7 @@ describe('secureCreatives', () => {
     }
 
     function resetAuction() {
-      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
+      getGlobal().setConfig({ enableSendAllBids: false });
       auction.getBidRequests = getBidRequests;
       auction.getBidsReceived = getBidResponses;
       auction.getAdUnits = getAdUnits;
@@ -411,7 +412,7 @@ describe('secureCreatives', () => {
           sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
           return receive(ev);
         }).then(() => {
-          stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
+          expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
         });
       });
 

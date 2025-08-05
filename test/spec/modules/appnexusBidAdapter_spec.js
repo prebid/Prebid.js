@@ -5,6 +5,7 @@ import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
@@ -1789,11 +1790,11 @@ describe('AppNexusAdapter', function () {
     let bidderSettingsStorage;
 
     before(function () {
-      bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+      bidderSettingsStorage = getGlobal().bidderSettings;
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+      getGlobal().bidderSettings = bidderSettingsStorage;
     });
 
     const response = {
@@ -1915,7 +1916,7 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         appnexus: {
           allowZeroCpmBids: true
         }
