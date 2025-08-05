@@ -1,8 +1,6 @@
 import sinon from 'sinon';
 import * as floorProvider from 'libraries/pubmaticUtils/plugins/floorProvider.js';
 import * as priceFloors from 'modules/priceFloors.js';
-import * as utils from 'src/utils.js';
-import * as configModule from 'src/config.js';
 import * as pubmaticUtils from 'libraries/pubmaticUtils/pubmaticUtils.js';
 import {expect} from 'chai';
 
@@ -59,8 +57,6 @@ describe('FloorProvider', () => {
     priceFloors.continueAuction = originalContinueAuction;
   });
 
-
-
   it('should return input unchanged if floor config is missing or disabled', async () => {
    
     const input = {
@@ -91,7 +87,20 @@ describe('FloorProvider', () => {
       getConfigByName: () => floorsobj
     });
 
-    const req = {baz: 3};
+    const req = {
+  ortb2Fragments: {
+    global: {},
+    bidder: {}
+  },
+  adUnits: [
+    {
+      code: 'div1',
+      mediaTypes: { banner: { sizes: [[728, 90]] } },
+      ortb2Imp: { ext: { data: { pbadslot: 'homepage-top-rect' } } },
+      bids: [{ bidder: 'pubmatic' }]
+    }
+  ]
+};
     const result = await floorProvider.processBidRequest(req);
 
     expect(result).to.equal(req);
@@ -119,8 +128,6 @@ describe('FloorProvider', () => {
   it('getTargeting should return undefined or do nothing', () => {
     expect(floorProvider.getTargeting([], {}, {}, {})).to.be.undefined;
   });
-
-  // Additional test cases for one-liner exports
   it('should return correct floor config using getFloorConfig', () => {
     floorProvider.init('dynamicFloors', {
       getConfigByName: () => floorsobj
@@ -140,6 +147,23 @@ describe('FloorProvider', () => {
     expect(mgr.getConfigByName('testPlugin')).to.deep.equal(floorsobj);
   });
   describe('Utility Exports', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('getCountry should return country from configJsonManager', () => {
+    floorProvider.init('any', { country: 'IN', getConfigByName: () => {} });
+    expect(floorProvider.getCountry()).to.equal('IN');
+  });
+
+  it('getOs should return string from getOS', () => {
+    // Import userAgentUtils and stub getOS there
+    const userAgentUtils = require('libraries/userAgentUtils/index.js');
+    const fakeOS = { toString: () => 'MacOS' };
+    const stub = sinon.stub(userAgentUtils, 'getOS').returns(fakeOS);
+    expect(floorProvider.getOs()).to.equal('MacOS');
+    stub.restore();
+  });
     afterEach(() => {
       sinon.restore();
     });
