@@ -33,6 +33,7 @@
     "kargoBidAdapter",
     "linkedInAdsIdSystem",
     "liveIntentIdSystem",
+    "mediafuseBidAdapter",
     "medianetBidAdapter",
     "mobkoiBidAdapter",
     "openxBidAdapter",
