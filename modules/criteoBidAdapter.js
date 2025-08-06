@@ -1,4 +1,4 @@
-import {deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel} from '../src/utils.js';
+import {deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel, deepAccess, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -9,6 +9,7 @@ import {OUTSTREAM} from '../src/video.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
+import {config} from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -32,6 +33,7 @@ const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
 const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
+const DEFAULT_GZIP_ENABLED = true;
 
 /**
  * Defines the generic oRTB converter and all customization functions.
@@ -372,7 +374,15 @@ export const spec = {
     const data = CONVERTER.toORTB({bidderRequest, bidRequests, context});
 
     if (data) {
-      return { method: 'POST', url, data, bidRequests };
+      return {
+        method: 'POST',
+        url,
+        data,
+        bidRequests,
+        options: {
+          endpointCompression: getGzipSetting()
+        },
+      };
     }
   },
 
@@ -418,6 +428,28 @@ export const spec = {
     }
   }
 };
+
+function getGzipSetting() {
+  try {
+    const gzipSetting = deepAccess(config.getBidderConfig(), 'criteo.gzipEnabled');
+
+    if (gzipSetting !== undefined) {
+      const gzipValue = String(gzipSetting).toLowerCase().trim();
+      if (gzipValue === 'true' || gzipValue === 'false') {
+        const parsedValue = gzipValue === 'true';
+        logInfo('Criteo: Using bidder-specific gzipEnabled setting:', parsedValue);
+        return parsedValue;
+      }
+
+      logWarn('Criteo: Invalid gzipEnabled value in bidder config:', gzipSetting);
+    }
+  } catch (e) {
+    logWarn('Criteo: Error accessing bidder config:', e);
+  }
+
+  logInfo('Criteo: Using default gzipEnabled setting:', DEFAULT_GZIP_ENABLED);
+  return DEFAULT_GZIP_ENABLED;
+}
 
 function readFromAllStorages(name) {
   const fromCookie = storage.getCookie(name);
