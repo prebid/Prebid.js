@@ -24,7 +24,9 @@ export const CONSTANTS = Object.freeze({
   }
 });
 
-export let _ymConfigPromise = null;
+let _ymConfigPromise;
+export const getYmConfigPromise = () => _ymConfigPromise;
+export const setYmConfigPromise = (promise) => { _ymConfigPromise = promise; };
 
 export function ConfigJsonManager() {
   let _ymConfig = {};
@@ -82,14 +84,15 @@ export function ConfigJsonManager() {
   return {
     fetchConfig,
     getYMConfig,
+    setYMConfig,
     getConfigByName,
     get country() { return country; }
   };
 }
 
 // Create core components
-const pluginManager = PluginManager();
-const configJsonManager = ConfigJsonManager();
+export const pluginManager = PluginManager();
+export const configJsonManager = ConfigJsonManager();
 
 // Register plugins
 pluginManager.register('dynamicFloors', FloorProvider);
