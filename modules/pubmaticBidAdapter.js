@@ -107,6 +107,9 @@ const converter = ortbConverter({
     reqLevelParams(request);
     updateUserSiteDevice(request, context?.bidRequests);
     addExtenstionParams(request);
+    if (bidderRequest.bidderCode !== BIDDER_CODE) {
+      request.ext.alias = bidderRequest.bidderCode
+    }
     const marketPlaceEnabled = bidderRequest?.bidderCode
       ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (marketPlaceEnabled) updateRequestExt(request, bidderRequest);
@@ -286,7 +289,7 @@ const setFloorInImp = (imp, bid) => {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
           if (isMultiFormatRequest && mediaType !== BANNER) {
             logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', imp.bidfloorcur);
-            imp[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur};
+            imp[mediaType]['ext'] = { 'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur };
           }
           logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
           bidFloor = bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor);
@@ -294,7 +297,7 @@ const setFloorInImp = (imp, bid) => {
         }
       });
       if (isMultiFormatRequest && mediaType === BANNER) {
-        imp[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur};
+        imp[mediaType]['ext'] = { 'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur };
       }
     });
   }
@@ -572,7 +575,7 @@ const getConnectionType = () => {
 
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
-  bootstrapPlayer: function(bid) {
+  bootstrapPlayer: function (bid) {
     const config = {
       code: bid.adUnitCode,
       vastXml: bid.vastXml || null,
@@ -592,7 +595,7 @@ const BB_RENDERER = {
     else logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
   },
 
-  newRenderer: function(rendererCode, adUnitCode) {
+  newRenderer: function (rendererCode, adUnitCode) {
     const rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
     const renderer = Renderer.install({ url: rendererUrl, loaded: false, adUnitCode });
     try {
@@ -603,11 +606,11 @@ const BB_RENDERER = {
     return renderer;
   },
 
-  outstreamRender: function(bid) {
+  outstreamRender: function (bid) {
     bid.renderer.push(() => BB_RENDERER.bootstrapPlayer(bid));
   },
 
-  getRendererId: function(pub, renderer) {
+  getRendererId: function (pub, renderer) {
     return `${pub}-${renderer}`; // NB convention!
   }
 };
@@ -748,7 +751,7 @@ export const spec = {
         return false;
       }
       if (videoMediaTypes.context === 'outstream' && !isStr(bid.params.outstreamAU) &&
-!bid.renderer && !videoMediaTypes.renderer) {
+        !bid.renderer && !videoMediaTypes.renderer) {
         if (mediaTypes.hasOwnProperty(BANNER) || mediaTypes.hasOwnProperty(NATIVE)) {
           delete mediaTypes[VIDEO];
           logWarn(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting mediatype Video of bid: `, bid);
