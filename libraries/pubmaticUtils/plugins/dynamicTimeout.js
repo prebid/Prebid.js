@@ -1,6 +1,7 @@
 import { logInfo } from '../../../src/utils.js'; 
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { calculateTimeoutModifier } from '../../bidderTimeoutUtils/bidderTimeoutUtils.js';
+import { shouldThrottle } from '../pubmaticUtils.js';
 
 let _dynamicTimeoutConfig = null;
 export const getDynamicTimeoutConfig = () => _dynamicTimeoutConfig;
@@ -50,30 +51,40 @@ export async function init(pluginName, configJsonManager) {
 }
 
 /**
- * Process bid request
+ * Process bid request by applying dynamic timeout adjustments
  * @param {Object} reqBidsConfigObj - Bid request config object
- * @returns {Object} - Updated bid request config object
+ * @returns {Object} - Updated bid request config object with adjusted timeout
  */
 export async function processBidRequest(reqBidsConfigObj) {
-  if (!getDynamicTimeoutConfig()?.enabled) {
+  // Cache config to avoid multiple calls
+  const timeoutConfig = getDynamicTimeoutConfig();
+  
+  // Return if dynamic timeout is disabled
+  if (!timeoutConfig?.enabled) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is disabled`);
     return reqBidsConfigObj;
   }
 
-  const isSkipped = Math.random() * 100 < parseFloat(getDynamicTimeoutConfig()?.skipRate);
-  if (isSkipped) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is skipped: ${isSkipped}`);
+  // Check if request should be throttled based on skipRate
+  if (shouldThrottle(timeoutConfig?.config?.skipRate)) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is skipped (skipRate: ${timeoutConfig?.config?.skipRate}%)`);
     return reqBidsConfigObj;
   }
 
   logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is applying...`);
 
+  // Get ad units and bidder timeout
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const bidderTimeout = getBidderTimeout(reqBidsConfigObj);
-
-  const additionalTimeout = calculateTimeoutModifier(adUnits, getRules(bidderTimeout));
+  
+  // Calculate and apply additional timeout
+  const rules = getRules(bidderTimeout);
+  const additionalTimeout = calculateTimeoutModifier(adUnits, rules);
+  
+  // Update the timeout in the request object
   reqBidsConfigObj.timeout = bidderTimeout + additionalTimeout;
-
+  
+  logInfo(`${CONSTANTS.LOG_PRE_FIX} Timeout adjusted from ${bidderTimeout}ms to ${reqBidsConfigObj.timeout}ms (added ${additionalTimeout}ms)`);
   return reqBidsConfigObj;
 }
 
@@ -101,42 +112,61 @@ export const DynamicTimeout = {
 
 
 export const getBidderTimeout = (reqBidsConfigObj) => {
-  return getDynamicTimeoutConfig()?.baseTimeout
-    ? getDynamicTimeoutConfig()?.baseTimeout
+  return getDynamicTimeoutConfig()?.config?.bidderTimeout
+    ? getDynamicTimeoutConfig()?.config?.bidderTimeout
     : reqBidsConfigObj?.timeout || getGlobal()?.getConfig('bidderTimeout');
 }
 
 /**
- * Get rules based on percentage values and baseTimeout
+ * Get rules based on percentage values and bidderTimeout
  * @param {number} bidderTimeout - Bidder timeout in milliseconds
  * @returns {Object} - Rules with calculated millisecond values
  */
 export const getRules = (bidderTimeout) => {
-  return (getDynamicTimeoutConfig()?.rules && Object.keys(getDynamicTimeoutConfig()?.rules).length > 0)
-    ? getDynamicTimeoutConfig()?.rules
-    : createDynamicRules(RULES_PERCENTAGE, bidderTimeout);
+  const timeoutConfig = getDynamicTimeoutConfig();
+  
+  // Check for rules in priority order, If ML model rules are available then return it
+  if (timeoutConfig?.data && Object.keys(timeoutConfig.data).length > 0) {
+    return timeoutConfig.data;
+  }
+  // If config rules are available then return it
+  if (timeoutConfig?.config?.timeoutRules && Object.keys(timeoutConfig.config.timeoutRules).length > 0) {
+    return timeoutConfig.config.timeoutRules;
+  }
+  // If no rules are available then create rules from percentages
+  return createDynamicRules(RULES_PERCENTAGE, bidderTimeout);
 }
 
 /**
- * Creates dynamic rules based on percentage values and baseTimeout
+ * Creates dynamic rules based on percentage values and bidder timeout
  * @param {Object} percentageRules - Rules with percentage values
- * @param {number} baseTimeout - Base timeout in milliseconds
+ * @param {number} bidderTimeout - Bidder timeout in milliseconds
  * @return {Object} - Rules with calculated millisecond values
  */
-export const createDynamicRules = (percentageRules, baseTimeout) => {
-  if (!percentageRules || !baseTimeout) {
+export const createDynamicRules = (percentageRules, bidderTimeout) => {
+  // Return if required parameters are missing or invalid
+  if (!percentageRules || typeof percentageRules !== 'object' || !bidderTimeout || bidderTimeout <= 0) {
     return {};
   }
 
-  const dynamicRules = {};
-  Object.keys(percentageRules).forEach(category => {
+  // Create a new rules object with millisecond values
+  return Object.entries(percentageRules).reduce((dynamicRules, [category, rules]) => {
+    // Skip if rules is not an object
+    if (!rules || typeof rules !== 'object') {
+      return dynamicRules;
+    }
+    
+    // Initialize category in the dynamic rules
     dynamicRules[category] = {};
     
-    Object.keys(percentageRules[category]).forEach(key => {
-      const percentValue = percentageRules[category][key];
-        dynamicRules[category][key] = Math.floor(baseTimeout * (percentValue / 100));
+    // Convert each percentage value to milliseconds
+    Object.entries(rules).forEach(([key, percentValue]) => {
+      // Ensure percentage value is a number and within reasonable range
+      if (typeof percentValue === 'number' && percentValue >= 0) {
+        dynamicRules[category][key] = Math.floor(bidderTimeout * (percentValue / 100));
+      }
     });
-  });
-
-  return dynamicRules;
+    
+    return dynamicRules;
+  }, {});
 };
