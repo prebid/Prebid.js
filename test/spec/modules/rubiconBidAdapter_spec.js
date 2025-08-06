@@ -3,7 +3,6 @@ import {
   spec,
   getPriceGranularity,
   masSizeOrdering,
-  resetUserSync,
   classifiedAsVideo,
   resetRubiConf,
   resetImpIdMap,
@@ -4450,10 +4449,6 @@ describe('the rubicon adapter', function () {
   describe('user sync', function () {
     const emilyUrl = 'https://eus.rubiconproject.com/usync.html';
 
-    beforeEach(function () {
-      resetUserSync();
-    });
-
     it('should register the Emily iframe', function () {
       const syncs = spec.getUserSyncs({
         iframeEnabled: true
@@ -4462,15 +4457,17 @@ describe('the rubicon adapter', function () {
       expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
     });
 
-    it('should not register the Emily iframe more than once', function () {
+    it('should register the Emily iframe more than once', function () {
       let syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
       expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
 
       // when called again, should still have only been called once
-      syncs = spec.getUserSyncs();
-      expect(syncs).to.equal(undefined);
+      syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
     });
 
     it('should pass gdpr params if consent is true', function () {
@@ -4723,10 +4720,6 @@ describe('the rubicon adapter', function () {
         }
       });
       config.resetConfig();
-    });
-
-    beforeEach(function () {
-      resetUserSync();
     });
 
     it('should update fastlane endpoint if', function () {
