@@ -54,8 +54,6 @@ export function getConnectionSpeed() {
     return 'unknown';
 }
 
-
-
 /**
  * Calculate the time to be added to the timeout
  * @param {Array} adUnits

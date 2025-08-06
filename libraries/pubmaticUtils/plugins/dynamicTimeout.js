@@ -45,8 +45,13 @@ export const RULES_PERCENTAGE = {
  * @returns {Promise<boolean>} - Promise resolving to initialization status
  */
 export async function init(pluginName, configJsonManager) {
+  const config = configJsonManager.getConfigByName(pluginName);
+  if (!config) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic Timeout configuration not found`);
+    return false;
+  }
   // Set the Dynamic Timeout config
-  setDynamicTimeoutConfig(configJsonManager.getConfigByName(pluginName));
+  setDynamicTimeoutConfig(config);
   return true;
 }
 
