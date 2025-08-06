@@ -8,6 +8,9 @@ const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Bidder-Optimization: '
 });
 
+// The normalised config supplied via pubmaticRtdProvider
+let _optConfig = null; 
+
 /**
  * Initialize the bidder optimization plugin
  * @param {Object} pluginName - Plugin name
@@ -21,6 +24,12 @@ export async function init(pluginName, configJsonManager) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration not found`);
     return false;
   }
+
+  if(!config?.enabled) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration is disabled`);
+    return false;
+  }
+
   try {
     setBidderOptimisationConfig(config);
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration set successfully`);
@@ -133,9 +142,6 @@ const getHostname = (() => {
 /* -------------------------------------------------------------------------- */
 /*                       Internal, mutable module state                       */
 /* -------------------------------------------------------------------------- */
-
-// The normalised config supplied via pubmaticRtdProvider
-let _optConfig = null;
 
 // Cache: auctionId => prepared optimisation data (lower-cased maps etc.)
 const _auctionDataCache = {};

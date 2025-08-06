@@ -31,6 +31,18 @@ const register = (name, plugin) => {
 };
 
 /**
+ * Unregister a plugin from the plugin manager
+ * @param {string} name - Plugin name
+ * @returns {Object} - Plugin manager functions
+ */
+const unregister = (name) => {
+  if (plugins.has(name)) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Unregistering plugin ${name}`);
+    plugins.delete(name);
+  }
+};
+
+/**
  * Initialize all registered plugins with their specific config
  * @param {Object} configJsonManager - Configuration JSON manager object
  * @returns {Promise} - Promise resolving when all plugins are initialized
@@ -41,7 +53,11 @@ const initialize = async (configJsonManager) => {
   // Initialize each plugin with its specific config
   for (const [name, plugin] of plugins.entries()) {
     if (plugin.init) {
-      initPromises.push(plugin.init(name, configJsonManager));
+      const initialized = plugin.init(name, configJsonManager);
+      if (!initialized) {
+        unregister(name);
+      }
+      initPromises.push(initialized);
     }
   }
 
