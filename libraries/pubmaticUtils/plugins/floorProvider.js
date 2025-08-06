@@ -31,13 +31,13 @@ export const CONSTANTS = Object.freeze({
 export async function init(pluginName, configJsonManager) {
   // Process floor-specific configuration
   const config = configJsonManager.getConfigByName(pluginName);
-  if(!config) {
+  if (!config) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration not found`);
     return false;
   }
   setFloorsConfig(config);
 
-  if(!getFloorConfig()?.enabled) {
+  if (!getFloorConfig()?.enabled) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration is disabled`);
     return false;
   }

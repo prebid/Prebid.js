@@ -9,7 +9,7 @@ const CONSTANTS = Object.freeze({
 });
 
 // The normalised config supplied via pubmaticRtdProvider
-let _optConfig = null; 
+let _optConfig = null;
 
 /**
  * Initialize the bidder optimization plugin
@@ -25,7 +25,7 @@ export async function init(pluginName, configJsonManager) {
     return false;
   }
 
-  if(!config?.enabled) {
+  if (!config?.enabled) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration is disabled`);
     return false;
   }

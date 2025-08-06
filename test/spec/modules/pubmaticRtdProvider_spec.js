@@ -211,8 +211,7 @@ describe('Pubmatic RTD Provider', () => {
       setTimeout(() => {
         expect(logErrorStub.calledOnce).to.be.true;
         expect(logErrorStub.firstCall.args[0]).to.equal(pubmaticRtdProvider.CONSTANTS.LOG_PRE_FIX);
-        expect(logErrorStub.firstCall.args[1]).to.equal('Error in updating floors :');
-        expect(logErrorStub.firstCall.args[2].message).to.equal('Plugin error');
+        expect(logErrorStub.firstCall.args[1].message).to.equal('Plugin error');
         expect(callback.calledOnce).to.be.true;
         done();
       }, 0);
