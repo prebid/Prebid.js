@@ -97,7 +97,7 @@ describe("DatawrkzAnalyticsAdapter", function () {
 
   it("should send data on AUCTION_END", function () {
     const clock = sinon.useFakeTimers();
-  
+
     analyticsAdapter.track({ eventType: AUCTION_INIT, args: { auctionId } });
     analyticsAdapter.track({
       eventType: BID_REQUESTED,
@@ -115,24 +115,23 @@ describe("DatawrkzAnalyticsAdapter", function () {
       },
     });
     analyticsAdapter.track({ eventType: AUCTION_END, args: { auctionId } });
-  
+
     clock.tick(2000); // Fast-forward time by 2 seconds
-  
+
     sinon.assert.calledOnce(fetchStub);
-  
+
     const [url, options] = fetchStub.firstCall.args;
     expect(url).to.equal("https://prebid-api.highr.ai/analytics");
     expect(options.method).to.equal("POST");
     expect(options.headers["Content-Type"]).to.equal("application/json");
-  
+
     const body = JSON.parse(options.body);
     expect(body.auctionId).to.equal(auctionId);
     expect(body.adunits[0].code).to.equal(adUnitCode);
     expect(body.adunits[0].bids[0].bidder).to.equal(bidder);
-  
+
     clock.restore();
   });
-  
 
   it("should send AD_RENDER_SUCCEEDED event", function () {
     analyticsAdapter.track({
@@ -143,11 +142,11 @@ describe("DatawrkzAnalyticsAdapter", function () {
         doc: "<html></html>"
       }
     });
-  
+
     sinon.assert.calledOnce(fetchStub);
     const [url, options] = fetchStub.firstCall.args;
     const payload = JSON.parse(options.body);
-  
+
     expect(payload.eventType).to.equal(AD_RENDER_SUCCEEDED);
     expect(payload.bidderCode).to.equal("appnexus");
     expect(payload.successDoc).to.be.a("string");
@@ -165,11 +164,11 @@ describe("DatawrkzAnalyticsAdapter", function () {
         message: "Render failed due to network error"
       }
     });
-  
+
     sinon.assert.calledOnce(fetchStub);
     const [url, options] = fetchStub.firstCall.args;
     const payload = JSON.parse(options.body);
-  
+
     expect(payload.eventType).to.equal(AD_RENDER_FAILED);
     expect(payload.bidderCode).to.equal("appnexus");
     expect(payload.successDoc).to.be.null;

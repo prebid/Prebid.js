@@ -111,14 +111,14 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
 
             const payload = {
               eventType: EVENTS.AD_RENDER_SUCCEEDED,
-              domain:  window.location.hostname || 'unknown',    
+              domain: window.location.hostname || 'unknown',
               bidderCode: bid?.bidderCode,
               width: bid?.width,
               height: bid?.height,
               cpm: bid?.cpm,
-              currency: bid?.currency,      
+              currency: bid?.currency,
               auctionId: bid?.auctionId,
-              adUnitCode: bid?.adUnitCode, 
+              adUnitCode: bid?.adUnitCode,
               adId,
               successDoc: JSON.stringify(doc),
               failureReason: null,
@@ -134,7 +134,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
             } catch (e) {
               logError('[DatawrkzAnalytics] Failed to send AD_RENDER_SUCCEEDED event', e, payload);
             }
-          
+
             break;
         }
 
@@ -143,14 +143,14 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
 
             const payload = {
               eventType: EVENTS.AD_RENDER_FAILED,
-              domain:  window.location.hostname || 'unknown',    
+              domain: window.location.hostname || 'unknown',
               bidderCode: bid?.bidderCode,
               width: bid?.width,
               height: bid?.height,
               cpm: bid?.cpm,
-              currency: bid?.currency,      
+              currency: bid?.currency,
               auctionId: bid?.auctionId,
-              adUnitCode: bid?.adUnitCode, 
+              adUnitCode: bid?.adUnitCode,
               adId,
               successDoc: null,
               failureReason: reason,
@@ -166,7 +166,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
             } catch (e) {
               logError('[DatawrkzAnalytics] Failed to send AD_RENDER_FAILED event', e, payload);
             }
-          
+
             break;
         }
 
@@ -174,13 +174,13 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
           const auctionId = args?.auctionId;
           const auction = auctions[auctionId];
           if (!auction) return;
-        
+
           setTimeout(() => {
             const adunitsArray = Object.entries(auction.adunits).map(([code, data]) => ({
               code,
               bids: data.bids
             }));
-        
+
             const payload = {
               eventType: 'auction_data',
               auctionId: auction.auctionId,
@@ -188,7 +188,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
               domain: auction.domain,
               adunits: adunitsArray
             };
-        
+
             try {
               fetch(ENDPOINT, {
                 method: 'POST',
@@ -198,10 +198,10 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
             } catch (e) {
               logError('[DatawrkzAnalytics] Sending failed', e, payload);
             }
-        
+
             delete auctions[auctionId];
           }, 2000); // Wait 2 seconds for BID_WON to happen
-        
+
           break;
         }
 
