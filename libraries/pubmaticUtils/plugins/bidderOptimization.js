@@ -16,8 +16,13 @@ const CONSTANTS = Object.freeze({
  */
 export async function init(pluginName, configJsonManager) {
   // Process bidder optimization configuration
+  const config = configJsonManager.getConfigByName(pluginName);
+  if (!config) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration not found`);
+    return false;
+  }
   try {
-    setBidderOptimisationConfig(configJsonManager.getConfigByName(pluginName));
+    setBidderOptimisationConfig(config);
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Bidder optimization configuration set successfully`);
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error setting bidder optimization config: ${error}`);

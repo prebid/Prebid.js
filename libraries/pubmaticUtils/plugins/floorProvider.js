@@ -30,7 +30,12 @@ export const CONSTANTS = Object.freeze({
  */
 export async function init(pluginName, configJsonManager) {
   // Process floor-specific configuration
-  setFloorsConfig(configJsonManager.getConfigByName(pluginName));
+  const config = configJsonManager.getConfigByName(pluginName);
+  if(!config) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration not found`);
+    return false;
+  }
+  setFloorsConfig(config);
   setConfigJsonManager(configJsonManager);
   if (!isFn(continueAuction)) {
     logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
