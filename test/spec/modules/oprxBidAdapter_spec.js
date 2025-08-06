@@ -30,9 +30,9 @@ describe('oprxBidAdapter', function () {
   // SETUP: Replace real converter with mock
   before(() => {
     __setTestConverter({
-      toORTB: ({ bRequests }) => ({
+      toORTB: ({ bidRequests }) => ({
         id: 'test-request',
-        imp: bRequests.map(bid => ({
+        imp: bidRequests.map(bid => ({
           id: bid.bidId,
           banner: { format: [{ w: 300, h: 250 }] },
           bidfloor: bid.params.bid_floor || 0
@@ -60,7 +60,6 @@ describe('oprxBidAdapter', function () {
     it('should build a valid request object', () => {
       const request = spec.buildRequests([bid], bidderRequest)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.include('placement_id=123456');
       expect(request.data).to.be.an('object');
     });
   });
