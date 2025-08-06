@@ -28,7 +28,6 @@ const register = (name, plugin) => {
     return;
   }
   plugins.set(name, plugin);
-  return { register, initialize, executeHook };
 };
 
 /**

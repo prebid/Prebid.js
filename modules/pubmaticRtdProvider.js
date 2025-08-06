@@ -158,7 +158,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
 
     callback();
   }).catch(error => {
-    logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
+    logError(CONSTANTS.LOG_PRE_FIX, error);
     callback();
   });
 };
