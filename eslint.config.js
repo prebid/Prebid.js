@@ -33,6 +33,13 @@ const allowedImports = {
     'dlv',
     'dset'
   ],
+  // [false] means disallow ANY import outside of modules/debugging
+  // this is because debugging also gets built as a standalone module,
+  // and importing global state does not work as expected.
+  // in theory imports that do not involve global state are fine, but
+  // even innocuous imports can become problematic if the source changes,
+  // and it's too easy to forget this is a problem for debugging-standalone.
+  'modules/debugging': [false],
   libraries: [],
   creative: [],
 }
