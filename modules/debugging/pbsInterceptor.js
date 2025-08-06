@@ -1,6 +1,5 @@
-import {deepClone, delayExecution} from '../../src/utils.js';
-
-export function makePbsInterceptor({createBid}) {
+export function makePbsInterceptor({createBid, utils}) {
+  const {deepClone, delayExecution} = utils;
   return function pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {
     onResponse,
     onError,
