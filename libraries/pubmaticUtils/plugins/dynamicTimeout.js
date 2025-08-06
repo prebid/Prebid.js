@@ -52,6 +52,11 @@ export async function init(pluginName, configJsonManager) {
   }
   // Set the Dynamic Timeout config
   setDynamicTimeoutConfig(config);
+
+  if(!getDynamicTimeoutConfig()?.enabled) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic Timeout configuration is disabled`);
+    return false;
+  }
   return true;
 }
 
@@ -63,12 +68,6 @@ export async function init(pluginName, configJsonManager) {
 export async function processBidRequest(reqBidsConfigObj) {
   // Cache config to avoid multiple calls
   const timeoutConfig = getDynamicTimeoutConfig();
-  
-  // Return if dynamic timeout is disabled
-  if (!timeoutConfig?.enabled) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is disabled`);
-    return reqBidsConfigObj;
-  }
 
   // Check if request should be throttled based on skipRate
   if (shouldThrottle(timeoutConfig?.config?.skipRate)) {
