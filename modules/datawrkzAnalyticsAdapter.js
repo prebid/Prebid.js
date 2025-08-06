@@ -107,67 +107,67 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
         }
 
         case EVENTS.AD_RENDER_SUCCEEDED: {
-            const { bid, adId, doc } = args || {};
+          const { bid, adId, doc } = args || {};
 
-            const payload = {
-              eventType: EVENTS.AD_RENDER_SUCCEEDED,
-              domain: window.location.hostname || 'unknown',
-              bidderCode: bid?.bidderCode,
-              width: bid?.width,
-              height: bid?.height,
-              cpm: bid?.cpm,
-              currency: bid?.currency,
-              auctionId: bid?.auctionId,
-              adUnitCode: bid?.adUnitCode,
-              adId,
-              successDoc: JSON.stringify(doc),
-              failureReason: null,
-              failureMessage: null,
-            }
+          const payload = {
+            eventType: EVENTS.AD_RENDER_SUCCEEDED,
+            domain: window.location.hostname || 'unknown',
+            bidderCode: bid?.bidderCode,
+            width: bid?.width,
+            height: bid?.height,
+            cpm: bid?.cpm,
+            currency: bid?.currency,
+            auctionId: bid?.auctionId,
+            adUnitCode: bid?.adUnitCode,
+            adId,
+            successDoc: JSON.stringify(doc),
+            failureReason: null,
+            failureMessage: null,
+          }
 
-            try {
-              fetch(ENDPOINT, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
-              });
-            } catch (e) {
-              logError('[DatawrkzAnalytics] Failed to send AD_RENDER_SUCCEEDED event', e, payload);
-            }
+          try {
+            fetch(ENDPOINT, {
+              method: 'POST',
+              body: JSON.stringify(payload),
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } catch (e) {
+            logError('[DatawrkzAnalytics] Failed to send AD_RENDER_SUCCEEDED event', e, payload);
+          }
 
-            break;
+          break;
         }
 
         case EVENTS.AD_RENDER_FAILED: {
-            const { reason, message, bid, adId } = args || {};
+          const { reason, message, bid, adId } = args || {};
 
-            const payload = {
-              eventType: EVENTS.AD_RENDER_FAILED,
-              domain: window.location.hostname || 'unknown',
-              bidderCode: bid?.bidderCode,
-              width: bid?.width,
-              height: bid?.height,
-              cpm: bid?.cpm,
-              currency: bid?.currency,
-              auctionId: bid?.auctionId,
-              adUnitCode: bid?.adUnitCode,
-              adId,
-              successDoc: null,
-              failureReason: reason,
-              failureMessage: message
-            }
+          const payload = {
+            eventType: EVENTS.AD_RENDER_FAILED,
+            domain: window.location.hostname || 'unknown',
+            bidderCode: bid?.bidderCode,
+            width: bid?.width,
+            height: bid?.height,
+            cpm: bid?.cpm,
+            currency: bid?.currency,
+            auctionId: bid?.auctionId,
+            adUnitCode: bid?.adUnitCode,
+            adId,
+            successDoc: null,
+            failureReason: reason,
+            failureMessage: message
+          }
 
-            try {
-              fetch(ENDPOINT, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
-              });
-            } catch (e) {
-              logError('[DatawrkzAnalytics] Failed to send AD_RENDER_FAILED event', e, payload);
-            }
+          try {
+            fetch(ENDPOINT, {
+              method: 'POST',
+              body: JSON.stringify(payload),
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } catch (e) {
+            logError('[DatawrkzAnalytics] Failed to send AD_RENDER_FAILED event', e, payload);
+          }
 
-            break;
+          break;
         }
 
         case EVENTS.AUCTION_END: {
