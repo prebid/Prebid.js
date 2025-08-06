@@ -36,11 +36,18 @@ export async function init(pluginName, configJsonManager) {
     return false;
   }
   setFloorsConfig(config);
-  setConfigJsonManager(configJsonManager);
+
+  if(!getFloorConfig()?.enabled) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration is disabled`);
+    return false;
+  }
+
   if (!isFn(continueAuction)) {
     logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
     return false;
   }
+
+  setConfigJsonManager(configJsonManager);
   try {
     conf.setConfig(prepareFloorsConfig());
     logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicFloors config set successfully`);
@@ -59,10 +66,6 @@ export async function init(pluginName, configJsonManager) {
  * @returns {Object} - Updated bid request config object
  */
 export async function processBidRequest(reqBidsConfigObj) {
-  if (!getFloorConfig() || !getFloorConfig().enabled) {
-    return reqBidsConfigObj;
-  }
-
   try {
     const hookConfig = {
       reqBidsConfigObj,
