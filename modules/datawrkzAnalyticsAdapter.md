@@ -2,7 +2,7 @@
 
 **Module Name:** Datawrkz Analytics Adapter  
 **Module Type:** Analytics Adapter  
-**Maintainer:** dev@datawrkz.com
+**Maintainer:** ambily@datawrkz.com
 
 ---
 
@@ -18,8 +18,5 @@ Enable the adapter using:
 
 ```js
 pbjs.enableAnalytics({
-  provider: 'datawrkzanalytics',
-  options: {
-    // No custom options required
-  }
+  provider: 'datawrkzanalytics'
 });

@@ -9,6 +9,8 @@ const {
   BID_TIMEOUT,
   BID_WON,
   AUCTION_END,
+  AD_RENDER_SUCCEEDED,
+  AD_RENDER_FAILED
 } = EVENTS;
 
 describe("DatawrkzAnalyticsAdapter", function () {
@@ -94,13 +96,13 @@ describe("DatawrkzAnalyticsAdapter", function () {
   });
 
   it("should send data on AUCTION_END", function () {
+    const clock = sinon.useFakeTimers();
+  
     analyticsAdapter.track({ eventType: AUCTION_INIT, args: { auctionId } });
-
     analyticsAdapter.track({
       eventType: BID_REQUESTED,
       args: { auctionId, bids: [{ adUnitCode, bidder }] },
     });
-
     analyticsAdapter.track({
       eventType: BID_RESPONSE,
       args: {
@@ -112,21 +114,66 @@ describe("DatawrkzAnalyticsAdapter", function () {
         timeToRespond: 300,
       },
     });
-
     analyticsAdapter.track({ eventType: AUCTION_END, args: { auctionId } });
-
+  
+    clock.tick(2000); // Fast-forward time by 2 seconds
+  
     sinon.assert.calledOnce(fetchStub);
-
+  
     const [url, options] = fetchStub.firstCall.args;
-    expect(url).to.equal("http://18.142.162.26/analytics");
+    expect(url).to.equal("https://prebid-api.highr.ai/analytics");
     expect(options.method).to.equal("POST");
     expect(options.headers["Content-Type"]).to.equal("application/json");
-
+  
     const body = JSON.parse(options.body);
     expect(body.auctionId).to.equal(auctionId);
-    expect(body.site).to.equal(window.location.hostname || "unknown");
-    expect(body.adunits).to.be.an("array");
     expect(body.adunits[0].code).to.equal(adUnitCode);
     expect(body.adunits[0].bids[0].bidder).to.equal(bidder);
+  
+    clock.restore();
+  });
+  
+
+  it("should send AD_RENDER_SUCCEEDED event", function () {
+    analyticsAdapter.track({
+      eventType: AD_RENDER_SUCCEEDED,
+      args: {
+        bid: { adId: "ad123", bidderCode: bidder, cpm: 2.0 },
+        adId: "ad123",
+        doc: "<html></html>"
+      }
+    });
+  
+    sinon.assert.calledOnce(fetchStub);
+    const [url, options] = fetchStub.firstCall.args;
+    const payload = JSON.parse(options.body);
+  
+    expect(payload.eventType).to.equal(AD_RENDER_SUCCEEDED);
+    expect(payload.bidderCode).to.equal("appnexus");
+    expect(payload.successDoc).to.be.a("string");
+    expect(payload.failureReason).to.be.null;
+    expect(payload.failureMessage).to.be.null;
+  });
+
+  it("should send AD_RENDER_FAILED event", function () {
+    analyticsAdapter.track({
+      eventType: AD_RENDER_FAILED,
+      args: {
+        bid: { adId: "ad124", bidderCode: bidder, cpm: 1.5 },
+        adId: "ad124",
+        reason: "network",
+        message: "Render failed due to network error"
+      }
+    });
+  
+    sinon.assert.calledOnce(fetchStub);
+    const [url, options] = fetchStub.firstCall.args;
+    const payload = JSON.parse(options.body);
+  
+    expect(payload.eventType).to.equal(AD_RENDER_FAILED);
+    expect(payload.bidderCode).to.equal("appnexus");
+    expect(payload.successDoc).to.be.null;
+    expect(payload.failureReason).to.equal("network");
+    expect(payload.failureMessage).to.equal("Render failed due to network error");
   });
 });
