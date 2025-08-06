@@ -1,4 +1,4 @@
-import { logError } from "../../../src/utils.js";
+import { logInfo, logWarn, logError } from "../../../src/utils.js";
 
 // pluginManager.js
 const plugins = new Map();
@@ -24,7 +24,7 @@ export const PluginManager = () => ({
  */
 const register = (name, plugin) => {
   if (plugins.has(name)) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} Plugin ${name} already registered`);
+    logWarn(`${CONSTANTS.LOG_PRE_FIX} Plugin ${name} already registered`);
     return;
   }
   plugins.set(name, plugin);

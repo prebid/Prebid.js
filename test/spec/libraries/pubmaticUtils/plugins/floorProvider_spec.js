@@ -1,7 +1,7 @@
 import sinon from 'sinon';
-import * as floorProvider from 'libraries/pubmaticUtils/plugins/floorProvider.js';
-import * as priceFloors from 'modules/priceFloors.js';
-import * as pubmaticUtils from 'libraries/pubmaticUtils/pubmaticUtils.js';
+import * as floorProvider from '../../../../../libraries/pubmaticUtils/plugins/floorProvider.js';
+import * as priceFloors from '../../../../../modules/priceFloors.js';
+import * as pubmaticUtils from '../../../../../libraries/pubmaticUtils/pubmaticUtils.js';
 import {expect} from 'chai';
 
 describe('FloorProvider', () => {
@@ -111,28 +111,39 @@ describe('FloorProvider', () => {
     expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
   });
 
-  it('should   return undefined if getConfigByName returns undefined', () => {
-    floorProvider.init('', { getConfigByName: () => undefined });
-    expect(floorProvider.getFloorConfig()).to.deep.equal(undefined);
+  it('should return false if getConfigByName returns undefined', async () => {
+    const result = await floorProvider.init('', { getConfigByName: () => undefined });
+    expect(result).to.equal(false);
   });
 
-  it('should cover getConfigJsonManager export and log its value', () => {
+  it('should return false when floor configuration is disabled', async () => {
+    const disabledConfig = { ...floorsobj, enabled: false };
+    const result = await floorProvider.init('dynamicFloors', {
+      getConfigByName: () => disabledConfig
+    });
+    expect(result).to.equal(false);
+    expect(floorProvider.getFloorConfig()).to.deep.equal(disabledConfig);
+  });
+
+  it('should cover getConfigJsonManager export and log its value', async () => {
     const configJsonManager = { getConfigByName: () => floorsobj };
-    floorProvider.init('testPlugin', configJsonManager);
+    const result = await floorProvider.init('testPlugin', configJsonManager);
     const mgr = floorProvider.getConfigJsonManager();
     expect(mgr.getConfigByName('testPlugin')).to.deep.equal(floorsobj);
+    expect(result).to.be.true;
   });
   describe('Utility Exports', () => {
     afterEach(() => {
       sinon.restore();
     });
 
-    it('getCountry should return country from configJsonManager', () => {
-      floorProvider.init('any', { country: 'IN', getConfigByName: () => {} });
+    it('getCountry should return country from configJsonManager', async () => {
+      const enabledConfig = { ...floorsobj, enabled: true };
+      floorProvider.init('any', { country: 'IN', getConfigByName: () => enabledConfig });
       expect(floorProvider.getCountry()).to.equal('IN');
     });
 
-    it('getOs should return string from getOS', () => {
+    it('getOs should return string from getOS', async () => {
     // Import userAgentUtils and stub getOS there
       const userAgentUtils = require('libraries/userAgentUtils/index.js');
       const fakeOS = { toString: () => 'MacOS' };
@@ -144,26 +155,26 @@ describe('FloorProvider', () => {
       sinon.restore();
     });
 
-    it('getTimeOfDay should return result from getCurrentTimeOfDay', () => {
+    it('getTimeOfDay should return result from getCurrentTimeOfDay', async () => {
       const stub = sinon.stub(pubmaticUtils, 'getCurrentTimeOfDay').returns('evening');
       expect(floorProvider.getTimeOfDay()).to.equal('evening');
     });
 
-    it('should return a string device type using getDeviceType', () => {
+    it('should return a string device type using getDeviceType', async () => {
       expect(floorProvider.getDeviceType()).to.be.a('string');
     });
 
-    it('getBrowser should return result from getBrowser', () => {
+    it('getBrowser should return result from getBrowser', async () => {
       const stub = sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
       expect(floorProvider.getBrowser()).to.equal('Chrome');
     });
 
-    it('getUtm should return result from getUtmValue', () => {
+    it('getUtm should return result from getUtmValue', async () => {
       const stub = sinon.stub(pubmaticUtils, 'getUtmValue').returns('evening');
       expect(floorProvider.getUtm()).to.equal('evening');
     });
 
-    it('getBidder should return bidder from request', () => {
+    it('getBidder should return bidder from request', async () => {
       floorProvider.init('dynamicFloors', { getConfigByName: () => floorsobj });
       expect(floorProvider.getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
       expect(floorProvider.getBidder({})).to.equal(undefined);
