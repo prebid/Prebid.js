@@ -70,15 +70,11 @@ const validUserIdTierFields = new Set<string>();
  * which is populated during config validation based on explicitly configured userIds.
  * Fields will be rejected if they're not in the configured set, even if they follow the userId.tierName format.
  */
-const isUidFieldMap = {};
 function isUserIdTierField(field: string): boolean {
   if (typeof field !== 'string') return false;
-  if (field in isUidFieldMap) return isUidFieldMap[field];
 
-  // Only consider fields valid if they exist in our configured userId tier fields set
-  const isConfiguredTier = validUserIdTierFields.has(field);
-  isUidFieldMap[field] = isConfiguredTier;
-  return isConfiguredTier;
+  // Simply check if the field exists in our configured userId tier fields set
+  return validUserIdTierFields.has(field);
 }
 
 /**
@@ -1169,7 +1165,7 @@ function validateUserIdsConfig(userIds: Record<string, unknown>): Record<string,
   validUserIdTierFields.clear();
 
   // Check if userIds is an object with array values
-  const invalidKey = Object.entries(userIds).find(([tierName, value]) => {
+  const invalidKey = Object.entries(userIds).some(([tierName, value]) => {
     if (!Array.isArray(value)) {
       return true;
     }
