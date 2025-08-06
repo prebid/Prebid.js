@@ -60,15 +60,25 @@ export const allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domai
 type DefaultField = { [K in (typeof allowedFields)[number]]: K extends string ? K : never}[(typeof allowedFields)[number]];
 
 /**
+ * @summary Global set to track valid userId tier fields
+ */
+const validUserIdTierFields = new Set<string>();
+
+/**
  * @summary Checks if a field is a valid user ID tier field (userId.tierName)
+ * A field is only considered valid if it appears in the validUserIdTierFields set,
+ * which is populated during config validation based on explicitly configured userIds.
+ * Fields will be rejected if they're not in the configured set, even if they follow the userId.tierName format.
  */
 const isUidFieldMap = {};
 function isUserIdTierField(field: string): boolean {
   if (typeof field !== 'string') return false;
   if (field in isUidFieldMap) return isUidFieldMap[field];
-  const isUid = field.startsWith('userId.');
-  isUidFieldMap[field] = isUid;
-  return isUid;
+
+  // Only consider fields valid if they exist in our configured userId tier fields set
+  const isConfiguredTier = validUserIdTierFields.has(field);
+  isUidFieldMap[field] = isConfiguredTier;
+  return isConfiguredTier;
 }
 
 /**
@@ -1150,13 +1160,28 @@ registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPre
 
 /**
  * Validate userIds config: must be an object with array values
+ * Also populates the validUserIdTierFields set with field names in the format "userId.tierName"
  */
 function validateUserIdsConfig(userIds: Record<string, unknown>): Record<string, unknown> {
   if (!userIds || typeof userIds !== 'object') return {};
+
+  // Clear the previous set of valid tier fields
+  validUserIdTierFields.clear();
+
   // Check if userIds is an object with array values
-  const invalidKey = Object.entries(userIds).find(([, value]) => !Array.isArray(value));
+  const invalidKey = Object.entries(userIds).find(([tierName, value]) => {
+    if (!Array.isArray(value)) {
+      return true;
+    }
+    // Add the tier field to the validUserIdTierFields set
+    validUserIdTierFields.add(`userId.${tierName}`);
+    return false;
+  });
+
   if (invalidKey) {
+    validUserIdTierFields.clear();
     return {};
   }
+
   return userIds;
 }
