@@ -3,7 +3,6 @@ import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput}
 
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
-
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
@@ -495,6 +494,19 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     const tId = deepAccess(ortb2Imp, 'ext.tid') || deepAccess(bidderRequest, 'ortb2.source.tid') || '';
     data.tId = tId
+
+    // Add bid cache configuration - only if explicitly set to true (false is the default)
+    const bidCacheConfig = config.getConfig('useBidCache');
+    if (bidCacheConfig === true) {
+      data.useBidCache = true;
+    }
+    // Note: We don't send false since it's the default value in Prebid.js
+
+    const cacheConfig = config.getConfig('cache');
+    if (cacheConfig && cacheConfig.url) {
+      data.cacheUrl = cacheConfig.url;
+    }
+
     Object.assign(
       data,
       _getBrowserParams(topWindowUrl, mosttopLocation),
