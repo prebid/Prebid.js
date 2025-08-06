@@ -76,7 +76,7 @@ const _createAiApiInstance = async (ApiConstructor, options) => {
 
 const mergeModuleConfig = (config) => {
   // Start with a deep copy of default_config to ensure all keys are present
-  let newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+  const newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
   if (config?.params) {
     mergeDeep(newConfig, config.params);
   }
@@ -228,11 +228,11 @@ export const detectLanguage = async (text) => {
 };
 
 export const detectSummary = async (text, config) => {
-    const summaryOptions = {
-        type: config.type,
-        format: config.format,
-        length: config.length,
-      };
+  const summaryOptions = {
+    type: config.type,
+    format: config.format,
+    length: config.length,
+  };
   const summarizer = await _createAiApiInstance(Summarizer, summaryOptions);
   if (!summarizer) {
     return null; // Error already logged by _createAiApiInstance

@@ -27,7 +27,7 @@ describe('currency', function () {
   let sandbox;
   let clock;
 
-  let fn = sinon.spy();
+  const fn = sinon.spy();
 
   function makeBid(bidProps) {
     return Object.assign(createBid(), bidProps);

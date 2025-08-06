@@ -22,7 +22,7 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let sizes = parseSizesInput(bid.sizes);
+    const sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
@@ -50,7 +50,9 @@ export const spec = {
         }
       }
 
-      _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
+      _each(bidRequest.params, (item, key) => {
+        src = src + '&' + key + '=' + item;
+      });
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;
@@ -80,7 +82,7 @@ export const spec = {
       return [];
     }
 
-    let bid = {
+    const bid = {
       requestId: bidRequest.bidId,
       cpm: responseObj.cpm,
       width: responseObj.Width,

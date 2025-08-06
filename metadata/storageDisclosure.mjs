@@ -1,31 +1,17 @@
 import fs from 'fs';
+import {getGvl, isValidGvlId} from './gvl.mjs';
 
-const GVL_URL = 'https://vendor-list.consensu.org/v3/vendor-list.json';
 const LOCAL_DISCLOSURE_PATTERN = /^local:\/\//;
 const LOCAL_DISCLOSURE_PATH = './metadata/disclosures/'
 const LOCAL_DISCLOSURES_URL = 'https://cdn.jsdelivr.net/gh/prebid/Prebid.js/metadata/disclosures/';
 
 const PARSE_ERROR_LINES = 20;
 
-export const getGvl = (() => {
-  let gvl;
-  return function () {
-    if (gvl == null) {
-      gvl = fetch(GVL_URL)
-        .then(resp => resp.json())
-        .catch((err) => {
-          gvl = null;
-          return Promise.reject(err);
-        });
-    }
-    return gvl;
-  };
-})();
 
-export function getDisclosureUrl(gvlId) {
-  return getGvl().then(gvl => {
-    return gvl.vendors[gvlId]?.deviceStorageDisclosureUrl;
-  });
+export async function getDisclosureUrl(gvlId, gvl = getGvl) {
+  if (await isValidGvlId(gvlId, gvl)) {
+    return (await gvl()).vendors[gvlId]?.deviceStorageDisclosureUrl;
+  }
 }
 
 function parseDisclosure(payload) {

@@ -144,7 +144,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
   for (const res of body.ads) {
     const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
-    let bidResponse = {
+    const bidResponse = {
       requestId: res.bidId,
       placementId: res.placementId,
       width: res.width,
@@ -195,7 +195,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 }
 
 function onBidWon(bid) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(bid, 'params.0.placementId'),
     creative_id: deepAccess(bid, 'creativeId'),
     price: deepAccess(bid, 'cpm'),
@@ -204,14 +204,14 @@ function onBidWon(bid) {
     ad_id: deepAccess(bid, 'adId'),
     ad_unit_code: deepAccess(bid, 'adUnitCode'),
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
   const burl = `https://${bidDomain}/tr/v1/prebid/win.gif?${query}`;
   triggerPixel(burl);
 }
 
 function onTimeout(data) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(data, '0.params.0.placementId'),
     timeout: deepAccess(data, '0.timeout'),
     auction_id: deepAccess(data, '0.auctionId'),
@@ -219,7 +219,7 @@ function onTimeout(data) {
     ad_unit_code: deepAccess(data, '0.adUnitCode'),
     version: ADAPTER_VERSION,
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
   const timeoutUrl = `https://${bidDomain}/tr/v1/prebid/timeout.gif?${query}`;
   triggerPixel(timeoutUrl);
@@ -327,7 +327,7 @@ function hasVideoMediaType(bid) {
 }
 
 function getValidSizes(sizes) {
-  let result = [];
+  const result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
       if (isArray(sizes[i]) && sizes[i].length == 2) {

@@ -4,8 +4,8 @@ import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
-import { deepSetValue } from '../../../src/utils';
-import { getImpIdMap, setIsEqtvTest } from '../../../modules/sharethroughBidAdapter';
+import { deepSetValue } from '../../../src/utils.js';
+import { getImpIdMap, setIsEqtvTest } from '../../../modules/sharethroughBidAdapter.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 

@@ -2,7 +2,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {deepClone} from '../../../src/utils';
+import {deepClone} from '../../../src/utils.js';
 import 'modules/consentManagementTcf';
 import 'modules/consentManagementUsp';
 import 'modules/userId/index';
@@ -569,8 +569,8 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.user).to.not.equal(null);
     expect(ortbRequest.user).to.deep.equal({
@@ -607,8 +607,8 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site).to.deep.equal({
@@ -654,8 +654,8 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     }];
-    let request = spec.buildRequests(bidderRequests, bidderRequest);
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(bidderRequests, bidderRequest);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);

@@ -14,7 +14,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
   describe('isBidRequestValid', function () {
     describe('banner request validity', function () {
-      let bid = {
+      const bid = {
         'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251'
@@ -33,7 +33,7 @@ describe('cadent_aperture_mx Adapter', function () {
         'bidderRequestId': '22edbae3120bf6',
         'auctionId': '1d1a01234a475'
       };
-      let badBid = {
+      const badBid = {
         'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251'
@@ -47,7 +47,7 @@ describe('cadent_aperture_mx Adapter', function () {
         'bidderRequestId': '22edbae3120bf6',
         'auctionId': '1d1a01234a475'
       };
-      let noBid = {};
+      const noBid = {};
 
       it('should return true when required params found', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -57,7 +57,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     describe('video request validity', function () {
-      let bid = {
+      const bid = {
         'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251',
@@ -78,7 +78,7 @@ describe('cadent_aperture_mx Adapter', function () {
         'bidderRequestId': '22edbae3120bf6',
         'auctionId': '1d1a01234a475'
       };
-      let noInstreamBid = {
+      const noInstreamBid = {
         'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251',
@@ -101,7 +101,7 @@ describe('cadent_aperture_mx Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
 
-      let outstreamBid = {
+      const outstreamBid = {
         'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251',
@@ -166,7 +166,7 @@ describe('cadent_aperture_mx Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidderRequest = {
+    const bidderRequest = {
       'bidderCode': 'cadent_aperture_mx',
       'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
       'bidderRequestId': '22edbae3120bf6',
@@ -289,8 +289,8 @@ describe('cadent_aperture_mx Adapter', function () {
       });
 
       it('builds correctly formatted request banner object', function () {
-        let bidRequestWithBanner = utils.deepClone(bidderRequest.bids);
-        let request = spec.buildRequests(bidRequestWithBanner, bidderRequest);
+        const bidRequestWithBanner = utils.deepClone(bidderRequest.bids);
+        const request = spec.buildRequests(bidRequestWithBanner, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.imp[0].video).to.equal(undefined);
         expect(data.imp[0].banner).to.exist.and.to.be.a('object');
@@ -303,7 +303,7 @@ describe('cadent_aperture_mx Adapter', function () {
       });
 
       it('builds correctly formatted request video object for instream', function () {
-        let bidRequestWithVideo = utils.deepClone(bidderRequest.bids);
+        const bidRequestWithVideo = utils.deepClone(bidderRequest.bids);
         bidRequestWithVideo[0].mediaTypes = {
           video: {
             context: 'instream',
@@ -311,7 +311,7 @@ describe('cadent_aperture_mx Adapter', function () {
           },
         };
         bidRequestWithVideo[0].params.video = {};
-        let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
+        const request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist.and.to.be.a('object');
         expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
@@ -319,7 +319,7 @@ describe('cadent_aperture_mx Adapter', function () {
       });
 
       it('builds correctly formatted request video object for outstream', function () {
-        let bidRequestWithOutstreamVideo = utils.deepClone(bidderRequest.bids);
+        const bidRequestWithOutstreamVideo = utils.deepClone(bidderRequest.bids);
         bidRequestWithOutstreamVideo[0].mediaTypes = {
           video: {
             context: 'outstream',
@@ -327,7 +327,7 @@ describe('cadent_aperture_mx Adapter', function () {
           },
         };
         bidRequestWithOutstreamVideo[0].params.video = {};
-        let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
+        const request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist.and.to.be.a('object');
         expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
@@ -341,7 +341,7 @@ describe('cadent_aperture_mx Adapter', function () {
       });
 
       it('should have the right gdpr info when enabled', function () {
-        let consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
+        const consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
         const gdprBidderRequest = utils.deepClone(bidderRequest);
         gdprBidderRequest.gdprConsent = {
           'consentString': consentString,
@@ -367,7 +367,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
       it('should add us privacy info to request', function() {
         const uspBidderRequest = utils.deepClone(bidderRequest);
-        let consentString = '1YNN';
+        const consentString = '1YNN';
         uspBidderRequest.uspConsent = consentString;
         let request = spec.buildRequests(uspBidderRequest.bids, uspBidderRequest);
         request = JSON.parse(request.data);
@@ -421,7 +421,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
       it('should add gpid to request if present in ext.gpid', () => {
         const gpid = '/12345/my-gpt-tag-0';
-        let bid = utils.deepClone(bidderRequest.bids[0]);
+        const bid = utils.deepClone(bidderRequest.bids[0]);
         bid.ortb2Imp = { ext: { gpid, data: { adserver: { adslot: gpid + '1' }, pbadslot: gpid + '2' } } };
         let requestWithGPID = spec.buildRequests([bid], bidderRequest);
         requestWithGPID = JSON.parse(requestWithGPID.data);
@@ -430,7 +430,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
       it('should add gpid to request if present in ext.data.adserver.adslot', () => {
         const gpid = '/12345/my-gpt-tag-0';
-        let bid = utils.deepClone(bidderRequest.bids[0]);
+        const bid = utils.deepClone(bidderRequest.bids[0]);
         bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid }, pbadslot: gpid + '1' } } };
         let requestWithGPID = spec.buildRequests([bid], bidderRequest);
         requestWithGPID = JSON.parse(requestWithGPID.data);
@@ -439,7 +439,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
       it('should add gpid to request if present in ext.data.pbadslot', () => {
         const gpid = '/12345/my-gpt-tag-0';
-        let bid = utils.deepClone(bidderRequest.bids[0]);
+        const bid = utils.deepClone(bidderRequest.bids[0]);
         bid.ortb2Imp = { ext: { data: {}, gpid } };
         let requestWithGPID = spec.buildRequests([bid], bidderRequest);
         requestWithGPID = JSON.parse(requestWithGPID.data);
@@ -533,7 +533,7 @@ describe('cadent_aperture_mx Adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bid = {
+    const bid = {
       'bidder': 'cadent_aperture_mx',
       'params': {
         'tagid': '25251',
@@ -660,7 +660,7 @@ describe('cadent_aperture_mx Adapter', function () {
     }];
 
     it('should properly format bid response', function () {
-      let result = spec.interpretResponse({
+      const result = spec.interpretResponse({
         body: serverResponse
       });
       expect(Object.keys(result[0]).length).to.equal(Object.keys(expectedResponse[0]).length);
@@ -678,7 +678,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should return multiple bids', function () {
-      let result = spec.interpretResponse({
+      const result = spec.interpretResponse({
         body: serverResponse
       });
       expect(Array.isArray(result.seatbid))
@@ -703,7 +703,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('returns a banner bid for non-xml creatives', function () {
-      let result = spec.interpretResponse({
+      const result = spec.interpretResponse({
         body: serverResponse
       }, { bidRequest: bid }
       );
@@ -727,7 +727,7 @@ describe('cadent_aperture_mx Adapter', function () {
       vastServerResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
       vastServerResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
 
-      let result = spec.interpretResponse({
+      const result = spec.interpretResponse({
         body: vastServerResponse
       }, { bidRequest: bid }
       );
@@ -747,7 +747,7 @@ describe('cadent_aperture_mx Adapter', function () {
       const vastServerResponse = utils.deepClone(serverResponse);
       vastServerResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
       vastServerResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
-      let result = spec.interpretResponse({body: vastServerResponse}, bid_outstream);
+      const result = spec.interpretResponse({body: vastServerResponse}, bid_outstream);
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.renderer).to.exist.and.to.be.a('object');
@@ -757,11 +757,11 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('handles nobid responses', function () {
-      let serverResponse = {
+      const serverResponse = {
         'bids': []
       };
 
-      let result = spec.interpretResponse({
+      const result = spec.interpretResponse({
         body: serverResponse
       });
       expect(result.length).to.equal(0);
@@ -779,7 +779,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
     it('returns valid advertiser domains', function () {
       const bidResponse = utils.deepClone(serverResponse);
-      let result = spec.interpretResponse({body: bidResponse});
+      const result = spec.interpretResponse({body: bidResponse});
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
       // case where adomains are not in request
       expect(result[1].meta).to.not.exist;
@@ -788,7 +788,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
   describe('getUserSyncs', function () {
     it('should register the iframe sync url', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
       expect(syncs).to.not.be.an('undefined');
@@ -798,7 +798,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should pass gdpr params', function () {
-      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
         gdprApplies: false, consentString: 'test'
       });
       expect(syncs).to.not.be.an('undefined');
@@ -809,7 +809,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should pass us_privacy string', function () {
-      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {
         consentString: 'test',
       });
       expect(syncs).to.not.be.an('undefined');
@@ -819,7 +819,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should pass us_privacy and gdpr strings', function () {
-      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {},
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {},
         {
           gdprApplies: true,
           consentString: 'test'
@@ -836,7 +836,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should pass gpp string and section id', function() {
-      let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {
+      const syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {
         gppString: 'abcdefgs',
         applicableSections: [1, 2, 4]
       });
@@ -846,7 +846,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should pass us_privacy and gdpr string and gpp string', function () {
-      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {},
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {},
         {
           gdprApplies: true,
           consentString: 'test'

@@ -30,21 +30,21 @@ const FIELDS = {
  * additionally, elements within them can be moved around using the `move` argument.
  */
 export function normalizer({nullify = [], move = {}, fn}: {
-    /**
-     * list of fields to force to null
-     */
-    nullify?: string[];
-    /**
-     * Map from list field name to an index remapping for elements within that field (using 1 as the first index).
-     * For example, {SensitiveDataProcessing: {1: 2, 2: [1, 3]}} means "rearrange SensitiveDataProcessing by moving
-     * the first element to the second position, and the second element to both the first and third position."
-     */
-    move?: { [name: string]: { [position: number]: number | number[] } };
-    /**
-     * an optional function to run once all the processing described above is complete;
-     * it's passed two arguments, the original (state) data, and its normalized (usnat) version.
-     */
-    fn?: (original, normalized) => any;
+  /**
+   * list of fields to force to null
+   */
+  nullify?: string[];
+  /**
+   * Map from list field name to an index remapping for elements within that field (using 1 as the first index).
+   * For example, {SensitiveDataProcessing: {1: 2, 2: [1, 3]}} means "rearrange SensitiveDataProcessing by moving
+   * the first element to the second position, and the second element to both the first and third position."
+   */
+  move?: { [name: string]: { [position: number]: number | number[] } };
+  /**
+   * an optional function to run once all the processing described above is complete;
+   * it's passed two arguments, the original (state) data, and its normalized (usnat) version.
+   */
+  fn?: (original, normalized) => any;
 }, fields = FIELDS) {
   move = Object.fromEntries(Object.entries(move).map(([k, map]) => [k,
     Object.fromEntries(Object.entries(map)
@@ -172,33 +172,33 @@ export const getSections = (() => {
 const handles = [];
 
 declare module './consentManagementGpp' {
-    interface GPPConfig {
-        mspa?: {
-            /**
-             * GPP SIDs that should be covered by activity restrictions. Defaults to all US state SIDs.
-             */
-            sids?: number[];
-            /**
-             * Map from section ID to per-section configuration options
-             */
-            sections?: {
-              [sid: number]: {
-                  /**
-                   * GPP API name to use for the section. Defaults to the names listed in the GPP spec:
-                   * https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Sections/Section%20Information.md#section-ids
-                   * This option would only be used if your CMP has named their sections in a non-standard way.y
-                   */
-                  name?: string;
-                  /**
-                   * Normalize the flags for this section as if it were the number provided.
-                   * Cfr https://docs.prebid.org/features/mspa-usnat.html#interpreting-usnat-strings
-                   * Each section defaults to its own ID.
-                   */
-                  normalizeAs?: number;
-              }
-            }
+  interface GPPConfig {
+    mspa?: {
+      /**
+       * GPP SIDs that should be covered by activity restrictions. Defaults to all US state SIDs.
+       */
+      sids?: number[];
+      /**
+       * Map from section ID to per-section configuration options
+       */
+      sections?: {
+        [sid: number]: {
+          /**
+           * GPP API name to use for the section. Defaults to the names listed in the GPP spec:
+           * https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Sections/Section%20Information.md#section-ids
+           * This option would only be used if your CMP has named their sections in a non-standard way.y
+           */
+          name?: string;
+          /**
+           * Normalize the flags for this section as if it were the number provided.
+           * Cfr https://docs.prebid.org/features/mspa-usnat.html#interpreting-usnat-strings
+           * Each section defaults to its own ID.
+           */
+          normalizeAs?: number;
         }
+      }
     }
+  }
 }
 
 config.getConfig('consentManagement', (cfg) => {

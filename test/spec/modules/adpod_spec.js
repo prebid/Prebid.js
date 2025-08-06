@@ -6,7 +6,7 @@ import { ADPOD } from 'src/mediaTypes.js';
 
 import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 describe('adpod.js', function () {
   let logErrorStub;
@@ -22,18 +22,18 @@ describe('adpod.js', function () {
     let afterBidAddedSpy;
     let auctionBids = [];
 
-    let callbackFn = function() {
+    const callbackFn = function() {
       callbackResult = true;
     };
 
-    let auctionInstance = {
+    const auctionInstance = {
       getAuctionStatus: function() {
         return auction.AUCTION_IN_PROGRESS;
       }
     }
 
     const fakeStoreFn = function(bids, callback) {
-      let payload = [];
+      const payload = [];
       bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
       callback(null, payload);
     };
@@ -50,7 +50,7 @@ describe('adpod.js', function () {
       clock = sinon.useFakeTimers();
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'https://test.cache.url/endpoint'
         }
       });
     });
@@ -66,12 +66,12 @@ describe('adpod.js', function () {
     })
 
     it('should redirect back to the original function if bid is not an adpod video', function () {
-      let bid = {
+      const bid = {
         adId: 'testAdId_123',
         mediaType: 'video'
       };
 
-      let videoMT = {
+      const videoMT = {
         context: 'outstream'
       };
 
@@ -87,7 +87,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'adId01277',
         auctionId: 'no_defer_123',
         mediaType: 'video',
@@ -106,7 +106,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'adId46547',
         auctionId: 'no_defer_123',
         mediaType: 'video',
@@ -125,7 +125,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 300,
@@ -165,7 +165,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'adId123',
         auctionId: 'full_abc123',
         mediaType: 'video',
@@ -183,7 +183,7 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'adId234',
         auctionId: 'full_abc123',
         mediaType: 'video',
@@ -201,7 +201,7 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 120,
@@ -239,7 +239,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse = {
+      const bidResponse = {
         adId: 'adId234',
         auctionId: 'timer_abc234',
         mediaType: 'video',
@@ -257,7 +257,7 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 120,
@@ -290,7 +290,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'multi_ad1',
         auctionId: 'multi_call_abc345',
         mediaType: 'video',
@@ -308,7 +308,7 @@ describe('adpod.js', function () {
           durationBucket: 15
         }
       };
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'multi_ad2',
         auctionId: 'multi_call_abc345',
         mediaType: 'video',
@@ -326,7 +326,7 @@ describe('adpod.js', function () {
           durationBucket: 15
         }
       };
-      let bidResponse3 = {
+      const bidResponse3 = {
         adId: 'multi_ad3',
         auctionId: 'multi_call_abc345',
         mediaType: 'video',
@@ -345,7 +345,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 45,
@@ -391,7 +391,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'nocat_ad1',
         auctionId: 'no_category_abc345',
         mediaType: 'video',
@@ -409,7 +409,7 @@ describe('adpod.js', function () {
           durationBucket: 15
         }
       };
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'nocat_ad2',
         auctionId: 'no_category_abc345',
         mediaType: 'video',
@@ -428,7 +428,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 45,
@@ -467,7 +467,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'missingCat_ad1',
         auctionId: 'missing_category_abc345',
         mediaType: 'video',
@@ -482,7 +482,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 45,
@@ -501,7 +501,7 @@ describe('adpod.js', function () {
 
     it('should not add bid to auction when Prebid Cache detects an existing key', function () {
       storeStub.callsFake(function(bids, callback) {
-        let payload = [];
+        const payload = [];
         bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
 
         // fake a duplicate bid response from PBC (sets an empty string for the uuid)
@@ -517,7 +517,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'dup_ad_1',
         auctionId: 'duplicate_def123',
         mediaType: 'video',
@@ -535,7 +535,7 @@ describe('adpod.js', function () {
           durationBucket: 45
         }
       };
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'dup_ad_2',
         auctionId: 'duplicate_def123',
         mediaType: 'video',
@@ -553,7 +553,7 @@ describe('adpod.js', function () {
           durationBucket: 45
         }
       };
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 120,
@@ -578,8 +578,8 @@ describe('adpod.js', function () {
 
     it('should not add bids to auction if PBC returns an error', function() {
       storeStub.callsFake(function(bids, callback) {
-        let payload = [];
-        let errmsg = 'invalid json';
+        const payload = [];
+        const errmsg = 'invalid json';
 
         callback(errmsg, payload);
       });
@@ -592,7 +592,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'err_ad_1',
         auctionId: 'error_xyz123',
         mediaType: 'video',
@@ -606,7 +606,7 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'err_ad_2',
         auctionId: 'error_xyz123',
         mediaType: 'video',
@@ -620,7 +620,7 @@ describe('adpod.js', function () {
           durationBucket: 30
         }
       };
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 120,
@@ -662,7 +662,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'cat_ad1',
         auctionId: 'test_category_abc345',
         mediaType: 'video',
@@ -686,7 +686,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 45,
@@ -717,7 +717,7 @@ describe('adpod.js', function () {
         }
       });
 
-      let bidResponse1 = {
+      const bidResponse1 = {
         adId: 'adId01277',
         auctionId: 'no_defer_123',
         mediaType: 'video',
@@ -738,7 +738,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let bidResponse2 = {
+      const bidResponse2 = {
         adId: 'adId46547',
         auctionId: 'no_defer_123',
         mediaType: 'video',
@@ -758,7 +758,7 @@ describe('adpod.js', function () {
         }
       };
 
-      let videoMT = {
+      const videoMT = {
         context: ADPOD,
         playerSize: [[300, 300]],
         adPodDurationSec: 300,
@@ -776,7 +776,7 @@ describe('adpod.js', function () {
 
   describe('checkAdUnitSetupHook', function () {
     let results;
-    let callbackFn = function (adUnits) {
+    const callbackFn = function (adUnits) {
       results = adUnits;
     };
 
@@ -790,7 +790,7 @@ describe('adpod.js', function () {
     });
 
     it('removes an incorrectly setup adpod adunit - required fields are missing', function() {
-      let adUnits = [{
+      const adUnits = [{
         code: 'test1',
         mediaTypes: {
           video: {
@@ -820,7 +820,7 @@ describe('adpod.js', function () {
     });
 
     it('removes an incorrectly setup adpod adunit - required fields are using invalid values', function() {
-      let adUnits = [{
+      const adUnits = [{
         code: 'test1',
         mediaTypes: {
           video: {
@@ -846,7 +846,7 @@ describe('adpod.js', function () {
     });
 
     it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function() {
-      let adUnits = [{
+      const adUnits = [{
         code: 'multi_test1',
         mediaTypes: {
           banner: {
@@ -868,7 +868,7 @@ describe('adpod.js', function () {
     });
 
     it('accepts mixed set of adunits', function() {
-      let adUnits = [{
+      const adUnits = [{
         code: 'test3',
         mediaTypes: {
           video: {
@@ -945,7 +945,7 @@ describe('adpod.js', function () {
       bailResult = null;
       config.setConfig({
         cache: {
-          url: 'http://test.cache.url/endpoint'
+          url: 'https://test.cache.url/endpoint'
         },
         adpod: {
           brandCategoryExclusion: true
@@ -962,7 +962,7 @@ describe('adpod.js', function () {
     })
 
     it('redirects to original function for non-adpod type video bids', function() {
-      let bannerTestBid = {
+      const bannerTestBid = {
         mediaType: 'video'
       };
       checkVideoBidSetupHook(callbackFn, bannerTestBid, {}, {}, 'instream');
@@ -974,14 +974,14 @@ describe('adpod.js', function () {
     it('returns true when adpod bid is properly setup', function() {
       config.setConfig({
         cache: {
-          url: 'http://test.cache.url/endpoint'
+          url: 'https://test.cache.url/endpoint'
         },
         adpod: {
           brandCategoryExclusion: false
         }
       });
 
-      let goodBid = utils.deepClone(adpodTestBid);
+      const goodBid = utils.deepClone(adpodTestBid);
       goodBid.meta.primaryCatId = undefined;
       checkVideoBidSetupHook(callbackFn, goodBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
       expect(callbackResult).to.be.null;
@@ -990,7 +990,7 @@ describe('adpod.js', function () {
     });
 
     it('returns true when adpod bid is missing iab category while brandCategoryExclusion in config is false', function() {
-      let goodBid = utils.deepClone(adpodTestBid);
+      const goodBid = utils.deepClone(adpodTestBid);
       checkVideoBidSetupHook(callbackFn, goodBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
       expect(callbackResult).to.be.null;
       expect(bailResult).to.equal(true);
@@ -1005,24 +1005,24 @@ describe('adpod.js', function () {
         expect(logErrorStub.called).to.equal(shouldErrorBeLogged);
       }
 
-      let noCatBid = utils.deepClone(adpodTestBid);
+      const noCatBid = utils.deepClone(adpodTestBid);
       noCatBid.meta.primaryCatId = undefined;
       testInvalidAdpodBid(noCatBid, false);
 
-      let noContextBid = utils.deepClone(adpodTestBid);
+      const noContextBid = utils.deepClone(adpodTestBid);
       delete noContextBid.video.context;
       testInvalidAdpodBid(noContextBid, false);
 
-      let wrongContextBid = utils.deepClone(adpodTestBid);
+      const wrongContextBid = utils.deepClone(adpodTestBid);
       wrongContextBid.video.context = 'instream';
       testInvalidAdpodBid(wrongContextBid, false);
 
-      let noDurationBid = utils.deepClone(adpodTestBid);
+      const noDurationBid = utils.deepClone(adpodTestBid);
       delete noDurationBid.video.durationSeconds;
       testInvalidAdpodBid(noDurationBid, false);
 
       config.resetConfig();
-      let noCacheUrlBid = utils.deepClone(adpodTestBid);
+      const noCacheUrlBid = utils.deepClone(adpodTestBid);
       testInvalidAdpodBid(noCacheUrlBid, true);
     });
 
@@ -1039,7 +1039,7 @@ describe('adpod.js', function () {
       };
 
       it('when requireExactDuration is true', function() {
-        let goodBid = utils.deepClone(basicBid);
+        const goodBid = utils.deepClone(basicBid);
         checkVideoBidSetupHook(callbackFn, goodBid, adUnitWithExact, adUnitWithExact.mediaTypes.video, ADPOD);
 
         expect(callbackResult).to.be.null;
@@ -1047,7 +1047,7 @@ describe('adpod.js', function () {
         expect(bailResult).to.equal(true);
         expect(logWarnStub.called).to.equal(false);
 
-        let badBid = utils.deepClone(basicBid);
+        const badBid = utils.deepClone(basicBid);
         badBid.video.durationSeconds = 14;
         checkVideoBidSetupHook(callbackFn, badBid, adUnitWithExact, adUnitWithExact.mediaTypes.video, ADPOD);
 
@@ -1066,23 +1066,23 @@ describe('adpod.js', function () {
           expect(logWarnStub.called).to.equal(false);
         }
 
-        let goodBid45 = utils.deepClone(basicBid);
+        const goodBid45 = utils.deepClone(basicBid);
         goodBid45.video.durationSeconds = 45;
         testRoundingForGoodBId(goodBid45, 45);
 
-        let goodBid30 = utils.deepClone(basicBid);
+        const goodBid30 = utils.deepClone(basicBid);
         goodBid30.video.durationSeconds = 30;
         testRoundingForGoodBId(goodBid30, 45);
 
-        let goodBid10 = utils.deepClone(basicBid);
+        const goodBid10 = utils.deepClone(basicBid);
         goodBid10.video.durationSeconds = 10;
         testRoundingForGoodBId(goodBid10, 15);
 
-        let goodBid16 = utils.deepClone(basicBid);
+        const goodBid16 = utils.deepClone(basicBid);
         goodBid16.video.durationSeconds = 16;
         testRoundingForGoodBId(goodBid16, 15);
 
-        let goodBid47 = utils.deepClone(basicBid);
+        const goodBid47 = utils.deepClone(basicBid);
         goodBid47.video.durationSeconds = 47;
         testRoundingForGoodBId(goodBid47, 45);
       });
@@ -1096,11 +1096,11 @@ describe('adpod.js', function () {
           expect(logWarnStub.called).to.equal(true);
         }
 
-        let badBid100 = utils.deepClone(basicBid);
+        const badBid100 = utils.deepClone(basicBid);
         badBid100.video.durationSeconds = 100;
         testRoundingForBadBid(badBid100);
 
-        let badBid48 = utils.deepClone(basicBid);
+        const badBid48 = utils.deepClone(basicBid);
         badBid48.video.durationSeconds = 48;
         testRoundingForBadBid(badBid48);
       });
@@ -1149,7 +1149,7 @@ describe('adpod.js', function () {
 
   describe('adpod utils', function() {
     it('should sort bids array', function() {
-      let bids = [{
+      const bids = [{
         cpm: 10.12345,
         adserverTargeting: {
           hb_pb: '10.00',
@@ -1191,7 +1191,7 @@ describe('adpod.js', function () {
         }
       }]
       bids.sort(sortByPricePerSecond);
-      let sortedBids = [{
+      const sortedBids = [{
         cpm: 15,
         adserverTargeting: {
           hb_pb: '15.00',
