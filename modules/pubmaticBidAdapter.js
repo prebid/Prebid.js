@@ -7,6 +7,7 @@ import { isViewabilityMeasurable, getViewability } from '../libraries/percentInV
 import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
+import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,6 +31,7 @@ const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js');
 const MSG_VIDEO_PLCMT_MISSING = 'Video.plcmt param missing';
 const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const DEFAULT_TTL = 360;
+const DEFAULT_GZIP_ENABLED = true;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -64,7 +66,7 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
-    const { adUnitCode, mediaTypes, rtd } = bidRequest;
+    const { adUnitCode, mediaTypes, rtd, ortb2 } = bidRequest;
     const imp = buildImp(bidRequest, context);
 
     // Check if the imp object does not have banner, video, or native
@@ -72,8 +74,18 @@ const converter = ortbConverter({
     if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
       return null;
     }
-    if (deals) addPMPDeals(imp, deals);
-    if (dctr) addDealCustomTargetings(imp, dctr);
+    if (deals) addPMPDeals(imp, deals, LOG_WARN_PREFIX);
+    if (dctr) addDealCustomTargetings(imp, dctr, LOG_WARN_PREFIX);
+    const customTargetings = shouldAddDealTargeting(ortb2);
+    if (customTargetings) {
+      imp.ext = imp.ext || {};
+      const targetingValues = Object.values(customTargetings).filter(Boolean);
+      if (targetingValues.length) {
+        imp.ext['key_val'] = imp.ext['key_val']
+          ? `${imp.ext['key_val']}|${targetingValues.join('|')}`
+          : targetingValues.join('|');
+      }
+    }
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
@@ -157,6 +169,17 @@ const converter = ortbConverter({
   }
 });
 
+export const shouldAddDealTargeting = (ortb2) => {
+  const imSegmentData = ortb2?.user?.ext?.data?.im_segments;
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  const hasImSegments = imSegmentData && isArray(imSegmentData) && imSegmentData.length;
+  const hasIasBrandSafety = typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length;
+  const result = {};
+  if (hasImSegments) result.im_segments = `im_segments=${imSegmentData.join(',')}`;
+  if (hasIasBrandSafety) result['ias-brand-safety'] = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`).join('|');
+  return Object.keys(result).length ? result : undefined;
+}
+
 export function _calculateBidCpmAdjustment(bid) {
   if (!bid) return;
 
@@ -219,7 +242,7 @@ const handleImageProperties = asset => {
 
 const toOrtbNativeRequest = legacyNativeAssets => {
   const ortb = { ver: '1.2', assets: [] };
-  for (let key in legacyNativeAssets) {
+  for (const key in legacyNativeAssets) {
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key) && !PREBID_NATIVE_DATA_KEY_VALUES.includes(key)) {
       logWarn(`${LOG_WARN_PREFIX}: Unrecognized asset: ${key}. Ignored.`);
@@ -267,8 +290,8 @@ function removeGranularFloor(imp, mediaTypes) {
 
 const setFloorInImp = (imp, bid) => {
   let bidFloor = -1;
-  let requestedMediatypes = Object.keys(bid.mediaTypes);
-  let isMultiFormatRequest = requestedMediatypes.length > 1
+  const requestedMediatypes = Object.keys(bid.mediaTypes);
+  const isMultiFormatRequest = requestedMediatypes.length > 1
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (!imp.hasOwnProperty(mediaType)) return;
@@ -312,7 +335,7 @@ const setFloorInImp = (imp, bid) => {
 }
 
 const updateBannerImp = (bannerObj, adSlot) => {
-  let slot = adSlot.split(':');
+  const slot = adSlot.split(':');
   let splits = slot[0]?.split('@');
   splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
   const primarySize = bannerObj.format[0];
@@ -327,6 +350,7 @@ const updateBannerImp = (bannerObj, adSlot) => {
   bannerObj.format = bannerObj.format.filter(
     (item) => !(item.w === bannerObj.w && item.h === bannerObj.h)
   );
+  if (!bannerObj.format?.length) delete bannerObj.format;
   bannerObj.pos ??= 0;
 }
 
@@ -340,7 +364,7 @@ const updateNativeImp = (imp, nativeParams) => {
     imp.native.request = JSON.stringify(toOrtbNativeRequest(nativeParams));
   }
   if (nativeParams?.ortb) {
-    let nativeConfig = JSON.parse(imp.native.request);
+    const nativeConfig = JSON.parse(imp.native.request);
     const { assets } = nativeConfig;
     if (!assets?.some(asset => asset.title || asset.img || asset.data || asset.video)) {
       logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or contains invalid objects`);
@@ -373,36 +397,9 @@ const addJWPlayerSegmentData = (imp, jwplayer) => {
   imp.ext.key_val = imp.ext.key_val ? `${imp.ext.key_val}|${jwPlayerData}` : jwPlayerData;
 };
 
-const addDealCustomTargetings = (imp, dctr) => {
-  if (isStr(dctr) && dctr.length > 0) {
-    const arr = dctr.split('|').filter(val => val.trim().length > 0);
-    dctr = arr.map(val => val.trim()).join('|');
-    imp.ext['key_val'] = dctr;
-  } else {
-    logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-  }
-}
-
-const addPMPDeals = (imp, deals) => {
-  if (!isArray(deals)) {
-    logWarn(`${LOG_WARN_PREFIX}Error: bid.params.deals should be an array of strings.`);
-    return;
-  }
-  deals.forEach(deal => {
-    if (typeof deal === 'string' && deal.length > 3) {
-      if (!imp.pmp) {
-        imp.pmp = { private_auction: 0, deals: [] };
-      }
-      imp.pmp.deals.push({ id: deal });
-    } else {
-      logWarn(`${LOG_WARN_PREFIX}Error: deal-id present in array bid.params.deals should be a string with more than 3 characters length, deal-id ignored: ${deal}`);
-    }
-  });
-}
-
 const updateRequestExt = (req, bidderRequest) => {
   const allBiddersList = ['all'];
-  let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+  const allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
   const biddersList = isArray(allowedBiddersList)
     ? allowedBiddersList.map(val => val.trim().toLowerCase()).filter(uniques)
     : allBiddersList;
@@ -563,7 +560,7 @@ const validateBlockedCategories = (bcats) => {
 }
 
 const getConnectionType = () => {
-  let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
+  const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
   const types = { ethernet: 1, wifi: 2, 'slow-2g': 4, '2g': 4, '3g': 5, '4g': 6 };
   return types[connection?.effectiveType] || 0;
 }
@@ -639,6 +636,25 @@ const getPublisherId = (bids) =>
   Array.isArray(bids) && bids.length > 0
     ? bids.find(bid => bid.params?.publisherId?.trim())?.params.publisherId || null
     : null;
+
+function getGzipSetting() {
+  // Check bidder-specific configuration
+  try {
+    const gzipSetting = deepAccess(config.getBidderConfig(), 'pubmatic.gzipEnabled');
+    if (gzipSetting !== undefined) {
+      const gzipValue = String(gzipSetting).toLowerCase().trim();
+      if (gzipValue === 'true' || gzipValue === 'false') {
+        const parsedValue = gzipValue === 'true';
+        logInfo('PubMatic: Using bidder-specific gzipEnabled setting:', parsedValue);
+        return parsedValue;
+      }
+      logWarn('PubMatic: Invalid gzipEnabled value in bidder config:', gzipSetting);
+    }
+  } catch (e) { logWarn('PubMatic: Error accessing bidder config:', e); }
+
+  logInfo('PubMatic: Using default gzipEnabled setting:', DEFAULT_GZIP_ENABLED);
+  return DEFAULT_GZIP_ENABLED;
+}
 
 const _handleCustomParams = (params, conf) => {
   Object.keys(CUSTOM_PARAMS).forEach(key => {
@@ -778,13 +794,13 @@ export const spec = {
     })
     const data = converter.toORTB({ validBidRequests, bidderRequest });
 
-    let serverRequest = {
+    const serverRequest = {
       method: 'POST',
       url: ENDPOINT,
       data: data,
       bidderRequest: bidderRequest,
       options: {
-        endpointCompression: true
+        endpointCompression: getGzipSetting()
       },
     };
     return data?.imp?.length ? serverRequest : null;

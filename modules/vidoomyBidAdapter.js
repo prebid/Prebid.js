@@ -158,7 +158,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      schain: serializeSupplyChainObj(bid.schain) || '',
+      schain: serializeSupplyChainObj(bid?.ortb2?.source?.ext?.schain) || '',
       eids: eids || '',
       bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
@@ -204,12 +204,12 @@ const render = (bid) => {
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
-    let responseBodies = serverResponse.body;
+    const responseBodies = serverResponse.body;
     if (!Array.isArray(responseBodies) || responseBodies.length === 0) return;
 
     const bids = [];
 
-    for (let responseBody of responseBodies) {
+    for (const responseBody of responseBodies) {
       if (!responseBody) continue;
       if (responseBody.mediaType === 'video') {
         responseBody.ad = responseBody.vastUrl || responseBody.vastXml;

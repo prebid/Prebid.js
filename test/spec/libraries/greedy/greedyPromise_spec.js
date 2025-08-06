@@ -25,7 +25,7 @@ describe('GreedyPromise', () => {
 
     Object.entries({
 
-      'resolver that throws': (P) => new P(() => { throw 'error' }),
+      'resolver that throws': (P) => new P(() => { throw new Error('error') }),
       'resolver that resolves multiple times': (P) => new P((resolve) => { resolve('first'); resolve('second'); }),
       'resolver that rejects multiple times': (P) => new P((resolve, reject) => { reject('first'); reject('second') }),
       'resolver that resolves and rejects': (P) => new P((resolve, reject) => { reject('first'); resolve('second') }),
@@ -75,7 +75,7 @@ describe('GreedyPromise', () => {
           .catch((err) => `${err} ${fval}`)
       },
 
-      '.finally that throws': (P) => makePromise(P, 'value').finally(() => { throw 'error' }),
+      '.finally that throws': (P) => makePromise(P, 'value').finally(() => { throw new Error('error') }),
       'chained .finally that rejects': (P) => makePromise(P, 'value').finally(() => P.reject('error')),
       'scalar Promise.resolve': (P) => P.resolve('scalar'),
       'null Promise.resolve': (P) => P.resolve(null),
@@ -148,7 +148,11 @@ describe('GreedyPromise', () => {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
                 const run = () => fail ? reject(value) : resolve(value);
-                delay === 0 ? run() : setTimeout(run, delay);
+                if (delay === 0) {
+                  run();
+                } else {
+                  setTimeout(run, delay);
+                }
               })
             };
             pendingSuccess = makePromise(GreedyPromise, 'pending result');

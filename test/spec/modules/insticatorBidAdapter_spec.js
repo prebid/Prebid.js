@@ -2,18 +2,19 @@ import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { getWinDimensions } from '../../../src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
 const USER_ID_STUBBED = '12345678-1234-1234-1234-123456789abc';
 
-let utils = require('src/utils.js');
+const utils = require('src/utils.js');
 
 describe('InsticatorBidAdapter', function () {
   const adapter = newBidder(spec);
 
   const bidderRequestId = '22edbae2733bf6';
-  let bidRequest = {
+  const bidRequest = {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
     params: {
@@ -46,17 +47,23 @@ describe('InsticatorBidAdapter', function () {
         gpid: '1111/homepage'
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'insticator.com',
-          sid: '00001',
-          hp: 1,
-          rid: bidderRequestId
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'insticator.com',
+                sid: '00001',
+                hp: 1,
+                rid: bidderRequestId
+              }
+            ]
+          }
         }
-      ]
+      }
     },
     userIdAsEids: [
       {
@@ -302,7 +309,7 @@ describe('InsticatorBidAdapter', function () {
     let serverRequests, serverRequest;
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         insticator: {
           storageAllowed: true
         }
@@ -322,7 +329,7 @@ describe('InsticatorBidAdapter', function () {
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     before(() => {

@@ -14,14 +14,14 @@ const UNDEF = undefined;
 const SUPPORTED_MEDIATYPES = [ BANNER ];
 
 function _getHost(url) {
-  let a = document.createElement('a');
+  const a = document.createElement('a');
   a.href = url;
   return a.hostname;
 }
 
 function _getBidFloor(bid, mType, sz) {
   if (isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
+    const floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: mType || '*',
       size: sz || '*'
@@ -197,8 +197,9 @@ export const spec = {
     }
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params
@@ -249,7 +250,7 @@ export const spec = {
           seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
+              const newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0),
                 currency: DEFAULT_CURRENCY,

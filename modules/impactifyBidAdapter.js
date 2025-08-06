@@ -35,7 +35,7 @@ export const STORAGE_KEY = '_im_str'
  */
 const helpers = {
   getExtParamsFromBid(bid) {
-    let ext = {
+    const ext = {
       impactify: {
         appId: bid.params.appId
       },
@@ -72,7 +72,7 @@ const helpers = {
   },
 
   createOrtbImpBannerObj(bid, size) {
-    let sizes = size.split('x');
+    const sizes = size.split('x');
 
     return {
       id: 'banner-' + bid.bidId,
@@ -118,7 +118,7 @@ const helpers = {
  */
 function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create request and set imp bids inside
-  let request = {
+  const request = {
     id: bidderRequest.bidderRequestId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
@@ -137,11 +137,11 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   }
 
   // Set SChain in request
-  let schain = deepAccess(validBidRequests, '0.schain');
+  const schain = deepAccess(validBidRequests, '0.ortb2.source.ext.schain');
   if (schain) request.source.ext = { schain: schain };
 
   // Set Eids
-  let eids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const eids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (eids && eids.length) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
@@ -179,9 +179,9 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {
-    let bannerObj = deepAccess(bid.mediaTypes, `banner`);
+    const bannerObj = deepAccess(bid.mediaTypes, `banner`);
 
-    let imp = {
+    const imp = {
       id: bid.bidId,
       bidfloor: bid.params.bidfloor ? bid.params.bidfloor : 0,
       ext: helpers.getExtParamsFromBid(bid)
@@ -253,7 +253,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
-    let request = createOpenRtbRequest(validBidRequests, bidderRequest);
+    const request = createOpenRtbRequest(validBidRequests, bidderRequest);
     const imStr = helpers.getImStrFromLocalStorage();
     const options = {}
 

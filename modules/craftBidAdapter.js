@@ -27,7 +27,7 @@ export const spec = {
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     const bidRequest = bidRequests[0];
     const tags = bidRequests.map(bidToTag);
-    const schain = bidRequest.schain;
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
     const payload = {
       tags: [...tags],
       ua: navigator.userAgent,
@@ -47,7 +47,7 @@ export const spec = {
         payload.us_privacy = bidderRequest.uspConsent;
       }
       if (bidderRequest.refererInfo) {
-        let refererinfo = {
+        const refererinfo = {
           // TODO: this collects everything it finds, except for the canonical URL
           rd_ref: bidderRequest.refererInfo.topmostLocation,
           rd_top: bidderRequest.refererInfo.reachedTop,

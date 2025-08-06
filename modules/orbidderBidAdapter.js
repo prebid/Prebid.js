@@ -98,7 +98,7 @@ export const spec = {
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
-      let httpReq = {
+      const httpReq = {
         url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
