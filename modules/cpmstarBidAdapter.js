@@ -28,7 +28,7 @@ export const spec = {
   pageID: Math.floor(Math.random() * 10e6),
 
   getMediaType: function (bidRequest) {
-    if (bidRequest === null) return BANNER;
+    if (!bidRequest) return BANNER;
     return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
   },
 
