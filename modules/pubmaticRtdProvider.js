@@ -4,7 +4,7 @@ import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../libraries/pubmaticUtils/pubmaticUtils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { setBidderOptimisationConfig, getBidderDecision } from '../libraries/pubmaticUtils/bidderOptimisation.js';
+//import { setBidderOptimisationConfig, getBidderDecision } from '../libraries/pubmaticUtils/bidderOptimisation.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -472,21 +472,20 @@ export const getRtdConfig = async (publisherId, profileId) => {
       }
     }
 
-    if (apiResponse.plugins?.dynamicBidderOptimisation) {
-      try {
-       setBidderOptimisationConfig(apiResponse.plugins.dynamicBidderOptimisation.data);
-       logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicBidderOptimisation config set successfully`);
-      } catch (error) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicBidderOptimisation config: ${error}`);
-      }
-    }
+    // if (apiResponse.plugins?.dynamicBidderOptimisation) {
+    //   try {
+    //    setBidderOptimisationConfig(apiResponse.plugins.dynamicBidderOptimisation.data);
+    //    logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicBidderOptimisation config set successfully`);
+    //   } catch (error) {
+    //     logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicBidderOptimisation config: ${error}`);
+    //   }
+    // }
   }
 };
 
 export const fetchData = async (publisherId, profileId) => {
     try {
-      //const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
-      const url = 'https://hbopenbid.pubmatic.com/yieldModuleConfigApi';
+      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -541,30 +540,27 @@ const init = (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   _ymConfigPromise.then(() => {
-    console.time('BidderDecision');
-    const decision = getBidderDecision({
-      auctionId: reqBidsConfigObj?.auctionId,
-      browser: getBrowserType(),
-      reqBidsConfigObj
-    });
-    console.timeEnd('BidderDecision');
-   console.log('Decision for bidder optimisation', decision);
-   if(!decision?.skipped){
-    for(const [adUnitCode, bidderList] of Object.entries(decision?.excludedBiddersByAdUnit)) {
-      filterBidders(bidderList, reqBidsConfigObj, adUnitCode);
-    }
-   }else {
-    //BO is skipped, set in ortb2 to use in reporting
-    const ortb2 = {
-      ext: {
-        bo_skipped: true,
-      }
-    }
-    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-      [CONSTANTS.SUBMODULE_NAME]: ortb2
-    });
-   }
-   console.log('RequestBid after exclusion of bidders ', reqBidsConfigObj);
+
+  //   const decision = getBidderDecision({
+  //     auctionId: reqBidsConfigObj?.auctionId,
+  //     browser: getBrowserType(),
+  //     reqBidsConfigObj
+  //   });
+  //  if(!decision?.skipped){
+  //   for(const [adUnitCode, bidderList] of Object.entries(decision?.excludedBiddersByAdUnit)) {
+  //     filterBidders(bidderList, reqBidsConfigObj, adUnitCode);
+  //   }
+  //  }else {
+  //   //BO is skipped, set in ortb2 to use in reporting
+  //   const ortb2 = {
+  //     ext: {
+  //       bo_skipped: true,
+  //     }
+  //   }
+  //   mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+  //     [CONSTANTS.SUBMODULE_NAME]: ortb2
+  //   });
+  //  }
 
     const hookConfig = {
       reqBidsConfigObj,
