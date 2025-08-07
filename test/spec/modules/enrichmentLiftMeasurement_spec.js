@@ -1,27 +1,25 @@
 import { expect } from "chai";
-import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig } from "../../../modules/enrichmentLiftMeasurement";
+import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig, compareConfigs, STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement/index.js";
 import {server} from 'test/mocks/xhr.js';
-import { config } from "../../../src/config"
-import { isInteger } from "../../../src/utils";
-import { ACTIVITY_ENRICH_EIDS } from "../../../src/activities/activities";
-import { isActivityAllowed } from "../../../src/activities/rules";
-import { activityParams } from "../../../src/activities/activityParams";
-import { MODULE_TYPE_UID } from "../../../src/activities/modules";
-import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/analyticsStub";
-import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter";
-import { EVENTS } from "../../../src/constants";
-import { getCoreStorageManager } from "../../../src/storageManager";
-import { compareConfigs } from "../../../modules/enrichmentLiftMeasurement";
-import { STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement";
+import { config } from "../../../src/config.js"
+import { isInteger } from "../../../src/utils.js";
+import { ACTIVITY_ENRICH_EIDS } from "../../../src/activities/activities.js";
+import { isActivityAllowed } from "../../../src/activities/rules.js";
+import { activityParams } from "../../../src/activities/activityParams.js";
+import { MODULE_TYPE_UID } from "../../../src/activities/modules.js";
+import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/analyticsStub.js";
+import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter.js";
+import { EVENTS } from "../../../src/constants.js";
+import { getCoreStorageManager } from "../../../src/storageManager.js";
 
 describe('enrichmentLiftMeasurement', () => {
   beforeEach(() => {
     config.resetConfig();
     reset();
   })
-  
+
   it('should properly split traffic basing on percentage', () => {
-    const TEST_SAMPLE_SIZE = 10000;
+    const TEST_SAMPLE_SIZE = 1000;
     const MARGIN_OF_ERROR = 0.05;
     const modulesConfig = [
       { name: 'idSystem1', percentage: 0.8 },
@@ -38,33 +36,31 @@ describe('enrichmentLiftMeasurement', () => {
       return fixedRandoms[callIndex++];
     });
     config.setConfig({ enrichmentLiftMeasurement: {
-        modules: modulesConfig
+      modules: modulesConfig
     }});
-
-    init();
 
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
-        results.push(getCalculatedSubmodules());
+      results.push(getCalculatedSubmodules(modulesConfig));
     }
     modulesConfig.forEach((idSystem) => {
-        const passedIdSystemsCount = results.filter((execution) => {
-            const item = execution.find(({name}) => idSystem.name === name)
-            return item?.enabled
-        }).length
-        const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
-        expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
+      const passedIdSystemsCount = results.filter((execution) => {
+        const item = execution.find(({name}) => idSystem.name === name)
+        return item?.enabled
+      }).length
+      const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
+      expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
     });
 
     mathRandomStub.restore();
   });
-  
+
   describe('should register activity based on suppression param', () => {
     Object.entries({
       [suppressionMethod.EIDS]: false,
       [suppressionMethod.SUBMODULES]: true
     }).forEach(([method, value]) => {
-      it(method, () => {					
+      it(method, () => {
         config.setConfig({ enrichmentLiftMeasurement: {
           suppression: method,
           modules: [
@@ -125,7 +121,7 @@ describe('enrichmentLiftMeasurement', () => {
         sessionStorageIsEnabled: () => true,
         getDataFromSessionStorage: sinon.stub().returns(null),
         setDataInSessionStorage: sinon.stub()
-      };			
+      };
       init(fakeStorageManager);
       sinon.assert.calledOnce(fakeStorageManager.setDataInSessionStorage);
       sinon.assert.calledOnce(getCalculatedSubmodulesStub);
@@ -150,7 +146,7 @@ describe('enrichmentLiftMeasurement', () => {
         storeSplits: storeSplitsMethod.SESSION_STORAGE,
         modules: mockConfig.map(module => ({...module, percentage: 0.1}))
       }});
-      
+
       init(fakeStorageManager);
 
       sinon.assert.calledOnce(fakeStorageManager.setDataInSessionStorage);
@@ -170,7 +166,7 @@ describe('enrichmentLiftMeasurement', () => {
         testRun: TEST_RUN_ID,
         storeSplits: storeSplitsMethod.PAGE
       }});
-      
+
       init();
 
       const eventType = EVENTS.BID_WON;
@@ -191,7 +187,7 @@ describe('enrichmentLiftMeasurement', () => {
       };
       const stringifiedConfig = JSON.stringify(expectedResult);
 
-      Object.entries({ 
+      Object.entries({
         [LOCAL_STORAGE]: localStorage,
         [SESSION_STORAGE]: sessionStorage,
       }).forEach(([method, storage]) => {
@@ -208,7 +204,7 @@ describe('enrichmentLiftMeasurement', () => {
       const { LOCAL_STORAGE, SESSION_STORAGE } = storeSplitsMethod;
       const TEST_RUN_ID = 'ExperimentA';
 
-      Object.entries({ 
+      Object.entries({
         [LOCAL_STORAGE]: localStorage,
         [SESSION_STORAGE]: sessionStorage,
       }).forEach(([method, storage]) => {

@@ -15,7 +15,7 @@ const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.3';
+const TAPPX_BIDDER_VERSION = '0.1.4';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -77,7 +77,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    let requests = [];
+    const requests = [];
     validBidRequests.forEach(oneValidRequest => {
       requests.push(buildOneRequest(oneValidRequest, bidderRequest));
     });
@@ -193,7 +193,7 @@ function validMediaType(bid) {
  * @returns {object} Prebid banner bidObject
  */
 function interpretBid(serverBid, request) {
-  let bidReturned = {
+  const bidReturned = {
     requestId: request.bids?.bidId,
     cpm: serverBid.price,
     currency: serverBid.cur ? serverBid.cur : CUR,
@@ -244,7 +244,7 @@ function interpretBid(serverBid, request) {
  * @return response ad
  */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  let hostInfo = _getHostInfo(validBidRequests);
+  const hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
 
@@ -257,14 +257,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const ORTB2 = deepAccess(validBidRequests, 'ortb2');
 
   // let requests = [];
-  let payload = {};
-  let publisher = {};
+  const payload = {};
+  const publisher = {};
   let tagid;
-  let api = {};
+  const api = {};
 
   // > App/Site object
   if (deepAccess(validBidRequests, 'params.app')) {
-    let app = {};
+    const app = {};
     app.name = deepAccess(validBidRequests, 'params.app.name');
     app.bundle = deepAccess(validBidRequests, 'params.app.bundle');
     app.domain = deepAccess(validBidRequests, 'params.app.domain');
@@ -274,8 +274,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     payload.app = app;
     api[0] = deepAccess(validBidRequests, 'params.api') ? deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
-    let bundle = _extractPageUrl(validBidRequests, bidderRequest);
-    let site = deepAccess(validBidRequests, 'params.site') || {};
+    const bundle = _extractPageUrl(validBidRequests, bidderRequest);
+    const site = deepAccess(validBidRequests, 'params.site') || {};
     site.name = bundle;
     site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
@@ -292,12 +292,12 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     site.ext.page_wlh = window.location.href || '-';
     publisher.name = bundle;
     publisher.domain = bundle;
-    let sitename = document.getElementsByTagName('meta')['title'];
+    const sitename = document.getElementsByTagName('meta')['title'];
     if (sitename && sitename.content) {
       site.name = sitename.content;
     }
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
-    let keywords = document.getElementsByTagName('meta')['keywords'];
+    const keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
       site.keywords = keywords.content;
     }
@@ -306,14 +306,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < App/Site object
 
   // > Imp object
-  let imp = {};
+  const imp = {};
   let w;
   let h;
 
   if (bannerMediaType) {
     if (!Array.isArray(bannerMediaType.sizes)) { logWarn(LOG_PREFIX, 'Banner sizes array not found.'); }
 
-    let banner = {};
+    const banner = {};
     w = bannerMediaType.sizes[0][0];
     h = bannerMediaType.sizes[0][1];
     banner.w = w;
@@ -335,9 +335,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
 
   if (typeof videoMediaType !== 'undefined') {
-    let video = {};
+    const video = {};
 
-    let videoParams = deepAccess(validBidRequests, 'params.video');
+    const videoParams = deepAccess(validBidRequests, 'params.video');
     if (typeof videoParams !== 'undefined') {
       for (var key in VIDEO_CUSTOM_PARAMS) {
         if (videoParams.hasOwnProperty(key)) {
@@ -358,7 +358,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     video.mimes = videoMediaType.mimes;
 
-    let videoExt = {};
+    const videoExt = {};
     if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded == 1) {
       videoExt.rewarded = videoMediaType.rewarded;
     }
@@ -374,7 +374,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.bidfloor = deepAccess(validBidRequests, 'params.bidfloor');
   if (isFn(validBidRequests.getFloor)) {
     try {
-      let floor = validBidRequests.getFloor({
+      const floor = validBidRequests.getFloor({
         currency: CUR,
         mediaType: '*',
         size: '*'
@@ -390,7 +390,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     }
   }
 
-  let bidder = {};
+  const bidder = {};
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
   bidder.bidfloor = BIDFLOOR;
@@ -398,10 +398,26 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   imp.ext = {};
   imp.ext.bidder = bidder;
+
+  const pbadslot = validBidRequests.ortb2Imp?.ext?.data?.pbadslot;
+  const adslot = validBidRequests.ortb2Imp?.ext?.data?.adserver?.adslot;
+  const adserverName = validBidRequests.ortb2Imp?.ext?.data?.adserver?.name;
+  const gpid = validBidRequests.ortb2Imp?.ext?.gpid;
+  const divid = validBidRequests.ortb2Imp?.ext?.divid;
+
+  if (pbadslot || adslot || adserverName) imp.ext.data = {};
+  if (adslot || adserverName) imp.ext.data.adserver = {};
+
+  if (gpid) imp.ext.gpid = gpid;
+  if (pbadslot) imp.ext.data.pbadslot = pbadslot;
+  if (adslot) imp.ext.data.adserver.adslot = adslot;
+  if (adserverName) imp.ext.data.adserver.name = adserverName;
+  if (divid) imp.ext.divid = divid;
+
   // < Imp object
 
   // > Device object
-  let device = {};
+  const device = {};
   // Mandatory
   device.os = getOs();
   device.ip = 'peer';
@@ -415,10 +431,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   device.language = getLanguage();
   device.make = getVendor();
 
-  let geo = {};
+  const geo = {};
   geo.country = deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
-  let configGeo = {};
+  const configGeo = {};
   configGeo.country = ORTB2?.device?.geo;
 
   if (typeof configGeo.country !== 'undefined') {
@@ -428,7 +444,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   };
 
   // > GDPR
-  let user = {};
+  const user = {};
   user.ext = {};
 
   // Universal ID
@@ -444,7 +460,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     user.ext.eids = eidsArr;
   };
 
-  let regs = {};
+  const regs = {};
   regs.gdpr = 0;
   if (!(bidderRequest.gdprConsent == null)) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') { regs.gdpr = bidderRequest.gdprConsent.gdprApplies; }
@@ -464,7 +480,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < GDPR
 
   // > Payload Ext
-  let payloadExt = {};
+  const payloadExt = {};
   payloadExt.bidder = {};
   payloadExt.bidder.tappxkey = TAPPXKEY;
   payloadExt.bidder.mktag = MKTAG;
@@ -490,7 +506,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = 'v' + '$prebid.version$';
+  const pbjsv = 'v' + '$prebid.version$';
 
   return {
     method: 'POST',
@@ -506,27 +522,27 @@ function getLanguage() {
 }
 
 function getOs() {
-  let ua = navigator.userAgent;
+  const ua = navigator.userAgent;
   if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
 function getVendor() {
-  let ua = navigator.userAgent;
+  const ua = navigator.userAgent;
   if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
 }
 
 export function _getHostInfo(validBidRequests) {
-  let domainInfo = {};
-  let endpoint = deepAccess(validBidRequests, 'params.endpoint');
+  const domainInfo = {};
+  const endpoint = deepAccess(validBidRequests, 'params.endpoint');
   let hostParam = deepAccess(validBidRequests, 'params.host');
 
   domainInfo.domain = hostParam.split('/', 1)[0];
 
-  let regexHostParamHttps = new RegExp(`^https:\/\/`);
-  let regexHostParamHttp = new RegExp(`^http:\/\/`);
+  const regexHostParamHttps = new RegExp('^https://');
+  const regexHostParamHttp = new RegExp('^http://');
 
-  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
-  let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+  const regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+  const regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
 
   if (regexHostParamHttps.test(hostParam)) {
     hostParam = hostParam.replace('https://', '');
@@ -603,7 +619,7 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
+  const url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   return parseDomain(url, {noLeadingWww: true});
 }
 

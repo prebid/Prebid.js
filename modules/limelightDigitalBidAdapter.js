@@ -77,7 +77,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: (bid) => {
     const cpm = bid.pbMg;
@@ -179,7 +179,7 @@ function buildPlacement(bidRequest) {
       ortb2Imp: bidRequest.ortb2Imp,
       publisherId: bidRequest.params.publisherId,
       userIdAsEids: bidRequest.userIdAsEids,
-      supplyChain: bidRequest.schain,
+      supplyChain: bidRequest?.ortb2?.source?.ext?.schain,
       custom1: bidRequest.params.custom1,
       custom2: bidRequest.params.custom2,
       custom3: bidRequest.params.custom3,

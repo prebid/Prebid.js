@@ -13,7 +13,6 @@ const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
 const STORAGE_TTL = 3600; // 1 hour in seconds
 
-
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
     return strings.reduce((result, str, i) => {
@@ -125,7 +124,7 @@ class NodalsAiRtdProvider {
           callback,
           userConsent,
           storedData
-       );
+        );
       } catch (error) {
         logError(`Error getting bid request data: ${error}`);
         callback();
@@ -174,7 +173,6 @@ class NodalsAiRtdProvider {
       logError(`Error processing auction end event: ${error}`);
     }
   }
-
 
   // Private methods
   #getData() {
@@ -246,7 +244,7 @@ class NodalsAiRtdProvider {
    */
 
   #hasRequiredUserConsent(userConsent) {
-    if (userConsent.gdpr === undefined || userConsent.gdpr?.gdprApplies === false) {
+    if (!userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
     if (
@@ -325,7 +323,6 @@ class NodalsAiRtdProvider {
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
-
   #getEndpointUrl(userConsent) {
     const endpointOrigin =
       this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
@@ -395,17 +392,17 @@ class NodalsAiRtdProvider {
     try {
       data = JSON.parse(response);
     } catch (error) {
-      throw `Error parsing response: ${error}`;
+      const msg = `Error parsing response: ${error}`;
+      logError(msg);
+      return;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
     this.#loadAdLibraries(data.deps || []);
   }
 
-
   #handleServerError(error, req) {
     logError(`Publisher endpoint response error: ${error}`);
   }
-
 
   #loadAdLibraries(deps) {
     // eslint-disable-next-line no-unused-vars

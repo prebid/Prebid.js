@@ -2,9 +2,10 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnitCode } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -130,7 +131,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -157,7 +164,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -185,7 +198,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -214,7 +233,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -239,7 +264,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -273,7 +304,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -311,7 +348,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -349,7 +392,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -383,7 +432,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -427,7 +482,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -499,7 +560,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -546,7 +613,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4f',
       bidderRequestId: '11a22b33c44f',
       auctionId: '1aa2bb3cc4df',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -587,7 +660,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -1005,7 +1084,7 @@ describe('IndexexchangeAdapter', function () {
       const syncOptions = {
         'iframeEnabled': true
       }
-      let userSync = spec.getUserSyncs(syncOptions, []);
+      const userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('iframe');
       const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -1015,7 +1094,7 @@ describe('IndexexchangeAdapter', function () {
       const syncOptions = {
         'iframeEnabled': false,
       }
-      let userSync = spec.getUserSyncs(syncOptions, []);
+      const userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -1031,7 +1110,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       })
-      let userSync = spec.getUserSyncs(syncOptions, []);
+      const userSync = spec.getUserSyncs(syncOptions, []);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=1&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       expect(userSync[0].url).to.equal(USER_SYNC_URL);
@@ -1047,7 +1126,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 0 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 0 } } }]);
       expect(userSync.length).to.equal(0);
     });
 
@@ -1061,7 +1140,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
@@ -1080,7 +1159,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 3
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 4 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 4 } } }]);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=3&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
@@ -1101,7 +1180,7 @@ describe('IndexexchangeAdapter', function () {
           syncsPerBidder: 0
         }
       });
-      let userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
+      const userSync = spec.getUserSyncs(syncOptions, [{ 'body': { 'ext': { 'publishersyncsperbidderoverride': 2 } } }]);
       expect(userSync[0].type).to.equal('image');
       const USER_SYNC_URL_0 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=0&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
       const USER_SYNC_URL_1 = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid&site_id=123&p=2&i=1&gdpr=1&gdpr_consent=3huaa11=qu3198ae&us_privacy=';
@@ -1345,7 +1424,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should fail if native openRTB object contains no valid assets', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
       bid.nativeOrtbRequest = {}
       expect(spec.isBidRequestValid(bid)).to.be.false;
 
@@ -1558,12 +1637,12 @@ describe('IndexexchangeAdapter', function () {
 
     it('IX adapter filters eids from prebid past the maximum eid limit', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = generateEid(55);
+      const eid_sent_from_prebid = generateEid(55);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
       expect(payload.user.eids).to.have.lengthOf(50);
-      let eid_accepted = eid_sent_from_prebid.slice(0, 50);
+      const eid_accepted = eid_sent_from_prebid.slice(0, 50);
       expect(payload.user.eids).to.have.deep.members(eid_accepted);
       expect(payload.ext.ixdiag.eidLength).to.equal(55);
     });
@@ -1599,7 +1678,7 @@ describe('IndexexchangeAdapter', function () {
         }
       };
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = generateEid(49);
+      const eid_sent_from_prebid = generateEid(49);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
@@ -1620,7 +1699,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('Has incoming eids with no uid', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = [
+      const eid_sent_from_prebid = [
         {
           source: 'catijah.org'
         },
@@ -1808,32 +1887,6 @@ describe('IndexexchangeAdapter', function () {
       const payload = extractPayload(request);
       expect(payload.user.eids).to.have.lengthOf(12);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
-    });
-  });
-
-  describe('getUserIds', function () {
-    it('request should contain userId information if configured and within bid request', function () {
-      config.setConfig({
-        userSync: {
-          syncDelay: 0,
-          userIds: [
-            { name: 'lotamePanoramaId' },
-            { name: 'merkleId' },
-            { name: 'parrableId' },
-          ]
-        }
-      });
-
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      bid.userId = DEFAULT_USERID_BID_DATA;
-
-      const request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
-      const r = extractPayload(request);
-
-      expect(r.ext.ixdiag.userIds).to.be.an('array');
-      expect(r.ext.ixdiag.userIds.should.not.include('lotamePanoramaId'));
-      expect(r.ext.ixdiag.userIds.should.not.include('merkleId'));
-      expect(r.ext.ixdiag.userIds.should.not.include('parrableId'));
     });
   });
 
@@ -2074,7 +2127,9 @@ describe('IndexexchangeAdapter', function () {
 
   describe('buildRequests', function () {
     const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-    delete bidWithoutSchain[0].schain;
+    if (bidWithoutSchain[0].ortb2 && bidWithoutSchain[0].ortb2.source && bidWithoutSchain[0].ortb2.source.ext) {
+      delete bidWithoutSchain[0].ortb2.source.ext.schain;
+    }
     const GPID = '/19968336/some-adunit-path';
     let request, requestUrl, requestMethod, payloadData, requestWithoutSchain, payloadWithoutSchain;
 
@@ -2370,7 +2425,7 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.format[0].ext.fl).to.equal('x');
       });
 
-      it('banner multi size impression should have bidFloor both in imp and format ext obejcts', function () {
+      it('banner multi size impression should have bidFloor both in imp and format ext objects', function () {
         const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid.params.bidFloor = 50;
         bid.params.bidFloorCur = 'USD';
@@ -2682,7 +2737,9 @@ describe('IndexexchangeAdapter', function () {
         const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
         bid[0].mediaTypes.video.context = 'outstream';
         bid[0].mediaTypes.video.w = [[300, 143]];
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('ix');
@@ -2695,7 +2752,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'http://publisherplayer.js',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
@@ -2708,7 +2767,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'publisherplayer.js',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.be.undefined;
@@ -2721,7 +2782,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'http://js-sec.indexww.rendererplayer.com',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('ix');
@@ -2733,7 +2796,9 @@ describe('IndexexchangeAdapter', function () {
         bid[0].mediaTypes.video.renderer = {
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.be.undefined;
@@ -2742,7 +2807,13 @@ describe('IndexexchangeAdapter', function () {
         const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
         bid[0].mediaTypes.video.context = 'outstream';
         bid[0].mediaTypes.video.w = [[300, 143]];
-        bid[0].schain = SAMPLE_SCHAIN;
+        bid[0].ortb2 = {
+          source: {
+            ext: {
+              schain: SAMPLE_SCHAIN
+            }
+          }
+        };
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
@@ -2841,7 +2912,7 @@ describe('IndexexchangeAdapter', function () {
       for (var i = 0; i < requests.length; i++) {
         const reqSize = `${requests[i].url}?${utils.parseQueryStringParameters(requests[i].data)}`.length;
         expect(reqSize).to.be.lessThan(8000);
-        let payload = extractPayload(requests[i]);
+        const payload = extractPayload(requests[i]);
         expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       }
     });
@@ -3183,7 +3254,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should build request with given asset properties', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
       bid[0].nativeOrtbRequest = {
         assets: [{ id: 0, required: 0, title: { len: 140 } }, { id: 1, required: 0, video: { mimes: ['javascript'], minduration: 10, maxduration: 60, protocols: [1] } }]
       }
@@ -3193,7 +3264,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should build request with all possible Prebid asset properties', function () {
-      let bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
+      const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID)
       bid[0].nativeOrtbRequest = {
         'ver': '1.2',
         'assets': [
@@ -3391,7 +3462,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -3486,7 +3556,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('impression should have paapi extension when passed', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      let bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
       bid.ortb2Imp.ext.ae = 1
       bid.ortb2Imp.ext.paapi = {
         requestedSize: {
@@ -3874,7 +3944,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should not set bid[].renderer if renderer defined at mediaType.video level', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].mediaTypes.video.renderer = {
         url: 'test',
         render: function () { }
@@ -3886,7 +3956,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should not set bid[].renderer if renderer defined at the ad unit level', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].renderer = {
         url: 'test',
         render: function () { }
@@ -3898,7 +3968,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should set bid[].renderer if ad unit renderer is invalid', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].mediaTypes.video.renderer = {
         url: 'test'
       };
@@ -3909,7 +3979,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should set bid[].renderer if ad unit renderer is a backup', function () {
-      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      const outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
       outstreamAdUnit[0].mediaTypes.video.renderer = {
         url: 'test',
         render: function () { },
@@ -3992,7 +4062,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      let bid_response = DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM;
+      const bid_response = DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM;
       bid_response.seatbid[0].bid[0].ext['vasturl'] = 'www.abcd.com/vast';
       const result = spec.interpretResponse({ body: bid_response }, {
         data: videoBidderRequest.data, validBidRequests: ONE_VIDEO
@@ -4411,7 +4481,7 @@ describe('IndexexchangeAdapter', function () {
 
   describe('Features', () => {
     let localStorageValues = {};
-    let sandbox = sinon.sandbox.create();
+    let sandbox = sinon.createSandbox();
     let setDataInLocalStorageStub;
     let getDataFromLocalStorageStub;
     let removeDataFromLocalStorageStub;
@@ -4429,7 +4499,7 @@ describe('IndexexchangeAdapter', function () {
 
     beforeEach(() => {
       localStorageValues = {};
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage').callsFake((key, value) => localStorageValues[key] = value);
       getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => localStorageValues[key]);
       removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage').callsFake((key) => delete localStorageValues[key]);
@@ -4480,7 +4550,7 @@ describe('IndexexchangeAdapter', function () {
       expect(lsData.features.test.activated).to.be.true;
     });
 
-    it('should retrive features from localstorage when enabled', () => {
+    it('should retrieve features from localstorage when enabled', () => {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       serverResponse.body.ext.features.test.activated = true;
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
@@ -4539,7 +4609,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requests).to.be.an('array');
       // buildRequestv2 enabled causes only 1 requests to get generated.
       expect(requests).to.have.lengthOf(1);
-      for (let request of requests) {
+      for (const request of requests) {
         expect(request.method).to.equal('POST');
       }
     });
@@ -4733,7 +4803,7 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let adunitcode = bids[1].adUnitCode;
+        const adunitcode = bids[1].adUnitCode;
         bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
@@ -4751,7 +4821,7 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let adunitcode = bids[1].adUnitCode;
+        const adunitcode = bids[1].adUnitCode;
         bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
@@ -4768,7 +4838,7 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.05;
         bids[0].params.bidFloorCur = 'USD';
-        let adunitcode = bids[1].adUnitCode;
+        const adunitcode = bids[1].adUnitCode;
         bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.35;
         bids[1].params.bidFloorCur = 'USD';
@@ -4782,7 +4852,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should return valid banner and video requests, different adunit, creates multiimp request', function () {
-        let bid = DEFAULT_MULTIFORMAT_VALID_BID[0]
+        const bid = DEFAULT_MULTIFORMAT_VALID_BID[0]
         bid.bidId = '1abcdef'
         const bids = [DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0], bid];
         const request = spec.buildRequests(bids, {});
@@ -4791,7 +4861,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should return valid  video requests, different adunit, creates multiimp request', function () {
-        let bid = DEFAULT_BANNER_VALID_BID[0]
+        const bid = DEFAULT_BANNER_VALID_BID[0]
         bid.bidId = '1abcdef'
         const bids = [DEFAULT_VIDEO_VALID_BID[0], bid];
         const request = spec.buildRequests(bids, {});
@@ -4811,7 +4881,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -5422,54 +5491,53 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.device.ip).to.be.undefined;
       expect(payload.device.ip6).to.be.undefined;
     });
+
+    it('should add device.geo if available in fpd', () => {
+      const ortb2 = {
+        device: {
+          geo: {
+            lat: 1,
+            lon: 2,
+            lastfix: 1,
+            type: 1
+          }
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.geo.lat).to.equal(1);
+      expect(payload.device.geo.lon).to.equal(2);
+      expect(payload.device.geo.lastfix).to.equal(1);
+      expect(payload.device.geo.type).to.equal(1);
+    });
+
+    it('should not add device.geo if it does not exist', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.geo).to.be.undefined;
+    });
   });
 
-  describe('fetch requests', function () {
-    let ajaxStub;
-
-    beforeEach(function () {
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
-        return sinon.spy(function (url, callback, data, options) {
-          callback.success('OK');
-        });
-      });
+  describe('getDivIdFromAdUnitCode', () => {
+    it('returns adUnitCode when element exists', () => {
+      const adUnitCode = 'div-ad1';
+      const el = document.createElement('div');
+      el.id = adUnitCode;
+      document.body.appendChild(el);
+      expect(getDivIdFromAdUnitCode(adUnitCode)).to.equal(adUnitCode);
+      document.body.removeChild(el);
     });
 
-    afterEach(function () {
-      ajaxStub.restore();
-    });
-
-    it('should send the correct headers in the actual fetch call', function (done) {
-      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
-      const request = requests[0];
-      const ajax = ajaxLib.ajaxBuilder();
-
-      ajax(
-        request.url,
-        {
-          success: () => {
-            try {
-              sinon.assert.calledOnce(ajaxStub);
-              const ajaxCall = ajaxStub.returnValues[0];
-              sinon.assert.calledOnce(ajaxCall);
-              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
-
-              expect(calledUrl).to.equal(request.url);
-              expect(calledData).to.equal(request.data);
-
-              expect(calledOptions.contentType).to.equal('text/plain');
-              expect(calledOptions.withCredentials).to.be.true;
-
-              done();
-            } catch (err) {
-              done(err);
-            }
-          },
-          error: (err) => done(err || new Error('Ajax request failed')),
-        },
-        request.data,
-        request.options
-      );
+    it('retrieves divId from GPT once and caches result', () => {
+      const adUnitCode = 'div-ad2';
+      const stub = sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({divId: 'gpt-div'});
+      const first = getDivIdFromAdUnitCode(adUnitCode);
+      const second = getDivIdFromAdUnitCode(adUnitCode);
+      expect(first).to.equal('gpt-div');
+      expect(second).to.equal('gpt-div');
+      expect(stub.calledOnce).to.be.true;
+      stub.restore();
     });
   });
 

@@ -55,7 +55,7 @@ describe('onomagicBidAdapter', function() {
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e'
     }];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -66,7 +66,7 @@ describe('onomagicBidAdapter', function() {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'onomagic',
       'params': {
         'publisherId': 1234567
@@ -92,7 +92,7 @@ describe('onomagicBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -161,7 +161,7 @@ describe('onomagicBidAdapter', function() {
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 800, height: 800 });
         const request = spec.buildRequests(bidRequests);
@@ -172,7 +172,7 @@ describe('onomagicBidAdapter', function() {
 
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
@@ -235,7 +235,7 @@ describe('onomagicBidAdapter', function() {
     });
 
     it('should get the correct bid response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -251,12 +251,12 @@ describe('onomagicBidAdapter', function() {
         }
       }];
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('crid should default to the bid id if not on the response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -272,24 +272,24 @@ describe('onomagicBidAdapter', function() {
         }
       }];
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: ''
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
 
   describe('getUserSyncs ', () => {
-    let syncOptions = {iframeEnabled: true, pixelEnabled: true};
+    const syncOptions = {iframeEnabled: true, pixelEnabled: true};
 
     it('should not return', () => {
-      let returnStatement = spec.getUserSyncs(syncOptions, []);
+      const returnStatement = spec.getUserSyncs(syncOptions, []);
       expect(returnStatement).to.be.empty;
     });
   });

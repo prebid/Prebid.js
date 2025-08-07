@@ -43,7 +43,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(bids => {
       const reqObj = {};
-      let placementId = getValue(bids.params, 'placementId');
+      const placementId = getValue(bids.params, 'placementId');
       const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
       reqObj.sizes = getSizes(bids);
       reqObj.bidId = getBidIdParameter('bidId', bids);
@@ -76,8 +76,9 @@ export const spec = {
 
     const firstBidRequest = validBidRequests[0];
 
-    if (firstBidRequest.schain) {
-      payload.schain = firstBidRequest.schain;
+    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     hydratePayloadWithGppConsentData(payload, bidderRequest.gppConsent);
@@ -165,8 +166,8 @@ function getSizes(bid) {
  */
 function hydratePayloadWithGppConsentData(payload, gppData) {
   if (!gppData) { return; }
-  let isValidConsentString = typeof gppData.gppString === 'string';
-  let validateApplicableSections =
+  const isValidConsentString = typeof gppData.gppString === 'string';
+  const validateApplicableSections =
       Array.isArray(gppData.applicableSections) &&
       gppData.applicableSections.every((section) => typeof (section) === 'number')
   payload.gpp = {
@@ -187,9 +188,9 @@ function hydratePayloadWithGppConsentData(payload, gppData) {
  */
 function hydratePayloadWithGdprConsentData(payload, gdprData) {
   if (!gdprData) { return; }
-  let isCmp = typeof gdprData.gdprApplies === 'boolean';
-  let isConsentString = typeof gdprData.consentString === 'string';
-  let status = isCmp
+  const isCmp = typeof gdprData.gdprApplies === 'boolean';
+  const isConsentString = typeof gdprData.consentString === 'string';
+  const status = isCmp
     ? findGdprStatus(gdprData.gdprApplies, gdprData.vendorData)
     : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
   payload.gdpr_iab = {

@@ -14,7 +14,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
-const GVLID = 607;
 const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
@@ -24,7 +23,6 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -48,7 +46,7 @@ export const spec = {
   },
 
   /**
-   * @param {BidRequest[]} bidRequests
+   * @param {BidRequest[]} bids
    * @param {*} bidderRequest
    * @return {ServerRequest}
    */
@@ -68,14 +66,15 @@ export const spec = {
 
   /**
    * Format ucfunnel responses as Prebid bid responses
-   * @param {ucfunnelResponseObj} ucfunnelResponse A successful response from ucfunnel.
+   * @param {Object} ucfunnelResponseObj A successful response from ucfunnel.
+   * @param {Object} request
    * @return {Bid[]} An array of formatted bids.
    */
   interpretResponse: function (ucfunnelResponseObj, request) {
     const bidRequest = request.bidRequest;
     const ad = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};
 
-    let bid = {
+    const bid = {
       requestId: bidRequest.bidId,
       cpm: ad.cpm || 0,
       creativeId: ad.crid || ad.ad_id || bidRequest.params.adid,
@@ -99,7 +98,7 @@ export const spec = {
 
     switch (ad.creative_type) {
       case NATIVE:
-        let nativeAd = ad.native;
+        const nativeAd = ad.native;
         Object.assign(bid, {
           width: 1,
           height: 1,
@@ -143,9 +142,9 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
-    let gdprApplies = (gdprConsent && gdprConsent.gdprApplies) ? '1' : '';
-    let apiVersion = (gdprConsent) ? gdprConsent.apiVersion : '';
-    let consentString = (gdprConsent) ? gdprConsent.consentString : '';
+    const gdprApplies = (gdprConsent && gdprConsent.gdprApplies) ? '1' : '';
+    const apiVersion = (gdprConsent) ? gdprConsent.apiVersion : '';
+    const consentString = (gdprConsent) ? gdprConsent.consentString : '';
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -178,7 +177,7 @@ function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConse
 }
 
 function parseSizes(bid) {
-  let params = bid.params;
+  const params = bid.params;
   if (bid.mediaType === VIDEO) {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
@@ -249,7 +248,7 @@ function addBidData(bidData, key, value) {
 }
 
 function getFormat(size) {
-  let formatList = []
+  const formatList = []
   for (var i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
   }
@@ -261,11 +260,12 @@ function getRequestData(bid, bidderRequest) {
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
-  const supplyChain = getSupplyChain(bid.schain);
+  const schain = bid?.ortb2?.source?.ext?.schain;
+  const supplyChain = getSupplyChain(schain);
   const bidFloor = getFloor(bid, size, bid.mediaTypes);
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   // general bid data
-  let bidData = {
+  const bidData = {
     ver: VER,
     ifr: 0,
     bl: language,

@@ -14,7 +14,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 var BIDDER_CODE = 'lemmadigital';
 var LOG_WARN_PREFIX = 'LEMMADIGITAL: ';
-var ENDPOINT = 'https://bid.lemmadigital.com/lemma/servad';
+var ENDPOINT = 'https://pbidj.lemmamedia.com/lemma/servad';
 var USER_SYNC = 'https://sync.lemmadigital.com/js/usersync.html?';
 var DEFAULT_CURRENCY = 'USD';
 var AUCTION_TYPE = 2;
@@ -62,8 +62,9 @@ export var spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests.length === 0) {
@@ -104,7 +105,7 @@ export var spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses) => {
-    let syncurl = USER_SYNC + 'pid=' + pubId;
+    const syncurl = USER_SYNC + 'pid=' + pubId;
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -294,9 +295,9 @@ export var spec = {
     if (typeof bid.getFloor === 'function') {
       [BANNER, VIDEO].forEach(mediaType => {
         if (impObj.hasOwnProperty(mediaType)) {
-          let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+          const floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
           if (utils.isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
-            let mediaTypeFloor = parseFloat(floorInfo.floor);
+            const mediaTypeFloor = parseFloat(floorInfo.floor);
             bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
           }
         }
@@ -482,7 +483,7 @@ export var spec = {
       return {
         pchain: params.pchain,
         ext: {
-          schain: request.schain
+          schain: request?.ortb2?.source?.ext?.schain
         },
       };
     }
@@ -547,7 +548,7 @@ export var spec = {
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
       var params = bid ? bid.params : null;
       var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
-      var sizes = bid.mediaTypes.video ? bid.mediaTypes.video.playerSize : []
+      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : []
       if (sizes && sizes.length > 0) {
         vObj = {};
         if (videoData) {

@@ -19,8 +19,8 @@ const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
-let globals = {};
-let itemMaps = {};
+const globals = {};
+const itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
 
 /* ----- _ss_pp_id:start ------ */
@@ -106,7 +106,7 @@ export const getPmgUID = () => {
 function getKv(obj, ...keys) {
   let o = obj;
 
-  for (let key of keys) {
+  for (const key of keys) {
     if (o && o[key]) {
       o = o[key];
     } else {
@@ -131,9 +131,8 @@ export function getCookieTimeToUTCString() {
 
 /**
  * format imp ad test ext params
- *
- * @param validBidRequest sigleBidRequest
- * @param bidderRequest
+ * @param {Object} bidRequest single bid request
+ * @param {Object} bidderRequest bidder request object
  */
 function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
   const { deepAccess } = utils;
@@ -158,7 +157,6 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
     adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
     keywords: deepAccess(bidRequest, 'ortb2Imp.ext.data.keywords', '', ''),
     gpid: deepAccess(bidRequest, 'ortb2Imp.ext.gpid', '', ''),
-    pbadslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot', '', ''),
   };
   return ext;
 }
@@ -174,20 +172,20 @@ function getItems(validBidRequests, bidderRequest) {
   items = validBidRequests.map((req, i) => {
     let ret = {};
 
-    let mediaTypes = getKv(req, 'mediaTypes');
+    const mediaTypes = getKv(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
-    let id = '' + (i + 1);
+    const id = '' + (i + 1);
 
     if (mediaTypes.native) {
       ret = { ...NATIVERET, ...{ id, bidFloor } };
     }
     // banner
     if (mediaTypes.banner) {
-      let sizes = transformSizes(getKv(req, 'sizes'));
+      const sizes = transformSizes(getKv(req, 'sizes'));
       let matchSize;
 
-      for (let size of sizes) {
+      for (const size of sizes) {
         matchSize = popInAdSize.find(
           (item) => size.width === item.w && size.height === item.h
         );
@@ -248,17 +246,14 @@ export const buildUTMTagData = (url) => {
  * @return {Object}
  */
 function getParam(validBidRequests, bidderRequest) {
-  const sharedid =
-    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid') ||
-    utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+  const sharedid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  const eids = validBidRequests[0].userIdAsEids;
 
-  let isMobile = getDevice() ? 1 : 0;
+  const isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
-  let isTest = validBidRequests[0].params.test || 0;
-  let auctionId = getKv(bidderRequest, 'auctionId');
-  let items = getItems(validBidRequests, bidderRequest);
+  const isTest = validBidRequests[0].params.test || 0;
+  const auctionId = getKv(bidderRequest, 'auctionId');
+  const items = getItems(validBidRequests, bidderRequest);
 
   const timeout = bidderRequest.timeout || 2000;
 
@@ -300,7 +295,7 @@ function getParam(validBidRequests, bidderRequest) {
   } catch (error) { }
 
   if (items && items.length) {
-    let c = {
+    const c = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'pp_hbjs_' + auctionId,
       test: +isTest,
@@ -382,7 +377,7 @@ export const spec = {
     const pbToken = globals['token'];
     if (!pbToken) return;
 
-    let payload = getParam(validBidRequests, bidderRequest);
+    const payload = getParam(validBidRequests, bidderRequest);
     const payloadString = JSON.stringify(payload);
 
     return {
@@ -401,12 +396,12 @@ export const spec = {
     const bids = getKv(serverResponse, 'body', 'seatbid', 0, 'bid');
     const cur = getKv(serverResponse, 'body', 'cur');
     const bidResponses = [];
-    for (let bid of bids) {
-      let impid = getKv(bid, 'impid');
+    for (const bid of bids) {
+      const impid = getKv(bid, 'impid');
       if (itemMaps[impid]) {
-        let bidId = getKv(itemMaps[impid], 'req', 'bidId');
+        const bidId = getKv(itemMaps[impid], 'req', 'bidId');
         const mediaType = getKv(bid, 'w') ? 'banner' : 'native';
-        let bidResponse = {
+        const bidResponse = {
           requestId: bidId,
           cpm: getKv(bid, 'price'),
           creativeId: getKv(bid, 'cid'),
@@ -490,7 +485,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function (data) {
     utils.logError('DiscoveryDSP adapter timed out for the auction.');
@@ -499,7 +494,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which  will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     if (bid['nurl']) {

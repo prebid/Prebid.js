@@ -19,11 +19,21 @@ import {
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+const divIdCache = {};
+
+export function getDivIdFromAdUnitCode(adUnitCode) {
+  if (divIdCache[adUnitCode]) {
+    return divIdCache[adUnitCode];
+  }
+  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  divIdCache[adUnitCode] = divId;
+  return divId;
+}
 
 const BIDDER_CODE = 'ix';
 const GLOBAL_VENDOR_ID = 10;
@@ -60,17 +70,6 @@ const SOURCE_RTI_MAPPING = {
   'uidapi.com': 'UID2',
   'adserver.org': 'TDID'
 };
-const PROVIDERS = [
-  'lipbid',
-  'criteoId',
-  'merkleId',
-  'parrableId',
-  'connectid',
-  'tapadId',
-  'quantcastId',
-  'pubProvidedId',
-  'pairId'
-];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
   'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
@@ -175,7 +174,7 @@ function setDisplayManager(imp, bid) {
       renderer = deepAccess(bid, 'renderer');
     }
 
-    if (deepAccess(bid, 'schain', false)) {
+    if (deepAccess(bid, 'ortb2.source.ext.schain', false)) {
       imp.displaymanager = 'pbjs_wrapper';
     } else if (renderer && typeof (renderer) === 'object') {
       if (renderer.url !== undefined) {
@@ -214,7 +213,7 @@ export function bidToVideoImp(bid) {
 
   imp.video = videoParamRef ? deepClone(bid.params.video) : {};
   // populate imp level transactionId
-  let tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
   if (tid) {
     deepSetValue(imp, 'ext.tid', tid);
   }
@@ -306,7 +305,7 @@ export function bidToNativeImp(bid) {
   };
 
   // populate imp level transactionId
-  let tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
   if (tid) {
     deepSetValue(imp, 'ext.tid', tid);
   }
@@ -548,7 +547,7 @@ function checkVideoParams(mediaTypeVideoRef, paramsVideoRef) {
     logWarn('IX Bid Adapter: mediaTypes.video is the preferred location for video params in ad unit');
   }
 
-  for (let property of REQUIRED_VIDEO_PARAMS) {
+  for (const property of REQUIRED_VIDEO_PARAMS) {
     const propInMediaType = mediaTypeVideoRef && mediaTypeVideoRef.hasOwnProperty(property);
     const propInVideoRef = paramsVideoRef && paramsVideoRef.hasOwnProperty(property);
 
@@ -621,8 +620,8 @@ function getBidRequest(id, impressions, validBidRequests) {
     return;
   }
   const bidRequest = {
-    ...find(validBidRequests, bid => bid.bidId === id),
-    ...find(impressions, imp => imp.id === id)
+    ...validBidRequests.find(bid => bid.bidId === id),
+    ...impressions.find(imp => imp.id === id)
   }
 
   return bidRequest;
@@ -636,8 +635,8 @@ function getBidRequest(id, impressions, validBidRequests) {
  *                  identity info from IX Library)
  */
 function getEidInfo(allEids) {
-  let toSend = [];
-  let seenSources = {};
+  const toSend = [];
+  const seenSources = {};
   if (isArray(allEids)) {
     for (const eid of allEids) {
       const isSourceMapped = SOURCE_RTI_MAPPING.hasOwnProperty(eid.source);
@@ -674,10 +673,10 @@ function getEidInfo(allEids) {
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
-  let baseUrl = SECURE_BID_URL;
+  const baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
-  let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'));
-  let userEids = eidInfo.toSend;
+  const eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'));
+  const userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -693,8 +692,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
   const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
-  let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
-  for (let key in ixdiag) {
+  const ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
+  for (const key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
 
@@ -702,7 +701,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
   r = applyRegulations(r, bidderRequest);
 
-  let payload = {};
+  const payload = {};
   if (validBidRequests[0].params.siteId) {
     siteID = validBidRequests[0].params.siteId;
     payload.s = siteID;
@@ -778,14 +777,14 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
  * @param {Array} eidInfo eidInfo info from prebid
  */
 function addRTI(userEids, eidInfo) {
-  let identityInfo = window.headertag.getIdentityInfo();
+  const identityInfo = window.headertag.getIdentityInfo();
   if (identityInfo && typeof identityInfo === 'object') {
     for (const partnerName in identityInfo) {
       if (userEids.length >= MAX_EID_SOURCES) {
         return
       }
       if (identityInfo.hasOwnProperty(partnerName)) {
-        let response = identityInfo[partnerName];
+        const response = identityInfo[partnerName];
         if (!response.responsePending && response.data && typeof response.data === 'object' &&
           Object.keys(response.data).length && !eidInfo.seenSources[response.data.source]) {
           userEids.push(response.data);
@@ -835,7 +834,7 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
 /**
  * enrichRequest adds userSync configs, source, and referer info to request and ixDiag objects.
  *
- * @param  {object} r                Base reuqest object.
+ * @param  {object} r                Base request object.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {Array}  impressions      A list of impressions to be added to the request.
  * @param  {Array}  validBidRequests A list of valid bid request config objects.
@@ -861,9 +860,11 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   }
 
   // if an schain is provided, send it along
-  if (validBidRequests[0].schain) {
-    r.source.ext = {};
-    r.source.ext.schain = validBidRequests[0].schain;
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    r.source = r.source || {};
+    r.source.ext = r.source.ext || {};
+    r.source.ext.schain = schain;
   }
 
   if (userEids.length > 0) {
@@ -879,9 +880,9 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 }
 
 /**
- * applyRegulations applies regulation info such as GDPR and GPP to the reqeust obejct.
+ * applyRegulations applies regulation info such as GDPR and GPP to the request object.
  *
- * @param  {object}  r                Base reuqest object.
+ * @param  {object}  r                Base request object.
  * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
  * @return {object}                   Object enriched with regulation info describing the request to the server.
  */
@@ -974,14 +975,13 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
     for (const impId in bannerImpsKeyed) {
       const bannerImps = bannerImpsKeyed[impId];
       const { id, banner: { topframe } } = bannerImps[0];
-      let externalID = deepAccess(bannerImps[0], 'ext.externalID');
+      const externalID = deepAccess(bannerImps[0], 'ext.externalID');
       const _bannerImpression = {
         id,
         banner: {
           topframe,
           format: bannerImps.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
-        },
-      };
+        }};
 
       for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
         // We add sid and externalID in imp.ext therefore, remove from banner.format[].ext
@@ -999,7 +999,8 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
           _bannerImpression.banner.format[i].ext.bidfloor = bannerImps[i].bidfloor;
         }
 
-        if (JSON.stringify(_bannerImpression.banner.format[i].ext) === '{}') {
+        const formatExt = _bannerImpression.banner.format[i].ext;
+        if (formatExt && Object.keys(formatExt).length === 0) {
           delete _bannerImpression.banner.format[i].ext;
         }
       }
@@ -1190,6 +1191,11 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     if (ipv6) {
       deepSetValue(r, 'device.ipv6', ipv6);
     }
+
+    const geo = fpd.device.geo;
+    if (geo) {
+      deepSetValue(r, 'device.geo', geo);
+    }
   }
 
   // regulations from ortb2
@@ -1255,29 +1261,16 @@ function addAdUnitFPD(imp, bid) {
  * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
  */
 function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseUrl) {
-  const pbaAdSlot = impressions[impKeys[adUnitIndex]].pbadslot;
   const tagId = impressions[impKeys[adUnitIndex]].tagId;
   const adUnitCode = impressions[impKeys[adUnitIndex]].adUnitCode;
   const divId = impressions[impKeys[adUnitIndex]].divId;
-  if (pbaAdSlot || tagId || adUnitCode || divId) {
-    r.ext.ixdiag.pbadslot = pbaAdSlot;
+  if (tagId || adUnitCode || divId) {
     r.ext.ixdiag.tagid = tagId;
     r.ext.ixdiag.adunitcode = adUnitCode;
     r.ext.ixdiag.divId = divId;
   }
 
   return r;
-}
-
-/**
- * Return an object of user IDs stored by Prebid User ID module
- *
- * @returns {Array} ID providers that are present in userIds
- */
-function _getUserIds(bidRequest) {
-  const userIds = bidRequest.userId || {};
-
-  return PROVIDERS.filter(provider => userIds[provider]);
 }
 
 /**
@@ -1292,8 +1285,8 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
 
-  let allEids = deepAccess(validBidRequests, '0.userIdAsEids', [])
-  let ixdiag = {
+  const allEids = deepAccess(validBidRequests, '0.userIdAsEids', [])
+  const ixdiag = {
     mfu: 0,
     bu: 0,
     iu: 0,
@@ -1302,7 +1295,6 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     allu: 0,
     ren: false,
     version: '$prebid.version$',
-    userIds: _getUserIds(validBidRequests[0]),
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
     ae: fledgeEnabled,
@@ -1310,8 +1302,8 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
   };
 
   // create ad unit map and collect the required diag properties
-  for (let adUnit of adUnitMap) {
-    let bid = validBidRequests.filter(bidRequest => bidRequest.adUnitCode === adUnit)[0];
+  for (const adUnit of adUnitMap) {
+    const bid = validBidRequests.filter(bidRequest => bidRequest.adUnitCode === adUnit)[0];
 
     if (deepAccess(bid, 'mediaTypes')) {
       if (Object.keys(bid.mediaTypes).length > 1) {
@@ -1378,11 +1370,10 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.adUnitCode].ixImps.push(imp);
     nativeImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
     nativeImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
-    nativeImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     nativeImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     nativeImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     nativeImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1401,11 +1392,10 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.adUnitCode].ixImps.push(imp);
     videoImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
     videoImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
-    videoImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     videoImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     videoImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     videoImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1418,7 +1408,7 @@ function createVideoImps(validBidRequest, videoImps) {
  * @param {object}  bannerImps reference to created banner impressions
  */
 function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidderRequest) {
-  let imp = bidToBannerImp(validBidRequest);
+  const imp = bidToBannerImp(validBidRequest);
 
   const bannerSizeDefined = includesSize(deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), deepAccess(validBidRequest, 'params.size'));
 
@@ -1429,7 +1419,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
   bannerImps[validBidRequest.adUnitCode].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
-  bannerImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
@@ -1462,7 +1451,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   }
 
   const adUnitCode = validBidRequest.adUnitCode;
-  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  const divId = getDivIdFromAdUnitCode(adUnitCode);
   bannerImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
   bannerImps[validBidRequest.adUnitCode].divId = divId;
 
@@ -1495,9 +1484,9 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
   } else {
     // New Ad Unit
     if (deepAccess(validBidRequest, 'mediaTypes.banner.sizes')) {
-      let sizeList = deepClone(validBidRequest.mediaTypes.banner.sizes);
+      const sizeList = deepClone(validBidRequest.mediaTypes.banner.sizes);
       removeFromSizes(sizeList, validBidRequest.params.size);
-      let newAdUnitEntry = {
+      const newAdUnitEntry = {
         'missingSizes': sizeList,
         'impression': imp
       };
@@ -1530,7 +1519,7 @@ function createMissingBannerImp(bid, imp, newSize) {
 function outstreamRenderer(bid) {
   bid.renderer.push(function () {
     const adUnitCode = bid.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     if (!divId) {
       logWarn(`IX Bid Adapter: adUnitCode: ${divId} not found on page.`);
       return;
@@ -1588,7 +1577,7 @@ function isIndexRendererPreferred(bid) {
 }
 
 function isExchangeIdConfigured() {
-  let exchangeId = config.getConfig('exchangeId');
+  const exchangeId = config.getConfig('exchangeId');
   if (typeof exchangeId === 'number' && isFinite(exchangeId)) {
     return true;
   }
@@ -1733,9 +1722,9 @@ export const spec = {
     });
 
     // Step 2: Update banner impressions with missing sizes
-    for (let adunitCode in missingBannerSizes) {
+    for (const adunitCode in missingBannerSizes) {
       if (missingBannerSizes.hasOwnProperty(adunitCode)) {
-        let missingSizes = missingBannerSizes[adunitCode].missingSizes;
+        const missingSizes = missingBannerSizes[adunitCode].missingSizes;
 
         if (!bannerImps.hasOwnProperty(adunitCode)) {
           bannerImps[adunitCode] = {};
@@ -1745,9 +1734,9 @@ export const spec = {
           bannerImps[adunitCode].missingCount = 0;
         }
 
-        let origImp = missingBannerSizes[adunitCode].impression;
+        const origImp = missingBannerSizes[adunitCode].impression;
         for (let i = 0; i < missingSizes.length; i++) {
-          let newImp = createMissingBannerImp(validBidRequests[0], origImp, missingSizes[i]);
+          const newImp = createMissingBannerImp(validBidRequests[0], origImp, missingSizes[i]);
           bannerImps[adunitCode].missingImps.push(newImp);
           bannerImps[adunitCode].missingCount++;
         }
@@ -1755,7 +1744,7 @@ export const spec = {
     }
 
     // Step 3: Build banner, video & native requests
-    let allImps = [];
+    const allImps = [];
     if (Object.keys(bannerImps).length > 0) {
       allImps.push(bannerImps);
     }
@@ -1923,7 +1912,7 @@ function buildImgSyncUrl(syncsPerBidder, index) {
   if (gdprConsent && gdprConsent.hasOwnProperty('consentString')) {
     consentString = gdprConsent.consentString || '';
   }
-  let siteIdParam = siteID !== 0 ? '&site_id=' + siteID.toString() : '';
+  const siteIdParam = siteID !== 0 ? '&site_id=' + siteID.toString() : '';
 
   return IMG_USER_SYNC_URL + siteIdParam + '&p=' + syncsPerBidder.toString() + '&i=' + index.toString() + '&gdpr=' + gdprApplies + '&gdpr_consent=' + consentString + '&us_privacy=' + (usPrivacy || '');
 }
@@ -1937,7 +1926,7 @@ export function combineImps(imps) {
   const result = {}
   imps.forEach((imp) => {
     Object.keys(imp).forEach((key) => {
-      if (Object.keys(result).includes(key)) {
+      if (result.hasOwnProperty(key)) {
         if (result[key].hasOwnProperty('ixImps') && imp[key].hasOwnProperty('ixImps')) {
           result[key].ixImps = [...result[key].ixImps, ...imp[key].ixImps];
         } else if (result[key].hasOwnProperty('missingImps') && imp[key].hasOwnProperty('missingImps')) {

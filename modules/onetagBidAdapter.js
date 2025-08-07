@@ -3,7 +3,6 @@
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
@@ -133,8 +132,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
-    payload.schain = validBidRequests[0].schain;
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain;
+  if (validBidRequests && validBidRequests.length !== 0 && schain && isSchainValid(schain)) {
+    payload.schain = schain;
   }
   try {
     if (storage.hasLocalStorage()) {
@@ -185,7 +185,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const { context, adUnitCode } = find(requestData.bids, (item) =>
+      const { context, adUnitCode } = ((requestData.bids) || []).find((item) =>
         item.bidId === bid.requestId &&
         item.type === VIDEO
       );
@@ -209,8 +209,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      paapi: fledgeAuctionConfigs,
-    }
+      paapi: fledgeAuctionConfigs}
   } else {
     return bids;
   }
@@ -303,7 +302,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.3'
+      adapter: '1.1.4'
     }
   };
 }
@@ -361,7 +360,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
@@ -422,7 +421,7 @@ function parseVideoSize(bid) {
 }
 
 function parseSizes(bid) {
-  let ret = [];
+  const ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
     return getSizes(bid.mediaTypes.banner.sizes)
   }
@@ -443,7 +442,7 @@ function getSizes(sizes) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  let syncs = [];
+  const syncs = [];
   let params = '';
   if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -482,19 +481,19 @@ function getBidFloor(bidRequest, mediaType, sizes) {
     const floorData = bidRequest.getFloor({
       currency: 'EUR',
       mediaType: mediaType || '*',
-      size: size || '*'
+      size: size || null
     }) || {};
 
     return {
       ...floorData,
-      size: size ? deepClone(size) : undefined,
+      size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
       floor: floorData.floor != null ? floorData.floor : null
     };
   };
+
   if (Array.isArray(sizes) && sizes.length > 0) {
     return sizes.map(size => getFloorObject([size.width, size.height]));
-  }
-  return [getFloorObject('*')];
+  } return [getFloorObject(null)];
 }
 
 export function isSchainValid(schain) {

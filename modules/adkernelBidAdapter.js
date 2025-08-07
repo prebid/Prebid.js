@@ -18,7 +18,6 @@ import {
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
@@ -132,11 +131,11 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
-    let requests = [];
-    let schain = bidRequests[0].schain;
+    const impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
+    const requests = [];
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     _each(impGroups, impGroup => {
-      let {host, zoneId, imps} = impGroup;
+      const {host, zoneId, imps} = impGroup;
       const request = buildRtbRequest(imps, bidderRequest, schain);
       requests.push({
         method: 'POST',
@@ -154,19 +153,19 @@ export const spec = {
    * @returns {Bid[]}
    */
   interpretResponse: function (serverResponse, serverRequest) {
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (!response.seatbid) {
       return [];
     }
 
-    let rtbRequest = JSON.parse(serverRequest.data);
-    let rtbBids = response.seatbid
+    const rtbRequest = JSON.parse(serverRequest.data);
+    const rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
-      let imp = find(rtbRequest.imp, imp => imp.id === rtbBid.impid);
-      let prBid = {
+      const imp = ((rtbRequest.imp) || []).find(imp => imp.id === rtbBid.impid);
+      const prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
         creativeId: rtbBid.crid,
@@ -260,13 +259,13 @@ registerBidder(spec);
  * @param refererInfo {refererInfo}
  */
 function groupImpressionsByHostZone(bidRequests, refererInfo) {
-  let secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
+  const secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
   return Object.values(
     bidRequests.map(bidRequest => buildImps(bidRequest, secure))
       .reduce((acc, curr, index) => {
-        let bidRequest = bidRequests[index];
-        let {zoneId, host} = bidRequest.params;
-        let key = `${host}_${zoneId}`;
+        const bidRequest = bidRequests[index];
+        const {zoneId, host} = bidRequest.params;
+        const key = `${host}_${zoneId}`;
         acc[key] = acc[key] || {host: host, zoneId: zoneId, imps: []};
         acc[key].imps.push(...curr);
         return acc;
@@ -280,7 +279,7 @@ function groupImpressionsByHostZone(bidRequests, refererInfo) {
  *  @param secure {boolean}
  */
 function buildImps(bidRequest, secure) {
-  let imp = {
+  const imp = {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
   };
@@ -288,9 +287,9 @@ function buildImps(bidRequest, secure) {
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
   var sizes = [];
-  let mediaTypes = bidRequest.mediaTypes;
-  let isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
-  let result = [];
+  const mediaTypes = bidRequest.mediaTypes;
+  const isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
+  const result = [];
   let typedImp;
 
   if (mediaTypes?.banner) {
@@ -301,7 +300,7 @@ function buildImps(bidRequest, secure) {
       typedImp = imp;
     }
     sizes = getAdUnitSizes(bidRequest);
-    let pbBanner = mediaTypes.banner;
+    const pbBanner = mediaTypes.banner;
     typedImp.banner = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, BANNER_FPD),
       ...getDefinedParamsOrEmpty(pbBanner, BANNER_PARAMS),
@@ -319,7 +318,7 @@ function buildImps(bidRequest, secure) {
     } else {
       typedImp = imp;
     }
-    let pbVideo = mediaTypes.video;
+    const pbVideo = mediaTypes.video;
     typedImp.video = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, VIDEO_FPD),
       ...getDefinedParamsOrEmpty(pbVideo, VIDEO_PARAMS)
@@ -353,7 +352,7 @@ function buildImps(bidRequest, secure) {
 }
 
 function initImpBidfloor(imp, bid, sizes, mediaType) {
-  let bidfloor = getBidFloor(bid, mediaType, sizes);
+  const bidfloor = getBidFloor(bid, mediaType, sizes);
   if (bidfloor) {
     imp.bidfloor = bidfloor;
   }
@@ -376,8 +375,8 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
   if (!syncRule) {
     return false;
   }
-  let bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
-  let rule = syncRule.filter === 'include';
+  const bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
+  const rule = syncRule.filter === 'include';
   return contains(bidders, bidderCode) === rule;
 }
 
@@ -390,7 +389,7 @@ function getAllowedSyncMethod(bidderCode) {
   if (!config.getConfig('userSync.syncEnabled')) {
     return;
   }
-  let filterConfig = config.getConfig('userSync.filterSettings');
+  const filterConfig = config.getConfig('userSync.filterSettings');
   if (isSyncMethodAllowed(filterConfig.all, bidderCode) || isSyncMethodAllowed(filterConfig.iframe, bidderCode)) {
     return SYNC_IFRAME;
   } else if (isSyncMethodAllowed(filterConfig.image, bidderCode)) {
@@ -404,7 +403,7 @@ function getAllowedSyncMethod(bidderCode) {
  * @returns {{device: Object}}
  */
 function makeDevice(fpd) {
-  let device = mergeDeep({
+  const device = mergeDeep({
     'ip': 'caller',
     'ipv6': 'caller',
     'ua': 'caller',
@@ -424,8 +423,8 @@ function makeDevice(fpd) {
  * @returns {{site: Object}|{app: Object}}
  */
 function makeSiteOrApp(bidderRequest, fpd) {
-  let {refererInfo} = bidderRequest;
-  let appConfig = config.getConfig('app');
+  const {refererInfo} = bidderRequest;
+  const appConfig = config.getConfig('app');
   if (isEmpty(appConfig)) {
     return {site: createSite(refererInfo, fpd)}
   } else {
@@ -440,12 +439,12 @@ function makeSiteOrApp(bidderRequest, fpd) {
  * @returns {{user: Object} | undefined}
  */
 function makeUser(bidderRequest, fpd) {
-  let {gdprConsent} = bidderRequest;
-  let user = fpd.user || {};
+  const {gdprConsent} = bidderRequest;
+  const user = fpd.user || {};
   if (gdprConsent && gdprConsent.consentString !== undefined) {
     deepSetValue(user, 'ext.consent', gdprConsent.consentString);
   }
-  let eids = getExtendedUserIds(bidderRequest);
+  const eids = getExtendedUserIds(bidderRequest);
   if (eids) {
     deepSetValue(user, 'ext.eids', eids);
   }
@@ -460,8 +459,8 @@ function makeUser(bidderRequest, fpd) {
  * @returns {{regs: Object} | undefined}
  */
 function makeRegulations(bidderRequest) {
-  let {gdprConsent, uspConsent, gppConsent} = bidderRequest;
-  let regs = {};
+  const {gdprConsent, uspConsent, gppConsent} = bidderRequest;
+  const regs = {};
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
       deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
@@ -490,7 +489,7 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let request = {
+  const request = {
     'id': bidderRequest.bidderRequestId,
     'imp': imps,
     'at': 1,
@@ -510,10 +509,10 @@ function makeBaseRequest(bidderRequest, imps, fpd) {
  * @param bidderRequest {BidderRequest}
  */
 function makeSyncInfo(bidderRequest) {
-  let {bidderCode} = bidderRequest;
-  let syncMethod = getAllowedSyncMethod(bidderCode);
+  const {bidderCode} = bidderRequest;
+  const syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {
-    let res = {};
+    const res = {};
     deepSetValue(res, 'ext.adk_usersync', syncMethod);
     return res;
   }
@@ -527,9 +526,9 @@ function makeSyncInfo(bidderRequest) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let fpd = bidderRequest.ortb2 || {};
+  const fpd = bidderRequest.ortb2 || {};
 
-  let req = mergeDeep(
+  const req = mergeDeep(
     makeBaseRequest(bidderRequest, imps, fpd),
     makeDevice(fpd),
     makeSiteOrApp(bidderRequest, fpd),
@@ -556,7 +555,7 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo, fpd) {
-  let site = {
+  const site = {
     'domain': refInfo.domain,
     'page': refInfo.page
   };
@@ -570,7 +569,7 @@ function createSite(refInfo, fpd) {
 }
 
 function getExtendedUserIds(bidderRequest) {
-  let eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
   if (isArray(eids)) {
     return eids;
   }

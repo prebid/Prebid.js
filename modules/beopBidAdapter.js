@@ -66,7 +66,7 @@ export const spec = {
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
     const kwdsFromRequest = firstSlot.kwds;
-    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
+    const keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
     let beopid = '';
     if (storage.cookiesAreEnabled) {
@@ -118,7 +118,7 @@ export const spec = {
       return;
     }
 
-    let trackingParams = buildTrackingParams(timeoutData, 'timeout', timeoutData.timeout);
+    const trackingParams = buildTrackingParams(timeoutData, 'timeout', timeoutData.timeout);
 
     logWarn(BIDDER_CODE + ': timed out request');
     triggerPixel(buildUrl({
@@ -132,7 +132,7 @@ export const spec = {
     if (bid === null || typeof bid === 'undefined' || Object.keys(bid).length === 0) {
       return;
     }
-    let trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
+    const trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
 
     logInfo(BIDDER_CODE + ': won request');
     triggerPixel(buildUrl({
@@ -174,10 +174,10 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  let params = Array.isArray(data.params) ? data.params[0] : data.params;
+  const params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: params.accountId ?? (data.ad?.match(/account: \“([a-f\d]{24})\“/)?.[1] ?? ''),
+    pid: params.accountId ?? (data.ad?.match(/account: “([a-f\d]{24})“/)?.[1] ?? ''),
     nid: params.networkId,
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,

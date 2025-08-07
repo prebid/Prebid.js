@@ -8,7 +8,7 @@ describe('Generic analytics', () => {
   describe('adapter', () => {
     let adapter, sandbox, clock;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(events, 'getEvents').returns([]);
       clock = sandbox.useFakeTimers();
       adapter = new GenericAnalytics();
@@ -17,6 +17,8 @@ describe('Generic analytics', () => {
     afterEach(() => {
       adapter.disableAnalytics();
       sandbox.restore();
+      clock.runAll();
+      clock.restore();
     });
 
     describe('configuration', () => {
@@ -115,7 +117,8 @@ describe('Generic analytics', () => {
         handler.throws(new Error());
         events.emit(AUCTION_INIT, {i: 0});
         let recv;
-        handler.reset();
+        handler.resetHistory();
+        handler.resetBehavior();
         handler.callsFake((arg) => {
           recv = arg;
         });

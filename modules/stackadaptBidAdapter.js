@@ -185,7 +185,7 @@ function getBidFloor(bidRequest) {
   }
 
   if (isFn(bidRequest.getFloor)) {
-    let floor = bidRequest.getFloor({
+    const floor = bidRequest.getFloor({
       currency: CURRENCY,
       mediaType: '*',
       size: '*'

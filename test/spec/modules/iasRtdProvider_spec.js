@@ -1,4 +1,4 @@
-import { iasSubModule, iasTargeting } from 'modules/iasRtdProvider.js';
+import { iasSubModule, iasTargeting, injectImpressionData, injectBrandSafetyData } from 'modules/iasRtdProvider.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 
@@ -63,7 +63,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
           keyMappings: {
             'id': 'ias_id'
           },
-          adUnitPath: {'one-div-id': '/012345/ad/unit/path'}
+          adUnitPath: { 'one-div-id': '/012345/ad/unit/path' }
         }
       };
       const value = iasSubModule.init(config);
@@ -181,11 +181,11 @@ describe('iasRtdProvider is a RTD provider that', function () {
       });
       it('it merges response data', function () {
         const callback = sinon.spy();
-        
+
         iasSubModule.getBidRequestData({
           adUnits: [
-            {code: 'adunit-1'},
-            {code: 'adunit-2'},
+            { code: 'adunit-1' },
+            { code: 'adunit-2' },
           ],
         }, callback, config);
 
@@ -201,11 +201,11 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targeting1['adunit-2']['adt']).to.be.eq('veryLow');
         expect(targeting1['adunit-2']['fr']).to.be.eq('false');
         expect(targeting1['adunit-2']['ias_id']).to.be.eq('id2');
-        
+
         iasSubModule.getBidRequestData({
           adUnits: [
-            {code: 'adunit-2'},
-            {code: 'adunit-3'},
+            { code: 'adunit-2' },
+            { code: 'adunit-3' },
           ],
         }, callback, config);
 
@@ -228,6 +228,87 @@ describe('iasRtdProvider is a RTD provider that', function () {
       });
     });
   })
+  describe('injectImpressionData', function () {
+    it('should inject impression data into adUnits ortb2Imp object', function () {
+      const adUnits = [
+        { code: 'leaderboard-flex-hp', ortb2Imp: { ext: { data: {} } } }
+      ];
+      const impressionData = {
+        'leaderboard-flex-hp': {
+          id: '03690e2f-4ae8-11f0-bdbb-c2443b7c428c',
+          vw: ['40', '50', '60', '70'],
+          grm: ['40', '50', '60'],
+          pub: ['40', '50', '60']
+        }
+      };
+      const fraudData = "false";
+      injectImpressionData(impressionData, fraudData, adUnits);
+      expect(adUnits[0].ortb2Imp.ext.data.ias_id).to.equal('03690e2f-4ae8-11f0-bdbb-c2443b7c428c');
+      expect(adUnits[0].ortb2Imp.ext.data.vw).to.deep.equal(['40', '50', '60', '70']);
+      expect(adUnits[0].ortb2Imp.ext.data.grm).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.pub).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.fr).to.equal('false');
+    });
+    it('should inject impression data with fraud true', function () {
+      const adUnits = [
+        { code: 'leaderboard-flex-hp', ortb2Imp: { ext: { data: {} } } }
+      ];
+      const impressionData = {
+        'leaderboard-flex-hp': {
+          id: '03690e2f-4ae8-11f0-bdbb-c2443b7c428c',
+          vw: ['40', '50', '60', '70'],
+          grm: ['40', '50', '60'],
+          pub: ['40', '50', '60']
+        }
+      };
+      const fraudData = "true";
+      injectImpressionData(impressionData, fraudData, adUnits);
+      expect(adUnits[0].ortb2Imp.ext.data.ias_id).to.equal('03690e2f-4ae8-11f0-bdbb-c2443b7c428c');
+      expect(adUnits[0].ortb2Imp.ext.data.vw).to.deep.equal(['40', '50', '60', '70']);
+      expect(adUnits[0].ortb2Imp.ext.data.grm).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.pub).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.fr).to.equal('true');
+    });
+    it('should not modify adUnits if impressionData is missing', function () {
+      const adUnits = [
+        { code: 'adunit-1', ortb2Imp: { ext: { data: {} } } }
+      ];
+      injectImpressionData(null, true, adUnits);
+      expect(adUnits[0].ortb2Imp.ext.data).to.deep.equal({});
+    });
+  });
+
+  describe('injectBrandSafetyData', function () {
+    it('should inject brandSafety data', function () {
+      const ortb2Fragments = { global: { site: {} } };
+      const adUnits = [
+        { bids: [{ bidder: 'pubmatic', params: {} }] }
+      ];
+      const brandSafetyData = {
+        adt: 'veryLow',
+        alc: 'veryLow',
+        dlm: 'veryLow',
+        drg: 'veryLow',
+        hat: 'high',
+        off: 'veryLow',
+        vio: 'veryLow'
+      };
+      injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits);
+      expect(ortb2Fragments.global.site.ext.data['ias-brand-safety']).to.deep.equal({
+        adt: 'veryLow',
+        alc: 'veryLow',
+        dlm: 'veryLow',
+        drg: 'veryLow',
+        hat: 'high',
+        off: 'veryLow',
+        vio: 'veryLow'
+      });
+      // Also assert that each key/value is present at the top level of ext.data
+      Object.entries(brandSafetyData).forEach(([key, value]) => {
+        expect(ortb2Fragments.global.site.ext.data[key]).to.equal(value);
+      });
+    });
+  });
 });
 
 const config = {
@@ -288,12 +369,12 @@ const mergeRespData1 = {
   brandSafety: { adt: 'veryLow' },
   custom: { 'ias-kw': ['IAS_5995_KW'] },
   fr: 'false',
-  slots: { 'adunit-1': { id: 'id1' }, 'adunit-2': {id: 'id2'} }
+  slots: { 'adunit-1': { id: 'id1' }, 'adunit-2': { id: 'id2' } }
 };
 
 const mergeRespData2 = {
   brandSafety: { adt: 'high' },
   custom: { 'ias-kw': ['IAS_5995_KW'] },
   fr: 'true',
-  slots: { 'adunit-2': {id: 'id2'}, 'adunit-3': { id: 'id3' } }
+  slots: { 'adunit-2': { id: 'id2' }, 'adunit-3': { id: 'id3' } }
 };

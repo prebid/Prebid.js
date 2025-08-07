@@ -5,7 +5,7 @@ import { internal } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
-import { resetWinDimensions } from '../../../src/utils';
+import { resetWinDimensions } from '../../../src/utils.js';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -498,7 +498,7 @@ describe('33acrossBidAdapter:', function () {
         .withBanner()
         .build()
     );
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').returns(element);
     sandbox.stub(internal, 'getWindowTop').returns(win);
@@ -1347,7 +1347,7 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .build();
 
-        let copyBidRequest = utils.deepClone(bidRequests);
+        const copyBidRequest = utils.deepClone(bidRequests);
         const bidRequestsWithGpid = copyBidRequest.map(function(bidRequest, index) {
           return {
             ...bidRequest,
@@ -1420,7 +1420,7 @@ describe('33acrossBidAdapter:', function () {
         ];
 
         schainValues.forEach((schain) => {
-          bidRequests[0].schain = schain;
+          bidRequests[0].ortb2.source = {ext: {schain: schain}};
 
           const ttxRequest = new TtxRequestBuilder()
             .withBanner()

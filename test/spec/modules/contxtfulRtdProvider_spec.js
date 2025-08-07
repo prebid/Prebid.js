@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
-import * as events from '../../../src/events';
+import * as events from '../../../src/events.js';
 import * as utils from 'src/utils.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
 import Sinon from 'sinon';
@@ -62,7 +62,7 @@ function fakeGetElementById(width, height, x, y) {
 }
 
 describe('contxtfulRtdProvider', function () {
-  let sandbox = sinon.sandbox.create();
+  const sandbox = sinon.createSandbox();
   let loadExternalScriptTag;
   let eventsEmitSpy;
 
@@ -72,36 +72,36 @@ describe('contxtfulRtdProvider', function () {
     loadExternalScriptTag = document.createElement('script');
     loadExternalScriptStub.callsFake((_url, _moduleName) => loadExternalScriptTag);
 
-    RX_API_MOCK.receptivity.reset();
+    RX_API_MOCK.receptivity.resetHistory();
     RX_API_MOCK.receptivity.callsFake(() => RX_FROM_API);
 
-    RX_API_MOCK.receptivityBatched.reset();
+    RX_API_MOCK.receptivityBatched.resetHistory();
     RX_API_MOCK.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
 
-    RX_API_MOCK_WITH_BUNDLE.receptivity.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivity.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.receptivity.callsFake(() => RX_FROM_API);
 
-    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
 
-    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.reset();
+    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callsFake((bidders, reqBidsConfigObj) => {
-      let bidderObj = bidders.reduce((accumulator, bidder) => { accumulator[bidder] = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } }; return accumulator; }, {});
+      const bidderObj = bidders.reduce((accumulator, bidder) => { accumulator[bidder] = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } }; return accumulator; }, {});
       return { global: { user: { site: { id: 'globalsiteId' } } }, bidder: bidderObj }
     }
     );
 
-    RX_CONNECTOR_MOCK.fetchConfig.reset();
+    RX_CONNECTOR_MOCK.fetchConfig.resetHistory();
     RX_CONNECTOR_MOCK.fetchConfig.callsFake((tagId) => new Promise((resolve, reject) => resolve({ tag_id: tagId })));
 
-    RX_CONNECTOR_MOCK.rxApiBuilder.reset();
+    RX_CONNECTOR_MOCK.rxApiBuilder.resetHistory();
     RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK)));
 
     eventsEmitSpy = sandbox.spy(events, ['emit']);
 
     sandbox.stub(utils, 'generateUUID').returns(SM);
 
-    let tagId = CUSTOMER;
+    const tagId = CUSTOMER;
     sessionStorage.clear();
   });
 
@@ -200,7 +200,7 @@ describe('contxtfulRtdProvider', function () {
 
   describe('init', function () {
     it('uses the RX API to get receptivity', (done) => {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
@@ -215,7 +215,7 @@ describe('contxtfulRtdProvider', function () {
 
   describe('init', function () {
     it('gets the RX API returned by an external script', (done) => {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
@@ -230,11 +230,11 @@ describe('contxtfulRtdProvider', function () {
 
   describe('init', function () {
     it('detect that initial receptivity is not dispatched and it does not initialize receptivity value', (done) => {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
 
       setTimeout(() => {
-        let targetingData = contxtfulSubmodule.getTargetingData(['ad-slot'], config);
+        const targetingData = contxtfulSubmodule.getTargetingData(['ad-slot'], config);
         expect(targetingData).to.deep.equal({});
         done();
       }, TIMEOUT);
@@ -251,12 +251,12 @@ describe('contxtfulRtdProvider', function () {
 
     theories.forEach(([initialReceptivityEvent, _description]) => {
       it('figures out that initial receptivity is invalid and it does not initialize receptivity value', (done) => {
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
         loadExternalScriptTag.dispatchEvent(initialReceptivityEvent);
 
         setTimeout(() => {
-          let targetingData = contxtfulSubmodule.getTargetingData(['ad-slot'], config);
+          const targetingData = contxtfulSubmodule.getTargetingData(['ad-slot'], config);
           expect(targetingData).to.deep.equal({});
           done();
         }, TIMEOUT);
@@ -285,12 +285,12 @@ describe('contxtfulRtdProvider', function () {
 
     theories.forEach(([adUnits, expected, description]) => {
       it('adds receptivity to the ad units using the RX API', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
         window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
-          let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
+          const targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
           expect(targetingData, description).to.deep.equal(expected, description);
           done();
         }, TIMEOUT);
@@ -317,26 +317,26 @@ describe('contxtfulRtdProvider', function () {
 
     theories.forEach(([adUnits, expected, description]) => {
       it('honours "adServerTargeting" and the RX API is not called', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         config.params.adServerTargeting = false;
         contxtfulSubmodule.init(config);
         window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
-          let _ = contxtfulSubmodule.getTargetingData(adUnits, config);
+          const _ = contxtfulSubmodule.getTargetingData(adUnits, config);
           expect(RX_API_MOCK.receptivity.callCount).to.be.equal(0);
           done();
         }, TIMEOUT);
       });
 
       it('honours adServerTargeting and it does not add receptivity to the ad units', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         config.params.adServerTargeting = false;
         contxtfulSubmodule.init(config);
         window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
-          let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
+          const targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
           expect(targetingData, description).to.deep.equal(expected);
           done();
         }, TIMEOUT);
@@ -368,10 +368,10 @@ describe('contxtfulRtdProvider', function () {
         // Simulate that there was a write to sessionStorage in the past.
         storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({ exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE }))
 
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
 
-        let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
+        const targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
         expect(targetingData).to.deep.equal(expected);
 
         done();
@@ -401,10 +401,10 @@ describe('contxtfulRtdProvider', function () {
         // Simulate that there was a write to sessionStorage in the past.
         storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({ exp: new Date().getTime() - 100, rx: RX_FROM_SESSION_STORAGE }));
 
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
 
-        let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
+        const targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
         expect(targetingData).to.deep.equal(expected);
 
         done();
@@ -417,7 +417,7 @@ describe('contxtfulRtdProvider', function () {
       contxtfulSubmodule.init(buildInitConfig(VERSION, CUSTOMER));
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -435,11 +435,11 @@ describe('contxtfulRtdProvider', function () {
 
   describe('getBidRequestData', function () {
     it('does not write receptivity to the global OpenRTB 2 fragment', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -457,18 +457,18 @@ describe('contxtfulRtdProvider', function () {
 
   describe('getBidRequestData', function () {
     it('writes receptivity to the configured bidder OpenRTB 2 fragments', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
         },
       };
 
-      let expectedData = {
+      const expectedData = {
         name: 'contxtful',
         ext: {
           rx: RX_FROM_API,
@@ -483,7 +483,7 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-        let data = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
+        const data = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
 
         expect(data.name).to.deep.equal(expectedData.name);
         expect(data.ext.rx).to.deep.equal(expectedData.ext.rx);
@@ -495,14 +495,14 @@ describe('contxtfulRtdProvider', function () {
 
   describe('getBidRequestData', function () {
     it('uses non-expired info from session storage and adds receptivity to the reqBidsConfigObj', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
 
       // Simulate that there was a write to sessionStorage in the past.
-      let bidder = config.params.bidders[0];
+      const bidder = config.params.bidders[0];
 
       storage.setDataInSessionStorage(`${config.params.customer}_${bidder}`, JSON.stringify({ exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE }));
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -515,9 +515,9 @@ describe('contxtfulRtdProvider', function () {
       contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, () => { }, config);
 
       setTimeout(() => {
-        let ortb2BidderFragment = reqBidsConfigObj.ortb2Fragments.bidder[bidder];
-        let userData = ortb2BidderFragment.user.data;
-        let contxtfulData = userData[0];
+        const ortb2BidderFragment = reqBidsConfigObj.ortb2Fragments.bidder[bidder];
+        const userData = ortb2BidderFragment.user.data;
+        const contxtfulData = userData[0];
 
         expect(contxtfulData.name).to.be.equal('contxtful');
         expect(contxtfulData.ext.rx).to.deep.equal(RX_FROM_SESSION_STORAGE);
@@ -533,11 +533,11 @@ describe('contxtfulRtdProvider', function () {
 
   describe('getBidRequestData', function () {
     it('uses the RX API', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -558,18 +558,18 @@ describe('contxtfulRtdProvider', function () {
 
   describe('getBidRequestData', function () {
     it('adds receptivity to the reqBidsConfigObj', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
         },
       };
 
-      let expectedData = {
+      const expectedData = {
         name: 'contxtful',
         ext: {
           rx: RX_FROM_API,
@@ -585,7 +585,7 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-        let data = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
+        const data = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
 
         expect(data.name).to.deep.equal(expectedData.name);
         expect(data.ext.rx).to.deep.equal(expectedData.ext.rx);
@@ -596,26 +596,26 @@ describe('contxtfulRtdProvider', function () {
     });
 
     it('does not change the sm', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let firstReqBidsConfigObj = {
+      const firstReqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
         },
       };
 
-      let secondReqBidsConfigObj = deepClone(firstReqBidsConfigObj);
+      const secondReqBidsConfigObj = deepClone(firstReqBidsConfigObj);
 
       setTimeout(() => {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(firstReqBidsConfigObj, onDoneSpy, config);
         contxtfulSubmodule.getBidRequestData(secondReqBidsConfigObj, onDoneSpy, config);
 
-        let firstData = firstReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
-        let secondData = secondReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
+        const firstData = firstReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
+        const secondData = secondReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
 
         expect(firstData.ext.sm).to.equal(secondData.ext.sm);
 
@@ -634,12 +634,12 @@ describe('contxtfulRtdProvider', function () {
 
       moveEventTheories.forEach(([event, expected, _description]) => {
         it('adds move event', function (done) {
-          let config = buildInitConfig(VERSION, CUSTOMER);
+          const config = buildInitConfig(VERSION, CUSTOMER);
           contxtfulSubmodule.init(config);
 
           window.dispatchEvent(event);
 
-          let reqBidsConfigObj = {
+          const reqBidsConfigObj = {
             ortb2Fragments: {
               global: {},
               bidder: {},
@@ -650,9 +650,9 @@ describe('contxtfulRtdProvider', function () {
             const onDoneSpy = sinon.spy();
             contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
 
-            let events = JSON.parse(atob(ext.events));
+            const events = JSON.parse(atob(ext.events));
 
             expect(events.ui.position.x).to.be.deep.equal(expected.x);
             expect(events.ui.position.y).to.be.deep.equal(expected.y);
@@ -663,14 +663,14 @@ describe('contxtfulRtdProvider', function () {
       });
 
       it('adds screen event', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
+        const config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
 
         // Cannot change the window size from JS
         // So we take the current size as expectation
         const { innerHeight: height, innerWidth: width } = getWinDimensions()
 
-        let reqBidsConfigObj = {
+        const reqBidsConfigObj = {
           ortb2Fragments: {
             global: {},
             bidder: {},
@@ -681,9 +681,9 @@ describe('contxtfulRtdProvider', function () {
           const onDoneSpy = sinon.spy();
           contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
 
-          let events = JSON.parse(atob(ext.events));
+          const events = JSON.parse(atob(ext.events));
 
           expect(events.ui.screen.topLeft).to.be.deep.equal({ x: 0, y: 0 }, 'screen top left');
           expect(events.ui.screen.width).to.be.deep.equal(width, 'screen width');
@@ -697,9 +697,9 @@ describe('contxtfulRtdProvider', function () {
 
   describe('when there is no ad units', function () {
     it('adds empty ad unit positions', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -709,8 +709,8 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-        let pos = JSON.parse(atob(ext.pos));
+        const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        const pos = JSON.parse(atob(ext.pos));
 
         expect(Object.keys(pos).length).to.be.equal(0);
         done();
@@ -720,9 +720,9 @@ describe('contxtfulRtdProvider', function () {
 
   describe('when there are ad units', function () {
     it('return empty objects for ad units that we can\'t get position of', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         adUnits: [
           { code: 'code1' },
           { code: 'code2' }
@@ -736,8 +736,8 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-        let pos = JSON.parse(atob(ext.pos));
+        const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        const pos = JSON.parse(atob(ext.pos));
 
         expect(Object.keys(pos).length).to.be.equal(0);
         done();
@@ -745,9 +745,9 @@ describe('contxtfulRtdProvider', function () {
     });
 
     it('returns the IAB position if the ad unit div id cannot be bound but property pos can be found in the ad unit', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         adUnits: [
           { code: 'code1', mediaTypes: { banner: { pos: 4 } } },
           { code: 'code2', mediaTypes: { banner: { pos: 5 } } },
@@ -762,8 +762,8 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-        let pos = JSON.parse(atob(ext.pos));
+        const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        const pos = JSON.parse(atob(ext.pos));
 
         expect(Object.keys(pos).length).to.be.equal(3);
         expect(pos['code1'].p).to.be.equal(4);
@@ -787,7 +787,7 @@ describe('contxtfulRtdProvider', function () {
     }
 
     function InitDivStubPositions(config, withIframe, isVisible, forceGetElementById = true) {
-      let fakeElem = fakeGetElementById(100, 100, 30, 30);
+      const fakeElem = fakeGetElementById(100, 100, 30, 30);
       if (isVisible) {
         fakeElem.checkVisibility = function () { return true };
         sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
@@ -797,7 +797,7 @@ describe('contxtfulRtdProvider', function () {
       }
 
       if (withIframe) {
-        let ws = {
+        const ws = {
           frameElement: {
             getBoundingClientRect: () => fakeElem.getBoundingClientRect()
           },
@@ -821,8 +821,8 @@ describe('contxtfulRtdProvider', function () {
 
     describe('when the div id cannot be found, we should try with GPT method', function () {
       it('returns an empty list if gpt not find the div', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
-        let reqBidsConfigObj = {
+        const config = buildInitConfig(VERSION, CUSTOMER);
+        const reqBidsConfigObj = {
           adUnits: [
             { code: 'code1' },
             { code: 'code2' }
@@ -833,7 +833,7 @@ describe('contxtfulRtdProvider', function () {
           },
         };
         InitDivStubPositions(config, false, true, false);
-        let fakeElem = fakeGetElementById(100, 100, 30, 30);
+        const fakeElem = fakeGetElementById(100, 100, 30, 30);
         sandbox.stub(window.top.document, 'getElementById').returns(function (id) {
           if (id == 'code1' || id == 'code2') {
             return undefined;
@@ -845,8 +845,8 @@ describe('contxtfulRtdProvider', function () {
           const onDoneSpy = sinon.spy();
           contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-          let pos = JSON.parse(atob(ext.pos));
+          const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          const pos = JSON.parse(atob(ext.pos));
 
           expect(Object.keys(pos).length).to.be.equal(0);
           done();
@@ -854,8 +854,8 @@ describe('contxtfulRtdProvider', function () {
       })
 
       it('returns object visibility and position if gpt not found but the div id is the ad unit code', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
-        let reqBidsConfigObj = {
+        const config = buildInitConfig(VERSION, CUSTOMER);
+        const reqBidsConfigObj = {
           adUnits: [
             { code: 'code1' },
             { code: 'code2' }
@@ -870,8 +870,8 @@ describe('contxtfulRtdProvider', function () {
           const onDoneSpy = sinon.spy();
           contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-          let pos = JSON.parse(atob(ext.pos));
+          const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          const pos = JSON.parse(atob(ext.pos));
 
           expect(Object.keys(pos).length).to.be.equal(2);
           expect(pos['code1'].p.x).to.be.equal(30);
@@ -882,8 +882,8 @@ describe('contxtfulRtdProvider', function () {
       });
 
       it('returns object visibility and position if gpt finds the div', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
-        let reqBidsConfigObj = {
+        const config = buildInitConfig(VERSION, CUSTOMER);
+        const reqBidsConfigObj = {
           adUnits: [
             { code: 'code1' },
             { code: 'code2' }
@@ -900,8 +900,8 @@ describe('contxtfulRtdProvider', function () {
           const onDoneSpy = sinon.spy();
           contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-          let pos = JSON.parse(atob(ext.pos));
+          const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          const pos = JSON.parse(atob(ext.pos));
 
           expect(Object.keys(pos).length).to.be.equal(2);
           expect(pos['code1'].p.x).to.be.equal(30);
@@ -913,18 +913,18 @@ describe('contxtfulRtdProvider', function () {
     });
 
     describe('when we get object visibility and position for ad units that we can get div id', function () {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
 
       describe('when we are not in an iframe', function () {
         it('return object visibility true if element is visible', function (done) {
-          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          const reqBidsConfigObj = getFakeRequestBidConfigObj();
           InitDivStubPositions(config, false, true);
           setTimeout(() => {
             const onDoneSpy = sinon.spy();
             contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-            let pos = JSON.parse(atob(ext.pos));
+            const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            const pos = JSON.parse(atob(ext.pos));
 
             expect(Object.keys(pos).length).to.be.equal(2);
             expect(pos['code1'].p.x).to.be.equal(30);
@@ -935,14 +935,14 @@ describe('contxtfulRtdProvider', function () {
         });
 
         it('return object visibility false if element is not visible', function (done) {
-          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          const reqBidsConfigObj = getFakeRequestBidConfigObj();
           InitDivStubPositions(config, false, false);
           setTimeout(() => {
             const onDoneSpy = sinon.spy();
             contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-            let pos = JSON.parse(atob(ext.pos));
+            const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            const pos = JSON.parse(atob(ext.pos));
 
             expect(Object.keys(pos).length).to.be.equal(2);
             expect(pos['code1'].v).to.be.equal(false);
@@ -954,14 +954,14 @@ describe('contxtfulRtdProvider', function () {
 
       describe('when we are in an iframe', function () {
         it('return object visibility true if element is visible', function (done) {
-          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          const reqBidsConfigObj = getFakeRequestBidConfigObj();
           InitDivStubPositions(config, true, true)
           setTimeout(() => {
             const onDoneSpy = sinon.spy();
             contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-            let pos = JSON.parse(atob(ext.pos));
+            const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            const pos = JSON.parse(atob(ext.pos));
 
             expect(Object.keys(pos).length).to.be.equal(2);
             expect(pos['code1'].p.x).to.be.equal(30);
@@ -972,14 +972,14 @@ describe('contxtfulRtdProvider', function () {
         });
 
         it('return object visibility false if element is not visible', function (done) {
-          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          const reqBidsConfigObj = getFakeRequestBidConfigObj();
           InitDivStubPositions(config, true, false);
           setTimeout(() => {
             const onDoneSpy = sinon.spy();
             contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-            let pos = JSON.parse(atob(ext.pos));
+            const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            const pos = JSON.parse(atob(ext.pos));
 
             expect(Object.keys(pos).length).to.be.equal(2);
             expect(pos['code1'].v).to.be.equal(false);
@@ -992,11 +992,11 @@ describe('contxtfulRtdProvider', function () {
 
   describe('after rxApi is loaded', function () {
     it('should add event', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -1007,9 +1007,9 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
 
-        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        const ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
 
-        let events = ext.events;
+        const events = ext.events;
 
         expect(events).to.be.not.undefined;
         done();
@@ -1019,14 +1019,14 @@ describe('contxtfulRtdProvider', function () {
 
   describe('when rxConnector contains getOrtb2Fragment function', () => {
     it('should just take whatever it contains and merge to the fragment', function (done) {
-      RX_CONNECTOR_MOCK.rxApiBuilder.reset();
+      RX_CONNECTOR_MOCK.rxApiBuilder.resetHistory();
       RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK_WITH_BUNDLE)));
 
-      let config = buildInitConfig(VERSION, CUSTOMER);
+      const config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         ortb2Fragments: {
           global: {},
           bidder: {},
@@ -1036,11 +1036,11 @@ describe('contxtfulRtdProvider', function () {
       setTimeout(() => {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
-        let global = reqBidsConfigObj.ortb2Fragments.global;
-        let bidder = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
+        const global = reqBidsConfigObj.ortb2Fragments.global;
+        const bidder = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
 
-        let globalExpected = { user: { site: { id: 'globalsiteId' } } };
-        let bidderExpected = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } };
+        const globalExpected = { user: { site: { id: 'globalsiteId' } } };
+        const bidderExpected = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } };
         expect(RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callCount).to.equal(1);
         expect(global).to.deep.equal(globalExpected);
         expect(bidder).to.deep.equal(bidderExpected);

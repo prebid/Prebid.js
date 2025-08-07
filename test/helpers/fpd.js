@@ -33,7 +33,7 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
 }
 
 export function addFPDEnrichments(ortb2 = {}, overrides) {
-  const sandbox = sinon.sandbox.create();
+  const sandbox = sinon.createSandbox();
   mockFpdEnrichments(sandbox, overrides)
   return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }

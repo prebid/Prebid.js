@@ -4,7 +4,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { find } from '../src/polyfill.js';
 import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';
 import { OUTSTREAM } from '../src/video.js';
 import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
@@ -70,38 +69,7 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
 /**
  * @typedef {Object} OpenRtbBidResponse
  * @property {string} id - ID of the bid response
- * @property {Array<{bid: Array<OpenRTBBid>}>} seatbid - Array of seat bids, each containing a list of bids
- * @property {string} cur - Currency in which bid amounts are expressed
- */
-
-/**
- * @typedef {Object} OpenRtbRequest
- * @property {string} id - Unique request ID
- * @property {Array<Imp>} imp - List of impression objects
- * @property {Site} site - Site information
- * @property {Device} device - Device information
- * @property {User} user - User information
- * @property {object} regs - Regulatory data, including GDPR and COPPA
- * @property {object} ext - Additional extensions, such as custom data for the bid request
- * @property {number} at - Auction type, typically first-price or second-price
- */
-
-/**
- * @typedef {Object} OpenRtbBid
- * @property {string} impid - ID of the impression this bid relates to
- * @property {number} price - Bid price for the impression
- * @property {string} adid - Ad ID for the bid
- * @property {number} [crid] - Creative ID, if available
- * @property {string} [dealid] - Deal ID if the bid is part of a private marketplace deal
- * @property {object} [ext] - Additional bid-specific extensions, such as media type
- * @property {string} [adm] - Ad markup if it’s directly included in the bid response
- * @property {string} [nurl] - Notification URL to be called when the bid wins
- */
-
-/**
- * @typedef {Object} OpenRtbBidResponse
- * @property {string} id - ID of the bid response
- * @property {Array<{bid: Array<OpenRTBBid>}>} seatbid - Array of seat bids, each containing a list of bids
+ * @property {Array<{bid: Array<OpenRtbBid>}>} seatbid - Array of seat bids, each containing a list of bids
  * @property {string} cur - Currency in which bid amounts are expressed
  */
 
@@ -155,7 +123,7 @@ function getOpenRTBSiteObject(bidderRequest) {
       id: publisherId
     },
     ext: {
-      schain: bidderRequest.schain
+      schain: bidderRequest?.ortb2?.source?.ext?.schain
     }
   };
 }
@@ -181,7 +149,6 @@ function getOpenRTBUserObject(bidderRequest) {
   return {
     ext: {
       consent: bidderRequest.gdprConsent.consentString,
-      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
     },
   };
 }
@@ -621,7 +588,7 @@ function buildBidResponse(bid, bidResponse, imp) {
 function getImpfromBid(bid, bidRequest) {
   if (!bidRequest || !bidRequest.imp) return null;
   const imps = bidRequest.imp;
-  return find(imps, (imp) => imp.id === bid.impid);
+  return ((imps) || []).find((imp) => imp.id === bid.impid);
 }
 
 /**

@@ -1,6 +1,7 @@
 import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {deepClone} from '../../../src/utils';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {deepClone} from '../../../src/utils.js';
+import {expect} from 'chai';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -126,12 +127,16 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
-    schain: schain,
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
     timeout: 500,
     ortb2: {
+      source: {
+        ext: {
+          schain: schain
+        }
+      },
       bcat: ['CAT1'],
       badv: ['test1.com'],
       site: {
@@ -191,7 +196,13 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
-    schain: schain,
+    ortb2: {
+      source: {
+        ext: {
+          schain: schain
+        }
+      }
+    },
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
@@ -444,28 +455,97 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bid3.meta.advertiserDomains).to.equal(receivedBid3.adomain);
   });
 
-  it('Different cases for user syncs', function () {
+  describe('getUserSyncs', function() {
     const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
     const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 
-    const sync1 = spec.getUserSyncs({iframeEnabled: true})[0];
-    expect(sync1.type).to.equal('iframe');
-    expect(sync1.url).to.include(USER_SYNC_URL_IFRAME);
+    it('execute as per config', function() {
+      expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
+      }]);
+      expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal([{
+        type: 'image', url: `${USER_SYNC_URL_IMAGE}`
+      }]);
+    });
 
-    const sync2 = spec.getUserSyncs({iframeEnabled: false})[0];
-    expect(sync2.type).to.equal('image');
-    expect(sync2.url).to.include(USER_SYNC_URL_IMAGE);
+    it('GDPR', function() {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: 'foo'})).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gdpr=1&gdpr_consent=foo`
+      }]);
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: false, consentString: 'foo'})).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gdpr=0&gdpr_consent=foo`
+      }]);
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: undefined})).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gdpr=1&gdpr_consent=`
+      }]);
+      expect(spec.getUserSyncs({iframeEnabled: false}, {}, {gdprApplies: true, consentString: 'foo'})).to.deep.equal([{
+        type: 'image', url: `${USER_SYNC_URL_IMAGE}&gdpr=1&gdpr_consent=foo`
+      }]);
+      expect(spec.getUserSyncs({iframeEnabled: false}, {}, {gdprApplies: false, consentString: 'foo'})).to.deep.equal([{
+        type: 'image', url: `${USER_SYNC_URL_IMAGE}&gdpr=0&gdpr_consent=foo`
+      }]);
+      expect(spec.getUserSyncs({iframeEnabled: false}, {}, {gdprApplies: true, consentString: undefined})).to.deep.equal([{
+        type: 'image', url: `${USER_SYNC_URL_IMAGE}&gdpr=1&gdpr_consent=`
+      }]);
+    });
 
-    const sync3 = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true})[0];
-    expect(sync3.type).to.equal('iframe');
-    expect(sync3.url).to.include(USER_SYNC_URL_IFRAME);
-    expect(sync3.url).to.include('&gdpr=');
+    it('CCPA', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
+        type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&us_privacy=1NYN`
+      }]);
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, '1NYN')).to.deep.equal([{
+        type: 'image', url: `${USER_SYNC_URL_IMAGE}&us_privacy=1NYN`
+      }]);
+    });
 
-    const sync4 = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true}, 'test')[0];
-    expect(sync4.type).to.equal('iframe');
-    expect(sync4.url).to.include(USER_SYNC_URL_IFRAME);
-    expect(sync4.url).to.include('&gdpr=');
-    expect(sync4.url).to.include('&us_privacy=');
+    describe('GPP', function() {
+      it('should return userSync url without GPP consent if gppConsent is undefined', () => {
+        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, undefined);
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
+        }]);
+      });
+
+      it('should return userSync url without GPP consent if gppConsent.gppString is undefined', () => {
+        const gppConsent = { applicableSections: ['5'] };
+        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
+        }]);
+      });
+
+      it('should return userSync url without GPP consent if gppConsent.applicableSections is undefined', () => {
+        const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN' };
+        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
+        }]);
+      });
+
+      it('should return userSync url without GPP consent if gppConsent.applicableSections is an empty array', () => {
+        const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [] };
+        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
+        }]);
+      });
+
+      it('should concatenate gppString and applicableSections values in the returned userSync iframe url', () => {
+        const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
+        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
+        }]);
+      });
+
+      it('should concatenate gppString and applicableSections values in the returned userSync image url', () => {
+        const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
+        const result = spec.getUserSyncs({iframeEnabled: false}, undefined, undefined, undefined, gppConsent);
+        expect(result).to.deep.equal([{
+          type: 'image', url: `${USER_SYNC_URL_IMAGE}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
+        }]);
+      });
+    });
   });
 
   it('Test provide gdpr and ccpa values in payload', function () {
@@ -475,6 +555,76 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.user.ext.consent).to.eql('consentString');
     expect(payload.regs.ext.gdpr).to.eql(1);
     expect(payload.regs.ext.us_privacy).to.eql('someCCPAString');
+  });
+
+  describe('buildRequests: GPP', function() {
+    it('Request params check with GPP Consent', function () {
+      const bidRequest = {
+        gppConsent: {
+          'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+          'fullGppData': {
+            'sectionId': 3,
+            'gppVersion': 1,
+            'sectionList': [
+              5,
+              7
+            ],
+            'applicableSections': [
+              5
+            ],
+            'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+            'pingData': {
+              'cmpStatus': 'loaded',
+              'gppVersion': '1.0',
+              'cmpDisplayStatus': 'visible',
+              'supportedAPIs': [
+                'tcfca',
+                'usnat',
+                'usca',
+                'usva',
+                'usco',
+                'usut',
+                'usct'
+              ],
+              'cmpId': 31
+            },
+            'eventName': 'sectionChange'
+          },
+          'applicableSections': [
+            5
+          ],
+          'apiVersion': 1
+        }
+      };
+      const request = spec.buildRequests(bannerRequest, bidRequest);
+      const data = JSON.parse(request.data);
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
+      expect(data.regs.gpp_sid[0]).to.equal(5);
+    });
+
+    it('Request params check without GPP Consent', function () {
+      const bidRequest = {};
+      const request = spec.buildRequests(bannerRequest, bidRequest);
+      const data = JSON.parse(request.data);
+      expect(data.regs).to.equal(undefined);
+    });
+
+    it('Request params check with GPP Consent read from ortb2', function () {
+      const bidRequest = {
+        ortb2: {
+          regs: {
+            'gpp': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+            'gpp_sid': [
+              5
+            ]
+          }
+        }
+      };
+      const request = spec.buildRequests(bannerRequest, bidRequest);
+      const data = JSON.parse(request.data);
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
+      expect(data.regs.gpp_sid[0]).to.equal(5);
+    });
   });
 
   it('Test do not override user object', function () {

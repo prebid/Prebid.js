@@ -44,19 +44,64 @@ const RTD_CONFIG = {
 };
 
 describe('rayn RTD Submodule', function () {
+  let sandbox;
   let getDataFromLocalStorageStub;
 
   beforeEach(function () {
+    sandbox = sinon.createSandbox();
     config.resetConfig();
-    getDataFromLocalStorageStub = sinon.stub(
+
+    // reset RTD_CONFIG mutations
+    RTD_CONFIG.dataProviders[0].params.bidders = [];
+    RTD_CONFIG.dataProviders[0].params.integration = {
+      iabAudienceCategories: {
+        v1_1: {
+          tier: 6,
+          enabled: true,
+        },
+      },
+      iabContentCategories: {
+        v3_0: {
+          tier: 4,
+          enabled: true,
+        },
+        v2_2: {
+          tier: 4,
+          enabled: true,
+        },
+      },
+    };
+
+    // reset TEST_SEGMENTS mutations
+    TEST_SEGMENTS[TEST_CHECKSUM] = {
+      7: {
+        2: ['51', '246', '652', '48', '324']
+      }
+    };
+    delete TEST_SEGMENTS['4'];
+    delete TEST_SEGMENTS['103015'];
+    delete TEST_SEGMENTS[TEST_CHECKSUM]['6'];
+
+    getDataFromLocalStorageStub = sandbox.stub(
       raynRTD.storage,
       'getDataFromLocalStorage',
     );
+
+    sandbox.stub(raynRTD, 'generateChecksum').returns(TEST_CHECKSUM);
+
+    delete global.window.raynJS;
   });
 
   afterEach(function () {
-    getDataFromLocalStorageStub.restore();
+    sandbox.restore();
+    delete global.window.raynJS;
   });
+
+  function expectLog(spy, message) {
+    // TODO: instead of testing the business logic, this suite tests
+    // what it logs (and the module is then forced to log its request payloads, which is just noise).
+    expect(spy.args.map(args => args[args.length - 1])).to.contain(message);
+  }
 
   describe('Initialize module', function () {
     it('should initialize and return true', function () {
@@ -185,7 +230,7 @@ describe('rayn RTD Submodule', function () {
   describe('Alter Bid Requests', function () {
     it('should update reqBidsConfigObj and execute callback', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const logMessageSpy = sandbox.spy(utils, 'logMessage');
 
       getDataFromLocalStorageStub
         .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
@@ -196,14 +241,12 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from localStorage: ${JSON.stringify(TEST_SEGMENTS)}`);
-
-      logMessageSpy.restore();
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(TEST_SEGMENTS)}`);
     });
 
     it('should update reqBidsConfigObj and execute callback using user segments from localStorage', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const logMessageSpy = sandbox.spy(utils, 'logMessage');
       const testSegments = {
         4: {
           3: ['4', '17', '72', '612']
@@ -228,9 +271,26 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from localStorage: ${JSON.stringify(testSegments)}`);
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`)
+    });
 
-      logMessageSpy.restore();
+    it('should update reqBidsConfigObj and execute callback using persona segment from localStorage', function () {
+      const callbackSpy = sinon.spy();
+      const logMessageSpy = sandbox.spy(utils, 'logMessage');
+      const testSegments = {
+        103015: ['agdv23', 'avscg3']
+      };
+
+      getDataFromLocalStorageStub
+        .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
+        .returns(JSON.stringify(testSegments));
+
+      const reqBidsConfigObj = { ortb2Fragments: { bidder: {} } };
+
+      raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
+
+      expect(callbackSpy.calledOnce).to.be.true;
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`)
     });
 
     it('should update reqBidsConfigObj and execute callback using persona segment from localStorage', function () {
@@ -256,7 +316,7 @@ describe('rayn RTD Submodule', function () {
 
     it('should update reqBidsConfigObj and execute callback using segments from raynJS', function () {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const logMessageSpy = sandbox.spy(utils, 'logMessage');
 
       getDataFromLocalStorageStub
         .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
@@ -267,14 +327,12 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`No segtax data`);
-
-      logMessageSpy.restore();
+      expectLog(logMessageSpy, `No segtax data`)
     });
 
     it('should update reqBidsConfigObj and execute callback using audience from localStorage', function (done) {
       const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const logMessageSpy = sandbox.spy(utils, 'logMessage');
       const testSegments = {
         6: {
           4: ['3', '27', '177']
@@ -297,15 +355,14 @@ describe('rayn RTD Submodule', function () {
 
       setTimeout(() => {
         expect(callbackSpy.calledOnce).to.be.true;
-        expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from RaynJS: ${JSON.stringify(testSegments)}`);
-        logMessageSpy.restore();
+        expectLog(logMessageSpy, `Segtax data from RaynJS: ${JSON.stringify(testSegments)}`)
         done();
       }, 0)
     });
 
     it('should execute callback if log error', function (done) {
       const callbackSpy = sinon.spy();
-      const logErrorSpy = sinon.spy(utils, 'logError');
+      const logErrorSpy = sandbox.spy(utils, 'logError');
       const rejectError = 'Error';
 
       global.window.raynJS = {
@@ -324,8 +381,7 @@ describe('rayn RTD Submodule', function () {
 
       setTimeout(() => {
         expect(callbackSpy.calledOnce).to.be.true;
-        expect(logErrorSpy.lastCall.lastArg).to.equal(rejectError);
-        logErrorSpy.restore();
+        expectLog(logErrorSpy, rejectError);
         done();
       }, 0)
     });

@@ -5,9 +5,9 @@ import {
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
-import { hook } from '../../../src/hook';
+import { hook } from '../../../src/hook.js';
 import { config } from '../../../src/config.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
@@ -26,7 +26,7 @@ describe('The inmobi bidding adapter', function () {
   beforeEach(function () {
     // mock objects
     utilsMock = sinon.mock(utils);
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     ajaxStub = sandbox.stub(ajax, 'ajax');
     fetchStub = sinon.stub(global, 'fetch').resolves(new Response('OK'));
   });
@@ -1877,7 +1877,6 @@ describe('The inmobi bidding adapter', function () {
                 required: true,
                 sizes: [120, 60],
                 sendId: true,
-                sendTargetingKeys: false
               }
             }
           }
@@ -1921,7 +1920,6 @@ describe('The inmobi bidding adapter', function () {
                 required: true,
                 sizes: [120, 60],
                 sendId: true,
-                sendTargetingKeys: false
               }
             }
           }

@@ -27,17 +27,17 @@ const html5Config = {
 describe('Deepintent DPES System', () => {
   describe('Deepintent Dpes Sytsem: test "getId" method', () => {
     it('If nothing is found in cache, return undefined', () => {
-      let diId = deepintentDpesSubmodule.getId({}, undefined, undefined);
+      const diId = deepintentDpesSubmodule.getId({}, undefined, undefined);
       expect(diId).to.be.eq(undefined);
     });
 
     it('Get value stored in cookie for getId', () => {
-      let diId = deepintentDpesSubmodule.getId(cookieConfig, undefined, DI_COOKIE_OBJECT);
+      const diId = deepintentDpesSubmodule.getId(cookieConfig, undefined, DI_COOKIE_OBJECT);
       expect(diId).to.deep.equal(DI_COOKIE_OBJECT);
     });
 
     it('provides the stored deepintentId if cookie is absent but present in local storage', () => {
-      let idx = deepintentDpesSubmodule.getId(html5Config, undefined, DI_UPDATED_STORAGE);
+      const idx = deepintentDpesSubmodule.getId(html5Config, undefined, DI_UPDATED_STORAGE);
       expect(idx).to.be.eq(DI_UPDATED_STORAGE);
     });
   });

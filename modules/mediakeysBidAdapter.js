@@ -1,4 +1,3 @@
-import {find} from '../src/polyfill.js';
 import {
   cleanObj,
   deepAccess,
@@ -82,8 +81,7 @@ const ORTB_VIDEO_PARAMS = {
   playbackend: value => [1, 2, 3].indexOf(value) !== -1,
   delivery: value => [1, 2, 3].indexOf(value) !== -1,
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
-};
+  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)};
 
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
@@ -153,7 +151,7 @@ function getFloor(bid, mediaType, size = '*') {
 function getHighestFloor(bid) {
   const floors = [];
 
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     const floor = getFloor(bid, mediaType);
 
     if (isNumber(floor)) {
@@ -214,7 +212,7 @@ function createOrtbTemplate() {
  * @returns {object}
  */
 function createBannerImp(bid) {
-  let sizes = bid.mediaTypes.banner.sizes;
+  const sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 
   if (!isArray(sizes) || !sizes.length) {
@@ -303,9 +301,9 @@ function createNativeImp(bid) {
     nativeParams.title.len = 90;
   }
 
-  for (let key in nativeParams) {
+  for (const key in nativeParams) {
     if (nativeParams.hasOwnProperty(key)) {
-      const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.name === key);
+      const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.name === key);
       if (!internalNativeAsset) {
         logWarn(`${BIDDER_CODE}: the asset "${key}" has not been found in Prebid assets map. Skipped for request.`);
         continue;
@@ -446,7 +444,7 @@ function createImp(bid) {
   }
 
   // Only supports proper mediaTypes definition…
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     switch (mediaType) {
       case BANNER:
         const banner = createBannerImp(bid);
@@ -540,7 +538,7 @@ function nativeBidResponseHandler(bid) {
     }
 
     if (asset.data) {
-      const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.id === asset.id);
+      const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.id === asset.id);
       if (internalNativeAsset) {
         native[internalNativeAsset.name] = asset.data.value;
       }
@@ -573,7 +571,7 @@ function nativeBidResponseHandler(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          const script = `<script async src=\"${tracker.url}\"></script>`;
+          const script = `<script async src="${tracker.url}"></script>`;
           if (!native.javascriptTrackers) {
             native.javascriptTrackers = script;
           } else {
@@ -612,7 +610,7 @@ export const spec = {
     deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
-      let bid = deepClone(validBid);
+      const bid = deepClone(validBid);
 
       // No additional params atm.
       const imp = createImp(bid);
@@ -620,8 +618,9 @@ export const spec = {
       payload.imp.push(imp);
     });
 
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

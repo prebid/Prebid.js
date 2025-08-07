@@ -1,9 +1,11 @@
+import { ajax } from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'colombia';
 const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
+const ENDPOINT_TIMEOUT = "https://ade.clmbtech.com/cde/bidNotify.htm";
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 
 export const spec = {
@@ -17,7 +19,7 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return [];
     }
-    let payloadArr = []
+    const payloadArr = []
     let ctr = 1;
     validBidRequests = validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
@@ -28,8 +30,8 @@ export const spec = {
       const cb = Math.floor(Math.random() * 99999999999);
       const bidId = bidRequest.bidId;
       const referrer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : '';
-      let mediaTypes = {}
-      let payload = {
+      const mediaTypes = {}
+      const payload = {
         v: 'hb1',
         p: placementId,
         pos: '~' + ctr,
@@ -74,7 +76,7 @@ export const spec = {
         const crid = response.creativeId || 0;
         const width = response.width || 0;
         const height = response.height || 0;
-        let cpm = response.cpm || 0;
+        const cpm = response.cpm || 0;
         if (cpm <= 0) {
           return bidResponses;
         }
@@ -95,6 +97,12 @@ export const spec = {
             referrer: bidRequest.data.r,
             ad: response.ad
           };
+          if (response.eventTrackers) {
+            bidResponse.eventTrackers = response.eventTrackers;
+          }
+          if (response.ext) {
+            bidResponse.ext = response.ext;
+          }
           bidResponses.push(bidResponse);
         }
       });
@@ -102,6 +110,45 @@ export const spec = {
       utils.logError(error);
     }
     return bidResponses;
+  },
+  onBidWon: function (bid) {
+    let ENDPOINT_BIDWON = null;
+    if (bid.eventTrackers && bid.eventTrackers.length) {
+      const matched = bid.eventTrackers.find(tracker => tracker.event === 500);
+      if (matched && matched.url) {
+        ENDPOINT_BIDWON = matched.url;
+      }
+    }
+    if (!ENDPOINT_BIDWON) return;
+    const payload = {};
+    payload.bidNotifyType = 1;
+    payload.evt = bid.ext && bid.ext.evtData;
+
+    ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
+      method: 'POST',
+      withCredentials: false
+    });
+  },
+
+  onTimeout: function (timeoutData) {
+    if (timeoutData === null || !timeoutData.length) {
+      return;
+    }
+    let pubAdCodes = [];
+    timeoutData.forEach(data => {
+      if (data && data.ortb2Imp && data.ortb2Imp.ext && typeof data.ortb2Imp.ext.gpid === 'string') {
+        pubAdCodes.push(data.ortb2Imp.ext.gpid.split('#')[0]);
+      };
+    });
+    const pubAdCodesString = pubAdCodes.join(',');
+    const payload = {};
+    payload.bidNotifyType = 2;
+    payload.pubAdCodeNames = pubAdCodesString;
+
+    ajax(ENDPOINT_TIMEOUT, null, JSON.stringify(payload), {
+      method: 'POST',
+      withCredentials: false
+    });
   }
 }
 registerBidder(spec);
