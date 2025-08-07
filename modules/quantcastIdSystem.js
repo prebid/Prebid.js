@@ -34,7 +34,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 
 export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
-  if (!window._qevents && clientId && clientId !== '') {
+  if (!window._qevents && clientId) {
     var fpa = storage.getCookie(QUANTCAST_FPA);
     var fpan = '0';
     var domain = quantcastIdSubmodule.findRootDomain();
