@@ -97,9 +97,9 @@ export const configJsonManager = ConfigJsonManager();
 
 // Register plugins
 pluginManager.register('dynamicFloors', FloorProvider);
-pluginManager.register('dynamicBidderOptimisation', BidderOptimization);
 pluginManager.register('unifiedPricingRule', UnifiedPricingRule);
 pluginManager.register('dynamicTimeout', DynamicTimeout);
+pluginManager.register('dynamicBidderOptimisation', BidderOptimization);
 
 /**
  * Initialize the Pubmatic RTD Module.
