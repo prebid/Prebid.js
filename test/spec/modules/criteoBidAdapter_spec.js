@@ -12,12 +12,13 @@ import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 
 import {hook} from '../../../src/hook.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('The Criteo bidding adapter', function () {
   let sandbox, ajaxStub, logWarnStub;
 
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       criteo: {
         storageAllowed: true
       }
@@ -30,7 +31,7 @@ describe('The Criteo bidding adapter', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     global.Criteo = undefined;
     try {
       sandbox?.restore();
@@ -665,8 +666,16 @@ describe('The Criteo bidding adapter', function () {
         apiVersion: 1,
       },
     };
+    const defaultBidRequests = [{
+      bidder: 'criteo',
+      adUnitCode: 'bid-123',
+      mediaTypes: {
+        banner: { sizes: [[728, 90]] }
+      },
+      params: {}
+    }]
 
-    let sandbox, localStorageIsEnabledStub;
+    let sandbox, localStorageIsEnabledStub, bidderConfigStub;
 
     before(() => {
       hook.ready();
@@ -675,6 +684,7 @@ describe('The Criteo bidding adapter', function () {
     this.beforeEach(function () {
       sandbox = sinon.createSandbox();
       localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
+      bidderConfigStub = sandbox.stub(config, "getBidderConfig")
       localStorageIsEnabledStub.returns(true);
     });
 
@@ -1996,6 +2006,27 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = request.data;
       expect(ortbRequest.device.ext.cdep).to.equal('cookieDeprecationLabel');
     });
+
+    it('should interpret correctly gzip configuration given as a string', async function() {
+      bidderConfigStub.returns({criteo: {gzipEnabled: 'false'}});
+
+      const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should interpret correctly gzip configuration given as a boolean', async function () {
+      bidderConfigStub.returns({criteo: {gzipEnabled: false}});
+
+      const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should default to true when it receives an invalid configuration', async function () {
+      bidderConfigStub.returns({criteo: {gzipEnabled: 'randomString'}});
+
+      const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
+      expect(request.options.endpointCompression).to.be.true;
+    })
   });
 
   describe('interpretResponse', function () {

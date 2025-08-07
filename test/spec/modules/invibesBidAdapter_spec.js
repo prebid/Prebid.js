@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import { config } from 'src/config.js';
 import {spec, resetInvibes, stubDomainOptions, readGdprConsent, storage} from 'modules/invibesBidAdapter.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -180,7 +181,7 @@ describe('invibesBidAdapter:', function () {
     config.setConfig({
       deviceAccess: true
     });
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       invibes: {
         storageAllowed: true
       }
@@ -191,7 +192,7 @@ describe('invibesBidAdapter:', function () {
 
   beforeEach(function () {
     resetInvibes();
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       invibes: {
         storageAllowed: true
       }
@@ -202,7 +203,7 @@ describe('invibesBidAdapter:', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     this.cStub1.restore();
     sandbox.restore();
   });

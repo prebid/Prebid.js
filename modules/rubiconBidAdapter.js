@@ -771,12 +771,11 @@ export const spec = {
     }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    if (!hasSynced && syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
-      hasSynced = true;
       return {
         type: 'iframe',
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
@@ -1309,12 +1308,6 @@ function partitionArray(array, size) {
     result.push(array.slice(i, i + size));
   }
   return result;
-}
-
-var hasSynced = false;
-
-export function resetUserSync() {
-  hasSynced = false;
 }
 
 /**

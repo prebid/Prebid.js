@@ -6,6 +6,7 @@ import {server} from '../../mocks/xhr.js';
 import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
 
 import {EVENTS} from 'src/constants.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const utils = require('src/utils');
 const events = require('src/events');
@@ -177,7 +178,7 @@ describe('ats analytics adapter', function () {
       // Step 6: Send bid won event
       events.emit(EVENTS.BID_WON, wonRequest);
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getAllWinningBids').callsFake((key) => {
+      sandbox.stub(getGlobal(), 'getAllWinningBids').callsFake((key) => {
         return [wonRequest]
       });
 

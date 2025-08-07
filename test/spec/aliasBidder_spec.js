@@ -1,4 +1,5 @@
 import { pbjsTestOnly } from 'test/helpers/pbjs-test-only.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 describe('Publisher API _ Alias Bidder', function () {
   var assert = require('chai').assert;
@@ -22,7 +23,7 @@ describe('Publisher API _ Alias Bidder', function () {
       ]
     };
 
-    $$PREBID_GLOBAL$$.addAdUnits(adUnit);
+    getGlobal().addAdUnits(adUnit);
   });
 
   after(function () {
@@ -31,7 +32,7 @@ describe('Publisher API _ Alias Bidder', function () {
 
   describe('set Alias Bidder', function () {
     it('should have both of target bidder and alias bidder', function () {
-      $$PREBID_GLOBAL$$.aliasBidder('appnexus', 'bRealTime1');
+      getGlobal().aliasBidder('appnexus', 'bRealTime1');
     });
   });
 });
