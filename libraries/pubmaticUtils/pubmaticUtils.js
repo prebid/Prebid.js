@@ -62,7 +62,6 @@ export const getUtmValue = () => {
   return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
 }
 
-
 /**
  * Determines whether an action should be throttled based on a given percentage.
  *
@@ -71,7 +70,7 @@ export const getUtmValue = () => {
  * @returns {boolean} - Returns true if the action should be throttled, false otherwise.
  */
 export const shouldThrottle = (skipRate, maxRandomValue = 100) => {
-	// Determine throttling based on the throttle rate and a random value
+  // Determine throttling based on the throttle rate and a random value
   const rate = skipRate ?? maxRandomValue;
-	return Math.floor(Math.random() * maxRandomValue) < rate;
+  return Math.floor(Math.random() * maxRandomValue) < rate;
 };
