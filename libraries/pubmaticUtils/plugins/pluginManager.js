@@ -1,7 +1,7 @@
 import { logInfo, logWarn, logError } from "../../../src/utils.js";
 
 // pluginManager.js
-const plugins = new Map();
+export const plugins = new Map();
 export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Plugin-Manager: '
 });
@@ -53,7 +53,7 @@ const initialize = async (configJsonManager) => {
   // Initialize each plugin with its specific config
   for (const [name, plugin] of plugins.entries()) {
     if (plugin.init) {
-      const initialized = plugin.init(name, configJsonManager);
+      const initialized = await plugin.init(name, configJsonManager);
       if (!initialized) {
         unregister(name);
       }
