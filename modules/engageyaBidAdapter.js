@@ -160,7 +160,7 @@ export const spec = {
       return [];
     }
     var response = serverResponse.body;
-    var isNative = response.pbtypeId === 1;
+    var isNative = Number(response.pbtypeId) === 1;
     return response.recs.map(rec => {
       const bid = {
         requestId: response.ireqId,
