@@ -108,7 +108,7 @@ const converter = ortbConverter({
     updateUserSiteDevice(request, context?.bidRequests);
     addExtenstionParams(request);
     if (bidderRequest.bidderCode !== BIDDER_CODE) {
-      request.ext.alias = bidderRequest.bidderCode
+      request.ext.alias = 1
     }
     const marketPlaceEnabled = bidderRequest?.bidderCode
       ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
