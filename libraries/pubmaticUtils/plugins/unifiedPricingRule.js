@@ -1,6 +1,7 @@
 // plugins/unifiedPricingRule.js
 import { logError, logInfo } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { REJECTION_REASON } from '../../../src/constants.js';
 
 const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Unified-Pricing-Rule: ',
@@ -42,7 +43,7 @@ export async function init(pluginName, configJsonManager) {
  * @param {Object} reqBidsConfigObj - Bid request config object
  * @returns {Object} - Updated bid request config object
  */
-export async function processBidRequest(reqBidsConfigObj) {
+export function processBidRequest(reqBidsConfigObj) {
   return reqBidsConfigObj;
 }
 
@@ -147,9 +148,8 @@ function findRejectedBidsForAdUnit(auction, code) {
 // Find a rejected bid due to price floor
 function findRejectedFloorBid(rejectedBids) {
   return rejectedBids.find(bid => {
-    const errorMessage = bid.statusMessage || bid.status || '';
-    return errorMessage.includes('price floor') ||
-           (bid.floorData?.floorValue && bid.cpm < bid.floorData.floorValue);
+    return bid.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET &&
+      (bid.floorData?.floorValue && bid.cpm < bid.floorData.floorValue);
   });
 }
 
@@ -172,30 +172,6 @@ function findWinningBid(adUnitCode) {
     logError(CONSTANTS.LOG_PRE_FIX, `Error finding highest CPM bid: ${error}`);
     return null;
   }
-}
-
-// Find a bid with the minimum floor value
-function findBidWithFloor(bids) {
-  let bidWithMinFloor = null;
-  let minFloorValue = Infinity;
-
-  if (!bids || !bids.length) return null;
-
-  for (const bid of bids) {
-    if (bid.floorData?.floorValue &&
-        !isNaN(parseFloat(bid.floorData.floorValue)) &&
-        parseFloat(bid.floorData.floorValue) < minFloorValue) {
-      minFloorValue = parseFloat(bid.floorData.floorValue);
-      bidWithMinFloor = bid;
-    }
-  }
-
-  // Log the result for debugging
-  if (bidWithMinFloor) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `Found bid with minimum floor value: ${minFloorValue}`);
-  }
-
-  return bidWithMinFloor;
 }
 
 // Find floor value from bidder requests
@@ -364,18 +340,6 @@ function handleRejectedFloorBidScenario(rejectedFloorBid, code) {
   };
 }
 
-// Identify floored bid scenario and return scenario data
-function handleFlooredBidScenario(bidWithFloor, code) {
-  const baseValue = bidWithFloor.floorData.floorValue;
-  return {
-    scenario: 'floored',
-    bidStatus: CONSTANTS.BID_STATUS.FLOORED,
-    baseValue,
-    multiplierKey: 'FLOORED',
-    logMessage: `Floored bid for ad unit: ${code}, Floor value: ${baseValue}`
-  };
-}
-
 // Identify no bid scenario and return scenario data
 function handleNoBidScenario(auction, code) {
   const baseValue = findFloorValueFromBidderRequests(auction, code);
@@ -390,20 +354,9 @@ function handleNoBidScenario(auction, code) {
 
 // Determine which scenario applies based on bid conditions
 function determineScenario(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
-  if (winningBid) {
-    return handleWinningBidScenario(winningBid, code);
-  }
-
-  if (rejectedFloorBid) {
-    return handleRejectedFloorBidScenario(rejectedFloorBid, code);
-  }
-
-  const bidWithFloor = findBidWithFloor(bidsForAdUnit);
-  if (bidWithFloor?.floorData?.floorValue) {
-    return handleFlooredBidScenario(bidWithFloor, code);
-  }
-
-  return handleNoBidScenario(auction, code);
+  return winningBid ? handleWinningBidScenario(winningBid, code)
+    : rejectedFloorBid ? handleRejectedFloorBidScenario(rejectedFloorBid, code)
+      : handleNoBidScenario(auction, code);
 }
 
 // Main function that determines bid status and calculates values

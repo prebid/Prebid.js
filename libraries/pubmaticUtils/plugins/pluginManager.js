@@ -64,23 +64,33 @@ const initialize = async (configJsonManager) => {
   return Promise.all(initPromises);
 };
 
+
 /**
- * Execute a hook on all registered plugins
+ * Execute a hook on all registered plugins synchronously
  * @param {string} hookName - Name of the hook to execute
  * @param {...any} args - Arguments to pass to the hook
- * @returns {Promise<Object>} - Promise resolving to an object of results
+ * @returns {Object} - Object containing merged results from all plugins
  */
-const executeHook = async (hookName, ...args) => {
+const executeHook = (hookName, ...args) => {
+  // Cache results to avoid repeated processing
   const results = {};
-
-  for (const [name, plugin] of plugins.entries()) {
-    if (typeof plugin[hookName] === 'function') {
+  
+  try {
+    // Get all plugins that have the specified hook method
+    const pluginsWithHook = Array.from(plugins.entries())
+      .filter(([_, plugin]) => typeof plugin[hookName] === 'function');
+    
+    // Process each plugin synchronously
+    for (const [name, plugin] of pluginsWithHook) {
       try {
-        const result = await plugin[hookName](...args);
-        // Handle null/undefined cases
+        // Call the plugin's hook method synchronously
+        const result = plugin[hookName](...args);
+        
+        // Skip null/undefined results
         if (result === null || result === undefined) {
           continue;
         }
+        
         // If result is an object, merge it
         if (typeof result === 'object') {
           Object.assign(results, result);
@@ -89,7 +99,9 @@ const executeHook = async (hookName, ...args) => {
         logError(`${CONSTANTS.LOG_PRE_FIX} Error executing hook ${hookName} in plugin ${name}: ${error.message}`);
       }
     }
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error in executeHookSync: ${error.message}`);
   }
-
+  
   return results;
 };
