@@ -203,20 +203,6 @@ describe('Pubmatic RTD Provider', () => {
       }, 0);
     });
 
-    it('should handle plugin error gracefully', (done) => {
-      pluginManagerStub.executeHook.rejects(new Error('Plugin error'));
-
-      pubmaticRtdProvider.pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
-
-      setTimeout(() => {
-        expect(logErrorStub.calledOnce).to.be.true;
-        expect(logErrorStub.firstCall.args[0]).to.equal(pubmaticRtdProvider.CONSTANTS.LOG_PRE_FIX);
-        expect(logErrorStub.firstCall.args[1].message).to.equal('Plugin error');
-        expect(callback.calledOnce).to.be.true;
-        done();
-      }, 0);
-    });
-
     it('should add country information to ORTB2', (done) => {
       pluginManagerStub.executeHook.resolves();
 

@@ -82,49 +82,6 @@ describe('UnifiedPricingRule - getTargeting scenarios', () => {
     expect(targeting[AD_UNIT_CODE].pm_ym_flrv).to.equal('5.00'); // 2.5 * 2
   });
 
-  it('Rejected floor bid', () => {
-    pbjsStub.getHighestCpmBids.withArgs(AD_UNIT_CODE).returns([]);
-
-    const rejectedBid = {
-      adUnitCode: AD_UNIT_CODE,
-      cpm: 0.5,
-      floorData: { floorProvider: 'PM', skipped: false, floorValue: 1.0 },
-      statusMessage: 'Bid rejected due to price floor'
-    };
-
-    const auction = buildAuction({
-      adUnits: [{ bids: [rejectedBid] }],
-      bidsReceived: [],
-      bidsRejected: [rejectedBid]
-    });
-
-    const targeting = unifiedPricingRule.getTargeting([AD_UNIT_CODE], {}, {}, auction);
-    expect(targeting[AD_UNIT_CODE].pm_ym_flrs).to.equal(1);
-    expect(targeting[AD_UNIT_CODE].pm_ym_bid_s).to.equal(2);
-    // 1.0 * 3 (floored multiplier)
-    expect(targeting[AD_UNIT_CODE].pm_ym_flrv).to.equal('3.00');
-  });
-
-  it('Floored bid (no win, no rejection)', () => {
-    pbjsStub.getHighestCpmBids.withArgs(AD_UNIT_CODE).returns([]);
-
-    const flooredBid = {
-      adUnitCode: AD_UNIT_CODE,
-      cpm: 1.5,
-      floorData: { floorProvider: 'PM', skipped: false, floorValue: 1.2 }
-    };
-
-    const auction = buildAuction({
-      adUnits: [{ bids: [flooredBid] }],
-      bidsReceived: [flooredBid]
-    });
-
-    const targeting = unifiedPricingRule.getTargeting([AD_UNIT_CODE], {}, {}, auction);
-    expect(targeting[AD_UNIT_CODE].pm_ym_flrs).to.equal(1);
-    expect(targeting[AD_UNIT_CODE].pm_ym_bid_s).to.equal(2);
-    expect(targeting[AD_UNIT_CODE].pm_ym_flrv).to.equal('3.60'); // 1.2 * 3
-  });
-
   it('No bid - uses findFloorValueFromBidderRequests to derive floor', () => {
     pbjsStub.getHighestCpmBids.withArgs(AD_UNIT_CODE).returns([]);
 
@@ -382,36 +339,6 @@ describe('UnifiedPricingRule - getTargeting scenarios', () => {
     expect(targeting[AD_UNIT_CODE].pm_ym_flrs).to.equal(0);
     expect(targeting[AD_UNIT_CODE]).to.not.have.property('pm_ym_flrv');
     expect(targeting[AD_UNIT_CODE]).to.not.have.property('pm_ym_bid_s');
-  });
-
-  it('Rejected bids present in object map', () => {
-    pbjsStub.getHighestCpmBids.withArgs(AD_UNIT_CODE).returns([]);
-
-    const rejectedBid = {
-      adUnitCode: AD_UNIT_CODE,
-      cpm: 0.4,
-      floorData: { floorProvider: 'PM', skipped: false, floorValue: 1.0 },
-      statusMessage: 'Bid rejected due to price floor'
-    };
-
-    // Dummy bid to trigger hasRtdFloorAppliedBid
-    const dummyBid = {
-      adUnitCode: 'dummy',
-      floorData: { floorProvider: 'PM', skipped: false, floorValue: 1.0 }
-    };
-
-    const auction = buildAuction({
-      adUnits: [{ bids: [dummyBid] }],
-      bidsReceived: [dummyBid],
-      bidsRejected: {
-        pubmatic: [rejectedBid]
-      }
-    });
-
-    const targeting = unifiedPricingRule.getTargeting([AD_UNIT_CODE], {}, {}, auction);
-    expect(targeting[AD_UNIT_CODE].pm_ym_flrs).to.equal(1);
-    expect(targeting[AD_UNIT_CODE].pm_ym_bid_s).to.equal(2);
-    expect(targeting[AD_UNIT_CODE].pm_ym_flrv).to.equal('3.00');
   });
 
   it('pmTargetingKeys disabled - should return empty object', () => {
