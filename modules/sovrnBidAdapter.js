@@ -240,7 +240,7 @@ export const spec = {
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (sovrnBid.mtype === 2) {
+          if (Number(sovrnBid.mtype) === 2) {
             bid.vastXml = decodeURIComponent(sovrnBid.adm)
           } else {
             bid.ad = sovrnBid.nurl ? decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`) : decodeURIComponent(sovrnBid.adm)
