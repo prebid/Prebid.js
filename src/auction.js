@@ -124,6 +124,8 @@ export function resetAuctionState() {
   [outstandingRequests, sourceInfo].forEach((ob) => Object.keys(ob).forEach((k) => { delete ob[k] }));
 }
 
+export const beforeInitAuction = hook('sync', (auction) => {})
+
 /**
  * Creates new auction instance
  *
@@ -293,6 +295,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     let call = {
       bidRequests,
       run: () => {
+        beforeInitAuction(this);
         startAuctionTimer();
 
         _auctionStatus = AUCTION_IN_PROGRESS;
