@@ -1,5 +1,13 @@
 import { logInfo } from '../../src/utils.js';
 
+// this allows the stubbing of functions during testing
+export const bidderTimeoutFunctions = {
+  getDeviceType,
+  checkVideo,
+  getConnectionSpeed,
+  calculateTimeoutModifier
+};
+
 /**
  * Returns an array of a given object's own enumerable string-keyed property [key, value] pairs.
  * @param {Object} obj
@@ -13,7 +21,7 @@ const entries = Object.entries || function (obj) {
   return resArray;
 };
 
-export function getDeviceType() {
+function getDeviceType() {
   const userAgent = window.navigator.userAgent.toLowerCase();
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(userAgent))) {
     return 5; // tablet
@@ -24,13 +32,13 @@ export function getDeviceType() {
   return 2; // personal computer
 }
 
-export function checkVideo(adUnits) {
+function checkVideo(adUnits) {
   return adUnits.some((adUnit) => {
     return adUnit.mediaTypes && adUnit.mediaTypes.video;
   });
 }
 
-export function getConnectionSpeed() {
+function getConnectionSpeed() {
   const connection = window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection || {}
   const connectionType = connection.type || connection.effectiveType;
 
@@ -60,7 +68,7 @@ export function getConnectionSpeed() {
  * @param {Object} rules
  * @return {number}
  */
-export function calculateTimeoutModifier(adUnits, rules) {
+function calculateTimeoutModifier(adUnits, rules) {
   if (!rules) {
     return 0;
   }
@@ -70,7 +78,7 @@ export function calculateTimeoutModifier(adUnits, rules) {
   let toAdd = 0;
 
   if (rules.includesVideo) {
-    const hasVideo = checkVideo(adUnits);
+    const hasVideo = bidderTimeoutFunctions.checkVideo(adUnits);
     toAdd = rules.includesVideo[hasVideo] || 0;
     logInfo(`Adding ${toAdd} to timeout for includesVideo ${hasVideo}`)
     timeoutModifier += toAdd;
@@ -93,14 +101,14 @@ export function calculateTimeoutModifier(adUnits, rules) {
   }
 
   if (rules.deviceType) {
-    const deviceType = getDeviceType();
+    const deviceType = bidderTimeoutFunctions.getDeviceType();
     toAdd = rules.deviceType[deviceType] || 0;
     logInfo(`Adding ${toAdd} to timeout for deviceType ${deviceType}`)
     timeoutModifier += toAdd;
   }
 
   if (rules.connectionSpeed) {
-    const connectionSpeed = getConnectionSpeed();
+    const connectionSpeed = bidderTimeoutFunctions.getConnectionSpeed();
     toAdd = rules.connectionSpeed[connectionSpeed] || 0;
     logInfo(`Adding ${toAdd} to timeout for connectionSpeed ${connectionSpeed}`)
     timeoutModifier += toAdd;

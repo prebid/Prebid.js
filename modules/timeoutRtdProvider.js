@@ -2,7 +2,7 @@ import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { calculateTimeoutModifier } from '../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js';
+import { bidderTimeoutFunctions } from '../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -58,7 +58,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
  */
 function handleTimeoutIncrement(reqBidsConfigObj, rules) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-  const timeoutModifier = calculateTimeoutModifier(adUnits, rules);
+  const timeoutModifier = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
   const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout');
   reqBidsConfigObj.timeout = bidderTimeout + timeoutModifier;
 }

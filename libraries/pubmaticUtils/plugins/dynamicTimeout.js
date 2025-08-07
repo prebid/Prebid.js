@@ -1,6 +1,6 @@
 import { logInfo } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import { calculateTimeoutModifier } from '../../bidderTimeoutUtils/bidderTimeoutUtils.js';
+import { bidderTimeoutFunctions } from '../../bidderTimeoutUtils/bidderTimeoutUtils.js';
 import { shouldThrottle } from '../pubmaticUtils.js';
 
 let _dynamicTimeoutConfig = null;
@@ -83,7 +83,7 @@ export async function processBidRequest(reqBidsConfigObj) {
 
   // Calculate and apply additional timeout
   const rules = getRules(bidderTimeout);
-  const additionalTimeout = calculateTimeoutModifier(adUnits, rules);
+  const additionalTimeout = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
 
   // Update the timeout in the request object
   reqBidsConfigObj.timeout = bidderTimeout + additionalTimeout;

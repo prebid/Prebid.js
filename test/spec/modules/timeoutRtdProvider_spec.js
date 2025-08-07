@@ -3,28 +3,6 @@ import { expect } from 'chai';
 import * as ajax from 'src/ajax.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 
-const DEFAULT_USER_AGENT = window.navigator.userAgent;
-const DEFAULT_CONNECTION = window.navigator.connection;
-
-const PC_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246';
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1';
-const TABLET_USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
-
-function resetUserAgent() {
-  window.navigator.__defineGetter__('userAgent', () => DEFAULT_USER_AGENT);
-};
-
-function setUserAgent(userAgent) {
-  window.navigator.__defineGetter__('userAgent', () => userAgent);
-}
-
-function resetConnection() {
-  window.navigator.__defineGetter__('connection', () => DEFAULT_CONNECTION);
-}
-function setConnectionType(connectionType) {
-  window.navigator.__defineGetter__('connection', () => { return {'type': connectionType} });
-}
-
 describe('Timeout RTD submodule', () => {
   let sandbox;
   beforeEach(() => {
