@@ -30,15 +30,15 @@ describe('admixerId tests', function () {
   });
 
   it('should NOT call the admixer id endpoint if gdpr applies but consent string is missing', function () {
-    let submoduleCallback = admixerIdSubmodule.getId(getIdParams, {gdpr: { gdprApplies: true }});
+    const submoduleCallback = admixerIdSubmodule.getId(getIdParams, {gdpr: { gdprApplies: true }});
     expect(submoduleCallback).to.be.undefined;
   });
 
   it('should call the admixer id endpoint', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = admixerIdSubmodule.getId(getIdParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = admixerIdSubmodule.getId(getIdParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq(`https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}`);
     request.respond(
       200,
@@ -49,10 +49,10 @@ describe('admixerId tests', function () {
   });
 
   it('should call callback with user id', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = admixerIdSubmodule.getId(getIdParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = admixerIdSubmodule.getId(getIdParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq(`https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}`);
     request.respond(
       200,
@@ -64,10 +64,10 @@ describe('admixerId tests', function () {
   });
 
   it('should continue to callback if ajax response 204', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = admixerIdSubmodule.getId(getIdParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = admixerIdSubmodule.getId(getIdParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq(`https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}`);
     request.respond(
       204

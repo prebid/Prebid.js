@@ -19,13 +19,13 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
  *
  */
 
- /**
-  * Register the user sync pixels which should be dropped after the auction.
-  *
-  * @param {SyncOptions} syncOptions Which user syncs are allowed?
-  * @param {ServerResponse[]} serverResponses List of server's responses.
-  * @return {UserSync[]} The user syncs which should be dropped.
-  */
+/**
+ * Register the user sync pixels which should be dropped after the auction.
+ *
+ * @param {SyncOptions} syncOptions Which user syncs are allowed?
+ * @param {ServerResponse[]} serverResponses List of server's responses.
+ * @return {UserSync[]} The user syncs which should be dropped.
+ */
 export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (typeof serverResponses === 'object' &&
   serverResponses != null &&
@@ -135,7 +135,7 @@ export function createResponse(bid, respBody) {
 
   if (bid.ext.mediaType === NATIVE) {
     try {
-        response.native = { ortb: JSON.parse(bid.adm) }
+      response.native = { ortb: JSON.parse(bid.adm) }
     } catch (e) {}
   }
   return response;

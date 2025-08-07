@@ -62,9 +62,9 @@ export const spec = {
         }
       }
 
-      let mediaTypesInfo = getMediaTypesInfo(bidRequest);
-      let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
-      let sizes = mediaTypesInfo[type];
+      const mediaTypesInfo = getMediaTypesInfo(bidRequest);
+      const type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
+      const sizes = mediaTypesInfo[type];
 
       payload = {
         _f: 'auto',
@@ -93,7 +93,7 @@ export const spec = {
       }
 
       if (!payload.pfilter.floorprice) {
-        let bidFloor = getBidFloor(bidRequest);
+        const bidFloor = getBidFloor(bidRequest);
         if (bidFloor > 0) {
           payload.pfilter.floorprice = bidFloor;
         }
@@ -114,16 +114,18 @@ export const spec = {
           payload.vf = params.vastFormat;
         }
         payload.vpl = {};
-        let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+        const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
           .filter(key => VIDEO_ORTB_PARAMS.includes(key))
-          .forEach(key => payload.vpl[key] = videoParams[key]);
+          .forEach(key => {
+            payload.vpl[key] = videoParams[key];
+          });
       }
 
       // iab content
-      let content = deepAccess(bidderRequest, 'ortb2.site.content');
+      const content = deepAccess(bidderRequest, 'ortb2.site.content');
       if (content) {
-        let stringContent = siteContentToString(content);
+        const stringContent = siteContentToString(content);
         if (stringContent) {
           payload.pfilter.iab_content = stringContent;
         }
@@ -140,18 +142,18 @@ export const spec = {
       }
 
       // schain
-      if (bidRequest.schain && bidRequest.schain.ver && bidRequest.schain.complete && bidRequest.schain.nodes) {
-        let schain = bidRequest.schain;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain && schain.ver && schain.complete && schain.nodes) {
         let schainString = schain.ver + "," + schain.complete;
-        for (let node of schain.nodes) {
-            schainString += '!' + [
-              node.asi ?? '',
-              node.sid ?? '',
-              node.hp ?? '',
-              node.rid ?? '',
-              node.name ?? '',
-              node.domain ?? '',
-            ].join(",");
+        for (const node of schain.nodes) {
+          schainString += '!' + [
+            node.asi ?? '',
+            node.sid ?? '',
+            node.hp ?? '',
+            node.rid ?? '',
+            node.name ?? '',
+            node.domain ?? '',
+          ].join(",");
         }
         payload.schain = schainString;
       }
@@ -188,7 +190,7 @@ function outstreamRender(bid) {
     const inIframe = getBidIdParameter('iframe', bid.renderer.config);
     if (inIframe && window.document.getElementById(inIframe).nodeName === 'IFRAME') {
       const iframe = window.document.getElementById(inIframe);
-      let framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      const framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
       framedoc.body.appendChild(embedCode);
       if (typeof window.dspxRender === 'function') {
         window.dspxRender(bid);
@@ -222,7 +224,7 @@ function outstreamRender(bid) {
  */
 function createOutstreamEmbedCode(bid) {
   const fragment = window.document.createDocumentFragment();
-  let div = window.document.createElement('div');
+  const div = window.document.createElement('div');
   div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
   fragment.appendChild(div);
 

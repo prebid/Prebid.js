@@ -8,8 +8,6 @@
 import {logError, isPlainObject, isStr, isNumber, getWinDimensions} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
-import AES from 'crypto-js/aes.js';
-import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
@@ -28,6 +26,7 @@ import {
 import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
 import {iiqPixelServerAddress, iiqServerAddress} from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
+import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -73,25 +72,6 @@ function generateGUID() {
   return guid;
 }
 
-/**
- * Encrypts plaintext.
- * @param {string} plainText The plaintext to encrypt.
- * @returns {string} The encrypted text as a base64 string.
- */
-export function encryptData(plainText) {
-  return AES.encrypt(plainText, MODULE_NAME).toString();
-}
-
-/**
- * Decrypts ciphertext.
- * @param {string} encryptedText The encrypted text as a base64 string.
- * @returns {string} The decrypted plaintext.
- */
-export function decryptData(encryptedText) {
-  const bytes = AES.decrypt(encryptedText, MODULE_NAME);
-  return bytes.toString(Utf8);
-}
-
 function collectDeviceInfo() {
   const windowDimensions = getWinDimensions();
   return {
@@ -135,13 +115,13 @@ function verifyIdType(value) {
 }
 
 function appendPartnersFirstParty (url, configParams) {
-  let partnerClientId = typeof configParams.partnerClientId === 'string' ? encodeURIComponent(configParams.partnerClientId) : '';
-  let partnerClientIdType = typeof configParams.partnerClientIdType === 'number' ? verifyIdType(configParams.partnerClientIdType) : -1;
+  const partnerClientId = typeof configParams.partnerClientId === 'string' ? encodeURIComponent(configParams.partnerClientId) : '';
+  const partnerClientIdType = typeof configParams.partnerClientIdType === 'number' ? verifyIdType(configParams.partnerClientIdType) : -1;
 
   if (partnerClientIdType === -1) return url;
   if (partnerClientId !== '') {
-      url = url + '&pcid=' + partnerClientId;
-      url = url + '&idtype=' + partnerClientIdType;
+    url = url + '&pcid=' + partnerClientId;
+    url = url + '&idtype=' + partnerClientIdType;
   }
   return url;
 }
@@ -349,13 +329,13 @@ export const intentIqIdSubmodule = {
     let callbackFired = false;
     let runtimeEids = { eids: [] };
 
-    let gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
-    let gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
-    let groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
-    let siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
+    const gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
+    const gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
+    const groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
+    const siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
     sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData) : '';
     sourceMetaDataExternal = isNumber(configParams.sourceMetaDataExternal) ? configParams.sourceMetaDataExternal : undefined;
-    let additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
+    const additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
@@ -518,7 +498,7 @@ export const intentIqIdSubmodule = {
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          let respJson = tryParse(response);
+          const respJson = tryParse(response);
           // If response is a valid json and should save is true
           if (respJson) {
             partnerData.date = Date.now();
@@ -613,7 +593,7 @@ export const intentIqIdSubmodule = {
               runtimeEids = respJson.data
               callback(respJson.data.eids);
               firePartnerCallback()
-              const encryptedData = encryptData(JSON.stringify(respJson.data))
+              const encryptedData = encryptData(JSON.stringify(respJson.data));
               partnerData.data = encryptedData;
             } else {
               callback(runtimeEids);

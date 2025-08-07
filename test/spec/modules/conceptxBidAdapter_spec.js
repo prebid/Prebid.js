@@ -7,18 +7,6 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 describe('conceptxBidAdapter', function () {
   const URL = 'https://conceptx.cncpt-central.com/openrtb';
 
-  // before(() => {
-
-  // });
-
-  // after(() => {
-  //   // $$PREBID_GLOBAL$$.bidderSettings = {};
-  // });
-
-  // afterEach(function () {
-  //   config.resetConfig();
-  // });
-
   const ENDPOINT_URL = `${URL}`;
   const ENDPOINT_URL_CONSENT = `${URL}?gdpr_applies=true&consentString=ihaveconsented`;
   const adapter = newBidder(spec);
@@ -105,13 +93,13 @@ describe('conceptxBidAdapter', function () {
 
   describe('user privacy', function () {
     it('should NOT send GDPR Consent data if gdprApplies equals undefined', function () {
-      let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'iDoNotConsent' } });
+      const request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'iDoNotConsent' } });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
     it('should send GDPR Consent data if gdprApplies', function () {
-      let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: true, consentString: 'ihaveconsented' } });
+      const request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: true, consentString: 'ihaveconsented' } });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_CONSENT);

@@ -98,7 +98,7 @@ function hasMandatoryDisplayParams(bid) {
 function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
-  let isValid =
+  const isValid =
     !!bid.params.publisherId &&
     !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
@@ -127,10 +127,10 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
+    requestCount: validBidRequest.bidRequestsCount || 1,
   };
 
-  if (hasVideoMediaType(validBidRequest)) {
+  if (hasVideoMediaType(validBidRequest) && hasMandatoryVideoParams(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
   }
 
@@ -147,7 +147,7 @@ function buildBidRequest(validBidRequest) {
  */
 function getVideoParams(validBidRequest) {
   const videoParams = validBidRequest.mediaTypes.video || {};
-  if (videoParams.playerSize) {
+  if (videoParams.playerSize && isArray(videoParams.playerSize) && videoParams.playerSize.length > 0) {
     videoParams.w = videoParams.playerSize[0][0];
     videoParams.h = videoParams.playerSize[0][1];
   }
@@ -320,11 +320,12 @@ export const spec = {
       payload['uspConsent'] = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
-    let coppa = config.getConfig('coppa');
+    const coppa = config.getConfig('coppa');
     if (coppa) {
       payload.coppa = coppa;
     }

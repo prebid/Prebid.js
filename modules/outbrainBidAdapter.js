@@ -223,9 +223,9 @@ export const spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     const syncs = [];
-    let syncUrl = config.getConfig('outbrain.usersyncUrl');
+    const syncUrl = config.getConfig('outbrain.usersyncUrl');
 
-    let query = [];
+    const query = [];
     if (syncOptions.pixelEnabled && syncUrl) {
       if (gdprConsent) {
         query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
@@ -282,7 +282,7 @@ function parseNative(bid) {
           result.impressionTrackers.push(tracker.url);
           break;
         case 2: // js
-          result.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          result.javascriptTrackers = `<script src="${tracker.url}"></script>`;
           break;
       }
     });

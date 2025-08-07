@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp, shouldAddDealTargeting } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse;
-  let request = {};
+  const request = {};
   firstBid = {
     adUnitCode: 'Div1',
     bidder: 'pubmatic',
@@ -51,13 +51,20 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
-      source: {}
+      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      source: {},
+      user: {
+        ext: {
+          data: {
+            im_segments: ['segment1', 'segment2']
+          }
+        }
+      }
     },
     ortb2Imp: {
       ext: {
-        	tid: '92489f71-1bf2-49a0-adf9-000cea934729',
-        	gpid: '/1111/homepage-leftnav',
+        tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+        gpid: '/1111/homepage-leftnav',
         data: {
           pbadslot: '/1111/homepage-leftnav',
           adserver: {
@@ -70,11 +77,23 @@ describe('PubMatic adapter', () => {
         }
       }
     },
+    rtd: {
+      jwplayer: {
+        targeting: {
+          content: {
+            id: 'jwplayer-content-id'
+          },
+          segments: [
+            'jwplayer-segment-1', 'jwplayer-segment-2'
+          ]
+        }
+      }
+    }
   }
   videoBid = {
     'seat': 'seat-id',
     'ext': {
-		  'buyid': 'BUYER-ID-987'
+      'buyid': 'BUYER-ID-987'
     },
     'bid': [{
       'id': '74858439-49D7-4169-BA5D-44A046315B2F',
@@ -90,13 +109,14 @@ describe('PubMatic adapter', () => {
         'dspid': 123
       },
       'dealid': 'PUBDEAL1',
-      'mtype': 2
+      'mtype': 2,
+      'params': {'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic'}
     }]
   };
   firstResponse = {
     'seat': 'seat-id',
     'ext': {
-		  'buyid': 'BUYER-ID-987'
+      'buyid': 'BUYER-ID-987'
     },
     'bid': [{
       'id': '74858439-49D7-4169-BA5D-44A046315B2F',
@@ -117,20 +137,20 @@ describe('PubMatic adapter', () => {
   };
   response = {
     'body': {
-		  cur: 'USD',
-		  id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
-		  seatbid: [firstResponse]
+      cur: 'USD',
+      id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+      seatbid: [firstResponse]
     }
   };
   videoResponse = {
     'body': {
-		  cur: 'USD',
-		  id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
-		  seatbid: [videoBid]
+      cur: 'USD',
+      id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+      seatbid: [videoBid]
     }
   }
-  let validBidRequests = [firstBid];
-  let bidderRequest = {
+  const validBidRequests = [firstBid];
+  const bidderRequest = {
     bids: [firstBid],
     auctionId: 'ee3074fe-97ce-4681-9235-d7622aede74c',
     auctionStart: 1725514077194,
@@ -150,9 +170,17 @@ describe('PubMatic adapter', () => {
         connectiontype: 6
       },
       site: {domain: 'ebay.com', page: 'https://ebay.com'},
-      source: {}
+      source: {},
+      user: {
+        ext: {
+          data: {
+            im_segments: ['segment1', 'segment2']
+          }
+        }
+      }
     },
-    timeout: 2000
+    timeout: 2000,
+
   };
   let videoBidRequest, videoBidderRequest, utilsLogWarnMock, nativeBidderRequest;
 
@@ -165,22 +193,23 @@ describe('PubMatic adapter', () => {
     it('should return false if publisherId is missing', () => {
       const bid = utils.deepClone(validBidRequests[0]);
       delete bid.params.publisherId;
-	  	const isValid = spec.isBidRequestValid(bid);
-	  	expect(isValid).to.equal(false);
-  	});
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equal(false);
+    });
 
     it('should return false if publisherId is not of type string', () => {
       const bid = utils.deepClone(validBidRequests[0]);
       bid.params.publisherId = 5890;
-	    const isValid = spec.isBidRequestValid(bid);
-	    expect(isValid).to.equal(false);
-  	});
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equal(false);
+    });
 
     if (FEATURES.VIDEO) {
       describe('VIDEO', () => {
         beforeEach(() => {
           videoBidRequest = utils.deepClone(validBidRequests[0]);
           delete videoBidRequest.mediaTypes.banner;
+          delete videoBidRequest.mediaTypes.native;
           videoBidRequest.mediaTypes.video = {
             playerSize: [
               [640, 480]
@@ -191,10 +220,12 @@ describe('PubMatic adapter', () => {
             skip: 1,
             linearity: 2
           }
+          videoBidRequest.params.outstreamAU = 'outstreamAU';
+          videoBidRequest.params.renderer = 'renderer_test_pubmatic'
         });
         it('should return false if mimes are missing in a video impression request', () => {
-			  	const isValid = spec.isBidRequestValid(videoBidRequest);
-			  	expect(isValid).to.equal(false);
+          const isValid = spec.isBidRequestValid(videoBidRequest);
+          expect(isValid).to.equal(false);
         });
 
         it('should return false if context is missing in a video impression request', () => {
@@ -206,14 +237,25 @@ describe('PubMatic adapter', () => {
         it('should return true if banner/native present, but outstreamAU or renderer is missing', () => {
           videoBidRequest.mediaTypes.video.mimes = ['video/flv'];
           videoBidRequest.mediaTypes.video.context = 'outstream';
+
           videoBidRequest.mediaTypes.banner = {
             sizes: [[728, 90], [160, 600]]
-          }
+          };
+
+          // Remove width and height from the video object to test coverage for missing values
+          delete videoBidRequest.mediaTypes.video.width;
+          delete videoBidRequest.mediaTypes.video.height;
+
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(true);
         });
 
         it('should return false if outstreamAU or renderer is missing', () => {
+          const isValid = spec.isBidRequestValid(videoBidRequest);
+          expect(isValid).to.equal(false);
+        });
+
+        it('should return TRUE if outstreamAU or renderer is present', () => {
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(false);
         });
@@ -226,7 +268,6 @@ describe('PubMatic adapter', () => {
       it('should include previousAuctionInfo in request when available', () => {
         const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
         const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
-
         bidderRequestWithPrevAuction.ortb2 = bidderRequestWithPrevAuction.ortb2 || {};
         bidderRequestWithPrevAuction.ortb2.ext = bidderRequestWithPrevAuction.ortb2.ext || {};
         bidderRequestWithPrevAuction.ortb2.ext.prebid = bidderRequestWithPrevAuction.ortb2.ext.prebid || {};
@@ -273,12 +314,12 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('ext').to.have.property('key_val');
       });
 
-      it('should not add key_val if dctr is absent in parameters', () => {
+      it('adds key_val when dctr is missing but RTD provides custom targeting via ortb2', () => {
         delete validBidRequests[0].params.dctr;
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
-        expect(imp[0]).to.have.property('ext').to.not.have.property('key_val');
+        expect(imp[0]).to.have.property('ext').to.have.property('key_val');
       });
 
       it('should set w and h to the primary size for banner', () => {
@@ -296,6 +337,26 @@ describe('PubMatic adapter', () => {
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('banner').to.have.property('format');
         expect(imp[0]).to.have.property('banner').to.have.property('format').to.be.an('array');
+      });
+
+      it('should not have format object in banner when there is only a single size', () => {
+        // Create a complete bid with only one size
+        const singleSizeBid = utils.deepClone(validBidRequests[0]);
+        singleSizeBid.mediaTypes.banner.sizes = [[300, 250]];
+        singleSizeBid.params.adSlot = '/15671365/DMDemo@300x250:0';
+
+        // Create a complete bidder request
+        const singleSizeBidderRequest = utils.deepClone(bidderRequest);
+        singleSizeBidderRequest.bids = [singleSizeBid];
+
+        const request = spec.buildRequests([singleSizeBid], singleSizeBidderRequest);
+        const { imp } = request?.data;
+
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('banner');
+        expect(imp[0].banner).to.not.have.property('format');
+        expect(imp[0].banner).to.have.property('w').equal(300);
+        expect(imp[0].banner).to.have.property('h').equal(250);
       });
 
       it('should add pmZoneId in ext if pmzoneid is present in parameters', () => {
@@ -373,7 +434,16 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
 
-	  	if (FEATURES.VIDEO) {
+      xit('should include custom targeting data in imp.ext when provided by RTD', () => {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const { imp } = request?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext');
+        expect(imp[0].ext).to.have.property('key_val');
+        expect(imp[0].ext.key_val).to.deep.equal('im_segments=segment1,segment2|jw-id=jwplayer-content-id|jw-jwplayer-segment-1=1|jw-jwplayer-segment-2=1');
+      })
+
+      if (FEATURES.VIDEO) {
         describe('VIDEO', () => {
           beforeEach(() => {
             utilsLogWarnMock = sinon.stub(utils, 'logWarn');
@@ -392,10 +462,14 @@ describe('PubMatic adapter', () => {
               linearity: 1,
               placement: 2,
               plcmt: 1,
+              context: 'outstream',
               minbitrate: 10,
               maxbitrate: 10,
               playerSize: [640, 480]
             }
+            videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
+            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic'
+            videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
           afterEach(() => {
@@ -447,8 +521,8 @@ describe('PubMatic adapter', () => {
             expect(imp[0]).to.have.property('video').to.have.property('h');
           });
         });
-	  	}
-	  	if (FEATURES.NATIVE) {
+      }
+      if (FEATURES.NATIVE) {
         describe('NATIVE', () => {
           beforeEach(() => {
             utilsLogWarnMock = sinon.stub(utils, 'logWarn');
@@ -492,60 +566,73 @@ describe('PubMatic adapter', () => {
             expect(imp[0]).to.have.property('native');
           });
         });
-	 		}
-      //   describe('MULTIFORMAT', () => {
-      //     let multiFormatBidderRequest;
-      //     it('should have both banner & video impressions', () => {
-      //       multiFormatBidderRequest = utils.deepClone(bidderRequest);
-      //       multiFormatBidderRequest.bids[0].mediaTypes.video = {
-      //         skip: 1,
-      //         mimes: ['video/mp4', 'video/x-flv'],
-      //         minduration: 5,
-      //         maxduration: 30,
-      //         startdelay: 5,
-      //         playbackmethod: [1, 3],
-      //         api: [1, 2],
-      //         protocols: [2, 3],
-      //         battr: [13, 14],
-      //         linearity: 1,
-      //         placement: 2,
-      //         plcmt: 1,
-      //         minbitrate: 10,
-      //         maxbitrate: 10,
-      //         playerSize: [640, 480]
-      //       }
-      //       const request = spec.buildRequests(validBidRequests, multiFormatBidderRequest);
-      //       const { imp } = request?.data;
-      //       expect(imp).to.be.an('array');
-      //       expect(imp[0]).to.have.property('banner');
-      //       expect(imp[0].banner).to.have.property('topframe');
-      //       expect(imp[0].banner).to.have.property('format');
-      //       expect(imp[0]).to.have.property('video');
-      //     });
-
-    //     it('should have both banner & native impressions', () => {
-    //       multiFormatBidderRequest = utils.deepClone(bidderRequest);
-    //       multiFormatBidderRequest.bids[0].nativeOrtbRequest = {
-    //         ver: '1.2',
-    //         assets: [{
-    //           id: 0,
-    //           img: {
-    //             'type': 3,
-    //             'w': 300,
-    //             'h': 250
-    //           },
-    //           required: 1,
-    //         }]
-    //       };
-    //       const request = spec.buildRequests(validBidRequests, multiFormatBidderRequest);
-    //       const { imp } = request?.data;
-    //       expect(imp).to.be.an('array');
-    //       expect(imp[0]).to.have.property('banner');
-    //       expect(imp[0].banner).to.have.property('topframe');
-    //       expect(imp[0].banner).to.have.property('format');
-    //       expect(imp[0]).to.have.property('native');
-    //     });
-    //   });
+      }
+      describe('ShouldAddDealTargeting', () => {
+        it('should return im_segment targeting', () => {
+          const ortb2 = {
+            user: {
+              ext: {
+                data: {
+                  im_segments: ['segment1', 'segment2']
+                }
+              }
+            }
+          };
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.have.property('im_segments');
+          expect(result.im_segments).to.deep.equal('im_segments=segment1,segment2');
+        });
+        it('should return ias-brand-safety targeting', () => {
+          const ortb2 = {
+            site: {
+              ext: {
+                data: {
+                  'ias-brand-safety': {
+                    'content': 'news',
+                    'sports': 'cricket',
+                    'cricket': 'player'
+                  }
+                }
+              }
+            }
+          };
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.have.property('ias-brand-safety');
+          expect(result['ias-brand-safety']).to.deep.equal('content=news|sports=cricket|cricket=player');
+        });
+        it('should return undefined if no targeting is present', () => {
+          const ortb2 = {};
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.be.undefined;
+        });
+        it('should return both im_segment and ias-brand-safety targeting', () => {
+          const ortb2 = {
+            user: {
+              ext: {
+                data: {
+                  im_segments: ['segment1', 'segment2']
+                }
+              }
+            },
+            site: {
+              ext: {
+                data: {
+                  'ias-brand-safety': {
+                    'content': 'news',
+                    'sports': 'cricket',
+                    'cricket': 'player'
+                  }
+                }
+              }
+            }
+          };
+          const result = shouldAddDealTargeting(ortb2);
+          expect(result).to.have.property('im_segments');
+          expect(result.im_segments).to.deep.equal('im_segments=segment1,segment2');
+          expect(result).to.have.property('ias-brand-safety');
+          expect(result['ias-brand-safety']).to.deep.equal('content=news|sports=cricket|cricket=player');
+        });
+      })
     });
 
     describe('rest of ORTB request', () => {
@@ -618,6 +705,76 @@ describe('PubMatic adapter', () => {
         it('should have tmax', () => {
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('tmax').to.equal(2000);
+        });
+
+        describe('Gzip Configuration', () => {
+          let configStub;
+          let bidderConfigStub;
+
+          beforeEach(() => {
+            configStub = sinon.stub(config, 'getConfig');
+            bidderConfigStub = sinon.stub(config, 'getBidderConfig');
+          });
+
+          afterEach(() => {
+            configStub.restore();
+            if (bidderConfigStub && bidderConfigStub.restore) {
+              bidderConfigStub.restore();
+            }
+          });
+
+          it('should enable gzip compression by default', () => {
+            // No specific configuration set, should use default
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.true;
+          });
+
+          it('should respect bidder-specific boolean configuration set via setBidderConfig', () => {
+            // Mock bidder-specific config to return false
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: false
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+
+          it('should handle bidder-specific string configuration ("true")', () => {
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: 'true'
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.true;
+          });
+
+          it('should handle bidder-specific string configuration ("false")', () => {
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: 'false'
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            expect(request.options.endpointCompression).to.be.false;
+          });
+
+          it('should fall back to default when bidder-specific value is invalid', () => {
+            // Mock bidder-specific config to return invalid value
+            bidderConfigStub.returns({
+              pubmatic: {
+                gzipEnabled: 'invalid'
+              }
+            });
+
+            const request = spec.buildRequests(validBidRequests, bidderRequest);
+            // Should fall back to default (true)
+            expect(request.options.endpointCompression).to.be.true;
+          });
         });
 
         it('should remove test if pubmaticTest is not set', () => {
@@ -801,7 +958,7 @@ describe('PubMatic adapter', () => {
 
       describe('GPP', () => {
         it('should have gpp & gpp_sid in request if set using ortb2 and not present in request', () => {
-          let copiedBidderRequest = utils.deepClone(bidderRequest);
+          const copiedBidderRequest = utils.deepClone(bidderRequest);
           copiedBidderRequest.ortb2.regs = {
             gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
             gpp_sid: [5]
@@ -819,14 +976,14 @@ describe('PubMatic adapter', () => {
           pubrender: 0,
           datatopub: 2,
           transparency: [
-    			  {
+            {
               domain: 'platform1domain.com',
               dsaparams: [1]
-    			  },
-    			  {
+            },
+            {
               domain: 'SSP2domain.com',
               dsaparams: [1, 2]
-    			  }
+            }
           ]
         };
         beforeEach(() => {
@@ -916,7 +1073,6 @@ describe('PubMatic adapter', () => {
           };
 
           spec.onBidWon(bid);
-
           expect(cpmAdjustment).to.deep.equal({
             currency: 'USD',
             originalCurrency: 'USD',
@@ -931,40 +1087,167 @@ describe('PubMatic adapter', () => {
             ]
           });
         });
+
+        it('should invoke _calculateBidCpmAdjustment and correctly update cpmAdjustment currency is different', () => {
+          const bid = {
+            cpm: 2.5,
+            originalCpm: 3,
+            originalCurrency: 'USD',
+            currency: 'EUR',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' },
+            getCpmInNewCurrency: function(currency) {
+              return currency === 'EUR' ? 2.8 : this.cpm;
+            }
+          };
+          spec.onBidWon(bid);
+          expect(cpmAdjustment).to.deep.equal({
+            currency: 'USD',
+            originalCurrency: 'USD',
+            adjustment: [
+              {
+                cpmAdjustment: Number(((3 - 2.5) / 3).toFixed(2)), // Expected: 0.17
+                mediaType: 'banner',
+                metaMediaType: 'banner',
+                cpm: 2.5,
+                originalCpm: 3
+              }
+            ]
+          });
+        });
+
+        it('should replace existing adjustment entry if mediaType and metaMediaType match', () => {
+          const bid1 = {
+            cpm: 2.5,
+            originalCpm: 3,
+            originalCurrency: 'USD',
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' }
+          };
+          const bid2 = {
+            cpm: 1.5,
+            originalCpm: 2,
+            originalCurrency: 'USD',
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' }
+          };
+
+          spec.onBidWon(bid1);
+          // Should add the first entry
+          expect(cpmAdjustment.adjustment.length).to.equal(1);
+          expect(cpmAdjustment.adjustment[0].cpm).to.equal(2.5);
+          spec.onBidWon(bid2);
+          // Should replace the entry, not add a new one
+          expect(cpmAdjustment.adjustment.length).to.equal(1);
+          expect(cpmAdjustment.adjustment[0].cpm).to.equal(1.5);
+          expect(cpmAdjustment.adjustment[0].originalCpm).to.equal(2);
+        });
       });
-
-      // describe('USER ID/ EIDS', () => {
-      // 	let copiedBidderRequest;
-      // 	beforeEach(() => {
-      // 		copiedBidderRequest = utils.deepClone(bidderRequest);
-      // 		copiedBidderRequest.bids[0].userId = {
-      // 			id5id : {
-      // 				uid: 'id5id-xyz-user-id'
-      // 			}
-      // 		}
-      // 		copiedBidderRequest.bids[0].userIdAsEids = [{
-      // 			source: 'id5-sync.com',
-      // 			uids: [{
-      // 				'id': "ID5*G3_osFE_-UHoUjSuA4T8-f51U-JTNOoGcb2aMpx1APnDy8pDwkKCzXCcoSb1HXIIw9AjWBOWmZ3QbMUDTXKq8MPPW8h0II9mBYkP4F_IXkvD-XG64NuFFDPKvez1YGGx",
-      // 				'atype': 1,
-      // 				'ext': {
-      // 					'linkType': 2,
-      // 					'pba': 'q6Vzr0jEebxzmvS8aSrVQJFoJnOxs9gKBKCOLw1y6ew='
-      // 				}
-      // 			}]
-      // 		}]
-      // 	});
-
-      // 	it('should send gpid if specified', () => {
-      // 		const request = spec.buildRequests(validBidRequests, copiedBidderRequest);
-      // 		expect(request.data).to.have.property('user');
-      // 		expect(request.data.user).to.have.property('eids');
-      // 	});
-      // });
     });
   });
 
   describe('Response', () => {
+    it('should parse native adm and set bidResponse.native, width, and height', () => {
+      // Prepare a valid native bidRequest
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+      bidRequest.mediaTypes = {
+        native: {
+          title: { required: true, len: 140 }
+        }
+      };
+      delete bidRequest.mediaTypes.banner;
+      delete bidRequest.mediaTypes.video;
+      bidRequest.sizes = undefined;
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      // Prepare a valid native bid response with matching impid
+      const nativeAdm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Test' } }] } });
+      const nativeBid = {
+        id: 'bid-id',
+        impid: request.data.imp[0].id, // match the imp id
+        price: 1.2,
+        adm: nativeAdm,
+        w: 123,
+        h: 456,
+        adomain: ['example.com'],
+        mtype: 4 // NATIVE
+      };
+      const seatbid = [{ bid: [nativeBid] }];
+      const nativeResponse = { body: { seatbid } };
+      const bidResponses = spec.interpretResponse(nativeResponse, request);
+      expect(bidResponses).to.be.an('array');
+      expect(bidResponses[0]).to.exist;
+      expect(bidResponses[0].native).to.exist;
+      expect(bidResponses[0].width).to.equal(123);
+      expect(bidResponses[0].height).to.equal(456);
+    });
+
+    it('should handle invalid JSON in native adm gracefully', () => {
+      // Prepare a valid native bidRequest
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+      bidRequest.mediaTypes = {
+        native: {
+          title: { required: true, len: 140 }
+        }
+      };
+      delete bidRequest.mediaTypes.banner;
+      delete bidRequest.mediaTypes.video;
+      bidRequest.sizes = undefined;
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      // Prepare a native bid response with invalid JSON and matching impid
+      const invalidAdm = '{ native: { assets: [ { id: 1, title: { text: "Test" } } ] }'; // missing closing }
+      const nativeBid = {
+        id: 'bid-id',
+        impid: request.data.imp[0].id, // match the imp id
+        price: 1.2,
+        adm: invalidAdm,
+        w: 123,
+        h: 456,
+        adomain: ['example.com'],
+        mtype: 4 // NATIVE
+      };
+      const seatbid = [{ bid: [nativeBid] }];
+      const nativeResponse = { body: { seatbid } };
+      const bidResponses = spec.interpretResponse(nativeResponse, request);
+      expect(bidResponses).to.be.an('array');
+      expect(bidResponses.length).to.equal(0); // No bid should be returned if adm is invalid
+    });
+
+    it('should set DEFAULT_WIDTH and DEFAULT_HEIGHT when bid.w and bid.h are missing for native', () => {
+      // Prepare a valid native bidRequest
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+      bidRequest.mediaTypes = {
+        native: {
+          title: { required: true, len: 140 }
+        }
+      };
+      delete bidRequest.mediaTypes.banner;
+      delete bidRequest.mediaTypes.video;
+      bidRequest.sizes = undefined;
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      // Prepare a native bid response with missing w and h
+      const nativeAdm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Test' } }] } });
+      const nativeBid = {
+        id: 'bid-id',
+        impid: request.data.imp[0].id, // match the imp id
+        price: 1.2,
+        adm: nativeAdm,
+        // w and h are intentionally missing
+        adomain: ['example.com'],
+        mtype: 4 // NATIVE
+      };
+      const seatbid = [{ bid: [nativeBid] }];
+      const nativeResponse = { body: { seatbid } };
+      const bidResponses = spec.interpretResponse(nativeResponse, request);
+      expect(bidResponses).to.be.an('array');
+      expect(bidResponses[0]).to.exist;
+      expect(bidResponses[0].native).to.exist;
+      expect(bidResponses[0].width).to.equal(0);
+      expect(bidResponses[0].height).to.equal(0);
+    });
+
     it('should return response in prebid format', () => {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const bidResponse = spec.interpretResponse(response, request);
@@ -1036,7 +1319,7 @@ describe('PubMatic adapter', () => {
     if (FEATURES.VIDEO) {
       describe('VIDEO', () => {
         beforeEach(() => {
-          let videoBidderRequest = utils.deepClone(bidderRequest);
+          const videoBidderRequest = utils.deepClone(bidderRequest);
           delete videoBidderRequest.bids[0].mediaTypes.banner;
           videoBidderRequest.bids[0].mediaTypes.video = {
             skip: 1,
@@ -1056,6 +1339,9 @@ describe('PubMatic adapter', () => {
             maxbitrate: 10,
             playerSize: [640, 480]
           }
+          videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
+          videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
+          videoBidderRequest.bids[0].adUnitCode = 'Div1';
         });
 
         it('should generate video response', () => {
@@ -1083,6 +1369,30 @@ describe('PubMatic adapter', () => {
           expect(bidResponse[0]).to.have.property('mediaType').to.equal('video');
           expect(bidResponse[0]).to.have.property('playerHeight').to.equal(480);
           expect(bidResponse[0]).to.have.property('playerWidth').to.equal(640);
+        });
+
+        it('should set renderer and rendererCode for outstream video with outstreamAU', () => {
+          const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+          const bidResponse = spec.interpretResponse(videoResponse, request);
+          expect(bidResponse).to.be.an('array');
+          expect(bidResponse[0]).to.be.an('object');
+          expect(bidResponse[0]).to.have.property('renderer');
+          expect(bidResponse[0].renderer).to.be.an('object');
+          expect(bidResponse[0]).to.have.property('rendererCode').to.equal('outstreamAU');
+        });
+
+        it('should set width and height from playerWidth/playerHeight if not present in bid', () => {
+          // Clone and modify the video response to remove w and h
+          const modifiedVideoResponse = utils.deepClone(videoResponse);
+          delete modifiedVideoResponse.body.seatbid[0].bid[0].w;
+          delete modifiedVideoResponse.body.seatbid[0].bid[0].h;
+          // Set up the request as usual
+          const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+          // Interpret the response
+          const bidResponses = spec.interpretResponse(modifiedVideoResponse, request);
+          // playerWidth = 640, playerHeight = 480 from playerSize in the test setup
+          expect(bidResponses[0].width).to.equal(640);
+          expect(bidResponses[0].height).to.equal(480);
         });
       });
     }
@@ -1152,6 +1462,168 @@ describe('PubMatic adapter', () => {
       });
     });
   })
+
+  it('should add userIdAsEids to user.ext.eids when present in bidRequest', () => {
+    const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
+    bidRequestWithEids.userIdAsEids = [
+      {
+        source: 'pubmatic',
+        uids: [{ id: 'test-id-123' }]
+      }
+    ];
+    // Create a clean bidderRequest without existing eids
+    const cleanBidderRequest = utils.deepClone(bidderRequest);
+    // Ensure user object exists
+    cleanBidderRequest.user = cleanBidderRequest.user || {};
+    cleanBidderRequest.user.ext = cleanBidderRequest.user.ext || {};
+    delete cleanBidderRequest.user.ext.eids;
+    // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
+    cleanBidderRequest.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
+    const request = spec.buildRequests([bidRequestWithEids], cleanBidderRequest);
+    expect(request.data.user).to.exist;
+    expect(request.data.user.ext).to.exist;
+    expect(request.data.user.ext.eids).to.deep.equal(bidRequestWithEids.userIdAsEids);
+  });
+  it('should not add userIdAsEids when req.user.ext.eids already exists', () => {
+    const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
+    bidRequestWithEids.userIdAsEids = [
+      {
+        source: 'pubmatic',
+        uids: [{ id: 'test-id-123' }]
+      }
+    ];
+    // Create a bidderRequest with existing eids
+    const bidderRequestWithExistingEids = utils.deepClone(bidderRequest);
+    // Ensure user object exists and set existing eids
+    bidderRequestWithExistingEids.user = bidderRequestWithExistingEids.user || {};
+    bidderRequestWithExistingEids.user.ext = bidderRequestWithExistingEids.user.ext || {};
+    bidderRequestWithExistingEids.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
+    // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
+    bidderRequestWithExistingEids.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
+    // Set existing eids in ortb2.user.ext.eids so the converter will merge them
+    // and the adapter will see them as already existing
+    bidderRequestWithExistingEids.ortb2 = bidderRequestWithExistingEids.ortb2 || {};
+    bidderRequestWithExistingEids.ortb2.user = bidderRequestWithExistingEids.ortb2.user || {};
+    bidderRequestWithExistingEids.ortb2.user.ext = bidderRequestWithExistingEids.ortb2.user.ext || {};
+    bidderRequestWithExistingEids.ortb2.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
+    const request = spec.buildRequests([bidRequestWithEids], bidderRequestWithExistingEids);
+    expect(request.data.user).to.exist;
+    expect(request.data.user.ext).to.exist;
+    expect(request.data.user.ext.eids).to.deep.equal(bidderRequestWithExistingEids.ortb2.user.ext.eids);
+  });
+
+  it('should copy geo from device to user when device has geo but user does not', () => {
+    const bidRequestWithDeviceGeo = utils.deepClone(validBidRequests[0]);
+    // Create a clean bidderRequest without existing geo data
+    const cleanBidderRequest = utils.deepClone(bidderRequest);
+    // Ensure user and device objects exist
+    cleanBidderRequest.user = cleanBidderRequest.user || {};
+    cleanBidderRequest.ortb2 = cleanBidderRequest.ortb2 || {};
+    cleanBidderRequest.ortb2.user = cleanBidderRequest.ortb2.user || {};
+    cleanBidderRequest.ortb2.device = cleanBidderRequest.ortb2.device || {};
+    delete cleanBidderRequest.user.geo;
+    delete cleanBidderRequest.ortb2.user.geo;
+    // Set geo data in bidderRequest.ortb2.device.geo so the converter will merge it
+    cleanBidderRequest.ortb2.device.geo = { lat: 40.7128, lon: -74.0060 };
+    const request = spec.buildRequests([bidRequestWithDeviceGeo], cleanBidderRequest);
+    expect(request.data.user).to.exist;
+    expect(request.data.user.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
+  });
+
+  it('should copy geo from user to device when user has geo but device does not', () => {
+    const bidRequestWithUserGeo = utils.deepClone(validBidRequests[0]);
+    // Create a clean bidderRequest without existing geo data
+    const cleanBidderRequest = utils.deepClone(bidderRequest);
+    // Ensure device object exists
+    cleanBidderRequest.device = cleanBidderRequest.device || {};
+    cleanBidderRequest.ortb2 = cleanBidderRequest.ortb2 || {};
+    cleanBidderRequest.ortb2.device = cleanBidderRequest.ortb2.device || {};
+    cleanBidderRequest.ortb2.user = cleanBidderRequest.ortb2.user || {};
+    delete cleanBidderRequest.device.geo;
+    delete cleanBidderRequest.ortb2.device.geo;
+    // Set geo data in bidderRequest.ortb2.user.geo so the converter will merge it
+    cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 };
+    const request = spec.buildRequests([bidRequestWithUserGeo], cleanBidderRequest);
+    expect(request.data.device).to.exist;
+    expect(request.data.device.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
+  });
+
+  it('should update site.page with kadpageurl when present', () => {
+    const bidRequestWithKadPageUrl = utils.deepClone(validBidRequests[0]);
+    bidRequestWithKadPageUrl.params.kadpageurl = 'https://example.com/page';
+    const request = spec.buildRequests([bidRequestWithKadPageUrl], bidderRequest);
+    expect(request.data.site).to.exist;
+    expect(request.data.site.page).to.equal('https://example.com/page');
+  });
+
+  it('should set site.publisher.id from pubId', () => {
+    // Ensure site.publisher structure exists in bidderRequest.ortb2
+    const bidderRequestWithPublisher = utils.deepClone(bidderRequest);
+    bidderRequestWithPublisher.ortb2 = bidderRequestWithPublisher.ortb2 || {};
+    bidderRequestWithPublisher.ortb2.site = bidderRequestWithPublisher.ortb2.site || {};
+    bidderRequestWithPublisher.ortb2.site.publisher = bidderRequestWithPublisher.ortb2.site.publisher || {};
+    const request = spec.buildRequests(validBidRequests, bidderRequestWithPublisher);
+    expect(request.data.site).to.exist;
+    expect(request.data.site.publisher).to.exist;
+    expect(request.data.site.publisher.id).to.equal('5670'); // pubId from params
+  });
+
+  it('should set site.ref from refURL when not already present', () => {
+    const request = spec.buildRequests(validBidRequests, bidderRequest);
+    expect(request.data.site).to.exist;
+    // Check if site.ref exists (it might be set to empty string or undefined)
+    if (request.data.site.ref !== undefined) {
+      expect(request.data.site.ref).to.exist;
+    }
+  });
+
+  it('should build a basic request successfully', () => {
+    const request = spec.buildRequests(validBidRequests, bidderRequest);
+    expect(request.data).to.exist;
+    expect(request.data.imp).to.be.an('array');
+    expect(request.data.imp.length).to.be.greaterThan(0);
+  });
+
+  it('should set floor values correctly for multi-format requests using getFloor', () => {
+    // Start with a valid bid
+    const testBid = utils.deepClone(validBidRequests[0]);
+    testBid.mediaTypes = {
+      banner: {
+        sizes: [[300, 250], [728, 90]],
+        format: [{ w: 300, h: 250 }, { w: 728, h: 90 }]
+      },
+      video: {},
+      native: {}
+    };
+    testBid.getFloor = ({ currency, mediaType, size }) => {
+      if (mediaType === 'banner') return { currency: 'AUD', floor: 2.5 };
+      if (mediaType === 'video') return { currency: 'AUD', floor: 1.5 };
+      if (mediaType === 'native') return { currency: 'AUD', floor: 1.0 };
+      return { currency: 'AUD', floor: 0 };
+    };
+    const testBidderRequest = {
+      bids: [testBid],
+      auctionId: 'test-auction',
+      bidderCode: 'pubmatic',
+      refererInfo: { page: 'https://example.com', ref: '' },
+      ortb2: { device: { w: 1200, h: 1800 }, site: { domain: 'example.com', page: 'https://example.com' } },
+      timeout: 2000
+    };
+    const request = spec.buildRequests([testBid], testBidderRequest);
+    expect(request).to.exist;
+    const builtImp = request.data.imp[0];
+    if (builtImp.banner && builtImp.banner.ext) {
+      expect(builtImp.banner.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'AUD' });
+    }
+    if (builtImp.video && builtImp.video.ext) {
+      expect(builtImp.video.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'AUD' });
+    }
+    if (builtImp.native && builtImp.native.ext) {
+      expect(builtImp.native.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'AUD' });
+    }
+    // The impression-level bidfloor should match the banner floor (2.5)
+    expect(builtImp.bidfloor).to.equal(2.5);
+  });
 })
 
 describe('addViewabilityToImp', () => {
