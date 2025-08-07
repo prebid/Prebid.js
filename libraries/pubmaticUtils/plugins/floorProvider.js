@@ -65,7 +65,7 @@ export async function init(pluginName, configJsonManager) {
  * @param {Object} reqBidsConfigObj - Bid request config object
  * @returns {Object} - Updated bid request config object
  */
-export async function processBidRequest(reqBidsConfigObj) {
+export function processBidRequest(reqBidsConfigObj) {
   try {
     const hookConfig = {
       reqBidsConfigObj,

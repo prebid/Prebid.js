@@ -138,8 +138,7 @@ const init = (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   _ymConfigPromise.then(() => {
-    return pluginManager.executeHook('processBidRequest', reqBidsConfigObj);
-  }).then(() => {
+    pluginManager.executeHook('processBidRequest', reqBidsConfigObj);
     // Apply country information if available
     const country = configJsonManager.country;
     if (country) {
