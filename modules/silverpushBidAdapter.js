@@ -142,7 +142,7 @@ function isBidRequestValid(bidRequest) {
 
 function isPublisherIdValid(bidRequest) {
   const pubId = utils.deepAccess(bidRequest, 'params.publisherId');
-  return (pubId !== null && utils.isStr(pubId) && pubId !== '');
+  return (pubId !== undefined && utils.isStr(pubId) && pubId !== '');
 }
 
 function isValidBannerRequest(bidRequest) {
