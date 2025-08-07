@@ -1,4 +1,4 @@
-import { logInfo } from '../../../src/utils.js'; 
+import { logInfo } from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { calculateTimeoutModifier } from '../../bidderTimeoutUtils/bidderTimeoutUtils.js';
 import { shouldThrottle } from '../pubmaticUtils.js';
@@ -53,7 +53,7 @@ export async function init(pluginName, configJsonManager) {
   // Set the Dynamic Timeout config
   setDynamicTimeoutConfig(config);
 
-  if(!getDynamicTimeoutConfig()?.enabled) {
+  if (!getDynamicTimeoutConfig()?.enabled) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic Timeout configuration is disabled`);
     return false;
   }
@@ -80,14 +80,14 @@ export async function processBidRequest(reqBidsConfigObj) {
   // Get ad units and bidder timeout
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const bidderTimeout = getBidderTimeout(reqBidsConfigObj);
-  
+
   // Calculate and apply additional timeout
   const rules = getRules(bidderTimeout);
   const additionalTimeout = calculateTimeoutModifier(adUnits, rules);
-  
+
   // Update the timeout in the request object
   reqBidsConfigObj.timeout = bidderTimeout + additionalTimeout;
-  
+
   logInfo(`${CONSTANTS.LOG_PRE_FIX} Timeout adjusted from ${bidderTimeout}ms to ${reqBidsConfigObj.timeout}ms (added ${additionalTimeout}ms)`);
   return reqBidsConfigObj;
 }
@@ -111,9 +111,7 @@ export const DynamicTimeout = {
   getTargeting
 };
 
-
 // Helper Functions
-
 
 export const getBidderTimeout = (reqBidsConfigObj) => {
   return getDynamicTimeoutConfig()?.config?.bidderTimeout
@@ -128,7 +126,7 @@ export const getBidderTimeout = (reqBidsConfigObj) => {
  */
 export const getRules = (bidderTimeout) => {
   const timeoutConfig = getDynamicTimeoutConfig();
-  
+
   // Check for rules in priority order, If ML model rules are available then return it
   if (timeoutConfig?.data && Object.keys(timeoutConfig.data).length > 0) {
     return timeoutConfig.data;
@@ -159,10 +157,10 @@ export const createDynamicRules = (percentageRules, bidderTimeout) => {
     if (!rules || typeof rules !== 'object') {
       return dynamicRules;
     }
-    
+
     // Initialize category in the dynamic rules
     dynamicRules[category] = {};
-    
+
     // Convert each percentage value to milliseconds
     Object.entries(rules).forEach(([key, percentValue]) => {
       // Ensure percentage value is a number and within reasonable range
@@ -170,7 +168,7 @@ export const createDynamicRules = (percentageRules, bidderTimeout) => {
         dynamicRules[category][key] = Math.floor(bidderTimeout * (percentValue / 100));
       }
     });
-    
+
     return dynamicRules;
   }, {});
 };
