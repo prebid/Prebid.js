@@ -163,11 +163,11 @@ export const PID_STORAGE_NAME = 'eqt_pid';
 /**
  * Handles cookie sync logic
  *
- * @param syncOptions
- * @param serverResponses
- * @param gdprConsent
- * @param networkId
- * @param storage
+ * @param {*} syncOptions A sync options object
+ * @param {*} serverResponses A server responses array
+ * @param {*} gdprConsent A gdpr consent object
+ * @param {number} networkId A network id
+ * @param {*} storage A storage object
  * @returns {{type: string, url: string}[]}
  */
 export function handleCookieSync(syncOptions, serverResponses, gdprConsent, networkId, storage) {

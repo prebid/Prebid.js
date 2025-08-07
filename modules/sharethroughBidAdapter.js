@@ -14,7 +14,7 @@ const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=233';
 const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const IDENTIFIER_PREFIX = 'Sharethrough:';
 
-const impIdMap = {};
+let impIdMap = {};
 let eqtvNetworkId = 0;
 let isEqtvTest = null;
 
@@ -98,7 +98,7 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
-    req.user = nullish(firstPartyData.user, {});
+    req.user = firstPartyData.user ?? {}
     if (!req.user.ext) req.user.ext = {};
     req.user.ext.eids = bidRequests[0].userIdAsEids || [];
 
@@ -199,7 +199,7 @@ export const sharethroughAdapterSpec = {
           };
 
           impression.video = {
-            pos: nullish(videoRequest.pos, 0),
+            pos: videoRequest.pos ?? 0,
             topframe: inIframe() ? 0 : 1,
             w,
             h,
@@ -374,11 +374,6 @@ function getBidRequestFloor(bid) {
 
 function getProtocol() {
   return window.location.protocol;
-}
-
-// stub for ?? operator
-function nullish(input, def) {
-  return input === null || input === undefined ? def : input;
 }
 
 registerBidder(sharethroughAdapterSpec);
