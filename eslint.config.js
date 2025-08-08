@@ -8,7 +8,7 @@ const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
-const {getSourceFolders, getIgnoreSources} = require('./gulpHelpers.js');
+const {getSourceFolders} = require('./gulpHelpers.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -63,7 +63,6 @@ module.exports = [
   includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
   {
     ignores: [
-      ...getIgnoreSources(),
       'integrationExamples/**/*',
       // do not lint build-related stuff
       '*.js',
