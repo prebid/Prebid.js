@@ -5,7 +5,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'defineMedia';
-const IAB_GVL_ID = 755;
+const IAB_GVL_ID = 440;
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 
 const ENDPOINT_URL_DEV = 'https://rtb-dev.conative.network/openrtb2/auction';

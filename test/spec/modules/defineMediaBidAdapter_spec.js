@@ -3,8 +3,6 @@ import { assert } from 'chai';
 import { spec } from 'modules/defineMediaBidAdapter.js';
 import { deepClone } from 'src/utils.js';
 
-const BIDDER_CODE = 'defineMedia';
-
 describe('Define Media Bid Adapter', function () {
   const mockValidBids = [
     {
