@@ -54,10 +54,6 @@ export const spec = {
         method: METHOD,
         url: endpointUrl,
         data: ortbRequest,
-        options: {
-          contentType: 'application/json',
-          withCredentials: false
-        }
       }
     });
   },
