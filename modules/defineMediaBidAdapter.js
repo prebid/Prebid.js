@@ -1,4 +1,4 @@
-import {logInfo, logError, logWarn, deepSetValue } from "../src/utils";
+import {logInfo, logError, logWarn, deepSetValue } from "../src/utils.js";
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
