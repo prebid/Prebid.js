@@ -3,6 +3,7 @@ import {
   getImp,
   setImpPos,
   getSourceObj,
+  getExtNextMilImp,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
@@ -1298,6 +1299,42 @@ describe('nextMillenniumBidAdapterTests', () => {
             expect(bid.currency).to.equal(expected[i].currency);
           });
         };
+      });
+    };
+  });
+
+  describe('getExtNextMilImp parameters adSlots and allowedAds', () => {
+    const tests = [
+      {
+        title: 'parameters adSlots and allowedAds are empty',
+        bid: {
+          params: {},
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'parameters adSlots and allowedAds',
+        bid: {
+          params: {
+            adSlots: ['test1'],
+            allowedAds: ['test2'],
+          },
+        },
+
+        expected: {
+          adSlots: ['test1'],
+          allowedAds: ['test2'],
+        },
+      },
+    ];
+
+    for (const {title, bid, expected} of tests) {
+      it(title, () => {
+        const extNextMilImp = getExtNextMilImp(bid);
+        expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
+        expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
   });

@@ -182,3 +182,46 @@ export const getBidFloor = (bid, creative) => {
   }
   return (bid.params.bidFloor ? bid.params.bidFloor : 0.0);
 }
+
+/**
+ * Detects the OS and version from the browser and formats them for ORTB 2.5.
+ *
+ * @returns {Object} An object with:
+ *   - os:  {string}  OS name (e.g., "iOS", "Android")
+ *   - osv: {string|undefined} OS version (e.g., "14.4.2") or undefined if not found
+ */
+export const getOsInfo = () => {
+  const ua = navigator.userAgent;
+
+  if (/windows phone/i.test(ua)) {
+    return { os: "Windows Phone", osv: undefined };
+  }
+
+  if (/windows nt/i.test(ua)) {
+    const match = ua.match(/Windows NT ([\d.]+)/);
+    return { os: "Windows", osv: match?.[1] };
+  }
+
+  if (/android/i.test(ua)) {
+    const match = ua.match(/Android ([\d.]+)/);
+    return { os: "Android", osv: match?.[1] };
+  }
+
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+    const match = ua.match(/OS (\d+[_\d]*)/);
+    const osv = match?.[1]?.replace(/_/g, '.');
+    return { os: "iOS", osv };
+  }
+
+  if (/Mac OS X/.test(ua)) {
+    const match = ua.match(/Mac OS X (\d+[_.]\d+[_.]?\d*)/);
+    const osv = match?.[1]?.replace(/_/g, '.');
+    return { os: "Mac OS", osv };
+  }
+
+  if (/Linux/.test(ua)) {
+    return { os: "Linux", osv: undefined };
+  }
+
+  return { os: "Unknown", osv: undefined };
+}

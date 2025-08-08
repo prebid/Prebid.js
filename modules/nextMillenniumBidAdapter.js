@@ -23,7 +23,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
-const NM_VERSION = '4.3.0';
+const NM_VERSION = '4.4.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -265,17 +265,21 @@ export const spec = {
   },
 };
 
-function getExtNextMilImp(bid) {
+export function getExtNextMilImp(bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
+  const {adSlots, allowedAds} = bid.params
   const nextMilImp = {
     impId: bid.bidId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
-      refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
+      refresh_count: window?.nmmRefreshCounts?.[bid.adUnitCode] || 0,
+      scrollTop: window?.pageYOffset || getWinDimensions()?.document?.documentElement?.scrollTop,
     },
   };
+
+  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots
+  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
 
   return nextMilImp;
 }
