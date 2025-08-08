@@ -473,10 +473,6 @@ function startLocalServer(options = {}) {
       return [
         function (req, res, next) {
           res.setHeader('Ad-Auction-Allowed', 'True');
-          res.setHeader('Access-Control-Allow-Origin', '*'); // Allow all origins or specify your domain
-          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-          res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-          res.setHeader('Access-Control-Allow-Credentials', true);
           next();
         }
       ];
