@@ -8,7 +8,7 @@ const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
-const {getSourceFolders, getIgnoreSources} = require('./gulpHelpers.js');
+const {getSourceFolders} = require('./gulpHelpers.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -33,6 +33,13 @@ const allowedImports = {
     'dlv',
     'dset'
   ],
+  // [false] means disallow ANY import outside of modules/debugging
+  // this is because debugging also gets built as a standalone module,
+  // and importing global state does not work as expected.
+  // in theory imports that do not involve global state are fine, but
+  // even innocuous imports can become problematic if the source changes,
+  // and it's too easy to forget this is a problem for debugging-standalone.
+  'modules/debugging': [false],
   libraries: [],
   creative: [],
 }
@@ -56,7 +63,6 @@ module.exports = [
   includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
   {
     ignores: [
-      ...getIgnoreSources(),
       'integrationExamples/**/*',
       // do not lint build-related stuff
       '*.js',
