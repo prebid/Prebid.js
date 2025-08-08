@@ -1,4 +1,5 @@
-import * as utils from '../src/utils.js';
+import {logInfo, logError, logWarn, deepSetValue } from "../src/utils";
+
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
@@ -27,9 +28,9 @@ export const spec = {
   isBidRequestValid: (bid) => {
     const hasSupplierDomainName = Boolean(bid?.params?.supplierDomainName);
     const isDevMode = Boolean(bid?.params?.devMode);
-    utils.logInfo(`[${BIDDER_CODE}] isBidRequestValid called with:`, { bid, hasSupplierDomainName, isDevMode });
+    logInfo(`[${BIDDER_CODE}] isBidRequestValid called with:`, { bid, hasSupplierDomainName, isDevMode });
     const isValid = hasSupplierDomainName;
-    utils.logInfo(`[${BIDDER_CODE}] isBidRequestValid returned:`, isValid);
+    logInfo(`[${BIDDER_CODE}] isBidRequestValid returned:`, isValid);
     return isValid;
   },
 
@@ -46,10 +47,10 @@ export const spec = {
       const isDevMode = Boolean(params?.devMode);
       const endpointUrl = isDevMode ? ENDPOINT_URL_DEV : ENDPOINT_URL_PROD;
 
-      utils.deepSetValue(ortbRequest, 'source.schain.complete', 1);
-      utils.deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
+      deepSetValue(ortbRequest, 'source.schain.complete', 1);
+      deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
 
-      utils.logInfo(`[${BIDDER_CODE}] Mapped ORTB Request from`, oneBidRequest, ' to ', ortbRequest, ' with bidderRequest ', bidderRequest);
+      logInfo(`[${BIDDER_CODE}] Mapped ORTB Request from`, oneBidRequest, ' to ', ortbRequest, ' with bidderRequest ', bidderRequest);
       return {
         method: METHOD,
         url: endpointUrl,
@@ -59,10 +60,10 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse, request) => {
-    utils.logInfo(`[${BIDDER_CODE}] interpretResponse called with:`, { serverResponse, request });
+    logInfo(`[${BIDDER_CODE}] interpretResponse called with:`, { serverResponse, request });
 
     if (!serverResponse?.body) {
-      utils.logWarn(`[${BIDDER_CODE}] No response body received`);
+      logWarn(`[${BIDDER_CODE}] No response body received`);
       return [];
     }
 
@@ -70,25 +71,25 @@ export const spec = {
   },
 
   onTimeout: (timeoutData) => {
-    utils.logInfo(`[${BIDDER_CODE}] onTimeout called with:`, timeoutData);
+    logInfo(`[${BIDDER_CODE}] onTimeout called with:`, timeoutData);
   },
 
   onBidWon: (bid) => {
     if (bid?.burl) {
       ajax(bid.burl, null, null);
     }
-    utils.logInfo(`[${BIDDER_CODE}] onBidWon called with bid:`, bid);
+    logInfo(`[${BIDDER_CODE}] onBidWon called with bid:`, bid);
   },
 
   onBidderError: ({ error, bidderRequest }) => {
     /* if (bid?.lurl) {
       ajax(bid.lurl, null, null);
     } */
-    utils.logError(`[${BIDDER_CODE}] onBidderError called with:`, { error, bidderRequest });
+    logError(`[${BIDDER_CODE}] onBidderError called with:`, { error, bidderRequest });
   },
 
   onAdRenderSucceeded: (bid) => {
-    utils.logInfo(`[${BIDDER_CODE}] onAdRenderSucceeded called with bid:`, bid);
+    logInfo(`[${BIDDER_CODE}] onAdRenderSucceeded called with bid:`, bid);
   }
 };
 
