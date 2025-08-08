@@ -532,7 +532,7 @@ function checkNativeSendId(bidRequest) {
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes === undefined) {
+  if (!sizes) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
