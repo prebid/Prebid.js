@@ -792,7 +792,13 @@ export const spec = {
         allowedIabCategories = allowedIabCategories.concat(acat);
       }
     })
-    const data = converter.toORTB({ validBidRequests, bidderRequest });
+    
+    // Filter to keep only  unique entries based on adUnitCode
+    const uniqueBidRequests = validBidRequests.filter((bid, index, array) => {
+      return array.findIndex(b => b.adUnitCode === bid.adUnitCode) === index;
+    });
+    
+    const data = converter.toORTB({ bidRequests: uniqueBidRequests, bidderRequest });
 
     const serverRequest = {
       method: 'POST',
