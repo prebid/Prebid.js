@@ -705,6 +705,76 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.coppa).to.eq(1);
     });
+
+    describe('bid cache configuration', function () {
+      beforeEach(function () {
+        config.resetConfig();
+      });
+
+      it('should add useBidCache parameter when config is set to true', function () {
+        config.setConfig({
+          useBidCache: true
+        });
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data.useBidCache).to.eq(true);
+      });
+
+      it('should not add useBidCache parameter when config is explicitly set to false (default)', function () {
+        config.setConfig({
+          useBidCache: false
+        });
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data).to.not.have.property('useBidCache');
+      });
+
+      it('should not add useBidCache parameter when config is not set', function () {
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data).to.not.have.property('useBidCache');
+      });
+
+      it('should add cacheUrl parameter when cache config is provided', function () {
+        config.setConfig({
+          cache: {
+            url: 'https://example.com/cache'
+          }
+        });
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data.cacheUrl).to.eq('https://example.com/cache');
+      });
+
+      it('should not add cacheUrl parameter when cache config has no url', function () {
+        config.setConfig({
+          cache: {}
+        });
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data).to.not.have.property('cacheUrl');
+      });
+
+      it('should add both useBidCache and cacheUrl when both configs are set', function () {
+        config.setConfig({
+          useBidCache: true,
+          cache: {
+            url: 'https://example.com/cache'
+          }
+        });
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data.useBidCache).to.eq(true);
+        expect(bidRequest.data.cacheUrl).to.eq('https://example.com/cache');
+      });
+
+      it('should only add cacheUrl when useBidCache is false but cache URL is provided', function () {
+        config.setConfig({
+          useBidCache: false,
+          cache: {
+            url: 'https://example.com/cache'
+          }
+        });
+        const bidRequest = spec.buildRequests(bidRequests)[0];
+        expect(bidRequest.data).to.not.have.property('useBidCache');
+        expect(bidRequest.data.cacheUrl).to.eq('https://example.com/cache');
+      });
+    });
+
     it('should add uspConsent parameter if it is present in the bidderRequest', function () {
       const noUspBidRequest = spec.buildRequests(bidRequests)[0];
       const uspConsentObj = { uspConsent: '1YYY' };
