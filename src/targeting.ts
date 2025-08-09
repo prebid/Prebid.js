@@ -2,13 +2,7 @@ import {auctionManager} from './auctionManager.js';
 import {getBufferedTTL} from './bidTTL.js';
 import {bidderSettings} from './bidderSettings.js';
 import {config} from './config.js';
-import {
-  BID_STATUS,
-  DEFAULT_TARGETING_KEYS,
-  EVENTS,
-  JSON_MAPPING,
-  TARGETING_KEYS
-} from './constants.js';
+import {BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS} from './constants.js';
 import * as events from './events.js';
 import {hook} from './hook.js';
 import {ADPOD} from './mediaTypes.js';
@@ -32,6 +26,7 @@ import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
 import type {Bid} from './bidfactory.ts';
 import type {AdUnitCode, ByAdUnit, Identifier} from './types/common.d.ts';
 import type {DefaultTargeting} from './auction.ts';
+import {lock} from "./targeting/lock.ts";
 
 var pbTargetingKeys = [];
 
@@ -51,9 +46,12 @@ const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
 
+const isBidNotLocked = (bid) => !lock.isLocked(bid.adserverTargeting);
+
 export const filters = {
   isBidNotExpired,
-  isUnusedBid
+  isUnusedBid,
+  isBidNotLocked
 };
 
 export function isBidUsable(bid) {
@@ -294,6 +292,7 @@ export function newTargeting(auctionManager) {
           });
           logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingSet[targetId]);
           slot.updateTargetingFromMap(Object.assign({}, resetMap, targetingSet[targetId]))
+          lock.lock(targetingSet[targetId]);
         })
       })
 
@@ -350,7 +349,8 @@ export function newTargeting(auctionManager) {
         logError('unable to reset targeting for AST' + e)
       }
 
-      Object.keys(astTargeting).forEach(targetId =>
+      Object.keys(astTargeting).forEach(targetId => {
+        lock.lock(astTargeting[targetId]);
         Object.keys(astTargeting[targetId]).forEach(key => {
           logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${astTargeting[targetId][key]}`);
           // setKeywords supports string and array as value
@@ -363,9 +363,10 @@ export function newTargeting(auctionManager) {
               // pt${n} keys should not be uppercased
               keywordsObj[key] = astTargeting[targetId][key];
             }
-            window.apntag.setKeywords(targetId, keywordsObj, { overrideKeyValue: true });
+            window.apntag.setKeywords(targetId, keywordsObj, {overrideKeyValue: true});
           }
         })
+      }
       );
     },
     isApntagDefined() {
