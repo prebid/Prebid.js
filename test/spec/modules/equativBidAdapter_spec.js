@@ -1,6 +1,7 @@
 import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
 import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
 
 describe('Equativ bid adapter tests', () => {
   let sandBox;
@@ -468,7 +469,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      const request = spec.buildRequests([ DEFAULT_BANNER_BID_REQUESTS[0] ], bidRequest)[0];
+      const request = spec.buildRequests([DEFAULT_BANNER_BID_REQUESTS[0]], bidRequest)[0];
 
       expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
 
@@ -589,7 +590,7 @@ describe('Equativ bid adapter tests', () => {
       delete missingRequiredVideoRequest.mediaTypes.video.mimes;
       delete missingRequiredVideoRequest.mediaTypes.video.placement;
 
-      const bidRequests = [ missingRequiredVideoRequest ];
+      const bidRequests = [missingRequiredVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -609,7 +610,7 @@ describe('Equativ bid adapter tests', () => {
           video: {}
         }
       };
-      const bidRequests = [ emptyVideoRequest ];
+      const bidRequests = [emptyVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -651,7 +652,7 @@ describe('Equativ bid adapter tests', () => {
             native: {}
           }
         };
-        const bidRequests = [ emptyNativeRequest ];
+        const bidRequests = [emptyNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
@@ -671,7 +672,7 @@ describe('Equativ bid adapter tests', () => {
 
         // removing just "assets" for this test
         delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // this value comes from native.js, part of the ortbConverter library
@@ -696,7 +697,7 @@ describe('Equativ bid adapter tests', () => {
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
 
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
@@ -897,105 +898,46 @@ describe('Equativ bid adapter tests', () => {
   });
 
   describe('getUserSyncs', () => {
-    let setDataInLocalStorageStub;
-    let addEventListenerStub;
-    let messageHandler;
+    let handleCookieSyncStub;
 
     beforeEach(() => {
-      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-      addEventListenerStub = sinon.stub(window, 'addEventListener').callsFake((type, handler) => {
-        if (type === 'message') {
-          messageHandler = handler;
-        }
-        return addEventListenerStub.wrappedMethod.call(this, type, handler);
-      });
+      handleCookieSyncStub = sinon.stub(equativUtils, 'handleCookieSync');
     });
     afterEach(() => {
-      setDataInLocalStorageStub.restore();
-      addEventListenerStub.restore();
+      handleCookieSyncStub.restore();
     });
 
-    it('should return empty array if iframe sync not enabled', () => {
-      const syncs = spec.getUserSyncs({}, SAMPLE_RESPONSE);
-      expect(syncs).to.deep.equal([]);
-    });
+    it('should call handleCookieSync with correct parameters and return its result', () => {
+      const expectedResult = [
+        { type: 'iframe', url: 'https://sync.example.com' },
+      ];
 
-    it('should retrieve and save user pid', (done) => {
-      spec.getUserSyncs(
+      handleCookieSyncStub.returns(expectedResult)
+
+      const result = spec.getUserSyncs({ iframeEnabled: true },
+        SAMPLE_RESPONSE,
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+
+      sinon.assert.calledWithMatch(
+        handleCookieSyncStub,
         { iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } },
+        sinon.match.number,
+        sinon.match.object
       );
 
-      messageHandler.call(window, {
-        origin: 'https://apps.smartadserver.com',
-        data: { action: 'getConsent', pid: '7767825890726' },
-        source: { postMessage: sinon.stub() }
-      });
-
-      expect(setDataInLocalStorageStub.calledOnce).to.be.true;
-      expect(setDataInLocalStorageStub.calledWith('eqt_pid', '7767825890726')).to.be.true;
-      done();
+      expect(result).to.deep.equal(expectedResult);
     });
 
-    it('should not save user pid coming from incorrect origin', (done) => {
-      spec.getUserSyncs(
-        { iframeEnabled: true },
+    it('should return an empty array if handleCookieSync returns an empty array', () => {
+      handleCookieSyncStub.returns([]);
+
+      const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
-      );
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
 
-      messageHandler.call(window, {
-        origin: 'https://another-origin.com',
-        data: { action: 'getConsent', pid: '7767825890726' },
-        source: { postMessage: sinon.stub() }
-      });
-
-      expect(setDataInLocalStorageStub.notCalled).to.be.true;
-      done();
-    });
-
-    it('should not save empty pid', (done) => {
-      spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
-      );
-
-      messageHandler.call(window, {
-        origin: 'https://apps.smartadserver.com',
-        data: { action: 'getConsent', pid: '' },
-        source: { postMessage: sinon.stub() }
-      });
-
-      expect(setDataInLocalStorageStub.notCalled).to.be.true;
-      done();
-    });
-
-    it('should return array including iframe cookie sync object (gdprApplies=true)', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: true }
-      );
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=1&'
-      });
-    });
-
-    it('should return array including iframe cookie sync object (gdprApplies=false)', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: false }
-      );
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=0&'
-      });
+      expect(result).to.deep.equal([]);
     });
   });
 
