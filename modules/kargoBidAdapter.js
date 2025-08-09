@@ -100,7 +100,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   // Add site.cat if it exists
-  if (firstBidRequest.ortb2?.site?.cat != null) {
+  if (firstBidRequest.ortb2?.site?.cat !== null && firstBidRequest.ortb2?.site?.cat !== undefined) {
     krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
   }
 
@@ -114,27 +114,27 @@ function buildRequests(validBidRequests, bidderRequest) {
   krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
 
   const reqCount = getRequestCount()
-  if (reqCount != null) {
+  if (reqCount !== null && reqCount !== undefined) {
     krakenParams.requestCount = reqCount;
   }
 
   // Add currency if not USD
-  if (currency != null && currency != CURRENCY.US_DOLLAR) {
+  if ((currency !== null && currency !== undefined) && currency !== CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
   }
 
-  if (metadata.rawCRB != null) {
+  if (metadata.rawCRB !== null && metadata.rawCRB !== undefined) {
     krakenParams.rawCRB = metadata.rawCRB
   }
 
-  if (metadata.rawCRBLocalStorage != null) {
+  if (metadata.rawCRBLocalStorage !== null && metadata.rawCRBLocalStorage !== undefined) {
     krakenParams.rawCRBLocalStorage = metadata.rawCRBLocalStorage
   }
 
   // Pull Social Canvas segments and embed URL
   const socialCanvas = deepAccess(firstBidRequest, REQUEST_KEYS.SOCIAL_CANVAS);
 
-  if (socialCanvas != null) {
+  if (socialCanvas !== null && socialCanvas !== undefined) {
     krakenParams.socan = socialCanvas;
   }
 
@@ -150,7 +150,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
 
       // Do not pass any empty strings
-      if (typeof suaValue == 'string' && suaValue.trim() === '') {
+      if (typeof suaValue === 'string' && suaValue.trim() === '') {
         return;
       }
 
@@ -166,9 +166,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
   }
 
-  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) != null
-  const validPageTimestamp = getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) != null
-  const validPageUrl = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) != null
+  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) !== null && getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) !== undefined
+  const validPageTimestamp = getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) !== null && getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) !== undefined
+  const validPageUrl = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) !== null && getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) !== undefined
 
   const page = {}
   if (validPageId) {
@@ -229,7 +229,7 @@ function interpretResponse(response, bidRequest) {
       meta: meta
     };
 
-    if (meta.mediaType == VIDEO) {
+    if (meta.mediaType === VIDEO) {
       if (adUnit.admUrl) {
         bidResponse.vastUrl = adUnit.admUrl;
       } else {
@@ -271,7 +271,7 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   var gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
 
   // don't sync if opted out via usPrivacy
-  if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
+  if (typeof usPrivacy === 'string' && usPrivacy.length === 4 && usPrivacy[0] === '1' && usPrivacy[2] === 'Y') {
     return syncs;
   }
   if (syncOptions.iframeEnabled && seed && clientId) {
@@ -290,7 +290,7 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
 }
 
 function onTimeout(timeoutData) {
-  if (timeoutData == null) {
+  if (timeoutData === null || timeoutData === undefined) {
     return;
   }
 
@@ -390,22 +390,22 @@ function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
   }
 
   // Kargo ID
-  if (crb.lexId != null) {
+  if (crb.lexId !== null && crb.lexId !== undefined) {
     userIds.kargoID = crb.lexId;
   }
 
   // Client ID
-  if (crb.clientId != null) {
+  if (crb.clientId !== null && crb.clientId !== undefined) {
     userIds.clientID = crb.clientId;
   }
 
   // Opt Out
-  if (crb.optOut != null) {
+  if (crb.optOut !== null && crb.optOut !== undefined) {
     userIds.optOut = crb.optOut;
   }
 
   // User ID Sub-Modules (userIdAsEids)
-  if (eids != null) {
+  if (eids !== null && eids !== undefined) {
     userIds.sharedIDEids = eids;
   }
 

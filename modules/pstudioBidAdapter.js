@@ -372,7 +372,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
 
 function cleanObject(data) {
   for (const key in data) {
-    if (typeof data[key] == 'object') {
+    if (typeof data[key] === 'object') {
       cleanObject(data[key]);
 
       if (isEmpty(data[key])) delete data[key];

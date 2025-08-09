@@ -32,7 +32,7 @@ function RhythmOneBidAdapter() {
       // clever trick to get the protocol
       var el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol == 'https:') ? 1 : 0;
+      isSecure = (el.protocol === 'https:') ? 1 : 0;
     }
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
