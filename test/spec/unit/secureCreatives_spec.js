@@ -448,7 +448,7 @@ describe('secureCreatives', () => {
           });
           container = document.createElement('div');
           container.id = 'mock-au';
-          slot = document.createElement('div');
+          slot = document.createElement('iframe');
           container.appendChild(slot);
           document.body.appendChild(container)
         });

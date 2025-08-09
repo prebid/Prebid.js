@@ -141,10 +141,8 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   function getDimension(value) {
     return value ? value + 'px' : '100%';
   }
-  // resize both container div + iframe
-  ['div', 'iframe'].forEach(elmType => {
-    // not select element that gets removed after dfp render
-    const element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+
+  function resize(element) {
     if (element) {
       const elementStyle = element.style;
       elementStyle.width = getDimension(width)
@@ -152,7 +150,13 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
     } else {
       logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
-  });
+  }
+
+  // not select element that gets removed after dfp render
+  const iframe = getElementByAdUnit('iframe:not([style*="display: none"])');
+
+  // resize both container div + iframe
+  [iframe, iframe?.parentElement].forEach(resize);
 
   function getElementByAdUnit(elmType) {
     const id = getElementIdBasedOnAdServer(adId, adUnitCode);
