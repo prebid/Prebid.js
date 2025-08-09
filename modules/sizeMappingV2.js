@@ -58,6 +58,7 @@ export function isUsingNewSizeMapping(adUnits) {
       V2_ADUNITS.set(adUnit, false);
       return false;
     }
+    return false;
   });
 }
 
@@ -339,7 +340,7 @@ export function getFilteredMediaTypes(mediaTypes) {
   activeViewportHeight = getWinDimensions().innerHeight;
 
   const activeViewport = [activeViewportWidth, activeViewportHeight];
-  Object.keys(mediaTypes).map(mediaType => {
+  Object.keys(mediaTypes).forEach(mediaType => {
     const sizeConfig = mediaTypes[mediaType].sizeConfig;
     if (sizeConfig) {
       activeSizeBucket[mediaType] = getActiveSizeBucket(sizeConfig, activeViewport);

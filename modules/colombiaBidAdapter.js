@@ -21,7 +21,7 @@ export const spec = {
     }
     const payloadArr = []
     let ctr = 1;
-    validBidRequests = validBidRequests.map(bidRequest => {
+    validBidRequests.forEach(bidRequest => {
       const params = bidRequest.params;
       const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
       const width = sizes.split('x')[0];

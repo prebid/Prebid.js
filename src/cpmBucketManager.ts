@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 import { isEmpty, logWarn } from './utils.js';
 import { config } from './config.js';
 
