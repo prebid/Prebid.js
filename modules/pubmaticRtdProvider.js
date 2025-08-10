@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, logInfo, isStr, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
+import { logError, logInfo, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
@@ -539,18 +539,15 @@ export const fetchData = async (publisherId, profileId, type) => {
  */
 const init = (config, _userConsent) => {
   initTime = Date.now(); // Capture the initialization time
-  const { publisherId, profileId } = config?.params || {};
+  let { publisherId, profileId } = config?.params || {};
 
-  if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
-    logError(
-        `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
-          : !isStr(publisherId) ? 'Publisher Id should be a string.'
-            : !profileId ? 'Missing profile Id.'
-              : 'Profile Id should be a string.'
-        }`
-    );
+  if (!publisherId || !profileId) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`);
     return false;
   }
+
+  publisherId = String(publisherId).trim();
+  profileId = String(profileId).trim();
 
   if (!isFn(continueAuction)) {
     logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);

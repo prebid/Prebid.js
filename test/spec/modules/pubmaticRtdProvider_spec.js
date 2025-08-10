@@ -88,24 +88,24 @@ describe('Pubmatic RTD Provider', () => {
       expect(pubmaticSubmodule.init(config)).to.be.false;
     });
 
-    it('should return false if publisherId is not a string', () => {
+    it('should accept numeric publisherId by converting to string', () => {
       const config = {
         params: {
           publisherId: 123,
           profileId: 'test-profile-id'
         }
       };
-      expect(pubmaticSubmodule.init(config)).to.be.false;
+      expect(pubmaticSubmodule.init(config)).to.be.true;
     });
 
-    it('should return false if profileId is not a string', () => {
+    it('should accept numeric profileId by converting to string', () => {
       const config = {
         params: {
           publisherId: 'test-publisher-id',
           profileId: 345
         }
       };
-      expect(pubmaticSubmodule.init(config)).to.be.false;
+      expect(pubmaticSubmodule.init(config)).to.be.true;
     });
 
     it('should initialize successfully with valid config', () => {
