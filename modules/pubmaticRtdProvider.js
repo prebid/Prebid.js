@@ -502,7 +502,7 @@ const init = (config, _userConsent) => {
     }
 
     publisherId = String(publisherId).trim();
-    profileId = String(profileId).trim() || '0';
+    profileId = String(profileId).trim();
 
     if (!isFn(continueAuction)) {
       logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
