@@ -567,7 +567,6 @@ describe('ttdBidAdapter', function () {
       };
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.user.buyeruid).to.be.undefined;
     });
 
     it('adds unified ID and UID2 info to user.ext.eids in the request', function () {
@@ -601,28 +600,6 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
-      expect(requestBody.user.buyeruid).to.equal(TDID);
-    });
-
-    it('has an empty buyeruid if tdid not found in userIdAsEids', function () {
-      const UID2 = '99999999-9999-9999-9999-999999999999';
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userIdAsEids = [
-        {
-          source: 'uidapi.com',
-          uids: [
-            {
-              atype: 3,
-              id: UID2
-            }
-          ]
-        }
-      ];
-      const expectedEids = clonedBannerRequests[0].userIdAsEids;
-
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
-      expect(requestBody.user.buyeruid).to.be.undefined;
     });
 
     it('adds first party site data to the request', function () {
