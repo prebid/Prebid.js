@@ -84,7 +84,7 @@
     "gulp-filter": "^9.0.1",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
-    "gulp-rename": "^2.0.0",
+    "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.0.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-tap": "^2.0.0",
