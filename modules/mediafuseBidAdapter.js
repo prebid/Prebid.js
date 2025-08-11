@@ -85,7 +85,7 @@ const NATIVE_MAPPING = {
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -147,7 +147,9 @@ export const spec = {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);

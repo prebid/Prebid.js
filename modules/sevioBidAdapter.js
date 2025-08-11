@@ -151,23 +151,14 @@ export const spec = {
         return asset;
       });
       const payload = {
-        bidId: bidRequest.bidId,
-        referrer: window.document.referrer,
-        gdpr: gdpr?.gdprApplies === true ? 1 : 0,
-        userAgent: navigator.userAgent,
-        language: navigator.language,
+        userLanguage: navigator.language,
         pageUrl: bidRequest?.refererInfo?.page,
         pageDomain: bidRequest?.refererInfo?.referer,
-        topframe: bidderRequest?.refererInfo?.reachedTop,
-        timestamp: Date.now(),
-        sizes: bidRequest.sizes,
-        mediaTypes: bidRequest.mediaTypes,
         userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
           source: eid.source,
           id: eid.uids?.[0]?.id
         })).filter(eid => eid.source && eid.id),
-        fpd: bidRequest.ortb2 || {},
         ads: [
           {
             maxSize: {

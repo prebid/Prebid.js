@@ -7,6 +7,7 @@ import { makeSlot } from '../integration/faker/googletag.js';
 import { mergeDeep } from '../../../src/utils.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -227,7 +228,7 @@ describe('VisxAdapter', function () {
     }];
 
     before(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -241,7 +242,7 @@ describe('VisxAdapter', function () {
     after(() => {
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should attach valid params to the tag', function () {
@@ -884,7 +885,7 @@ describe('VisxAdapter', function () {
     ];
 
     before(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -898,7 +899,7 @@ describe('VisxAdapter', function () {
     after(() => {
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should send request for banner bid', function () {
@@ -1065,7 +1066,7 @@ describe('VisxAdapter', function () {
         id: 'visx-adunit-element-2'
       });
 
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -1080,7 +1081,7 @@ describe('VisxAdapter', function () {
       sandbox.restore();
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should find ad slot by ad unit code as element id', function () {
@@ -2053,7 +2054,7 @@ describe('VisxAdapter', function () {
     };
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: true
         }
@@ -2065,9 +2066,13 @@ describe('VisxAdapter', function () {
     afterEach(() => {
       cookiesAreEnabledStub.restore();
       localStorageIsEnabledStub.restore();
-      getCookieStub && getCookieStub.restore();
-      getDataFromLocalStorageStub && getDataFromLocalStorageStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      if (getCookieStub) {
+        getCookieStub.restore();
+      }
+      if (getDataFromLocalStorageStub) {
+        getDataFromLocalStorageStub.restore();
+      }
+      getGlobal().bidderSettings = {};
     });
 
     it('should not pass user id if both cookies and local storage are not available', function () {

@@ -277,7 +277,7 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidde
           transactionId: adUnit.transactionId,
           adUnitId: adUnit.adUnitId,
           sizes: mediaTypes?.banner?.sizes || mediaTypes?.video?.playerSize || [],
-          bidId: (bid as any).bid_id || getUniqueIdentifierStr(),
+          bidId: (bid as any).bid_id || generateUUID(),
           bidderRequestId,
           auctionId,
           src,
@@ -513,7 +513,7 @@ const adapterManager = {
         const uniquePbsTid = generateUUID();
 
         (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
-          const bidderRequestId = getUniqueIdentifierStr();
+          const bidderRequestId = generateUUID();
           const metrics = auctionMetrics.fork();
           const bidderRequest = addOrtb2({
             bidderCode,
@@ -552,7 +552,7 @@ const adapterManager = {
     // client adapters
     const adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
     clientBidders.forEach(bidderCode => {
-      const bidderRequestId = getUniqueIdentifierStr();
+      const bidderRequestId = generateUUID();
       const metrics = auctionMetrics.fork();
       const bidderRequest = addOrtb2({
         bidderCode,
@@ -669,7 +669,6 @@ const adapterManager = {
     // handle client adapter requests
     clientBidderRequests.forEach(bidderRequest => {
       bidderRequest.start = timestamp();
-      // TODO : Do we check for bid in pool from here and skip calling adapter again ?
       const adapter = _bidderRegistry[bidderRequest.bidderCode];
       config.runWithBidder(bidderRequest.bidderCode, () => {
         logMessage(`CALLING BIDDER`);

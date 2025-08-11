@@ -8,7 +8,7 @@ import {
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction/';
 const BIDDER_CODE = 'showheroes-bs';
@@ -19,12 +19,13 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: TTL,
     currency: 'EUR',
-    mediaType: VIDEO,
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-    deepSetValue(imp, 'video.ext.context', videoContext);
+    if (videoContext) {
+      deepSetValue(imp, 'video.ext.context', videoContext);
+    }
     imp.ext = imp.ext || {};
     imp.ext.params = bidRequest.params;
     imp.ext.adUnitCode = bidRequest.adUnitCode;
@@ -75,14 +76,14 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ['showheroesBs'],
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: (bid) => {
     return !!bid.params.unitId;
   },
   buildRequests: (bidRequests, bidderRequest) => {
     const QA = bidRequests[0].params.qa;
 
-    const ortbData = converter.toORTB({ bidRequests, bidderRequest })
+    const ortbData = converter.toORTB({ bidRequests, bidderRequest });
 
     return {
       url: QA?.endpoint || ENDPOINT,
@@ -95,8 +96,7 @@ export const spec = {
       return [];
     }
 
-    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
-    return bids;
+    return converter.fromORTB({response: response.body, request: request.data}).bids;
   },
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];

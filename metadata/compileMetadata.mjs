@@ -6,6 +6,7 @@ import coreMetadata from './core.json' with {type: 'json'};
 
 import overrides from './overrides.mjs';
 import {fetchDisclosure, getDisclosureUrl, logErrorSummary} from './storageDisclosure.mjs';
+import {isValidGvlId} from './gvl.mjs';
 
 const MAX_DISCLOSURE_AGE_DAYS = 14;
 
@@ -109,6 +110,28 @@ async function updateModuleMetadata(moduleName, metadata) {
   );
 }
 
+async function validateGvlIds() {
+  let invalid = false;
+  (await Promise.all(
+    moduleMetadata
+      .components
+      .filter(({gvlid}) => gvlid != null)
+      .map(({componentName, componentType, gvlid}) => isValidGvlId(gvlid).then(valid => ({
+        valid,
+        componentName,
+        componentType,
+        gvlid
+      })))
+  )).filter(({valid}) => !valid)
+    .forEach(({componentName, componentType, gvlid}) => {
+      console.error(`"${componentType}.${componentName}" provides a GVL ID that is deleted or missing: ${gvlid}`)
+      invalid = true;
+    })
+  if (invalid) {
+    throw new Error('One or more GVL IDs are invalid')
+  }
+}
+
 async function compileModuleMetadata() {
   const processed = [];
   const found = new WeakSet();
@@ -155,6 +178,7 @@ async function compileModuleMetadata() {
 
 
 export default async function compileMetadata() {
+  await validateGvlIds();
   const allModules = new Set((await compileCoreMetadata())
     .concat(await compileModuleMetadata()));
   logErrorSummary();

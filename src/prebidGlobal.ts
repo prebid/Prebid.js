@@ -1,3 +1,5 @@
+import {getGlobalVarName, shouldDefineGlobal} from "./buildOptions.ts";
+
 interface Command {
   (): any;
 }
@@ -25,10 +27,9 @@ export interface PrebidJS {
   scheduler?: { yield: () => Promise<void> }
 }
 
-// if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
-declare const $$DEFINE_PREBID_GLOBAL$$: boolean;
-const scope: any = !$$DEFINE_PREBID_GLOBAL$$ ? {} : window;
-const global: PrebidJS = scope.$$PREBID_GLOBAL$$ = scope.$$PREBID_GLOBAL$$ || {};
+// if the global already exists in global document scope, use it, if not, create the object
+const scope: any = !shouldDefineGlobal() ? {} : window;
+const global: PrebidJS = scope[getGlobalVarName()] = scope[getGlobalVarName()] || {};
 global.cmd = global.cmd || [];
 global.que = global.que || [];
 global.installedModules = global.installedModules || []
@@ -36,7 +37,7 @@ global.installedModules = global.installedModules || []
 // create a pbjs global pointer
 if (scope === window) {
   scope._pbjsGlobals = scope._pbjsGlobals || [];
-  scope._pbjsGlobals.push('$$PREBID_GLOBAL$$');
+  scope._pbjsGlobals.push(getGlobalVarName());
 }
 
 export function getGlobal() {

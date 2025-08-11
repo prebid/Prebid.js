@@ -148,7 +148,7 @@ function getMockInput(mediaType) {
 describe('Instream Tracking', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    clock = sandbox.useFakeTimers();
+    clock = sandbox.useFakeTimers({shouldClearNativeTimers: true});
   });
 
   afterEach(function () {

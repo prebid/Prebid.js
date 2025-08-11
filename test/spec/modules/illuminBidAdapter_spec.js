@@ -19,6 +19,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -271,7 +272,7 @@ describe('IlluminBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         illumin: {
           storageAllowed: true
         }
@@ -433,7 +434,7 @@ describe('IlluminBidAdapter', function () {
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -602,14 +603,14 @@ describe('IlluminBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         illumin: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -637,14 +638,14 @@ describe('IlluminBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         illumin: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();

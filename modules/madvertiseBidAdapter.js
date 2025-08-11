@@ -50,7 +50,9 @@ export const spec = {
         }
       }
 
-      _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
+      _each(bidRequest.params, (item, key) => {
+        src = src + '&' + key + '=' + item;
+      });
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;
