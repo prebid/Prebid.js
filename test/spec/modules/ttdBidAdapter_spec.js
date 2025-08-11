@@ -559,16 +559,6 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.source.ext.schain).to.deep.equal(schain);
     });
 
-    it('no longer uses userId', function () {
-      const TDID = '00000000-0000-0000-0000-000000000000';
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
-        tdid: TDID
-      };
-
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-    });
-
     it('adds unified ID and UID2 info to user.ext.eids in the request', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
