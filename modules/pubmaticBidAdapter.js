@@ -751,7 +751,7 @@ export const spec = {
         return false;
       }
       if (videoMediaTypes.context === 'outstream' && !isStr(bid.params.outstreamAU) &&
-    !bid.renderer && !videoMediaTypes.renderer) {
+!bid.renderer && !videoMediaTypes.renderer) {
         if (mediaTypes.hasOwnProperty(BANNER) || mediaTypes.hasOwnProperty(NATIVE)) {
           delete mediaTypes[VIDEO];
           logWarn(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting mediatype Video of bid: `, bid);
