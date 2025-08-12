@@ -53,6 +53,7 @@ jobs:
         with:
           path: .
           key: ${{ inputs.wdir }}
+          fail-on-cache-miss: true
 
       - name: Run tests
         uses: nick-fields/retry@v3
@@ -66,4 +67,13 @@ jobs:
         with:
           path: .
           key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
+
+      - name: Verify cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
+          lookup-only: true
+          fail-on-cache-miss: true
+
 

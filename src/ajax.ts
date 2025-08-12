@@ -28,39 +28,39 @@ const GET = 'GET';
 const POST = 'POST';
 const CTYPE = 'Content-Type';
 export interface AjaxOptions {
-    /**
-     * HTTP method.
-     */
-    method?: string;
-    /**
-     * Custom HTTP headers.
-     */
-    customHeaders?: Record<string, string>;
-    /**
-     * Content type.
-     */
-    contentType?: string;
-    /**
-     * Whether 3rd party cookies (and some other less relevant features, like HTTP auth)_
-     * should be enabled.
-     */
-    withCredentials?: boolean;
-    /**
-     * Fetch keepalive flag.
-     */
-    keepalive?: boolean
-    /**
-     * Whether chrome's `Sec-Browing-Topics` header should be sent
-     */
-    browsingTopics?: boolean
-    /**
-     * Whether chrome's PAAPI headers should be sent.
-     */
-    adAuctionHeaders?: boolean;
-    /**
-     * If true, suppress warnings
-     */
-    suppressTopicsEnrollmentWarning?: boolean;
+  /**
+   * HTTP method.
+   */
+  method?: string;
+  /**
+   * Custom HTTP headers.
+   */
+  customHeaders?: Record<string, string>;
+  /**
+   * Content type.
+   */
+  contentType?: string;
+  /**
+   * Whether 3rd party cookies (and some other less relevant features, like HTTP auth)_
+   * should be enabled.
+   */
+  withCredentials?: boolean;
+  /**
+   * Fetch keepalive flag.
+   */
+  keepalive?: boolean
+  /**
+   * Whether chrome's `Sec-Browing-Topics` header should be sent
+   */
+  browsingTopics?: boolean
+  /**
+   * Whether chrome's PAAPI headers should be sent.
+   */
+  adAuctionHeaders?: boolean;
+  /**
+   * If true, suppress warnings
+   */
+  suppressTopicsEnrollmentWarning?: boolean;
 }
 
 export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
@@ -148,10 +148,10 @@ export function fetcherFactory(timeout = 3000, {request, done}: any = {}, module
 export type XHR = ReturnType<typeof toXHR>;
 
 function toXHR({status, statusText = '', headers, url}: {
-    status: number;
-    statusText?: string;
-    headers?: Response['headers'];
-    url?: string;
+  status: number;
+  statusText?: string;
+  headers?: Response['headers'];
+  url?: string;
 }, responseText: string) {
   let xml: Document;
   function getXML(onError?) {
@@ -194,8 +194,8 @@ export function attachCallbacks(fetchPm: Promise<Response>, callback: AjaxCallba
     error: (e, x) => logError('Network error', e, x)
   };
   return fetchPm.then(response => response
-      .text()
-      .then((responseText) => [response, responseText] as [Response, string]))
+    .text()
+    .then((responseText) => [response, responseText] as [Response, string]))
     .then(([response, responseText]) => {
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);

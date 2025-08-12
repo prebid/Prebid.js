@@ -313,13 +313,13 @@ describe('LogicadAdapter', function () {
     });
 
     it('should return false if the tid parameter is not present', function () {
-      let bidRequest = utils.deepClone(bidRequests[0]);
+      const bidRequest = utils.deepClone(bidRequests[0]);
       delete bidRequest.params.tid;
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
     });
 
     it('should return false if the params object is not present', function () {
-      let bidRequest = utils.deepClone(bidRequests);
+      const bidRequest = utils.deepClone(bidRequests);
       delete bidRequest[0].params;
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
     });

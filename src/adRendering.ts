@@ -1,12 +1,12 @@
 import {
-    createIframe,
-    createInvisibleIframe,
-    inIframe,
-    insertElement,
-    logError,
-    logWarn,
-    replaceMacros,
-    triggerPixel
+  createIframe,
+  createInvisibleIframe,
+  inIframe,
+  insertElement,
+  logError,
+  logWarn,
+  replaceMacros,
+  triggerPixel
 } from './utils.js';
 import * as events from './events.js';
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
@@ -28,29 +28,29 @@ const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RE
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 declare module './events' {
-    interface Events {
-        /**
-         * Fired when a bid is rendered (successfully or not).
-         */
-        [EVENTS.BID_WON]: [Bid];
-        /**
-         * Fired when a bid failed to render.
-         */
-        [EVENTS.AD_RENDER_FAILED]: [AdRenderFailedData];
-        /**
-         * Fired when a bid was rendered successfully.
-         */
-        [EVENTS.AD_RENDER_SUCCEEDED]: [AdRenderSucceededData];
-        /**
-         * Fired when a bid that was previously rendered is rendered again.
-         */
-        [EVENTS.STALE_RENDER]: [Bid];
-        /**
-         * Fired when an expired bid is rendered. A bid expires after `.ttl` seconds from
-         * the time it was received.
-         */
-        [EVENTS.EXPIRED_RENDER]: [Bid];
-    }
+  interface Events {
+    /**
+     * Fired when a bid is rendered (successfully or not).
+     */
+    [EVENTS.BID_WON]: [Bid];
+    /**
+     * Fired when a bid failed to render.
+     */
+    [EVENTS.AD_RENDER_FAILED]: [AdRenderFailedData];
+    /**
+     * Fired when a bid was rendered successfully.
+     */
+    [EVENTS.AD_RENDER_SUCCEEDED]: [AdRenderSucceededData];
+    /**
+     * Fired when a bid that was previously rendered is rendered again.
+     */
+    [EVENTS.STALE_RENDER]: [Bid];
+    /**
+     * Fired when an expired bid is rendered. A bid expires after `.ttl` seconds from
+     * the time it was received.
+     */
+    [EVENTS.EXPIRED_RENDER]: [Bid];
+  }
 }
 
 export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
@@ -67,22 +67,22 @@ export const markWinningBid = hook('sync', function (bid) {
 })
 
 type AdRenderFailedData = {
-    /**
-     * Failure reason.
-     */
-    reason: (typeof AD_RENDER_FAILED_REASON)[keyof typeof AD_RENDER_FAILED_REASON];
-    /**
-     * failure description
-     */
-    message: string;
-    /**
-     * The bid that failed to render.
-     */
-    bid?: Bid;
-    /**
-     * Ad ID of the bid that failed to render.
-     */
-    adId?: string;
+  /**
+   * Failure reason.
+   */
+  reason: (typeof AD_RENDER_FAILED_REASON)[keyof typeof AD_RENDER_FAILED_REASON];
+  /**
+   * failure description
+   */
+  message: string;
+  /**
+   * The bid that failed to render.
+   */
+  bid?: Bid;
+  /**
+   * Ad ID of the bid that failed to render.
+   */
+  adId?: string;
 }
 
 /**
@@ -101,19 +101,19 @@ export function emitAdRenderFail({ reason, message, bid, id }: Omit<AdRenderFail
 }
 
 type AdRenderSucceededData = {
-    /**
-     * document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
-     * a cross-origin frame).
-     */
-    doc: Document | null;
-    /**
-     * The bid that was rendered.
-     */
-    bid: Bid;
-    /**
-     * Ad ID of the bid that was rendered.
-     */
-    adId: string;
+  /**
+   * document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
+   * a cross-origin frame).
+   */
+  doc: Document | null;
+  /**
+   * The bid that was rendered.
+   */
+  bid: Bid;
+  /**
+   * Ad ID of the bid that was rendered.
+   */
+  adId: string;
 }
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
@@ -176,7 +176,7 @@ function creativeMessageHandler(deps) {
 }
 
 type RenderOptions = {
-    clickUrl?: string;
+  clickUrl?: string;
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {

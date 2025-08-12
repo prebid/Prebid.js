@@ -104,7 +104,7 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
-    let syncs = [];
+    const syncs = [];
     serverResponses.forEach(resp => {
       const userSync = deepAccess(resp, 'body.ext.usersync');
       if (userSync) {

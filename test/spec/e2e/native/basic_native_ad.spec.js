@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { setupTest, testPageURL } = require('../../../helpers/testing-utils');
+const { setupTest, testPageURL } = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('native.html?pbjs_debug=true');
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/prebid_native_example_1_0"]';

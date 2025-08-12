@@ -144,9 +144,9 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
-    let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+    const element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
-      let elementStyle = element.style;
+      const elementStyle = element.style;
       elementStyle.width = getDimension(width)
       elementStyle.height = getDimension(height);
     } else {
@@ -155,19 +155,25 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   });
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    let parentDivEle = document.getElementById(id);
+    const id = getElementIdBasedOnAdServer(adId, adUnitCode);
+    const parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      return getDfpElementId(adId);
-    } else if (isApnGetTagDefined()) {
-      return getAstElementId(adUnitCode);
-    } else {
-      return adUnitCode;
+      const dfpId = getDfpElementId(adId);
+      if (dfpId) {
+        return dfpId;
+      }
     }
+    if (isApnGetTagDefined()) {
+      const apnId = getAstElementId(adUnitCode);
+      if (apnId) {
+        return apnId;
+      }
+    }
+    return adUnitCode;
   }
 
   function getDfpElementId(adId) {
@@ -180,7 +186,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   }
 
   function getAstElementId(adUnitCode) {
-    let astTag = window.apntag.getTag(adUnitCode);
+    const astTag = window.apntag.getTag(adUnitCode);
     return astTag && astTag.targetId;
   }
 }

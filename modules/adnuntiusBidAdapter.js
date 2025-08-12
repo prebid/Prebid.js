@@ -211,7 +211,7 @@ const storageTool = (function () {
 const targetingTool = (function() {
   const getSegmentsFromOrtb = function(bidderRequest) {
     const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
-    let segments = [];
+    const segments = [];
     if (userData && Array.isArray(userData)) {
       userData.forEach(userdat => {
         if (userdat.segment) {

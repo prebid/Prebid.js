@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import {spec} from 'modules/talkadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config';
-import {server} from '../../mocks/xhr';
+import {config} from '../../../src/config.js';
+import {server} from '../../mocks/xhr.js';
 
 describe('TalkAds adapter', function () {
   const commonBidderRequest = {
@@ -85,7 +85,7 @@ describe('TalkAds adapter', function () {
    * buildRequests
    */
   describe('buildRequests1', function() {
-    let bidRequest = {
+    const bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
     };
@@ -98,14 +98,14 @@ describe('TalkAds adapter', function () {
       gdpr: { applies: false, consent: false },
     };
     it('should generate a valid banner bid request', function () {
-      let laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
+      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(laResponse.method).to.equal('POST');
       expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
     });
   }); // buildRequests1
   describe('buildRequests2', function() {
-    let bidRequest = {
+    const bidRequest = {
       ...commonBidRequest,
       ...nativeBidRequestParams,
     };
@@ -118,7 +118,7 @@ describe('TalkAds adapter', function () {
       gdpr: { applies: false, consent: false },
     };
     it('should generate a valid native bid request', function () {
-      let laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
+      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(laResponse.method).to.equal('POST');
       expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
@@ -132,7 +132,7 @@ describe('TalkAds adapter', function () {
       gdpr: { applies: true, consent: 'yes' },
     };
     it('should generate a valid native bid request', function () {
-      let laResponse = spec.buildRequests([bidRequest], bidderRequest);
+      const laResponse = spec.buildRequests([bidRequest], bidderRequest);
       expect(laResponse.method).to.equal('POST');
       expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest2));

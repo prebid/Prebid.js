@@ -14,23 +14,23 @@ export type Metrics = ReturnType<ReturnType<typeof metricsFactory>>;
  * A function that, when called, stops a time measure and saves it as a metric.
  */
 export type MetricsTimer = {
-    (): void;
-    /**
-     * @return a wrapper around the given function that begins by stopping this time measure.
-     */
-    stopBefore<F extends AnyFunction>(fn: F): Wraps<F>;
-    /**
-     * @return a wrapper around the given function that ends by stopping this time measure.
-     */
-    stopAfter<F extends AnyFunction>(fn: F): Wraps<F>;
+  (): void;
+  /**
+   * @return a wrapper around the given function that begins by stopping this time measure.
+   */
+  stopBefore<F extends AnyFunction>(fn: F): Wraps<F>;
+  /**
+   * @return a wrapper around the given function that ends by stopping this time measure.
+   */
+  stopAfter<F extends AnyFunction>(fn: F): Wraps<F>;
 };
 
 export type InstrumentedNext<F extends AnyFunction> = Next<F> & {
-    /**
-     * The original `next` argument; using it will not affect the timer.
-     */
-    untimed: Next<F>;
-    stopTiming: MetricsTimer;
+  /**
+   * The original `next` argument; using it will not affect the timer.
+   */
+  untimed: Next<F>;
+  stopTiming: MetricsTimer;
 }
 
 function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () => void): Wraps<F> {
@@ -45,173 +45,173 @@ function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () =>
 }
 
 export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES} = {}) {
-    return function newMetrics() {
-        function makeMetrics(self, rename = (n) => ({forEach(fn) { fn(n); }})) {
-            rename = mkRenamer(rename);
+  return function newMetrics() {
+    function makeMetrics(self, rename = (n) => ({forEach(fn) { fn(n); }})) {
+      rename = mkRenamer(rename);
 
-            function accessor(slot) {
-                return function (name) {
-                    return self.dfWalk({
-                        visit(edge, node) {
-                            const obj = node[slot];
-                            if (obj.hasOwnProperty(name)) {
-                                return obj[name];
-                            }
-                        }
-                    });
-                };
+      function accessor(slot) {
+        return function (name) {
+          return self.dfWalk({
+            visit(edge, node) {
+              const obj = node[slot];
+              if (obj.hasOwnProperty(name)) {
+                return obj[name];
+              }
             }
+          });
+        };
+      }
 
-            const getTimestamp = accessor('timestamps');
+      const getTimestamp = accessor('timestamps');
 
-            /**
-             * Register a metric.
-             *
-             * @param name metric name
-             * @param value metric valiue
-             */
-            function setMetric(name: string, value: unknown): void {
-                const names = rename(name);
-                self.dfWalk({
-                    follow(inEdge, outEdge) {
-                        return outEdge.propagate && (!inEdge || !inEdge.stopPropagation)
-                    },
-                    visit(edge, node) {
-                        names.forEach(name => {
-                            if (edge == null) {
-                                node.metrics[name] = value;
-                            } else {
-                                if (!node.groups.hasOwnProperty(name)) {
-                                    node.groups[name] = [];
-                                }
-                                node.groups[name].push(value);
-                            }
-                        })
-                    }
-                });
-            }
-
-            /**
-             * Mark the current time as a checkpoint with the given name, to be referenced later
-             * by `timeSince` or `timeBetween`.
-             *
-             * @param name checkpoint name
-             */
-            function checkpoint(name: string): void {
-                self.timestamps[name] = now();
-            }
-
-            /**
-             * Get the tame passed since `checkpoint`, and optionally save it as a metric.
-             *
-             * @param checkpoint checkpoint name
-             * @param metric The name of the metric to save. Optional.
-             * @return The time in milliseconds between now and the checkpoint, or `null` if the checkpoint is not found.
-             */
-            function timeSince(checkpoint: string, metric?: string): number | null {
-                const ts = getTimestamp(checkpoint);
-                const elapsed = ts != null ? now() - ts : null;
-                if (metric != null) {
-                    setMetric(metric, elapsed);
+      /**
+       * Register a metric.
+       *
+       * @param name metric name
+       * @param value metric valiue
+       */
+      function setMetric(name: string, value: unknown): void {
+        const names = rename(name);
+        self.dfWalk({
+          follow(inEdge, outEdge) {
+            return outEdge.propagate && (!inEdge || !inEdge.stopPropagation)
+          },
+          visit(edge, node) {
+            names.forEach(name => {
+              if (edge == null) {
+                node.metrics[name] = value;
+              } else {
+                if (!node.groups.hasOwnProperty(name)) {
+                  node.groups[name] = [];
                 }
-                return elapsed;
-            }
+                node.groups[name].push(value);
+              }
+            })
+          }
+        });
+      }
 
-            /**
-             * Get the time passed between `startCheckpoint` and `endCheckpoint`, optionally saving it as a metric.
-             *
-             * @param startCheckpoint - The name of the starting checkpoint.
-             * @param endCheckpoint - The name of the ending checkpoint.
-             * @param metric - The name of the metric to save.
-             * @return The time in milliseconds between `startCheckpoint` and `endCheckpoint`, or `null` if either checkpoint is not found.
-             */
-            function timeBetween(startCheckpoint: string, endCheckpoint: string, metric?: string): number | null {
-                const start = getTimestamp(startCheckpoint);
-                const end = getTimestamp(endCheckpoint);
-                const elapsed = start != null && end != null ? end - start : null;
-                if (metric != null) {
-                    setMetric(metric, elapsed);
-                }
-                return elapsed;
-            }
+      /**
+       * Mark the current time as a checkpoint with the given name, to be referenced later
+       * by `timeSince` or `timeBetween`.
+       *
+       * @param name checkpoint name
+       */
+      function checkpoint(name: string): void {
+        self.timestamps[name] = now();
+      }
 
-            /**
-             * Start measuring a time metric with the given name.
-             *
-             * @param name metric name
-             */
-            function startTiming(name: string): MetricsTimer {
-                return mkTimer(now, (val) => setMetric(name, val))
-            }
+      /**
+       * Get the tame passed since `checkpoint`, and optionally save it as a metric.
+       *
+       * @param checkpoint checkpoint name
+       * @param metric The name of the metric to save. Optional.
+       * @return The time in milliseconds between now and the checkpoint, or `null` if the checkpoint is not found.
+       */
+      function timeSince(checkpoint: string, metric?: string): number | null {
+        const ts = getTimestamp(checkpoint);
+        const elapsed = ts != null ? now() - ts : null;
+        if (metric != null) {
+          setMetric(metric, elapsed);
+        }
+        return elapsed;
+      }
 
-            /**
-             * Run fn and measure the time spent in it.
-             *
-             * @param name the name to use for the measured time metric
-             * @param fn the function to run
-             * @return the return value of `fn`
-             */
-            function measureTime<R>(name: string, fn: () => R): R {
-                return startTiming(name).stopAfter(fn)();
-            }
+      /**
+       * Get the time passed between `startCheckpoint` and `endCheckpoint`, optionally saving it as a metric.
+       *
+       * @param startCheckpoint - The name of the starting checkpoint.
+       * @param endCheckpoint - The name of the ending checkpoint.
+       * @param metric - The name of the metric to save.
+       * @return The time in milliseconds between `startCheckpoint` and `endCheckpoint`, or `null` if either checkpoint is not found.
+       */
+      function timeBetween(startCheckpoint: string, endCheckpoint: string, metric?: string): number | null {
+        const start = getTimestamp(startCheckpoint);
+        const end = getTimestamp(endCheckpoint);
+        const elapsed = start != null && end != null ? end - start : null;
+        if (metric != null) {
+          setMetric(metric, elapsed);
+        }
+        return elapsed;
+      }
 
-            /**
-             * Convenience method for measuring time spent in a `.before` or `.after` hook.
-             *
-             * @param name - The metric name.
-             * @param next - The hook's `next` (first) argument.
-             * @param fn   - A function that will be run immediately; it takes `next`, where both `next` and
-             *               `next.bail` automatically call `stopTiming` before continuing with the original hook.
-             * @return The return value of `fn`.
-             */
-            function measureHookTime<F extends AnyFunction, R>(name: string, next: Next<F>, fn: (next: InstrumentedNext<F>) => R): R {
-                const stopTiming = startTiming(name);
-                return fn((function (orig) {
-                    const next = stopTiming.stopBefore(orig) as InstrumentedNext<F>;
-                    next.bail = orig.bail && stopTiming.stopBefore(orig.bail);
-                    next.stopTiming = stopTiming;
-                    next.untimed = orig;
-                    return next;
-                })(next));
-            }
+      /**
+       * Start measuring a time metric with the given name.
+       *
+       * @param name metric name
+       */
+      function startTiming(name: string): MetricsTimer {
+        return mkTimer(now, (val) => setMetric(name, val))
+      }
 
-            /**
-             * Get all registered metrics.
-             */
-            function getMetrics(): { [name: string]: unknown } {
-                let result = {}
-                self.dfWalk({
-                    visit(edge, node) {
-                        result = Object.assign({}, !edge || edge.includeGroups ? node.groups : null, node.metrics, result);
-                    }
-                });
-                return result;
-            }
+      /**
+       * Run fn and measure the time spent in it.
+       *
+       * @param name the name to use for the measured time metric
+       * @param fn the function to run
+       * @return the return value of `fn`
+       */
+      function measureTime<R>(name: string, fn: () => R): R {
+        return startTiming(name).stopAfter(fn)();
+      }
+
+      /**
+       * Convenience method for measuring time spent in a `.before` or `.after` hook.
+       *
+       * @param name - The metric name.
+       * @param next - The hook's `next` (first) argument.
+       * @param fn   - A function that will be run immediately; it takes `next`, where both `next` and
+       *               `next.bail` automatically call `stopTiming` before continuing with the original hook.
+       * @return The return value of `fn`.
+       */
+      function measureHookTime<F extends AnyFunction, R>(name: string, next: Next<F>, fn: (next: InstrumentedNext<F>) => R): R {
+        const stopTiming = startTiming(name);
+        return fn((function (orig) {
+          const next = stopTiming.stopBefore(orig) as InstrumentedNext<F>;
+          next.bail = orig.bail && stopTiming.stopBefore(orig.bail);
+          next.stopTiming = stopTiming;
+          next.untimed = orig;
+          return next;
+        })(next));
+      }
+
+      /**
+       * Get all registered metrics.
+       */
+      function getMetrics(): { [name: string]: unknown } {
+        let result = {}
+        self.dfWalk({
+          visit(edge, node) {
+            result = Object.assign({}, !edge || edge.includeGroups ? node.groups : null, node.metrics, result);
+          }
+        });
+        return result;
+      }
 
             type PropagationOptions = {
-                /**
-                 * If false, the forked or joined metrics will not be propagated here.
-                 */
-                propagate?: boolean;
-                /**
-                 * If true, propagation from the new metrics is stopped here, instead of
-                 * continuing up the chain (if for example these metrics were themselves created through `.fork()`).
-                 */
-                stopPropagation?: boolean;
-                /**
-                 * If true, the forked metrics will also replicate metrics that were propagated
-                 *   here from elsewhere. For example:
-                 *   ```
-                 *   const metrics = newMetrics();
-                 *   const op1 = metrics.fork();
-                 *   const withoutGroups = metrics.fork();
-                 *   const withGroups = metrics.fork({includeGroups: true});
-                 *   op1.setMetric('foo', 'bar');
-                 *   withoutGroups.getMetrics() // {}
-                 *   withGroups.getMetrics() // {foo: ['bar']}
-                 *   ```
-                 */
-                includeGroups?: boolean;
+              /**
+               * If false, the forked or joined metrics will not be propagated here.
+               */
+              propagate?: boolean;
+              /**
+               * If true, propagation from the new metrics is stopped here, instead of
+               * continuing up the chain (if for example these metrics were themselves created through `.fork()`).
+               */
+              stopPropagation?: boolean;
+              /**
+               * If true, the forked metrics will also replicate metrics that were propagated
+               *   here from elsewhere. For example:
+               *   ```
+               *   const metrics = newMetrics();
+               *   const op1 = metrics.fork();
+               *   const withoutGroups = metrics.fork();
+               *   const withGroups = metrics.fork({includeGroups: true});
+               *   op1.setMetric('foo', 'bar');
+               *   withoutGroups.getMetrics() // {}
+               *   withGroups.getMetrics() // {foo: ['bar']}
+               *   ```
+               */
+              includeGroups?: boolean;
             };
 
             /**
@@ -249,7 +249,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
              * ```
              */
             function fork({propagate = true, stopPropagation = false, includeGroups = false}: PropagationOptions = {}): Metrics {
-                return makeMetrics(mkNode([[self, {propagate, stopPropagation, includeGroups}]]), rename);
+              return makeMetrics(mkNode([[self, {propagate, stopPropagation, includeGroups}]]), rename);
             }
 
             /**
@@ -257,10 +257,10 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
              * and all metrics from here will be included in `otherMetrics`.
              */
             function join(otherMetrics: Metrics, {propagate = true, stopPropagation = false, includeGroups = false}: PropagationOptions = {}): void {
-                const other = nodes.get(otherMetrics);
-                if (other != null) {
-                    other.addParent(self, {propagate, stopPropagation, includeGroups});
-                }
+              const other = nodes.get(otherMetrics);
+              if (other != null) {
+                other.addParent(self, {propagate, stopPropagation, includeGroups});
+              }
             }
 
             /**
@@ -269,39 +269,39 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
              *  - without these metrics' rename rule (if `renameFn` is omitted).
              */
             function renameWith(renameFn?: (name: string) => string[]): Metrics {
-                return makeMetrics(self, renameFn);
+              return makeMetrics(self, renameFn);
             }
 
             /**
              * @return a new metrics object that uses the same propagation and renaming rules as this one.
              */
             function newMetrics(): Metrics {
-                return makeMetrics(self.newSibling(), rename);
+              return makeMetrics(self.newSibling(), rename);
             }
 
             const metrics = {
-                startTiming,
-                measureTime,
-                measureHookTime,
-                checkpoint,
-                timeSince,
-                timeBetween,
-                setMetric,
-                getMetrics,
-                fork,
-                join,
-                newMetrics,
-                renameWith,
-                toJSON() {
-                    return getMetrics();
-                }
+              startTiming,
+              measureTime,
+              measureHookTime,
+              checkpoint,
+              timeSince,
+              timeBetween,
+              setMetric,
+              getMetrics,
+              fork,
+              join,
+              newMetrics,
+              renameWith,
+              toJSON() {
+                return getMetrics();
+              }
             };
             nodes.set(metrics, self);
             return metrics;
-        }
-
-        return makeMetrics(mkNode([]));
     }
+
+    return makeMetrics(mkNode([]));
+  }
 }
 
 function makeTimer(now: () => number, cb: (elapsed: number) => void): MetricsTimer {

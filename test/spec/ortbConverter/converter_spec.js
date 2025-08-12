@@ -146,6 +146,20 @@ describe('pbjs-ortb converter', () => {
     }).to.throw();
   });
 
+  Object.entries({
+    'empty': {},
+    'null': null
+  }).forEach(([t, resp]) => {
+    it(`returns no bids when response is ${t}`, () => {
+      const converter = makeConverter();
+      const {bids} = converter.fromORTB({
+        request: converter.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}),
+        response: resp
+      });
+      expect(bids).to.eql([]);
+    })
+  })
+
   it('gives precedence to the bidRequests argument over bidderRequest.bids', () => {
     expect(makeConverter().toORTB({bidderRequest: MOCK_BIDDER_REQUEST, bidRequests: [MOCK_BIDDER_REQUEST.bids[0]]})).to.eql({
       id: 'req0',
