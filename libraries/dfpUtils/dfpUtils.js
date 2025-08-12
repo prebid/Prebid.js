@@ -1,4 +1,4 @@
-import {gdprDataHandler} from '../../src/consentHandler.js';
+import {gdprDataHandler, gppDataHandler} from '../../src/consentHandler.js';
 
 /** Safe defaults which work on pretty much all video calls. */
 export const DEFAULT_DFP_PARAMS = {
@@ -21,6 +21,16 @@ export function gdprParams() {
     if (typeof gdprConsent.gdprApplies === 'boolean') { params.gdpr = Number(gdprConsent.gdprApplies); }
     if (gdprConsent.consentString) { params.gdpr_consent = gdprConsent.consentString; }
     if (gdprConsent.addtlConsent) { params.addtl_consent = gdprConsent.addtlConsent; }
+  }
+  return params;
+}
+
+export function gppParams() {
+  const gppConsent = gppDataHandler.getConsentData();
+  const params = {};
+  if (gppConsent) {
+    if (gppConsent.gppString) { params.gpp_string = gppConsent.gppString; }
+    if (gppConsent.applicableSections) { params.gpp_sid = gppConsent.applicableSections.join(','); }
   }
   return params;
 }
