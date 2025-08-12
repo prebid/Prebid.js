@@ -1,5 +1,5 @@
 // plugins/floorProvider.js
-import { logInfo, logError, isFn, logMessage } from '../../../src/utils.js';
+import { logInfo, logError, isFn, logMessage, isEmpty } from '../../../src/utils.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../../userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../pubmaticUtils.js';
 import { config as conf } from '../../../src/config.js';
@@ -161,8 +161,10 @@ export const prepareFloorsConfig = () => {
 
   // default values provided by publisher on YM UI
   const defaultValues = ymUiConfig.defaultValues ?? {};
-  // If floorsData is not present, use default values
-  const ymFloorsData = getFloorConfig().data ?? { ...defaultValueTemplate, values: { ...defaultValues } };
+  // If floorsData is not present or is an empty object, use default values
+  const ymFloorsData = isEmpty(getFloorConfig().data)
+    ? { ...defaultValueTemplate, values: { ...defaultValues } }
+    : getFloorConfig().data;
 
   delete ymUiConfig.defaultValues;
   // If skiprate is provided in configs, overwrite the value in ymFloorsData
