@@ -8,8 +8,6 @@
 import {logError, isPlainObject, isStr, isNumber, getWinDimensions} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
-import AES from 'crypto-js/aes.js';
-import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
@@ -28,6 +26,7 @@ import {
 import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
 import {iiqPixelServerAddress, iiqServerAddress} from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
+import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -71,25 +70,6 @@ function generateGUID() {
     return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   });
   return guid;
-}
-
-/**
- * Encrypts plaintext.
- * @param {string} plainText The plaintext to encrypt.
- * @returns {string} The encrypted text as a base64 string.
- */
-export function encryptData(plainText) {
-  return AES.encrypt(plainText, MODULE_NAME).toString();
-}
-
-/**
- * Decrypts ciphertext.
- * @param {string} encryptedText The encrypted text as a base64 string.
- * @returns {string} The decrypted plaintext.
- */
-export function decryptData(encryptedText) {
-  const bytes = AES.decrypt(encryptedText, MODULE_NAME);
-  return bytes.toString(Utf8);
 }
 
 function collectDeviceInfo() {
@@ -613,7 +593,7 @@ export const intentIqIdSubmodule = {
               runtimeEids = respJson.data
               callback(respJson.data.eids);
               firePartnerCallback()
-              const encryptedData = encryptData(JSON.stringify(respJson.data))
+              const encryptedData = encryptData(JSON.stringify(respJson.data));
               partnerData.data = encryptedData;
             } else {
               callback(runtimeEids);
