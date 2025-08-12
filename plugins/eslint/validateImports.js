@@ -59,6 +59,11 @@ function flagErrors(context, node, importPath) {
     !context.options[0].some(name => importPath.startsWith(name))
   ) {
     context.report(node, `import "${importPath}" not in import whitelist`);
+  } else if (
+    context?.options?.[0].some(val => val === false) &&
+    path.relative(absFileDir, absImportPath).startsWith('..')
+  ) {
+    context.report(node, `non-local imports are not allowed`)
   } else {
     // do not allow cross-module imports
     if (isInDirectory(absImportPath, MODULES_PATH) && (!isInDirectory(absImportPath, absFileDir) || absFileDir === MODULES_PATH)) {
