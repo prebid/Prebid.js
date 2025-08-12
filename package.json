@@ -111,7 +111,7 @@
     "merge-stream": "^2.0.0",
     "mocha": "^10.8.2",
     "morgan": "^1.10.0",
-    "neostandard": "^0.12.1",
+    "neostandard": "^0.12.2",
     "nise": "^6.1.1",
     "node-html-parser": "^6.1.5",
     "opn": "^5.4.0",
