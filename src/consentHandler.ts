@@ -42,11 +42,11 @@ export class ConsentHandler<T> {
   #ready;
   #dirty = true;
   #hash;
-  #listenerId: string | null = null;
+  #listenerId: number | undefined = undefined;
   #cmpApi: any = null;
   generatedTime: number;
   hashFields;
- 
+
   constructor() {
     this.reset();
   }
@@ -76,7 +76,7 @@ export class ConsentHandler<T> {
    * Set CMP listener ID
    * @param listenerId - Unique identifier for the CMP listener
    */
-  setCmpListenerId(listenerId: string) {
+  setCmpListenerId(listenerId: number | undefined) {
     this.#listenerId = listenerId;
   }
 
@@ -85,6 +85,13 @@ export class ConsentHandler<T> {
    */
   getCmpListenerId() {
     return this.#listenerId;
+  }
+
+  resetCmpApis(success: boolean) {
+    if (success) {
+      this.#cmpApi = null;
+      this.#listenerId = undefined;
+    }
   }
 
   /**
@@ -148,10 +155,32 @@ export class ConsentHandler<T> {
 
   get hash() {
     if (this.#dirty) {
-      this.#hash = cyrb53Hash(JSON.stringify(this.#data && this.hashFields ? this.hashFields.map(f => this.#data[f]) : this.#data))
+      this.#hash = cyrb53Hash(
+        JSON.stringify(
+          this.#data && this.hashFields ? this.hashFields.map((f) => this.#data[f]) : this.#data
+        )
+      );
       this.#dirty = false;
     }
     return this.#hash;
+  }
+
+  addApiVersionToParams(params: any) {}
+
+  // Base class defines the algorithm structure
+  removeCmpEventListener() {
+    if (this.getCmpApi() && this.getCmpListenerId() !== undefined && this.getCmpListenerId() !== null) {
+      const params = {
+        command: "removeEventListener",
+        callback: this.resetCmpApis.bind(this),
+        parameter: this.getCmpListenerId(),
+      };
+
+      // Call the method that subclasses will override
+      this.addApiVersionToParams(params);
+
+      this.getCmpApi()(params);
+    }
   }
 }
 
@@ -172,49 +201,31 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
 }
 
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
-  hashFields = ['gdprApplies', 'consentString']
+  hashFields = ["gdprApplies", "consentString"];
   /**
    * Remove CMP event listener using CMP API
    */
-  removeCmpEventListener() {
-    if (this.getCmpApi() && this.getCmpListenerId()) {
-      const apiVersion = this.getConsentData()?.apiVersion || 2;
-      this.getCmpApi()('removeEventListener', apiVersion, function (data: boolean, success: boolean) {
-        if (success) {
-          this.setCmpApi(null);
-          this.setCmpListenerId(null);  
-        }
-      }, this.getCmpListenerId());
-    }
+  addApiVersionToParams(params: any) {
+    const apiVersion = this.getConsentData()?.apiVersion || 2;
+    params.apiVersion = apiVersion;
   }
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
         gdprApplies: consentData.gdprApplies as boolean,
-        consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
+        consentStringSize: isStr(consentData.vendorData.tcString)
+          ? consentData.vendorData.tcString.length
+          : 0,
         generatedAt: this.generatedTime,
-        apiVersion: consentData.apiVersion
-      }
+        apiVersion: consentData.apiVersion,
+      };
     }
   }
 }
 
 class GppConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GPP>> {
   hashFields = ['applicableSections', 'gppString'];
-  /**
-   * Remove CMP event listener using CMP API
-   */
-  removeCmpEventListener() {
-    if (this.getCmpApi() && this.getCmpListenerId()) {
-      this.getCmpApi()('removeEventListener', function (data: boolean, success: boolean) {
-        if (data) {
-          this.setCmpApi(null);
-          this.setCmpListenerId(null);  
-        }
-      }, this.getCmpListenerId());
-    }
-  }
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
