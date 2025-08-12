@@ -321,7 +321,7 @@ describe('topics', () => {
     describe('caching', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       })
 
       afterEach(() => {
@@ -374,7 +374,7 @@ describe('topics', () => {
     });
 
     it('should return empty segments for bidder if there is cached segments stored which is expired', () => {
-      let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
+      const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
       storage.setDataInLocalStorage(topicStorageName, storedSegments);
       assert.deepEqual(getCachedTopics(), []);
     });
@@ -416,15 +416,15 @@ describe('topics', () => {
 
       it('should store segments if receiveMessage event is triggered with segment data', () => {
         receiveMessage(evt);
-        let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
         expect(segments.has('pubmatic')).to.equal(true);
       });
 
       it('should update stored segments if receiveMessage event is triggerred with segment data', () => {
-        let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
+        const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
         storage.setDataInLocalStorage(topicStorageName, storedSegments);
         receiveMessage(evt);
-        let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
         expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1);
       });
     });

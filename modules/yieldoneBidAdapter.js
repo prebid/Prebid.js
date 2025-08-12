@@ -25,7 +25,7 @@ const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstvi
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
-/** @type BidderSpec */
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
@@ -113,6 +113,18 @@ export const spec = {
         payload.id5Id = id5id;
       }
 
+      // UID2.0
+      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
+      if (isStr(uid2) && !isEmpty(uid2)) {
+        payload.uid2id = uid2;
+      }
+
+      // GPID
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+      if (isStr(gpid) && !isEmpty(gpid)) {
+        payload.gpid = gpid;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
@@ -123,7 +135,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    * @param {ServerResponse} serverResponse - A successful response from the server.
-   * @param {BidRequest} bidRequests
+   * @param {BidRequest} bidRequest
    * @returns {Bid[]} - An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
@@ -157,7 +169,7 @@ export const spec = {
 
       if (response.adTag && renderId === 'ViewableRendering') {
         bidResponse.mediaType = BANNER;
-        let viewableScript = `
+        const viewableScript = `
         <script src="${VIEWABLE_PERCENTAGE_URL}"></script>
         <script>
         let width =${bidResponse.width};
@@ -337,7 +349,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
 
 /**
  * Create render for outstream video.
- * @param {Object} serverResponse.body -
+ * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
 function newRenderer(response) {
@@ -368,7 +380,7 @@ function outstreamRender(bid) {
 
 /**
  * Create render for cmer outstream video.
- * @param {Object} serverResponse.body -
+ * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
 function newCmerRenderer(response) {

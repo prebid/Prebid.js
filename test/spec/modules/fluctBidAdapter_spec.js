@@ -26,14 +26,14 @@ describe('fluctAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return true when dfpUnitCode is not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         tagId: '10000:100000001',
@@ -43,7 +43,7 @@ describe('fluctAdapter', function () {
     });
 
     it('should return false when groupId is not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         dfpUnitCode: '/1000/dfp_unit_code',
@@ -57,7 +57,7 @@ describe('fluctAdapter', function () {
     let sb;
 
     beforeEach(function () {
-      sb = sinon.sandbox.create();
+      sb = sinon.createSandbox();
     });
 
     afterEach(function () {
@@ -139,13 +139,13 @@ describe('fluctAdapter', function () {
       expect(request.data.gpid).to.eql('gpid');
     });
 
-    it('sends ortb2Imp.ext.data.pbadslot as gpid', function () {
+    it('sends ortb2Imp.ext.gpid as gpid', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({
         ...req,
         ortb2Imp: {
           ext: {
+            gpid: 'data-pbadslot',
             data: {
-              pbadslot: 'data-pbadslot',
               adserver: {
                 adslot: 'data-adserver-adslot',
               },
@@ -338,16 +338,22 @@ describe('fluctAdapter', function () {
       // this should be done by schain.js
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign({}, bidReq, {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: 'publisher-id',
-                hp: 1
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      asi: 'example.com',
+                      sid: 'publisher-id',
+                      hp: 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         })
       );
@@ -401,6 +407,36 @@ describe('fluctAdapter', function () {
 
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.regs.coppa).to.eql(1);
+    });
+
+    it('includes data.regs.gpp.string and data.regs.gpp.sid if bidderRequest.gppConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          gppConsent: {
+            gppString: 'gpp-consent-string',
+            applicableSections: [1, 2, 3],
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
+      expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
+    });
+
+    it('includes data.regs.gpp.string and data.regs.gpp.sid if bidderRequest.ortb2.regs.gpp exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          ortb2: {
+            regs: {
+              gpp: 'gpp-consent-string',
+              gpp_sid: [1, 2, 3],
+            },
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
+      expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
     });
   });
 

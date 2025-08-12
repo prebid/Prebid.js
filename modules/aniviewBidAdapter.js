@@ -48,6 +48,7 @@ const converter = ortbConverter({
 
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
+    const replacements = context.bidRequests[0]?.params?.replacements;
 
     mergeDeep(request, {
       ext: {
@@ -56,7 +57,11 @@ const converter = ortbConverter({
           pbv: '$prebid.version$',
         }
       }
-    })
+    });
+
+    if (isPlainObject(replacements)) {
+      mergeDeep(request, { ext: { [BIDDER_CODE]: { replacements } } });
+    }
 
     return request;
   },
@@ -81,6 +86,18 @@ const converter = ortbConverter({
     }
 
     mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } });
+
+    if (bid.ext?.aniview) {
+      prebidBid.meta.aniview = bid.ext.aniview
+
+      if (prebidBid.meta.aniview.tag) {
+        try {
+          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag)
+        } catch {
+          // Ignore the error
+        }
+      }
+    }
 
     if (isVideoType(mediaType)) {
       if (bidRequest.mediaTypes.video.context === 'outstream') {
@@ -140,31 +157,40 @@ export const spec = {
       return [];
     }
 
-    return converter.fromORTB({ response: body, request: bidderRequest.data }).bids.map((prebidBid, index) => {
-      const bid = bids[index];
-      const replacements = {
-        auctionPrice: prebidBid.cpm,
-        auctionId: prebidBid.requestId,
-        auctionBidId: bid.bidid,
-        auctionImpId: bid.impid,
-        auctionSeatId: prebidBid.seatBidId,
-        auctionAdId: bid.adid,
-      };
+    return converter.fromORTB({ response: body, request: bidderRequest.data }).bids
+      .filter((prebidBid, index) => !!bids[index].adm || !!bids[index].nurl)
+      .map((prebidBid, index) => {
+        const bid = bids[index];
+        const replacements = {
+          auctionPrice: prebidBid.cpm,
+          auctionId: prebidBid.requestId,
+          auctionBidId: bid.bidid,
+          auctionImpId: bid.impid,
+          auctionSeatId: prebidBid.seatBidId,
+          auctionAdId: bid.adid,
+        };
 
-      const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements);
+        const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements);
 
-      if (isVideoType(prebidBid.mediaType)) {
-        prebidBid.vastXml = bidAdmWithReplacedMacros;
+        if (isVideoType(prebidBid.mediaType)) {
+          if (bidAdmWithReplacedMacros) {
+            prebidBid.vastXml = bidAdmWithReplacedMacros;
+          }
 
-        if (bid?.nurl) {
-          prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
+          if (bid.nurl) {
+            if (!prebidBid.vastXml) {
+              prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
+            } else {
+              // We do not want to use the vastUrl if we have the vastXml
+              delete prebidBid.vastUrl
+            }
+          }
+        } else {
+          prebidBid.ad = bidAdmWithReplacedMacros;
         }
-      } else {
-        prebidBid.ad = bidAdmWithReplacedMacros;
-      }
 
-      return prebidBid;
-    });
+        return prebidBid;
+      });
   },
 
   getUserSyncs(syncOptions, serverResponses) {

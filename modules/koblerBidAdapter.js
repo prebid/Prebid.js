@@ -74,6 +74,7 @@ export const interpretResponse = function (serverResponse, request) {
           ttl: TIME_TO_LIVE_IN_SECONDS,
           ad: b.adm,
           nurl: b.nurl,
+          cid: b.cid,
           meta: {
             advertiserDomains: b.adomain
           }
@@ -163,7 +164,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice()
+      devicetype: getDevice(),
+      ua: navigator.userAgent,
+      sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
       page: pageUrl,

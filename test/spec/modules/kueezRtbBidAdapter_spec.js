@@ -9,8 +9,8 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {config} from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -21,6 +21,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -268,12 +269,12 @@ describe('KueezRtbBidAdapter', function () {
     let sandbox;
     let createFirstPartyDataStub;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
       createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
         pcid: 'pcid',
@@ -438,7 +439,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -448,7 +449,7 @@ describe('KueezRtbBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -456,7 +457,7 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -464,8 +465,19 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
+      }]);
+    });
+
+    it('should have valid user sync with coppa on response', function () {
+      config.setConfig({
+        coppa: 1
+      });
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
       }]);
     });
 
@@ -483,7 +495,7 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
         'type': 'image'
       }]);
     });
@@ -615,14 +627,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -650,14 +662,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();
@@ -697,14 +709,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('First party data', () => {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       storage.removeDataFromLocalStorage('_iiq_fdata');
     })
 

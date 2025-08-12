@@ -1,0 +1,151 @@
+<html>
+    <head>
+        <title>Prebid Test Bidder Example</title>
+        <script src="../../build/dev/prebid.js" async></script>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            const adUnitCode = 'adUnit-0000';
+
+            const adUnits = [{
+                mediaTypes: {
+                    native: {
+                        ortb: {
+                            assets: [
+                                { 
+                                    required: true,
+                                    id: 1,
+                                    img: {
+                                        type: 3,
+                                        wmin: 100,
+                                        hmin: 100,
+                                    }
+                                },
+                                {
+                                    required: true,
+                                    id: 2,
+                                    img: {
+                                        type: 3,
+                                        wmin: 200,
+                                        hmin: 200
+                                    }
+                                },
+                                {
+                                    required: true,
+                                    id: 3,
+                                    data: {
+                                        type: 3,
+                                        len: 20
+                                    }
+                                },
+                                {
+                                    required: true,
+                                    id: 4,
+                                    title: {
+                                        len: 20
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                code: adUnitCode,
+                bids: [
+                    {bidder: 'testBidder', params: {}}
+                ]
+            }]
+
+            pbjs.que.push(function () {
+
+                /**
+                 * BID RESPONSE SIMULATION SECTION START
+                 *
+                 * This section handles simulating a bidder
+                 * that will always respond with bid responses.
+                 *
+                 * This part should not be present in production.
+                 */
+                pbjs.registerBidAdapter(null, 'testBidder', {
+                    supportedMediaTypes: ['banner', 'video', 'native'],
+                    isBidRequestValid: () => true
+                });
+
+                pbjs.setConfig({
+                    debugging: {
+                        enabled: true,
+                        intercept: [
+                            {
+                                when: {
+                                    bidder: 'testBidder',
+                                },
+                                then: {
+                                    creativeId: 'testCreativeId',
+                                }
+                            }
+                        ]
+                    }
+                });
+                /**
+                 * BID RESPONSE SIMULATION SECTION END
+                 */
+
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    adUnitCodes: [adUnitCode],
+                    bidsBackHandler: function() {
+                        const bids = pbjs.getHighestCpmBids(adUnitCode);
+                        const bid = bids[0];
+                        const slot = document.getElementById('native');
+                        const iframe = document.createElement('iframe');
+                        Object.entries({
+                            frameBorder: 0,
+                            marginWidth: 0,
+                            marginHeight: 0,
+                            width: 600,
+                            height: 500,
+                            scrolling: 'no',
+                            srcdoc: document.getElementById('native-template').innerHTML
+                        }).forEach(([prop, val]) => iframe.setAttribute(prop, val));
+                        slot.appendChild(iframe);
+                        iframe.onload = () => pbjs.renderAd(iframe.contentDocument, bid.adId);
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <template id="native-template">
+            <style>
+                body {
+                    display: inline-block;
+                }
+        
+                .container {
+                    display: inline-block;
+                    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+                    font-size: 14px;
+                    line-height: 1.42857143;
+                    box-sizing: border-box;
+                    border: 3px dashed red;
+                    padding: 20px;
+                    color: #333;
+                }
+
+                .img {
+                    width: 300px;
+                    height: 200px;
+                }
+    
+            </style>
+            <div class="container">
+                <h1>##hb_native_asset_id_4##</h1>
+                <h3>Rating: ##hb_native_asset_id_3##</h3>
+                <img class="img" src="##hb_native_asset_id_1##" alt="bg" />
+            </div>
+        </template>
+        <h2>Prebid Test Bidder Example</h2>
+        <h5>Native ad</h5>
+        <div id="native"></div>
+    </body>
+</html>

@@ -13,7 +13,6 @@ import {
   deepAccess, checkCookieSupport, deepSetValue, hasDeviceAccess, inIframe, isEmpty,
   logError, logInfo, mergeDeep
 } from '../src/utils.js';
-import { findIndex } from '../src/polyfill.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -100,7 +99,7 @@ let params = {
  */
 export function setCookieOnTopDomain(key, value, hostname, deleteCookie) {
   const subDomains = hostname.split('.');
-  let expTime = new Date();
+  const expTime = new Date();
   expTime.setTime(expTime.getTime() + (deleteCookie ? -1 : 365 * 24 * 60 * 60 * 1000)); // Set expiration time
   for (let i = 0; i < subDomains.length; ++i) {
     // Try to write the cookie on this subdomain (we want it to be stored only on the TLD+1)
@@ -122,7 +121,7 @@ export function setCookieOnTopDomain(key, value, hostname, deleteCookie) {
  */
 export function getUidFromStorage() {
   let cUid = STORAGE.getCookie(EUIDS_STORAGE_NAME, null);
-  let lsUid = STORAGE.getDataFromLocalStorage(EUIDS_STORAGE_NAME, null);
+  const lsUid = STORAGE.getDataFromLocalStorage(EUIDS_STORAGE_NAME, null);
   if (cUid && (!lsUid || cUid !== lsUid)) {
     STORAGE.setDataInLocalStorage(EUIDS_STORAGE_NAME, cUid, null);
   } else if (lsUid && !cUid) {
@@ -160,7 +159,7 @@ export function mergeEuidsArrays(euids1, euids2) {
   const processArray = (array) => {
     array.forEach(item => {
       if (item.uids) {
-        const foundIndex = findIndex(mergedArray, function (x) {
+        const foundIndex = mergedArray.findIndex(function (x) {
           return x.source === item.source;
         });
         if (foundIndex !== -1) {
@@ -490,7 +489,7 @@ export function pushToOrtb2(ortb2Fragments, bidder, data, segtaxid, cattaxid) {
  */
 export function setOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue) {
   try {
-    let ortb2Data = [{ name: ORTB2_NAME, segment: segments.map(segmentId => ({ id: segmentId })) }];
+    const ortb2Data = [{ name: ORTB2_NAME, segment: segments.map(segmentId => ({ id: segmentId })) }];
     if (segtaxValue) ortb2Data[0].ext = { segtax: segtaxValue };
     let ortb2Conf = (type === 'site') ? { site: { content: { data: ortb2Data } } } : { user: { data: ortb2Data } };
     if (bidder) ortb2Conf = { [bidder]: ortb2Conf };
@@ -548,16 +547,16 @@ export function loadCustomFunction(todo, adUnit, list, data, bid) {
  * @returns {Object} - The segments and categories data
  */
 export function getSegAndCatsArray(data, minScore, pid) {
-  let sirdataData = { segments: [], categories: [], categories_score: {} };
+  const sirdataData = { segments: [], categories: [], categories_score: {} };
   minScore = typeof minScore === 'number' ? minScore : 30;
   const { cattaxid, segtaxid, segments } = data;
   const contextualCategories = data.contextual_categories || {};
   // parses contextual categories
   try {
     if (contextualCategories) {
-      for (let catId in contextualCategories) {
+      for (const catId in contextualCategories) {
         if (contextualCategories.hasOwnProperty(catId) && contextualCategories[catId]) {
-          let value = contextualCategories[catId];
+          const value = contextualCategories[catId];
           if (value >= minScore && !sirdataData.categories.includes(catId)) {
             if (pid === '27440' && cattaxid) { // Equativ only
               sirdataData.categories.push(`${pid}cc${catId}`);
@@ -575,9 +574,9 @@ export function getSegAndCatsArray(data, minScore, pid) {
   // parses user-centric segments (empty if no right to access device/process PII)
   try {
     if (segments) {
-      for (let segId in segments) {
+      for (const segId in segments) {
         if (segments.hasOwnProperty(segId) && segments[segId]) {
-          let id = segments[segId].toString();
+          const id = segments[segId].toString();
           if (pid === '27440' && segtaxid) { // Equativ only
             sirdataData.segments.push(`${pid}us${id}`);
           } else {
@@ -613,16 +612,16 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, r
   // Only share Publisher SDA data if whitelisted
   if (!biddersParamsExist || bidderIndex) {
     // SDA Publisher
-    let sirdataDataForSDA = getSegAndCatsArray(data, params.contextualMinRelevancyScore, params.partnerId.toString());
+    const sirdataDataForSDA = getSegAndCatsArray(data, params.contextualMinRelevancyScore, params.partnerId.toString());
     pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, sirdataDataForSDA, data.segtaxid, data.cattaxid);
   }
 
   // Always share SDA for curation
   if (!isEmpty(data.shared_taxonomy)) {
-    let curationId = (bidderIndex && params.bidders[bidderIndex]?.curationId) || biddersId[aliasActualBidder];
+    const curationId = (bidderIndex && params.bidders[bidderIndex]?.curationId) || biddersId[aliasActualBidder];
     if (curationId && data.shared_taxonomy[curationId]) {
       // Seller defined audience & bidder specific data
-      let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], params.contextualMinRelevancyScore, curationId.toString());
+      const curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], params.contextualMinRelevancyScore, curationId.toString());
       if (!isEmpty(curationData)) {
         pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, curationData, data.shared_taxonomy[curationId].segtaxid, data.shared_taxonomy[curationId].cattaxid);
         mergeDeep(sirdataData, curationData);
@@ -644,13 +643,13 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, r
 export function addSegmentData(reqBids, data, adUnits, onDone) {
   logInfo(LOG_PREFIX, 'Dispatch Segments And Categories');
   const minScore = params.contextualMinRelevancyScore || 30;
-  let sirdataData = getSegAndCatsArray(data, minScore, '');
+  const sirdataData = getSegAndCatsArray(data, minScore, '');
 
   const biddersParamsExist = params.bidders.length > 0;
 
   // Global ortb2 SDA
   if (!isEmpty(data.global_taxonomy)) {
-    for (let i in data.global_taxonomy) {
+    for (const i in data.global_taxonomy) {
       let globalData;
       if (!isEmpty(data.global_taxonomy[i])) {
         globalData = getSegAndCatsArray(data.global_taxonomy[i], params.contextualMinRelevancyScore, '');
@@ -686,11 +685,11 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
 
   adUnits.forEach(adUnit => {
     return adUnit.bids?.forEach(bid => {
-      const bidderIndex = findIndex(params.bidders, function (i) { return i.bidder === bid.bidder; });
+      const bidderIndex = params.bidders.findIndex(function (i) { return i.bidder === bid.bidder; });
       try {
         const aliasActualBidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
         if (aliasActualBidder === 'appnexus') {
-          let xandrData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder);
+          const xandrData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder);
           // Surprisingly, to date Xandr doesn't support SDA, we need to set specific 'keywords' entries
           if (xandrData.segments.length > 0) {
             setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', `sd_rtd=${xandrData.segments.join(',sd_rtd=')}`);

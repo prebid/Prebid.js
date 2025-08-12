@@ -1,6 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
 
 const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',
@@ -86,7 +85,7 @@ export const spec = {
     ads = serverResponse.body
     for (i = 0; i < ads.length; i++) {
       ad = ads[i]
-      bid = find(bidRequest.bids, bid => bid.bidId === ad.bidId)
+      bid = ((bidRequest.bids) || []).find(bid => bid.bidId === ad.bidId)
       if (bid) {
         token = bid.params.token || ''
 
@@ -96,7 +95,7 @@ export const spec = {
 
         url = SMARTICO_CONFIG.widgetUrl + '?token=' + encodeURIComponent(token) + '&auction-id=' + encodeURIComponent(bid.auctionId) + '&from-auction-buffer=1&own_session=1&ad=' + encodeURIComponent(ad.id) + '&scriptid=' + scriptId + (ad.bannerFormatAlias ? '&banner-format=' + encodeURIComponent(ad.bannerFormatAlias) : '') + (language ? '&language=' + encodeURIComponent(language) : '')
 
-        html = '<script id="' + scriptId + '" async defer type="text/javascript" src="' + url + '"><\/script>'
+        html = '<script id="' + scriptId + '" async defer type="text/javascript" src="' + url + '"></script>'
 
         bidObject = {
           requestId: bid.bidId,
