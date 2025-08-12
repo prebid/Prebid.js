@@ -11,6 +11,13 @@ Maintainer: sdksupport@app-stock.com
 One of the easiest way to gain access to AppStockSSP demand sources  - AppStockSSP header bidding adapter.
 AppStockSSP header bidding adapter connects with AppStockSSP demand sources to fetch bids for display placements
 
+# Region Parameter
+
+**Supported regions:**
+- `eu` → `ortb-eu.al-ad.com`
+- `us-east` → `lb.al-ad.com`
+- `apac` → `ortb-apac.al-ad.com`
+
 # Test Parameters
 ```
     var adUnits = [
@@ -27,6 +34,7 @@ AppStockSSP header bidding adapter connects with AppStockSSP demand sources to f
                             bidder: 'appStockSSP',
                             params: {
                                 placementId: 'testBanner',
+                                region: 'eu'
                             }
                         }
                     ]
@@ -46,6 +54,7 @@ AppStockSSP header bidding adapter connects with AppStockSSP demand sources to f
                             bidder: 'appStockSSP',
                             params: {
                                 placementId: 'testVideo',
+                                region: 'us-east'
                             }
                         }
                     ]
@@ -71,6 +80,7 @@ AppStockSSP header bidding adapter connects with AppStockSSP demand sources to f
                             bidder: 'appStockSSP',
                             params: {
                                 placementId: 'testNative',
+                                region: 'apac'
                             }
                         }
                     ]
