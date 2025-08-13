@@ -190,7 +190,7 @@ export function configParser(
     
     // Check if module is explicitly disabled
     if (cmConfig?.enabled === false) {
-      logInfo(msg(`config enabled is set to false, disabling consent manager module`));
+      logWarn(msg(`config enabled is set to false, disabling consent manager module`));
       reset();
       return {};
     }
