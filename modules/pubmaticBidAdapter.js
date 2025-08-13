@@ -835,8 +835,6 @@ export const spec = {
       }
     })
     
-    // Filter to keep only  unique entries based on adUnitCode
-    
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
 
     const serverRequest = {
