@@ -615,7 +615,7 @@ function aliasEidsHook(next, bidderRequests) {
       Object.defineProperty(bid, 'userIdAsEids', {
         configurable: true,
         get() {
-          return bidderRequest.ortb2.user?.ext?.eids;
+          return bidderRequest.ortb2.user?.ext?.eids ?? [];
         }
       })
     )
