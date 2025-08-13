@@ -127,13 +127,13 @@ export const getBidderTimeout = (reqBidsConfigObj) => {
 export const getRules = (bidderTimeout) => {
   const timeoutConfig = getDynamicTimeoutConfig();
 
-  // In milliseconds - Check for rules in priority order, If ML model rules are available then return it
-  if (timeoutConfig?.data && Object.keys(timeoutConfig.data).length > 0) { 
-    return timeoutConfig.data;
-  }
-  // In milliseconds - If config rules are available then return it 
+  // In milliseconds - If config rules are available then return it
   if (timeoutConfig?.config?.timeoutRules && Object.keys(timeoutConfig.config.timeoutRules).length > 0) {
     return timeoutConfig.config.timeoutRules;
+  }
+  // In milliseconds - Check for rules in priority order, If ML model rules are available then return it
+  if (timeoutConfig?.data && Object.keys(timeoutConfig.data).length > 0) {
+    return timeoutConfig.data;
   }
   // In Percentage - If no rules are available then create rules from percentages
   return createDynamicRules(RULES_PERCENTAGE, bidderTimeout);
