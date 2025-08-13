@@ -13,7 +13,7 @@ declare module '../targeting.ts' {
      *
      * When set, targeting set through `setTargetingForGPTAsync` or `setTargetingForAst`
      * will prevent bids with the same targeting on the given keys from being used until rendering is complete or
-     * `lockTimeout` seconds have passed.
+     * `lockTimeout` milliseconds have passed.
      *
      * For example, when using standard targeting setting this to 'hb_adid' will prevent the same ad ID
      * (or equivalently, the same bid) from being used on multiple slots simultaneously.
