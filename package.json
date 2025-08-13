@@ -27,9 +27,10 @@
     "url": "https://github.com/prebid/Prebid.js.git"
   },
   "sideEffects": [
-    "src/prebid.js",
-    "modules/*.js",
-    "modules/*/index.js"
+    "dist/src/prebid.js",
+    "dist/src/prebid.public.js",
+    "dist/src/public/**/*.js",
+    "dist/src/modules/**/*.js"
   ],
   "browserslist": [
     "> 0.25%",
