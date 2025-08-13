@@ -567,7 +567,6 @@ const getConnectionType = () => {
   return types[connection?.effectiveType] || 0;
 }
 
-// BB stands for Blue BillyWig
 /**
  * Optimizes the impressions array by consolidating impressions for the same ad unit
  * @param {Array} imps - Array of impression objects
@@ -607,7 +606,7 @@ function optimizeImps(imps, bidderRequest) {
   });
   return Object.values(optimizedImpsByAdUnit);
 }
-
+// BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
     const config = {
@@ -834,7 +833,6 @@ export const spec = {
         allowedIabCategories = allowedIabCategories.concat(acat);
       }
     })
-    
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
 
     const serverRequest = {
