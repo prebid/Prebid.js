@@ -42,7 +42,7 @@ export const spec = {
     { code: 'velonium' },
     { code: 'orangeclickmedia', gvlid: 1148 },
     { code: 'streamvision' },
-    { code: 'stellormedia' }
+    { code: 'stellorMediaRtb' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
