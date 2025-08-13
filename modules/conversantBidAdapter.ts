@@ -216,6 +216,7 @@ export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
           const pixels = [{urls: ext.fsyncs, type: 'iframe'}, {urls: ext.psyncs, type: 'image'}]
             .filter((entry) => {
               return entry.urls && Array.isArray(entry.urls) &&
+                entry.urls.length > 0 &&
                 ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
                 (entry.type === 'image' && syncOptions.pixelEnabled));
             })
@@ -272,7 +273,7 @@ function getBidFloor(bid) {
   let floor = getBidIdParameter('bidfloor', bid.params);
 
   if (!floor && isFn(bid.getFloor)) {
-    const floorObj: { floor: number, currency: string } = bid.getFloor({
+    const floorObj: { floor: any, currency: string } = bid.getFloor({
       currency: ENV.DEFAULT_CURRENCY,
       mediaType: '*',
       size: '*'
