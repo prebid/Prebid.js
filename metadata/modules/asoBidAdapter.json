@@ -36,6 +36,13 @@
       "aliasOf": "aso",
       "gvlid": null,
       "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adklip",
+      "aliasOf": "aso",
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

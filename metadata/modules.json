@@ -1151,6 +1151,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "newdream",
+      "aliasOf": "appnexus",
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "matomy",
       "aliasOf": "appnexus",
       "gvlid": 32,
@@ -1278,6 +1285,13 @@
     {
       "componentType": "bidder",
       "componentName": "cordless",
+      "aliasOf": "aso",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adklip",
       "aliasOf": "aso",
       "gvlid": null,
       "disclosureURL": null
@@ -1895,6 +1909,13 @@
       "componentType": "bidder",
       "componentName": "digitalmatter",
       "aliasOf": "digitalMatter",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "digitalcaramel",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -3755,6 +3776,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "risemediatech",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "rixengine",
       "aliasOf": null,
       "gvlid": null,
@@ -5566,6 +5594,11 @@
     {
       "componentType": "analytics",
       "componentName": "adnuntius",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "adplus",
       "gvlid": null
     },
     {
