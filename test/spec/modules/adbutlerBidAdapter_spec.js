@@ -87,7 +87,7 @@ describe('AdButler adapter', function () {
         const requests = spec.buildRequests(validBidRequests);
         const request = requests[0];
 
-        const [domain] = request.url.split('/adserve/');
+        let [domain] = request.url.split('/adserve/');
 
         expect(domain).to.equal('https://servedbyadbutler.com');
       });

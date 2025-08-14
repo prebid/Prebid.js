@@ -2,10 +2,7 @@ import { deepAccess, logError, parseUrl, parseSizesInput, triggerPixel } from '.
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- */
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'viously';
 const GVLID = 1028;
@@ -28,8 +25,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    const videoParams = deepAccess(bid, 'mediaTypes.video');
-    const bannerParams = deepAccess(bid, 'mediaTypes.banner');
+    let videoParams = deepAccess(bid, 'mediaTypes.video');
+    let bannerParams = deepAccess(bid, 'mediaTypes.banner');
 
     if (!bid.params) {
       logError('The bid params are missing');
@@ -46,7 +43,7 @@ export const spec = {
      */
 
     if (bannerParams) {
-      const sizes = bannerParams.sizes;
+      let sizes = bannerParams.sizes;
 
       if (!sizes || parseSizesInput(sizes).length == 0) {
         logError('mediaTypes.banner.sizes must be set for banner placement at the right format.');
@@ -92,7 +89,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const payload = {};
+    let payload = {};
 
     /** Viously Publisher ID */
     if (validBidRequests[0].params.pid) {
@@ -101,12 +98,12 @@ export const spec = {
 
     // Referer Info
     if (config.getConfig('pageUrl')) {
-      const parsedUrl = parseUrl(config.getConfig('pageUrl'));
+      let parsedUrl = parseUrl(config.getConfig('pageUrl'));
 
       payload.domain = parsedUrl.hostname;
       payload.page_domain = config.getConfig('pageUrl');
     } else if (bidderRequest && bidderRequest.refererInfo) {
-      const parsedUrl = parseUrl(bidderRequest.refererInfo.page);
+      let parsedUrl = parseUrl(bidderRequest.refererInfo.page);
 
       payload.domain = parsedUrl.hostname;
       payload.page_domain = bidderRequest.refererInfo.page;
@@ -132,9 +129,8 @@ export const spec = {
     }
 
     // Schain
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      payload.schain = schain;
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
     }
     // Currency
     payload.currency_code = CURRENCY;
@@ -146,13 +142,13 @@ export const spec = {
 
     // Placements
     payload.placements = validBidRequests.map(bidRequest => {
-      const request = {
+      let request = {
         id: bidRequest.adUnitCode,
         bid_id: bidRequest.bidId
       };
 
       if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-        const position = deepAccess(bidRequest, 'mediaTypes.banner.pos');
+        let position = deepAccess(bidRequest, 'mediaTypes.banner.pos');
 
         request.type = BANNER;
 
@@ -186,10 +182,10 @@ export const spec = {
     if (responseBody.ads && responseBody.ads.length > 0) {
       responseBody.ads.forEach(function(bidResponse) {
         if (bidResponse.bid) {
-          const bidRequest = ((requests.data.placements) || []).find(bid => bid.bid_id === bidResponse.bid_id);
+          let bidRequest = find(requests.data.placements, bid => bid.bid_id === bidResponse.bid_id);
 
           if (bidRequest) {
-            const sizes = bidResponse.size.split('x');
+            let sizes = bidResponse.size.split('x');
 
             const bid = {
               requestId: bidRequest.bid_id,

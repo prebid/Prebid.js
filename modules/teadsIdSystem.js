@@ -95,12 +95,6 @@ export const teadsIdSubmodule = {
       ajax(url, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
-  },
-  eids: {
-    teadsId: {
-      source: 'teads.com',
-      atype: 1
-    }
   }
 };
 

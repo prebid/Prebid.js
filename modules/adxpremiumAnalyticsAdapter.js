@@ -3,11 +3,12 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
+import {includes} from '../src/polyfill.js';
 
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://adxpremium.services/graphql';
 
-const reqCountry = window.reqCountry || null;
+let reqCountry = window.reqCountry || null;
 
 // Events needed
 const {
@@ -19,13 +20,13 @@ const {
   AUCTION_END
 } = EVENTS;
 
-const timeoutBased = false;
+let timeoutBased = false;
 let requestSent = false;
 let requestDelivered = false;
 let elementIds = [];
 
 // Memory objects
-const completeObject = {
+let completeObject = {
   publisher_id: null,
   auction_id: null,
   referer: null,
@@ -38,7 +39,7 @@ const completeObject = {
 // Upgraded object
 let upgradedObject = null;
 
-const adxpremiumAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
+let adxpremiumAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
@@ -66,7 +67,7 @@ const adxpremiumAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
 });
 
 // DFP support
-const googletag = window.googletag || {};
+let googletag = window.googletag || {};
 googletag.cmd = googletag.cmd || [];
 googletag.cmd.push(function() {
   googletag.pubads().addEventListener('slotRenderEnded', args => {
@@ -100,7 +101,7 @@ function auctionInit(args) {
   completeObject.device_type = deviceType();
 }
 function bidRequested(args) {
-  const tmpObject = {
+  let tmpObject = {
     type: 'REQUEST',
     bidder_code: args.bidderCode,
     event_timestamp: args.start,
@@ -116,7 +117,7 @@ function bidRequested(args) {
 }
 
 function bidResponse(args) {
-  const tmpObject = {
+  let tmpObject = {
     type: 'RESPONSE',
     bidder_code: args.bidderCode,
     event_timestamp: args.responseTimestamp,
@@ -133,7 +134,7 @@ function bidResponse(args) {
 }
 
 function bidWon(args) {
-  const eventIndex = bidResponsesMapper[args.requestId];
+  let eventIndex = bidResponsesMapper[args.requestId];
   if (eventIndex !== undefined) {
     if (requestDelivered) {
       if (completeObject.events[eventIndex]) {
@@ -152,7 +153,7 @@ function bidWon(args) {
     }
   } else {
     logInfo('AdxPremium Analytics - Response not found, creating new one.');
-    const tmpObject = {
+    let tmpObject = {
       type: 'RESPONSE',
       bidder_code: args.bidderCode,
       event_timestamp: args.responseTimestamp,
@@ -165,23 +166,23 @@ function bidWon(args) {
       is_winning: true,
       is_lost: true
     };
-    const lostObject = deepClone(completeObject);
+    let lostObject = deepClone(completeObject);
     lostObject.events = [tmpObject];
     sendEvent(lostObject); // send lost object
   }
 }
 
 function bidTimeout(args) {
-  const timeoutObject = deepClone(completeObject);
+  let timeoutObject = deepClone(completeObject);
   timeoutObject.events = [];
-  const usedRequestIds = [];
+  let usedRequestIds = [];
 
   args.forEach(bid => {
-    const pulledRequestId = bidMapper[bid.bidId];
-    const eventIndex = bidRequestsMapper[pulledRequestId];
+    let pulledRequestId = bidMapper[bid.bidId];
+    let eventIndex = bidRequestsMapper[pulledRequestId];
     if (eventIndex !== undefined && completeObject.events[eventIndex] && usedRequestIds.indexOf(pulledRequestId) == -1) {
       // mark as timeouted
-      const tempEventIndex = timeoutObject.events.push(completeObject.events[eventIndex]) - 1;
+      let tempEventIndex = timeoutObject.events.push(completeObject.events[eventIndex]) - 1;
       timeoutObject.events[tempEventIndex]['type'] = 'TIMEOUT';
       usedRequestIds.push(pulledRequestId); // mark as used
     }
@@ -210,7 +211,7 @@ function deviceType() {
 }
 
 function clearSlot(elementId) {
-  if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
+  if (includes(elementIds, elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
   if (elementIds.length == 0 && !requestSent && !timeoutBased) {
     requestSent = true;
     sendEvent(completeObject);
@@ -233,9 +234,9 @@ function sendEvent(completeObject) {
   if (!adxpremiumAnalyticsAdapter.enabled) return;
   requestDelivered = true;
   try {
-    const responseEvents = btoa(JSON.stringify(completeObject));
-    const mutation = `mutation {createEvent(input: {event: {eventData: "${responseEvents}"}}) {event {createTime } } }`;
-    const dataToSend = JSON.stringify({ query: mutation });
+    let responseEvents = btoa(JSON.stringify(completeObject));
+    let mutation = `mutation {createEvent(input: {event: {eventData: "${responseEvents}"}}) {event {createTime } } }`;
+    let dataToSend = JSON.stringify({ query: mutation });
     let ajaxEndpoint = defaultUrl;
     if (adxpremiumAnalyticsAdapter.initOptions.sid) {
       ajaxEndpoint = 'https://' + adxpremiumAnalyticsAdapter.initOptions.sid + '.adxpremium.services/graphql'

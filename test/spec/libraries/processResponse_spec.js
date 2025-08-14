@@ -54,7 +54,7 @@ describe('processResponse', function () {
     'videoMissing': 'Bid request videoType property is missing - '
   };
   it('returns bid when respItem and LOG_ERROR_MESS is passed', function () {
-    const response = getBidFromResponse(respItem, LOG_ERROR_MESS);
+    let response = getBidFromResponse(respItem, LOG_ERROR_MESS);
     expect(response).not.include.any.keys('emptyResponse', 'hasNoArrayOfBids', 'emptySeatbid');
   });
 });

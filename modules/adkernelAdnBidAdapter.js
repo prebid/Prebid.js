@@ -15,21 +15,21 @@ function isRtbDebugEnabled(refInfo) {
 }
 
 function buildImp(bidRequest) {
-  const imp = {
+  let imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
   let mediaType;
-  const bannerReq = deepAccess(bidRequest, `mediaTypes.banner`);
-  const videoReq = deepAccess(bidRequest, `mediaTypes.video`);
+  let bannerReq = deepAccess(bidRequest, `mediaTypes.banner`);
+  let videoReq = deepAccess(bidRequest, `mediaTypes.video`);
   if (bannerReq) {
-    const sizes = canonicalizeSizesArray(bannerReq.sizes);
+    let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: parseSizesInput(sizes)
     };
     mediaType = BANNER;
   } else if (videoReq) {
-    const size = canonicalizeSizesArray(videoReq.playerSize)[0];
+    let size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
       w: size[0],
       h: size[1],
@@ -39,7 +39,7 @@ function buildImp(bidRequest) {
     };
     mediaType = VIDEO;
   }
-  const bidFloor = getBidFloor(bidRequest, mediaType, '*');
+  let bidFloor = getBidFloor(bidRequest, mediaType, '*');
   if (bidFloor) {
     imp.bidfloor = bidFloor;
   }
@@ -59,8 +59,8 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  const {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
-  const req = {
+  let {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
+  let req = {
     id: bidderRequest.bidderRequestId,
     // TODO: root-level `tid` is not ORTB; is this intentional?
     tid: ortb2?.source?.tid,
@@ -90,7 +90,7 @@ function buildSite(refInfo) {
     secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
     ref: refInfo.ref
   }
-  const keywords = document.getElementsByTagName('meta')['keywords'];
+  let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
     result.keywords = keywords.content;
   }
@@ -98,7 +98,7 @@ function buildSite(refInfo) {
 }
 
 function buildBid(tag) {
-  const bid = {
+  let bid = {
     requestId: tag.impid,
     cpm: tag.bid,
     creativeId: tag.crid,
@@ -159,21 +159,21 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
-    const dispatch = bidRequests.map(buildImp)
+    let dispatch = bidRequests.map(buildImp)
       .reduce((acc, curr, index) => {
-        const bidRequest = bidRequests[index];
-        const pubId = bidRequest.params.pubId;
-        const host = bidRequest.params.host || DEFAULT_ADKERNEL_DSP_DOMAIN;
+        let bidRequest = bidRequests[index];
+        let pubId = bidRequest.params.pubId;
+        let host = bidRequest.params.host || DEFAULT_ADKERNEL_DSP_DOMAIN;
         acc[host] = acc[host] || {};
         acc[host][pubId] = acc[host][pubId] || [];
         acc[host][pubId].push(curr);
         return acc;
       }, {});
 
-    const requests = [];
+    let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        const request = buildRequestParams(dispatch[host][pubId], bidderRequest);
+        let request = buildRequestParams(dispatch[host][pubId], bidderRequest);
         requests.push({
           method: 'POST',
           url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
@@ -185,7 +185,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse) {
-    const response = serverResponse.body;
+    let response = serverResponse.body;
     if (!response.tags) {
       return [];
     }

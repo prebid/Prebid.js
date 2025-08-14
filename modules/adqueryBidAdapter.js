@@ -43,7 +43,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     const requests = [];
 
-    const adqueryRequestUrl = buildUrl({
+    let adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/bid',
@@ -75,7 +75,7 @@ export const spec = {
     logMessage(response);
 
     const res = response && response.body && response.body.data;
-    const bidResponses = [];
+    let bidResponses = [];
 
     if (!res) {
       return [];
@@ -113,14 +113,14 @@ export const spec = {
       return;
     }
     logInfo('onTimeout ', timeoutData);
-    const params = {
+    let params = {
       bidder: timeoutData.bidder,
       bId: timeoutData.bidId,
       adUnitCode: timeoutData.adUnitCode,
       timeout: timeoutData.timeout,
       auctionId: timeoutData.auctionId,
     };
-    const adqueryRequestUrl = buildUrl({
+    let adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/eventTimeout',
@@ -134,15 +134,15 @@ export const spec = {
    */
   onBidWon: (bid) => {
     logInfo('onBidWon', bid);
-    const copyOfBid = { ...bid }
+    let copyOfBid = { ...bid }
     delete copyOfBid.ad
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
-    const params = {
+    let params = {
       q: encodedBuf,
     };
-    const adqueryRequestUrl = buildUrl({
+    let adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/eventBidWon',
@@ -157,7 +157,7 @@ export const spec = {
   onSetTargeting: (bid) => {
     logInfo('onSetTargeting', bid);
 
-    const params = {
+    let params = {
       bidder: bid.bidder,
       width: bid.width,
       height: bid.height,
@@ -168,7 +168,7 @@ export const spec = {
       adUnitCode: bid.adUnitCode
     };
 
-    const adqueryRequestUrl = buildUrl({
+    let adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/eventSetTargeting',
@@ -187,7 +187,7 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
-    const syncData = {
+    let syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
       'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
@@ -197,7 +197,7 @@ export const spec = {
       syncData.qid = window.qid;
     }
 
-    const syncUrlObject = {
+    let syncUrlObject = {
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_USER_SYNC_DOMAIN,
       pathname: '/prebid/userSync',
@@ -223,7 +223,7 @@ export const spec = {
 };
 
 function buildRequest(validBidRequests, bidderRequest) {
-  const bid = validBidRequests;
+  let bid = validBidRequests;
   logInfo('buildRequest: ', bid);
 
   let userId = null;

@@ -8,7 +8,7 @@
     <!-- <script async src="../../build/dist/prebid.js"></script> -->
     <script async src="../../build/dev/prebid.js"></script>
     <!-- Google Publisher Tag -->
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script>
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -74,15 +74,11 @@
         });
         function sendAdServerRequest() {
             googletag.cmd.push(function () {
-                if (pbjs.libLoaded) {
-                    pbjs.que.push(function () {
-                        pbjs.setTargetingForGPTAsync('/21623266709/prebid-test');
-                        pbjs.setTargetingForGPTAsync('/21623266709/prebid-test-2');
-                        googletag.pubads().refresh();
-                    });
-                } else {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync('/21623266709/prebid-test');
+                    pbjs.setTargetingForGPTAsync('/21623266709/prebid-test-2');
                     googletag.pubads().refresh();
-                }
+                });
             });
         }
     </script>

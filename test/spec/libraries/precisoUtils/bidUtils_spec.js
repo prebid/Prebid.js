@@ -1,3 +1,4 @@
+
 import { expect } from 'chai';
 import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js';
 
@@ -75,7 +76,7 @@ describe('bidUtils', function () {
       expect(serverRequest.url).to.equal(`https://${TESTDOMAIN}/bid_request/openrtb`);
     });
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data.device).to.be.a('object');
       expect(data.user).to.be.a('object');
@@ -85,14 +86,14 @@ describe('bidUtils', function () {
     it('Returns data.device is undefined  if no valid device object is passed', function () {
       delete bid.ortb2.device;
       serverRequest = spec.buildRequests([bid]);
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data.device).to.be.undefined;
     });
   });
 
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
-      const response = {
+      let response = {
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
         seatbid: [
           {
@@ -113,7 +114,7 @@ describe('bidUtils', function () {
           }
         ],
       }
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
           cpm: DEFAULT_PRICE,
@@ -127,7 +128,7 @@ describe('bidUtils', function () {
           meta: { advertiserDomains: [] },
         }
       ]
-      const result = spec.interpretResponse({ body: response })
+      let result = spec.interpretResponse({ body: response })
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
     })
   });

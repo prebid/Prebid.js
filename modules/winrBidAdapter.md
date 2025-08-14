@@ -288,7 +288,7 @@ var adUnits = [
     <script async src="prebid.js"></script>
     <script
       async
-      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+      src="https://www.googletagservices.com/tag/js/gpt.js"
     ></script>
 
     <script>

@@ -1,11 +1,6 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques, isEmpty} from '../../src/utils.js';
-
-const slotInfoCache = new Map();
-
-export function clearSlotInfoCache() {
-  slotInfoCache.clear();
-}
+import {find} from '../../src/polyfill.js';
+import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../../src/utils.js';
 
 /**
  * Returns filter function to match adUnitCode in slot
@@ -35,7 +30,7 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
-    matchingSlot = window.googletag.pubads().getSlots().find(isSlotMatchingAdUnitCode(adUnitCode));
+    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
   }
   return matchingSlot;
 }
@@ -44,19 +39,14 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
  * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
  */
 export function getGptSlotInfoForAdUnitCode(adUnitCode) {
-  if (slotInfoCache.has(adUnitCode)) {
-    return slotInfoCache.get(adUnitCode);
-  }
   const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
-  let info = {};
   if (matchingSlot) {
-    info = {
+    return {
       gptSlot: matchingSlot.getAdUnitPath(),
       divId: matchingSlot.getSlotElementId()
     };
   }
-  !isEmpty(info) && slotInfoCache.set(adUnitCode, info);
-  return info;
+  return {};
 }
 
 export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];

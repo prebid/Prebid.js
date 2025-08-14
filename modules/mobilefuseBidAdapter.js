@@ -1,9 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepSetValue} from '../src/utils.js';
-import { config } from '../src/config.js';
+import {deepSetValue} from '../src/utils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import { userSync } from '../src/userSync.js';
 
 const ADAPTER_VERSION = '1.0.0';
 const ENDPOINT_URL = 'https://mfx.mobilefuse.com/prebidjs';
@@ -12,6 +10,7 @@ const SYNC_URL = 'https://mfx.mobilefuse.com/usync';
 export const spec = {
   code: 'mobilefuse',
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 909,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -50,10 +49,6 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
 
     deepSetValue(request, 'ext.prebid.mobilefuse.version', ADAPTER_VERSION);
-
-    const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled');
-    const canSyncWithIframe = syncEnabled && userSync.canBidderRegisterSync('iframe', 'mobilefuse');
-    deepSetValue(request, 'ext.prebid.mobilefuse.ifsync', canSyncWithIframe);
 
     if (bidderRequest.uspConsent) {
       deepSetValue(request, 'regs.us_privacy', bidderRequest.uspConsent);
@@ -131,7 +126,7 @@ function getBidfloor(bidRequest) {
     return null;
   }
 
-  const floor = bidRequest.getFloor();
+  let floor = bidRequest.getFloor();
   if (floor.currency === 'USD') {
     return floor.floor;
   }

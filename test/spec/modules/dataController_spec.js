@@ -89,7 +89,7 @@ describe('data controller', function () {
     });
 
     it('filterEIDwhenSDA for All SDA ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['*']
         }
@@ -103,7 +103,7 @@ describe('data controller', function () {
     });
 
     it('filterEIDwhenSDA for available SAD permutive.com:4:777777 ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['permutive.com:4:777777']
         }
@@ -119,7 +119,7 @@ describe('data controller', function () {
     });
 
     it('filterEIDwhenSDA for unavailable SAD test.com:4:9999 ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['test.com:4:99999']
         }
@@ -131,14 +131,14 @@ describe('data controller', function () {
     });
     // Test for global
     it('filterEIDwhenSDA for available global SAD test.com:4:777777 ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['test.com:5:11111']
         }
 
       };
       config.setConfig(dataControllerConfiguration);
-      const globalObject = {
+      let globalObject = {
         'ortb2Fragments': {
           'global': {
             'user': {
@@ -165,14 +165,14 @@ describe('data controller', function () {
           }
         }
       };
-      const globalRequest = Object.assign({}, req, globalObject);
+      let globalRequest = Object.assign({}, req, globalObject);
       filterBidData(callbackFn, globalRequest);
       expect(globalRequest.adUnits[0].bids[0].userIdAsEids).that.is.empty;
       expect(globalRequest.adUnits[0].bids[0].userId).that.is.empty;
     });
 
     it('filterSDAwhenEID for id5-sync.com EID ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['id5-sync.com']
         }
@@ -183,7 +183,7 @@ describe('data controller', function () {
     });
 
     it('filterSDAwhenEID for All EID ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['*']
         }
@@ -196,7 +196,7 @@ describe('data controller', function () {
     });
 
     it('filterSDAwhenEID for unavailable source test-sync.com EID ', function () {
-      const dataControllerConfiguration = {
+      let dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['test-sync.com']
         }

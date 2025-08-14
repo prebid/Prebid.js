@@ -148,22 +148,16 @@ describe('jwplayerBidAdapter', function() {
               playbackend: 2
             }
           },
-          ortb2: {
-            source: {
-              ext: {
-                schain: {
-                  ver: '1.0',
-                  complete: 1,
-                  nodes: [
-                    {
-                      asi: 'publisher.com',
-                      sid: '00001',
-                      hp: 1
-                    }
-                  ]
-                }
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'publisher.com',
+                sid: '00001',
+                hp: 1
               }
-            }
+            ]
           },
           bidRequestsCount: 1,
           adUnitCode: 'testAdUnitCode',

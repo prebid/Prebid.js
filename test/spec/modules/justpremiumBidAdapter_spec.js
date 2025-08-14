@@ -5,14 +5,14 @@ describe('justpremium adapter', function () {
   let sandbox;
 
   beforeEach(function() {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function() {
     sandbox.restore();
   });
 
-  const schainConfig = {
+  let schainConfig = {
     'ver': '1.0',
     'complete': 1,
     'nodes': [
@@ -24,7 +24,7 @@ describe('justpremium adapter', function () {
     ]
   }
 
-  const adUnits = [
+  let adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
       bidder: 'justpremium',
@@ -46,13 +46,7 @@ describe('justpremium adapter', function () {
         zone: 28313,
         allow: ['lb', 'wp']
       },
-      ortb2: {
-        source: {
-          ext: {
-            schain: schainConfig
-          }
-        }
-      }
+      schain: schainConfig
     },
     {
       adUnitCode: 'div-gpt-ad-1471513102552-2',
@@ -64,7 +58,7 @@ describe('justpremium adapter', function () {
     },
   ]
 
-  const bidderRequest = {
+  let bidderRequest = {
     uspConsent: '1YYN',
     refererInfo: {
       referer: 'https://justpremium.com'
@@ -134,7 +128,7 @@ describe('justpremium adapter', function () {
   describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits, bidderRequest)
     it('Verify server response', function () {
-      const response = {
+      let response = {
         'bid': {
           '28313': [{
             'id': 3213123,
@@ -155,7 +149,7 @@ describe('justpremium adapter', function () {
         'deals': {}
       }
 
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: '319a5029c362f4',
           creativeId: 3213123,
@@ -176,7 +170,7 @@ describe('justpremium adapter', function () {
         }
       ]
 
-      const result = spec.interpretResponse({body: response}, request)
+      let result = spec.interpretResponse({body: response}, request)
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]))
 
       expect(result[0]).to.not.equal(null)
@@ -194,7 +188,7 @@ describe('justpremium adapter', function () {
     })
 
     it('Verify wrong server response', function () {
-      const response = {
+      let response = {
         'bid': {
           '28313': []
         },
@@ -203,7 +197,7 @@ describe('justpremium adapter', function () {
         }
       }
 
-      const result = spec.interpretResponse({body: response}, request)
+      let result = spec.interpretResponse({body: response}, request)
       expect(result.length).to.equal(0)
     })
   })

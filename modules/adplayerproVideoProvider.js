@@ -43,10 +43,10 @@ const setupFailMessage = 'Failed to instantiate the player';
 export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, utils) {
   const adPlayerPro = adPlayerPro_;
   let player = null;
-  const playerVersion = null;
+  let playerVersion = null;
   const playerConfig = config.playerConfig;
   const divId = config.divId;
-  const callbackStorage = callbackStorage_;
+  let callbackStorage = callbackStorage_;
   let supportedMediaTypes = null;
   let setupCompleteCallbacks = [];
   let setupFailedCallbacks = [];
@@ -164,6 +164,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         return;
     }
 
+
     const playerEventName = utils.getPlayerEvent(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
     player && player.on(playerEventName, eventHandler);
@@ -213,9 +214,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
 
     player = adPlayerPro(divId);
     callbackStorage.addAllCallbacks(player.on);
-    player.on('AdStopped', () => {
-      player = null;
-    });
+    player.on('AdStopped', () => player = null);
     player.setup(playerConfig);
   }
 
@@ -396,7 +395,7 @@ export function callbackStorageFactory() {
   }
 
   function getCallback(eventType, callback) {
-    const eventHandlers = storage[eventType];
+    let eventHandlers = storage[eventType];
     if (eventHandlers) {
       return eventHandlers[callback];
     }
@@ -408,7 +407,7 @@ export function callbackStorageFactory() {
       delete storageHandlers[eventType];
       return;
     }
-    const eventHandlers = storage[eventType];
+    let eventHandlers = storage[eventType];
     if (eventHandlers) {
       const eventHandler = eventHandlers[callback];
       if (eventHandler) {
@@ -442,7 +441,7 @@ export function callbackStorageFactory() {
   }
 
   function addAllCallbacks(functionOnPlayer) {
-    for (const eventType in storageHandlers) {
+    for (let eventType in storageHandlers) {
       storageHandlers[eventType].forEach(handler => functionOnPlayer(eventType, handler));
     }
   }

@@ -35,7 +35,7 @@ export function buildVideoUrl(options) {
   const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
   const allTargetingData = getAllTargetingData(options);
   const custParams = options.params.cust_params;
-  const iu = options.params.iu;
+  let iu = options.params.iu;
 
   if (isURL.test(iu)) {
     const urlComponents = parseUrl(iu, {noDecodeWholeURL: true});
@@ -84,7 +84,7 @@ function getAllTargetingData(options) {
   let allTargetingData = {};
   const adUnit = options && options.adUnit;
   if (adUnit) {
-    const allTargeting = targeting.getAllTargeting(adUnit.code);
+    let allTargeting = targeting.getAllTargeting(adUnit.code);
     allTargetingData = allTargeting ? allTargeting[adUnit.code] : {};
   }
 

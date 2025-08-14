@@ -15,21 +15,21 @@ describe('The ad server manager', function () {
 
   it('should register video support to the proper place on the API', function () {
     function videoSupport() { }
-    registerVideoSupport('gam', { buildVideoUrl: videoSupport });
+    registerVideoSupport('dfp', { buildVideoUrl: videoSupport });
 
     expect(prebid).to.have.property('adServers');
-    expect(prebid.adServers).to.have.property('gam');
-    expect(prebid.adServers.gam).to.have.property('buildVideoUrl', videoSupport);
+    expect(prebid.adServers).to.have.property('dfp');
+    expect(prebid.adServers.dfp).to.have.property('buildVideoUrl', videoSupport);
   });
 
   it('should keep the first function when we try to add a second', function () {
     function videoSupport() { }
-    registerVideoSupport('gam', { buildVideoUrl: videoSupport });
-    registerVideoSupport('gam', { buildVideoUrl: function noop() { } });
+    registerVideoSupport('dfp', { buildVideoUrl: videoSupport });
+    registerVideoSupport('dfp', { buildVideoUrl: function noop() { } });
 
     expect(prebid).to.have.property('adServers');
-    expect(prebid.adServers).to.have.property('gam');
-    expect(prebid.adServers.gam).to.have.property('buildVideoUrl', videoSupport);
+    expect(prebid.adServers).to.have.property('dfp');
+    expect(prebid.adServers.dfp).to.have.property('buildVideoUrl', videoSupport);
   });
 
   it('should support any custom named property in the public API', function () {

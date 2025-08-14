@@ -1,16 +1,14 @@
 import * as utils from 'src/utils.js';
-import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils.js';
+import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils';
 
 describe('consent management utils', () => {
-  let sandbox, clock;
+  let sandbox;
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    clock = sandbox.useFakeTimers();
+    sandbox = sinon.sandbox.create();
     ['logError', 'logInfo', 'logWarn'].forEach(n => sandbox.stub(utils, n));
   });
   afterEach(() => {
     sandbox.restore();
-    clock.restore();
   });
 
   describe('consentManagementHook', () => {
@@ -170,7 +168,7 @@ describe('consent management utils', () => {
 
         it('should not time out after it resolves', async () => {
           await runLookup();
-          clock.tick(timeout + 10);
+          await new Promise((resolve) => setTimeout(resolve, timeout + 10));
           sinon.assert.notCalled(consentDataHandler.setConsentData);
         });
       });
@@ -189,9 +187,7 @@ describe('consent management utils', () => {
       [0, 100].forEach(timeout => {
         it(`should resolve with null consent after cmpTimeout ( = ${timeout}ms)`, async () => {
           cmpTimeout = timeout;
-          const lookup = runLookup();
-          clock.tick(timeout + 1);
-          const {consentData, error} = await lookup;
+          const {consentData, error} = await runLookup();
           sinon.assert.calledWith(consentDataHandler.setConsentData, {consent: null});
           expect(consentData).to.eql({consent: null})
           expect(error.message).to.match(/.*CMP to load.*/)
@@ -202,27 +198,26 @@ describe('consent management utils', () => {
           cmpTimeout = 100;
           actionTimeout = timeout;
           const lookup = runLookup();
-          clock.tick(10);
+          await new Promise((resolve) => setTimeout(resolve, 10));
           setProvisionalConsent({consent: 'provisional'});
-          clock.tick(timeout + 1);
           const {consentData, error} = await lookup;
           expect(consentData).to.eql({consent: 'provisional'});
           expect(error.message).to.match(/.*action.*/)
         });
       });
 
-      it('should not reset action timeout if provisional consent is updated multiple times', async () => {
+      it('should not reset action timeout if provisional consent is updated multiple times', (done) => {
         actionTimeout = 100;
         let consentData;
-        const lookup = runLookup().then((res) => {
+        runLookup().then((res) => {
           consentData = res.consentData;
-        });
+        })
         setProvisionalConsent({consent: 1});
-        clock.tick(20);
-        setProvisionalConsent({consent: 2});
-        clock.tick(80);
-        await lookup;
-        expect(consentData).to.eql({consent: 2});
+        setTimeout(() => setProvisionalConsent({consent: 2}), 20);
+        setTimeout(() => {
+          expect(consentData).to.eql({consent: 2});
+          done();
+        }, 100)
       })
     });
   });

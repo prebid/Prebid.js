@@ -5,14 +5,10 @@ describe('cmpClient', () => {
     let listeners = [];
     const win = {
       addEventListener: sinon.stub().callsFake((evt, listener) => {
-        if (evt === 'message') {
-          listeners.push(listener);
-        }
+        evt === 'message' && listeners.push(listener)
       }),
       removeEventListener: sinon.stub().callsFake((evt, listener) => {
-        if (evt === 'message') {
-          listeners = listeners.filter((l) => l !== listener);
-        }
+        evt === 'message' && (listeners = listeners.filter((l) => l !== listener));
       }),
       postMessage: sinon.stub().callsFake((msg) => {
         listeners.forEach(ln => ln({data: msg}))

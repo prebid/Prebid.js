@@ -9,7 +9,6 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'revcontent';
-const GVLID = 203;
 const NATIVE_PARAMS = {
   title: {
     id: 0,
@@ -30,7 +29,6 @@ const STYLE_EXTRA = '<style type="text/css">.undefined-photo { background-size: 
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
     return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');
@@ -49,7 +47,7 @@ export const spec = {
       host = 'trends.revcontent.com';
     }
 
-    const serverRequests = [];
+    let serverRequests = [];
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo.page;
@@ -67,7 +65,7 @@ export const spec = {
 
     const imp = validBidRequests.map((bid, id) => buildImp(bid, id));
 
-    const data = {
+    let data = {
       id: bidderRequest.bidderRequestId,
       imp: imp,
       site: {
@@ -101,21 +99,21 @@ export const spec = {
     return serverRequests;
   },
   interpretResponse: function (serverResponse, serverRequest) {
-    const response = serverResponse.body;
+    let response = serverResponse.body;
     if ((!response) || (!response.seatbid)) {
       return [];
     }
 
-    const rtbRequest = JSON.parse(serverRequest.data);
-    const rtbBids = response.seatbid
+    let rtbRequest = JSON.parse(serverRequest.data);
+    let rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
       const bidIndex = +rtbBid.impid - 1;
-      const imp = rtbRequest.imp.filter(imp => imp.id.toString() === rtbBid.impid)[0];
+      let imp = rtbRequest.imp.filter(imp => imp.id.toString() === rtbBid.impid)[0];
 
-      const prBid = {
+      let prBid = {
         requestId: serverRequest.bid[bidIndex].bidId,
         cpm: rtbBid.price,
         creativeId: rtbBid.crid,
@@ -130,8 +128,8 @@ export const spec = {
         prBid.height = rtbBid.h;
         prBid.ad = STYLE_EXTRA + rtbBid.adm;
       } else if ('native' in imp) {
-        const adm = JSON.parse(rtbBid.adm);
-        const ad = {
+        let adm = JSON.parse(rtbBid.adm);
+        let ad = {
           clickUrl: adm.link.url
         };
 
@@ -214,7 +212,7 @@ function buildImp(bid, id) {
     bidfloor = deepAccess(bid, `params.bidfloor`) || 0.1;
   }
 
-  const imp = {
+  let imp = {
     id: id + 1,
     tagid: bid.adUnitCode,
     bidderRequestId: bid.bidderRequestId,
@@ -226,10 +224,10 @@ function buildImp(bid, id) {
     secure: '1'
   };
 
-  const bannerReq = deepAccess(bid, `mediaTypes.banner`);
-  const nativeReq = deepAccess(bid, `mediaTypes.native`);
+  let bannerReq = deepAccess(bid, `mediaTypes.banner`);
+  let nativeReq = deepAccess(bid, `mediaTypes.native`);
   if (bannerReq) {
-    const sizes = getAdUnitSizes(bid);
+    let sizes = getAdUnitSizes(bid);
     imp.banner = {
       w: sizes[0][0],
       h: sizes[0][1],

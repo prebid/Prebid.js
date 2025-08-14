@@ -28,7 +28,7 @@ describe('ChtnwAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [{
+    let bidRequests = [{
       code: 'adunit-code',
       bidder: 'chtnw',
       params: {
@@ -49,7 +49,7 @@ describe('ChtnwAdapter', function () {
     });
 
     it('Returns general data valid', function () {
-      const data = request.data;
+      let data = request.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('bids');
       expect(data).to.have.property('uuid');
@@ -59,7 +59,7 @@ describe('ChtnwAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const responseBody = [{
+    let responseBody = [{
       'requestId': 'test',
       'cpm': 0.5,
       'currency': 'USD',
@@ -78,19 +78,19 @@ describe('ChtnwAdapter', function () {
     }];
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: responseBody
       };
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result.length).to.not.equal(0);
       expect(result[0].meta.advertiserDomains).to.be.an('array');
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: []
       };
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
@@ -100,7 +100,7 @@ describe('ChtnwAdapter', function () {
       const syncOptions = {
         'pixelEnabled': 'true'
       }
-      const userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('image');
       expect(userSync[0].url).to.have.string('ssp');
     });

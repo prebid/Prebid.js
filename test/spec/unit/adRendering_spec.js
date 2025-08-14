@@ -27,7 +27,7 @@ import {
 describe('adRendering', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     sandbox.stub(utils, 'logWarn');
     sandbox.stub(utils, 'logError');
   })
@@ -349,7 +349,7 @@ describe('adRendering', () => {
       });
 
       describe('when bid has already expired', () => {
-        const isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        let isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
         beforeEach(() => {
           isBidNotExpiredStub.returns(false);
         });

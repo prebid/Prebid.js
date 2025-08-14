@@ -17,7 +17,7 @@ const DEFAULT_HEIGHT = 0;
 const NET_REVENUE = false;
 let publisherId = 0;
 let zoneId = 0;
-const NATIVE_ASSET_ID_TO_KEY_MAP = {};
+let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 const DATA_TYPES = {
   'NUMBER': 'number',
   'STRING': 'string',
@@ -74,12 +74,12 @@ const NATIVE_ASSETS = {
 };
 
 function _getDomainFromURL(url) {
-  const anchor = document.createElement('a');
+  let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
 
-const platform = (function getPlatform() {
+let platform = (function getPlatform() {
   var ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
     return 'Android'
@@ -459,8 +459,8 @@ export const spec = {
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
-    const conf = _initConf(refererInfo);
-    const payload = _createOrtbTemplate(conf);
+    let conf = _initConf(refererInfo);
+    let payload = _createOrtbTemplate(conf);
     let bidCurrency = '';
     let bid;
     validBidRequests.forEach(originalBid => {
@@ -514,9 +514,8 @@ export const spec = {
       payload.test = 1;
     }
     // adding schain object
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      deepSetValue(payload, 'source.ext.schain', schain);
+    if (validBidRequests[0].schain) {
+      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -543,8 +542,8 @@ export const spec = {
   interpretResponse: function (serverResponses, bidderRequest) {
     const bidResponses = [];
     var respCur = ADTRUE_CURRENCY;
-    const parsedRequest = JSON.parse(bidderRequest.data);
-    const parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+    let parsedRequest = JSON.parse(bidderRequest.data);
+    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       if (serverResponses.body && serverResponses.body.seatbid && isArray(serverResponses.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
@@ -553,7 +552,7 @@ export const spec = {
           seatbidder.bid &&
           isArray(seatbidder.bid) &&
           seatbidder.bid.forEach(bid => {
-            const newBid = {
+            let newBid = {
               requestId: bid.impid,
               cpm: (parseFloat(bid.price) || 0).toFixed(2),
               width: bid.w,
@@ -614,9 +613,9 @@ export const spec = {
       return [];
     }
     return responses.reduce((accum, rsp) => {
-      const cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
+      let cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
       if (cookieSyncs) {
-        const cookieSyncObjects = cookieSyncs.map(cookieSync => {
+        let cookieSyncObjects = cookieSyncs.map(cookieSync => {
           return {
             type: SYNC_TYPES[cookieSync.type],
             url: cookieSync.url +

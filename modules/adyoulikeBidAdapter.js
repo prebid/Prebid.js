@@ -1,6 +1,7 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -8,7 +9,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const VERSION = '1.0';
@@ -75,9 +75,9 @@ export const spec = {
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
-        const mediatype = getMediatype(bidReq);
-        const sizesArray = getSizeArray(bidReq);
-        const size = getSize(sizesArray);
+        let mediatype = getMediatype(bidReq);
+        let sizesArray = getSizeArray(bidReq);
+        let size = getSize(sizesArray);
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
         accumulator[bidReq.bidId].TransactionID = bidReq.ortb2Imp?.ext?.tid;
@@ -87,9 +87,8 @@ export const spec = {
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
-        const schain = bidReq?.ortb2?.source?.ext?.schain;
-        if (schain) {
-          accumulator[bidReq.bidId].SChain = schain;
+        if (bidReq.schain) {
+          accumulator[bidReq.bidId].SChain = bidReq.schain;
         }
         if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
           eids = bidReq.userIdAsEids;
@@ -188,7 +187,7 @@ export const spec = {
    *
    * @param {*} syncOptions Publisher prebid configuration.
    * @param {*} serverResponses A successful response from the server.
-   * @return {UserSync[]} An array of syncs that should be executed.
+   * @return {syncs[]} An array of syncs that should be executed.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled) {
@@ -228,7 +227,7 @@ export const spec = {
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
-  const dcHostname = ((bidderRequest) || []).find(bid => bid.params.DC);
+  let dcHostname = find(bidderRequest, bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
   }
@@ -273,7 +272,7 @@ function getPageRefreshed() {
 
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest, hasVideo) {
-  const host = getHostname(bidRequests);
+  let host = getHostname(bidRequests);
   const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
@@ -301,7 +300,7 @@ function createEndpointQS(bidderRequest) {
       qs.PageReferrer = encodeURIComponent(ref.location);
     }
 
-    // retrieve info from ortb2 object if present (prebid7)
+    // retreive info from ortb2 object if present (prebid7)
     const siteInfo = bidderRequest.ortb2?.site;
     if (siteInfo) {
       qs.PageUrl = encodeURIComponent(siteInfo.page || ref?.topmostLocation);
@@ -516,7 +515,7 @@ function createBid(response, bidRequests) {
 
   const request = bidRequests && bidRequests[response.BidID];
 
-  // In case we don't retrieve the size from the adserver, use the given one.
+  // In case we don't retreive the size from the adserver, use the given one.
   if (request) {
     if (!response.Width || response.Width === '0') {
       response.Width = request.Width;
@@ -537,7 +536,7 @@ function createBid(response, bidRequests) {
     meta: response.Meta || { advertiserDomains: [] }
   };
 
-  // retrieve video response if present
+  // retreive video response if present
   const vast64 = response.Vast;
   if (vast64) {
     bid.width = response.Width;

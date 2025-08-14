@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/compassBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
-import { config } from '../../../src/config.js';
 
 const bidder = 'compass';
 
@@ -133,7 +132,7 @@ describe('CompassBidAdapter', function () {
     });
 
     it('Returns general data valid', function () {
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
@@ -213,7 +212,7 @@ describe('CompassBidAdapter', function () {
         }
       ];
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
@@ -248,7 +247,7 @@ describe('CompassBidAdapter', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('object');
       expect(data.gdpr).to.have.property('consentString');
@@ -262,7 +261,7 @@ describe('CompassBidAdapter', function () {
       bidderRequest.uspConsent = '1---';
       delete bidderRequest.gdprConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -277,8 +276,8 @@ describe('CompassBidAdapter', function () {
         applicableSections: [8]
       };
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
@@ -292,11 +291,13 @@ describe('CompassBidAdapter', function () {
       bidderRequest.ortb2.regs.gpp = 'abc123';
       bidderRequest.ortb2.regs.gpp_sid = [8];
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
+
+      bidderRequest.ortb2;
     })
   });
 
@@ -321,9 +322,9 @@ describe('CompassBidAdapter', function () {
           }
         }]
       };
-      const bannerResponses = spec.interpretResponse(banner);
+      let bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(banner.body[0].requestId);
@@ -355,10 +356,10 @@ describe('CompassBidAdapter', function () {
           }
         }]
       };
-      const videoResponses = spec.interpretResponse(video);
+      let videoResponses = spec.interpretResponse(video);
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      const dataItem = videoResponses[0];
+      let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -392,10 +393,10 @@ describe('CompassBidAdapter', function () {
           }
         }]
       };
-      const nativeResponses = spec.interpretResponse(native);
+      let nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      const dataItem = nativeResponses[0];
+      let dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -426,7 +427,7 @@ describe('CompassBidAdapter', function () {
         }]
       };
 
-      const serverResponses = spec.interpretResponse(invBanner);
+      let serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid video response is passed', function () {
@@ -442,7 +443,7 @@ describe('CompassBidAdapter', function () {
           dealId: '1'
         }]
       };
-      const serverResponses = spec.interpretResponse(invVideo);
+      let serverResponses = spec.interpretResponse(invVideo);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid native response is passed', function () {
@@ -459,7 +460,7 @@ describe('CompassBidAdapter', function () {
           currency: 'USD',
         }]
       };
-      const serverResponses = spec.interpretResponse(invNative);
+      let serverResponses = spec.interpretResponse(invNative);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -472,17 +473,17 @@ describe('CompassBidAdapter', function () {
           dealId: '1'
         }]
       };
-      const serverResponses = spec.interpretResponse(invalid);
+      let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
 
   describe('getUserSyncs', function() {
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = config.runWithBidder(bidder, () => spec.getUserSyncs({}, {}, {
+      const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, {}));
+      }, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -491,9 +492,9 @@ describe('CompassBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://sa-cs.deliverimp.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = config.runWithBidder(bidder, () => spec.getUserSyncs({}, {}, {}, {
+      const syncData = spec.getUserSyncs({}, {}, {}, {
         consentString: '1---'
-      }));
+      });
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -502,10 +503,10 @@ describe('CompassBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://sa-cs.deliverimp.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = config.runWithBidder(bidder, () => spec.getUserSyncs({}, {}, {}, {}, {
+      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
         gppString: 'abc123',
         applicableSections: [8]
-      }));
+      });
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')

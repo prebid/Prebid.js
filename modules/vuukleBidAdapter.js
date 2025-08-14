@@ -31,7 +31,7 @@ export const spec = {
         rnd: Math.random(),
         bidId: bid.bidId,
         source: 'pbjs',
-        schain: JSON.stringify(bid?.ortb2?.source?.ext?.schain),
+        schain: JSON.stringify(bid.schain),
         requestId: bid.bidderRequestId,
         tmax: bidderRequest.timeout,
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,

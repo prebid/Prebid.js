@@ -74,11 +74,10 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
 }
 
 /**
- * Extracts consent from the Prebid consent object and translates it
- * into a 1plusX profile api query parameter dict
- * @param {object} prebid
- * @param {object} prebid.gdpr gdpr object
- * @returns {Object|null} dictionary of papi gdpr query parameters
+ * Extracts consent from the prebid consent object and translates it
+ * into a 1plusX profile api query parameter parameter dict
+ * @param {object} prebid gdpr object
+ * @returns dictionary of papi gdpr query parameters
  */
 export const extractConsent = ({ gdpr }) => {
   if (!gdpr) {
@@ -86,14 +85,10 @@ export const extractConsent = ({ gdpr }) => {
   }
   const { gdprApplies, consentString } = gdpr
   if (!(gdprApplies == '0' || gdprApplies == '1')) {
-    const msg = 'TCF Consent: gdprApplies has wrong format'
-    logError(msg)
-    return null
+    throw 'TCF Consent: gdprApplies has wrong format'
   }
   if (consentString && typeof consentString != 'string') {
-    const msg = 'TCF Consent: consentString must be string if defined'
-    logError(msg)
-    return null
+    throw 'TCF Consent: consentString must be string if defined'
   }
   const result = {
     'gdpr_applies': gdprApplies,
@@ -123,9 +118,9 @@ export const extractFpid = (fpidStorageType) => {
 }
 /**
  * Gets the URL of Profile Api from which targeting data will be fetched
- * @param {string} customerId
+ * @param {string} config.customerId
  * @param {object} consent query params as dict
- * @param {string} [fpid] first party id
+ * @param {string} oneplusx first party id (nullable)
  * @returns {string} URL to access 1plusX Profile API
  */
 export const getPapiUrl = (customerId, consent, fpid) => {
@@ -171,8 +166,8 @@ const getTargetingDataFromPapi = (papiUrl) => {
 /**
  * Prepares the update for the ORTB2 object
  * @param {Object} targetingData Targeting data fetched from Profile API
- * @param {string[]} targetingData.segments Represents the audience segments of the user
- * @param {string[]} targetingData.topics Represents the topics of the page
+ * @param {string[]} segments Represents the audience segments of the user
+ * @param {string[]} topics Represents the topics of the page
  * @returns {Object} Object describing the updates to make on bidder configs
  */
 export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
@@ -222,7 +217,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
 };
 
 /**
- * Updates bidder configs with the targeting data retrieved from Profile API
+ * Updates bidder configs with the targeting data retreived from Profile API
  * @param {Object} papiResponse Response from Profile API
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration

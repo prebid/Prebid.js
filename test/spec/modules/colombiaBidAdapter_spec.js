@@ -1,16 +1,15 @@
 import { expect } from 'chai';
 import { spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import * as ajaxLib from 'src/ajax.js';
 
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
-describe('colombiaBidAdapter', function () {
+describe('colombiaBidAdapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'colombia',
       'params': {
         placementId: '307466'
@@ -34,14 +33,14 @@ describe('colombiaBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'colombia',
         'params': {
@@ -69,7 +68,7 @@ describe('colombiaBidAdapter', function () {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
-    const bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -89,7 +88,7 @@ describe('colombiaBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const bidRequest = [
+    let bidRequest = [
       {
         'method': 'POST',
         'url': 'https://ade.clmbtech.com/cde/prebid.htm',
@@ -106,7 +105,7 @@ describe('colombiaBidAdapter', function () {
       }
     ];
 
-    const serverResponse = [{
+    let serverResponse = [{
       'ad': '<div>This is test case for colombia adapter</div> ',
       'cpm': 3.14,
       'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
@@ -121,7 +120,7 @@ describe('colombiaBidAdapter', function () {
     }];
 
     it('should get the correct bid response', function () {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 3.14,
         'width': 728,
@@ -134,12 +133,12 @@ describe('colombiaBidAdapter', function () {
         'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
         'ad': '<div>This is test case for colombia adapter</div>'
       }];
-      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: {
           'uid': '23beaa6af6cdde',
           'height': 0,
@@ -149,130 +148,8 @@ describe('colombiaBidAdapter', function () {
           'cpm': 0
         }
       };
-      const result = spec.interpretResponse(response, bidRequest[0]);
+      let result = spec.interpretResponse(response, bidRequest[0]);
       expect(result.length).to.equal(0);
-    });
-  });
-  describe('onBidWon', function () {
-    let ajaxStub;
-    beforeEach(() => {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('should call ajax with correct URL and encoded evtData when event 500 is present', function () {
-      const bid = {
-        eventTrackers: [{
-          event: 500,
-          method: 500,
-          url: 'https://ade.clmbtech.com/cde/bidNotify.htm'
-        }],
-        ext: {
-          evtData: 'd_1_%7B%22iId%22%3A%22abc123-impr-id%22%2C%22aId%22%3A%22ad5678%22%2C%22ci%22%3A%22call-id-789%22%2C%22fpc%22%3A%22some-fpc-value%22%2C%22prebid%22%3A1%7D'
-        }
-      };
-      spec.onBidWon(bid);
-      expect(ajaxStub.calledOnce).to.be.true;
-      const [url, , data, options] = ajaxStub.firstCall.args;
-      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm');
-      const parsedPayload = JSON.parse(data);
-      expect(parsedPayload).to.deep.equal({
-        bidNotifyType: 1,
-        evt: 'd_1_%7B%22iId%22%3A%22abc123-impr-id%22%2C%22aId%22%3A%22ad5678%22%2C%22ci%22%3A%22call-id-789%22%2C%22fpc%22%3A%22some-fpc-value%22%2C%22prebid%22%3A1%7D'
-      });
-      expect(options).to.deep.include({
-        method: 'POST',
-        withCredentials: false
-      });
-    });
-    it('should not call ajax if eventTrackers is missing or event 500 not present', function () {
-      spec.onBidWon({});
-      spec.onBidWon({ eventTrackers: [{ event: 200 }] });
-
-      expect(ajaxStub.notCalled).to.be.true;
-    });
-  });
-  describe('onTimeout', function () {
-    let ajaxStub;
-
-    beforeEach(function () {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
-    });
-
-    afterEach(function () {
-      ajaxStub.restore();
-    });
-
-    it('should call ajax with correct payload and pubAdCodeNames from gpid', function () {
-      const timeoutData = [
-        {
-          ortb2Imp: {
-            ext: {
-              gpid: 'abc#123'
-            }
-          }
-        },
-        {
-          ortb2Imp: {
-            ext: {
-              gpid: 'def#456'
-            }
-          }
-        },
-        {
-          ortb2Imp: {
-            ext: {
-              gpid: 'ghi#789'
-            }
-          }
-        }
-      ];
-
-      spec.onTimeout(timeoutData);
-
-      expect(ajaxStub.calledOnce).to.be.true;
-
-      const [url, , data, options] = ajaxStub.firstCall.args;
-
-      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm');
-
-      const parsedPayload = JSON.parse(data);
-      expect(parsedPayload).to.deep.equal({
-        bidNotifyType: 2,
-        pubAdCodeNames: 'abc,def,ghi'
-      });
-
-      expect(options).to.deep.include({
-        method: 'POST',
-        withCredentials: false
-      });
-    });
-
-    it('should not call ajax if timeoutData is null or empty', function () {
-      spec.onTimeout(null);
-      spec.onTimeout([]);
-
-      expect(ajaxStub.notCalled).to.be.true;
-    });
-
-    it('should skip entries without valid gpid', function () {
-      const timeoutData = [
-        { ortb2Imp: { ext: { gpid: 'valid#123' } } },
-        { ortb2Imp: { ext: {} } },
-        { ortb2Imp: {} },
-        {},
-      ];
-
-      spec.onTimeout(timeoutData);
-
-      expect(ajaxStub.calledOnce).to.be.true;
-      const [, , data] = ajaxStub.firstCall.args;
-      const parsed = JSON.parse(data);
-
-      expect(parsed.pubAdCodeNames).to.equal('valid');
     });
   });
 });

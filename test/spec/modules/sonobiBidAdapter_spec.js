@@ -4,8 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
-import { parseQS } from '../../../src/utils.js'
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { parseQS } from '../../../src/utils'
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
   const originalBuildRequests = spec.buildRequests;
@@ -249,7 +248,7 @@ describe('SonobiBidAdapter', function () {
 
   describe('.buildRequests', function () {
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         sonobi: {
           storageAllowed: true
         }
@@ -267,28 +266,22 @@ describe('SonobiBidAdapter', function () {
       gptUtils.getGptSlotInfoForAdUnitCode.restore();
       sandbox.restore();
     });
-    const bidRequest = [{
-      'ortb2': {
-        'source': {
-          'ext': {
-            'schain': {
-              'ver': '1.0',
-              'complete': 1,
-              'nodes': [
-                {
-                  'asi': 'indirectseller.com',
-                  'sid': '00001',
-                  'hp': 1
-                },
-                {
-                  'asi': 'indirectseller-2.com',
-                  'sid': '00002',
-                  'hp': 0
-                },
-              ]
-            }
-          }
-        }
+    let bidRequest = [{
+      'schain': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 0
+          },
+        ]
       },
       'bidder': 'sonobi',
       'params': {
@@ -303,8 +296,9 @@ describe('SonobiBidAdapter', function () {
       'bidId': '30b31c1838de1f',
       ortb2Imp: {
         ext: {
-          data: {},
-          gpid: '/123123/gpt_publisher/adunit-code-1'
+          data: {
+            pbadslot: '/123123/gpt_publisher/adunit-code-1'
+          }
         }
       },
       mediaTypes: {
@@ -391,14 +385,14 @@ describe('SonobiBidAdapter', function () {
       }
     }];
 
-    const keyMakerData = {
+    let keyMakerData = {
       '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,pm=1:2:3,p=2,pl=3,protocols=1:2:3:4:5,mimes=video/mp4:video/mpeg:video/x-flv,battr=16:17,api=1:2:3,minduration=5,maxduration=60,skip=1,skipafter=10,startdelay=5,linearity=1,minbitrate=1,maxbitrate=2,',
       '30b31c1838de1g': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25,gpid=/123123/gpt_publisher/adunit-code-42,c=d,',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
     };
 
-    const bidderRequests = {
+    let bidderRequests = {
       'gdprConsent': {
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
         'vendorData': {},
@@ -453,7 +447,7 @@ describe('SonobiBidAdapter', function () {
     });
 
     it('should have storageAllowed set to true', function () {
-      expect(getGlobal().bidderSettings.sonobi.storageAllowed).to.be.true;
+      expect($$PREBID_GLOBAL$$.bidderSettings.sonobi.storageAllowed).to.be.true;
     });
 
     it('should return a properly formatted request', function () {
@@ -496,7 +490,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.consent_string).to.equal(encodeURIComponent('BOJ/P2HOJ/P2HABABMAAAAAZ+A=='))
     })
     it('should return a properly formatted request with GDPR applies set to false with no consent_string param', function () {
-      const bidderRequests = {
+      let bidderRequests = {
         'gdprConsent': {
           'consentString': undefined,
           'vendorData': {},
@@ -516,7 +510,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data).to.not.include.keys('consent_string')
     })
     it('should return a properly formatted request with GDPR applies set to true with no consent_string param', function () {
-      const bidderRequests = {
+      let bidderRequests = {
         'gdprConsent': {
           'consentString': undefined,
           'vendorData': {},
@@ -571,7 +565,7 @@ describe('SonobiBidAdapter', function () {
 
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(JSON.parse(decodeURIComponent(bidRequests.data.schain))).to.deep.equal(bidRequest[0].ortb2.source.ext.schain)
+      expect(JSON.parse(decodeURIComponent(bidRequests.data.schain))).to.deep.equal(bidRequest[0].schain)
     });
 
     it('should return a properly formatted request with eids as a JSON-encoded set of eids', function () {
@@ -708,7 +702,7 @@ describe('SonobiBidAdapter', function () {
       ]
     };
 
-    const bidResponse = {
+    let bidResponse = {
       'body': {
         'slots': {
           '/7780971/sparks_prebid_LB|30b31c1838de1f': {
@@ -763,7 +757,7 @@ describe('SonobiBidAdapter', function () {
       }
     };
 
-    const prebidResponse = [
+    let prebidResponse = [
       {
         'requestId': '30b31c1838de1f',
         'cpm': 1.07,
@@ -863,7 +857,7 @@ describe('SonobiBidAdapter', function () {
   });
 
   describe('.getUserSyncs', function () {
-    const bidResponse = [{
+    let bidResponse = [{
       'body': {
         'sbi_px': [{
           'code': 'so',

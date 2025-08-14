@@ -79,7 +79,7 @@ describe('#bidViewabilityIO', function() {
     };
 
     beforeEach(function() {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     })
 
     afterEach(function() {
@@ -105,7 +105,7 @@ describe('#bidViewabilityIO', function() {
     let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     })
 
     afterEach(function() {

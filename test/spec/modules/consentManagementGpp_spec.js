@@ -9,7 +9,7 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import 'src/prebid.js';
 
-const expect = require('chai').expect;
+let expect = require('chai').expect;
 
 describe('consentManagementGpp', function () {
   beforeEach(resetConsentData);
@@ -64,7 +64,7 @@ describe('consentManagementGpp', function () {
 
       it('should not produce any consent metadata', async function () {
         await setConsentConfig(undefined)
-        const consentMetadata = gppDataHandler.getConsentMeta();
+        let consentMetadata = gppDataHandler.getConsentMeta();
         expect(consentMetadata).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       })
@@ -85,7 +85,7 @@ describe('consentManagementGpp', function () {
       });
 
       it('results in all user settings overriding system defaults', async function () {
-        const allConfig = {
+        let allConfig = {
           gpp: {
             cmpApi: 'iab',
             timeout: 7500
@@ -120,7 +120,7 @@ describe('consentManagementGpp', function () {
       });
 
       it('results in user settings overriding system defaults', async () => {
-        const staticConfig = {
+        let staticConfig = {
           gpp: {
             cmpApi: 'static',
             timeout: 7500,
@@ -297,7 +297,7 @@ describe('consentManagementGpp', function () {
         'irrelevant': {eventName: 'irrelevant'}
       }).forEach(([t, evt]) => {
         it(`ignores ${t} events`, () => {
-          const pm = gppClient.init({signalStatus: 'not ready'}).catch((err) => err.args[0] !== 'done' && Promise.reject(err));
+          let pm = gppClient.init({signalStatus: 'not ready'}).catch((err) => err.args[0] !== 'done' && Promise.reject(err));
           eventListener(evt);
           eventListener('done', false);
           return pm;
@@ -346,7 +346,7 @@ describe('consentManagementGpp', function () {
           });
 
           it('keeps updating consent data on new events', () => {
-            const pm = gppClient.init({signalStatus: 'not ready'}).then(data => {
+            let pm = gppClient.init({signalStatus: 'not ready'}).then(data => {
               sinon.assert.match(data, gppData);
               sinon.assert.match(gppDataHandler.getConsentData(), gppData);
             });
@@ -383,7 +383,7 @@ describe('consentManagementGpp', function () {
   })
 
   describe('moduleConfig.requestBidsHook tests:', function () {
-    const goodConfig = {
+    let goodConfig = {
       gpp: {
         cmpApi: 'iab',
         timeout: 7500,
@@ -420,7 +420,7 @@ describe('consentManagementGpp', function () {
       });
 
       it('should throw a warning and return to hooked function when an unknown CMP framework ID is used', async function () {
-        const badCMPConfig = {
+        let badCMPConfig = {
           gpp: {
             cmpApi: 'bad'
           }
@@ -428,7 +428,7 @@ describe('consentManagementGpp', function () {
         await setConsentConfig(badCMPConfig);
         expect(consentConfig.cmpHandler).to.be.equal(badCMPConfig.gpp.cmpApi);
         expect(await runHook()).to.be.true;
-        const consent = gppDataHandler.getConsentData();
+        let consent = gppDataHandler.getConsentData();
         expect(consent).to.be.null;
         sinon.assert.calledOnce(utils.logWarn);
       });
@@ -446,7 +446,7 @@ describe('consentManagementGpp', function () {
       it('should throw proper errors when CMP is not found', async function () {
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.false;
-        const consent = gppDataHandler.getConsentData();
+        let consent = gppDataHandler.getConsentData();
         // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
         sinon.assert.calledTwice(utils.logError);
         expect(consent).to.be.null;
@@ -538,7 +538,7 @@ describe('consentManagementGpp', function () {
         await didHookRun();
         triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
         await consentConfig.loadConsentData();
-        window.__gpp.resetHistory();
+        window.__gpp.reset();
         didHookRun = startHook();
         await consentConfig.loadConsentData();
         expect(await didHookRun()).to.be.true;
@@ -550,7 +550,7 @@ describe('consentManagementGpp', function () {
         await didHookRun();
         triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
         await consentConfig.loadConsentData();
-        for (const run of ['first', 'second']) {
+        for (let run of ['first', 'second']) {
           triggerCMPEvent('cmpDisplayStatus', {signalStatus: 'not ready'});
           didHookRun = startHook();
           expect(await didHookRun()).to.be.false;

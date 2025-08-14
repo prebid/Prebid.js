@@ -41,7 +41,7 @@ let invisiblyAnalyticsEnabled = false;
 
 const { width: x, height: y } = getViewportSize();
 
-const _pageView = {
+let _pageView = {
   eventType: 'pageView',
   userAgent: window.navigator.userAgent,
   timestamp: Date.now(),
@@ -53,11 +53,11 @@ const _pageView = {
 };
 
 // pass only 1% of events & fail the rest 99%
-const weightedFilter = { filter: Math.random() > 0.99 };
+let weightedFilter = { filter: Math.random() > 0.99 };
 
-const _eventQueue = [_pageView];
+let _eventQueue = [_pageView];
 
-const invisiblyAdapter = Object.assign(
+let invisiblyAdapter = Object.assign(
   adapter({ url: DEFAULT_EVENT_URL, analyticsType }),
   {
     track({ eventType, args }) {
@@ -99,18 +99,18 @@ function flush() {
 
   if (_eventQueue.length > 0) {
     while (_eventQueue.length) {
-      const eventFromQue = _eventQueue.shift();
-      const eventtype = 'PREBID_' + eventFromQue.eventType;
+      let eventFromQue = _eventQueue.shift();
+      let eventtype = 'PREBID_' + eventFromQue.eventType;
       delete eventFromQue.eventType;
 
-      const data = {
+      let data = {
         pageViewId: _pageViewId,
         ver: _VERSION,
         bundleId: initOptions.bundleId,
         ...eventFromQue,
       };
 
-      const payload = {
+      let payload = {
         event_type: eventtype,
         event_data: { ...data },
       };

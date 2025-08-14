@@ -26,7 +26,7 @@ let context = {};
 /**
  * Create eightPod Analytic adapter
  */
-const eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}), {
+let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}), {
   /**
    * Execute on bid won - setup basic settings, save context about EightPod's bid. We will send it with our events later
    */

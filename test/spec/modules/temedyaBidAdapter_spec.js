@@ -56,24 +56,24 @@ describe('temedya adapter', function() {
 
   describe('isBidRequestValid', function () {
     it('valid bid case', function () {
-      const validBid = {
+      let validBid = {
         bidder: 'temedya',
         params: {
           widgetId: 753497,
           count: 1
         }
       }
-      const isValid = spec.isBidRequestValid(validBid);
+      let isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
     it('invalid bid case: widgetId and countId is not passed', function() {
-      const validBid = {
+      let validBid = {
         bidder: 'temedya',
         params: {
         }
       }
-      const isValid = spec.isBidRequestValid(validBid);
+      let isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(false);
     })
   })
@@ -86,19 +86,19 @@ describe('temedya adapter', function() {
     });
 
     it('buildRequests function should not modify original bidRequests object', function () {
-      const originalBidRequests = utils.deepClone(bidRequests);
-      const request = spec.buildRequests(bidRequests);
+      let originalBidRequests = utils.deepClone(bidRequests);
+      let request = spec.buildRequests(bidRequests);
       expect(bidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('buildRequests function should not modify original nativeBidRequests object', function () {
-      const originalBidRequests = utils.deepClone(nativeBidRequests);
-      const request = spec.buildRequests(nativeBidRequests);
+      let originalBidRequests = utils.deepClone(nativeBidRequests);
+      let request = spec.buildRequests(nativeBidRequests);
       expect(nativeBidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('Request params check', function() {
-      const request = spec.buildRequests(bidRequests)[0];
+      let request = spec.buildRequests(bidRequests)[0];
       const data = _getUrlVars(request.url)
       data.type = 'native';
       data.wid = bidRequests[0].params.widgetId;
@@ -107,7 +107,7 @@ describe('temedya adapter', function() {
   })
 
   describe('interpretResponse', function () {
-    const response = {
+    let response = {
       ads: [
         {
           'id': 30,
@@ -150,7 +150,7 @@ describe('temedya adapter', function() {
     };
 
     it('should get correct bid response', function () {
-      const expectedResponse = [
+      let expectedResponse = [
         {
           'requestId': '1d236f7890b',
           'cpm': 0.0920,
@@ -164,8 +164,8 @@ describe('temedya adapter', function() {
           'ad': '<!-- ADS TAG -->'
         }
       ];
-      const request = spec.buildRequests(bidRequests)[0];
-      const result = spec.interpretResponse({body: response}, request);
+      let request = spec.buildRequests(bidRequests)[0];
+      let result = spec.interpretResponse({body: response}, request);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].cpm).to.not.equal(null);
       expect(result[0].creativeId).to.not.equal(null);

@@ -3,15 +3,15 @@ import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import {expectEvents} from '../../helpers/analytics.js';
 import {EVENTS} from 'src/constants.js';
-const adapterManager = require('src/adapterManager').default;
-const events = require('src/events');
+let adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
 
 describe('adWMG Analytics', function () {
-  const timestamp = new Date() - 256;
-  const auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
-  const timeout = 1500;
+  let timestamp = new Date() - 256;
+  let auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
+  let timeout = 1500;
 
-  const bidTimeoutArgs = [
+  let bidTimeoutArgs = [
     {
       bidId: '2baa51527bd015',
       bidder: 'bidderA',
@@ -41,7 +41,7 @@ describe('adWMG Analytics', function () {
     height: 250,
   };
 
-  const wonRequest = {
+  let wonRequest = {
     'adId': '4587fec4900b81',
     'mediaType': 'banner',
     'requestId': '4587fec4900b81',
@@ -60,7 +60,7 @@ describe('adWMG Analytics', function () {
     'size': [300, 250],
   };
 
-  const expectedBidWonData = {
+  let expectedBidWonData = {
     publisher_id: '5abd0543ba45723db49d97ea',
     site: 'test.com',
     ad_unit_size: ['300,250'],
@@ -88,7 +88,7 @@ describe('adWMG Analytics', function () {
     ]
   }
 
-  const adUnits = [{
+  let adUnits = [{
     code: 'ad-slot-1',
     sizes: [[300, 250]],
     mediaTypes: {
@@ -167,7 +167,7 @@ describe('adWMG Analytics', function () {
     it('check bidWon data', function () {
       events.emit(EVENTS.AUCTION_END, {});
       events.emit(EVENTS.BID_WON, wonRequest);
-      const realBidWonData = JSON.parse(server.requests[1].requestBody);
+      let realBidWonData = JSON.parse(server.requests[1].requestBody);
       expect(realBidWonData.publisher_id).to.equal(expectedBidWonData.publisher_id);
       expect(realBidWonData.site).to.equal(expectedBidWonData.site);
       expect(realBidWonData.ad_unit_type[0]).to.equal(expectedBidWonData.ad_unit_type[0]);

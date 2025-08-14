@@ -62,7 +62,7 @@ export const spec = {
     deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
 
     validBidRequests.forEach((validBid) => {
-      const bid = deepClone(validBid);
+      let bid = deepClone(validBid);
 
       const imp = createImp(bid);
       payload.imp.push(imp);
@@ -211,7 +211,7 @@ function createImp(bid) {
   }
 
   // Only supports proper mediaTypes definition…
-  for (const mediaType in bid.mediaTypes) {
+  for (let mediaType in bid.mediaTypes) {
     switch (mediaType) {
       case BANNER:
         imp.banner = createBannerImp(bid);
@@ -271,7 +271,7 @@ function getFloor(bid, mediaType, size = '*') {
 function getMinFloor(bid) {
   const floors = [];
 
-  for (const mediaType in bid.mediaTypes) {
+  for (let mediaType in bid.mediaTypes) {
     const floor = getFloor(bid, mediaType);
 
     if (isNumber(floor)) {
@@ -295,7 +295,7 @@ function getMinFloor(bid) {
  * @returns {object}
  */
 function createBannerImp(bid) {
-  const sizes = bid.mediaTypes.banner.sizes;
+  let sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 
   const banner = {};

@@ -7,8 +7,8 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {config} from '../../../src/config.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
 import {
   hashCode,
   extractPID,
@@ -19,7 +19,6 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -269,12 +268,12 @@ describe('OpaMarketplaceBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         opamarketplace: {
           storageAllowed: true
         }
       };
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
@@ -431,7 +430,7 @@ describe('OpaMarketplaceBidAdapter', function () {
     });
 
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -629,14 +628,14 @@ describe('OpaMarketplaceBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         opamarketplace: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -664,14 +663,14 @@ describe('OpaMarketplaceBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         opamarketplace: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();

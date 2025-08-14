@@ -2,6 +2,7 @@ import { config } from '../../src/config.js';
 import {
   isFn,
   isStr,
+  deepAccess,
   getWindowTop,
   triggerPixel
 } from '../../src/utils.js';
@@ -27,7 +28,7 @@ function isBidResponseValid(bid) {
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return bid?.params?.bidFloor ?? 0;
+    return deepAccess(bid, 'params.bidFloor', 0);
   }
 
   try {
@@ -66,7 +67,7 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     const placement = {
       placementId: bid.params.placementId,
       bidId: bid.bidId,
-      schain: bid?.ortb2?.source?.ext?.schain || {},
+      schain: bid.schain || {},
       bidfloor: getBidFloor(bid)
     };
 
@@ -92,9 +93,9 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
 }
 
 export function interpretResponse(serverResponse) {
-  const response = [];
+  let response = [];
   for (let i = 0; i < serverResponse.body.length; i++) {
-    const resItem = serverResponse.body[i];
+    let resItem = serverResponse.body[i];
     if (isBidResponseValid(resItem)) {
       const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
       resItem.meta = { ...resItem.meta, advertiserDomains };
@@ -120,7 +121,7 @@ export function consentCheck(bidderRequest, req) {
 }
 
 export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint) => {
-  const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
   const isCk2trk = syncEndpoint.includes('ck.2trk.info');
 
   let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
@@ -153,7 +154,7 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
 }
 
 export function bidWinReport (bid) {
-  const cpm = bid?.adserverTargeting?.hb_pb || '';
+  const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
   if (isStr(bid.nurl) && bid.nurl !== '') {
     bid.nurl = bid.nurl.replace(/\${AUCTION_PRICE}/, cpm);
     triggerPixel(bid.nurl);

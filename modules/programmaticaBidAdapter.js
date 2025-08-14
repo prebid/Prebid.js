@@ -13,15 +13,15 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    const valid = bid.params.siteId && bid.params.placementId;
+    let valid = bid.params.siteId && bid.params.placementId;
 
     return !!valid;
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const requests = [];
+    let requests = [];
     for (const bid of validBidRequests) {
-      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
 
       requests.push({
         method: 'GET',
@@ -51,7 +51,7 @@ export const spec = {
     let width;
     let height;
 
-    const sizes = getSize(body.size);
+    let sizes = getSize(body.size);
     if (isArray(sizes)) {
       [width, height] = sizes;
     }

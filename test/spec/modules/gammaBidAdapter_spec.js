@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 describe('gammaBidAdapter', function() {
   const adapter = newBidder(spec);
 
-  const bid = {
+  let bid = {
     'bidder': 'gamma',
     'params': {
       siteId: '1398219351',
@@ -20,7 +20,7 @@ describe('gammaBidAdapter', function() {
     'bidderRequestId': '19c0c1efdf37e7',
     'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
   };
-  const bidArray = [bid];
+  let bidArray = [bid];
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
@@ -28,7 +28,7 @@ describe('gammaBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', () => {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -79,7 +79,7 @@ describe('gammaBidAdapter', function() {
     })
 
     it('should get the correct bid response', () => {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 0.45,
         'width': 300,
@@ -92,15 +92,15 @@ describe('gammaBidAdapter', function() {
         'ad': '<!-- adtag -->',
         'meta': {'advertiserDomains': ['testdomain.com']}
       }];
-      const result = spec.interpretResponse(serverResponse);
+      let result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
     it('handles empty bid response', () => {
-      const response = {
+      let response = {
         body: {}
       };
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });

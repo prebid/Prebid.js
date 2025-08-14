@@ -14,8 +14,6 @@ import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
-
 const NAME = 'amxId';
 const GVL_ID = 737;
 const ID_KEY = NAME;
@@ -119,7 +117,7 @@ export const amxIdSubmodule = {
 
       v: '$prebid.version$',
       av: version,
-      vg: getGlobalVarName(),
+      vg: '$$PREBID_GLOBAL$$',
       us_privacy: usp,
       am: getBidAdapterID(),
       gdpr: consent.gdprApplies ? 1 : 0,
@@ -144,6 +142,7 @@ export const amxIdSubmodule = {
                 logError(`${NAME} invalid response`, responseText);
               }
             }
+
             done(null);
           },
         },

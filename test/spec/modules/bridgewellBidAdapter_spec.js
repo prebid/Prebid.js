@@ -154,7 +154,7 @@ describe('bridgewellBidAdapter', function () {
       expect(payload.adUnits).to.be.an('array');
       expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
-        const u = payload.adUnits[i];
+        let u = payload.adUnits[i];
         expect(u).to.have.property('ChannelID').that.is.a('string');
         expect(u).to.not.have.property('cid');
         expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
@@ -199,7 +199,7 @@ describe('bridgewellBidAdapter', function () {
       expect(payload.adUnits).to.be.an('array');
       expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
-        const u = payload.adUnits[i];
+        let u = payload.adUnits[i];
         expect(u).to.have.property('cid').that.is.a('number');
         expect(u).to.not.have.property('ChannelID');
         expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
@@ -364,7 +364,7 @@ describe('bridgewellBidAdapter', function () {
       expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
     });
 
-    it('should give up bid if server response is undefined', function () {
+    it('should give up bid if server response is undefiend', function () {
       let result = spec.interpretResponse({ 'body': undefined }, bannerBidRequests);
 
       expect(result).to.deep.equal([]);
@@ -1165,8 +1165,8 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       }];
       const result = spec.interpretResponse({ 'body': response }, request);
-      const actualBidId = result.map(obj => obj.requestId);
-      const expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+      let actualBidId = result.map(obj => obj.requestId);
+      let expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
 
       expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
     });
@@ -1263,8 +1263,8 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       }];
       const result = spec.interpretResponse({ 'body': response }, request);
-      const actualBidId = result.map(obj => obj.requestId);
-      const expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+      let actualBidId = result.map(obj => obj.requestId);
+      let expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
 
       expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
     });
@@ -1318,8 +1318,8 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       }];
       const result = spec.interpretResponse({ 'body': response }, request);
-      const actualBidId = result.map(obj => obj.requestId);
-      const expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+      let actualBidId = result.map(obj => obj.requestId);
+      let expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
 
       expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
     });

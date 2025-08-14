@@ -34,7 +34,7 @@ describe('vast trackers', () => {
         return [{bids: [bidRequest]}]
       }
     };
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     index = new AuctionIndex(() => [auction]);
     tracker = sinon.stub().callsFake(function (bidResponse) {
       return [

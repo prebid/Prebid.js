@@ -40,7 +40,7 @@ const DO_NOT_HONOR_CONFIG = false;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 let cookieDomain;
-const appliedConfig = {
+let appliedConfig = {
   name: 'lotamePanoramaId',
   storage: {
     type: 'cookie&html5',
@@ -54,7 +54,7 @@ const appliedConfig = {
  */
 function setProfileId(profileId) {
   if (cookiesAreEnabled()) {
-    const expirationDate = new Date(timestamp() + NINE_MONTHS_MS).toUTCString();
+    let expirationDate = new Date(timestamp() + NINE_MONTHS_MS).toUTCString();
     storage.setCookie(
       KEY_PROFILE,
       profileId,
@@ -110,7 +110,7 @@ function saveLotameCache(
   expirationTimestamp = timestamp() + DAYS_TO_CACHE * DAY_MS
 ) {
   if (key && value) {
-    const expirationDate = new Date(expirationTimestamp).toUTCString();
+    let expirationDate = new Date(expirationTimestamp).toUTCString();
     if (cookiesAreEnabled()) {
       storage.setCookie(
         key,
@@ -132,7 +132,7 @@ function saveLotameCache(
  * @param {Number} clientId
  */
 function getLotameLocalCache(clientId = undefined) {
-  const cache = {
+  let cache = {
     data: getFromStorage(KEY_ID),
     expiryTimestampMs: 0,
     clientExpiryTimestampMs: 0,
@@ -164,7 +164,7 @@ function getLotameLocalCache(clientId = undefined) {
 function clearLotameCache(key) {
   if (key) {
     if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
-      const expirationDate = new Date(0).toUTCString();
+      let expirationDate = new Date(0).toUTCString();
       storage.setCookie(
         key,
         '',
@@ -290,7 +290,7 @@ export const lotamePanoramaIdSubmodule = {
     }
 
     const resolveIdFunction = function (callback) {
-      const queryParams = {};
+      let queryParams = {};
       if (storedUserId) {
         queryParams.fp = storedUserId;
       }
@@ -323,7 +323,7 @@ export const lotamePanoramaIdSubmodule = {
           let coreId;
           if (response) {
             try {
-              const responseObj = JSON.parse(response);
+              let responseObj = JSON.parse(response);
               const hasNoConsentErrors = !(
                 isArray(responseObj.errors) &&
                 responseObj.errors.indexOf(MISSING_CORE_CONSENT) !== -1

@@ -3,7 +3,7 @@ import {GreedyPromise} from 'libraries/greedy/greedyPromise.js';
 import {fakeXhr} from 'nise';
 import {dep} from 'src/ajax.js';
 
-export const xhr = fakeXhr.useFakeXMLHttpRequest();
+export const xhr = sinon.useFakeXMLHttpRequest();
 export const server = mockFetchServer();
 
 /**

@@ -95,9 +95,9 @@ describe('docereeadmanager', function () {
           },
         },
       };
-      const bannerResponses = spec.interpretResponse(banner);
+      let bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys(
         'requestId',
         'cpm',

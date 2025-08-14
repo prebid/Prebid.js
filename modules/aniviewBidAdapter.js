@@ -157,40 +157,31 @@ export const spec = {
       return [];
     }
 
-    return converter.fromORTB({ response: body, request: bidderRequest.data }).bids
-      .filter((prebidBid, index) => !!bids[index].adm || !!bids[index].nurl)
-      .map((prebidBid, index) => {
-        const bid = bids[index];
-        const replacements = {
-          auctionPrice: prebidBid.cpm,
-          auctionId: prebidBid.requestId,
-          auctionBidId: bid.bidid,
-          auctionImpId: bid.impid,
-          auctionSeatId: prebidBid.seatBidId,
-          auctionAdId: bid.adid,
-        };
+    return converter.fromORTB({ response: body, request: bidderRequest.data }).bids.map((prebidBid, index) => {
+      const bid = bids[index];
+      const replacements = {
+        auctionPrice: prebidBid.cpm,
+        auctionId: prebidBid.requestId,
+        auctionBidId: bid.bidid,
+        auctionImpId: bid.impid,
+        auctionSeatId: prebidBid.seatBidId,
+        auctionAdId: bid.adid,
+      };
 
-        const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements);
+      const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements);
 
-        if (isVideoType(prebidBid.mediaType)) {
-          if (bidAdmWithReplacedMacros) {
-            prebidBid.vastXml = bidAdmWithReplacedMacros;
-          }
+      if (isVideoType(prebidBid.mediaType)) {
+        prebidBid.vastXml = bidAdmWithReplacedMacros;
 
-          if (bid.nurl) {
-            if (!prebidBid.vastXml) {
-              prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
-            } else {
-              // We do not want to use the vastUrl if we have the vastXml
-              delete prebidBid.vastUrl
-            }
-          }
-        } else {
-          prebidBid.ad = bidAdmWithReplacedMacros;
+        if (bid?.nurl) {
+          prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
         }
+      } else {
+        prebidBid.ad = bidAdmWithReplacedMacros;
+      }
 
-        return prebidBid;
-      });
+      return prebidBid;
+    });
   },
 
   getUserSyncs(syncOptions, serverResponses) {

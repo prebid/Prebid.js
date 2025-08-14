@@ -158,7 +158,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      schain: serializeSupplyChainObj(bid?.ortb2?.source?.ext?.schain) || '',
+      schain: serializeSupplyChainObj(bid.schain) || '',
       eids: eids || '',
       bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
@@ -167,7 +167,6 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
       videoContext: videoContext || '',
-      multiBidsSupport: 1,
       bcat: ortb2.bcat || bid.params.bcat || [],
       badv: ortb2.badv || bid.params.badv || [],
       bapp: ortb2.bapp || bid.params.bapp || [],
@@ -204,75 +203,71 @@ const render = (bid) => {
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
-    const responseBodies = serverResponse.body;
-    if (!Array.isArray(responseBodies) || responseBodies.length === 0) return;
+    let responseBody = serverResponse.body;
+    if (!responseBody) return;
+    if (responseBody.mediaType === 'video') {
+      responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
+      const videoContext = bidRequest.data.videoContext;
+
+      if (videoContext === OUTSTREAM) {
+        try {
+          const renderer = Renderer.install({
+            id: bidRequest.bidId,
+            adunitcode: bidRequest.tagId,
+            loaded: false,
+            config: responseBody.mediaType,
+            url: responseBody.meta.rendererUrl
+          });
+          renderer.setRender(render);
+
+          responseBody.renderer = renderer;
+        } catch (e) {
+          responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
+          logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
+        }
+      }
+    }
+    const bid = {
+      ad: responseBody.ad,
+      renderer: responseBody.renderer,
+      mediaType: responseBody.mediaType,
+      requestId: responseBody.requestId,
+      cpm: responseBody.cpm,
+      currency: responseBody.currency,
+      width: responseBody.width,
+      height: responseBody.height,
+      creativeId: responseBody.creativeId,
+      netRevenue: responseBody.netRevenue,
+      ttl: responseBody.ttl,
+      meta: {
+        mediaType: responseBody.meta.mediaType,
+        rendererUrl: responseBody.meta.rendererUrl,
+        advertiserDomains: responseBody.meta.advertiserDomains,
+        advertiserId: responseBody.meta.advertiserId,
+        advertiserName: responseBody.meta.advertiserName,
+        agencyId: responseBody.meta.agencyId,
+        agencyName: responseBody.meta.agencyName,
+        brandId: responseBody.meta.brandId,
+        brandName: responseBody.meta.brandName,
+        dchain: responseBody.meta.dchain,
+        networkId: responseBody.meta.networkId,
+        networkName: responseBody.meta.networkName,
+        primaryCatId: responseBody.meta.primaryCatId,
+        secondaryCatIds: responseBody.meta.secondaryCatIds
+      }
+    };
+    if (responseBody.vastUrl) {
+      bid.vastUrl = responseBody.vastUrl;
+    } else if (responseBody.vastXml) {
+      bid.vastXml = responseBody.vastXml;
+    }
 
     const bids = [];
 
-    for (const responseBody of responseBodies) {
-      if (!responseBody) continue;
-      if (responseBody.mediaType === 'video') {
-        responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
-        const videoContext = bidRequest.data.videoContext;
-
-        if (videoContext === OUTSTREAM) {
-          try {
-            const renderer = Renderer.install({
-              id: bidRequest.bidId,
-              adunitcode: bidRequest.tagId,
-              loaded: false,
-              config: responseBody.mediaType,
-              url: responseBody.meta.rendererUrl
-            });
-            renderer.setRender(render);
-
-            responseBody.renderer = renderer;
-          } catch (e) {
-            responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
-            logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
-          }
-        }
-      }
-      const bid = {
-        ad: responseBody.ad,
-        renderer: responseBody.renderer,
-        mediaType: responseBody.mediaType,
-        requestId: responseBody.requestId,
-        cpm: responseBody.cpm,
-        currency: responseBody.currency,
-        width: responseBody.width,
-        height: responseBody.height,
-        creativeId: responseBody.creativeId,
-        netRevenue: responseBody.netRevenue,
-        ttl: responseBody.ttl,
-        meta: {
-          mediaType: responseBody.meta.mediaType,
-          rendererUrl: responseBody.meta.rendererUrl,
-          advertiserDomains: responseBody.meta.advertiserDomains,
-          advertiserId: responseBody.meta.advertiserId,
-          advertiserName: responseBody.meta.advertiserName,
-          agencyId: responseBody.meta.agencyId,
-          agencyName: responseBody.meta.agencyName,
-          brandId: responseBody.meta.brandId,
-          brandName: responseBody.meta.brandName,
-          dchain: responseBody.meta.dchain,
-          networkId: responseBody.meta.networkId,
-          networkName: responseBody.meta.networkName,
-          primaryCatId: responseBody.meta.primaryCatId,
-          secondaryCatIds: responseBody.meta.secondaryCatIds
-        }
-      };
-      if (responseBody.vastUrl) {
-        bid.vastUrl = responseBody.vastUrl;
-      } else if (responseBody.vastXml) {
-        bid.vastXml = responseBody.vastXml;
-      }
-
-      if (isBidResponseValid(bid)) {
-        bids.push(bid);
-      } else {
-        logError(BIDDER_CODE + ': server returns invalid response');
-      }
+    if (isBidResponseValid(bid)) {
+      bids.push(bid);
+    } else {
+      logError(BIDDER_CODE + ': server returns invalid response');
     }
 
     return bids;
@@ -285,7 +280,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
-    const urls = deepAccess(responses, '0.body.0.pixels') || COOKIE_SYNC_FALLBACK_URLS;
+    const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
 
     return [].concat(urls).map(url => ({
       type: pixelType,

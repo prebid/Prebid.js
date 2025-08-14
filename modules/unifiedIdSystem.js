@@ -75,14 +75,7 @@ export const unifiedIdSubmodule = {
     };
     return {callback: resp};
   },
-  eids: {
-    tdid: {
-      ...UID1_EIDS.tdid,
-      mm: 4,
-      inserter: 'adserver.org',
-      matcher: 'adserver.org'
-    }
-  }
+  eids: {...UID1_EIDS}
 };
 
 submodule('userId', unifiedIdSubmodule);

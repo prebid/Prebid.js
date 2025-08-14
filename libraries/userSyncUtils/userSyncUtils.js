@@ -1,5 +1,5 @@
 export function getUserSyncParams(gdprConsent, uspConsent, gppConsent) {
-  const params = {};
+  let params = {};
 
   if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {

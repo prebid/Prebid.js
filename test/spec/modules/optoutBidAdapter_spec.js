@@ -94,7 +94,7 @@ describe('optoutAdapterTest', function () {
     it('bidRequest with config for currency', function () {
       config.setConfig({
         currency: {
-          adServerCurrency: 'USD',
+       	    adServerCurrency: 'USD',
           granularityMultiplier: 1
         }
       })

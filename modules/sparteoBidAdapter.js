@@ -70,8 +70,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const bannerParams = deepAccess(bid, 'mediaTypes.banner');
-    const videoParams = deepAccess(bid, 'mediaTypes.video');
+    let bannerParams = deepAccess(bid, 'mediaTypes.banner');
+    let videoParams = deepAccess(bid, 'mediaTypes.video');
 
     if (!bid.params) {
       logError('The bid params are missing');
@@ -94,7 +94,7 @@ export const spec = {
      */
 
     if (bannerParams) {
-      const sizes = bannerParams.sizes;
+      let sizes = bannerParams.sizes;
 
       if (!sizes || parseSizesInput(sizes).length == 0) {
         logError('mediaTypes.banner.sizes must be set for banner placement at the right format.');

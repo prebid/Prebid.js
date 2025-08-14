@@ -15,7 +15,6 @@ import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
 import * as activityRules from 'src/activities/rules.js';
 import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../../../../src/activities/activities.js';
-import {getGlobal} from '../../../../src/prebidGlobal.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -43,7 +42,7 @@ before(() => {
   hook.ready();
 });
 
-const wrappedCallback = config.callbackWithBidder(CODE);
+let wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
   let onTimelyResponseStub;
@@ -79,12 +78,12 @@ describe('bidderFactory', () => {
       let aliasRegistryStub, aliasRegistry;
 
       beforeEach(function () {
-        sandbox = sinon.createSandbox();
+        sandbox = sinon.sandbox.create();
         sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
         ajaxStub = sandbox.stub(ajax, 'ajax');
-        addBidResponseStub.resetHistory();
+        addBidResponseStub.reset();
         getConfigSpy = sandbox.spy(config, 'getConfig');
-        doneStub.resetHistory();
+        doneStub.reset();
         aliasRegistry = {};
         aliasRegistryStub = sandbox.stub(adapterManager, 'aliasRegistry');
         aliasRegistryStub.get(() => aliasRegistry);
@@ -222,7 +221,7 @@ describe('bidderFactory', () => {
 
       describe('transaction IDs', () => {
         beforeEach(() => {
-          activityRules.isActivityAllowed.resetHistory();
+          activityRules.isActivityAllowed.reset();
           ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
           spec.interpretResponse.callsFake(() => [
             {
@@ -504,15 +503,15 @@ describe('bidderFactory', () => {
       describe('browsingTopics ajax option', () => {
         let transmitUfpdAllowed, bidder, origBS;
         before(() => {
-          origBS = getGlobal().bidderSettings;
+          origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
         })
 
         after(() => {
-          getGlobal().bidderSettings = origBS;
+          window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
         });
 
         beforeEach(() => {
-          activityRules.isActivityAllowed.resetHistory();
+          activityRules.isActivityAllowed.reset();
           activityRules.isActivityAllowed.callsFake((activity) => activity === ACTIVITY_TRANSMIT_UFPD ? transmitUfpdAllowed : true);
           bidder = newBidder(spec);
           spec.isBidRequestValid.returns(true);
@@ -531,8 +530,7 @@ describe('bidderFactory', () => {
           ]);
           bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
           sinon.assert.calledWith(ajaxStub, 'url', sinon.match.any, sinon.match.any, sinon.match({
-            browsingTopics: false,
-            suppressTopicsEnrollmentWarning: true
+            browsingTopics: false
           }));
         });
 
@@ -543,7 +541,7 @@ describe('bidderFactory', () => {
         }).forEach(([t, [topicsHeader, enabled]]) => {
           describe(`when bidderSettings.topicsHeader is ${t}`, () => {
             beforeEach(() => {
-              getGlobal().bidderSettings = {
+              window.$$PREBID_GLOBAL$$.bidderSettings = {
                 [CODE]: {
                   topicsHeader: topicsHeader
                 }
@@ -551,7 +549,7 @@ describe('bidderFactory', () => {
             });
 
             afterEach(() => {
-              delete getGlobal().bidderSettings[CODE];
+              delete window.$$PREBID_GLOBAL$$.bidderSettings[CODE];
             });
 
             Object.entries({
@@ -595,7 +593,7 @@ describe('bidderFactory', () => {
                     url,
                     sinon.match.any,
                     sinon.match.any,
-                    sinon.match({browsingTopics: shouldBeSet, suppressTopicsEnrollmentWarning: true})
+                    sinon.match({browsingTopics: shouldBeSet})
                   );
                 });
               });
@@ -651,7 +649,7 @@ describe('bidderFactory', () => {
           fakeResponse.returns('headerContent');
           callbacks.success('response body', { getResponseHeader: fakeResponse });
         });
-        addBidResponseStub.resetHistory();
+        addBidResponseStub.reset();
         doneStub.resetBehavior();
         userSyncStub = sinon.stub(userSync, 'registerSync')
         logErrorSpy = sinon.spy(utils, 'logError');
@@ -956,8 +954,8 @@ describe('bidderFactory', () => {
         });
         callBidderErrorStub = sinon.stub(adapterManager, 'callBidderError');
         eventEmitterStub = sinon.stub(events, 'emit');
-        addBidResponseStub.resetHistory();
-        doneStub.resetHistory();
+        addBidResponseStub.reset();
+        doneStub.reset();
       });
 
       afterEach(function () {
@@ -1194,7 +1192,7 @@ describe('bidderFactory', () => {
     let ajaxStub;
     let logErrorSpy;
 
-    const bids = [{
+    let bids = [{
       'ad': 'creative',
       'cpm': '1.99',
       'width': 300,
@@ -1239,7 +1237,7 @@ describe('bidderFactory', () => {
     afterEach(function () {
       ajaxStub.restore();
       logErrorSpy.restore();
-      indexStub.restore();
+      indexStub.restore;
     });
 
     if (FEATURES.NATIVE) {
@@ -1251,7 +1249,7 @@ describe('bidderFactory', () => {
           }
         }]
         decorateAdUnitsWithNativeParams(adUnits);
-        const bidRequest = {
+        let bidRequest = {
           bids: [{
             bidId: '1',
             auctionId: 'first-bid-id',
@@ -1264,7 +1262,7 @@ describe('bidderFactory', () => {
           }]
         };
 
-        const bids1 = Object.assign({},
+        let bids1 = Object.assign({},
           bids[0],
           {
             'mediaType': 'native',
@@ -1293,7 +1291,7 @@ describe('bidderFactory', () => {
           },
         }];
         decorateAdUnitsWithNativeParams(adUnits);
-        const bidRequest = {
+        let bidRequest = {
           bids: [{
             bidId: '1',
             auctionId: 'first-bid-id',
@@ -1305,7 +1303,7 @@ describe('bidderFactory', () => {
             mediaType: 'native',
           }]
         };
-        const bids1 = Object.assign({},
+        let bids1 = Object.assign({},
           bids[0],
           {
             bidderCode: CODE,
@@ -1334,7 +1332,7 @@ describe('bidderFactory', () => {
           video: {context: 'outstream'}
         }
       }]
-      const bidRequest = {
+      let bidRequest = {
         bids: [{
           bidId: '1',
           auctionId: 'first-bid-id',
@@ -1346,7 +1344,7 @@ describe('bidderFactory', () => {
         }]
       };
 
-      const bids1 = Object.assign({},
+      let bids1 = Object.assign({},
         bids[0],
         {
           bidderCode: CODE,
@@ -1366,7 +1364,7 @@ describe('bidderFactory', () => {
     });
 
     it('should add banner bids that have no width or height but single adunit size', function () {
-      const bidRequest = {
+      let bidRequest = {
         bids: [{
           bidder: CODE,
           bidId: '1',
@@ -1379,7 +1377,7 @@ describe('bidderFactory', () => {
         }]
       };
       bidderRequests = [bidRequest];
-      const bids1 = Object.assign({},
+      let bids1 = Object.assign({},
         bids[0],
         {
           width: undefined,
@@ -1398,7 +1396,7 @@ describe('bidderFactory', () => {
     });
 
     it('should disregard auctionId/transactionId set by the adapter', () => {
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [{
           bidder: CODE,
           bidId: '1',
@@ -1738,7 +1736,7 @@ describe('bidderFactory', () => {
     let debugTurnedOnStub;
 
     before(() => {
-      origBS = getGlobal().bidderSettings;
+      origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
     });
 
     beforeEach(() => {
@@ -1773,7 +1771,7 @@ describe('bidderFactory', () => {
       if (doneStub.restore) doneStub.restore();
       getParameterByNameStub.restore();
       debugTurnedOnStub.restore();
-      getGlobal().bidderSettings = origBS;
+      window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
     });
 
     it('should send a gzip compressed payload when gzip is supported and enabled', function (done) {

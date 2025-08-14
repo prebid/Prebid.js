@@ -158,8 +158,8 @@ describe('greenbidsRtdProvider', () => {
 
   describe('getBidRequestData', () => {
     it('Callback is called if the server responds a 200 within the time limit', (done) => {
-      const requestBids = deepClone(SAMPLE_REQUEST_BIDS_CONFIG_OBJ);
-      const callback = sinon.stub();
+      let requestBids = deepClone(SAMPLE_REQUEST_BIDS_CONFIG_OBJ);
+      let callback = sinon.stub();
 
       greenbidsSubmodule.getBidRequestData(requestBids, callback, SAMPLE_MODULE_CONFIG);
 
@@ -191,8 +191,8 @@ describe('greenbidsRtdProvider', () => {
 
   describe('getBidRequestData', () => {
     it('Nothing changes if the server times out but still the callback is called', (done) => {
-      const requestBids = deepClone(SAMPLE_REQUEST_BIDS_CONFIG_OBJ);
-      const callback = sinon.stub();
+      let requestBids = deepClone(SAMPLE_REQUEST_BIDS_CONFIG_OBJ);
+      let callback = sinon.stub();
 
       greenbidsSubmodule.getBidRequestData(requestBids, callback, SAMPLE_MODULE_CONFIG);
 
@@ -218,8 +218,8 @@ describe('greenbidsRtdProvider', () => {
 
   describe('getBidRequestData', () => {
     it('callback is called if the server responds a 500 error within the time limit and no changes are made', (done) => {
-      const requestBids = deepClone(SAMPLE_REQUEST_BIDS_CONFIG_OBJ);
-      const callback = sinon.stub();
+      let requestBids = deepClone(SAMPLE_REQUEST_BIDS_CONFIG_OBJ);
+      let callback = sinon.stub();
 
       greenbidsSubmodule.getBidRequestData(requestBids, callback, SAMPLE_MODULE_CONFIG);
 

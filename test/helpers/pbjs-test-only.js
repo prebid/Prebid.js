@@ -1,12 +1,10 @@
-import {getGlobal} from '../../src/prebidGlobal.js';
-
 export const pbjsTestOnly = {
 
   getAdUnits() {
-    return getGlobal().adUnits;
+    return $$PREBID_GLOBAL$$.adUnits;
   },
 
   clearAllAdUnits() {
-    getGlobal().adUnits = [];
+    $$PREBID_GLOBAL$$.adUnits = [];
   }
 };

@@ -40,40 +40,42 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {Array} validBidRequests - an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    const codes = [];
-    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let codes = [];
+    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let floor = {};
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
+      floor = {};
       adunitValue = validBidRequests[key];
-      const code = {
+      if (typeof adunitValue.getFloor === 'function') {
+        if (Array.isArray(adunitValue.sizes)) {
+          adunitValue.sizes.forEach(value => {
+            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
+          });
+        }
+        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        if (tmpFloor != {}) { floor['*'] = tmpFloor; }
+      }
+      codes.push({
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
+        auctionId: adunitValue.auctionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
-        floor: {}
-      }
-      if (typeof adunitValue.getFloor === 'function') {
-        if (Array.isArray(adunitValue.sizes)) {
-          adunitValue.sizes.forEach(value => {
-            const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor != {}) { code.floor[value.join('x')] = tmpFloor; }
-          });
-        }
-        const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
-        if (tmpFloor != {}) { code.floor['*'] = tmpFloor; }
-      }
-      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
-      codes.push(code);
+        floor: floor
+      });
     });
     const payload = {
       codes: codes,
@@ -89,10 +91,13 @@ export const spec = {
         };
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
-      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
+      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      if (bidderRequest.userId) {
+        payload.userId = bidderRequest.userId;
+      } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
+        payload.userId = bidderRequest.bids[0].userId;
+      }
       if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
-      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -133,7 +138,7 @@ export const spec = {
           }
         };
         if ('dsa' in value) { bidResponse.meta.dsa = value['dsa']; }
-        const paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
         paramsToSearchFor.forEach(param => {
           if (param in value) {
             bidResponse['mediasquare'][param] = value[param];
@@ -173,15 +178,15 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Object} bid The bid that won the auction
+   * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
     if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
       return;
     }
-    const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
-    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
+    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
     if (bid.hasOwnProperty('mediasquare')) {
       paramsToSearchFor.forEach(param => {

@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError, safeJSONEncode } from '../src/utils.js';
+import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError } from '../src/utils.js';
 import { sendBeacon, ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import {
@@ -26,7 +26,7 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
+    let imp = buildImp(bidRequest, context);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -96,7 +96,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   });
 
   // See https://docs.prebid.org/dev-docs/bidder-adaptor.html
-  const req = {
+  let req = {
     url: adapterUrl,
     method: 'POST',
     data: {
@@ -153,7 +153,7 @@ const getSamplingRate = (bidderConfig, eventType) => {
 
 const logBidderError = ({ error, bidderRequest }) => {
   if (error) {
-    const jsonReason = {
+    let jsonReason = {
       message: error.reason?.message,
       stack: error.reason?.stack,
     };
@@ -162,59 +162,15 @@ const logBidderError = ({ error, bidderRequest }) => {
   logEvent('onBidderError', { error, bidderRequest });
 };
 
-const safeStringify = (data, keysToExclude = []) => {
-  try {
-    const seen = new WeakSet();
-    return JSON.stringify(data, function (key, value) {
-      try {
-        if (keysToExclude.includes(key)) {
-          return '[Excluded]';
-        }
-        // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#exceptions
-        if (typeof value === "bigint") {
-          return value.toString();
-        }
-
-        // Handle browser objects
-        if (typeof value === "object" && value !== null) {
-          // In case we try to stringify some html object, it could throw a SecurityError before detecting the circular reference
-          if (value === window ||
-              (typeof Window !== 'undefined' && value instanceof Window) ||
-              (typeof Document !== 'undefined' && value instanceof Document) ||
-              (typeof HTMLElement !== 'undefined' && value instanceof HTMLElement) ||
-              (typeof Node !== 'undefined' && value instanceof Node)) {
-            return '[Browser Object]';
-          }
-
-          // Check for circular references
-          if (seen.has(value)) {
-            return "[Circular]";
-          }
-          seen.add(value);
-        }
-
-        return value;
-      } catch (error) {
-        // Handle any property access errors (like cross-origin SecurityError)
-        return '[Inaccessible Object]';
-      }
-    });
-  } catch (error) {
-    return safeJSONEncode({ traceId: data?.traceId || '[Unknown]', error: error?.toString() });
-  }
-};
-
 // Handles the logging of events
 const logEvent = (eventType, data) => {
   try {
+    // Log event
+    logInfo(BIDDER_CODE, `[${eventType}] ${JSON.stringify(data)}`);
+
     // Get Config
     const bidderConfig = pbjsConfig.getConfig();
     const { version, customer } = extractParameters(bidderConfig);
-
-    // Construct a fail-safe payload
-    const stringifiedPayload = safeStringify(data, ["renderer"]);
-
-    logInfo(BIDDER_CODE, `[${eventType}] ${stringifiedPayload}`);
 
     // Sampled monitoring
     if (['onBidBillable', 'onAdRenderSucceeded'].includes(eventType)) {
@@ -228,6 +184,7 @@ const logEvent = (eventType, data) => {
       return;
     }
 
+    const payload = { type: eventType, data };
     const eventUrl = buildUrl({
       protocol: 'https',
       host: MONITORING_ENDPOINT,
@@ -235,19 +192,19 @@ const logEvent = (eventType, data) => {
     });
 
     // Try sending a beacon
-    if (sendBeacon(eventUrl, stringifiedPayload)) {
-      logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Beacon and payload: ${stringifiedPayload}`);
+    if (sendBeacon(eventUrl, JSON.stringify(payload))) {
+      logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Beacon and payload: ${JSON.stringify(data)}`);
     } else {
       // Fallback to using ajax
-      ajax(eventUrl, null, stringifiedPayload, {
+      ajax(eventUrl, null, JSON.stringify(payload), {
         method: 'POST',
         contentType: 'application/json',
         withCredentials: true,
       });
-      logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Ajax and payload: ${stringifiedPayload}`);
+      logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Ajax and payload: ${JSON.stringify(data)}`);
     }
   } catch (error) {
-    logError(BIDDER_CODE, `Failed to log event: ${eventType}. Error: ${error.toString()}.`);
+    logError(BIDDER_CODE, `Failed to log event: ${eventType}`);
   }
 };
 
@@ -267,8 +224,5 @@ export const spec = {
   onTimeout: function (timeoutData) { logEvent('onTimeout', timeoutData); },
   onBidderError: logBidderError,
 };
-
-// Export for testing
-export { safeStringify };
 
 registerBidder(spec);

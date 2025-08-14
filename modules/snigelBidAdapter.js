@@ -58,7 +58,7 @@ export const spec = {
         uspConsent: deepAccess(bidderRequest, 'uspConsent'),
         coppa: getConfig('coppa'),
         eids: deepAccess(bidRequests, '0.userIdAsEids'),
-        schain: deepAccess(bidRequests, '0.ortb2.source.ext.schain'),
+        schain: deepAccess(bidRequests, '0.schain'),
         page: getPage(bidderRequest),
         topframe: inIframe() === true ? 0 : 1,
         device: {
@@ -72,6 +72,7 @@ export const spec = {
             id: r.adUnitCode,
             tid: r.transactionId,
             gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
+            pbadslot: deepAccess(r, 'ortb2Imp.ext.data.pbadslot') || deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
             counter: getPlacementCounter(r.params.placement),
             sizes: r.sizes,

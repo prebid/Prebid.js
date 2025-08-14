@@ -190,7 +190,7 @@ describe('Sublime Adapter', function () {
     ];
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     });
 
     it('should trigger pixel', function () {
@@ -569,7 +569,7 @@ describe('Sublime Adapter', function () {
     const bid = { foo: 'bar' };
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     });
 
     it('should trigger "bidwon" pixel', function () {
@@ -592,7 +592,7 @@ describe('Sublime Adapter', function () {
     }];
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     });
 
     it('should trigger "bidtimeout" pixel', function () {

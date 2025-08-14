@@ -1,5 +1,6 @@
 import { isGptPubadsDefined, logError } from '../../src/utils.js';
 import { setKeyValue as setGptKeyValue } from '../../libraries/gptUtils/gptUtils.js';
+import { find } from '../../src/polyfill.js';
 
 /** @type {string} */
 const VIEWABILITY_KEYNAME = 'browsiViewability';
@@ -88,7 +89,7 @@ export function getSlotByCode(code) {
   if (!slots || !slots.length) {
     return null;
   }
-  return slots.find(s => s.getSlotElementId() === code || s.getAdUnitPath() === code) || null;
+  return find(slots, s => s.getSlotElementId() === code || s.getAdUnitPath() === code) || null;
 }
 
 function getLocalStorageData(storage) {

@@ -179,7 +179,7 @@ describe('optidigitalAdapterTests', function () {
       }
     };
 
-    const validBidRequests = [
+    let validBidRequests = [
       {
         'bidder': 'optidigital',
         'bidId': '51ef8751f9aead',
@@ -222,20 +222,14 @@ describe('optidigitalAdapterTests', function () {
 
     it('should add schain object to payload if exists', function () {
       const bidRequest = Object.assign({}, validBidRequests[0], {
-        ortb2: {
-          source: {
-            ext: {
-              schain: {
-                ver: '1.0',
-                complete: 1,
-                nodes: [{
-                  asi: 'examplewebsite.com',
-                  sid: '00001',
-                  hp: 1
-                }]
-              }
-            }
-          }
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'examplewebsite.com',
+            sid: '00001',
+            hp: 1
+          }]
         }
       });
       const request = spec.buildRequests([bidRequest], bidderRequest);
@@ -253,7 +247,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should add adContainerWidth and adContainerHeight to payload if divId exsists in parameter', function () {
-      const validBidRequestsWithDivId = [
+      let validBidRequestsWithDivId = [
         {
           'bidder': 'optidigital',
           'bidId': '51ef8751f9aead',
@@ -283,7 +277,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should add pageTemplate to payload if pageTemplate exsists in parameter', function () {
-      const validBidRequestsWithDivId = [
+      let validBidRequestsWithDivId = [
         {
           'bidder': 'optidigital',
           'bidId': '51ef8751f9aead',
@@ -394,7 +388,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should send GDPR to given endpoint', function() {
-      const consentString = 'DFR8KRePoQNsRREZCADBG+A==';
+      let consentString = 'DFR8KRePoQNsRREZCADBG+A==';
       bidderRequest.gdprConsent = {
         'consentString': consentString,
         'gdprApplies': true,
@@ -411,7 +405,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should send empty GDPR consent to endpoint', function() {
-      const consentString = false;
+      let consentString = false;
       bidderRequest.gdprConsent = {
         'consentString': consentString,
         'gdprApplies': true,
@@ -433,7 +427,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should send gppConsent to given endpoint where there is gppConsent', function() {
-      const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      let consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
       bidderRequest.gppConsent = {
         'gppString': consentString,
         'applicableSections': [7]
@@ -444,7 +438,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should send gppConsent to given endpoint when there is gpp in ortb2', function() {
-      const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      let consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
       bidderRequest.gppConsent = undefined;
       bidderRequest.ortb2 = {
         regs: {
@@ -480,7 +474,7 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should fetch floor from floor module if it is available', function() {
-      const validBidRequestsWithCurrency = [
+      let validBidRequestsWithCurrency = [
         {
           'bidder': 'optidigital',
           'bidId': '51ef8751f9aead',
@@ -505,7 +499,7 @@ describe('optidigitalAdapterTests', function () {
       let floorInfo;
       validBidRequestsWithCurrency[0].getFloor = () => floorInfo;
       floorInfo = { currency: 'USD', floor: 1.99 };
-      const request = spec.buildRequests(validBidRequestsWithCurrency, bidderRequest);
+      let request = spec.buildRequests(validBidRequestsWithCurrency, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].bidFloor).to.exist;
     });
@@ -549,7 +543,7 @@ describe('optidigitalAdapterTests', function () {
     const syncurlIframe = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
     let test;
     beforeEach(function () {
-      test = sinon.createSandbox();
+      test = sinon.sandbox.create();
       resetSync();
     });
     afterEach(function() {
@@ -590,7 +584,7 @@ describe('optidigitalAdapterTests', function () {
   });
   describe('interpretResponse', function () {
     it('should get bids', function() {
-      const bids = {
+      let bids = {
         'body': {
           'bids': [{
             'transactionId': 'cf5faec3-fcee-4f26-80ae-fc8b6cf23b7d',
@@ -619,7 +613,7 @@ describe('optidigitalAdapterTests', function () {
           }]
         }
       };
-      const expectedResponse = [
+      let expectedResponse = [
         {
           'placementId': 'Billboard_Top',
           'requestId': '83fb53a5e67f49',
@@ -650,17 +644,17 @@ describe('optidigitalAdapterTests', function () {
           }
         }
       ];
-      const result = spec.interpretResponse(bids);
+      let result = spec.interpretResponse(bids);
       expect(result).to.eql(expectedResponse);
     });
 
     it('should handle empty array bid response', function() {
-      const bids = {
+      let bids = {
         'body': {
           'bids': []
         }
       };
-      const result = spec.interpretResponse(bids);
+      let result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });
   });

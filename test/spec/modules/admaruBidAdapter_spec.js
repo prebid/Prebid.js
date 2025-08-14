@@ -14,10 +14,10 @@ describe('Admaru Adapter', function () {
   });
 
   describe('isBidRequestValidForBanner', () => {
-    const bid = {
+    let bid = {
       'bidder': 'admaru',
       'params': {
-        'pub_id': '1234',
+    	  'pub_id': '1234',
         'adspace_id': '1234'
       },
       'adUnitCode': 'adunit-code',
@@ -39,7 +39,7 @@ describe('Admaru Adapter', function () {
     });
 
     it('should return false when required params are not passed', () => {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         wrong: 'missing pub_id or adspace_id'
@@ -49,11 +49,11 @@ describe('Admaru Adapter', function () {
   });
 
   describe('buildRequestsForBanner', () => {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'admaru',
         'params': {
-          'pub_id': '1234',
+        	'pub_id': '1234',
           'adspace_id': '1234'
         },
         'adUnitCode': 'adunit-code',
@@ -91,11 +91,11 @@ describe('Admaru Adapter', function () {
   });
 
   describe('interpretResponseForBanner', () => {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'admaru',
         'params': {
-          'pub_id': '1234',
+        	'pub_id': '1234',
           'adspace_id': '1234'
         },
         'adUnitCode': 'adunit-code',
@@ -115,9 +115,9 @@ describe('Admaru Adapter', function () {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(bidRequests);
-      const response = '';
+      let response = '';
 
-      const result = spec.interpretResponse(response, request[0]);
+      let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
     });
   });

@@ -53,7 +53,7 @@ const _getFidFromBitmediaFid = (bitmediaFid) => {
 const _getBidFloor = (bid, size) => {
   logInfo(BIDDER_CODE, '[Bid Floor] Retrieving bid floor for bid:', bid, size);
   if (isFn(bid.getFloor)) {
-    const floor = bid.getFloor({
+    let floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: BANNER,
       size: size || '*'

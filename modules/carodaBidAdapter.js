@@ -49,7 +49,7 @@ export const spec = {
     const test = getFirstWithKey(validBidRequests, 'params.test');
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
-    const schain = getFirstWithKey(validBidRequests, 'ortb2.source.ext.schain');
+    const schain = getFirstWithKey(validBidRequests, 'schain');
     const request = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bidderRequest.auctionId,
@@ -154,7 +154,7 @@ function getTopUsableWindow () {
 function getORTBCommon (bidderRequest) {
   let app, site;
   const commonFpd = bidderRequest.ortb2 || {};
-  const { user } = commonFpd;
+  let { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
     app = getConfig('app') || {}
     if (commonFpd.app) {

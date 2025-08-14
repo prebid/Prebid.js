@@ -26,7 +26,7 @@ const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
 const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-const consentInfo = {
+let consentInfo = {
   gdpr: {
     applies: 0,
     consentString: null,

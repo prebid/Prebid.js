@@ -37,7 +37,7 @@ describe('innityAdapterTest', () => {
       'auctionId': '18fd8b8b0bd757'
     }];
 
-    const bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         page: 'https://refererExample.com'
       }
@@ -86,9 +86,9 @@ describe('innityAdapterTest', () => {
       }
     };
 
-    const advDomains = ['advertiserExample.com'];
+    let advDomains = ['advertiserExample.com'];
 
-    const bidResponse = {
+    let bidResponse = {
       body: {
         'cpm': 100,
         'width': '300',

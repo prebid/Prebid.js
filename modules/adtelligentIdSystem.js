@@ -21,7 +21,7 @@ const syncUrl = 'https://idrs.adtelligent.com/get';
 
 function buildUrl(opts) {
   const queryPairs = [];
-  for (const key in opts) {
+  for (let key in opts) {
     queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
   }
   return `${syncUrl}?${queryPairs.join('&')}`;

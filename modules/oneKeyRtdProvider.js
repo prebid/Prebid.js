@@ -1,3 +1,4 @@
+
 import { submodule } from '../src/hook.js';
 import { mergeDeep, logError, logMessage, deepSetValue, generateUUID } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -21,8 +22,9 @@ window.OneKey.queue = window.OneKey.queue || [];
  * https://docs.prebid.org/dev-docs/add-rtd-submodule.html#getbidrequestdata
  *
  * @param {Object} reqBidsConfigObj
- * @param {function} done
+ * @param {function} callback
  * @param {Object} rtdConfig
+ * @param {Object} userConsent
  */
 const getTransmissionInBidRequest = (reqBidsConfigObj, done, rtdConfig) => {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;

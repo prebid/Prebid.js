@@ -1,9 +1,9 @@
 import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { BANNER, NATIVE } from '../../../src/mediaTypes';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Yandex adapter', function () {
   describe('isBidRequestValid', function () {
@@ -495,18 +495,6 @@ describe('Yandex adapter', function () {
           },
         });
       });
-
-      it('should include eventtrackers in the native request', () => {
-        const nativeParams = buildRequestAndGetNativeParams({
-          mediaTypes: {
-            native: {
-              title: { required: true },
-            },
-          },
-        });
-
-        expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
-      });
     });
   });
 
@@ -522,7 +510,6 @@ describe('Yandex adapter', function () {
               price: 0.3,
               crid: 321,
               adm: '<!-- HTML/JS -->',
-              mtype: 1,
               w: 300,
               h: 250,
               adomain: [
@@ -530,7 +517,6 @@ describe('Yandex adapter', function () {
               ],
               adid: 'yabs.123=',
               nurl: 'https://example.com/nurl/?price=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}',
-              lurl: 'https://example.com/nurl/?reason=${AUCTION_LOSS}',
             }
           ]
         }],
@@ -557,7 +543,6 @@ describe('Yandex adapter', function () {
       expect(rtbBid.netRevenue).to.equal(true);
       expect(rtbBid.ttl).to.equal(180);
       expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
-      expect(rtbBid.lurl).to.exist;
 
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
@@ -578,7 +563,6 @@ describe('Yandex adapter', function () {
               impid: 'videoBid1',
               price: 1.50,
               adm: '<VAST version="3.0"></VAST>',
-              mtype: 2,
               w: 640,
               h: 480,
               adomain: ['advertiser.com'],
@@ -684,7 +668,6 @@ describe('Yandex adapter', function () {
                   ],
                   adid: 'yabs.123=',
                   adm: JSON.stringify(nativeAdmResponce),
-                  mtype: 4,
                 },
               ],
             }],
@@ -715,117 +698,6 @@ describe('Yandex adapter', function () {
             height: 32,
           },
         });
-      });
-
-      it('should add eventtrackers urls to impressionTrackers', function () {
-        bannerRequest.bidRequest = {
-          mediaType: NATIVE,
-          bidId: 'bidid-1',
-        };
-
-        const nativeAdmResponse = getNativeAdmResponse();
-        nativeAdmResponse.native.eventtrackers = [
-          {
-            event: 1, // TRACKER_EVENTS.impression
-            method: 1, // TRACKER_METHODS.img
-            url: 'https://example.com/imp-event-tracker',
-          },
-          {
-            event: 2,
-            method: 2,
-            url: 'https://example.com/skip-me',
-          },
-        ];
-
-        const bannerResponse = {
-          body: {
-            seatbid: [
-              {
-                bid: [
-                  {
-                    impid: 1,
-                    price: 0.3,
-                    adm: JSON.stringify(nativeAdmResponse),
-                    mtype: 4,
-                  },
-                ],
-              },
-            ],
-          },
-        };
-
-        const result = spec.interpretResponse(bannerResponse, bannerRequest);
-        const bid = result[0];
-
-        expect(bid.native.impressionTrackers).to.include(
-          'https://example.com/imptracker'
-        );
-        expect(bid.native.impressionTrackers).to.include(
-          'https://example.com/imp-event-tracker'
-        );
-        expect(bid.native.impressionTrackers).to.not.include('https://example.com/skip-me');
-      });
-
-      it('should handle missing imptrackers', function () {
-        bannerRequest.bidRequest = {
-          mediaType: NATIVE,
-          bidId: 'bidid-1',
-        };
-
-        const nativeAdmResponse = getNativeAdmResponse();
-        delete nativeAdmResponse.native.imptrackers;
-        nativeAdmResponse.native.eventtrackers = [{
-          event: 1,
-          method: 1,
-          url: 'https://example.com/fallback-tracker'
-        }];
-
-        const bannerResponse = {
-          body: {
-            seatbid: [{
-              bid: [{
-                impid: 1,
-                price: 0.3,
-                adm: JSON.stringify(nativeAdmResponse),
-                mtype: 4,
-              }]
-            }]
-          }
-        };
-
-        const result = spec.interpretResponse(bannerResponse, bannerRequest);
-        const bid = result[0];
-
-        expect(bid.native.impressionTrackers)
-          .to.deep.equal(['https://example.com/fallback-tracker']);
-      });
-
-      it('should handle missing eventtrackers', function () {
-        bannerRequest.bidRequest = {
-          mediaType: NATIVE,
-          bidId: 'bidid-1',
-        };
-
-        const nativeAdmResponse = getNativeAdmResponse();
-
-        const bannerResponse = {
-          body: {
-            seatbid: [{
-              bid: [{
-                impid: 1,
-                price: 0.3,
-                adm: JSON.stringify(nativeAdmResponse),
-                mtype: 4,
-              }]
-            }]
-          }
-        };
-
-        const result = spec.interpretResponse(bannerResponse, bannerRequest);
-        const bid = result[0];
-
-        expect(bid.native.impressionTrackers)
-          .to.deep.equal(['https://example.com/imptracker']);
       });
     });
   });

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
 import { EVENTS, STATUS } from 'src/constants.js';
-const events = require('src/events');
+let events = require('src/events');
 
 describe('Invisibly Analytics Adapter test suite', function () {
   let xhr;
@@ -214,7 +214,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
         });
         // spec to test custom api endpoint
         it('support custom endpoint', function () {
-          const custom_url = 'custom url';
+          let custom_url = 'custom url';
           invisiblyAdapter.enableAnalytics({
             provider: 'invisiblyAnalytics',
             options: {

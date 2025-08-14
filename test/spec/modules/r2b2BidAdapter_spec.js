@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, internal as r2b2, internal} from 'modules/r2b2BidAdapter.js';
-import * as utils from '../../../src/utils.js';
+import * as utils from '../../../src/utils';
+import 'modules/schain.js';
 import 'modules/userId/index.js';
 
 function encodePlacementIds (ids) {
@@ -11,11 +12,11 @@ describe('R2B2 adapter', function () {
   let serverResponse, requestForInterpretResponse;
   let bidderRequest;
   let bids = [];
-  const gdprConsent = {
+  let gdprConsent = {
     gdprApplies: true,
     consentString: 'consent-string',
   };
-  const schain = {
+  let schain = {
     ver: '1.0',
     complete: 1,
     nodes: [{
@@ -90,9 +91,9 @@ describe('R2B2 adapter', function () {
           }
         },
         site: {},
-        device: {},
-        source: {ext: {schain: schain}}
+        device: {}
       },
+      schain
     }, {
       bidder: 'r2b2',
       params: {
@@ -127,9 +128,9 @@ describe('R2B2 adapter', function () {
           }
         },
         site: {},
-        device: {},
-        source: {ext: {schain: schain}}
+        device: {}
       },
+      schain
     }];
     bidderRequest = {
       bidderCode: 'r2b2',
@@ -149,8 +150,7 @@ describe('R2B2 adapter', function () {
           }
         },
         site: {},
-        device: {},
-        source: {ext: {schain: schain}}
+        device: {}
       },
       gdprConsent: {
         consentString: 'consent-string',
@@ -199,7 +199,7 @@ describe('R2B2 adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {};
+    let bid = {};
 
     it('should return false when missing required "pid" param', function () {
       bid.params = {random: 'param'};
@@ -258,9 +258,9 @@ describe('R2B2 adapter', function () {
     });
 
     it('should set correct request method and url and pass bids', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const request = requests[0]
+      let request = requests[0]
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://hb.r2b2.cz/openrtb2/bid');
       expect(request.data).to.be.an('object');
@@ -268,9 +268,9 @@ describe('R2B2 adapter', function () {
     });
 
     it('should pass correct parameters', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
-      const {data} = requests[0];
-      const {imp, device, site, source, ext, cur, test} = data;
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      let {data} = requests[0];
+      let {imp, device, site, source, ext, cur, test} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(1);
       expect(device).to.be.an('object');
       expect(site).to.be.an('object');
@@ -281,12 +281,12 @@ describe('R2B2 adapter', function () {
     });
 
     it('should pass correct imp', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
-      const {data} = requests[0];
-      const {imp} = data;
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(1);
       expect(imp[0]).to.be.an('object');
-      const bid = imp[0];
+      let bid = imp[0];
       expect(bid.id).to.equal('20917a54ee9858');
       expect(bid.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 250}]});
       expect(bid.ext).to.be.an('object');
@@ -295,10 +295,10 @@ describe('R2B2 adapter', function () {
 
     it('should map type correctly', function () {
       let result, bid;
-      const requestWithId = function(id) {
-        const b = bids[0];
+      let requestWithId = function(id) {
+        let b = bids[0];
         b.params.pid = id;
-        const passedBids = [b];
+        let passedBids = [b];
         bidderRequest.bids = passedBids;
         return spec.buildRequests(passedBids, bidderRequest);
       };
@@ -329,34 +329,34 @@ describe('R2B2 adapter', function () {
     });
 
     it('should pass correct parameters for test ad', function () {
-      const testAdBid = bids[0];
+      let testAdBid = bids[0];
       testAdBid.params = {pid: 'selfpromo'};
-      const requests = spec.buildRequests([testAdBid], bidderRequest);
-      const {data} = requests[0];
-      const {imp} = data;
+      let requests = spec.buildRequests([testAdBid], bidderRequest);
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(1);
       expect(imp[0]).to.be.an('object');
-      const bid = imp[0];
+      let bid = imp[0];
       expect(bid.ext).to.be.an('object');
       expect(bid.ext.r2b2).to.deep.equal({d: 'test', g: 'test', p: 'selfpromo', m: 0, 'selfpromo': 1});
     });
 
     it('should pass multiple bids', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
+      let requests = spec.buildRequests(bids, bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const {data} = requests[0];
-      const {imp} = data;
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(bids.length);
-      const bid1 = imp[0];
+      let bid1 = imp[0];
       expect(bid1.ext.r2b2).to.deep.equal({d: 'example.com', g: 'generic', p: '300x250', m: 1});
-      const bid2 = imp[1];
+      let bid2 = imp[1];
       expect(bid2.ext.r2b2).to.deep.equal({d: 'example.com', g: 'generic', p: '300x600', m: 0});
     });
 
     it('should set up internal variables', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
-      const bid1Id = bids[0].bidId;
-      const bid2Id = bids[1].bidId;
+      let requests = spec.buildRequests(bids, bidderRequest);
+      let bid1Id = bids[0].bidId;
+      let bid2Id = bids[1].bidId;
       expect(r2b2.placementsToSync).to.be.an('array').that.has.lengthOf(2);
       expect(r2b2.mappedParams).to.have.property(bid1Id);
       expect(r2b2.mappedParams[bid1Id]).to.deep.equal({d: 'example.com', g: 'generic', p: '300x250', m: 1, pid: 'example.com/generic/300x250/1'});
@@ -365,9 +365,9 @@ describe('R2B2 adapter', function () {
     });
 
     it('should pass gdpr properties', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
-      const {data} = requests[0];
-      const {user, regs} = data;
+      let requests = spec.buildRequests(bids, bidderRequest);
+      let {data} = requests[0];
+      let {user, regs} = data;
       expect(user).to.be.an('object').that.has.property('ext');
       expect(regs).to.be.an('object').that.has.property('ext');
       expect(user.ext.consent).to.equal('consent-string');
@@ -375,17 +375,17 @@ describe('R2B2 adapter', function () {
     });
 
     it('should pass us privacy properties', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
-      const {data} = requests[0];
-      const {regs} = data;
+      let requests = spec.buildRequests(bids, bidderRequest);
+      let {data} = requests[0];
+      let {regs} = data;
       expect(regs).to.be.an('object').that.has.property('ext');
       expect(regs.ext.us_privacy).to.equal('1YYY');
     });
 
     it('should pass supply chain', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
-      const {data} = requests[0];
-      const {source} = data;
+      let requests = spec.buildRequests(bids, bidderRequest);
+      let {data} = requests[0];
+      let {source} = data;
       expect(source).to.be.an('object').that.has.property('ext');
       expect(source.ext.schain).to.deep.equal({
         complete: 1,
@@ -397,7 +397,7 @@ describe('R2B2 adapter', function () {
     });
 
     it('should pass extended ids', function () {
-      const eidsArray = [
+      let eidsArray = [
         {
           source: 'adserver.org',
           uids: [
@@ -421,9 +421,9 @@ describe('R2B2 adapter', function () {
         },
       ];
       bidderRequest.ortb2 = {user: {ext: {eids: eidsArray}}}
-      const requests = spec.buildRequests(bids, bidderRequest);
-      const request = requests[0];
-      const eids = request.data.user.ext.eids;
+      let requests = spec.buildRequests(bids, bidderRequest);
+      let request = requests[0];
+      let eids = request.data.user.ext.eids;
 
       expect(eids).to.deep.equal(eidsArray);
     });
@@ -442,9 +442,9 @@ describe('R2B2 adapter', function () {
     });
 
     it('should map params correctly', function () {
-      const result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
+      let result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
       expect(result).to.be.an('array').that.has.lengthOf(1);
-      const bid = result[0];
+      let bid = result[0];
       expect(bid.requestId).to.equal(impId);
       expect(bid.cpm).to.equal(price);
       expect(bid.ad).to.equal(ad);
@@ -458,23 +458,23 @@ describe('R2B2 adapter', function () {
     });
 
     it('should set up renderer on bid', function () {
-      const result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
+      let result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
       expect(result).to.be.an('array').that.has.lengthOf(1);
-      const bid = result[0];
+      let bid = result[0];
       expect(bid.renderer).to.be.an('object');
       expect(bid.renderer).to.have.property('render').that.is.a('function');
       expect(bid.renderer).to.have.property('url').that.is.a('string');
     });
 
     it('should map ext params correctly', function() {
-      const dgpm = {something: 'something'};
+      let dgpm = {something: 'something'};
       r2b2.mappedParams = {};
       r2b2.mappedParams[impId] = dgpm;
-      const result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
+      let result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
       expect(result).to.be.an('array').that.has.lengthOf(1);
-      const bid = result[0];
+      let bid = result[0];
       expect(bid.ext).to.be.an('object');
-      const { ext } = bid;
+      let { ext } = bid;
       expect(ext.dgpm).to.deep.equal(dgpm);
       expect(ext.cid).to.equal(cid);
       expect(ext.cdid).to.equal(cdid);
@@ -499,8 +499,8 @@ describe('R2B2 adapter', function () {
       const ad2 = 'gaeouho';
       const w2 = 300;
       const h2 = 600;
-      const b = serverResponse.seatbid[0].bid[0];
-      const b2 = Object.assign({}, b);
+      let b = serverResponse.seatbid[0].bid[0];
+      let b2 = Object.assign({}, b);
       b2.impid = impId2;
       b2.price = price2;
       b2.adm = ad2;
@@ -508,10 +508,10 @@ describe('R2B2 adapter', function () {
       b2.h = h2;
       serverResponse.seatbid[0].bid.push(b2);
       requestForInterpretResponse.data.imp.push({id: impId2});
-      const result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
+      let result = spec.interpretResponse({ body: serverResponse }, requestForInterpretResponse);
       expect(result).to.be.an('array').that.has.lengthOf(2);
-      const firstBid = result[0];
-      const secondBid = result[1];
+      let firstBid = result[0];
+      let secondBid = result[1];
       expect(firstBid.requestId).to.equal(impId);
       expect(firstBid.ad).to.equal(ad);
       expect(firstBid.cpm).to.equal(price);

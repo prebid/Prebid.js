@@ -1,218 +1,297 @@
-// tests/luponmediaBidAdapter_spec.js
-import { resetUserSync, spec, converter, storage } from 'modules/luponmediaBidAdapter.js';
-import sinon from 'sinon';
-import { expect } from 'chai';
+import { resetUserSync, spec, hasValidSupplyChainParams } from 'modules/luponmediaBidAdapter.js';
+const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
 
 describe('luponmediaBidAdapter', function () {
-  let sandbox;
-
-  beforeEach(function () {
-    sandbox = sinon.createSandbox();
-  });
-
-  afterEach(function () {
-    sandbox.restore();
-  });
-
   describe('isBidRequestValid', function () {
-    const bid = {
-      bidder: 'luponmedia',
-      params: { keyId: 'uid@eu_test_300_600' },
-      adUnitCode: 'test-div',
-      sizes: [[300, 250]],
-      bidId: 'g1987234bjkads'
+    let bid = {
+      'bidder': 'luponmedia',
+      'params': {
+        'siteId': 12345,
+        'keyId': '4o2c4'
+      },
+      'adUnitCode': 'test-div',
+      'sizes': [[300, 250]],
+      'bidId': 'g1987234bjkads',
+      'bidderRequestId': '290348ksdhkas89324',
+      'auctionId': '20384rlek235',
     };
 
-    it('should return true when required param is found and it is valid', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+    it('should return true when required params are found', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true with required and without optional param', function () {
-      bid.params = { keyId: 'uid_test_300_600' };
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-
-    it('should return false when keyId is not in the required format', function () {
-      bid.params = { keyId: 12345 };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+    it('should return false when required params are not passed', function () {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
+        'siteId': 12345
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
-        bidder: 'luponmedia',
-        params: { keyId: 'uid_test_300_600', placement_id: 'test-div' },
-        mediaTypes: { banner: { sizes: [[300, 600]] } },
-        adUnitCode: 'test-div',
-        transactionId: 'txn-id',
-        bidId: 'bid-id',
-        ortb2: { device: { ua: 'test-agent' } }
+        'bidder': 'luponmedia',
+        'params': {
+          'siteId': 303522,
+          'keyId': '4o2c4'
+        },
+        'crumbs': {
+          'pubcid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [
+                300,
+                250
+              ]
+            ]
+          }
+        },
+        'adUnitCode': 'div-gpt-ad-1533155193780-2',
+        'transactionId': '585d96a5-bd93-4a89-b8ea-0f546f3aaa82',
+        'sizes': [
+          [
+            300,
+            250
+          ]
+        ],
+        'bidId': '268a30af10dd6f',
+        'bidderRequestId': '140411b5010a2a',
+        'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
+        'src': 'client',
+        'bidRequestsCount': 1,
+        'bidderRequestsCount': 1,
+        'bidderWinsCount': 0,
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'novi.ba',
+              'sid': '199424',
+              'hp': 1
+            }
+          ]
+        }
       }
     ];
 
-    const bidderRequest = {
-      bidderCode: 'luponmedia',
-      gdprConsent: {
-        gdprApplies: true
+    let bidderRequest = {
+      'bidderCode': 'luponmedia',
+      'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
+      'bidderRequestId': '140411b5010a2a',
+      'bids': [
+        {
+          'bidder': 'luponmedia',
+          'params': {
+            'siteId': 303522,
+            'keyId': '4o2c4'
+          },
+          'crumbs': {
+            'pubcid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [
+                [
+                  300,
+                  250
+                ]
+              ]
+            }
+          },
+          'adUnitCode': 'div-gpt-ad-1533155193780-2',
+          'transactionId': '585d96a5-bd93-4a89-b8ea-0f546f3aaa82',
+          'sizes': [
+            [
+              300,
+              250
+            ]
+          ],
+          'bidId': '268a30af10dd6f',
+          'bidderRequestId': '140411b5010a2a',
+          'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0,
+          'schain': {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'novi.ba',
+                'sid': '199424',
+                'hp': 1
+              }
+            ]
+          }
+        }
+      ],
+      'auctionStart': 1587413920820,
+      'timeout': 1500,
+      'refererInfo': {
+        'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines',
+        'reachedTop': true,
+        'numIframes': 0,
+        'stack': [
+          'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'
+        ]
       },
-      uspConsent: true
+      'start': 1587413920835,
+      ortb2: {
+        source: {
+          tid: 'mock-tid'
+        }
+      },
     };
 
-    it('sends bid request to default endpoint', function () {
-      const req = spec.buildRequests(bidRequests, bidderRequest);
-
-      expect(req.url).to.include('https://rtb.adxpremium.services/openrtb2/auction');
-      expect(req.method).to.equal('POST');
-      expect(req.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
-      expect(req.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
-    });
-
-    it('sends bid request to endpoint specified in keyId', function () {
-      bidRequests[0].params.keyId = 'uid@eu_test_300_600';
-
-      const req = spec.buildRequests(bidRequests, bidderRequest);
-      expect(req.url).to.include('https://eu.adxpremium.services/openrtb2/auction');
+    it('sends bid request to ENDPOINT via POST', function () {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let dynRes = JSON.parse(requests.data);
+      expect(requests.url).to.equal(ENDPOINT_URL);
+      expect(requests.method).to.equal('POST');
+      expect(JSON.parse(requests.data)).to.deep.include({
+        'test': 0,
+        'source': {
+          tid: 'mock-tid',
+          'ext': {'schain': {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'novi.ba', 'sid': '199424', 'hp': 1}]}}
+        },
+        'tmax': 1500,
+        'imp': [{
+          'id': '268a30af10dd6f',
+          'secure': 1,
+          'ext': {'luponmedia': {'siteId': 303522, 'keyId': '4o2c4'}},
+          'banner': {'format': [{'w': 300, 'h': 250}]}
+        }],
+        'ext': {'prebid': {'targeting': {'includewinners': true, 'includebidderkeys': false}}},
+        'user': {'id': dynRes.user.id, 'buyeruid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'},
+        'site': {'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'}
+      });
     });
   });
 
   describe('interpretResponse', function () {
     it('should get correct banner bid response', function () {
-      const response = {
-        id: 'resp-id',
-        seatbid: [
+      let response = {
+        'id': '4776d680-15a2-45c3-bad5-db6bebd94a06',
+        'seatbid': [
           {
-            bid: [
+            'bid': [
               {
-                id: 'bid123',
-                impid: 'bid123',
-                price: 0.43,
-                adm: '<div>Ad Markup</div>',
-                crid: 'creative-id',
-                w: 300,
-                h: 250,
-                ext: {
-                  prebid: {
-                    targeting: {
-                      hb_bidder: 'luponmedia',
-                      hb_pb: '0.40',
-                      hb_size: '300x250'
+                'id': '2a122246ef72ea',
+                'impid': '2a122246ef72ea',
+                'price': 0.43,
+                'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
+                'adid': '56380110',
+                'adomain': [
+                  'mi.betrivers.com'
+                ],
+                'cid': '44724710',
+                'crid': '443801010',
+                'w': 300,
+                'h': 250,
+                'ext': {
+                  'prebid': {
+                    'targeting': {
+                      'hb_bidder': 'luponmedia',
+                      'hb_pb': '0.40',
+                      'hb_size': '300x250'
                     },
-                    type: 'banner'
+                    'type': 'banner'
                   }
                 }
               }
             ],
-            seat: 'luponmedia'
+            'seat': 'luponmedia'
           }
         ],
-        cur: 'USD'
-      };
-
-      const bidRequests = [
-        {
-          bidId: 'bid123',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        'cur': 'USD',
+        'ext': {
+          'responsetimemillis': {
+            'luponmedia': 233
+          },
+          'tmaxrequest': 1500,
+          'usersyncs': {
+            'status': 'ok',
+            'bidder_status': []
+          }
         }
-      ];
-
-      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
-
-      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
-
-      expect(result).to.be.an('array').with.lengthOf(1);
-      expect(result[0]).to.include({
-        requestId: 'bid123',
-        cpm: 0.43,
-        width: 300,
-        height: 250,
-        creativeId: 'creative-id',
-        currency: 'USD',
-        ttl: 300,
-        ad: '<div>Ad Markup</div>'
-      });
-    });
-
-    it('should enrich bidResponse with crid, dealId, and referrer if missing', function () {
-      const response = {
-        id: 'resp-id',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: 'bid456',
-                impid: 'bid456',
-                price: 0.75,
-                adm: '<div>Creative</div>',
-                crid: 'creative456',
-                dealid: 'deal789',
-                w: 300,
-                h: 250
-              }
-            ],
-            seat: 'luponmedia'
-          }
-        ],
-        cur: 'USD'
       };
 
-      const bidRequests = [
+      let expectedResponse = [
         {
-          bidId: 'bid456',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } },
-          ortb2: {
-            site: {
-              ref: 'https://mysite.com'
-            }
+          'requestId': '2a122246ef72ea',
+          'cpm': '0.43',
+          'width': 300,
+          'height': 250,
+          'creativeId': '443801010',
+          'currency': 'USD',
+          'dealId': '23425',
+          'netRevenue': false,
+          'ttl': 300,
+          'referrer': '',
+          'ad': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
+          'adomain': [
+            'mi.betrivers.com'
+          ],
+          'meta': {
+            'advertiserDomains': [
+              'mi.betrivers.com'
+            ]
           }
         }
       ];
 
-      const bidderRequest = {
-        refererInfo: { referer: 'https://mysite.com' }
+      let bidderRequest = {
+        'data': '{"site":{"page":"https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines"}}'
       };
 
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
-
-      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
-
-      expect(result[0].creativeId).to.equal('creative456');
-      expect(result[0].dealId).to.equal('deal789');
-      expect(result[0].referrer).to.equal('https://mysite.com');
+      let result = spec.interpretResponse({ body: response }, bidderRequest);
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('should return empty array for unhandled response', function () {
-      const bidRequests = [{
-        bidId: 'bad-response',
-        adUnitCode: 'test-div',
-        params: { keyId: 'uid_test_300_600' },
-        mediaTypes: { banner: { sizes: [[300, 250]] } }
-      }];
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
+    it('handles nobid responses', function () {
+      let noBidResponse = [];
 
-      const result = spec.interpretResponse({ status: 400, body: {} }, { data: ortbRequest });
-      expect(result).to.deep.equal([]);
+      let noBidBidderRequest = {
+        'data': '{"site":{"page":""}}'
+      }
+      let noBidResult = spec.interpretResponse({ body: noBidResponse }, noBidBidderRequest);
+      expect(noBidResult.length).to.equal(0);
     });
   });
 
   describe('getUserSyncs', function () {
-    const bidResponse = {
-      body: {
-        ext: {
-          usersyncs: {
-            bidder_status: [
+    const bidResponse1 = {
+      'body': {
+        'ext': {
+          'responsetimemillis': {
+            'luponmedia': 233
+          },
+          'tmaxrequest': 1500,
+          'usersyncs': {
+            'status': 'ok',
+            'bidder_status': [
               {
-                no_cookie: true,
-                usersync: { url: 'https://sync.img', type: 'image' }
+                'bidder': 'luponmedia',
+                'no_cookie': true,
+                'usersync': {
+                  'url': 'https://adxpremium.services/api/usersync',
+                  'type': 'redirect'
+                }
               },
               {
-                no_cookie: true,
-                usersync: { url: 'https://sync.iframe', type: 'iframe' }
+                'bidder': 'luponmedia',
+                'no_cookie': true,
+                'usersync': {
+                  'url': 'https://adxpremium.services/api/iframeusersync',
+                  'type': 'iframe'
+                }
               }
             ]
           }
@@ -220,42 +299,101 @@ describe('luponmediaBidAdapter', function () {
       }
     };
 
-    it('should return empty syncs when not pixel or iframe enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse]);
-      expect(syncs.length).to.equal(0);
-    });
+    const bidResponse2 = {
+      'body': {
+        'ext': {
+          'responsetimemillis': {
+            'luponmedia': 233
+          },
+          'tmaxrequest': 1500,
+          'usersyncs': {
+            'status': 'no_cookie',
+            'bidder_status': []
+          }
+        }
+      }
+    };
 
-    it('returns pixel syncs when pixel enabled and iframe not enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse]);
-      expect(syncs).to.deep.include({ type: 'image', url: 'https://sync.img' });
-    });
-
-    it('returns iframe syncs when iframe enabled and pixel not enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse]);
-      expect(syncs).to.deep.include({ type: 'iframe', url: 'https://sync.iframe' });
-    });
-
-    it('returns both syncs when both iframe and pixel enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse]);
-      expect(syncs).to.deep.include.members([
-        { type: 'image', url: 'https://sync.img' },
-        { type: 'iframe', url: 'https://sync.iframe' }
+    it('should use a sync url from first response (pixel and iframe)', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse1, bidResponse2]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://adxpremium.services/api/usersync'
+        },
+        {
+          type: 'iframe',
+          url: 'https://adxpremium.services/api/iframeusersync'
+        }
       ]);
     });
 
-    it('returns no syncs when usersyncs object missing', function () {
-      const emptyResponse = { body: { ext: {} } };
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [emptyResponse]);
+    it('handle empty response (e.g. timeout)', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('returns empty syncs on empty response array', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
+    it('returns empty syncs when not pixel enabled and not iframe enabled', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse1]);
       expect(syncs).to.deep.equal([]);
+    });
+
+    it('returns pixel syncs when pixel enabled and not iframe enabled', function() {
+      resetUserSync();
+
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse1]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://adxpremium.services/api/usersync'
+        }
+      ]);
+    });
+
+    it('returns iframe syncs when not pixel enabled and iframe enabled', function() {
+      resetUserSync();
+
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse1]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://adxpremium.services/api/iframeusersync'
+        }
+      ]);
+    });
+  });
+
+  describe('hasValidSupplyChainParams', function () {
+    it('returns true if schain is valid', function () {
+      const schain = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'novi.ba',
+            'sid': '199424',
+            'hp': 1
+          }
+        ]
+      };
+
+      const checkSchain = hasValidSupplyChainParams(schain);
+      expect(checkSchain).to.equal(true);
+    });
+
+    it('returns false if schain is invalid', function () {
+      const schain = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'invalid': 'novi.ba'
+          }
+        ]
+      };
+
+      const checkSchain = hasValidSupplyChainParams(schain);
+      expect(checkSchain).to.equal(false);
     });
   });
 });

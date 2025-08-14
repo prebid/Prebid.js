@@ -157,7 +157,7 @@ var adUnit3 = {
 | `cts_res` | Yieldbot bid response processing started timestamp, in milliseconds since the UNIX epoch |
 | `e` | Yieldbot search parameters terminator |
 | `ioa` | Indicator that the user-agent supports the Intersection Observer API |
-| `it` | Indicator to specify Yieldbot creative rendering occurred in an iframe: same/cross origin (`so`)/(`co`) or top (`none`) |
+| `it` | Indicator to specify Yieldbot creative rendering occured in an iframe: same/cross origin (`so`)/(`co`) or top (`none`) |
 | `la` | Language and locale of the user-agent |
 | `lo` | The page visit location Url |
 | `lpv` | Time in milliseconds since the last page visit |

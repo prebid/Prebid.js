@@ -15,10 +15,10 @@ describe('Djax Adapter', function() {
   });
 
   describe('isBidRequestValidForBanner', () => {
-    const bid = {
+    let bid = {
       'bidder': 'djax',
       'params': {
-        'publisherId': 2
+    	  'publisherId': 2
       },
       'adUnitCode': 'adunit-code',
       'mediaTypes': {
@@ -40,11 +40,11 @@ describe('Djax Adapter', function() {
   });
 
   describe('buildRequestsForBanner', () => {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'djax',
         'params': {
-          'publisherId': 2
+        	'publisherId': 2
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -69,11 +69,11 @@ describe('Djax Adapter', function() {
   });
 
   describe('interpretResponseForBanner', () => {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'djax',
         'params': {
-          'publisherId': 2
+        	'publisherId': 2
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -92,8 +92,8 @@ describe('Djax Adapter', function() {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(bidRequests);
-      const response = '';
-      const result = spec.interpretResponse(response, request[0]);
+      let response = '';
+      let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
     });
   });

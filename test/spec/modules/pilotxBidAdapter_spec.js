@@ -33,7 +33,7 @@ describe('pilotxAdapter', function () {
       banner.sizes = []
       expect(spec.isBidRequestValid(banner)).to.equal(false);
     });
-    it('should return false for no size and empty params', function () {
+    it('should return false for no size and empty params', function() {
       const emptySizes = {
         bidder: 'pilotx',
         adUnitCode: 'adunit-test',
@@ -46,7 +46,7 @@ describe('pilotxAdapter', function () {
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(false);
     })
-    it('should return true for no size and valid size params', function () {
+    it('should return true for no size and valid size params', function() {
       const emptySizes = {
         bidder: 'pilotx',
         adUnitCode: 'adunit-test',
@@ -59,7 +59,7 @@ describe('pilotxAdapter', function () {
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(true);
     })
-    it('should return false for no size items', function () {
+    it('should return false for no size items', function() {
       const emptySizes = {
         bidder: 'pilotx',
         adUnitCode: 'adunit-test',
@@ -149,21 +149,21 @@ describe('pilotxAdapter', function () {
     }];
     it('should return correct response', function () {
       const builtRequest = spec.buildRequests(mockVideo1, mockRequest)
-      const builtRequestData = builtRequest.data
-      const data = JSON.parse(builtRequestData)
+      let builtRequestData = builtRequest.data
+      let data = JSON.parse(builtRequestData)
       expect(data['379'].bidId).to.equal(mockVideo1[0].bidId)
     });
     it('should return correct response for only array of size', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequest)
-      const builtRequestData = builtRequest.data
-      const data = JSON.parse(builtRequestData)
+      let builtRequestData = builtRequest.data
+      let data = JSON.parse(builtRequestData)
       expect(data['379'].sizes[0][0]).to.equal(mockVideo2[0].sizes[0])
       expect(data['379'].sizes[0][1]).to.equal(mockVideo2[0].sizes[1])
     });
     it('should be valid and pass gdpr items correctly', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequestGDPR)
-      const builtRequestData = builtRequest.data
-      const data = JSON.parse(builtRequestData)
+      let builtRequestData = builtRequest.data
+      let data = JSON.parse(builtRequestData)
       expect(data['379'].gdprConsentString).to.equal(mockRequestGDPR.gdprConsent.consentString)
       expect(data['379'].gdprConsentRequired).to.equal(mockRequestGDPR.gdprConsent.gdprApplies)
     });
@@ -180,8 +180,7 @@ describe('pilotxAdapter', function () {
       requestId: '273b39c74069cb',
       ttl: 3000,
       vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-      width: 640,
-      advertiserDomains: ["test.com"]
+      width: 640
     }
     const serverResponseVideo = {
       body: serverResponse
@@ -195,78 +194,11 @@ describe('pilotxAdapter', function () {
       netRevenue: false,
       requestId: '273b39c74069cb',
       ttl: 3000,
-      ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-      width: 640,
-      advertiserDomains: ["test.com"]
+      vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
+      width: 640
     }
     const serverResponseBanner = {
       body: serverResponse2
-    }
-    const serverResponse3 = {
-      bids: [
-        {
-          cpm: 2.5,
-          creativeId: 'V9060',
-          currency: 'US',
-          height: 480,
-          mediaType: 'banner',
-          netRevenue: false,
-          requestId: '273b39c74069cb',
-          ttl: 3000,
-          ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640,
-          advertiserDomains: ["testaddomainbanner"]
-        },
-        {
-          cpm: 2.5,
-          creativeId: 'V9060',
-          currency: 'US',
-          height: 480,
-          mediaType: 'video',
-          netRevenue: false,
-          requestId: '273b39c74069cb',
-          ttl: 3000,
-          vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640,
-          advertiserDomains: ["testaddomainvideo"]
-        }
-      ]
-    }
-    const serverResponseVideoAndBanner = {
-      body: serverResponse3
-    }
-    const serverResponse4 = {
-      bids: [
-        {
-          cpm: 2.5,
-          creativeId: 'V9060',
-          currency: 'US',
-          height: 480,
-          mediaType: 'video',
-          netRevenue: false,
-          requestId: '273b39c74069cb',
-          ttl: 3000,
-          vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640,
-          advertiserDomains: ["testaddomainvideo"]
-        },
-        {
-          cpm: 2.5,
-          creativeId: 'V9060',
-          currency: 'US',
-          height: 480,
-          mediaType: 'banner',
-          netRevenue: false,
-          requestId: '273b39c74069cb',
-          ttl: 3000,
-          ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640,
-          advertiserDomains: ["testaddomainbanner"]
-        }
-      ]
-    }
-    const serverResponseVideoAndBannerReversed = {
-      body: serverResponse4
     }
     it('should be valid from bidRequest for video', function () {
       const bidResponses = spec.interpretResponse(serverResponseVideo, bidRequest)
@@ -281,7 +213,6 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].vastUrl).to.equal(serverResponse.vastUrl)
       expect(bidResponses[0].mediaType).to.equal(serverResponse.mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse.mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse.advertiserDomains)
     });
     it('should be valid from bidRequest for banner', function () {
       const bidResponses = spec.interpretResponse(serverResponseBanner, bidRequest)
@@ -296,63 +227,6 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].ad).to.equal(serverResponse2.ad)
       expect(bidResponses[0].mediaType).to.equal(serverResponse2.mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse2.mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse2.advertiserDomains)
-    });
-    it('should be valid from bidRequest for banner and video', function () {
-      const bidResponses = spec.interpretResponse(serverResponseVideoAndBanner, bidRequest)
-      expect(bidResponses[0].requestId).to.equal(serverResponse3.bids[0].requestId)
-      expect(bidResponses[0].cpm).to.equal(serverResponse3.bids[0].cpm)
-      expect(bidResponses[0].width).to.equal(serverResponse3.bids[0].width)
-      expect(bidResponses[0].height).to.equal(serverResponse3.bids[0].height)
-      expect(bidResponses[0].creativeId).to.equal(serverResponse3.bids[0].creativeId)
-      expect(bidResponses[0].currency).to.equal(serverResponse3.bids[0].currency)
-      expect(bidResponses[0].netRevenue).to.equal(serverResponse3.bids[0].netRevenue)
-      expect(bidResponses[0].ttl).to.equal(serverResponse3.bids[0].ttl)
-      expect(bidResponses[0].ad).to.equal(serverResponse3.bids[0].ad)
-      expect(bidResponses[0].mediaType).to.equal(serverResponse3.bids[0].mediaType)
-      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse3.bids[0].mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse3.bids[0].advertiserDomains)
-
-      expect(bidResponses[1].requestId).to.equal(serverResponse3.bids[1].requestId)
-      expect(bidResponses[1].cpm).to.equal(serverResponse3.bids[1].cpm)
-      expect(bidResponses[1].width).to.equal(serverResponse3.bids[1].width)
-      expect(bidResponses[1].height).to.equal(serverResponse3.bids[1].height)
-      expect(bidResponses[1].creativeId).to.equal(serverResponse3.bids[1].creativeId)
-      expect(bidResponses[1].currency).to.equal(serverResponse3.bids[1].currency)
-      expect(bidResponses[1].netRevenue).to.equal(serverResponse3.bids[1].netRevenue)
-      expect(bidResponses[1].ttl).to.equal(serverResponse3.bids[1].ttl)
-      expect(bidResponses[1].vastUrl).to.equal(serverResponse3.bids[1].vastUrl)
-      expect(bidResponses[1].mediaType).to.equal(serverResponse3.bids[1].mediaType)
-      expect(bidResponses[1].meta.mediaType).to.equal(serverResponse3.bids[1].mediaType)
-      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse3.bids[1].advertiserDomains)
-    })
-    it('should correctly handle response with video first and banner second', function () {
-      const bidResponses = spec.interpretResponse(serverResponseVideoAndBannerReversed, bidRequest)
-      expect(bidResponses[0].requestId).to.equal(serverResponse4.bids[0].requestId)
-      expect(bidResponses[0].cpm).to.equal(serverResponse4.bids[0].cpm)
-      expect(bidResponses[0].width).to.equal(serverResponse4.bids[0].width)
-      expect(bidResponses[0].height).to.equal(serverResponse4.bids[0].height)
-      expect(bidResponses[0].creativeId).to.equal(serverResponse4.bids[0].creativeId)
-      expect(bidResponses[0].currency).to.equal(serverResponse4.bids[0].currency)
-      expect(bidResponses[0].netRevenue).to.equal(serverResponse4.bids[0].netRevenue)
-      expect(bidResponses[0].ttl).to.equal(serverResponse4.bids[0].ttl)
-      expect(bidResponses[0].vastUrl).to.equal(serverResponse4.bids[0].vastUrl)
-      expect(bidResponses[0].mediaType).to.equal(serverResponse4.bids[0].mediaType)
-      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse4.bids[0].mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse4.bids[0].advertiserDomains)
-
-      expect(bidResponses[1].requestId).to.equal(serverResponse4.bids[1].requestId)
-      expect(bidResponses[1].cpm).to.equal(serverResponse4.bids[1].cpm)
-      expect(bidResponses[1].width).to.equal(serverResponse4.bids[1].width)
-      expect(bidResponses[1].height).to.equal(serverResponse4.bids[1].height)
-      expect(bidResponses[1].creativeId).to.equal(serverResponse4.bids[1].creativeId)
-      expect(bidResponses[1].currency).to.equal(serverResponse4.bids[1].currency)
-      expect(bidResponses[1].netRevenue).to.equal(serverResponse4.bids[1].netRevenue)
-      expect(bidResponses[1].ttl).to.equal(serverResponse4.bids[1].ttl)
-      expect(bidResponses[1].ad).to.equal(serverResponse4.bids[1].ad)
-      expect(bidResponses[1].mediaType).to.equal(serverResponse4.bids[1].mediaType)
-      expect(bidResponses[1].meta.mediaType).to.equal(serverResponse4.bids[1].mediaType)
-      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse4.bids[1].advertiserDomains)
     });
   });
   describe('setPlacementID', function () {

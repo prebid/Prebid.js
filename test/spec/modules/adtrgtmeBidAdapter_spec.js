@@ -6,7 +6,7 @@ const DEFAULT_SID = '1220291391';
 const DEFAULT_ZID = '1836455615';
 const DEFAULT_PIXEL_URL = 'https://cdn.adtarget.me/libs/1x1.gif';
 const DEFAULT_BANNER_URL = 'https://cdn.adtarget.me/libs/banner/300x250.jpg';
-const BIDDER_VERSION = '1.0.7';
+const BIDDER_VERSION = '1.0.6';
 const PREBIDJS_VERSION = '$prebid.version$';
 
 const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
@@ -35,7 +35,7 @@ const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
   return bR;
 }
 
-const createBidderRequest = (arr, code = 'default-code', ortb2 = {}) => {
+let createBidderRequest = (arr, code = 'default-code', ortb2 = {}) => {
   return {
     adUnitCode: code,
     auctionId: 'd4c83a3b-18e4-4208-b98b-63848449c7aa',
@@ -75,9 +75,7 @@ const createAdm = (type) => {
       ADM = `<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
       <img src="${DEFAULT_BANNER_URL}" />`;
       break;
-    default:
-      ADM = '<span>Ad is here</span>';
-      break;
+    default: '<span>Ad is here</span>'; break;
   };
   return ADM;
 };
@@ -146,20 +144,20 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('sync check bad url and type in pixels', () => {
-      const opt = {
+      let opt = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      const pixels = spec.getUserSyncs(opt, sRs);
+      let pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(3);
     });
 
     it('sync check for iframe only', () => {
-      const opt = {
+      let opt = {
         iframeEnabled: true,
         pixelEnabled: false
       };
-      const pixels = spec.getUserSyncs(opt, sRs);
+      let pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(2);
       expect(pixels).to.deep.equal(
         [
@@ -170,11 +168,11 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('sync check for image only', () => {
-      const opt = {
+      let opt = {
         iframeEnabled: false,
         pixelEnabled: true
       };
-      const pixels = spec.getUserSyncs(opt, sRs);
+      let pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(1);
       expect(pixels).to.deep.equal(
         [
@@ -184,11 +182,11 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('Sync for iframe and image', () => {
-      const opt = {
+      let opt = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      const pixels = spec.getUserSyncs(opt, sRs);
+      let pixels = spec.getUserSyncs(opt, sRs);
       expect(pixels.length).to.equal(3);
       expect(pixels).to.deep.equal(
         [
@@ -268,9 +266,9 @@ describe('Adtrgtme Bid Adapter:', () => {
           hp: 1
         }]
       };
-      bidRequest.ortb2 = { source: { ext: { schain: globalSchain } } };
+      bidRequest.schain = globalSchain;
       const data = spec.buildRequests(validBR, bidderRequest)[0].data;
-      const schain = data.source.schain;
+      const schain = data.source.ext.schain;
       expect(schain.nodes.length).to.equal(1);
       expect(schain).to.equal(globalSchain);
     });
@@ -402,7 +400,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      let { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         ext: {
           data: {
@@ -415,7 +413,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(data.imp[0].ext.data).to.deep.equal(validBR[0].ortb2Imp.ext.data);
     });
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      let { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         instl: 1
       };
@@ -424,7 +422,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      let { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         instl: true
       };
@@ -433,7 +431,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean false to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      let { validBR, bidderRequest } = createRequestMock({})
       validBR[0].ortb2Imp = {
         instl: false
       };
@@ -528,7 +526,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
   describe('validate request filtering:', () => {
     it('should return undefined when no bids', function () {
-      const request = spec.buildRequests([]);
+      let request = spec.buildRequests([]);
       expect(request).to.be.undefined;
     });
 
@@ -568,8 +566,10 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
 
       expect(data.regs).to.deep.equal({
-        'us_privacy': '',
-        gdpr: 1
+        ext: {
+          'us_privacy': '',
+          gdpr: 1
+        }
       });
 
       expect(data.cur).to.deep.equal(['USD']);
@@ -584,15 +584,15 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('should use siteId value as site.id', () => {
-      const { validBR, bidderRequest } = createRequestMock({pubIdMode: true});
+      let { validBR, bidderRequest } = createRequestMock({pubIdMode: true});
       validBR[0].params.sid = '9876543210';
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.site.id).to.equal('9876543210');
     });
 
     it('should use placementId value as imp.tagid when using "zid"', () => {
-      const { validBR, bidderRequest } = createRequestMock({});
-      const TEST_ZID = '54321';
+      let { validBR, bidderRequest } = createRequestMock({}),
+        TEST_ZID = '54321';
       validBR[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.imp[0].tagid).to.deep.equal(TEST_ZID);

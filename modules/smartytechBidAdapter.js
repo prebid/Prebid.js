@@ -55,11 +55,11 @@ export const spec = {
     const referer = bidderRequest?.refererInfo?.page || window.location.href;
 
     const bidRequests = validBidRequests.map((validBidRequest) => {
-      const video = deepAccess(validBidRequest, 'mediaTypes.video', false);
-      const banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
-      const sizes = validBidRequest.params.sizes;
+      let video = deepAccess(validBidRequest, 'mediaTypes.video', false);
+      let banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
+      let sizes = validBidRequest.params.sizes;
 
-      const oneRequest = {
+      let oneRequest = {
         endpointId: validBidRequest.params.endpointId,
         adUnitCode: validBidRequest.adUnitCode,
         referer: referer,
@@ -83,7 +83,7 @@ export const spec = {
       return oneRequest
     });
 
-    const adPartnerRequestUrl = buildUrl({
+    let adPartnerRequestUrl = buildUrl({
       protocol: ENDPOINT_PROTOCOL,
       hostname: ENDPOINT_DOMAIN,
       pathname: ENDPOINT_PATH,

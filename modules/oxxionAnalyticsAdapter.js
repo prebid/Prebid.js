@@ -16,20 +16,20 @@ const {
   BID_TIMEOUT,
 } = EVENTS;
 
-const saveEvents = {}
+let saveEvents = {}
 let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
 let mode = {};
 let endpoint = 'https://default'
-const requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
 function filterAttributes(arg, removead) {
-  const response = {};
+  let response = {};
   if (typeof arg == 'object') {
     if (typeof arg['bidderCode'] == 'string') {
       response['originalBidder'] = getAdapterNameForAlias(arg['bidderCode']);
@@ -66,9 +66,9 @@ function filterAttributes(arg, removead) {
 }
 
 function cleanAuctionEnd(args) {
-  const response = {};
+  let response = {};
   let filteredObj;
-  const objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
+  let objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
   objects.forEach((attr) => {
     if (Array.isArray(args[attr])) {
       response[attr] = [];
@@ -88,7 +88,7 @@ function cleanAuctionEnd(args) {
 }
 
 function cleanCreatives(args) {
-  const stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   return filterAttributes(stringArgs, false);
 }
 
@@ -104,26 +104,26 @@ function enhanceMediaType(arg) {
 }
 
 function addBidResponse(args) {
-  const eventType = BID_RESPONSE;
-  const argsCleaned = cleanCreatives(args); ;
+  let eventType = BID_RESPONSE;
+  let argsCleaned = cleanCreatives(args); ;
   if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
   allEvents[eventType].push(argsCleaned);
 }
 
 function addBidRequested(args) {
-  const eventType = BID_REQUESTED;
-  const argsCleaned = filterAttributes(args, true);
+  let eventType = BID_REQUESTED;
+  let argsCleaned = filterAttributes(args, true);
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(argsCleaned);
 }
 
 function addTimeout(args) {
-  const eventType = BID_TIMEOUT;
+  let eventType = BID_TIMEOUT;
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
-  const argsCleaned = [];
+  let argsCleaned = [];
   let argsDereferenced = {};
-  const stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   argsDereferenced = stringArgs;
   argsDereferenced.forEach((attr) => {
     argsCleaned.push(filterAttributes(deepClone(attr), false));
@@ -134,22 +134,22 @@ function addTimeout(args) {
 
 export const dereferenceWithoutRenderer = function(args) {
   if (args.renderer) {
-    const tmp = args.renderer;
+    let tmp = args.renderer;
     delete args.renderer;
-    const stringified = JSON.stringify(args);
+    let stringified = JSON.stringify(args);
     args['renderer'] = tmp;
     return stringified;
   }
   if (args.bidsReceived) {
-    const tmp = {}
-    for (const key in args.bidsReceived) {
+    let tmp = {}
+    for (let key in args.bidsReceived) {
       if (args.bidsReceived[key].renderer) {
         tmp[key] = args.bidsReceived[key].renderer;
         delete args.bidsReceived[key].renderer;
       }
     }
-    const stringified = JSON.stringify(args);
-    for (const key in tmp) {
+    let stringified = JSON.stringify(args);
+    for (let key in tmp) {
       args.bidsReceived[key].renderer = tmp[key];
     }
     return stringified;
@@ -158,10 +158,10 @@ export const dereferenceWithoutRenderer = function(args) {
 }
 
 function addAuctionEnd(args) {
-  const eventType = AUCTION_END;
+  let eventType = AUCTION_END;
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
-  const argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
+  let argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
   if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
@@ -201,11 +201,11 @@ function handleBidWon(args) {
 
 function handleAuctionEnd() {
   ajax(endpoint + '.oxxion.io/analytics/auctions', function (data) {
-    const list = JSON.parse(data);
+    let list = JSON.parse(data);
     if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
-      const alreadyCalled = [];
+      let alreadyCalled = [];
       allEvents['bidResponse'].forEach((bidResponse) => {
-        const tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
+        let tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
         if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
           alreadyCalled.push(tmpId);
           ajax(endpoint + '.oxxion.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
@@ -217,7 +217,7 @@ function handleAuctionEnd() {
   auctionEnd = {};
 }
 
-const oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
+let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({
     eventType,
     args

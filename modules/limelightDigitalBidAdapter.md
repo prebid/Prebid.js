@@ -64,7 +64,7 @@ The Limelight Digital Exchange Bidder Adapter expects Prebid Cache(for video) to
 pbjs.setConfig({
     usePrebidCache: true,
     cache: {
-        url: 'https://prebid.example.com/pbc/v1/cache'
+        url: 'https://prebid.adnxs.com/pbc/v1/cache'
     }
 });
 ```

@@ -150,7 +150,7 @@ export const spec = {
       params.publisher = globalPublisherId;
     }
 
-    const syncs = [];
+    let syncs = [];
 
     // iframe sync
     syncs.push({

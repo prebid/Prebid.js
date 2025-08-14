@@ -32,8 +32,7 @@ pbjs.setConfig({
           controlGroupPct: 0.1   // valid values are 0.0 - 1.0 (inclusive)
         },
         disableExtensions: false,// optional
-        canCookieSync: true,      // optional, has effect only when externalModuleUrl is used 
-        gamTargetingPrefix: "id5" // optional, when set the ID5 module will set gam targeting paramaters with this prefix
+        canCookieSync: true      // optional, has effect only when externalModuleUrl is used 
       },
       storage: {
         type: 'html5',           // "html5" is the required storage type
@@ -60,7 +59,6 @@ pbjs.setConfig({
 | params.abTesting.controlGroupPct | Optional | Number | Must be a number between `0.0` and `1.0` (inclusive) and is used to determine the percentage of requests that fall into the control group (and thus not exposing the ID5 ID). For example, a value of `0.20` will result in 20% of requests without an ID5 ID and 80% with an ID.  | `0.1` |
 | params.disableExtensions | Optional | Boolean | Set this to `true` to force turn off extensions call. Default `false`                                                                                                                                                                                                              | `true` or `false` |
 | params.canCookieSync | Optional | Boolean | Set this to `true` to enable cookie syncing with other ID5 partners. See [our documentation](https://wiki.id5.io/docs/initiate-cookie-sync-to-id5) for details. Default `false`                                                                                                    | `true` or `false` |
-| params.gamTargetingPrefix | Optional | String  | When this parameter is set the ID5 module will set appropriate GAM pubads targeting tags                                                                                                                                                                                            | `id5`                                               |
 | storage | Required | Object | Storage settings for how the User ID module will cache the ID5 ID locally                                                                                                                                                                                                          | |
 | storage.type | Required | String | This is where the results of the user ID will be stored. ID5 **requires** `"html5"`.                                                                                                                                                                                               | `"html5"` |
 | storage.name | Required | String | The name of the local storage where the user ID will be stored. ID5 **requires** `"id5id"`.                                                                                                                                                                                        | `"id5id"` |

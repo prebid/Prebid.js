@@ -26,7 +26,7 @@ describe('Overtone RTD Submodule with Test URLs', function () {
       }
       throw new Error('Unexpected URL in test');
     });
-
+    
     getBidRequestDataStub = sinon.stub(overtoneRtdProvider, 'getBidRequestData').callsFake((config, callback) => {
       if (config.shouldFail) {
         return;
@@ -66,6 +66,14 @@ describe('Overtone RTD Submodule with Test URLs', function () {
   });
 
   describe('getBidRequestData', function () {
+    it('should call callback function after execution', function (done) {
+      const bidReqConfig = { ortb2Fragments: { global: { site: { ext: {} } } } };
+      overtoneRtdProvider.getBidRequestData(bidReqConfig, () => {
+        expect(true).to.be.true;
+        done();
+      });
+    });
+
     it('should not call callback if config has shouldFail set to true', function () {
       const bidReqConfig = { shouldFail: true, ortb2Fragments: { global: { site: { ext: {} } } } };
       const callbackSpy = sinon.spy();

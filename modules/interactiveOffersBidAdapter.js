@@ -49,8 +49,8 @@ export const spec = {
     return ret;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const aux = parseRequestPrebidjsToOpenRTB(bidderRequest, bidderRequest);
-    const payload = aux.payload;
+    let aux = parseRequestPrebidjsToOpenRTB(bidderRequest, bidderRequest);
+    let payload = aux.payload;
     return {
       method: 'POST',
       url: ENDPOINT + aux.partnerId,
@@ -72,14 +72,14 @@ export const spec = {
 };
 
 function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
-  const ret = {
+  let ret = {
     payload: {},
     partnerId: null
   };
   // TODO: these should probably look at refererInfo
-  const pageURL = window.location.href;
-  const domain = window.location.hostname;
-  const openRTBRequest = deepClone(DEFAULT['OpenRTBBidRequest']);
+  let pageURL = window.location.href;
+  let domain = window.location.hostname;
+  let openRTBRequest = deepClone(DEFAULT['OpenRTBBidRequest']);
   openRTBRequest.id = bidderRequest.bidderRequestId;
   openRTBRequest.ext = {
     // TODO: please do not send internal data structures over the network
@@ -117,7 +117,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
     if (!ret.partnerId) {
       ret.partnerId = bid.params.partnerId;
     }
-    const imp = deepClone(DEFAULT['OpenRTBBidRequestImp']);
+    let imp = deepClone(DEFAULT['OpenRTBBidRequestImp']);
     imp.id = bid.bidId;
     imp.secure = bid.ortb2Imp?.secure ?? 1;
     imp.tagid = bid.adUnitCode;
@@ -149,13 +149,13 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
   return ret;
 }
 function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
-  const prebidResponse = [];
+  let prebidResponse = [];
   openRTBResponse.forEach(function(response) {
     if (response.seatbid && response.seatbid.forEach) {
       response.seatbid.forEach(function(seatbid) {
         if (seatbid.bid && seatbid.bid.forEach) {
           seatbid.bid.forEach(function(bid) {
-            const prebid = deepClone(DEFAULT['PrebidBid']);
+            let prebid = deepClone(DEFAULT['PrebidBid']);
             prebid.requestId = bid.impid;
             prebid.ad = bid.adm;
             prebid.creativeId = bid.crid;

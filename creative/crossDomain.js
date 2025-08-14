@@ -82,7 +82,8 @@ export function renderer(win) {
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
-          style: 'display: none'
+          style: 'display: none',
+          srcdoc: `<script>${data.renderer}</script>`
         });
         renderer.onload = guard(function () {
           const W = renderer.contentWindow;
@@ -93,9 +94,6 @@ export function renderer(win) {
             onError
           );
         });
-        // Attach 'srcdoc' after 'onload', otherwise the latter seems to randomly run prematurely in tests
-        // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
-        renderer.srcdoc = `<script>${data.renderer}</script>`;
         win.document.body.appendChild(renderer);
       }
     }

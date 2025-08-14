@@ -1,27 +1,23 @@
 import {expect} from 'chai';
 import {spec, helper} from 'modules/gamoshiBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
+import {newBidder} from '../../../src/adapters/bidderFactory.js';
+import {deepClone} from 'src/utils';
 
 const supplyPartnerId = '123';
 const adapter = newBidder(spec);
+const TTL = 360;
 
 describe('GamoshiAdapter', () => {
-  let sandBox;
   let schainConfig,
     bidRequest,
     bannerBidRequest,
-    bannerRequestWithEids,
     videoBidRequest,
     rtbResponse,
     videoResponse,
     gdprConsent;
 
   beforeEach(() => {
-    sandBox = sinon.createSandbox();
-    sandBox.stub(utils, 'logError');
-    sandBox.stub(utils, 'logWarn');
     schainConfig = {
       'ver': '1.0',
       'complete': 1,
@@ -60,64 +56,28 @@ describe('GamoshiAdapter', () => {
         consentString: 'some string',
         gdprApplies: true
       },
-      ortb2: {
-        source: {
-          ext: {
-            schain: schainConfig
-          }
-        }
-      },
-      uspConsent: 'gamoshiCCPA',
-    }
-    bannerBidRequest = {
-      'adUnitCode': 'adunit-code',
-      'auctionId': 'auction-id-12345',
-      'mediaTypes': {
-        banner: {}
-      },
-      'params': {
-        'supplyPartnerId': supplyPartnerId
-      },
-      'sizes': [[300, 250], [300, 600]],
-      'transactionId': '1d1a030790a475',
-      'bidId': 'request-id-12345',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      schain: schainConfig,
+      uspConsent: 'gamoshiCCPA'
     };
 
-    bannerRequestWithEids = {
+    bannerBidRequest = {
       'adUnitCode': 'adunit-code',
-      'auctionId': 'auction-id-12345',
+      'auctionId': '1d1a030790a475',
       'mediaTypes': {
         banner: {}
       },
       'params': {
         'supplyPartnerId': supplyPartnerId
       },
-      userIdAsEids: [
-        {
-          source: '1.test.org',
-          uids: [{
-            id: '11111',
-            atype: 1,
-          }]
-        },
-        {
-          source: '2.test.org',
-          uids: [{
-            id: '11111',
-            atype: 1,
-          }]
-        }
-      ],
       'sizes': [[300, 250], [300, 600]],
-      'transactionId': '1d1a030790a475',
-      'bidId': 'request-id-12345',
+      'transactionId': 'a123456789',
+      'bidId': '111',
       refererInfo: {referer: 'http://examplereferer.com'}
     };
 
     videoBidRequest = {
       'adUnitCode': 'adunit-code',
-      'auctionId': 'auction-id-12345',
+      'auctionId': '1d1a030790a475',
       'mediaTypes': {
         video: {}
       },
@@ -129,9 +89,10 @@ describe('GamoshiAdapter', () => {
       'bidId': '111',
       refererInfo: {referer: 'http://examplereferer.com'}
     };
+
     rtbResponse = {
-      'id': 'request-id-12345',
-      'bidid': 'bid-id-12345',
+      'id': 'imp_5b05b9fde4b09084267a556f',
+      'bidid': 'imp_5b05b9fde4b09084267a556f',
       'cur': 'USD',
       'ext': {
         'utrk': [
@@ -176,7 +137,7 @@ describe('GamoshiAdapter', () => {
               'price': 3,
               'adid': '542jlhdfd2112jnjf3x',
               'nurl': 'https://rtb.gamoshi.io/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0',
-              'adm': '<img width="300px" height="250px" src="https://dummyimage.com/300x250/030d00/52b31e.gif&text=Gamoshi+Demo" onclick="window.open(\'https://www.gamoshi.com\')" alt=""> <img width="0px" height="0px" src="https://rtb.gamoshi.io/pix/monitoring/imp/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0" alt=""/>',
+              'adm': '<img width="300px" height="250px" src="https://dummyimage.com/300x250/030d00/52b31e.gif&text=Gamoshi+Demo" onclick="window.open(\'https://www.gamoshi.com\')"> <img width="0px" height="0px" src="https://rtb.gamoshi.io/pix/monitoring/imp/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0"/>',
               'adomain': ['bbb.com'],
               'cid': 'fgdlwjh2498ydjhg1',
               'crid': 'kjh34297ydh2133d',
@@ -195,8 +156,8 @@ describe('GamoshiAdapter', () => {
     };
 
     videoResponse = {
-      'id': 'request-id-12345',
-      'bidid': 'bid-id-12345',
+      'id': '64f32497-b2f7-48ec-9205-35fc39894d44',
+      'bidid': 'imp_5c24924de4b0d106447af333',
       'cur': 'USD',
       'seatbid': [
         {
@@ -205,7 +166,7 @@ describe('GamoshiAdapter', () => {
           'bid': [
             {
               'id': 'gb_1',
-              'impid': '1',
+              'impid': 'afbb5852-7cea-4a81-aa9a-a41aab505c23',
               'price': 5.0,
               'adid': '1274',
               'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1',
@@ -240,44 +201,15 @@ describe('GamoshiAdapter', () => {
     };
   });
 
-  afterEach(() => {
-    sandBox.restore()
-    config.resetConfig();
+  describe('Get top Frame', () => {
+    it('check if you are in the top frame', () => {
+      expect(helper.getTopFrame()).to.equal(0);
+    });
   });
 
-  describe('helper.getBidFloor', () => {
-    it('should return null when getFloor is not a function and no bidfloor param', () => {
-      const bid = { params: {} };
-      expect(helper.getBidFloor(bid)).to.equal(null);
-    });
-
-    it('should return bidfloor param when getFloor is not a function', () => {
-      const bid = { params: { bidfloor: 1.5 } };
-      expect(helper.getBidFloor(bid)).to.equal(1.5);
-    });
-
-    it('should use getFloor function with currency support', () => {
-      const bid = {
-        params: {},
-        getFloor: () => ({ currency: 'EUR', floor: 2.0 })
-      };
-      expect(helper.getBidFloor(bid, 'EUR')).to.equal(2.0);
-    });
-
-    it('should return null when getFloor returns invalid currency', () => {
-      const bid = {
-        params: {},
-        getFloor: () => ({ currency: 'USD', floor: 2.0 })
-      };
-      expect(helper.getBidFloor(bid, 'EUR')).to.equal(null);
-    });
-
-    it('should return null when getFloor returns invalid floor', () => {
-      const bid = {
-        params: {},
-        getFloor: () => ({ currency: 'USD', floor: NaN })
-      };
-      expect(helper.getBidFloor(bid, 'USD')).to.equal(null);
+  describe('Is String start with search', () => {
+    it('check if a string started with', () => {
+      expect(helper.startsWith('gamoshi.com', 'gamo')).to.equal(true);
     });
   });
 
@@ -290,13 +222,8 @@ describe('GamoshiAdapter', () => {
   describe('isBidRequestValid', () => {
     it('should validate supply-partner ID', () => {
       expect(spec.isBidRequestValid({params: {}})).to.equal(false);
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: 123}})).to.equal(true);
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: 123}})).to.equal(false);
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supply_partner_id: 123}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supply_partner_id: '123'}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {inventory_id: 123}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {inventory_id: '123'}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {inventory_id: 'kukuk1212'}})).to.equal(false);
     });
 
     it('should validate RTB endpoint', () => {
@@ -311,55 +238,58 @@ describe('GamoshiAdapter', () => {
     });
 
     it('should validate bid floor', () => {
-      // bidfloor can be omitted - should be valid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true);
-
-      // bidfloor as string should be invalid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: '123'}})).to.equal(true);
-
-      // bidfloor as zero should be invalid (not positive)
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 0}})).to.equal(false);
-
-      // bidfloor as negative number should be invalid
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: -0.5}})).to.equal(false);
-
-      // bidfloor as positive number should be valid
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // bidfloor has a default
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: '123'}})).to.equal(false);
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 0.1}})).to.equal(true);
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: 1.5}})).to.equal(true);
-      //
-      // const getFloorResponse = {currency: 'USD', floor: 5};
-      // let testBidRequest = deepClone(bidRequest);
-      // let request = spec.buildRequests([testBidRequest], bidRequest)[0];
-      //
-      // // 1. getBidFloor not exist AND bidfloor not exist - return 0
-      // let payload = request.data;
-      // expect(payload.imp[0].bidfloor).to.exist.and.equal(0);
-      //
-      // // 2. getBidFloor not exist AND bidfloor exist - use bidfloor property
-      // testBidRequest = deepClone(bidRequest);
-      // testBidRequest.params = {
-      //   'bidfloor': 0.3
-      // };
-      // request = spec.buildRequests([testBidRequest], bidRequest)[0];
-      // payload = request.data;
-      // expect(payload.imp[0].bidfloor).to.exist.and.to.equal(0.3)
-      //
-      // // 3. getBidFloor exist AND bidfloor not exist - use getFloor method
-      // testBidRequest = deepClone(bidRequest);
-      // testBidRequest.getFloor = () => getFloorResponse;
-      // request = spec.buildRequests([testBidRequest], bidRequest)[0];
-      // payload = request.data;
-      // expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
-      //
-      // // 4. getBidFloor exist AND bidfloor exist -> use getFloor method
-      // testBidRequest = deepClone(bidRequest);
-      // testBidRequest.getFloor = () => getFloorResponse;
-      // testBidRequest.params = {
-      //   'bidfloor': 0.3
-      // };
-      // request = spec.buildRequests([testBidRequest], bidRequest)[0];
-      // payload = request.data;
-      // expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
+
+      const getFloorResponse = {currency: 'USD', floor: 5};
+      let testBidRequest = deepClone(bidRequest);
+      let request = spec.buildRequests([testBidRequest], bidRequest)[0];
+
+      // 1. getBidFloor not exist AND bidfloor not exist - return 0
+      let payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.equal(0);
+
+      // 2. getBidFloor not exist AND bidfloor exist - use bidfloor property
+      testBidRequest = deepClone(bidRequest);
+      testBidRequest.params = {
+        'bidfloor': 0.3
+      };
+      request = spec.buildRequests([testBidRequest], bidRequest)[0];
+      payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.to.equal(0.3)
+
+      // 3. getBidFloor exist AND bidfloor not exist - use getFloor method
+      testBidRequest = deepClone(bidRequest);
+      testBidRequest.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([testBidRequest], bidRequest)[0];
+      payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
+
+      // 4. getBidFloor exist AND bidfloor exist -> use getFloor method
+      testBidRequest = deepClone(bidRequest);
+      testBidRequest.getFloor = () => getFloorResponse;
+      testBidRequest.params = {
+        'bidfloor': 0.3
+      };
+      request = spec.buildRequests([testBidRequest], bidRequest)[0];
+      payload = request.data;
+      expect(payload.imp[0].bidfloor).to.exist.and.to.equal(5)
+    });
+
+    it('should validate adpos', () => {
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // adpos has a default
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', adpos: '123'}})).to.equal(false);
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', adpos: 0.1}})).to.equal(true);
+    });
+
+    it('should validate instl', () => {
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // adpos has a default
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: '123'}})).to.equal(false);
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: -1}})).to.equal(false);
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: 0}})).to.equal(true);
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: 1}})).to.equal(true);
+      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: 2}})).to.equal(false);
     });
   });
 
@@ -399,15 +329,26 @@ describe('GamoshiAdapter', () => {
       })
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
 
+      expect(response.data.site.domain).to.equal('www.test.com');
+      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('http://referrer.com');
       expect(response.data.imp.length).to.equal(1);
+      expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
+      expect(response.data.imp[0].instl).to.equal(0);
       expect(response.data.imp[0].tagid).to.equal(bidRequest.adUnitCode);
       expect(response.data.imp[0].bidfloor).to.equal(0);
       expect(response.data.imp[0].bidfloorcur).to.equal('USD');
-      expect(response.data.ext.gamoshi.supplyPartnerId).to.equal(supplyPartnerId);
+      expect(response.data.regs.ext.us_privacy).to.equal('gamoshiCCPA');// USP/CCPAs
+      expect(response.data.source.ext.schain).to.deep.equal(bidRequest2.schain);
+
       const bidRequestWithInstlEquals1 = utils.deepClone(bidRequest);
       bidRequestWithInstlEquals1.params.instl = 1;
       response = spec.buildRequests([bidRequestWithInstlEquals1], bidRequest2)[0];
       expect(response.data.imp[0].instl).to.equal(bidRequestWithInstlEquals1.params.instl);
+      const bidRequestWithInstlEquals0 = utils.deepClone(bidRequest);
+      bidRequestWithInstlEquals0.params.instl = 1;
+      response = spec.buildRequests([bidRequestWithInstlEquals0], bidRequest2)[0];
+      expect(response.data.imp[0].instl).to.equal(bidRequestWithInstlEquals0.params.instl);
       const bidRequestWithBidfloorEquals1 = utils.deepClone(bidRequest);
       bidRequestWithBidfloorEquals1.params.bidfloor = 1;
       response = spec.buildRequests([bidRequestWithBidfloorEquals1], bidRequest2)[0];
@@ -417,7 +358,6 @@ describe('GamoshiAdapter', () => {
     it('builds request banner object correctly', () => {
       let response;
       const bidRequestWithBanner = utils.deepClone(bidRequest);
-
       bidRequestWithBanner.mediaTypes = {
         banner: {
           sizes: [[300, 250], [120, 600]]
@@ -426,6 +366,8 @@ describe('GamoshiAdapter', () => {
       response = spec.buildRequests([bidRequestWithBanner], bidRequest)[0];
       expect(response.data.imp[0].banner.w).to.equal(bidRequestWithBanner.mediaTypes.banner.sizes[0][0]);
       expect(response.data.imp[0].banner.h).to.equal(bidRequestWithBanner.mediaTypes.banner.sizes[0][1]);
+      expect(response.data.imp[0].banner.pos).to.equal(0);
+      expect(response.data.imp[0].banner.topframe).to.equal(0);
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithBanner);
       bidRequestWithPosEquals1.params.pos = 1;
       response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
@@ -433,28 +375,34 @@ describe('GamoshiAdapter', () => {
     });
 
     it('builds request video object correctly', () => {
-      const bidRequestWithVideo = utils.deepClone(videoBidRequest);
+      let response;
+      const bidRequestWithVideo = utils.deepClone(bidRequest);
+
+      bidRequestWithVideo.params.video = {
+        plcmt: 1,
+        minduration: 1,
+      }
+
       bidRequestWithVideo.mediaTypes = {
         video: {
           playerSize: [[302, 252]],
           mimes: ['video/mpeg'],
-          pos: 0,
           playbackmethod: 1,
-          minduration: 30,
-          plcmt: 1,
           startdelay: 1,
         }
       };
-      let request = spec.buildRequests([bidRequestWithVideo], videoBidRequest)[0];
-      expect(request.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
-      expect(request.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
-      expect(request.data.imp[0].video.pos).to.equal(0);
-      expect(request.data.imp[0].video.mimes[0]).to.equal(bidRequestWithVideo.mediaTypes.video.mimes[0]);
-      expect(request.data.imp[0].video.skip).to.not.exist;
-      expect(request.data.imp[0].video.plcmt).to.equal(1);
-      expect(request.data.imp[0].video.minduration).to.equal(30);
-      expect(request.data.imp[0].video.playbackmethod).to.equal(1);
-      expect(request.data.imp[0].video.startdelay).to.equal(1);
+      response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
+      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
+      expect(response.data.imp[0].video.pos).to.equal(0);
+
+      expect(response.data.imp[0].video.mimes).to.equal(bidRequestWithVideo.mediaTypes.video.mimes);
+      expect(response.data.imp[0].video.skip).to.not.exist;
+      expect(response.data.imp[0].video.plcmt).to.equal(1);
+      expect(response.data.imp[0].video.minduration).to.equal(1);
+      expect(response.data.imp[0].video.playbackmethod).to.equal(1);
+      expect(response.data.imp[0].video.startdelay).to.equal(1);
+
       bidRequestWithVideo.mediaTypes = {
         video: {
           playerSize: [302, 252],
@@ -466,12 +414,14 @@ describe('GamoshiAdapter', () => {
           startdelay: 1,
         },
       };
-      request = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(request.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0]);
-      expect(request.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[1]);
-      bidRequestWithVideo.mediaTypes.video.pos = 1;
-      request = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(request.data.imp[0].video.pos).to.equal(1);
+
+      const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
+      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0]);
+      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[1]);
+
+      bidRequestWithPosEquals1.params.pos = 1;
+      response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
+      expect(response.data.imp[0].video.pos).to.equal(bidRequestWithPosEquals1.params.pos);
     });
 
     it('builds request video object correctly with context', () => {
@@ -487,25 +437,28 @@ describe('GamoshiAdapter', () => {
           startdelay: 1,
         }
       };
-      let resultingRequest = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(resultingRequest.data.imp[0].video.ext.context).to.equal('instream');
+      let response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[0].video.ext.context).to.equal('instream');
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
 
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
       bidRequestWithPosEquals1.mediaTypes.video.context = 'outstream';
-      resultingRequest = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
-      expect(resultingRequest.data.imp[0].video.ext.context).to.equal('outstream');
+      response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
+      expect(response.data.imp[0].video.ext.context).to.equal('outstream');
 
       const bidRequestWithPosEquals2 = utils.deepClone(bidRequestWithVideo);
       bidRequestWithPosEquals2.mediaTypes.video.context = null;
-      resultingRequest = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
-      expect(resultingRequest.data.imp[0].video?.ext.context).to.equal(null);
+      response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
+      expect(response.data.imp[0].video.ext.context).to.equal(null);
     });
 
     it('builds request video object correctly with multi-dimensions size array', () => {
-      let resultingRequest;
-      const bidRequestWithVideo = utils.deepClone(videoBidRequest);
+      let response;
+      const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes.video = {
         playerSize: [[304, 254], [305, 255]],
+        context: 'instream',
         mimes: ['video/mpeg'],
         skip: 1,
         plcmt: 1,
@@ -513,36 +466,64 @@ describe('GamoshiAdapter', () => {
         playbackmethod: 1,
         startdelay: 1,
       };
-      resultingRequest = spec.buildRequests([bidRequestWithVideo], videoBidRequest)[0];
-      expect(resultingRequest.data.imp[0].video.plcmt).to.equal(1);
+
+      response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal('instream');
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
+
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
-      bidRequestWithPosEquals1.mediaTypes.video.plcmt = 4;
-      resultingRequest = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
-      expect(resultingRequest.data.imp[0].video.plcmt).to.equal(4);
+      bidRequestWithPosEquals1.mediaTypes.video.context = 'outstream';
+      response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal('outstream');
+
+      const bidRequestWithPosEquals2 = utils.deepClone(bidRequestWithVideo);
+      bidRequestWithPosEquals2.mediaTypes.video.context = null;
+      response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal(null);
     });
 
-    it('builds request with standard ORTB GDPR handling', () => {
+    it('builds request with gdpr consent', () => {
       let response = spec.buildRequests([bidRequest], bidRequest)[0];
-      // GDPR is now handled by standard ORTB converter through bidderRequest.ortb2
-      // We just verify the request is built without custom GDPR extensions
-      expect(response.data.ext.gamoshi.supplyPartnerId).to.equal(supplyPartnerId);
+
+      expect(response.data.ext.gdpr_consent).to.not.equal(null).and.not.equal(undefined);
+      expect(response.data.ext).to.have.property('gdpr_consent');
+      expect(response.data.ext.gdpr_consent.consent_string).to.equal('some string');
+      expect(response.data.ext.gdpr_consent.consent_required).to.equal(true);
+
+      expect(response.data.regs.ext.gdpr).to.not.equal(null).and.not.equal(undefined);
+      expect(response.data.user.ext.consent).to.equal('some string');
     });
 
-    it('handles error when supplyPartnerId is missing', () => {
-      const invalidBidRequest = utils.deepClone(bidRequest);
-      delete invalidBidRequest.params.supplyPartnerId;
-
-      const response = spec.buildRequests([invalidBidRequest], bidRequest);
-      expect(response.length).to.equal(0);
-      expect(utils.logError.calledWith('Gamoshi: supplyPartnerId is required')).to.be.true;
+    it('build request with ID5 Id', () => {
+      const bidRequestClone = utils.deepClone(bidRequest);
+      bidRequestClone.userId = {};
+      bidRequestClone.userId.id5id = { uid: 'id5-user-id' };
+      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      expect(request.data.user.ext.eids).to.deep.equal([{
+        'source': 'id5-sync.com',
+        'uids': [{
+          'id': 'id5-user-id',
+          'ext': {
+            'rtiPartner': 'ID5ID'
+          }
+        }]
+      }]);
     });
 
-    it('handles error when ORTB conversion fails', () => {
-      const invalidBidRequest = utils.deepClone(bidRequest);
-      // Create a scenario that would cause ORTB conversion to fail
-      invalidBidRequest.mediaTypes = null;
-      const response = spec.buildRequests([invalidBidRequest], bidRequest);
-      expect(response.length).to.equal(0);
+    it('build request with unified Id', () => {
+      const bidRequestClone = utils.deepClone(bidRequest);
+      bidRequestClone.userId = {};
+      bidRequestClone.userId.tdid = 'tdid-user-id';
+      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      expect(request.data.user.ext.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'tdid-user-id',
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }]
+      }]);
     });
   });
 
@@ -555,41 +536,43 @@ describe('GamoshiAdapter', () => {
       response = spec.interpretResponse({}, {bidRequest: bannerBidRequest});
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(0);
-
-      // const invalidResponse = {body: 'invalid string response'};
-      // response = spec.interpretResponse(invalidResponse, {bidRequest: bannerBidRequest});
-      // expect(Array.isArray(response)).to.equal(true);
-      // expect(response.length).to.equal(0);
-      // expect(utils.logError.calledWith('Gamoshi: Invalid response format')).to.be.true;
-      //
-      // const malformedResponse = {body: {seatbid: 'invalid'}};
-      // response = spec.interpretResponse(malformedResponse, {bidRequest: bannerBidRequest});
-      //
-      // expect(Array.isArray(response)).to.equal(true);
-      // expect(response.length).to.equal(0);
-      //
-      // const emptyResponse = {body: {}};
-      // response = spec.interpretResponse(emptyResponse, {bidRequest: bannerBidRequest});
-      // expect(Array.isArray(response)).to.equal(true);
-      // expect(response.length).to.equal(0);
     });
 
     it('aggregates banner bids from all seat bids', () => {
-      const mockOrtbRequest = {
-        imp: [{ id: '1', tagid: bannerBidRequest.adUnitCode }]
-      };
-      const response = spec.interpretResponse({body: rtbResponse}, {data: mockOrtbRequest, bidRequest: bannerBidRequest});
+      const response = spec.interpretResponse({body: rtbResponse}, {bidRequest: bannerBidRequest});
       expect(Array.isArray(response)).to.equal(true);
-      // The ORTB converter handles response processing, just verify it returns an array
+      expect(response.length).to.equal(1);
+      const ad0 = response[0];
+      expect(ad0.requestId).to.equal(bannerBidRequest.bidId);
+      expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
+      expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
+      expect(ad0.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
+      expect(ad0.ttl).to.equal(TTL);
+      expect(ad0.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
+      expect(ad0.netRevenue).to.equal(true);
+      expect(ad0.currency).to.equal(rtbResponse.seatbid[1].bid[0].cur || rtbResponse.cur || 'USD');
+      expect(ad0.ad).to.equal(rtbResponse.seatbid[1].bid[0].adm);
+      expect(ad0.vastXml).to.be.an('undefined');
+      expect(ad0.vastUrl).to.be.an('undefined');
+      expect(ad0.meta.advertiserDomains).to.be.equal(rtbResponse.seatbid[1].bid[0].adomain);
     });
 
     it('aggregates video bids from all seat bids', () => {
-      const mockOrtbRequest = {
-        imp: [{ id: '1', tagid: videoBidRequest.adUnitCode }]
-      };
-      const response = spec.interpretResponse({body: videoResponse}, {data: mockOrtbRequest, bidRequest: videoBidRequest});
+      const response = spec.interpretResponse({body: rtbResponse}, {bidRequest: videoBidRequest});
       expect(Array.isArray(response)).to.equal(true);
-      // The ORTB converter handles response processing, just verify it returns an array
+      expect(response.length).to.equal(1);
+      const ad0 = response[0];
+      expect(ad0.requestId).to.equal(videoBidRequest.bidId);
+      expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
+      expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
+      expect(ad0.height).to.equal(rtbResponse.seatbid[0].bid[0].h);
+      expect(ad0.ttl).to.equal(TTL);
+      expect(ad0.creativeId).to.equal(rtbResponse.seatbid[0].bid[0].crid);
+      expect(ad0.netRevenue).to.equal(true);
+      expect(ad0.currency).to.equal(rtbResponse.seatbid[0].bid[0].cur || rtbResponse.cur || 'USD');
+      expect(ad0.ad).to.be.an('undefined');
+      expect(ad0.vastXml).to.equal(rtbResponse.seatbid[0].bid[0].adm);
+      expect(ad0.vastUrl).to.equal(rtbResponse.seatbid[0].bid[0].ext.vast_url);
     });
 
     it('aggregates user-sync pixels', () => {
@@ -609,17 +592,12 @@ describe('GamoshiAdapter', () => {
     it('supports configuring outstream renderers', () => {
       const videoRequest = utils.deepClone(videoBidRequest);
       videoRequest.mediaTypes.video.context = 'outstream';
-      const mockOrtbRequest = {
-        imp: [{ id: '1', tagid: videoRequest.adUnitCode }]
-      };
-      const result = spec.interpretResponse({body: videoResponse}, {data: mockOrtbRequest, bidRequest: videoRequest});
-      expect(Array.isArray(result)).to.equal(true);
+      const result = spec.interpretResponse({body: videoResponse}, {bidRequest: videoRequest});
+      expect(result[0].renderer).to.not.equal(undefined);
     });
 
     it('validates in/existing of gdpr consent', () => {
       let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
-      // print result
-
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
@@ -653,50 +631,6 @@ describe('GamoshiAdapter', () => {
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=0&consent=&us_privacy=');
-
-      videoResponse.ext.utrk[0].url = 'https://rtb.gamoshi.io/pix/1275/scm';
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
-      expect(result).to.be.an('array');
-      expect(result.length).to.equal(1);
-      expect(result[0].type).to.equal('image');
-      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm');
-    });
-
-    it('handles invalid response format gracefully', () => {
-      const invalidResponse = { body: 'invalid string response' };
-      const response = spec.interpretResponse(invalidResponse, { bidRequest: bannerBidRequest });
-      expect(Array.isArray(response)).to.equal(true);
-      expect(response.length).to.equal(0);
-      // expect(utils.logError.calledWith('Gamoshi: Invalid response format or empty seatbid array')).to.be.true;
-    });
-
-    it('handles ORTB converter errors gracefully', () => {
-      const malformedResponse = { body: { seatbid: 'invalid' } };
-      const response = spec.interpretResponse(malformedResponse, { bidRequest: bannerBidRequest });
-      expect(Array.isArray(response)).to.equal(true);
-      expect(response.length).to.equal(0);
-    });
-
-    it('enhances video bids with metadata from bid.ext.video', () => {
-      const videoResponseWithMeta = utils.deepClone(videoResponse);
-      videoResponseWithMeta.seatbid[0].bid[0].ext.video = {
-        duration: 30,
-        bitrate: 1000,
-        protocol: 'VAST 3.0'
-      };
-      const mockOrtbRequest = {
-        imp: [{ id: '1', tagid: videoBidRequest.adUnitCode }]
-      };
-      const response = spec.interpretResponse({body: videoResponseWithMeta}, {data: mockOrtbRequest, bidRequest: videoBidRequest});
-      expect(Array.isArray(response)).to.equal(true);
-    });
-
-    it('returns empty array when ORTB converter returns non-array', () => {
-      // Mock a scenario where ORTB converter returns undefined or null
-      const emptyResponse = { body: {} };
-      const response = spec.interpretResponse(emptyResponse, { bidRequest: bannerBidRequest });
-      expect(Array.isArray(response)).to.equal(true);
-      expect(response.length).to.equal(0);
     });
   });
 });

@@ -5,7 +5,6 @@ import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js'
 
 const BIDDER_CODE = 'adipolo';
 const ENDPOINT = 'https://prebid.adipolo.live';
-const GVL_ID = 1456;
 
 function isBidRequestValid(bid) {
   if (bid && typeof bid.params !== 'object') {
@@ -28,7 +27,6 @@ function isBidRequestValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT),

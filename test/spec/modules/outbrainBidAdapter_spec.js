@@ -550,7 +550,7 @@ describe('Outbrain Adapter', function () {
       });
 
       it('should pass extended ids', function () {
-        const bidRequest = {
+        let bidRequest = {
           bidId: 'bidId',
           params: {},
           userIdAsEids: [
@@ -559,7 +559,7 @@ describe('Outbrain Adapter', function () {
           ...commonBidRequest,
         };
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.eids).to.deep.equal([
           { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
@@ -569,13 +569,13 @@ describe('Outbrain Adapter', function () {
       it('should pass OB user token', function () {
         getDataFromLocalStorageStub.returns('12345');
 
-        const bidRequest = {
+        let bidRequest = {
           bidId: 'bidId',
           params: {},
           ...commonBidRequest,
         };
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.obusertoken).to.equal('12345')
         expect(getDataFromLocalStorageStub.called).to.be.true;
@@ -600,7 +600,7 @@ describe('Outbrain Adapter', function () {
       });
 
       it('should transform string sizes to numbers', function () {
-        const bidRequest = {
+        let bidRequest = {
           bidId: 'bidId',
           params: {},
           ...commonBidRequest,
@@ -634,7 +634,7 @@ describe('Outbrain Adapter', function () {
           ]
         }
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
       });

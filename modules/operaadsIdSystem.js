@@ -22,7 +22,7 @@ const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'applic
 
 function constructUrl(pairs) {
   const queries = [];
-  for (const key in pairs) {
+  for (let key in pairs) {
     queries.push(`${key}=${encodeURIComponent(pairs[key])}`);
   }
   return `${SYNC_URL}?${queries.join('&')}`;

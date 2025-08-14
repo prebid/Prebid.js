@@ -26,14 +26,14 @@ describe('fluctAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return true when dfpUnitCode is not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         tagId: '10000:100000001',
@@ -43,7 +43,7 @@ describe('fluctAdapter', function () {
     });
 
     it('should return false when groupId is not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         dfpUnitCode: '/1000/dfp_unit_code',
@@ -57,7 +57,7 @@ describe('fluctAdapter', function () {
     let sb;
 
     beforeEach(function () {
-      sb = sinon.createSandbox();
+      sb = sinon.sandbox.create();
     });
 
     afterEach(function () {
@@ -139,13 +139,13 @@ describe('fluctAdapter', function () {
       expect(request.data.gpid).to.eql('gpid');
     });
 
-    it('sends ortb2Imp.ext.gpid as gpid', function () {
+    it('sends ortb2Imp.ext.data.pbadslot as gpid', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({
         ...req,
         ortb2Imp: {
           ext: {
-            gpid: 'data-pbadslot',
             data: {
+              pbadslot: 'data-pbadslot',
               adserver: {
                 adslot: 'data-adserver-adslot',
               },
@@ -338,22 +338,16 @@ describe('fluctAdapter', function () {
       // this should be done by schain.js
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign({}, bidReq, {
-          ortb2: {
-            source: {
-              ext: {
-                schain: {
-                  ver: '1.0',
-                  complete: 1,
-                  nodes: [
-                    {
-                      asi: 'example.com',
-                      sid: 'publisher-id',
-                      hp: 1
-                    }
-                  ]
-                }
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: 'publisher-id',
+                hp: 1
               }
-            }
+            ]
           }
         })
       );

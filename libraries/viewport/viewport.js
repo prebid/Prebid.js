@@ -3,7 +3,7 @@ import {getWinDimensions, getWindowTop} from '../../src/utils.js';
 export function getViewportCoordinates() {
   try {
     const win = getWindowTop();
-    const { scrollY: top, scrollX: left } = win;
+    let { scrollY: top, scrollX: left } = win;
     const { height: innerHeight, width: innerWidth } = getViewportSize();
     return { top, right: left + innerWidth, bottom: top + innerHeight, left };
   } catch (e) {

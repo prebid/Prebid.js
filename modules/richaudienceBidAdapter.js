@@ -54,7 +54,7 @@ export const spec = {
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
         kws: bid.params.keywords,
-        schain: bid?.ortb2?.source?.ext?.schain,
+        schain: bid.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
         userData: deepAccess(bid, 'ortb2.user.data')
@@ -211,7 +211,7 @@ export const spec = {
   },
 
   onTimeout: function (data) {
-    const url = raiGetTimeoutURL(data);
+    let url = raiGetTimeoutURL(data);
     if (url) {
       triggerPixel(url);
     }
@@ -273,8 +273,8 @@ function renderer(bid) {
 }
 
 function renderAd(bid) {
-  const raOutstreamHBPassback = `${bid.vastXml}`;
-  const raPlayerHB = {
+  let raOutstreamHBPassback = `${bid.vastXml}`;
+  let raPlayerHB = {
     adUnit: bid.adUnitCode
   };
 
@@ -300,7 +300,7 @@ function raiSetPbAdSlot(bid) {
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
-    const raiSync = {};
+    let raiSync = {};
     if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
       raConfig = config.getConfig('userSync').filterSettings
       if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
@@ -322,7 +322,7 @@ function raiGetFloor(bid, config) {
     if (bid.params.bidfloor != null) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
-      const floorSpec = bid.getFloor({
+      let floorSpec = bid.getFloor({
         currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
         mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
@@ -337,7 +337,7 @@ function raiGetFloor(bid, config) {
 }
 
 function raiGetTimeoutURL(data) {
-  const {params, timeout} = data[0]
+  let {params, timeout} = data[0]
   let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
 
   url = url.replace('[timeout_publisher]', timeout)
@@ -349,6 +349,6 @@ function raiGetTimeoutURL(data) {
 }
 
 function setDSA(bid) {
-  const dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
   return dsa;
 }

@@ -61,7 +61,7 @@ export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
       usPrivacyParamString = `&us_privacy=${US_PRIVACY_STRING}`;
     }
 
-    const url = QSERVE_URL +
+    let url = QSERVE_URL +
     '?d=' + domain +
     '&client_id=' + clientId +
     '&a=' + PREBID_PCODE +
@@ -190,7 +190,7 @@ export const quantcastIdSubmodule = {
    */
   getId(config) {
     // Consent signals are currently checked on the server side.
-    const fpa = storage.getCookie(QUANTCAST_FPA);
+    let fpa = storage.getCookie(QUANTCAST_FPA);
 
     const coppa = coppaDataHandler.getCoppa();
 

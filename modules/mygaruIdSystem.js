@@ -19,7 +19,7 @@ const syncUrl = 'https://ident.mygaru.com/v2/id';
 
 export function buildUrl(opts) {
   const queryPairs = [];
-  for (const key in opts) {
+  for (let key in opts) {
     if (opts[key] !== undefined) {
       queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
     }

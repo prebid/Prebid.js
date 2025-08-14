@@ -4,7 +4,7 @@ import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events');
+let events = require('src/events');
 
 describe('symitri analytics adapter', function () {
   beforeEach(function () {
@@ -16,13 +16,13 @@ describe('symitri analytics adapter', function () {
   });
 
   describe('track', function () {
-    const initOptionsValid = {
+    let initOptionsValid = {
       apiAuthToken: 'TOKEN1234'
     };
-    const initOptionsInValid = {
+    let initOptionsInValid = {
     };
 
-    const bidWon = {
+    let bidWon = {
       'bidderCode': 'appnexus',
       'width': 300,
       'height': 250,
@@ -81,9 +81,9 @@ describe('symitri analytics adapter', function () {
       });
       events.emit(EVENTS.BID_WON, bidWon);
       expect(server.requests.length).to.equal(1);
-      const winEventData = JSON.parse(server.requests[0].requestBody);
+      let winEventData = JSON.parse(server.requests[0].requestBody);
       expect(winEventData).to.deep.equal(bidWon);
-      const authToken = server.requests[0].requestHeaders['Authorization'];
+      let authToken = server.requests[0].requestHeaders['Authorization'];
       expect(authToken).to.equal(initOptionsValid.apiAuthToken);
     });
   });

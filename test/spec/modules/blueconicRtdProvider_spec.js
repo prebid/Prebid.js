@@ -14,7 +14,7 @@ describe('blueconicRtdProvider', function() {
 
   describe('blueconicSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(blueconicSubmodule.init()).to.equal(true);
+		  expect(blueconicSubmodule.init()).to.equal(true);
     });
   });
 
@@ -32,7 +32,7 @@ describe('blueconicRtdProvider', function() {
         ]
       };
 
-      const bidConfig = {
+      let bidConfig = {
         ortb2Fragments: {
           global: {
             user: {
@@ -59,7 +59,7 @@ describe('blueconicRtdProvider', function() {
 
       addRealTimeData(bidConfig.ortb2Fragments.global, rtd);
 
-      const ortb2Config = bidConfig.ortb2Fragments.global;
+      let ortb2Config = bidConfig.ortb2Fragments.global;
       expect(ortb2Config.user.data).to.deep.include.members([setConfigUserObj1, setConfigUserObj2, rtdUserObj1]);
     });
 
@@ -99,7 +99,7 @@ describe('blueconicRtdProvider', function() {
 
       addRealTimeData(bidConfig.ortb2Fragments.global, rtd);
 
-      const ortb2Config = bidConfig.ortb2Fragments.global;
+      let ortb2Config = bidConfig.ortb2Fragments.global;
 
       expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
       expect(bidConfig.ortb2Fragments.global.user.data).to.have.lengthOf(2);

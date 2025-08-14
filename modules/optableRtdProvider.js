@@ -15,8 +15,8 @@ const {logMessage, logWarn, logError} = optableLog;
  */
 export const parseConfig = (moduleConfig) => {
   let bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
-  const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
-  const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
+  let adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
+  let handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
 
   // If present, trim the bundle URL
   if (typeof bundleUrl === 'string') {

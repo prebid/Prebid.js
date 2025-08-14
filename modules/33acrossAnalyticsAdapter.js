@@ -57,7 +57,7 @@ export const log = getLogger();
  */
 
 /**
- * @typedef {string} AdUnitSize
+ * @typedef {`${number}x${number}`} AdUnitSize
  */
 
 /**
@@ -159,6 +159,7 @@ class TransactionManager {
   #clearSendTimeout() {
     return clearTimeout(this.#sendTimeoutId);
   }
+
 
   #restartSendTimeout() {
     this.#clearSendTimeout();
@@ -362,8 +363,8 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
 
 function getCachedBid(auctionId, bidId) {
   const auction = locals.cache.auctions[auctionId];
-  for (const adUnit of auction.adUnits) {
-    for (const bid of adUnit.bids) {
+  for (let adUnit of auction.adUnits) {
+    for (let bid of adUnit.bids) {
       if (bid.bidId === bidId) {
         return bid;
       }
@@ -375,7 +376,7 @@ function getCachedBid(auctionId, bidId) {
 /**
  * @param {Object} args
  * @param {Object} args.args Event data
- * @param {string} args.eventType
+ * @param {EVENTS[keyof EVENTS]} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
   if (!locals.cache) {
@@ -391,7 +392,7 @@ function analyticEventHandler({ eventType, args }) {
       onBidRequested(args);
       break;
     case EVENTS.BID_TIMEOUT:
-      for (const bid of args) {
+      for (let bid of args) {
         setCachedBidStatus(bid.auctionId, bid.bidId, BidStatus.TIMEOUT);
       }
       break;
@@ -407,7 +408,7 @@ function analyticEventHandler({ eventType, args }) {
       break;
     case EVENTS.BIDDER_ERROR:
       if (args.bidderRequest && args.bidderRequest.bids) {
-        for (const bid of args.bidderRequest.bids) {
+        for (let bid of args.bidderRequest.bids) {
           setCachedBidStatus(args.bidderRequest.auctionId, bid.bidId, BidStatus.ERROR);
         }
       }
@@ -443,7 +444,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
         // The value of the UNIQUIFIER is likely to be the div-id,
         // but, if div-id is randomized / unavailable, may be something else like the media size)
-        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || au.code,
+        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || deepAccess(au, 'ortb2Imp.ext.data.pbadslot', au.code),
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],
@@ -477,7 +478,7 @@ function setAdUnitMap(adUnitCode, auctionId, transactionId) {
  * BID_REQUESTED *
  ****************/
 function onBidRequested({ auctionId, bids }) {
-  for (const { bidder, bidId, transactionId, src } of bids) {
+  for (let { bidder, bidId, transactionId, src } of bids) {
     const auction = locals.cache.auctions[auctionId];
     const adUnit = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId);
     if (!adUnit) return;
@@ -551,7 +552,7 @@ function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floor
  * @returns {void}
  */
 function onAuctionEnd({ bidsReceived, auctionId }) {
-  for (const bid of bidsReceived) {
+  for (let bid of bidsReceived) {
     setCachedBidStatus(auctionId, bid.requestId, bid.status);
   }
 }

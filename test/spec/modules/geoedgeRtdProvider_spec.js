@@ -1,5 +1,5 @@
 import * as utils from '../../../src/utils.js';
-import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import { loadExternalScript } from '../../../src/adloader.js';
 import * as geoedgeRtdModule from '../../../modules/geoedgeRtdProvider.js';
 import { server } from '../../../test/mocks/xhr.js';
 import * as events from '../../../src/events.js';
@@ -105,7 +105,7 @@ describe('Geoedge RTD module', function () {
       it('should load the in page code when gpt params is true', function () {
         geoedgeSubmodule.init(makeConfig(true));
         const isInPageUrl = arg => arg === getInPageUrl(key);
-        expect(loadExternalScriptStub.calledWith(sinon.match(isInPageUrl))).to.equal(true);
+        expect(loadExternalScript.calledWith(sinon.match(isInPageUrl))).to.equal(true);
       });
       it('should set the window.grumi config object when gpt params is true', function () {
         const hasGrumiObj = typeof window.grumi === 'object';
@@ -115,7 +115,7 @@ describe('Geoedge RTD module', function () {
     describe('preloadClient', function () {
       let iframe;
       preloadClient(key);
-      const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
+      const loadExternalScriptCall = loadExternalScript.getCall(0);
       it('should create an invisible iframe and insert it to the DOM', function () {
         iframe = document.getElementById('grumiFrame');
         expect(iframe && iframe.style.display === 'none');

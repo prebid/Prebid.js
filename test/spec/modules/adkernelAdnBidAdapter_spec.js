@@ -4,139 +4,139 @@ import {config} from 'src/config';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
-    bidder: 'adkernelAdn',
-    transactionId: 'transact0',
-    bidderRequestId: 'req0',
-    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-    bidId: 'bidid_1',
-    params: {
-      pubId: 1,
-      host: 'tag.adkernel.com'
-    },
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250], [300, 200]]
+      bidder: 'adkernelAdn',
+      transactionId: 'transact0',
+      bidderRequestId: 'req0',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      bidId: 'bidid_1',
+      params: {
+        pubId: 1,
+        host: 'tag.adkernel.com'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 200]]
+        }
+      },
+      adUnitCode: 'ad-unit-1',
+    }, bid2_pub1 = {
+      bidder: 'adkernelAdn',
+      transactionId: 'transact0',
+      bidderRequestId: 'req0',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      bidId: 'bidid_2',
+      params: {
+        pubId: 1
+      },
+      adUnitCode: 'ad-unit-2',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
       }
-    },
-    adUnitCode: 'ad-unit-1',
-  }; const bid2_pub1 = {
-    bidder: 'adkernelAdn',
-    transactionId: 'transact0',
-    bidderRequestId: 'req0',
-    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-    bidId: 'bidid_2',
-    params: {
-      pubId: 1
-    },
-    adUnitCode: 'ad-unit-2',
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250]]
+    }, bid1_pub2 = {
+      bidder: 'adkernelAdn',
+      transactionId: 'transact2',
+      bidderRequestId: 'req1',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      bidId: 'bidid_3',
+      params: {
+        pubId: 7,
+        host: 'dps-test.com'
+      },
+      adUnitCode: 'ad-unit-2',
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
       }
-    }
-  }; const bid1_pub2 = {
-    bidder: 'adkernelAdn',
-    transactionId: 'transact2',
-    bidderRequestId: 'req1',
-    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-    bidId: 'bidid_3',
-    params: {
-      pubId: 7,
-      host: 'dps-test.com'
-    },
-    adUnitCode: 'ad-unit-2',
-    mediaTypes: {
-      banner: {
-        sizes: [[728, 90]]
+    }, bid_video1 = {
+      bidder: 'adkernelAdn',
+      transactionId: 'transact3',
+      bidderRequestId: 'req1',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      bidId: 'bidid_4',
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 300],
+          mimes: ['video/mp4', 'video/webm'],
+          api: [1, 2],
+          protocols: [5, 6]
+        }
+      },
+      adUnitCode: 'video_wrapper',
+      params: {
+        pubId: 7
       }
-    }
-  }; const bid_video1 = {
-    bidder: 'adkernelAdn',
-    transactionId: 'transact3',
-    bidderRequestId: 'req1',
-    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-    bidId: 'bidid_4',
-    mediaTypes: {
-      video: {
-        context: 'instream',
-        playerSize: [640, 300],
-        mimes: ['video/mp4', 'video/webm'],
-        api: [1, 2],
-        protocols: [5, 6]
+    }, bid_video2 = {
+      bidder: 'adkernelAdn',
+      transactionId: 'transact3',
+      bidderRequestId: 'req1',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      bidId: 'bidid_5',
+      mediaTypes: {
+        video: {
+          playerSize: [1920, 1080],
+          context: 'instream'
+        }
+      },
+      adUnitCode: 'video_wrapper2',
+      params: {
+        pubId: 7
       }
-    },
-    adUnitCode: 'video_wrapper',
-    params: {
-      pubId: 7
-    }
-  }; const bid_video2 = {
-    bidder: 'adkernelAdn',
-    transactionId: 'transact3',
-    bidderRequestId: 'req1',
-    auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
-    bidId: 'bidid_5',
-    mediaTypes: {
-      video: {
-        playerSize: [1920, 1080],
-        context: 'instream'
-      }
-    },
-    adUnitCode: 'video_wrapper2',
-    params: {
-      pubId: 7
-    }
-  }; const bid_multiformat = {
-    bidder: 'adkernelAdn',
-    transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
-    bidderRequestId: 'req-001',
-    auctionId: 'auc-001',
-    bidId: 'Bid_01',
-    mediaTypes: {
-      banner: {sizes: [[300, 250], [300, 200]]},
-      video: {context: 'instream', playerSize: [[640, 480]]}
-    },
-    adUnitCode: 'ad-unit-1',
-    params: {pubId: 7}
-  };
+    }, bid_multiformat = {
+      bidder: 'adkernelAdn',
+      transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
+      bidderRequestId: 'req-001',
+      auctionId: 'auc-001',
+      bidId: 'Bid_01',
+      mediaTypes: {
+        banner: {sizes: [[300, 250], [300, 200]]},
+        video: {context: 'instream', playerSize: [[640, 480]]}
+      },
+      adUnitCode: 'ad-unit-1',
+      params: {pubId: 7}
+    };
 
   const response = {
-    tags: [{
-      id: 'ad-unit-1',
-      impid: '2c5e951baeeadd',
-      crid: '108_159810',
-      bid: 5.0,
-      tag: '<!-- tag goes here -->',
-      w: 300,
-      h: 250,
-      advertiserId: 777,
-      advertiserName: 'advertiser',
-      agencyName: 'agency',
-      advertiserDomains: ['example.com'],
-      primaryCatId: 'IAB1-1',
-    }, {
-      id: 'ad-unit-2',
-      impid: '31d798477126c4',
-      crid: '108_21226',
-      bid: 2.5,
-      tag: '<!-- tag goes here -->',
-      w: 300,
-      h: 250,
-      advertiserId: 777,
-      advertiserName: 'advertiser',
-      agencyName: 'agency',
-      advertiserDomains: ['example.com'],
-      secondaryCatIds: ['IAB1-4', 'IAB8-16', 'IAB25-5']
-    }, {
-      id: 'video_wrapper',
-      impid: '57d602ad1c9545',
-      crid: '108_158802',
-      bid: 10.0,
-      vast_url: 'https://vast.com/vast.xml'
-    }],
-    syncpages: ['https://dsp.adkernel.com/sync']
-  }; const usersyncOnlyResponse = {
-    syncpages: ['https://dsp.adkernel.com/sync']
-  };
+      tags: [{
+        id: 'ad-unit-1',
+        impid: '2c5e951baeeadd',
+        crid: '108_159810',
+        bid: 5.0,
+        tag: '<!-- tag goes here -->',
+        w: 300,
+        h: 250,
+        advertiserId: 777,
+        advertiserName: 'advertiser',
+        agencyName: 'agency',
+        advertiserDomains: ['example.com'],
+        primaryCatId: 'IAB1-1',
+      }, {
+        id: 'ad-unit-2',
+        impid: '31d798477126c4',
+        crid: '108_21226',
+        bid: 2.5,
+        tag: '<!-- tag goes here -->',
+        w: 300,
+        h: 250,
+        advertiserId: 777,
+        advertiserName: 'advertiser',
+        agencyName: 'agency',
+        advertiserDomains: ['example.com'],
+        secondaryCatIds: ['IAB1-4', 'IAB8-16', 'IAB25-5']
+      }, {
+        id: 'video_wrapper',
+        impid: '57d602ad1c9545',
+        crid: '108_158802',
+        bid: 10.0,
+        vast_url: 'https://vast.com/vast.xml'
+      }],
+      syncpages: ['https://dsp.adkernel.com/sync']
+    }, usersyncOnlyResponse = {
+      syncpages: ['https://dsp.adkernel.com/sync']
+    };
 
   const defaultBidderRequest = {
     bidderCode: 'adkernelAdn',
@@ -209,19 +209,19 @@ describe('AdkernelAdn adapter', function () {
   });
 
   function buildRequest(bidRequests, bidderRequestAugments = {}) {
-    const fullBidderRequest = Object.assign(defaultBidderRequest, bidderRequestAugments);
+    let fullBidderRequest = Object.assign(defaultBidderRequest, bidderRequestAugments);
     fullBidderRequest.auctionId = bidRequests[0].auctionId;
     fullBidderRequest.transactionId = bidRequests[0].transactionId;
     fullBidderRequest.bidderRequestId = bidRequests[0].bidderRequestId;
     fullBidderRequest.bids = bidRequests;
-    const pbRequests = spec.buildRequests(bidRequests, fullBidderRequest);
-    const tagRequests = pbRequests.map(r => JSON.parse(r.data));
+    let pbRequests = spec.buildRequests(bidRequests, fullBidderRequest);
+    let tagRequests = pbRequests.map(r => JSON.parse(r.data));
     return [pbRequests, tagRequests];
   }
 
   describe('banner request building', function () {
-    const [_, tagRequests] = buildRequest([bid1_pub1], {ortb2: {source: {tid: 'mock-tid'}}});
-    const tagRequest = tagRequests[0];
+    let [_, tagRequests] = buildRequest([bid1_pub1], {ortb2: {source: {tid: 'mock-tid'}}});
+    let tagRequest = tagRequests[0];
 
     it('should have request id', function () {
       expect(tagRequest).to.have.property('id');
@@ -254,12 +254,12 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
-      const [_, tagRequests] = buildRequest([bid1_pub1]);
+      let [_, tagRequests] = buildRequest([bid1_pub1]);
       expect(tagRequests[0]).to.not.have.property('user');
     });
 
     it('should contain gdpr and ccpa information if consent is configured', function () {
-      const [_, bidRequests] = buildRequest([bid1_pub1],
+      let [_, bidRequests] = buildRequest([bid1_pub1],
         {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}, uspConsent: '1YNN'});
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 1);
@@ -268,7 +268,7 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      const [_, bidRequests] = buildRequest([bid1_pub1], {gdprConsent: {gdprApplies: false}});
+      let [_, bidRequests] = buildRequest([bid1_pub1], {gdprConsent: {gdprApplies: false}});
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 0);
       expect(bidRequests[0].user).to.not.have.property('consent');
@@ -276,28 +276,28 @@ describe('AdkernelAdn adapter', function () {
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
       config.setConfig({coppa: true});
-      const [_, bidRequests] = buildRequest([bid1_pub1]);
+      let [_, bidRequests] = buildRequest([bid1_pub1]);
       config.resetConfig();
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('coppa', 1);
     });
 
     it('should set bidfloor if configured', function() {
-      const bid = Object.assign({}, bid1_pub1);
+      let bid = Object.assign({}, bid1_pub1);
       bid.getFloor = function() {
         return {
           currency: 'USD',
           floor: 0.145
         }
       };
-      const [, tagRequests] = buildRequest([bid]);
+      let [, tagRequests] = buildRequest([bid]);
       expect(tagRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
   });
 
   describe('video request building', () => {
-    const [_, tagRequests] = buildRequest([bid_video1, bid_video2]);
-    const tagRequest = tagRequests[0];
+    let [_, tagRequests] = buildRequest([bid_video1, bid_video2]);
+    let tagRequest = tagRequests[0];
 
     it('should have video object', () => {
       expect(tagRequest.imp[0]).to.have.property('video');
@@ -327,7 +327,7 @@ describe('AdkernelAdn adapter', function () {
   });
 
   describe('multiformat request building', function () {
-    const [_, tagRequests] = buildRequest([bid_multiformat]);
+    let [_, tagRequests] = buildRequest([bid_multiformat]);
 
     it('should contain single request', function () {
       expect(tagRequests).to.have.length(1);
@@ -343,7 +343,7 @@ describe('AdkernelAdn adapter', function () {
 
   describe('requests routing', function () {
     it('should issue a request for each publisher', function () {
-      const [pbRequests, tagRequests] = buildRequest([bid1_pub1, bid_video1]);
+      let [pbRequests, tagRequests] = buildRequest([bid1_pub1, bid_video1]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].url).to.have.string(`account=${bid1_pub1.params.pubId}`);
       expect(pbRequests[1].url).to.have.string(`account=${bid1_pub2.params.pubId}`);
@@ -352,7 +352,7 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should issue a request for each host', function () {
-      const [pbRequests, tagRequests] = buildRequest([bid1_pub1, bid1_pub2]);
+      let [pbRequests, tagRequests] = buildRequest([bid1_pub1, bid1_pub2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].url).to.have.string('https://tag.adkernel.com/tag');
       expect(pbRequests[1].url).to.have.string(`https://${bid1_pub2.params.host}/tag`);
@@ -373,7 +373,7 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should return fully-initialized bid-response', function () {
-      const resp = responses[0];
+      let resp = responses[0];
       expect(resp).to.have.property('requestId', '2c5e951baeeadd');
       expect(resp).to.have.property('cpm', 5.0);
       expect(resp).to.have.property('width', 300);
@@ -392,7 +392,7 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should return fully-initialized video bid-response', function () {
-      const resp = responses[2];
+      let resp = responses[2];
       expect(resp).to.have.property('requestId', '57d602ad1c9545');
       expect(resp).to.have.property('cpm', 10.0);
       expect(resp).to.have.property('creativeId', '108_158802');
@@ -413,13 +413,13 @@ describe('AdkernelAdn adapter', function () {
     });
 
     it('should handle user-sync only response', function () {
-      const [pbRequests, tagRequests] = buildRequest([bid1_pub1]);
-      const resp = spec.interpretResponse({body: usersyncOnlyResponse}, pbRequests[0]);
+      let [pbRequests, tagRequests] = buildRequest([bid1_pub1]);
+      let resp = spec.interpretResponse({body: usersyncOnlyResponse}, pbRequests[0]);
       expect(resp).to.have.length(0);
     });
 
     it('shouldn\' fail on empty response', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: ''}]);
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: ''}]);
       expect(syncs).to.have.length(0);
     });
   });

@@ -3,7 +3,7 @@ import {config} from 'src/config';
 import {EVENTS} from 'src/constants.js';
 import {server} from '../../mocks/xhr.js';
 
-const events = require('src/events');
+let events = require('src/events');
 
 const SAMPLE_EVENTS = {
   AUCTION_END: {
@@ -383,7 +383,7 @@ describe('Uniquest Analytics Adapter', function () {
   let requests;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
   });

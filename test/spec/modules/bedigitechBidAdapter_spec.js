@@ -83,9 +83,9 @@ describe('BedigitechAdapter', function () {
           'currency': 'USD',
           'height': 250,
           'id': 'bedigitechMyidfdfdf',
-          'netRevenue': true,
-          'requestTime': 1686306237,
-          'timeToRespond': 300,
+          'netRevenue':	true,
+          'requestTime':	1686306237,
+          'timeToRespond':	300,
           'ttl': 300,
           'width': 300
         }
@@ -107,10 +107,10 @@ describe('BedigitechAdapter', function () {
           'meta': {
             'mediaType': BANNER,
           },
-          'netRevenue': true,
+          'netRevenue':	true,
           'requestId': 'bedigitechMyidfdfdf',
-          'requestTimestamp': 1686306237,
-          'timeToRespond': 300,
+          'requestTimestamp':	1686306237,
+          'timeToRespond':	300,
           'ttl': 300,
           'width': 300,
           'bidderCode': 'bedigitech',
@@ -118,7 +118,7 @@ describe('BedigitechAdapter', function () {
       ];
       const result = spec.interpretResponse(response);
       expect(result).to.have.lengthOf(1);
-      const resultKeys = Object.keys(result[0]);
+      let resultKeys = Object.keys(result[0]);
       expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort());
       resultKeys.forEach(function(k) {
         if (k === 'ad') {

@@ -1,7 +1,7 @@
 // import or require modules necessary for the test, e.g.:
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import { spec } from 'modules/brainxBidAdapter.js';
-import utils, { deepClone } from '../../../src/utils.js';
+import utils, { deepClone } from '../../../src/utils';
 // import adapter from 'src/adapters/<adapter>';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 

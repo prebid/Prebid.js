@@ -1,12 +1,12 @@
-import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT, getAuctionCache, CACHE_CLEANUP_DELAY } from 'modules/livewrappedAnalyticsAdapter.js';
+import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter.js';
 import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { setConfig } from 'modules/currency.js';
 
-const events = require('src/events');
-const utils = require('src/utils');
-const adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
+let utils = require('src/utils');
+let adapterManager = require('src/adapterManager').default;
 
 const {
   AUCTION_INIT,
@@ -314,9 +314,9 @@ describe('Livewrapped analytics adapter', function () {
   let clock;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
 
-    const element = {
+    let element = {
       getAttribute: function() {
         return 'adunitid';
       }
@@ -339,8 +339,6 @@ describe('Livewrapped analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
-    clock.runAll();
-    clock.restore();
   });
 
   describe('when handling events', function () {
@@ -368,21 +366,13 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
+      let request = server.requests[0];
 
       expect(request.url).to.equal('https://lwadm.com/analytics/10');
 
-      const message = JSON.parse(request.requestBody);
+      let message = JSON.parse(request.requestBody);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
-    });
-
-    it('should clear auction cache after sending events', function () {
-      performStandardAuction();
-
-      clock.tick(BID_WON_TIMEOUT + CACHE_CLEANUP_DELAY + 100);
-
-      expect(Object.keys(getAuctionCache()).length).to.equal(0);
     });
 
     it('should send batched message without BID_WON AND AD_RENDER_FAILED if necessary and further BID_WON and AD_RENDER_FAILED events individually', function () {
@@ -426,7 +416,7 @@ describe('Livewrapped analytics adapter', function () {
 
       expect(server.requests.length).to.equal(1);
 
-      const message = JSON.parse(server.requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('livewrapped');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
@@ -465,8 +455,8 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
 
       expect(message.gdpr.length).to.equal(1);
       expect(message.gdpr[0].gdprApplies).to.equal(true);
@@ -519,8 +509,8 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
 
       expect(message.gdpr.length).to.equal(1);
 
@@ -570,8 +560,8 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
 
       expect(message.gdpr.length).to.equal(1);
 
@@ -599,8 +589,8 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
 
       expect(message.wins.length).to.equal(1);
       expect(message.wins[0].rUp).to.equal('rUpObject');
@@ -633,7 +623,7 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
+      let request = server.requests[0];
 
       expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
     });
@@ -667,8 +657,8 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
 
       expect(message.ext).to.not.equal(null);
       expect(message.ext.testparam).to.equal(123);
@@ -690,8 +680,8 @@ describe('Livewrapped analytics adapter', function () {
       clock.tick(BID_WON_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
 
       expect(message.wins.length).to.equal(1);
       expect(message.wins[0]).to.deep.equal({

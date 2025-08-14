@@ -25,7 +25,7 @@ describe('flippAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       invalidBid.params = { siteId: 1234 }
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });

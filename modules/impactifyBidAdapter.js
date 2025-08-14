@@ -31,11 +31,11 @@ export const STORAGE_KEY = '_im_str'
 
 /**
  * Helpers object
- * @type {Object}
+ * @type {{getExtParamsFromBid(*): {impactify: {appId}}, createOrtbImpVideoObj(*): {context: string, playerSize: [number,number], id: string, mimes: [string]}, getDeviceType(): (number), createOrtbImpBannerObj(*, *): {format: [], id: string}}}
  */
 const helpers = {
   getExtParamsFromBid(bid) {
-    const ext = {
+    let ext = {
       impactify: {
         appId: bid.params.appId
       },
@@ -72,7 +72,7 @@ const helpers = {
   },
 
   createOrtbImpBannerObj(bid, size) {
-    const sizes = size.split('x');
+    let sizes = size.split('x');
 
     return {
       id: 'banner-' + bid.bidId,
@@ -118,7 +118,7 @@ const helpers = {
  */
 function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create request and set imp bids inside
-  const request = {
+  let request = {
     id: bidderRequest.bidderRequestId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
@@ -137,11 +137,11 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   }
 
   // Set SChain in request
-  const schain = deepAccess(validBidRequests, '0.ortb2.source.ext.schain');
+  let schain = deepAccess(validBidRequests, '0.schain');
   if (schain) request.source.ext = { schain: schain };
 
   // Set Eids
-  const eids = deepAccess(validBidRequests, '0.userIdAsEids');
+  let eids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (eids && eids.length) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
@@ -179,9 +179,9 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {
-    const bannerObj = deepAccess(bid.mediaTypes, `banner`);
+    let bannerObj = deepAccess(bid.mediaTypes, `banner`);
 
-    const imp = {
+    let imp = {
       id: bid.bidId,
       bidfloor: bid.params.bidfloor ? bid.params.bidfloor : 0,
       ext: helpers.getExtParamsFromBid(bid)
@@ -247,13 +247,13 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {Array} validBidRequests - an array of bids
-   * @param {Object} bidderRequest - the bidding request
-   * @return {Object} Info describing the request to the server.
+   * @param {validBidRequests[]} - an array of bids
+   * @param {bidderRequest} - the bidding request
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
-    const request = createOpenRtbRequest(validBidRequests, bidderRequest);
+    let request = createOpenRtbRequest(validBidRequests, bidderRequest);
     const imStr = helpers.getImStrFromLocalStorage();
     const options = {}
 
@@ -363,7 +363,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Object} bid The bid that won the auction
+   * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
     ajax(`${LOGGER_URI}/prebid/won`, null, JSON.stringify(bid), {
@@ -376,7 +376,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {Object} data Containing timeout specific data
+   * @param {data} Containing timeout specific data
    */
   onTimeout: function (data) {
     ajax(`${LOGGER_URI}/prebid/timeout`, null, JSON.stringify(data[0]), {

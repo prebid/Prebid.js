@@ -1,4 +1,4 @@
-import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
+import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
@@ -38,8 +38,8 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
-      const isValidPlacementId = _validateId(bid.params.placementId);
-      const isValidPageId = _validateId(bid.params.pageId);
+      let isValidPlacementId = _validateId(bid.params.placementId);
+      let isValidPageId = _validateId(bid.params.pageId);
       isValid = isValidPlacementId && isValidPageId;
     }
 
@@ -51,9 +51,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} validBidRequests an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {validBidRequests[]} an array of bids
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
@@ -80,8 +79,6 @@ export const spec = {
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',
-      timeout: bidderRequest?.timeout,
-      eids: getUserIdAsEids(validBidRequests),
       ...getSharedViewerIdParameters(validBidRequests),
       outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -89,15 +86,14 @@ export const spec = {
 
     const firstBidRequest = validBidRequests[0];
 
-    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      payload.schain = schain;
+    if (firstBidRequest.schain) {
+      payload.schain = firstBidRequest.schain;
     }
 
-    const gpp = bidderRequest.gppConsent;
+    let gpp = bidderRequest.gppConsent;
     if (bidderRequest && gpp) {
-      const isValidConsentString = typeof gpp.gppString === 'string';
-      const validateApplicableSections =
+      let isValidConsentString = typeof gpp.gppString === 'string';
+      let validateApplicableSections =
         Array.isArray(gpp.applicableSections) &&
         gpp.applicableSections.every((section) => typeof (section) === 'number')
       payload.gpp = {
@@ -106,11 +102,11 @@ export const spec = {
       };
     }
 
-    const gdpr = bidderRequest.gdprConsent;
+    let gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
-      const isCmp = typeof gdpr.gdprApplies === 'boolean';
-      const isConsentString = typeof gdpr.consentString === 'string';
-      const status = isCmp
+      let isCmp = typeof gdpr.gdprApplies === 'boolean';
+      let isConsentString = typeof gdpr.consentString === 'string';
+      let status = isCmp
         ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData)
         : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
       payload.gdpr_iab = {
@@ -188,38 +184,33 @@ export const spec = {
 
 /**
  *
- * @param {BidRequest[]} validBidRequests an array of bids
+ * @param validBidRequests an array of bids
  * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
  */
 function getSharedViewerIdParameters(validBidRequests) {
   const sharedViewerIdMapping = {
-    unifiedId2: 'uidapi.com', // uid2IdSystem
-    liveRampId: 'liveramp.com', // identityLinkIdSystem
-    lotamePanoramaId: 'crwdcntrl.net', // lotamePanoramaIdSystem
-    id5Id: 'id5-sync.com', // id5IdSystem
-    criteoId: 'criteo.com', // criteoIdSystem
-    yahooConnectId: 'yahoo.com', // connectIdSystem
-    quantcastId: 'quantcast.com', // quantcastIdSystem
-    epsilonPublisherLinkId: 'epsilon.com', // publinkIdSystem
-    publisherFirstPartyViewerId: 'pubcid.org', // sharedIdSystem
-    merkleId: 'merkleinc.com', // merkleIdSystem
-    kinessoId: 'kpuid.com' // kinessoIdSystem
+    unifiedId2: 'uid2.id', // uid2IdSystem
+    liveRampId: 'idl_env', // identityLinkIdSystem
+    lotamePanoramaId: 'lotamePanoramaId', // lotamePanoramaIdSystem
+    id5Id: 'id5id.uid', // id5IdSystem
+    criteoId: 'criteoId', // criteoIdSystem
+    yahooConnectId: 'connectId', // connectIdSystem
+    quantcastId: 'quantcastId', // quantcastIdSystem
+    epsilonPublisherLinkId: 'publinkId', // publinkIdSystem
+    publisherFirstPartyViewerId: 'pubcid', // sharedIdSystem
+    merkleId: 'merkleId.id', // merkleIdSystem
+    kinessoId: 'kpuid' // kinessoIdSystem
   }
 
-  const sharedViewerIdObject = {};
+  let sharedViewerIdObject = {};
   for (const sharedViewerId in sharedViewerIdMapping) {
-    const userIdKey = sharedViewerIdMapping[sharedViewerId];
-    validBidRequests[0].userIdAsEids?.forEach((eid) => {
-      if (eid.source === userIdKey && eid.uids?.[0].id) {
-        sharedViewerIdObject[sharedViewerId] = eid.uids[0].id;
-      }
-    })
+    const key = sharedViewerIdMapping[sharedViewerId];
+    const value = deepAccess(validBidRequests, `0.userId.${key}`);
+    if (value) {
+      sharedViewerIdObject[sharedViewerId] = value;
+    }
   }
   return sharedViewerIdObject;
-}
-
-function getUserIdAsEids(validBidRequests) {
-  return validBidRequests?.[0]?.userIdAsEids || [];
 }
 
 function getReferrerInfo(bidderRequest) {
@@ -284,8 +275,8 @@ function findGdprStatus(gdprApplies, gdprData) {
 
 function buildRequestObject(bid) {
   const reqObj = {};
-  const placementId = bid.params.placementId;
-  const pageId = bid.params.pageId;
+  let placementId = bid.params.placementId;
+  let pageId = bid.params.pageId;
   const gpid = bid?.ortb2Imp?.ext?.gpid;
   const videoPlcmt = bid?.mediaTypes?.video?.plcmt;
 
@@ -306,12 +297,12 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  const playerSize = bid?.mediaTypes?.video?.playerSize;
-  const videoSizes = bid?.mediaTypes?.video?.sizes;
-  const bannerSizes = bid?.mediaTypes?.banner?.sizes;
+  let playerSize = bid?.mediaTypes?.video?.playerSize;
+  let videoSizes = bid?.mediaTypes?.video?.sizes;
+  let bannerSizes = bid?.mediaTypes?.banner?.sizes;
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    const mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
     return mediaTypesSizes
       .reduce(function(acc, currSize) {
         if (isArray(currSize)) {
@@ -340,7 +331,7 @@ function _validateId(id) {
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
 function getFirstPartyTeadsIdParameter(validBidRequests) {
-  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userIdAsEids?.find(eid => eid.source === 'teads.com')?.uids?.[0].id;
+  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userId?.teadsId;
 
   if (firstPartyTeadsIdFromUserIdModule) {
     return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};

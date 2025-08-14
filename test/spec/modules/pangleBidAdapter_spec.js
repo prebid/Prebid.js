@@ -91,7 +91,7 @@ const RESPONSE = {
               'bidder': {
                 'pangle': {
                   'brand_id': 334553,
-                  'auction_id': '514667951122925701',
+                  'auction_id': 514667951122925701,
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
@@ -108,7 +108,7 @@ const RESPONSE = {
 describe('pangle bid adapter', function () {
   describe('isBidRequestValid', function () {
     it('should accept request if placementid and appid is passed', function () {
-      const bid = {
+      let bid = {
         bidder: 'pangle',
         params: {
           token: 'xxx',
@@ -117,7 +117,7 @@ describe('pangle bid adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('reject requests without params', function () {
-      const bid = {
+      let bid = {
         bidder: 'pangle',
         params: {}
       };
@@ -127,12 +127,12 @@ describe('pangle bid adapter', function () {
 
   describe('buildRequests', function () {
     it('creates request data', function () {
-      const request1 = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
+      let request1 = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
       expect(request1).to.exist.and.to.be.a('object');
       const payload1 = request1.data;
       expect(payload1.imp[0]).to.have.property('id', REQUEST[0].bidId);
 
-      const request2 = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[1];
+      let request2 = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[1];
       expect(request2).to.exist.and.to.be.a('object');
       const payload2 = request2.data;
       expect(payload2.imp[0]).to.have.property('id', REQUEST[1].bidId);
@@ -141,8 +141,8 @@ describe('pangle bid adapter', function () {
 
   describe('interpretResponse', function () {
     it('has bids', function () {
-      const request = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
-      const bids = spec.interpretResponse(RESPONSE, request);
+      let request = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
+      let bids = spec.interpretResponse(RESPONSE, request);
       expect(bids).to.be.an('array').that.is.not.empty;
       validateBidOnIndex(0);
 
@@ -160,7 +160,7 @@ describe('pangle bid adapter', function () {
     });
 
     it('handles empty response', function () {
-      const request = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
+      let request = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
       const EMPTY_RESP = Object.assign({}, RESPONSE, { 'body': {} });
       const bids = spec.interpretResponse(EMPTY_RESP, request);
       expect(bids).to.be.empty;
@@ -176,17 +176,17 @@ describe('pangle bid adapter', function () {
     });
 
     it('should return correct device type: tablet', function () {
-      const deviceType = spec.getDeviceType(tablet);
+      let deviceType = spec.getDeviceType(tablet);
       expect(deviceType).to.equal(5);
     });
 
     it('should return correct device type: mobile', function () {
-      const deviceType = spec.getDeviceType(mobile);
+      let deviceType = spec.getDeviceType(mobile);
       expect(deviceType).to.equal(4);
     });
 
     it('should return correct device type: desktop', function () {
-      const deviceType = spec.getDeviceType(desktop);
+      let deviceType = spec.getDeviceType(desktop);
       expect(deviceType).to.equal(2);
     });
   });

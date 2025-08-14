@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { domainLogger, spec } from '../../../modules/michaoBidAdapter.js';
+import { domainLogger, spec } from '../../../modules/michaoBidAdapter';
 import * as utils from '../../../src/utils.js';
 
 describe('Michao Bid Adapter', () => {
@@ -18,7 +18,7 @@ describe('Michao Bid Adapter', () => {
     nativeBidRequest = cloneDeep(_nativeBidRequest);
     videoServerResponse = cloneDeep(_videoServerResponse);
     bannerServerResponse = cloneDeep(_bannerServerResponse);
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     domainLoggerMock = sandbox.stub(domainLogger);
     triggerPixelSpy = sandbox.spy(utils, 'triggerPixel');
   });
@@ -379,7 +379,7 @@ describe('Michao Bid Adapter', () => {
       };
       const request = spec.buildRequests([videoBidRequest], bidderRequest);
 
-      const result = spec.interpretResponse(videoServerResponse, request[0]).bids;
+      const result = spec.interpretResponse(videoServerResponse, request[0]);
 
       expect(result[0].renderer.url).to.equal(
         'https://cdn.jsdelivr.net/npm/in-renderer-js@1/dist/in-video-renderer.umd.min.js'
@@ -399,7 +399,7 @@ describe('Michao Bid Adapter', () => {
       };
       const request = spec.buildRequests([videoBidRequest], bidderRequest);
 
-      const result = spec.interpretResponse(videoServerResponse, request[0]).bids;
+      const result = spec.interpretResponse(videoServerResponse, request[0]);
 
       expect(result[0].renderer).to.be.undefined;
     });
@@ -413,7 +413,7 @@ describe('Michao Bid Adapter', () => {
       };
       const request = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-      const result = spec.interpretResponse(bannerServerResponse, request[0]).bids;
+      const result = spec.interpretResponse(bannerServerResponse, request[0]);
 
       expect(result[0].renderer).to.be.undefined;
     });

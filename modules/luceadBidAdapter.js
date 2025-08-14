@@ -7,6 +7,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getUniqueIdentifierStr, deepSetValue, logInfo} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 
+const gvlid = 1309;
 const bidderCode = 'lucead';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
@@ -74,7 +75,7 @@ function buildRequests(bidRequests, bidderRequest) {
           sizes: bidRequest.sizes,
           media_types: bidRequest.mediaTypes,
           placement_id: bidRequest.params.placementId,
-          schain: bidRequest?.ortb2?.source?.ext?.schain,
+          schain: bidRequest.schain,
         };
       }),
     }),
@@ -151,7 +152,7 @@ function report(type, data) {
 function onBidWon(bid) {
   logInfo('Bid won', bid);
 
-  const data = {
+  let data = {
     bid_id: bid?.bidId,
     placement_id: bid.params ? (bid?.params[0]?.placementId || '0') : '0',
     spent: bid?.cpm,
@@ -178,6 +179,7 @@ function onTimeout(timeoutData) {
 
 export const spec = {
   code: bidderCode,
+  gvlid,
   aliases,
   isBidRequestValid,
   buildRequests,

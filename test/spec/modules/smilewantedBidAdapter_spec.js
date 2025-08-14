@@ -116,13 +116,7 @@ const DISPLAY_REQUEST_WITH_SCHAIN = [{
       tid: 'trans_abcd1234',
     }
   },
-  ortb2: {
-    source: {
-      ext: {
-        schain: SCHAIN
-      }
-    }
-  },
+  schain: SCHAIN,
 }];
 
 const BID_RESPONSE_DISPLAY = {
@@ -238,6 +232,7 @@ const NATIVE_REQUEST = [{
   ],
   mediaTypes: {
     native: {
+      sendTargetingKeys: false,
       title: {
         required: true,
         len: 140
@@ -438,12 +433,12 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent).to.have.property('eids');
     expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
     expect(requestContent.eids.length).to.greaterThan(0);
-    for (const index in requestContent.eids) {
-      const eid = requestContent.eids[index];
+    for (let index in requestContent.eids) {
+      let eid = requestContent.eids[index];
       expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
       expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
-      for (const uidsIndex in eid.uids) {
-        const uid = eid.uids[uidsIndex];
+      for (let uidsIndex in eid.uids) {
+        let uid = eid.uids[uidsIndex];
         expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
       }
     }
@@ -635,7 +630,7 @@ describe('smilewantedBidAdapterTests', function () {
   });
 
   it('SmileWanted - Verify user sync - empty data', function () {
-    const syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, null);
+    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, null);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     expect(syncs[0].url).to.equal('https://csync.smilewanted.com');

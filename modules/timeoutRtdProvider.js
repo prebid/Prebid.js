@@ -1,3 +1,4 @@
+
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
@@ -21,7 +22,7 @@ export const timeoutRtdFunctions = {
 const entries = Object.entries || function(obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
-  const resArray = new Array(i);
+  let resArray = new Array(i);
   while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
   return resArray;
 };

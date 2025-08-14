@@ -28,7 +28,7 @@ describe('Ad Queue Coordinator', function () {
       coordinator.queueAd('testAdTag', testId, { param: {} });
 
       expect(mockEvents.emit.calledOnce).to.be.true;
-      const emitArgs = mockEvents.emit.firstCall.args;
+      let emitArgs = mockEvents.emit.firstCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadQueued');
       expect(mockVideoCore.setAdTagUrl.called).to.be.false;
     });
@@ -93,7 +93,7 @@ describe('Ad Queue Coordinator', function () {
 
       coordinator.queueAd('testAdTag', testId, { param: {} });
       expect(mockEvents.emit.calledOnce).to.be.true;
-      const emitArgs = mockEvents.emit.firstCall.args;
+      let emitArgs = mockEvents.emit.firstCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
       expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
     });

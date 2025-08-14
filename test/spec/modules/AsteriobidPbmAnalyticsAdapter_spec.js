@@ -5,10 +5,10 @@ import * as utils from 'src/utils.js';
 import {expectEvents} from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events');
+let events = require('src/events');
 
 describe('Prebid Manager Analytics Adapter', function () {
-  const bidWonEvent = {
+  let bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
@@ -45,7 +45,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
 
     it('support custom endpoint', function () {
-      const custom_url = 'custom url';
+      let custom_url = 'custom url';
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
@@ -58,7 +58,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      const bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {

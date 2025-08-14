@@ -131,7 +131,7 @@ describe('auction index', () => {
   });
 
   describe('getOrtb2', () => {
-    let bidderRequests; let adUnits = [];
+    let bidderRequests, adUnits = [];
     beforeEach(() => {
       bidderRequests = [
         {bidderRequestId: 'ber1', ortb2: {}, bids: [{bidId: 'b1', adUnitId: 'au1'}, {}]},

@@ -8,7 +8,7 @@ describe('wipesBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'wipes',
       'params': {
         asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
@@ -29,14 +29,14 @@ describe('wipesBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'wipes',
         'params': {
@@ -59,7 +59,7 @@ describe('wipesBidAdapter', function () {
       }
     ];
 
-    const bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -87,7 +87,7 @@ describe('wipesBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const bidRequestVideo = [
+    let bidRequestVideo = [
       {
         'method': 'GET',
         'url': ENDPOINT_URL,
@@ -98,7 +98,7 @@ describe('wipesBidAdapter', function () {
       }
     ];
 
-    const serverResponseVideo = {
+    let serverResponseVideo = {
       body: {
         'uuid': 'a42947f8-f8fd-4cf7-bb72-31a87ab1f6ff',
         'ad_tag': '<!-- adtag -->',
@@ -114,7 +114,7 @@ describe('wipesBidAdapter', function () {
     };
 
     it('should get the correct bid response for video', function () {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 850,
         'width': 300,
@@ -131,13 +131,13 @@ describe('wipesBidAdapter', function () {
           'advertiserDomains': ['wipes.com'],
         },
       }];
-      const result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: {
           'uid': 'a42947f8-f8fd-4cf7-bb72-31a87ab1f6ff',
           'height': 0,
@@ -147,7 +147,7 @@ describe('wipesBidAdapter', function () {
           'cpm': 0
         }
       };
-      const result = spec.interpretResponse(response, bidRequestVideo[0]);
+      let result = spec.interpretResponse(response, bidRequestVideo[0]);
       expect(result.length).to.equal(0);
     });
   });

@@ -6,7 +6,7 @@ import {AuctionIndex} from '../../../src/auctionIndex.js';
 describe('DSA transparency', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
   afterEach(() => {
     sandbox.restore();

@@ -295,10 +295,7 @@ describe('pubGENIUS adapter', () => {
           }
         ]
       };
-      bidRequest.ortb2 = bidRequest.ortb2 || {};
-      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
-      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
-      bidRequest.ortb2.source.ext.schain = deepClone(schain);
+      bidRequest.schain = deepClone(schain);
       expectedRequest.data.source = {
         ext: { schain: deepClone(schain) },
       };

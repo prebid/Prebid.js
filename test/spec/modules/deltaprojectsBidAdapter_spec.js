@@ -35,8 +35,14 @@ describe('deltaprojectsBidAdapter', function() {
       expect(spec.isBidRequestValid(undefined)).to.equal(false);
     });
 
+    it('should return false when bidder not set correctly', function () {
+      let bid = makeBid();
+      delete bid.bidder;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('should return false when publisher id is not set', function () {
-      const bid = makeBid();
+      let bid = makeBid();
       delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -215,58 +221,58 @@ describe('deltaprojectsBidAdapter', function() {
     };
 
     it('should get incorrect bid response if response body is missing', function () {
-      const response = makeResponse();
+      let response = makeResponse();
       delete response.body;
-      const result = spec.interpretResponse(response, request);
+      let result = spec.interpretResponse(response, request);
       expect(result.length).to.equal(0);
     });
 
     it('should get incorrect bid response if id or seat id of response body is missing', function () {
-      const response1 = makeResponse();
+      let response1 = makeResponse();
       delete response1.body.id;
-      const result1 = spec.interpretResponse(response1, request);
+      let result1 = spec.interpretResponse(response1, request);
       expect(result1.length).to.equal(0);
 
-      const response2 = makeResponse();
+      let response2 = makeResponse();
       delete response2.body.seatbid;
-      const result2 = spec.interpretResponse(response2, request);
+      let result2 = spec.interpretResponse(response2, request);
       expect(result2.length).to.equal(0);
     });
 
     it('should get the correct bid response', function () {
-      const result = spec.interpretResponse(makeResponse(), request);
+      let result = spec.interpretResponse(makeResponse(), request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(expectedBid);
     });
 
     it('should handle a missing crid', function () {
-      const noCridResponse = makeResponse();
+      let noCridResponse = makeResponse();
       delete noCridResponse.body.seatbid[0].bid[0].crid;
       const fallbackCrid = noCridResponse.body.seatbid[0].bid[0].id;
-      const noCridResult = Object.assign({}, expectedBid, {'creativeId': fallbackCrid});
-      const result = spec.interpretResponse(noCridResponse, request);
+      let noCridResult = Object.assign({}, expectedBid, {'creativeId': fallbackCrid});
+      let result = spec.interpretResponse(noCridResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(noCridResult);
     });
 
     it('should handle a missing nurl', function () {
-      const noNurlResponse = makeResponse();
+      let noNurlResponse = makeResponse();
       delete noNurlResponse.body.seatbid[0].bid[0].nurl;
-      const noNurlResult = Object.assign({}, expectedBid);
+      let noNurlResult = Object.assign({}, expectedBid);
       noNurlResult.ad = '<!-- creative -->';
-      const result = spec.interpretResponse(noNurlResponse, request);
+      let result = spec.interpretResponse(noNurlResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(noNurlResult);
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: {
           id: '5e5c23a5ba71e78',
           seatbid: []
         }
       };
-      const result = spec.interpretResponse(response, request);
+      let result = spec.interpretResponse(response, request);
       expect(result.length).to.equal(0);
     });
 

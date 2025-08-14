@@ -8,26 +8,19 @@ import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js'
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
-import { getStorageManager } from '../src/storageManager.js'
 
 /** Prebid Event Handlers */
 
 const ADAPTER_CODE = 'automatadAnalytics'
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE})
 const trialCountMilsMapping = [1500, 3000, 5000, 10000];
 
 var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null; var __atmtdAnalyticsQueue = []; var qBeingUsed; var qTraversalComplete;
 
 const prettyLog = (level, text, isGroup = false, cb = () => {}) => {
   if (self.isLoggingEnabled === undefined) {
-    let loggingFlag = false
-    try {
-      if (storage.hasLocalStorage()) {
-        loggingFlag = !!storage.getDataFromLocalStorage('__aggLoggingEnabled')
-      }
-    } catch (e) {}
-    if (loggingFlag) {
+    // TODO FIX THIS RULES VIOLATION
+    // eslint-disable-next-line no-restricted-properties
+    if (window.localStorage.getItem('__aggLoggingEnabled')) {
       self.isLoggingEnabled = true
     } else {
       const queryParams = new URLSearchParams(new URL(window.location.href).search)
@@ -197,8 +190,8 @@ const initializeQueue = () => {
 
 // ANALYTICS ADAPTER
 
-const baseAdapter = adapter({analyticsType: 'bundle'});
-const atmtdAdapter = Object.assign({}, baseAdapter, {
+let baseAdapter = adapter({analyticsType: 'bundle'});
+let atmtdAdapter = Object.assign({}, baseAdapter, {
 
   disableAnalytics() {
     baseAdapter.disableAnalytics.apply(this, arguments);
@@ -309,6 +302,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
   }
 
   logMessage(`Automatad Analytics Adapter enabled with sdk config`, window.__atmtdSDKConfig)
+
 
   atmtdAdapter.originEnableAnalytics(configuration)
 };

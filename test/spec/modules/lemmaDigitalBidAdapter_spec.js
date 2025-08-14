@@ -59,13 +59,13 @@ describe('lemmaDigitalBidAdapter', function () {
         [300, 250],
         [300, 600]
       ],
-      ortb2: { source: { ext: { schain: schainConfig } } }
+      schain: schainConfig
     }];
     videoBidRequests = [{
       code: 'video1',
       mediaTypes: {
         video: {
-          playerSize: [[640, 480]],
+          playerSize: [640, 480],
           context: 'instream'
         }
       },
@@ -84,7 +84,7 @@ describe('lemmaDigitalBidAdapter', function () {
           maxduration: 30
         }
       },
-      ortb2: { source: { ext: { schain: schainConfig } } }
+      schain: schainConfig
     }];
     bidResponses = {
       'body': {
@@ -132,65 +132,65 @@ describe('lemmaDigitalBidAdapter', function () {
   describe('implementation', function () {
     describe('Bid validations', function () {
       it('valid bid case', function () {
-        const validBid = {
-          bidder: 'lemmadigital',
-          params: {
-            pubId: 1001,
-            adunitId: 1
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        let validBid = {
+            bidder: 'lemmadigital',
+            params: {
+              pubId: 1001,
+              adunitId: 1
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
       it('invalid bid case', function () {
-        const isValid = spec.isBidRequestValid();
+        let isValid = spec.isBidRequestValid();
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: pubId not passed', function () {
-        const validBid = {
-          bidder: 'lemmadigital',
-          params: {
-            adunitId: 1
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        let validBid = {
+            bidder: 'lemmadigital',
+            params: {
+              adunitId: 1
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: pubId is not number', function () {
-        const validBid = {
-          bidder: 'lemmadigital',
-          params: {
-            pubId: '301',
-            adunitId: 1
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        let validBid = {
+            bidder: 'lemmadigital',
+            params: {
+              pubId: '301',
+              adunitId: 1
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: adunitId is not passed', function () {
-        const validBid = {
-          bidder: 'lemmadigital',
-          params: {
-            pubId: 1001
-          }
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        let validBid = {
+            bidder: 'lemmadigital',
+            params: {
+              pubId: 1001
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: video bid request mimes is not passed', function () {
         let validBid = {
-          bidder: 'lemmadigital',
-          params: {
-            pubId: 1001,
-            adunitId: 1,
-            video: {
-              skippable: true,
-              minduration: 5,
-              maxduration: 30
+            bidder: 'lemmadigital',
+            params: {
+              pubId: 1001,
+              adunitId: 1,
+              video: {
+                skippable: true,
+                minduration: 5,
+                maxduration: 30
+              }
             }
-          }
-        };
-        let isValid = spec.isBidRequestValid(validBid);
+          },
+          isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
         validBid.params.video.mimes = [];
         isValid = spec.isBidRequestValid(validBid);
@@ -199,62 +199,62 @@ describe('lemmaDigitalBidAdapter', function () {
     });
     describe('Request formation', function () {
       it('bidRequest check empty', function () {
-        const bidRequests = [];
-        const request = spec.buildRequests(bidRequests);
+        let bidRequests = [];
+        let request = spec.buildRequests(bidRequests);
         expect(request).to.equal(undefined);
       });
       it('buildRequests function should not modify original bidRequests object', function () {
-        const originalBidRequests = utils.deepClone(bidRequests);
-        const request = spec.buildRequests(bidRequests);
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let request = spec.buildRequests(bidRequests);
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
       it('bidRequest imp array check empty', function () {
-        const request = spec.buildRequests(bidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         data.imp = [];
         expect(data.imp.length).to.equal(0);
       });
       it('Endpoint checking', function () {
-        const request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('https://pbidj.lemmamedia.com/lemma/servad?pid=1001&aid=1');
+        let request = spec.buildRequests(bidRequests);
+        expect(request.url).to.equal('https://bid.lemmadigital.com/lemma/servad?pid=1001&aid=1');
         expect(request.method).to.equal('POST');
       });
       it('Request params check', function () {
-        const request = spec.buildRequests(bidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal('1'); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
       });
 
       it('Set sizes from mediaTypes object', function () {
-        const newBannerRequest = utils.deepClone(bidRequests);
+        let newBannerRequest = utils.deepClone(bidRequests);
         delete newBannerRequest[0].sizes;
-        const request = spec.buildRequests(newBannerRequest);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(newBannerRequest);
+        let data = JSON.parse(request.data);
         expect(data.sizes).to.equal(undefined);
       });
       it('Check request banner object present', function () {
-        const newBannerRequest = utils.deepClone(bidRequests);
-        const request = spec.buildRequests(newBannerRequest);
-        const data = JSON.parse(request.data);
+        let newBannerRequest = utils.deepClone(bidRequests);
+        let request = spec.buildRequests(newBannerRequest);
+        let data = JSON.parse(request.data);
         expect(data.banner).to.deep.equal(undefined);
       });
       it('Check device, source object not present', function () {
-        const newBannerRequest = utils.deepClone(bidRequests);
-        delete newBannerRequest[0].ortb2;
-        const request = spec.buildRequests(newBannerRequest);
-        const data = JSON.parse(request.data);
+        let newBannerRequest = utils.deepClone(bidRequests);
+        delete newBannerRequest[0].schain;
+        let request = spec.buildRequests(newBannerRequest);
+        let data = JSON.parse(request.data);
         delete data.device;
         delete data.source;
         expect(data.source).to.equal(undefined);
         expect(data.device).to.equal(undefined);
       });
       it('Set content from config, set site.content', function () {
-        const sandbox = sinon.createSandbox();
+        let sandbox = sinon.sandbox.create();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -264,13 +264,13 @@ describe('lemmaDigitalBidAdapter', function () {
           };
           return config[key];
         });
-        const request = spec.buildRequests(bidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         expect(data.site.content).to.deep.equal(content);
         sandbox.restore();
       });
       it('Set content from config, set app.content', function () {
-        const bidRequest = [{
+        let bidRequest = [{
           bidder: 'lemmadigital',
           params: {
             pubId: 1001,
@@ -294,7 +294,7 @@ describe('lemmaDigitalBidAdapter', function () {
             },
           }
         }];
-        const sandbox = sinon.createSandbox();
+        let sandbox = sinon.sandbox.create();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -304,18 +304,18 @@ describe('lemmaDigitalBidAdapter', function () {
           };
           return config[key];
         });
-        const request = spec.buildRequests(bidRequest);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequest);
+        let data = JSON.parse(request.data);
         expect(data.app.content).to.deep.equal(content);
         sandbox.restore();
       });
       it('Set tmax from requestBids method', function () {
-        const request = spec.buildRequests(bidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         expect(data.tmax).to.deep.equal(300);
       });
       it('Request params check without mediaTypes object', function () {
-        const bidRequests = [{
+        let bidRequests = [{
           bidder: 'lemmadigital',
           params: {
             pubId: 1001,
@@ -327,8 +327,8 @@ describe('lemmaDigitalBidAdapter', function () {
             [300, 600]
           ]
         }];
-        const request = spec.buildRequests(bidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
         expect(data.imp[0].banner.format).exist.and.to.be.an('array');
@@ -338,8 +338,8 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('Request params check: without tagId', function () {
         delete bidRequests[0].params.adunitId;
-        const request = spec.buildRequests(bidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal(undefined); // tagid
@@ -347,7 +347,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
       });
       it('Request params multi size format object check', function () {
-        const bidRequests = [{
+        let bidRequests = [{
           bidder: 'lemmadigital',
           mediaTypes: {
             banner: {
@@ -413,7 +413,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0].banner.format[0].h).to.equal(250); // height
       });
       it('Request params currency check', function () {
-        const bidRequest = [{
+        let bidRequest = [{
           bidder: 'lemmadigital',
           mediaTypes: {
             banner: {
@@ -450,8 +450,8 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal('USD');
       });
       it('Request params check for video ad', function () {
-        const request = spec.buildRequests(videoBidRequests);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(videoBidRequests);
+        let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
         expect(data.imp[0].tagid).to.equal('1');
         expect(data.imp[0]['video']['mimes']).to.exist.and.to.be.an('array');
@@ -459,9 +459,9 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0]['video']['mimes'][1]).to.equal(videoBidRequests[0].params.video['mimes'][1]);
         expect(data.imp[0]['video']['minduration']).to.equal(videoBidRequests[0].params.video['minduration']);
         expect(data.imp[0]['video']['maxduration']).to.equal(videoBidRequests[0].params.video['maxduration']);
-        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][0]);
-        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][1]);
-        expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].ortb2.source.ext.schain);
+        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
+        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+        expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].schain);
       });
       describe('setting imp.floor using floorModule', function () {
         /*
@@ -472,7 +472,7 @@ describe('lemmaDigitalBidAdapter', function () {
 
         let newRequest;
         let floorModuleTestData;
-        const getFloor = function (req) {
+        let getFloor = function (req) {
           return floorModuleTestData[req.mediaType];
         };
 
@@ -494,7 +494,7 @@ describe('lemmaDigitalBidAdapter', function () {
         it('bidfloor should be undefined if calculation is <= 0', function () {
           floorModuleTestData.banner.floor = 0; // lowest of them all
           newRequest[0].params.bidFloor = undefined;
-          const request = spec.buildRequests(newRequest);
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
           expect(data.bidfloor).to.equal(undefined);
@@ -503,7 +503,7 @@ describe('lemmaDigitalBidAdapter', function () {
         it('ignore floormodule o/p if floor is not number', function () {
           floorModuleTestData.banner.floor = 'INR';
           newRequest[0].params.bidFloor = undefined;
-          const request = spec.buildRequests(newRequest);
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
           expect(data.bidfloor).to.equal(undefined); // video will be lowest now
@@ -512,7 +512,7 @@ describe('lemmaDigitalBidAdapter', function () {
         it('ignore floormodule o/p if currency is not matched', function () {
           floorModuleTestData.banner.currency = 'INR';
           newRequest[0].params.bidFloor = undefined;
-          const request = spec.buildRequests(newRequest);
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
           expect(data.bidfloor).to.equal(undefined); // video will be lowest now
@@ -520,7 +520,7 @@ describe('lemmaDigitalBidAdapter', function () {
 
         it('bidFloor is not passed, use minimum from floorModule', function () {
           newRequest[0].params.bidFloor = undefined;
-          const request = spec.buildRequests(newRequest);
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
           expect(data.bidfloor).to.equal(1.5);
@@ -528,7 +528,7 @@ describe('lemmaDigitalBidAdapter', function () {
 
         it('bidFloor is passed as 1, use min of floorModule as it is highest', function () {
           newRequest[0].params.bidFloor = '1.0';// yes, we want it as a string
-          const request = spec.buildRequests(newRequest);
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
           expect(data.bidfloor).to.equal(1.5);
@@ -536,8 +536,8 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       describe('Response checking', function () {
         it('should check for valid response values', function () {
-          const request = spec.buildRequests(bidRequests);
-          const response = spec.interpretResponse(bidResponses, request);
+          let request = spec.buildRequests(bidRequests);
+          let response = spec.interpretResponse(bidResponses, request);
           expect(response).to.be.an('array').with.length.above(0);
           expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
           expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
@@ -554,14 +554,14 @@ describe('lemmaDigitalBidAdapter', function () {
           expect(response[0].ttl).to.equal(300);
         });
         it('should check for valid banner mediaType in request', function () {
-          const request = spec.buildRequests(bidRequests);
-          const response = spec.interpretResponse(bidResponses, request);
+          let request = spec.buildRequests(bidRequests);
+          let response = spec.interpretResponse(bidResponses, request);
 
           expect(response[0].mediaType).to.equal('banner');
         });
         it('should check for valid video mediaType in request', function () {
-          const request = spec.buildRequests(videoBidRequests);
-          const response = spec.interpretResponse(videoBidResponse, request);
+          let request = spec.buildRequests(videoBidRequests);
+          let response = spec.interpretResponse(videoBidResponse, request);
 
           expect(response[0].mediaType).to.equal('video');
         });
@@ -571,7 +571,7 @@ describe('lemmaDigitalBidAdapter', function () {
       let sandbox, utilsMock, newVideoRequest;
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
-        sandbox = sinon.createSandbox();
+        sandbox = sinon.sandbox.create();
         sandbox.spy(utils, 'logWarn');
         newVideoRequest = utils.deepClone(videoBidRequests);
       });
@@ -584,18 +584,18 @@ describe('lemmaDigitalBidAdapter', function () {
       it('Video params from mediaTypes and params obj of bid are not present', function () {
         delete newVideoRequest[0].mediaTypes.video;
         delete newVideoRequest[0].params.video;
-        const request = spec.buildRequests(newVideoRequest);
+        let request = spec.buildRequests(newVideoRequest);
         expect(request).to.equal(undefined);
       });
 
       it('Should consider video params from mediaType object of bid', function () {
         delete newVideoRequest[0].params.video;
 
-        const request = spec.buildRequests(newVideoRequest);
-        const data = JSON.parse(request.data);
+        let request = spec.buildRequests(newVideoRequest);
+        let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
-        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][0]);
-        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][1]);
+        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
+        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
         expect(data.imp[0]['video']['battr']).to.equal(undefined);
       });
     });
@@ -603,7 +603,7 @@ describe('lemmaDigitalBidAdapter', function () {
       const syncurl_iframe = 'https://sync.lemmadigital.com/js/usersync.html?pid=1001';
       let sandbox;
       beforeEach(function () {
-        sandbox = sinon.createSandbox();
+        sandbox = sinon.sandbox.create();
       });
       afterEach(function () {
         sandbox.restore();

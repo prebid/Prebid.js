@@ -1,3 +1,4 @@
+import {includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -84,7 +85,7 @@ export const spec = {
           return false
         }
       }
-      if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(placeType)) {
+      if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], placeType)) {
         if (imageUrl && imageWidth && imageHeight) {
           return true
         }
@@ -109,7 +110,7 @@ export const spec = {
           sizes,
           placeId,
         }
-        if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(placeType)) {
+        if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], placeType)) {
           Object.assign(bidRequest, {
             imageUrl,
             imageWidth: Math.floor(imageWidth),

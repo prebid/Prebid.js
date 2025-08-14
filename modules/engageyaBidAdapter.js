@@ -72,7 +72,7 @@ function parseBannerResponse(rec, response) {
   }
   let style;
   try {
-    const additionalData = JSON.parse(response.widget.additionalData);
+    let additionalData = JSON.parse(response.widget.additionalData);
     const css = additionalData.css || '';
     style = css ? `<style>${css}</style>` : '';
   } catch (e) {
@@ -162,7 +162,7 @@ export const spec = {
     var response = serverResponse.body;
     var isNative = response.pbtypeId == 1;
     return response.recs.map(rec => {
-      const bid = {
+      let bid = {
         requestId: response.ireqId,
         width: response.imageWidth,
         height: response.imageHeight,

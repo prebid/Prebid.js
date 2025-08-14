@@ -87,5 +87,5 @@ Module that connects to preciso' demand sources
                         }
                     ]
                 }
-            ];
+            ]; 
 ```

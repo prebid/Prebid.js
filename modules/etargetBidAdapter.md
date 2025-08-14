@@ -1,10 +1,8 @@
 # Overview
 
-```
 Module Name: ETARGET Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid@etarget.sk
-```
+Maintainer: info@etarget.sk
 
 # Description
 
@@ -21,8 +19,8 @@ Banner and video formats are supported.
                    {
                        bidder: "etarget",
                        params: {
-                           country: 1, // required; available country values: 1 (SK), 2 (CZ), 3 (HU), 4 (RO), 5 (RS), 6 (BG), 7 (PL), 8 (HR), 9 (AT), 11 (DE), 255 (EN)
-                           refid: '12345' // required; this ID is available in your publisher dashboard at https://partner.etarget.sk/
+                           country: 1, //require // specific to your country {1:'sk',2:'cz',3:'hu',4:'ro',5:'rs',6:'bg',7:'pl',8:'hr',9:'at',11:'de',255:'en'}
+                           refid: '12345' // require // you can create/find this ID in Our portal administration on https://sk.etarget-media.com/partner/
                        }
                    }
                ]

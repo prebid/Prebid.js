@@ -15,7 +15,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bids = [];
+    let bids = [];
     validBidRequests.forEach(bidRequest => {
       bids.push({
         bidId: bidRequest.bidId,
@@ -25,11 +25,11 @@ export const spec = {
       })
     })
 
-    const payload = {
+    let payload = {
       requestId: bidderRequest.bidderRequestId,
       bids,
       referer: bidderRequest.refererInfo.page,
-      schain: validBidRequests[0]?.ortb2?.source?.ext?.schain
+      schain: validBidRequests[0].schain
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -65,9 +65,9 @@ export const spec = {
       return [];
     }
 
-    const bids = [];
+    let bids = [];
     prebidResponse.forEach(bidResponse => {
-      const bid = deepClone(bidResponse);
+      let bid = deepClone(bidResponse);
       bid.cpm = parseFloat(bidResponse.cpm);
 
       // banner or video

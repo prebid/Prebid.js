@@ -90,7 +90,7 @@ export const spec = {
       const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
       const url = `${urlBase}?${urlParams}`;
 
-      const data = {
+      let data = {
         currency: getCurrencyType(bidderRequest),
         pbver: '$prebid.version$',
         sdkname: 'prebidjs',
@@ -208,7 +208,7 @@ function isNative(adResult) {
 }
 
 function createNativeAd(nativeAd, beaconUrl) {
-  const native = {};
+  let native = {};
   if (nativeAd && nativeAd.assets.length > 0) {
     const assets = nativeAd.assets;
     for (let i = 0, len = assets.length; i < len; i++) {
@@ -283,7 +283,7 @@ function createADGBrowserMTag() {
  * @return {string}
  */
 function insertVASTMethodForAPV(targetId, vastXml) {
-  const apvVideoAdParam = {
+  let apvVideoAdParam = {
     s: targetId
   };
   return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`

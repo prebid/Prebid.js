@@ -7,7 +7,6 @@ import { makeSlot } from '../integration/faker/googletag.js';
 import { mergeDeep } from '../../../src/utils.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -19,7 +18,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'visx',
       'params': {
         'uid': 903536
@@ -36,7 +35,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -45,7 +44,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when uid can not be parsed as number', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 'sdvsdv'
@@ -54,7 +53,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should fail on invalid video bid', function () {
-      const videoBid = Object.assign({}, bid);
+      let videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -66,7 +65,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should pass on valid video bid', function () {
-      const videoBid = Object.assign({}, bid);
+      let videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -143,7 +142,7 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'visx',
         'params': {
@@ -228,7 +227,7 @@ describe('VisxAdapter', function () {
     }];
 
     before(() => {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -242,7 +241,7 @@ describe('VisxAdapter', function () {
     after(() => {
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('should attach valid params to the tag', function () {
@@ -598,7 +597,7 @@ describe('VisxAdapter', function () {
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
-        Object.assign({ortb2: {source: {ext: {schain: schainObject}}}}, bidRequests[0]),
+        Object.assign({schain: schainObject}, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
@@ -885,7 +884,7 @@ describe('VisxAdapter', function () {
     ];
 
     before(() => {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -899,10 +898,10 @@ describe('VisxAdapter', function () {
     after(() => {
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    it('should send request for banner bid', function () {
+    it('should send requst for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -1057,7 +1056,7 @@ describe('VisxAdapter', function () {
     let documentStub;
 
     before(function() {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
       documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('visx-adunit-code-1').returns({
         id: 'visx-adunit-code-1'
@@ -1066,7 +1065,7 @@ describe('VisxAdapter', function () {
         id: 'visx-adunit-element-2'
       });
 
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -1081,7 +1080,7 @@ describe('VisxAdapter', function () {
       sandbox.restore();
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('should find ad slot by ad unit code as element id', function () {
@@ -1953,7 +1952,7 @@ describe('VisxAdapter', function () {
       return { path, query };
     }
     it('should call iframe', function () {
-      const syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -1969,7 +1968,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should call image', function () {
-      const syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 
@@ -2054,7 +2053,7 @@ describe('VisxAdapter', function () {
     };
 
     beforeEach(() => {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         visx: {
           storageAllowed: true
         }
@@ -2066,13 +2065,9 @@ describe('VisxAdapter', function () {
     afterEach(() => {
       cookiesAreEnabledStub.restore();
       localStorageIsEnabledStub.restore();
-      if (getCookieStub) {
-        getCookieStub.restore();
-      }
-      if (getDataFromLocalStorageStub) {
-        getDataFromLocalStorageStub.restore();
-      }
-      getGlobal().bidderSettings = {};
+      getCookieStub && getCookieStub.restore();
+      getDataFromLocalStorageStub && getDataFromLocalStorageStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('should not pass user id if both cookies and local storage are not available', function () {

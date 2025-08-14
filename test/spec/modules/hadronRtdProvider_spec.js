@@ -31,7 +31,7 @@ describe('hadronRtdProvider', function () {
 
   describe('Add Real-Time Data', function () {
     it('merges ortb2 data', function () {
-      const rtdConfig = {};
+      let rtdConfig = {};
 
       const setConfigUserObj1 = {
         name: 'www.dataprovider1.com',
@@ -64,7 +64,7 @@ describe('hadronRtdProvider', function () {
         ]
       }
 
-      const bidConfig = {
+      let bidConfig = {
         ortb2Fragments: {
           global: {
             user: {
@@ -124,14 +124,14 @@ describe('hadronRtdProvider', function () {
 
       addRealTimeData(bidConfig, rtd, rtdConfig);
 
-      const ortb2Config = bidConfig.ortb2Fragments.global;
+      let ortb2Config = bidConfig.ortb2Fragments.global;
 
       expect(ortb2Config.user.data).to.deep.include.members([setConfigUserObj1, setConfigUserObj2, rtdUserObj1]);
       expect(ortb2Config.site.content.data).to.deep.include.members([setConfigSiteObj1, rtdSiteObj1]);
     });
 
     it('merges ortb2 data without duplication', function () {
-      const rtdConfig = {};
+      let rtdConfig = {};
 
       const userObj1 = {
         name: 'www.dataprovider1.com',
@@ -164,7 +164,7 @@ describe('hadronRtdProvider', function () {
         ]
       }
 
-      const bidConfig = {
+      let bidConfig = {
         ortb2Fragments: {
           global: {
             user: {
@@ -194,7 +194,7 @@ describe('hadronRtdProvider', function () {
 
       addRealTimeData(bidConfig, rtd, rtdConfig);
 
-      const ortb2Config = bidConfig.ortb2Fragments.global;
+      let ortb2Config = bidConfig.ortb2Fragments.global;
 
       expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
       expect(ortb2Config.site.content.data).to.deep.include.members([siteObj1]);
@@ -203,7 +203,7 @@ describe('hadronRtdProvider', function () {
     });
 
     it('merges bidder-specific ortb2 data', function () {
-      const rtdConfig = {};
+      let rtdConfig = {};
 
       const configUserObj1 = {
         name: 'www.dataprovider1.com',
@@ -256,7 +256,7 @@ describe('hadronRtdProvider', function () {
         ]
       };
 
-      const bidConfig = {
+      let bidConfig = {
         ortb2Fragments: {
           bidder: {
             adbuzz: {
@@ -380,7 +380,7 @@ describe('hadronRtdProvider', function () {
     });
 
     it('merges bidder-specific ortb2 data without duplication', function () {
-      const rtdConfig = {};
+      let rtdConfig = {};
 
       const userObj1 = {
         name: 'www.dataprovider1.com',
@@ -433,7 +433,7 @@ describe('hadronRtdProvider', function () {
         ]
       };
 
-      const bidConfig = {
+      let bidConfig = {
         ortb2Fragments: {
           bidder: {
             adbuzz: {
@@ -521,7 +521,7 @@ describe('hadronRtdProvider', function () {
         }
       };
 
-      const bidConfig = {};
+      let bidConfig = {};
 
       const rtdUserObj1 = {
         name: 'www.dataprovider.com',
@@ -585,8 +585,8 @@ describe('hadronRtdProvider', function () {
                     bid.adBuzzData.segments.adBuzz.push(rtd.adBuzz[k]);
                   }
                 } else if (bid.bidder == 'trueBid') {
-                  for (var m = 0; m < rtd.trueBid.length; m++) {
-                    bid.trueBidSegments.push(rtd.trueBid[m]);
+                  for (var k = 0; k < rtd.trueBid.length; k++) {
+                    bid.trueBidSegments.push(rtd.trueBid[k]);
                   }
                 }
               }
@@ -595,7 +595,7 @@ describe('hadronRtdProvider', function () {
         }
       };
 
-      const bidConfig = {
+      let bidConfig = {
         adUnits: [
           {
             bids: [
@@ -704,7 +704,7 @@ describe('hadronRtdProvider', function () {
         }
       };
 
-      const bidConfig = {
+      let bidConfig = {
         ortb2Fragments: {
           global: {
             site: {
@@ -744,8 +744,8 @@ describe('hadronRtdProvider', function () {
 
       getDataFromLocalStorageStub.withArgs(HADRONID_LOCAL_NAME).returns('testHadronId1');
       getRealTimeData(bidConfig, () => {
-        const request = server.requests[0];
-        const postData = JSON.parse(request.requestBody);
+        let request = server.requests[0];
+        let postData = JSON.parse(request.requestBody);
         expect(postData.config).to.have.deep.property('publisherId', 'testPub1');
         expect(postData.userIds).to.have.deep.property('hadronId', 'testHadronId1');
         request.respond(200, responseHeader, JSON.stringify(data));

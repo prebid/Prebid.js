@@ -6,7 +6,7 @@ import { getStorageManager } from '../../../src/storageManager.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { config as _config } from 'src/config.js';
-import { DATA_STORAGE_KEY, MODULE_NAME, MODULE_TYPE, getStorageData, updateUserData } from '../../../modules/goldfishAdsRtdProvider.js';
+import { DATA_STORAGE_KEY, MODULE_NAME, MODULE_TYPE, getStorageData, updateUserData } from '../../../modules/goldfishAdsRtdProvider';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 

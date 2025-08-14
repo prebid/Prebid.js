@@ -2,7 +2,7 @@ import {submodule} from '../src/hook.js';
 import {isFn, logError} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-
+import {includes} from '../src/polyfill.js';
 import '../src/adapterManager.js';
 
 let observerAvailable = true;
@@ -17,7 +17,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
   const waitForIt = providerConfig.waitForIt;
   let adUnits = requestBidsObject.adUnits || getGlobal().adUnits || [];
   if (adUnitCodes.length) {
-    adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
+    adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
   }
   let checkTimeoutId;
   findAndObservePlaceholders();
@@ -77,9 +77,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
     adUnits && adUnits.forEach((unit) => {
       const intersection = intersectionMap[unit.code];
       if (intersection && unit.bids) {
-        unit.bids.forEach(bid => {
-          bid.intersection = intersection;
-        });
+        unit.bids.forEach(bid => bid.intersection = intersection);
       }
     });
     onDone();

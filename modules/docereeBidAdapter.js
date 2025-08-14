@@ -4,13 +4,11 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'doceree';
-const GVLID = 1063;
 const END_POINT = 'https://bidder.doceree.com'
 const TRACKING_END_POINT = 'https://tracking.doceree.com'
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   url: '',
   supportedMediaTypes: [ BANNER ],
 

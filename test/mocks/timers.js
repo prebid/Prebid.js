@@ -10,13 +10,10 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
   wrappersActive = true;
   let theseWrappersActive = true;
 
-  const originalSetTimeout = globalThis.setTimeout;
-  const originalSetInterval = globalThis.setInterval;
-  const originalClearTimeout = globalThis.clearTimeout;
-  const originalClearInterval = globalThis.clearInterval;
+  let originalSetTimeout = setTimeout, originalSetInterval = setInterval, originalClearTimeout = clearTimeout, originalClearInterval = clearInterval;
 
   let timerId = -1;
-  const timers = [];
+  let timers = [];
 
   const waitOnTimersResolves = [];
   function checkWaits() {
@@ -65,10 +62,10 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
   const clearTimeoutInterceptor = generateClearInterceptor('timeout', originalClearTimeout);
   const clearIntervalInterceptor = generateClearInterceptor('interval', originalClearInterval);
 
-  globalThis.setTimeout = setTimeoutInterceptor;
-  globalThis.setInterval = setIntervalInterceptor;
-  globalThis.clearTimeout = clearTimeoutInterceptor;
-  globalThis.clearInterval = clearIntervalInterceptor;
+  setTimeout = setTimeoutInterceptor;
+  setInterval = setIntervalInterceptor;
+  clearTimeout = clearTimeoutInterceptor;
+  clearInterval = clearIntervalInterceptor;
 
   return {
     waitAllActiveTimers,
@@ -77,10 +74,10 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
     restore: () => {
       if (theseWrappersActive) {
         theseWrappersActive = false;
-        globalThis.setTimeout = originalSetTimeout;
-        globalThis.setInterval = originalSetInterval;
-        globalThis.clearTimeout = originalClearTimeout;
-        globalThis.clearInterval = originalClearInterval;
+        setTimeout = originalSetTimeout;
+        setInterval = originalSetInterval;
+        clearTimeout = originalClearTimeout;
+        clearInterval = originalClearInterval;
       }
     }
   }

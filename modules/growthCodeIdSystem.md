@@ -1,6 +1,6 @@
 ## GrowthCode User ID Submodule
 
-GrowthCode provides Id Enrichment for requests.
+GrowthCode provides Id Enrichment for requests. 
 
 ## Building Prebid with GrowthCode Support
 
@@ -18,7 +18,7 @@ pbjs.setConfig({
     userIds: [{
       name: 'growthCodeId',
       params: {
-          customerEids: 'customerEids',
+          customerEids: 'customerEids', 
       }
     }]
   }

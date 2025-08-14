@@ -1,26 +1,25 @@
-import atsAnalyticsAdapter, {parseBrowser, analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
+import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
-
+import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
 import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
-
+import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
 import {EVENTS} from 'src/constants.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
-const utils = require('src/utils');
-const events = require('src/events');
+let utils = require('src/utils');
+let events = require('src/events');
 
 const storage = getCoreStorageManager();
 let sandbox;
 let clock;
-const now = new Date();
+let now = new Date();
 
 describe('ats analytics adapter', function () {
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
     storage.setCookie('_lr_env_src_ats', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     clock = sandbox.useFakeTimers(now.getTime());
   });
 
@@ -44,13 +43,13 @@ describe('ats analytics adapter', function () {
 
       this.timeout(2100);
 
-      const initOptions = {
+      let initOptions = {
         pid: '10433394'
       };
-      const auctionTimestamp = 1496510254326;
+      let auctionTimestamp = 1496510254326;
 
       // prepare general auction - request
-      const bidRequest = {
+      let bidRequest = {
         'bidderCode': 'appnexus',
         'auctionStart': 1580739265161,
         'bids': [{
@@ -72,7 +71,7 @@ describe('ats analytics adapter', function () {
         'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
       };
       // prepare general auction - response
-      const bidResponse = {
+      let bidResponse = {
         'height': 250,
         'statusMessage': 'Bid available',
         'adId': '2eddfdc0c791dc',
@@ -94,7 +93,7 @@ describe('ats analytics adapter', function () {
       };
 
       // what we expect after general auction
-      const expectedAfterBid = {
+      let expectedAfterBid = {
         'Data': [{
           'has_envelope': true,
           'adapter_version': 3,
@@ -115,7 +114,7 @@ describe('ats analytics adapter', function () {
         }]
       };
 
-      const wonRequest = {
+      let wonRequest = {
         'adId': '2eddfdc0c791dc',
         'mediaType': 'banner',
         'requestId': '30c77d079cdf17',
@@ -135,7 +134,7 @@ describe('ats analytics adapter', function () {
       };
 
       // lets simulate that some bidders timeout
-      const bidTimeoutArgsV1 = [
+      let bidTimeoutArgsV1 = [
         {
           bidId: '2baa51527bd015',
           bidder: 'bidderOne',
@@ -178,19 +177,19 @@ describe('ats analytics adapter', function () {
       // Step 6: Send bid won event
       events.emit(EVENTS.BID_WON, wonRequest);
 
-      sandbox.stub(getGlobal(), 'getAllWinningBids').callsFake((key) => {
+      sandbox.stub($$PREBID_GLOBAL$$, 'getAllWinningBids').callsFake((key) => {
         return [wonRequest]
       });
 
       clock.tick(2000);
 
-      const requests = server.requests.filter(req => {
+      let requests = server.requests.filter(req => {
         return req.url.indexOf(analyticsUrl) > -1;
       });
 
       expect(requests.length).to.equal(1);
 
-      const realAfterBid = JSON.parse(requests[0].requestBody);
+      let realAfterBid = JSON.parse(requests[0].requestBody);
 
       // Step 7: assert real data after bid and expected data
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
@@ -201,51 +200,51 @@ describe('ats analytics adapter', function () {
     it('check browser is safari', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
-      const browser = parseBrowser();
+      let browser = parseBrowser();
       expect(browser).to.equal('Safari');
     })
     it('check browser is chrome', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
       sinon.stub(Math, 'random').returns(0.99);
-      const browser = parseBrowser();
+      let browser = parseBrowser();
       expect(browser).to.equal('Chrome');
     })
     it('check browser is edge', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
       sinon.stub(Math, 'random').returns(0.99);
-      const browser = parseBrowser();
+      let browser = parseBrowser();
       expect(browser).to.equal('Microsoft Edge');
     })
     it('check browser is firefox', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
       sinon.stub(Math, 'random').returns(0.99);
-      const browser = parseBrowser();
+      let browser = parseBrowser();
       expect(browser).to.equal('Firefox');
     })
     it('check browser is unknown', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns(undefined);
       sinon.stub(Math, 'random').returns(0.99);
-      const browser = parseBrowser();
+      let browser = parseBrowser();
       expect(browser).to.equal('Unknown');
     })
     it('should not fire analytics request if sampling rate is 0', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
-      const result = atsAnalyticsAdapter.shouldFireRequest(0);
+      let result = atsAnalyticsAdapter.shouldFireRequest(0);
       expect(result).to.equal(false);
     })
     it('should fire analytics request', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
-      const result = atsAnalyticsAdapter.shouldFireRequest(8);
+      let result = atsAnalyticsAdapter.shouldFireRequest(8);
       expect(result).to.equal(true);
     })
     it('should not fire analytics request if math random is something other then 0.99', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.98);
       // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
-      const result = atsAnalyticsAdapter.shouldFireRequest(10);
+      let result = atsAnalyticsAdapter.shouldFireRequest(10);
       expect(result).to.equal(false);
     })
 
@@ -253,7 +252,7 @@ describe('ats analytics adapter', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       atsAnalyticsAdapter.setSamplingCookie(10);
-      const samplingRate = storage.getCookie('_lr_sampling_rate');
+      let samplingRate = storage.getCookie('_lr_sampling_rate');
       expect(samplingRate).to.equal('10');
     })
 
@@ -261,7 +260,7 @@ describe('ats analytics adapter', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       atsAnalyticsAdapter.setSamplingCookie(0);
-      const samplingRate = storage.getCookie('_lr_sampling_rate');
+      let samplingRate = storage.getCookie('_lr_sampling_rate');
       expect(samplingRate).to.equal('0');
     })
 

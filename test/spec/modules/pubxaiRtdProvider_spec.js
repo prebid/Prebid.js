@@ -1,4 +1,4 @@
-import * as priceFloors from '../../../modules/priceFloors.js';
+import * as priceFloors from '../../../modules/priceFloors';
 import {
   FLOORS_END_POINT,
   storage,
@@ -13,8 +13,8 @@ import {
   setFloorsApiStatus,
   setFloorsConfig,
   setPriceFloors,
-} from '../../../modules/pubxaiRtdProvider.js';
-import { config } from '../../../src/config.js';
+} from '../../../modules/pubxaiRtdProvider';
+import { config } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import { server } from '../../mocks/xhr.js';
 
@@ -75,7 +75,7 @@ const stubConfig = () => {
 describe('pubxaiRtdProvider', () => {
   describe('beforeInit', () => {
     it('should register RTD submodule provider', function () {
-      const submoduleStub = sinon.stub(hook, 'submodule');
+      let submoduleStub = sinon.stub(hook, 'submodule');
       beforeInit();
       assert(submoduleStub.calledOnceWith('realTimeData', pubxaiSubmodule));
       submoduleStub.restore();

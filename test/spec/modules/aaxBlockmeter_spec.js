@@ -16,7 +16,7 @@ const config = {
 
 describe('aaxBlockmeter realtime module', function () {
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     window.aax = window.aax || {};
     window.aax.getTargetingData = getTargetingDataSpy = sandbox.spy();
   });

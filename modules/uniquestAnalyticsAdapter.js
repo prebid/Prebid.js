@@ -68,8 +68,8 @@ function auctionEndHandler(eventType, args, pageUrl) {
   }
 }
 
-const baseAdapter = adapter({analyticsType: 'endpoint'});
-const uniquestAdapter = Object.assign({}, baseAdapter, {
+let baseAdapter = adapter({analyticsType: 'endpoint'});
+let uniquestAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(config = {}) {
     if (config.options && config.options.sid) {
@@ -87,7 +87,7 @@ const uniquestAdapter = Object.assign({}, baseAdapter, {
 
   track({eventType, args}) {
     const refererInfo = getRefererInfo();
-    const pageUrl = refererInfo.page;
+    let pageUrl = refererInfo.page;
 
     switch (eventType) {
       case EVENTS.AD_RENDER_SUCCEEDED:

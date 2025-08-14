@@ -84,7 +84,7 @@ export const CONVERTER = ortbConverter({
       }
     })
 
-    const userAgent = navigator.userAgent;
+    let userAgent = navigator.userAgent;
     utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
     utils.deepSetValue(req, 'device.devicetype', _isMobile() ? 1 : _isConnectedTV() ? 3 : 2);
 
@@ -141,7 +141,7 @@ function isBidRequestValid(bidRequest) {
 }
 
 function isPublisherIdValid(bidRequest) {
-  const pubId = utils.deepAccess(bidRequest, 'params.publisherId');
+  let pubId = utils.deepAccess(bidRequest, 'params.publisherId');
   return (pubId != null && utils.isStr(pubId) && pubId != '');
 }
 
@@ -159,9 +159,9 @@ function isValidVideoRequest(bidRequest) {
 }
 
 function buildRequests(validBids, bidderRequest) {
-  const videoBids = validBids.filter(bid => isVideoBid(bid));
-  const bannerBids = validBids.filter(bid => isBannerBid(bid));
-  const requests = [];
+  let videoBids = validBids.filter(bid => isVideoBid(bid));
+  let bannerBids = validBids.filter(bid => isBannerBid(bid));
+  let requests = [];
 
   bannerBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -273,7 +273,7 @@ function _renderer(bid) {
       });
 
       try {
-        const vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
+        let vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
         spoplayer.load(vastUrlbt).then(function() {
           window.spoplayer = spoplayer;
         }).catch(function(reason) {

@@ -27,7 +27,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   const envParams = getEnvParams();
 
   // Make a dynamic bid request to the ad partner's endpoint
-  const bidRequestData = {
+  let bidRequestData = {
     'id': validBidRequest.bidId, // NOT bid.bidderRequestId or bid.auctionId
     'at': 1,
     'imp': [],
@@ -177,7 +177,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
   utils.logInfo('on handleResORTB2Dot4 -> request json data:', JSON.parse(request.data));
   utils.logInfo('on handleResORTB2Dot4 -> serverResponse:', serverResponse);
 
-  const bidResponses = [];
+  let bidResponses = [];
   const bidRq = JSON.parse(request.data);
 
   if (serverResponse.hasOwnProperty('body') && serverResponse.body.hasOwnProperty('id')) {
@@ -302,7 +302,7 @@ function makeBidRequest(url, data) {
 }
 
 function getUrl(adPartner, bid) {
-  const endpointUrlMapping = {
+  let endpointUrlMapping = {
     [PARTNERS.ORTB_2_4]: bid.params.endpoint + '?idzone=' + bid.params.zoneId + '&fid=' + bid.params.fid
   };
 
@@ -342,8 +342,8 @@ function getEnvParams() {
     envParams.osName = 'Unknown';
   }
 
-  const browserLanguage = navigator.language || navigator.userLanguage;
-  const acceptLanguage = browserLanguage.replace('_', '-');
+  let browserLanguage = navigator.language || navigator.userLanguage;
+  let acceptLanguage = browserLanguage.replace('_', '-');
 
   envParams.language = acceptLanguage;
 
@@ -447,7 +447,7 @@ export const spec = {
       return false;
     }
 
-    const adPartner = bid.params.partner;
+    let adPartner = bid.params.partner;
 
     if (adPartnerHandlers[adPartner] && adPartnerHandlers[adPartner]['validation']) {
       return adPartnerHandlers[adPartner]['validation'](bid);
@@ -461,11 +461,11 @@ export const spec = {
     utils.logInfo('on buildRequests -> bidderRequest:', bidderRequest);
 
     return validBidRequests.map(bid => {
-      const adPartner = bid.params.partner;
+      let adPartner = bid.params.partner;
 
       imps.set(bid.params.impressionId, { adPartner: adPartner, mediaType: null });
 
-      const endpointUrl = getUrl(adPartner, bid);
+      let endpointUrl = getUrl(adPartner, bid);
 
       // Call the handler for the ad partner, passing relevant parameters
       if (adPartnerHandlers[adPartner]['request']) {

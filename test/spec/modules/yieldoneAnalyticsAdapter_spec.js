@@ -4,8 +4,8 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events');
-const adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
+let adapterManager = require('src/adapterManager').default;
 
 describe('Yieldone Prebid Analytic', function () {
   let sendStatStub;
@@ -13,28 +13,25 @@ describe('Yieldone Prebid Analytic', function () {
   const fakeTargeting = {
     '0000': {'someId': 'someValue'}
   };
-  let clock;
 
   describe('enableAnalytics', function () {
     beforeEach(function () {
       sendStatStub = sinon.stub(yieldoneAnalytics, 'sendStat');
       getAllTargetingStub = sinon.stub(targeting, 'getAllTargeting').returns(fakeTargeting);
       sinon.stub(events, 'getEvents').returns([]);
-      clock = sinon.useFakeTimers();
     });
 
     afterEach(function () {
       sendStatStub.restore();
       getAllTargetingStub.restore();
       events.getEvents.restore();
-      clock.restore();
     });
 
     after(function () {
       yieldoneAnalytics.disableAnalytics();
     });
 
-    it('should catch all events', function () {
+    it('should catch all events', function (done) {
       adapterManager.registerAnalyticsAdapter({
         code: 'yieldone',
         adapter: yieldoneAnalytics
@@ -273,17 +270,19 @@ describe('Yieldone Prebid Analytic', function () {
 
       delete yieldoneAnalytics.eventsStorage[auctionId];
 
-      clock.tick(1000);
-      events.emit(EVENTS.BID_WON, winner);
+      setTimeout(function() {
+        events.emit(EVENTS.BID_WON, winner);
 
-      sinon.assert.callCount(sendStatStub, 2);
-      const billableEventIndex = yieldoneAnalytics.eventsStorage[auctionId].events.findIndex(event => event.eventType === EVENTS.BILLABLE_EVENT);
-      if (billableEventIndex > -1) {
-        yieldoneAnalytics.eventsStorage[auctionId].events.splice(billableEventIndex, 1);
-      }
-      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
+        sinon.assert.callCount(sendStatStub, 2)
+        const billableEventIndex = yieldoneAnalytics.eventsStorage[auctionId].events.findIndex(event => event.eventType === EVENTS.BILLABLE_EVENT);
+        if (billableEventIndex > -1) {
+          yieldoneAnalytics.eventsStorage[auctionId].events.splice(billableEventIndex, 1);
+        }
+        expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
 
-      delete yieldoneAnalytics.eventsStorage[auctionId];
+        delete yieldoneAnalytics.eventsStorage[auctionId];
+        done();
+      }, 1000);
     });
   });
 });

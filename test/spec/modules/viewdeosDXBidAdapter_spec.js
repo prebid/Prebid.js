@@ -209,16 +209,16 @@ describe('viewdeosDXBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, VIDEO_REQUEST);
+      let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    const videoBidRequests = [VIDEO_REQUEST];
-    const displayBidRequests = [DISPLAY_REQUEST];
-    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    let videoBidRequests = [VIDEO_REQUEST];
+    let displayBidRequests = [DISPLAY_REQUEST];
+    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
 
     const displayRequest = spec.buildRequests(displayBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});

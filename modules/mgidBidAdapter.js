@@ -81,8 +81,8 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
     required: true,
   }
 ];
-const _NATIVE_ASSET_ID_TO_KEY_MAP = {};
-const _NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+let _NATIVE_ASSET_ID_TO_KEY_MAP = {};
+let _NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // loading _NATIVE_ASSET_ID_TO_KEY_MAP
 _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
@@ -111,8 +111,8 @@ export const spec = {
       const nativeParams = deepAccess(bid, 'nativeParams');
       let assetsCount = 0;
       if (isPlainObject(nativeParams)) {
-        for (const k in nativeParams) {
-          const v = nativeParams[k];
+        for (let k in nativeParams) {
+          let v = nativeParams[k];
           const supportProp = spec.NATIVE_ASSET_KEY_TO_ASSET_MAP.hasOwnProperty(k);
           if (supportProp) {
             assetsCount++;
@@ -133,8 +133,8 @@ export const spec = {
         bannerOk = sizes[f].length === 2;
       }
     }
-    const acc = Number(bid.params.accountId);
-    const plcmt = Number(bid.params.placementId);
+    let acc = Number(bid.params.accountId);
+    let plcmt = Number(bid.params.placementId);
     return (bannerOk || nativeOk) && isPlainObject(bid.params) && !!bid.adUnitCode && isStr(bid.adUnitCode) && (plcmt > 0 ? bid.params.placementId.toString().search(spec.reId) === 0 : true) &&
       !!acc && acc > 0 && bid.params.accountId.toString().search(spec.reId) === 0;
   },
@@ -162,11 +162,11 @@ export const spec = {
     }
     const cur = setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CUR;
     const secure = window.location.protocol === 'https:' ? 1 : 0;
-    const imp = [];
+    let imp = [];
     validBidRequests.forEach(bid => {
       let tagid = deepAccess(bid, 'params.placementId') || 0;
       tagid = !tagid ? bid.adUnitCode : tagid + '/' + bid.adUnitCode;
-      const impObj = {
+      let impObj = {
         id: bid.bidId,
         tagid,
         secure,
@@ -180,7 +180,7 @@ export const spec = {
       if (floorData.cur) {
         impObj.bidfloorcur = floorData.cur;
       }
-      for (const mediaTypes in bid.mediaTypes) {
+      for (let mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {
           case BANNER:
             impObj.banner = createBannerRequest(bid);
@@ -205,7 +205,7 @@ export const spec = {
 
     const ortb2Data = bidderRequest?.ortb2 || {};
 
-    const request = {
+    let request = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: ortb2Data?.site || {},
       cur: [cur],
@@ -304,7 +304,7 @@ export const spec = {
         deepSetValue(request, 'regs.coppa', 1);
       }
     }
-    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
+    const schain = setOnAny(validBidRequests, 'schain');
     if (schain) {
       deepSetValue(request, 'source.ext.schain', schain);
     }
@@ -450,7 +450,7 @@ function setLocalStorageSafely(key, val) {
 
 function createBannerRequest(bid) {
   const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-  const format = [];
+  let format = [];
   if (sizes.length > 1) {
     for (let f = 0; f < sizes.length; f++) {
       if (sizes[f].length === 2) {
@@ -458,7 +458,7 @@ function createBannerRequest(bid) {
       }
     }
   }
-  const r = {
+  let r = {
     w: sizes && sizes[0][0],
     h: sizes && sizes[0][1],
   };
@@ -473,11 +473,11 @@ function createBannerRequest(bid) {
 }
 
 function createNativeRequest(params) {
-  const nativeRequestObject = {
+  let nativeRequestObject = {
     plcmtcnt: 1,
     assets: []
   };
-  for (const key in params) {
+  for (let key in params) {
     let assetObj = {};
     if (params.hasOwnProperty(key)) {
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
@@ -560,10 +560,10 @@ function createNativeRequest(params) {
 
   // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
   // if any of these are missing from the request then request will not be sent
-  const requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
+  let requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
   let presentrequiredAssetCount = 0;
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    const lengthOfExistingAssets = nativeRequestObject.assets.length;
+    let lengthOfExistingAssets = nativeRequestObject.assets.length;
     for (let i = 0; i < lengthOfExistingAssets; i++) {
       if (ele.id === nativeRequestObject.assets[i].id) {
         presentrequiredAssetCount++;

@@ -2,9 +2,6 @@ import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, l
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
-import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
-
-const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
@@ -39,14 +36,14 @@ export const spec = {
     return valid;
   },
   interpretResponse: function(bidResponse, bidRequest) {
-    const responses = [];
+    let responses = [];
     if (bidResponse && bidResponse.body) {
       try {
-        const bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
+        let bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
         if (bids) {
           bids.forEach(bidObj => {
-            const newBid = formatResponse(bidObj);
-            const mediaType = _checkMediaType(bidObj);
+            let newBid = formatResponse(bidObj);
+            let mediaType = _checkMediaType(bidObj);
             if (mediaType === BANNER) {
               newBid.mediaType = BANNER;
             } else if (mediaType === VIDEO) {
@@ -122,7 +119,7 @@ export const spec = {
 
 };
 function _checkMediaType(bid) {
-  const videoRegex = new RegExp(/VAST\s+version/);
+  let videoRegex = new RegExp(/VAST\s+version/);
   let mediaType;
   if (bid.adm && bid.adm.indexOf('deepintent_wrapper') >= 0) {
     mediaType = BANNER;
@@ -133,7 +130,7 @@ function _checkMediaType(bid) {
 }
 
 function clean(obj) {
-  for (const propName in obj) {
+  for (let propName in obj) {
     if (obj[propName] === null || obj[propName] === undefined) {
       delete obj[propName];
     }
@@ -158,12 +155,6 @@ function buildImpression(bid) {
   if (deepAccess(bid, 'mediaTypes.video')) {
     impression['video'] = _buildVideo(bid);
   }
-  if (deepAccess(bid, 'params.deals')) {
-    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX);
-  }
-  if (deepAccess(bid, 'params.dctr')) {
-    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX);
-  }
   return impression;
 }
 
@@ -172,7 +163,7 @@ function getFloor(bidRequest) {
     return bidRequest.params?.bidfloor;
   }
 
-  const floor = bidRequest.getFloor({
+  let floor = bidRequest.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
@@ -250,7 +241,7 @@ function buildBanner(bid) {
   if (deepAccess(bid, 'mediaTypes.banner')) {
     // Get Sizes from MediaTypes Object, Will always take first size, will be overrided by params for exact w,h
     if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
-      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+      let sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
       if (isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
@@ -269,7 +260,7 @@ function buildBanner(bid) {
 }
 
 function buildSite(bidderRequest) {
-  const site = {};
+  let site = {};
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     site.page = bidderRequest.refererInfo.page;
     site.domain = bidderRequest.refererInfo.domain;

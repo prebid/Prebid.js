@@ -44,7 +44,7 @@ describe('imRtdProvider', function () {
   });
 
   describe('imRtdSubmodule', function () {
-    it('should initialise and return true', function () {
+    it('should initalise and return true', function () {
       expect(imRtdSubmodule.init()).to.equal(true)
     })
   })
@@ -154,11 +154,11 @@ describe('imRtdProvider', function () {
   })
 
   describe('getRealTimeData', function () {
-    it('should initialise and return when empty params', function () {
+    it('should initalise and return when empty params', function () {
       expect(getRealTimeData({}, function() {}, {})).to.equal(undefined)
     });
 
-    it('should initialise and return with config', function () {
+    it('should initalise and return with config', function () {
       expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
     });
 

@@ -7,9 +7,7 @@ import {loadExternalScript} from './adloader.js';
 import {PbPromise} from './utils/promise.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
-import {getDistUrlBase, getGlobalVarName} from './buildOptions.js';
-
-export const DEBUG_KEY = `__${getGlobalVarName()}_debugging__`;
+export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
 
 function isDebuggingInstalled() {
   return getGlobal().installedModules.includes('debugging');
@@ -31,7 +29,7 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
           if (alreadyInstalled()) {
             resolve();
           } else {
-            const url = `${getDistUrlBase()}debugging-standalone.js`;
+            const url = '$$PREBID_DIST_URL_BASE$$debugging-standalone.js';
             logMessage(`Debugging module not installed, loading it from "${url}"...`);
             getGlobal()._installDebugging = true;
             script(url).then(() => {
@@ -81,7 +79,7 @@ export function loadSession() {
   } catch (e) {}
 
   if (storage !== null) {
-    const debugging = ctl;
+    let debugging = ctl;
     let config = null;
     try {
       config = storage.getItem(DEBUG_KEY);

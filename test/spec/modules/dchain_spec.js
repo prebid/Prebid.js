@@ -31,7 +31,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if complete param is not 0 or 1', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       dchainConfig.complete = 0; // integer
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.complete = 1; // integer
@@ -51,7 +51,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if ver param is not a String', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       dchainConfig.ver = 1; // integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
       dchainConfig.ver = '1'; // string
@@ -69,7 +69,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if ext param is not an Object', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       dchainConfig.ext = 1; // integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
       dchainConfig.ext = '1'; // string
@@ -87,7 +87,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if nodes param is not an Array', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.nodes = 1; // integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
@@ -104,13 +104,13 @@ describe('dchain module', function () {
     });
 
     it('Returns false if unknown field is used in main dchain', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       dchainConfig.test = '1'; // String
       expect(checkDchainSyntax(bid, STRICT)).to.false;
     });
 
     it('Returns false if nodes[].asi is not a String', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.nodes[0].asi = 1; // Integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
@@ -127,7 +127,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if nodes[].bsid is not a String', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.nodes[0].bsid = 1; // Integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
@@ -144,7 +144,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if nodes[].rid is not a String', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.nodes[0].rid = 1; // Integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
@@ -161,7 +161,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if nodes[].name is not a String', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.nodes[0].name = 1; // Integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
@@ -178,7 +178,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if nodes[].domain is not a String', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       expect(checkDchainSyntax(bid, STRICT)).to.true;
       dchainConfig.nodes[0].domain = 1; // Integer
       expect(checkDchainSyntax(bid, STRICT)).to.false;
@@ -195,7 +195,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if nodes[].ext is not an Object', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       dchainConfig.nodes[0].ext = '1'; // String
       expect(checkDchainSyntax(bid, STRICT)).to.false;
       dchainConfig.nodes[0].ext = 1; // Integer
@@ -213,7 +213,7 @@ describe('dchain module', function () {
     });
 
     it('Returns false if unknown field is used in nodes[]', function () {
-      const dchainConfig = bid.meta.dchain;
+      let dchainConfig = bid.meta.dchain;
       dchainConfig.nodes[0].test = '1'; // String
       expect(checkDchainSyntax(bid, STRICT)).to.false;
     });
@@ -234,7 +234,7 @@ describe('dchain module', function () {
 
   describe('addBidResponseHook', function () {
     let bid;
-    const adUnitCode = 'adUnit1';
+    let adUnitCode = 'adUnit1';
 
     beforeEach(function () {
       bid = {

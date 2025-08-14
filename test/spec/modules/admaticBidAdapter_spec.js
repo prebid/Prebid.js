@@ -7,7 +7,7 @@ const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';
 
 describe('admaticBidAdapter', () => {
   const adapter = newBidder(spec);
-  const validRequest = [ {
+  let validRequest = [ {
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
       'domain': 'https://www.admatic.com.tr',
@@ -242,7 +242,7 @@ describe('admaticBidAdapter', () => {
       'bidder': 'admatic'
     }
   } ];
-  const bidderRequest = {
+  let bidderRequest = {
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
       'domain': 'https://www.admatic.com.tr',
@@ -556,7 +556,7 @@ describe('admaticBidAdapter', () => {
   });
 
   describe('isBidRequestValid', function() {
-    const bid = {
+    let bid = {
       'refererInfo': {
         'page': 'https://www.admatic.com.tr',
         'domain': 'https://www.admatic.com.tr',
@@ -582,7 +582,7 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', function() {
-      const bid2 = {};
+      let bid2 = {};
       bid2.params = {
         'someIncorrectParam': 0
       };
@@ -598,7 +598,7 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should not populate GDPR if for non-EEA users', function () {
-      const bidRequest = Object.assign([], validRequest);
+      let bidRequest = Object.assign([], validRequest);
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
@@ -613,7 +613,7 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', function () {
-      const bidRequest = Object.assign([], validRequest);
+      let bidRequest = Object.assign([], validRequest);
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
@@ -627,7 +627,7 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should properly build a request when coppa flag is true', function () {
-      const bidRequest = Object.assign([], validRequest);
+      let bidRequest = Object.assign([], validRequest);
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
@@ -639,7 +639,7 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should properly build a request with gpp consent field', function () {
-      const bidRequest = Object.assign([], validRequest);
+      let bidRequest = Object.assign([], validRequest);
       const ortb2 = {
         regs: {
           gpp: 'gpp_consent_string',
@@ -652,7 +652,7 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should properly build a request with ccpa consent field', function () {
-      const bidRequest = Object.assign([], validRequest);
+      let bidRequest = Object.assign([], validRequest);
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
@@ -795,7 +795,7 @@ describe('admaticBidAdapter', () => {
 
   describe('interpretResponse', function () {
     it('should get correct bid responses', function() {
-      const bids = { body: {
+      let bids = { body: {
         data: [
           {
             'id': 1,
@@ -854,7 +854,7 @@ describe('admaticBidAdapter', () => {
         'status': true
       }};
 
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: 1,
           cpm: 0.01,
@@ -1046,6 +1046,7 @@ describe('admaticBidAdapter', () => {
             ],
             'type': 'native',
             'mediatype': {
+              'sendTargetingKeys': false,
               'ortb': {
                 'ver': '1.1',
                 'context': 2,
@@ -1136,25 +1137,25 @@ describe('admaticBidAdapter', () => {
         ]
       };
 
-      const result = spec.interpretResponse(bids, {data: request});
+      let result = spec.interpretResponse(bids, {data: request});
       expect(result).to.eql(expectedResponse);
     });
 
     it('handles nobid responses', function () {
-      const request = {
+      let request = {
         ext: {
           'cur': 'TRY',
           'type': 'admatic'
         }
       };
-      const bids = { body: {
+      let bids = { body: {
         data: [],
         'queryId': 'cdnbh24rlv0hhkpfpln0',
         'status': true,
         'cur': 'TRY'
       }};
 
-      const result = spec.interpretResponse(bids, {data: request});
+      let result = spec.interpretResponse(bids, {data: request});
       expect(result.length).to.equal(0);
     });
   });

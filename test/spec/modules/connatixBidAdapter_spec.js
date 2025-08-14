@@ -576,7 +576,7 @@ describe('connatixBidAdapter', function () {
   describe('buildRequests', function () {
     let serverRequest;
     let setCookieStub, setDataInLocalStorageStub;
-    const bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         canonicalUrl: '',
         numIframes: 0,
@@ -885,7 +885,7 @@ describe('connatixBidAdapter', function () {
           'atype': 1
         }]
       }];
-      const serverRequest = spec.buildRequests(validBidRequests, {});
+      let serverRequest = spec.buildRequests(validBidRequests, {});
       expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
   });

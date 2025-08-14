@@ -43,22 +43,16 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    ortb2: {
-      source: {
-        ext: {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: '1',
-                hp: 1
-              }
-            ]
-          }
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
         }
-      }
+      ]
     }
   }
   const bid2 = {
@@ -97,27 +91,21 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    ortb2: {
-      source: {
-        ext: {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: '1',
-                hp: 1
-              },
-              {
-                asi: 'example1.com',
-                sid: '2',
-                hp: 1
-              }
-            ]
-          }
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        },
+        {
+          asi: 'example1.com',
+          sid: '2',
+          hp: 1
         }
-      }
+      ]
     }
   }
   const bid3 = {
@@ -160,22 +148,16 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    ortb2: {
-      source: {
-        ext: {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: '1',
-                hp: 1
-              }
-            ]
-          }
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
         }
-      }
+      ]
     }
   }
   const bid4 = {
@@ -216,22 +198,16 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    ortb2: {
-      source: {
-        ext: {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: '1',
-                hp: 1
-              }
-            ]
-          }
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
         }
-      }
+      ]
     }
   }
 
@@ -267,7 +243,7 @@ describe('vdoaiBidAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        const data = serverRequest.data;
+        let data = serverRequest.data;
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys(
           'deviceWidth',
@@ -348,7 +324,7 @@ describe('vdoaiBidAdapter', function () {
     })
   })
   describe('interpretBannerResponse', function () {
-    const resObject = {
+    let resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -369,7 +345,7 @@ describe('vdoaiBidAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        const dataItem = serverResponses[i];
+        let dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -391,7 +367,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('interpretVideoResponse', function () {
-    const resObject = {
+    let resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -412,7 +388,7 @@ describe('vdoaiBidAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        const dataItem = serverResponses[i];
+        let dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -434,7 +410,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('isBidRequestValid', function() {
-    const bid = {
+    let bid = {
       bidId: '2dd581a2b6281d',
       bidder: 'vdoai',
       bidderRequestId: '145e1d6a7837c9',
@@ -461,7 +437,7 @@ describe('vdoaiBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function() {
-      const bidFailed = {
+      let bidFailed = {
         bidder: 'vdoai',
         bidderRequestId: '145e1d6a7837c9',
         params: {
@@ -477,7 +453,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('interpretResponse', function() {
-    const resObject = {
+    let resObject = {
       requestId: '123',
       cpm: 0.3,
       width: 320,
@@ -493,7 +469,7 @@ describe('vdoaiBidAdapter', function () {
       }
     };
     it('should skip responses which do not contain required params', function() {
-      const bidResponses = {
+      let bidResponses = {
         body: [ {
           cpm: 0.3,
           ttl: 1000,
@@ -507,28 +483,28 @@ describe('vdoaiBidAdapter', function () {
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should skip responses which do not contain advertiser domains', function() {
-      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
+      let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
-      const bidResponses = {
+      let bidResponses = {
         body: [ resObjectWithoutAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should return responses which contain empty advertiser domains', function() {
-      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
+      let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
-      const bidResponses = {
+      let bidResponses = {
         body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
     it('should skip responses which do not contain meta media type', function() {
-      const resObjectWithoutMetaMediaType = Object.assign({}, resObject);
+      let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
       resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutMetaMediaType.meta.mediaType;
-      const bidResponses = {
+      let bidResponses = {
         body: [ resObjectWithoutMetaMediaType, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
@@ -763,6 +739,6 @@ function validateAdUnit(adUnit, bid) {
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
-  expect(adUnit.supplyChain).to.deep.equal(bid.ortb2?.source?.ext?.schain);
+  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
   expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
 }

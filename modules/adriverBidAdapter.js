@@ -22,9 +22,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const win = getWindowLocation();
-    const customID = Math.round(Math.random() * 999999999) + '-' + Math.round(new Date() / 1000) + '-1-46-';
-    const siteId = getBidIdParameter('siteid', validBidRequests[0].params) + '';
+    let win = getWindowLocation();
+    let customID = Math.round(Math.random() * 999999999) + '-' + Math.round(new Date() / 1000) + '-1-46-';
+    let siteId = getBidIdParameter('siteid', validBidRequests[0].params) + '';
     let currency = getBidIdParameter('currency', validBidRequests[0].params);
     currency = 'RUB';
 
@@ -63,10 +63,10 @@ export const spec = {
         let height;
         let par;
 
-        const floorAndCurrency = _getFloor(bid, currency, sizes);
+        let floorAndCurrency = _getFloor(bid, currency, sizes);
 
-        const bidFloor = floorAndCurrency.floor;
-        const dealId = getBidIdParameter('dealid', bid.params);
+        let bidFloor = floorAndCurrency.floor;
+        let dealId = getBidIdParameter('dealid', bid.params);
         if (typeof sizes[0] === 'number' && typeof sizes[1] === 'number') {
           width = sizes[0];
           height = sizes[1];
@@ -97,7 +97,7 @@ export const spec = {
       });
     });
 
-    const adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId?.adrcid;
+    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId?.adrcid;
     if (adrcidCookie) {
       payload.user.buyerid = adrcidCookie;
     }
@@ -124,7 +124,7 @@ export const spec = {
       }
 
       if (bid.price >= 0 && bid.impid !== undefined && nurl !== 0 && bid.dealid === undefined) {
-        const bidResponse = {
+        let bidResponse = {
           requestId: bid.ext || undefined,
           cpm: bid.price,
           width: bid.w,

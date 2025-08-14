@@ -1,12 +1,11 @@
-const helpers = require('./gulpHelpers.js');
+var path = require('path');
 
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
-  context: helpers.getPrecompiledPath(),
   resolve: {
     modules: [
-      helpers.getPrecompiledPath(),
+      path.resolve('.'),
       'node_modules'
     ],
   },
@@ -15,4 +14,17 @@ module.exports = {
       import: './modules/debugging/standalone.js',
     }
   },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
+        use: [
+          {
+            loader: 'babel-loader'
+          }
+        ]
+      },
+    ]
+  }
 };

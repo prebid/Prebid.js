@@ -26,7 +26,12 @@ pbjs.setConfig(
         auctionDelay: 2000,
         dataProviders: [
             {
-                name: "dynamicAdBoost"
+                name: "dynamicAdBoost",
+                params: {
+                    keyId: "[PROVIDED_KEY]", // Your provided Dynamic AdBoost keyId
+                    adUnits: ["allowedAdUnit1", "allowedAdUnit2"],
+                    threshold: 35 // optional
+                }
             }
         ]
     }

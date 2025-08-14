@@ -35,12 +35,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let playerVersion = null;
   const playerConfig = config.playerConfig;
   const divId = config.divId;
-  const adState = adState_;
-  const timeState = timeState_;
-  const callbackStorage = callbackStorage_;
+  let adState = adState_;
+  let timeState = timeState_;
+  let callbackStorage = callbackStorage_;
   let pendingSeek = {};
   let supportedMediaTypes = null;
-  const minimumSupportedPlayerVersion = '8.20.1';
+  let minimumSupportedPlayerVersion = '8.20.1';
   let setupCompleteCallbacks = [];
   let setupFailedCallbacks = [];
   const MEDIA_TYPES = [
@@ -622,7 +622,7 @@ export const utils = {
     }
 
     // Height is undefined when player has not yet rendered
-    if (height !== undefined && height !== null) {
+    if (height !== undefined) {
       return height;
     }
 
@@ -637,7 +637,7 @@ export const utils = {
     }
 
     // Width is undefined when player has not yet rendered
-    if (width !== undefined && width !== null) {
+    if (width !== undefined) {
       return width;
     }
 
@@ -649,7 +649,7 @@ export const utils = {
 
   getPlayerSizeFromAspectRatio: function(player, config) {
     const aspectRatio = config.aspectratio;
-    const percentageWidth = config.width;
+    let percentageWidth = config.width;
 
     if (typeof aspectRatio !== 'string' || typeof percentageWidth !== 'string') {
       return {};
@@ -672,15 +672,11 @@ export const utils = {
     const xRatio = parseInt(ratios[0], 10);
     const yRatio = parseInt(ratios[1], 10);
 
-    if (isNaN(xRatio) || isNaN(yRatio) || xRatio === 0 || yRatio === 0) {
+    if (isNaN(xRatio) || isNaN(yRatio)) {
       return {};
     }
 
     const numericWidthPercentage = parseInt(percentageWidth, 10);
-
-    if (isNaN(numericWidthPercentage)) {
-      return {};
-    }
 
     const desiredWidth = containerWidth * numericWidthPercentage / 100;
     const desiredHeight = Math.min(desiredWidth * yRatio / xRatio, containerHeight);
@@ -807,7 +803,7 @@ export const utils = {
    * @returns {boolean} - support of omid
    */
   isOmidSupported: function(adClient) {
-    const omidIsLoaded = window.OmidSessionClient !== undefined && window.OmidSessionClient !== null;
+    const omidIsLoaded = window.OmidSessionClient !== undefined;
     return omidIsLoaded && adClient === 'vast';
   },
 
@@ -840,6 +836,7 @@ export const utils = {
     const formattedSegments = jwpsegs.reduce((convertedSegments, rawSegment) => {
       convertedSegments.push({
         id: rawSegment,
+        value: rawSegment
       });
       return convertedSegments;
     }, []);
@@ -854,7 +851,7 @@ export const utils = {
    * @return {Object} - Object compliant with the oRTB content.data[index] spec.
    */
   getContentDatum: function (mediaId, segments) {
-    if (!mediaId && (!segments || segments.length === 0)) {
+    if (!mediaId && !segments) {
       return;
     }
 
@@ -864,10 +861,10 @@ export const utils = {
     };
 
     if (mediaId) {
-      contentData.ext.cids = contentData.cids = [mediaId];
+      contentData.ext.cids = [mediaId];
     }
 
-    if (segments && segments.length > 0) {
+    if (segments) {
       contentData.segment = segments;
       contentData.ext.segtax = 502;
     }
@@ -900,7 +897,7 @@ export function callbackStorageFactory() {
   }
 
   function getCallback(eventType, callback) {
-    const eventHandlers = storage[eventType];
+    let eventHandlers = storage[eventType];
     if (!eventHandlers) {
       return;
     }
@@ -997,13 +994,13 @@ export function adStateFactory() {
     }
 
     const adProperties = Object.keys(ad);
-    for (const property of adProperties) {
+    adProperties.forEach(property => {
       const value = ad[property];
       const wrapperIds = value.adWrapperIds;
       if (wrapperIds) {
         return wrapperIds;
       }
-    }
+    });
   }
 
   return adState;

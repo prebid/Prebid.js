@@ -12,7 +12,7 @@ describe('ClickforceAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'clickforce',
       'params': {
         'zone': '6682'
@@ -31,7 +31,7 @@ describe('ClickforceAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'someIncorrectParam': 0
@@ -41,7 +41,7 @@ describe('ClickforceAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [{
+    let bidRequests = [{
       'bidder': 'clickforce',
       'params': {
         'zone': '6682'
@@ -63,7 +63,7 @@ describe('ClickforceAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const response = [{
+    let response = [{
       'cpm': 0.5,
       'width': '300',
       'height': '250',
@@ -81,7 +81,7 @@ describe('ClickforceAdapter', function () {
       ]
     }];
 
-    const response1 = [{
+    let response1 = [{
       'cpm': 0.0625,
       'width': '3',
       'height': '3',
@@ -108,7 +108,7 @@ describe('ClickforceAdapter', function () {
       'zone': '6878'
     }];
 
-    const expectedResponse = [{
+    let expectedResponse = [{
       'requestId': '220ed41385952a',
       'cpm': 0.5,
       'width': '300',
@@ -126,7 +126,7 @@ describe('ClickforceAdapter', function () {
       }
     }];
 
-    const expectedResponse1 = [{
+    let expectedResponse1 = [{
       'requestId': '2e27ec595bf1a',
       'cpm': 0.0625,
       'width': '3',
@@ -160,21 +160,21 @@ describe('ClickforceAdapter', function () {
 
     it('should get the correct bid response by display ad', function () {
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('should get the correct bid response by native ad', function () {
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response1 }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response1 }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse1[0]));
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: {}
       };
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
@@ -184,7 +184,7 @@ describe('ClickforceAdapter', function () {
       const syncOptions = {
         'iframeEnabled': 'true'
       }
-      const userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('iframe');
       expect(userSync[0].url).to.equal('https://cdn.holmesmind.com/js/capmapping.htm');
     });
@@ -193,7 +193,7 @@ describe('ClickforceAdapter', function () {
       const syncOptions = {
         'pixelEnabled': 'true'
       }
-      const userSync = spec.getUserSyncs(syncOptions);
+      let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('image');
       expect(userSync[0].url).to.equal('https://c.holmesmind.com/cm');
     });

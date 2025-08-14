@@ -196,10 +196,7 @@ describe('VideoByteBidAdapter', function () {
           hp: 1
         }]
       };
-      bidRequest.ortb2 = bidRequest.ortb2 || {};
-      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
-      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
-      bidRequest.ortb2.source.ext.schain = globalSchain;
+      bidRequest.schain = globalSchain;
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(requests[0].data);
       const schain = data.source.ext.schain;
@@ -464,7 +461,7 @@ describe('VideoByteBidAdapter', function () {
       }, {
         bidRequest
       });
-      const o = {
+      let o = {
         requestId: serverResponse.id,
         cpm: serverResponse.seatbid[0].bid[0].price,
         creativeId: serverResponse.seatbid[0].bid[0].crid,
@@ -594,17 +591,17 @@ describe('VideoByteBidAdapter', function () {
       }
     };
     it('handles no parameters', function () {
-      const opts = spec.getUserSyncs({});
+      let opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [ortbResponse]);
+      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [ortbResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -612,7 +609,7 @@ describe('VideoByteBidAdapter', function () {
     });
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [ortbResponse]);
+      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [ortbResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -620,7 +617,7 @@ describe('VideoByteBidAdapter', function () {
     });
 
     it('all sync enabled should return only iframe result', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [ortbResponse]);
+      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [ortbResponse]);
 
       expect(opts.length).to.equal(1);
     });

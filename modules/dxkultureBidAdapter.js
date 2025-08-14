@@ -117,7 +117,7 @@ export const spec = {
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: {contextMediaType} });
 
     let publisherId = validBidRequests[0].params.publisherId;
-    const placementId = validBidRequests[0].params.placementId;
+    let placementId = validBidRequests[0].params.placementId;
 
     if (validBidRequests[0].params.e2etest) {
       logMessage('dxkulture: E2E test mode enabled');
@@ -160,7 +160,7 @@ export const spec = {
           }
         });
         syncDetails.forEach(syncDetails => {
-          const queryParamStrings = [];
+          let queryParamStrings = [];
           let syncUrl = syncDetails.url;
 
           if (syncDetails.type === 'iframe') {
@@ -287,8 +287,8 @@ function _validateBanner(bidRequest) {
 
 /**
  * Validates video bid request. If it is not video media type returns true.
- * @param {Object} bidRequest bid to validate
- * @return {boolean} true if valid, otherwise false
+ * @param {BidRequest} bidRequest, bid to validate
+ * @return boolean, true if valid, otherwise false
  */
 function _validateVideo(bidRequest) {
   // If there's no video no need to validate

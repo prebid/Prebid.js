@@ -3,7 +3,7 @@ import { spec } from 'modules/vuukleBidAdapter.js';
 import { config } from '../../../src/config.js';
 
 describe('vuukleBidAdapterTests', function() {
-  const bidRequestData = {
+  let bidRequestData = {
     bids: [
       {
         bidId: 'testbid',
@@ -30,20 +30,20 @@ describe('vuukleBidAdapterTests', function() {
 
   it('validate_generated_params', function() {
     request = spec.buildRequests(bidRequestData.bids);
-    const req_data = request[0].data;
+    let req_data = request[0].data;
 
     expect(req_data.bidId).to.equal('testbid');
   });
 
   it('validate_generated_params_tmax', function() {
     request = spec.buildRequests(bidRequestData.bids, {timeout: 1234});
-    const req_data = request[0].data;
+    let req_data = request[0].data;
 
     expect(req_data.tmax).to.equal(1234);
   });
 
   it('validate_response_params', function() {
-    const serverResponse = {
+    let serverResponse = {
       body: {
         'cpm': 0.01,
         'width': 300,
@@ -55,10 +55,10 @@ describe('vuukleBidAdapterTests', function() {
     };
 
     request = spec.buildRequests(bidRequestData.bids);
-    const bids = spec.interpretResponse(serverResponse, request[0]);
+    let bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(1);
 
-    const bid = bids[0];
+    let bid = bids[0];
     expect(bid.ad).to.equal('test ad');
     expect(bid.cpm).to.equal(0.01);
     expect(bid.width).to.equal(300);
@@ -84,7 +84,7 @@ describe('vuukleBidAdapterTests', function() {
 
     it('must handle consent 1/1', function() {
       request = spec.buildRequests(bidRequestData.bids, bidderRequest);
-      const req_data = request[0].data;
+      let req_data = request[0].data;
 
       expect(req_data.gdpr).to.equal(1);
       expect(req_data.consentGiven).to.equal(1);
@@ -94,7 +94,7 @@ describe('vuukleBidAdapterTests', function() {
     it('must handle consent 0/1', function() {
       bidderRequest.gdprConsent.gdprApplies = 0;
       request = spec.buildRequests(bidRequestData.bids, bidderRequest);
-      const req_data = request[0].data;
+      let req_data = request[0].data;
 
       expect(req_data.gdpr).to.equal(0);
       expect(req_data.consentGiven).to.equal(1);
@@ -104,7 +104,7 @@ describe('vuukleBidAdapterTests', function() {
       bidderRequest.gdprConsent.gdprApplies = 0;
       bidderRequest.gdprConsent.vendorData = undefined;
       request = spec.buildRequests(bidRequestData.bids, bidderRequest);
-      const req_data = request[0].data;
+      let req_data = request[0].data;
 
       expect(req_data.gdpr).to.equal(0);
       expect(req_data.consentGiven).to.equal(0);
@@ -112,7 +112,7 @@ describe('vuukleBidAdapterTests', function() {
 
     it('must handle consent undef', function() {
       request = spec.buildRequests(bidRequestData.bids, {});
-      const req_data = request[0].data;
+      let req_data = request[0].data;
 
       expect(req_data.gdpr).to.equal(0);
       expect(req_data.consentGiven).to.equal(0);
@@ -121,14 +121,14 @@ describe('vuukleBidAdapterTests', function() {
 
   it('must handle usp consent', function() {
     request = spec.buildRequests(bidRequestData.bids, {uspConsent: '1YNN'});
-    const req_data = request[0].data;
+    let req_data = request[0].data;
 
     expect(req_data.uspConsent).to.equal('1YNN');
   })
 
   it('must handle undefined usp consent', function() {
     request = spec.buildRequests(bidRequestData.bids, {});
-    const req_data = request[0].data;
+    let req_data = request[0].data;
 
     expect(req_data.uspConsent).to.equal(undefined);
   })
@@ -139,7 +139,7 @@ describe('vuukleBidAdapterTests', function() {
       .returns(true);
 
     request = spec.buildRequests(bidRequestData.bids);
-    const req_data = request[0].data;
+    let req_data = request[0].data;
 
     expect(req_data.coppa).to.equal(1);
 

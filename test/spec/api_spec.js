@@ -1,30 +1,28 @@
 var assert = require('chai').assert;
-var prebid = require('../../src/prebid.js');
-const {getGlobalVarName} = require('../../src/buildOptions.js');
-const {getGlobal} = require('../../src/prebidGlobal.js');
+var prebid = require('../../src/prebid');
 
 describe('Publisher API', function () {
   // var assert = chai.assert;
 
   describe('api of command queue', function () {
-    it(`should have a global variable ${getGlobalVarName()}`, function () {
-      assert.isObject(window[getGlobalVarName()]);
+    it('should have a global variable $$PREBID_GLOBAL$$', function () {
+      assert.isObject($$PREBID_GLOBAL$$);
     });
 
-    it(`should have a global variable ${getGlobalVarName()}.cmd as an array`, function () {
-      assert.isArray(window[getGlobalVarName()].cmd);
+    it('should have a global variable $$PREBID_GLOBAL$$.cmd as an array', function () {
+      assert.isArray($$PREBID_GLOBAL$$.cmd);
     });
 
-    it(`should have ${getGlobalVarName()}.cmd.push function`, function () {
-      assert.isFunction(window[getGlobalVarName()].cmd.push);
+    it('should have $$PREBID_GLOBAL$$.cmd.push function', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.cmd.push);
     });
 
-    it(`should have a global variable ${getGlobalVarName()}.que as an array`, function () {
-      assert.isArray(window[getGlobalVarName()].que);
+    it('should have a global variable $$PREBID_GLOBAL$$.que as an array', function () {
+      assert.isArray($$PREBID_GLOBAL$$.que);
     });
 
-    it(`should have ${getGlobalVarName()}.que.push function`, function () {
-      assert.isFunction(window[getGlobalVarName()].que.push);
+    it('should have $$PREBID_GLOBAL$$.que.push function', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.que.push);
     });
 
     it('should have global pointer for PBJS global', function () {
@@ -33,60 +31,60 @@ describe('Publisher API', function () {
   });
 
   describe('has function', function () {
-    it('should have function .getAdserverTargeting', function () {
-      assert.isFunction(getGlobal().getAdserverTargeting);
+    it('should have function $$PREBID_GLOBAL$$.getAdserverTargeting', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getAdserverTargeting);
     });
 
-    it('should have function .getAdserverTargetingForAdUnitCode', function () {
-      assert.isFunction(getGlobal().getAdserverTargetingForAdUnitCode);
+    it('should have function $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode);
     });
 
-    it('should have function .getBidResponses', function () {
-      assert.isFunction(getGlobal().getBidResponses);
+    it('should have function $$PREBID_GLOBAL$$.getBidResponses', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getBidResponses);
     });
 
-    it('should have function .getNoBids', function () {
-      assert.isFunction(getGlobal().getNoBids);
+    it('should have function $$PREBID_GLOBAL$$.getNoBids', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBids);
     });
 
-    it('should have function .getNoBidsForAdUnitCode', function () {
-      assert.isFunction(getGlobal().getNoBidsForAdUnitCode);
+    it('should have function $$PREBID_GLOBAL$$.getNoBidsForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBidsForAdUnitCode);
     });
 
-    it('should have function .getBidResponsesForAdUnitCode', function () {
-      assert.isFunction(getGlobal().getBidResponsesForAdUnitCode);
+    it('should have function $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode);
     });
 
-    it('should have function .setTargetingForGPTAsync', function () {
-      assert.isFunction(getGlobal().setTargetingForGPTAsync);
+    it('should have function $$PREBID_GLOBAL$$.setTargetingForGPTAsync', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.setTargetingForGPTAsync);
     });
 
-    it('should have function .renderAd', function () {
-      assert.isFunction(getGlobal().renderAd);
+    it('should have function $$PREBID_GLOBAL$$.renderAd', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.renderAd);
     });
 
-    it('should have function .removeAdUnit', function () {
-      assert.isFunction(getGlobal().removeAdUnit);
+    it('should have function $$PREBID_GLOBAL$$.removeAdUnit', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.removeAdUnit);
     });
 
-    it('should have function .requestBids', function () {
-      assert.isFunction(getGlobal().requestBids);
+    it('should have function $$PREBID_GLOBAL$$.requestBids', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.requestBids);
     });
 
-    it('should have function .addAdUnits', function () {
-      assert.isFunction(getGlobal().addAdUnits);
+    it('should have function $$PREBID_GLOBAL$$.addAdUnits', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.addAdUnits);
     });
 
-    it('should have function .aliasBidder', function () {
-      assert.isFunction(getGlobal().aliasBidder);
+    it('should have function $$PREBID_GLOBAL$$.aliasBidder', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.aliasBidder);
     });
 
-    it('should have function .getAllWinningBids', function () {
-      assert.isFunction(getGlobal().getAllWinningBids);
+    it('should have function $$PREBID_GLOBAL$$.getAllWinningBids', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getAllWinningBids);
     });
 
-    it('should have function .getHighestUnusedBidResponseForAdUnitCode', function () {
-      assert.isFunction(getGlobal().getHighestUnusedBidResponseForAdUnitCode);
+    it('should have function $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode);
     });
   });
 });

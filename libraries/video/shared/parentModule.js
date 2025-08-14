@@ -22,7 +22,11 @@ export function ParentModule(submoduleBuilder_) {
     }
 
     let submodule;
-    submodule = submoduleBuilder.build(vendorCode, config);
+    try {
+      submodule = submoduleBuilder.build(vendorCode, config);
+    } catch (e) {
+      throw e;
+    }
     submodules[id] = submodule;
   }
 

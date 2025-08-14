@@ -22,7 +22,7 @@ describe('AdmixerAdapter', function () {
   // inv-nets.admixer.net/adxprebid.1.2.aspx
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       bidder: BIDDER_CODE,
       params: {
         zone: ZONE_ID,
@@ -37,7 +37,7 @@ describe('AdmixerAdapter', function () {
       auctionId: '1d1a030790a475',
     };
 
-    const rtbBid = {
+    let rtbBid = {
       bidder: RTB_BIDDER_CODE,
       params: {
         tagId: ENDPOINT_ID,
@@ -60,7 +60,7 @@ describe('AdmixerAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         placementId: 0,
@@ -68,7 +68,7 @@ describe('AdmixerAdapter', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
     it('should return false when params required by RTB are not passed', function () {
-      const invalidBid = Object.assign({}, rtbBid);
+      let invalidBid = Object.assign({}, rtbBid);
       delete invalidBid.params;
       invalidBid.params = {
         clientId: 0,
@@ -78,7 +78,7 @@ describe('AdmixerAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const validRequest = [
+    let validRequest = [
       {
         bidder: BIDDER_CODE,
         params: {
@@ -94,7 +94,7 @@ describe('AdmixerAdapter', function () {
         auctionId: '1d1a030790a475',
       },
     ];
-    const bidderRequest = {
+    let bidderRequest = {
       bidderCode: BIDDER_CODE,
       refererInfo: {
         page: 'https://example.com',
@@ -206,7 +206,7 @@ describe('AdmixerAdapter', function () {
   });
 
   describe('checkFloorGetting', function () {
-    const validRequest = [
+    let validRequest = [
       {
         bidder: BIDDER_CODE,
         params: {
@@ -219,7 +219,7 @@ describe('AdmixerAdapter', function () {
         auctionId: '1d1a030790a475',
       },
     ];
-    const bidderRequest = {
+    let bidderRequest = {
       bidderCode: BIDDER_CODE,
       refererInfo: {
         page: 'https://example.com',
@@ -236,7 +236,7 @@ describe('AdmixerAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const response = {
+    let response = {
       body: {
         ads: [
           {
@@ -262,7 +262,7 @@ describe('AdmixerAdapter', function () {
 
     it('should get correct bid response', function () {
       const ads = response.body.ads;
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: ads[0].requestId,
           cpm: ads[0].cpm,
@@ -282,22 +282,22 @@ describe('AdmixerAdapter', function () {
         },
       ];
 
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles nobid responses', function () {
-      const response = [];
+      let response = [];
 
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
 
   describe('getUserSyncs', function () {
-    const imgUrl = 'https://example.com/img1';
-    const frmUrl = 'https://example.com/frm2';
-    const responses = [
+    let imgUrl = 'https://example.com/img1';
+    let frmUrl = 'https://example.com/frm2';
+    let responses = [
       {
         body: {
           cm: {
@@ -309,9 +309,9 @@ describe('AdmixerAdapter', function () {
     ];
 
     it('Returns valid values', function () {
-      const userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
-      const userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
-      const userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
+      let userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
+      let userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
+      let userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
       expect(userSyncAll).to.be.an('array').with.lengthOf(2);
       expect(userSyncImg).to.be.an('array').with.lengthOf(1);
       expect(userSyncImg[0].url).to.be.equal(imgUrl);

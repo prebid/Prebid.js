@@ -98,9 +98,9 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bids, bidderRequest) {
-  const videoBids = bids.filter(bid => isVideoBid(bid));
-  const bannerBids = bids.filter(bid => isBannerBid(bid));
-  const requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
+  let videoBids = bids.filter(bid => isVideoBid(bid));
+  let bannerBids = bids.filter(bid => isBannerBid(bid));
+  let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });

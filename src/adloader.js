@@ -1,7 +1,7 @@
 import { LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
-
+import { includes } from './polyfill.js';
 import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
@@ -14,12 +14,12 @@ const _approvedLoadExternalJSList = [
   'aaxBlockmeter',
   'adagio',
   'adloox',
+  'akamaidap',
   'arcspan',
   'airgrid',
   'browsi',
   'brandmetrics',
   'clean.io',
-  'humansecurityMalvDefense',
   'humansecurity',
   'confiant',
   'contxtful',
@@ -63,7 +63,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     logError('cannot load external script without url and moduleCode');
     return;
   }
-  if (!_approvedLoadExternalJSList.includes(moduleCode)) {
+  if (!includes(_approvedLoadExternalJSList, moduleCode)) {
     logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }

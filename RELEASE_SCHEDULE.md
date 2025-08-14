@@ -26,7 +26,7 @@ Announcements regarding releases will be made to the #prebid-js channel in prebi
 
 ### 2. Make sure all browserstack tests are passing
 
-   On PR merge to master, Github Actions will run unit tests on browserstack. Checking the last build for master branch will show you detailed results.**
+   On PR merge to master, CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid/Prebid.js) for master branch will show you detailed results.**
 
    In case of failure do following,
      - Try to fix the failing tests.

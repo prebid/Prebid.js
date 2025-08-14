@@ -44,7 +44,7 @@ export const spec = {
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
     combinedRequestsObject.bids.timestamp = timestamp();
 
-    const options = {
+    let options = {
       withCredentials: false
     };
 

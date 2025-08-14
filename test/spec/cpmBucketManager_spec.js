@@ -2,22 +2,22 @@ import { expect } from 'chai';
 import { getPriceBucketString, isValidPriceConfig } from 'src/cpmBucketManager.js';
 import { config } from 'src/config.js';
 
-const cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
+let cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
 
 describe('cpmBucketManager', function () {
   describe('getPriceBucketString', function () {
     it('getPriceBucketString function generates the correct price strings', function () {
-      const input = cpmFixtures.cpmInputs;
+      let input = cpmFixtures.cpmInputs;
       for (let i = 0; i < input.length; i++) {
-        const output = getPriceBucketString(input[i]);
-        const jsonOutput = JSON.stringify(output);
+        let output = getPriceBucketString(input[i]);
+        let jsonOutput = JSON.stringify(output);
         expect(jsonOutput).to.deep.equal(JSON.stringify(cpmFixtures.priceStringOutputs[i]));
       }
     });
 
     it('gets the correct custom bucket strings', function () {
-      const cpm = 16.50908;
-      const customConfig = {
+      let cpm = 16.50908;
+      let customConfig = {
         'buckets': [{
           'precision': 4,
           'max': 3,
@@ -30,14 +30,14 @@ describe('cpmBucketManager', function () {
           'cap': true
         }]
       };
-      const expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.5000"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.5000"}';
+      let output = getPriceBucketString(cpm, customConfig);
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
     it('gets the correct custom bucket strings with irregular increment', function () {
-      const cpm = 14.50908;
-      const customConfig = {
+      let cpm = 14.50908;
+      let customConfig = {
         'buckets': [{
           'precision': 4,
           'max': 4,
@@ -50,14 +50,14 @@ describe('cpmBucketManager', function () {
           'cap': true
         }]
       };
-      const expected = '{"low":"5.00","med":"14.50","high":"14.50","auto":"14.50","dense":"14.50","custom":"14.5000"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"14.50","high":"14.50","auto":"14.50","dense":"14.50","custom":"14.5000"}';
+      let output = getPriceBucketString(cpm, customConfig);
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
     it('gets the correct custom bucket strings in non-USD currency', function () {
-      const cpm = 16.50908 * 110.49;
-      const customConfig = {
+      let cpm = 16.50908 * 110.49;
+      let customConfig = {
         'buckets': [{
           'precision': 4,
           'max': 3,
@@ -70,8 +70,8 @@ describe('cpmBucketManager', function () {
           'cap': true
         }]
       };
-      const expected = '{"low":"552.45","med":"1823.09","high":"1823.09","auto":"1823.09","dense":"1823.09","custom":"1823.0850"}';
-      const output = getPriceBucketString(cpm, customConfig, 110.49);
+      let expected = '{"low":"552.45","med":"1823.09","high":"1823.09","auto":"1823.09","dense":"1823.09","custom":"1823.0850"}';
+      let output = getPriceBucketString(cpm, customConfig, 110.49);
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
@@ -146,8 +146,8 @@ describe('cpmBucketManager', function () {
     });
 
     it('gets custom bucket strings and it should honor 0', function () {
-      const cpm = 16.50908;
-      const customConfig = {
+      let cpm = 16.50908;
+      let customConfig = {
         'buckets': [
           {
             'precision': 0,
@@ -156,14 +156,14 @@ describe('cpmBucketManager', function () {
           }
         ]
       };
-      const expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"17"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"17"}';
+      let output = getPriceBucketString(cpm, customConfig);
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
     it('gets the custom bucket strings without passing precision and it should honor the default precision', function () {
-      const cpm = 16.50908;
-      const customConfig = {
+      let cpm = 16.50908;
+      let customConfig = {
         'buckets': [
           {
             'max': 18,
@@ -171,14 +171,14 @@ describe('cpmBucketManager', function () {
           }
         ]
       };
-      const expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.50"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.50"}';
+      let output = getPriceBucketString(cpm, customConfig);
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
     it('defaults to Math.floor if no rounding function is provided', function () {
-      const cpm = 6.516;
-      const customConfig = {
+      let cpm = 6.516;
+      let customConfig = {
         'buckets': [
           {
             'max': 18,
@@ -186,14 +186,14 @@ describe('cpmBucketManager', function () {
           }
         ]
       };
-      const expected = '{"low":"5.00","med":"6.50","high":"6.51","auto":"6.50","dense":"6.50","custom":"6.50"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"6.50","high":"6.51","auto":"6.50","dense":"6.50","custom":"6.50"}';
+      let output = getPriceBucketString(cpm, customConfig);
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
     it('accepts custom rounding functions', function () {
-      const cpm = 6.516;
-      const customConfig = {
+      let cpm = 6.516;
+      let customConfig = {
         'buckets': [
           {
             'max': 18,
@@ -201,17 +201,17 @@ describe('cpmBucketManager', function () {
           }
         ]
       };
-      const getConfig = config.getConfig;
+      let getConfig = config.getConfig;
       config.getConfig = () => Math.ceil;
-      const expected = '{"low":"5.00","med":"6.60","high":"6.52","auto":"6.60","dense":"6.55","custom":"6.55"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"6.60","high":"6.52","auto":"6.60","dense":"6.55","custom":"6.55"}';
+      let output = getPriceBucketString(cpm, customConfig);
       config.getConfig = getConfig;
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
 
     it('will default to Math.floor if passed an invalid rounding function', function () {
-      const cpm = 6.516;
-      const customConfig = {
+      let cpm = 6.516;
+      let customConfig = {
         'buckets': [
           {
             'max': 18,
@@ -219,10 +219,10 @@ describe('cpmBucketManager', function () {
           }
         ]
       };
-      const getConfig = config.getConfig;
+      let getConfig = config.getConfig;
       config.getConfig = () => Math.ceil(5.3);
-      const expected = '{"low":"5.00","med":"6.50","high":"6.51","auto":"6.50","dense":"6.50","custom":"6.50"}';
-      const output = getPriceBucketString(cpm, customConfig);
+      let expected = '{"low":"5.00","med":"6.50","high":"6.51","auto":"6.50","dense":"6.50","custom":"6.50"}';
+      let output = getPriceBucketString(cpm, customConfig);
       config.getConfig = getConfig;
       expect(JSON.stringify(output)).to.deep.equal(expected);
     });
@@ -230,7 +230,7 @@ describe('cpmBucketManager', function () {
 
   describe('isValidPriceConfig', function () {
     it('checks whether custom config is valid', function () {
-      const badConfig = {
+      let badConfig = {
         'buckets': [{
           'max': 3,
           'increment': 0.01,
@@ -243,7 +243,7 @@ describe('cpmBucketManager', function () {
       };
       expect(isValidPriceConfig(badConfig)).to.be.false;
 
-      const customConfig = {
+      let customConfig = {
         'buckets': [
           {
             'max': 18,

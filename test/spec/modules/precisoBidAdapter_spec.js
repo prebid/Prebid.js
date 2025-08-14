@@ -12,7 +12,7 @@ const DEFAULT_BANNER_HEIGHT = 250
 const BIDDER_CODE = 'preciso';
 
 describe('PrecisoAdapter', function () {
-  const bid = {
+  let bid = {
     precisoBid: true,
     bidId: '23fhj33i987f',
     bidder: 'preciso',
@@ -57,6 +57,7 @@ describe('PrecisoAdapter', function () {
   };
 
   let nativeBid = {
+
     precisoBid: true,
     bidId: '23fhj33i987f',
     bidder: 'precisonat',
@@ -156,7 +157,7 @@ describe('PrecisoAdapter', function () {
       expect(serverRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb');
     });
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data.device).to.be.a('object');
       expect(data.user).to.be.a('object');
@@ -166,12 +167,11 @@ describe('PrecisoAdapter', function () {
     it('Returns empty data if no valid requests are passed', function () {
       delete bid.ortb2.device;
       serverRequest = spec.buildRequests([bid]);
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data.device).to.be.undefined;
     });
 
     let ServeNativeRequest = spec.buildRequests([nativeBid]);
-
     it('Creates a valid nativeServerRequest object ', function () {
       expect(ServeNativeRequest).to.exist;
       expect(ServeNativeRequest.method).to.exist;
@@ -199,7 +199,7 @@ describe('PrecisoAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
-      const response = {
+      let response = {
 
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
 
@@ -223,7 +223,7 @@ describe('PrecisoAdapter', function () {
         ],
       }
 
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
           cpm: DEFAULT_PRICE,
@@ -237,7 +237,7 @@ describe('PrecisoAdapter', function () {
           meta: { advertiserDomains: [] },
         }
       ]
-      const result = spec.interpretResponse({ body: response })
+      let result = spec.interpretResponse({ body: response })
 
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
     })
@@ -317,7 +317,6 @@ describe('PrecisoAdapter', function () {
           }
         }
       ]
-
       let result = spec.interpretResponse({ body: nativeResponse });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedNativeResponse[0]));
     })
@@ -329,7 +328,7 @@ describe('PrecisoAdapter', function () {
       iframeEnabled: true,
       spec: true
     };
-    const userSync = spec.getUserSyncs(syncOptions);
+    let userSync = spec.getUserSyncs(syncOptions);
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;

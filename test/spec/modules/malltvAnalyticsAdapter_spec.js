@@ -3,7 +3,7 @@ import {
   ANALYTICS_VERSION, BIDDER_STATUS, DEFAULT_SERVER
 } from 'modules/malltvAnalyticsAdapter.js'
 import { expect } from 'chai'
-import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter.js'
+import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter'
 import * as events from 'src/events'
 import { EVENTS } from 'src/constants.js'
 

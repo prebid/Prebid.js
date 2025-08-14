@@ -2,16 +2,12 @@ import {deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/ut
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
+import {findIndex} from '../src/polyfill.js';
 import {
   getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
-
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- */
 
 const URL = 'https://ghb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
@@ -23,6 +19,7 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['viewdeos'],
+  gvlid: 924,
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
@@ -44,8 +41,8 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids
-   * @param {Object} serverResponse
-   * @param {BidderRequest} bidderRequest
+   * @param serverResponse
+   * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, {bidderRequest}) {
@@ -79,7 +76,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const requestId = bidderRequest.bids.findIndex((bidRequest) => {
+    const requestId = findIndex(bidderRequest.bids, (bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 

@@ -71,8 +71,8 @@ export const spec = {
       url.searchParams.set('requestid', bidRequest.bidId);
       url.searchParams.set('referer', referer);
 
-      const schain = bidRequest?.ortb2?.source?.ext?.schain;
-      if (schain && schain.nodes) {
+      if (bidRequest.schain && bidRequest.schain.nodes) {
+        var schain = bidRequest.schain;
         var schainString = '';
         schainString += schain.ver + ',' + schain.complete;
         for (var i2 = 0; i2 < schain.nodes.length; i2++) {
@@ -105,7 +105,7 @@ export const spec = {
         url.searchParams.set('tfcd', (config.getConfig('coppa') ? 1 : 0));
       }
 
-      const adUnitCode = bidRequest.adUnitCode;
+      let adUnitCode = bidRequest.adUnitCode;
       if (adUnitCode) {
         body.adUnitCode = adUnitCode;
       }

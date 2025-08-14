@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           always-auth: true
-          node-version: '20.x'
+          node-version: '14.x'
           registry-url: https://npm.pkg.github.com
           scope: '@freestarcapital'
       - run: npm install

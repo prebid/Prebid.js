@@ -13,7 +13,7 @@ describe('C1XAdapter', () => {
     });
   });
   describe('isBidRequestValid', () => {
-    const bid = {
+    let bid = {
       'bidder': BIDDER_CODE,
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -31,13 +31,13 @@ describe('C1XAdapter', () => {
     });
 
     it('should return false when require params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(c1xAdapter.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
   describe('buildRequests', () => {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': BIDDER_CODE,
         'params': {
@@ -85,7 +85,7 @@ describe('C1XAdapter', () => {
       expect(payloadObj.a1d).to.equal('1233');
     });
     it('should convert floor price to proper form and attach to request', () => {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           'params': {
@@ -102,7 +102,7 @@ describe('C1XAdapter', () => {
       expect(payloadObj.a1p).to.equal('4.35');
     });
     it('should convert pageurl to proper form and attach to request', () => {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           'params': {
@@ -112,7 +112,7 @@ describe('C1XAdapter', () => {
           }
         });
 
-      const bidderRequest = {
+      let bidderRequest = {
         'bidderCode': 'c1x'
       }
       bidderRequest.bids = bidRequests;
@@ -123,8 +123,8 @@ describe('C1XAdapter', () => {
     });
 
     it('should convert GDPR Consent to proper form and attach to request', () => {
-      const consentString = 'BOP2gFWOQIFovABABAENBGAAAAAAMw';
-      const bidderRequest = {
+      let consentString = 'BOP2gFWOQIFovABABAENBGAAAAAAMw';
+      let bidderRequest = {
         'bidderCode': 'c1x',
         'gdprConsent': {
           'consentString': consentString,
@@ -142,7 +142,7 @@ describe('C1XAdapter', () => {
   });
 
   describe('interpretResponse', () => {
-    const response = {
+    let response = {
       'bid': true,
       'cpm': 1.5,
       'ad': '<!-- Creative -->',
@@ -153,7 +153,7 @@ describe('C1XAdapter', () => {
       'bidType': 'GROSS_BID'
     };
     it('should get correct bid response', () => {
-      const expectedResponse = [
+      let expectedResponse = [
         {
           width: 300,
           height: 250,
@@ -166,23 +166,23 @@ describe('C1XAdapter', () => {
           requestId: 'yyyy'
         }
       ];
-      const bidderRequest = {};
+      let bidderRequest = {};
       bidderRequest.bids = [
         {
           adUnitCode: 'c1x-test',
           bidId: 'yyyy'
         }
       ];
-      const result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
+      let result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
     it('handles nobid responses', () => {
-      const response = {
+      let response = {
         bid: false,
         adId: 'c1x-test'
       };
-      const bidderRequest = {};
-      const result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
+      let bidderRequest = {};
+      let result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
       expect(result.length).to.equal(0);
     });
   });

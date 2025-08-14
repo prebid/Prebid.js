@@ -3,9 +3,12 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, getWinDimensions, parseSizesInput, setOnAny} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, getWinDimensions, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
+import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+const { getConfig } = config;
 
 const BIDDER_CODE = 'adf';
 const GVLID = 50;
@@ -30,26 +33,37 @@ export const spec = {
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
-    const user = commonFpd.user || {};
-    if (typeof commonFpd.app === 'object') {
-      app = commonFpd.app || {};
+    let user = commonFpd.user || {};
+
+    if (typeof getConfig('app') === 'object') {
+      app = getConfig('app') || {};
+      if (commonFpd.app) {
+        mergeDeep(app, commonFpd.app);
+      }
     } else {
-      site = commonFpd.site || {};
+      site = getConfig('site') || {};
+      if (commonFpd.site) {
+        mergeDeep(site, commonFpd.site);
+      }
+
       if (!site.page) {
         site.page = bidderRequest.refererInfo.page;
       }
     }
 
-    const device = commonFpd.device || {};
+    let device = getConfig('device') || {};
+    if (commonFpd.device) {
+      mergeDeep(device, commonFpd.device);
+    }
     const { innerWidth, innerHeight } = getWinDimensions();
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
-    const source = commonFpd.source || {};
+    let source = commonFpd.source || {};
     source.fd = 1;
 
-    const regs = commonFpd.regs || {};
+    let regs = commonFpd.regs || {};
 
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
@@ -58,7 +72,7 @@ export const spec = {
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
-    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
+    const schain = setOnAny(validBidRequests, 'schain');
 
     if (eids) {
       deepSetValue(user, 'ext.eids', eids);
@@ -80,7 +94,7 @@ export const spec = {
       const bidfloor = floorInfo?.floor;
       const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
-      const impExt = bid.ortb2Imp?.ext;
+      const impExtData = bid.ortb2Imp?.ext?.data;
 
       const imp = {
         id: id + 1,
@@ -88,7 +102,7 @@ export const spec = {
         bidfloor,
         bidfloorcur,
         ext: {
-          ...impExt,
+          data: impExtData,
           bidder: {
             inv,
             mname
@@ -97,17 +111,17 @@ export const spec = {
       };
 
       if (bid.nativeOrtbRequest && bid.nativeOrtbRequest.assets) {
-        const assets = bid.nativeOrtbRequest.assets;
-        const requestAssets = [];
+        let assets = bid.nativeOrtbRequest.assets;
+        let requestAssets = [];
         for (let i = 0; i < assets.length; i++) {
-          const asset = deepClone(assets[i]);
-          const img = asset.img;
+          let asset = deepClone(assets[i]);
+          let img = asset.img;
           if (img) {
-            const aspectratios = img.ext && img.ext.aspectratios;
+            let aspectratios = img.ext && img.ext.aspectratios;
 
             if (aspectratios) {
-              const ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
-              const ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
+              let ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
+              let ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
               img.wmin = img.wmin || 0;
               img.hmin = ratioHeight * img.wmin / ratioWidth | 0;
             }

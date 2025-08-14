@@ -343,6 +343,14 @@ describe('mediasniperBidAdapter', function () {
       expect(response06.length).to.equal(0);
     });
 
+    it('Log an error', function () {
+      const request = '';
+      sinon.stub(utils, 'isArray').throws();
+      utilsMock.expects('logError').once();
+      spec.interpretResponse(rawServerResponse, request);
+      utils.isArray.restore();
+    });
+
     describe('Build banner response', function () {
       it('Retrurn successful response', function () {
         const request = '';
@@ -381,7 +389,7 @@ describe('mediasniperBidAdapter', function () {
         });
       });
 
-      it('should use adid if no crid', function () {
+      it('shoud use adid if no crid', function () {
         const raw = {
           body: {
             seatbid: [
@@ -402,7 +410,7 @@ describe('mediasniperBidAdapter', function () {
         );
       });
 
-      it('should use id if no crid or adid', function () {
+      it('shoud use id if no crid or adid', function () {
         const raw = {
           body: {
             seatbid: [
@@ -421,7 +429,7 @@ describe('mediasniperBidAdapter', function () {
         expect(response[0].creativeId).to.equal(raw.body.seatbid[0].bid[0].id);
       });
 
-      it('should use 0 if no cpm', function () {
+      it('shoud use 0 if no cpm', function () {
         const raw = {
           body: {
             seatbid: [
@@ -436,7 +444,7 @@ describe('mediasniperBidAdapter', function () {
         expect(response[0].cpm).to.equal(0);
       });
 
-      it('should use dealid if exists', function () {
+      it('shoud use dealid if exists', function () {
         const raw = {
           body: {
             seatbid: [
@@ -451,7 +459,7 @@ describe('mediasniperBidAdapter', function () {
         expect(response[0].dealId).to.equal(raw.body.seatbid[0].bid[0].dealid);
       });
 
-      it('should use DEFAULT_CURRENCY if no cur', function () {
+      it('shoud use DEFAUL_CURRENCY if no cur', function () {
         const raw = {
           body: {
             seatbid: [

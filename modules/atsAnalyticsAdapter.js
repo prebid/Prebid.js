@@ -21,11 +21,11 @@ const preflightUrl = 'https://check.analytics.rlcdn.com/check/';
 export const analyticsUrl = 'https://analytics.rlcdn.com';
 
 let handlerRequest = [];
-const handlerResponse = [];
+let handlerResponse = [];
 
-const atsAnalyticsAdapterVersion = 3;
+let atsAnalyticsAdapterVersion = 3;
 
-const browsersList = [
+let browsersList = [
   /* Googlebot */
   {
     test: /googlebot/i,
@@ -207,11 +207,11 @@ const browsersList = [
   },
 ];
 
-const listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
+let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
 function bidRequestedHandler(args) {
-  const envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
-  const envelopeSource = envelopeSourceCookieValue === 'true';
+  let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
+  let envelopeSource = envelopeSourceCookieValue === 'true';
   let requests;
   requests = args.bids.map(function(bid) {
     return {
@@ -243,12 +243,12 @@ function bidResponseHandler(args) {
 }
 
 export function parseBrowser() {
-  const ua = atsAnalyticsAdapter.getUserAgent();
+  let ua = atsAnalyticsAdapter.getUserAgent();
   try {
-    const result = browsersList.filter(function(obj) {
+    let result = browsersList.filter(function(obj) {
       return obj.test.test(ua);
     });
-    const browserName = result && result.length ? result[0].name : '';
+    let browserName = result && result.length ? result[0].name : '';
     return (listOfSupportedBrowsers.indexOf(browserName) >= 0) ? browserName : 'Unknown';
   } catch (err) {
     logError('ATS Analytics - Error while checking user browser!', err);
@@ -258,8 +258,8 @@ export function parseBrowser() {
 function sendDataToAnalytic (events) {
   // send data to ats analytic endpoint
   try {
-    const dataToSend = {'Data': events};
-    const strJSON = JSON.stringify(dataToSend);
+    let dataToSend = {'Data': events};
+    let strJSON = JSON.stringify(dataToSend);
     logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
       logInfo('ATS Analytics - events sent successfully!');
@@ -275,11 +275,11 @@ function preflightRequest (events) {
   ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
     {
       success: function (data) {
-        const samplingRateObject = JSON.parse(data);
+        let samplingRateObject = JSON.parse(data);
         logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
-        const samplingRate = samplingRateObject.samplingRate;
+        let samplingRate = samplingRateObject.samplingRate;
         atsAnalyticsAdapter.setSamplingCookie(samplingRate);
-        const samplingRateNumber = Number(samplingRate);
+        let samplingRateNumber = Number(samplingRate);
         if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber)) {
           logInfo('ATS Analytics - events to send: ', events);
           sendDataToAnalytic(events);
@@ -292,7 +292,7 @@ function preflightRequest (events) {
     }, undefined, {method: 'GET', crossOrigin: true});
 }
 
-const atsAnalyticsAdapter = Object.assign(adapter(
+let atsAnalyticsAdapter = Object.assign(adapter(
   {
     analyticsType
   }),
@@ -310,7 +310,7 @@ atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 // add check to not fire request every time, but instead to send 1/100
 atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
   if (samplingRate !== 0) {
-    const shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
+    let shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
     logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
     return shouldFireRequestValue;
   } else {
@@ -340,7 +340,7 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid,
     bidWonTimeout: config.options.bidWonTimeout
   };
-  const initOptions = config.options;
+  let initOptions = config.options;
   logInfo('ATS Analytics - adapter enabled! ');
   atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
 };
@@ -352,14 +352,14 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
     handlerResponse.push(bidResponseHandler(args));
   }
   if (evtype === EVENTS.AUCTION_END) {
-    const bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
+    let bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
     let events = [];
     setTimeout(() => {
-      const winningBids = getGlobal().getAllWinningBids();
+      let winningBids = getGlobal().getAllWinningBids();
       logInfo('ATS Analytics - winning bids: ', winningBids)
       // prepare format data for sending to analytics endpoint
       if (handlerRequest.length) {
-        const wonEvent = {};
+        let wonEvent = {};
         if (handlerResponse.length) {
           events = handlerRequest.filter(request => handlerResponse.filter(function (response) {
             if (request.bid_id === response.bid_id) {
@@ -380,7 +380,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
         }
         // check should we send data to analytics or not, check first cookie value _lr_sampling_rate
         try {
-          const samplingRateCookie = storage.getCookie('_lr_sampling_rate');
+          let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
           if (!samplingRateCookie) {
             preflightRequest(events);
           } else {

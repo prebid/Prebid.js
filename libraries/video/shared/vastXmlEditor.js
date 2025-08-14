@@ -1,3 +1,4 @@
+
 import XMLUtil from '../../xmlUtils/xmlUtils.js';
 import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 

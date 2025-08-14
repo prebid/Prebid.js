@@ -142,7 +142,7 @@ function mockBidRequestListData(mediaType, size, customSizes) {
   return Array.apply(null, {length: size}).map((i, index) => {
     const id = Math.floor(Math.random() * 800) * (index + 1);
     let mediaTypes;
-    const params = {
+    let params = {
       endpointId: id
     }
 
@@ -183,7 +183,7 @@ function mockRefererData() {
 }
 
 function mockResponseData(requestData) {
-  const data = {}
+  let data = {}
   requestData.data.forEach((request, index) => {
     const rndIndex = Math.floor(Math.random() * 800);
     let width, height, mediaType;

@@ -56,7 +56,7 @@ export const spec = {
 
       if (impExt) {
         data.transactionId = impExt.tid;
-        data.gpid = impExt.gpid ?? impExt.data?.adserver?.adslot;
+        data.gpid = impExt.gpid ?? impExt.data?.pbadslot ?? impExt.data?.adserver?.adslot;
       }
       if (bidderRequest.gdprConsent) {
         deepSetValue(data, 'regs.gdpr', {
@@ -93,9 +93,8 @@ export const spec = {
 
       data.params = request.params;
 
-      const schain = request?.ortb2?.source?.ext?.schain;
-      if (schain) {
-        data.schain = schain;
+      if (request.schain) {
+        data.schain = request.schain;
       }
 
       const searchParams = new URLSearchParams({
@@ -140,7 +139,7 @@ export const spec = {
       const callImpBeacon = `<script type="application/javascript">` +
         `(function() { var img = new Image(); img.src = "${beaconUrl}"})()` +
         `</script>`;
-      const data = {
+      let data = {
         requestId: res.id,
         currency: res.cur,
         cpm: parseFloat(bid.price) || 0,

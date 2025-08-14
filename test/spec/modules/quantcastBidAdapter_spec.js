@@ -13,7 +13,6 @@ import {
 import { newBidder } from '../../../src/adapters/bidderFactory.js';
 import { parseUrl } from 'src/utils.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -21,10 +20,10 @@ describe('Quantcast adapter', function () {
   let bidderRequest;
 
   afterEach(function () {
-    getGlobal().bidderSettings = {};
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   });
   beforeEach(function () {
-    getGlobal().bidderSettings = {
+    $$PREBID_GLOBAL$$.bidderSettings = {
       quantcast: {
         storageAllowed: true
       }
@@ -608,7 +607,7 @@ describe('Quantcast adapter', function () {
   describe('propagates coppa', function() {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     });
 
     afterEach(() => {

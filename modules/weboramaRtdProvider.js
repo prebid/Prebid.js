@@ -353,21 +353,17 @@ class WeboramaRtdProvider {
       extra = extra || {};
       const requiredFields = extra?.requiredFields || [];
 
-      for (const field of requiredFields) {
+      requiredFields.forEach((field) => {
         if (!(field in weboSectionConf)) {
-          const msg = `missing required field '${field}'`;
-          logger.logError(msg);
-          return false;
+          throw `missing required field '${field}'`;
         }
-      }
+      });
 
       if (
         isPlainObject(extra?.userConsent?.gdpr) &&
         !this.#checkTCFv2(extra.userConsent.gdpr)
       ) {
-        const msg = 'gdpr consent not ok';
-        logger.logError(msg);
-        return false;
+        throw 'gdpr consent not ok';
       }
     } catch (e) {
       logger.logError(
@@ -393,9 +389,6 @@ class WeboramaRtdProvider {
    * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.consents
    * @param {?Object} gdpr.vendorData.vendor
    * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.consents
-   * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.legitimateInterests
-   * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.legitimateInterests
-   * @param {?Object.<number, boolean>} gdpr.vendorData.publisher.restrictions
    * @return {boolean}
    */
 
@@ -404,50 +397,18 @@ class WeboramaRtdProvider {
       return true;
     }
 
-    const vendorConsents = deepAccess(gdpr, 'vendorData.vendor.consents');
-    const vendorLegitimateInterests = deepAccess(gdpr, 'vendorData.vendor.legitimateInterests');
-    const purposeConsents = deepAccess(gdpr, 'vendorData.purpose.consents');
-    const purposeLegitimateInterests = deepAccess(gdpr, 'vendorData.purpose.legitimateInterests');
-    const publisherRestrictions = deepAccess(gdpr, 'vendorData.publisher.restrictions');
-
-    const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
-    const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);
-
-    const allPurposeIDs = new Set([...consentPurposeIDSet, ...legitimateInterestPurposeIDSet]);
-
-    for (const purposeID of allPurposeIDs) {
-      if (publisherRestrictions?.[purposeID]?.[GVLID] === 0) {
-        return false;
-      }
-    }
-
-    for (const purposeID of legitimateInterestPurposeIDSet) {
-      if (publisherRestrictions?.[purposeID]?.[GVLID] === 1) {
-        legitimateInterestPurposeIDSet.delete(purposeID);
-        consentPurposeIDSet.add(purposeID);
-      }
-    }
-
-    if (consentPurposeIDSet.size > 0) {
-      if (!vendorConsents[GVLID]) {
-        return false;
-      }
-      for (const purposeID of consentPurposeIDSet) {
-        if (!purposeConsents[purposeID]) {
-          return false;
-        }
-      }
-    }
-
-    if (legitimateInterestPurposeIDSet.size > 0) {
-      if (!vendorLegitimateInterests[GVLID]) {
-        return false;
-      }
-      for (const purposeID of legitimateInterestPurposeIDSet) {
-        if (!purposeLegitimateInterests[purposeID]) {
-          return false;
-        }
-      }
+    if (
+      deepAccess(gdpr, 'vendorData.vendor.consents') &&
+      deepAccess(gdpr, 'vendorData.purpose.consents')
+    ) {
+      return (
+        gdpr.vendorData.vendor.consents[GVLID] === true && // check weborama vendor id
+        gdpr.vendorData.purpose.consents[1] === true && // info storage access
+        gdpr.vendorData.purpose.consents[3] === true && // create personalized ads
+        gdpr.vendorData.purpose.consents[4] === true && // select personalized ads
+        gdpr.vendorData.purpose.consents[5] === true && // create personalized content
+        gdpr.vendorData.purpose.consents[6] === true
+      ); // select personalized content
     }
 
     return true;
@@ -478,15 +439,11 @@ class WeboramaRtdProvider {
     this.#coerceSendToBidders(submoduleParams);
 
     if (!isFn(submoduleParams.onData)) {
-      const msg = 'onData parameter should be a callback';
-      logger.logError(msg);
-      return false;
+      throw 'onData parameter should be a callback';
     }
 
     if (!isValidProfile(submoduleParams.defaultProfile)) {
-      const msg = 'defaultProfile is not valid';
-      logger.logError(msg);
-      return false;
+      throw 'defaultProfile is not valid';
     }
   }
 
@@ -505,9 +462,7 @@ class WeboramaRtdProvider {
         submoduleParams.setPrebidTargeting
       );
     } catch (e) {
-      const msg = `invalid setPrebidTargeting: ${e}`;
-      logger.logError(msg);
-      return false;
+      throw `invalid setPrebidTargeting: ${e}`;
     }
   }
 
@@ -521,7 +476,7 @@ class WeboramaRtdProvider {
    */
 
   #coerceSendToBidders(submoduleParams) {
-    const sendToBidders = submoduleParams.sendToBidders;
+    let sendToBidders = submoduleParams.sendToBidders;
 
     if (isPlainObject(sendToBidders)) {
       const sendToBiddersMap = Object.entries(sendToBidders).reduce(
@@ -543,9 +498,7 @@ class WeboramaRtdProvider {
         try {
           return validatorCallback(adUnitCode);
         } catch (e) {
-          const msg = `invalid sendToBidders[${bidder}]: ${e}`;
-          logger.logError(msg);
-          return false;
+          throw `invalid sendToBidders[${bidder}]: ${e}`;
         }
       };
 
@@ -558,9 +511,7 @@ class WeboramaRtdProvider {
         (bid) => bid.bidder
       );
     } catch (e) {
-      const msg = `invalid sendToBidders: ${e}`;
-      logger.logError(msg);
-      return false;
+      throw `invalid sendToBidders: ${e}`;
     }
   }
 
@@ -694,10 +645,7 @@ class WeboramaRtdProvider {
         const data = JSON.parse(response);
         onSuccess(data);
       } else {
-        const msg = `unexpected http status response ${req.status} with response ${response}`;
-        logger.logError(msg);
-        onDone();
-        return;
+        throw `unexpected http status response ${req.status} with response ${response}`;
       }
 
       onDone();
@@ -1014,9 +962,7 @@ class WeboramaRtdProvider {
       };
     }
 
-    const msg = `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
-    logger.logError(msg);
-    return () => false;
+    throw `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
   }
 }
 

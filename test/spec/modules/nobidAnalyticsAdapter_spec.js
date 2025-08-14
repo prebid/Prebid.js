@@ -2,8 +2,8 @@ import nobidAnalytics from 'modules/nobidAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
-const events = require('src/events');
-const adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
+let adapterManager = require('src/adapterManager').default;
 
 const TOP_LOCATION = 'https://www.somesite.com';
 const SITE_ID = 1234;
@@ -596,7 +596,7 @@ describe('NoBid Prebid Analytic', function () {
       active = nobidCarbonizer.isActive();
       expect(active).to.equal(true);
 
-      const adunits = [
+      let adunits = [
         {
           bids: [
             { bidder: 'bidder1' },

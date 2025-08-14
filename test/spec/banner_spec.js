@@ -1,70 +1,7 @@
 import * as utils from '../../src/utils.js';
-import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
+import { syncOrtb2 } from '../../src/prebid.js';
 
 describe('banner', () => {
-  describe('validateOrtbBannerFields', () => {
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-    })
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('removes incorrect or invalid ortb properties, and keep non ortb ones', () => {
-      const mt = {
-        mimes: ['video/mp4'],
-        w: 600,
-        h: 480,
-        battr: [6, 7],
-        api: 6, // -- INVALID
-        otherOne: 'test'
-      };
-
-      const expected = {...mt};
-      delete expected.api;
-
-      const adUnit = {
-        code: 'adUnitCode',
-        mediaTypes: { banner: mt }
-      };
-      validateOrtbFields(adUnit, 'banner');
-
-      expect(adUnit.mediaTypes.banner).to.eql(expected);
-    });
-
-    it('Early return when 1st param is not a plain object', () => {
-      sandbox.spy(utils, 'logWarn');
-
-      validateOrtbFields(undefined, 'banner');
-      validateOrtbFields([], 'banner');
-      validateOrtbFields(null, 'banner');
-      validateOrtbFields('hello', 'banner');
-      validateOrtbFields(() => {}, 'banner');
-
-      sinon.assert.callCount(utils.logWarn, 5);
-    });
-
-    it('Calls onInvalidParam when a property is invalid', () => {
-      const onInvalidParam = sandbox.spy();
-      const adUnit = {
-        code: 'adUnitCode',
-        mediaTypes: {
-          banner: {
-            mimes: ['video/mp4'],
-            api: 6
-          }
-        }
-      };
-      validateOrtbFields(adUnit, 'banner', onInvalidParam);
-
-      sinon.assert.calledOnce(onInvalidParam);
-      sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
-    });
-  });
-
   describe('syncOrtb2', () => {
     let logWarnSpy;
 

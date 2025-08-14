@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
 import { hook } from 'src/hook.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('ConcertAdapter', function () {
   let bidRequests;
@@ -34,7 +33,7 @@ describe('ConcertAdapter', function () {
       }
     };
 
-    getGlobal().bidderSettings = {
+    $$PREBID_GLOBAL$$.bidderSettings = {
       concert: {
         storageAllowed: true
       }
@@ -85,12 +84,12 @@ describe('ConcertAdapter', function () {
       }
     }
 
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
   });
 
   afterEach(function () {
-    getGlobal().bidderSettings = {};
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     sandbox.restore();
   });
 
@@ -167,18 +166,12 @@ describe('ConcertAdapter', function () {
 
     it('should use sharedid if it exists', function() {
       storage.removeDataFromLocalStorage('c_nap');
-      const bidRequestsWithSharedId = [{
-        ...bidRequests[0],
-        userIdAsEids: [{
-          source: 'sharedid.org',
-          uids: [{ id: '123abc' }]
-        }]
-      }];
+      const bidRequestsWithSharedId = [{ ...bidRequests[0], userId: { sharedid: { id: '123abc' } } }]
       const request = spec.buildRequests(bidRequestsWithSharedId, bidRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.meta.uid).to.equal('123abc');
-    });
+    })
 
     it('should grab uid from local storage if it exists and sharedid does not', function() {
       storage.setDataInLocalStorage('vmconcert_uid', 'foo');
@@ -190,10 +183,7 @@ describe('ConcertAdapter', function () {
     });
 
     it('should add uid2 to eids list if available', function() {
-      bidRequests[0].userIdAsEids = [{
-        source: 'uidapi.com',
-        uids: [{ id: 'uid123', atype: 3 }]
-      }];
+      bidRequests[0].userId = { uid2: { id: 'uid123' } }
 
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
@@ -205,6 +195,7 @@ describe('ConcertAdapter', function () {
     })
 
     it('should return empty eids list if none are available', function() {
+      bidRequests[0].userId = { testId: { id: 'uid123' } }
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
       const meta = payload.meta
@@ -241,31 +232,10 @@ describe('ConcertAdapter', function () {
     it('should pass along tdid if the user has not opted out', function() {
       storage.removeDataFromLocalStorage('c_nap', 'true');
       const tdid = '123abc';
-      const bidRequestsWithTdid = [{
-        ...bidRequests[0],
-        userIdAsEids: [{
-          source: 'adserver.org',
-          uids: [{ id: tdid }]
-        }]
-      }];
+      const bidRequestsWithTdid = [{ ...bidRequests[0], userId: { tdid } }]
       const request = spec.buildRequests(bidRequestsWithTdid, bidRequest);
       const payload = JSON.parse(request.data);
       expect(payload.meta.tdid).to.equal(tdid);
-    });
-
-    it('should use pubcId if it exists and sharedId does not', function() {
-      storage.removeDataFromLocalStorage('c_nap');
-      const bidRequestsWithPubcId = [{
-        ...bidRequests[0],
-        userIdAsEids: [{
-          source: 'pubcid.org',
-          uids: [{ id: 'pubcid123' }]
-        }]
-      }];
-      const request = spec.buildRequests(bidRequestsWithPubcId, bidRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.meta.uid).to.equal('pubcid123');
     });
   });
 

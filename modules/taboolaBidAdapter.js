@@ -102,7 +102,7 @@ const converter = ortbConverter({
     ttl: 300
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
+    let imp = buildImp(bidRequest, context);
     fillTaboolaImpData(bidRequest, imp);
     return imp;
   },
@@ -170,7 +170,7 @@ export const spec = {
         if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
           return;
         }
-        const buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
+        let buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
         if (!buyerdata) {
           return;
         }
@@ -179,7 +179,7 @@ export const spec = {
           if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
             return;
           }
-          const parsedData = safeJSONParse(buyerItem.buyerdata)
+          let parsedData = safeJSONParse(buyerItem.buyerdata)
           if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
             return;
           }

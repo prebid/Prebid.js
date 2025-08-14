@@ -2,9 +2,8 @@ import { expect } from 'chai';
 import {
   spec, STORAGE, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
-import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
-const sandbox = sinon.createSandbox();
+import { sandbox } from 'sinon';
+import { getAmxId } from '../../../libraries/nexx360Utils';
 
 describe('Nexx360 bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -32,6 +31,7 @@ describe('Nexx360 bid adapter tests', () => {
       }],
     },
   };
+    
 
   describe('isBidRequestValid()', () => {
     let bannerBid;
@@ -186,8 +186,7 @@ describe('Nexx360 bid adapter tests', () => {
         style: {
           maxWidth: '400px',
           maxHeight: '350px',
-        },
-        getBoundingClientRect() { return { width: 200, height: 250 }; }
+        }
       });
       sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
       sandbox.stub(STORAGE, 'setDataInLocalStorage');
@@ -226,7 +225,7 @@ describe('Nexx360 bid adapter tests', () => {
               sizes: [[728, 90], [970, 250]]
             }
           },
-
+          
           adUnitCode: 'div-2-abcd',
           transactionId: '6196885d-4e76-40dc-a09c-906ed232626b',
           sizes: [[728, 90], [970, 250]],
@@ -335,7 +334,7 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '6.1',
+            bidderVersion: '6.0',
             localStorage: { amxId: 'abcdef'}
           },
           cur: [
@@ -523,7 +522,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       };
-
+      
       const output = spec.interpretResponse(response);
       const expectedOutput = [{
         requestId: '263cba3b8bfb72',
@@ -575,7 +574,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       };
-
+      
       const output = spec.interpretResponse(response);
       const expectedOutut = [{
         requestId: '4ce809b61a3928',
@@ -631,7 +630,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       };
-
+      
       const output = spec.interpretResponse(response);
       const expectOutput = [{
         requestId: '23e11d845514bb',
@@ -692,7 +691,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       }];
-      expect(output).to.eql(expectOutput);
+      expect(output).to.eql(expectOutput);      
     });
   });
 
@@ -715,9 +714,9 @@ describe('Nexx360 bid adapter tests', () => {
       expect(syncs).to.eql([]);
     });
     it('Verifies user sync with no bid body response', () => {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
   });

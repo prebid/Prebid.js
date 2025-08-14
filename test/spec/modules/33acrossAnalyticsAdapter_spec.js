@@ -1,15 +1,16 @@
-import analyticsAdapter, { log } from 'modules/33acrossAnalyticsAdapter.js';
-
+// @ts-nocheck
+import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
+import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as events from 'src/events.js';
 import * as faker from 'faker';
 import { EVENTS } from 'src/constants.js';
-import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
-import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from '../../../modules/33acrossAnalyticsAdapter.js';
+import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager';
+import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from '../../../modules/33acrossAnalyticsAdapter';
 
 describe('33acrossAnalyticsAdapter:', function () {
   let sandbox;
-  const assert = getLocalAssert();
+  let assert = getLocalAssert();
 
   beforeEach(function () {
     mockGpt.reset();
@@ -17,7 +18,6 @@ describe('33acrossAnalyticsAdapter:', function () {
     sandbox = sinon.createSandbox({
       useFakeTimers: {
         now: new Date(2023, 3, 3, 0, 1, 33, 425),
-        shouldClearNativeTimers: true
       },
     });
 
@@ -284,16 +284,16 @@ describe('33acrossAnalyticsAdapter:', function () {
           const { prebid: [auction] } = getMockEvents();
 
           events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-          for (const bidRequestedEvent of auction.BID_REQUESTED) {
+          for (let bidRequestedEvent of auction.BID_REQUESTED) {
             events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
           };
 
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          for (const bidResponseEvent of auction.BID_RESPONSE) {
+          for (let bidResponseEvent of auction.BID_RESPONSE) {
             events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
           };
-          for (const bidWonEvent of auction.BID_WON) {
+          for (let bidWonEvent of auction.BID_WON) {
             events.emit(EVENTS.BID_WON, bidWonEvent);
           };
 
@@ -353,7 +353,7 @@ describe('33acrossAnalyticsAdapter:', function () {
         performStandardAuction({ exclude: [EVENTS.BID_WON] });
 
         assert.notCalled(navigator.sendBeacon);
-        for (const bidWon of auction.BID_WON) {
+        for (let bidWon of auction.BID_WON) {
           events.emit(EVENTS.BID_WON, bidWon);
         }
         assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
@@ -391,7 +391,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
         // Start the auction
         events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-        for (const bidRequestedEvent of auction.BID_REQUESTED) {
+        for (let bidRequestedEvent of auction.BID_REQUESTED) {
           events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
         };
 
@@ -659,13 +659,13 @@ function performStandardAuction({ exclude = [], useSlotElementIds = false } = {}
   }
 
   if (!exclude.includes(EVENTS.BID_REQUESTED)) {
-    for (const bidRequestedEvent of auction.BID_REQUESTED) {
+    for (let bidRequestedEvent of auction.BID_REQUESTED) {
       events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
     };
   }
 
   if (!exclude.includes(EVENTS.BID_RESPONSE)) {
-    for (const bidResponseEvent of auction.BID_RESPONSE) {
+    for (let bidResponseEvent of auction.BID_RESPONSE) {
       events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
     };
   }
@@ -675,13 +675,13 @@ function performStandardAuction({ exclude = [], useSlotElementIds = false } = {}
   }
 
   if (!exclude.includes('slotRenderEnded')) {
-    for (const gEvent of gam.slotRenderEnded) {
+    for (let gEvent of gam.slotRenderEnded) {
       mockGpt.emitEvent('slotRenderEnded', gEvent);
     }
   }
 
   if (!exclude.includes(EVENTS.BID_WON)) {
-    for (const bidWonEvent of auction.BID_WON) {
+    for (let bidWonEvent of auction.BID_WON) {
       events.emit(EVENTS.BID_WON, bidWonEvent);
     };
   }

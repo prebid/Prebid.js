@@ -17,7 +17,7 @@ import {
   VOLUME
 } from 'libraries/video/constants/events.js';
 import adPlayerProSubmoduleFactory, {callbackStorageFactory} from '../../../../../modules/adplayerproVideoProvider.js';
-import {PLACEMENT} from '../../../../../libraries/video/constants/ortb.js';
+import {PLACEMENT} from '../../../../../libraries/video/constants/ortb';
 import sinon from 'sinon';
 
 const {AdPlayerProProvider, utils} = require('modules/adplayerproVideoProvider.js');
@@ -229,7 +229,7 @@ describe('AdPlayerProProvider', function () {
 
       const provider = AdPlayerProProvider(config, null, null, utilsMock);
       provider.init();
-      const video = provider.getOrtbVideo();
+      let video = provider.getOrtbVideo();
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
       expect(video.protocols).to.include.members([

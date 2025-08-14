@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
 describe('novatiqIdSystem', function () {
-  const urlParams = {
+  let urlParams = {
     novatiqId: 'snowflake',
     useStandardUuid: false,
     useSspId: true,
@@ -62,7 +62,7 @@ describe('novatiqIdSystem', function () {
     it('should set sharedStatus if sharedID is configured and is valid', function() {
       const config = { params: { sourceid: '123', useSharedId: true } };
 
-      const stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
+      let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
 
       const response = novatiqIdSubmodule.getId(config);
 
@@ -74,7 +74,7 @@ describe('novatiqIdSystem', function () {
     it('should set sharedStatus if sharedID is configured and is valid when making an async call', function() {
       const config = { params: { sourceid: '123', useSharedId: true, useCallbacks: true } };
 
-      const stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
+      let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
 
       const response = novatiqIdSubmodule.getId(config);
 
@@ -100,7 +100,7 @@ describe('novatiqIdSystem', function () {
     });
 
     it('should return custom url parameters when set', function() {
-      const customUrlParams = {
+      let customUrlParams = {
         novatiqId: 'hyperid',
         useStandardUuid: true,
         useSspId: false,
@@ -145,7 +145,7 @@ describe('novatiqIdSystem', function () {
     });
 
     it('should change the result format if async', function() {
-      const novatiqId = {};
+      let novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
       const response = novatiqIdSubmodule.decode(novatiqId);
@@ -155,7 +155,7 @@ describe('novatiqIdSystem', function () {
     });
 
     it('should remove syncResponse if removeAdditionalInfo true', function() {
-      const novatiqId = {};
+      let novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
       var config = {params: {removeAdditionalInfo: true}};

@@ -17,7 +17,7 @@ describe('currency utils', () => {
   })
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(() => {

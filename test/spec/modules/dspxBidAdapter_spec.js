@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from '../../../src/utils.js';
-import {BANNER} from '../../../src/mediaTypes.js';
+import { deepClone } from '../../../src/utils';
+import {BANNER} from '../../../src/mediaTypes';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
@@ -12,7 +12,7 @@ describe('dspxAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'dspx',
       'params': {
         'placement': '6682',
@@ -52,7 +52,7 @@ describe('dspxAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [{
+    let bidRequests = [{
       'bidder': 'dspx',
       'params': {
         'placement': '6682',
@@ -73,123 +73,58 @@ describe('dspxAdapter', function () {
       'bidderRequestId': '22edbae2733bf61',
       'auctionId': '1d1a030790a475',
       'adUnitCode': 'testDiv1',
-
-      'userIdAsEids': [{
-        'source': 'criteo.com',
-        'uids': [{
-          'id': 'criteo',
-          'atype': 1
-        }]
-      }, {
-        'source': 'pubcid.org',
-        'uids': [{
-          'id': 'pubcid',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'netid.de',
-        'uids': [{
-          'id': 'netid',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'uidapi.com',
-        'uids': [{
-          'id': 'uidapi',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': 'sharedid',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'adserver.org',
-        'uids': [{
-          'id': 'adserver',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'pubmatic.com',
-        'uids': [{
-          'id': 'pubmatic',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'yahoo.com',
-        'uids': [{
-          'id': 'yahoo',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'utiq.com',
-        'uids': [{
-          'id': 'utiq',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'euid.eu',
-        'uids': [{
-          'id': 'euid',
-          'atype': 1
-        }]
-      },
-      {
-        'source': 'id5-sync.com',
-        'uids': [
-          {
-            'id': 'ID5UID',
+      'userId': {
+        'netId': '123',
+        'uid2': {'id': '456'},
+        'pubcid': 'e09ab6a3-ae74-4f01-b2e8-81b141d6dc61',
+        'id5id': {
+          'uid': 'ID5-ZHMOcvSShIBZiIth_yYh9odjNFxVEmMQ_i5TArPfWw!ID5*dtrjfV5mPLasyya5TW2IE9oVzQZwx7xRPGyAYS4hcWkAAOoxoFef4bIoREpQys8x',
+          'ext': {
+            'linkType': 2
+          }
+        },
+        'sharedid': {
+          'id': '01EXPPGZ9C8NKG1MTXVHV98505',
+          'third': '01EXPPGZ9C8NKG1MTXVHV98505'
+        },
+        'pubProvidedId': [{
+          'source': 'puburl2.com',
+          'uids': [{
+            'id': 'pubid2'
+          }, {
+            'id': 'pubid2-123'
+          }]
+        }, {
+          'source': 'puburl.com',
+          'uids': [{
+            'id': 'pubid1',
             'atype': 1,
             'ext': {
-              'linkType': 2
+              'stype': 'ppuid'
             }
+          }]
+        }],
+        'euid': {},
+        'tdid': 'tdid_ID',
+      },
+      'crumbs': {
+        'pubcid': 'e09ab6a3-ae74-4f01-b2e8-81b141d6dc61'
+      },
+      'schain': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'example.com',
+            'sid': '0',
+            'hp': 1,
+            'rid': 'bidrequestid',
+            'domain': 'example.com'
           }
         ]
-      }, {
-        source: "domain.com",
-        uids: [{
-          id: "1234",
-          atype: 1,
-          ext: {
-            stype: "ppuid"
-          }
-
-        }]
-      }
-      ],
-      'crumbs': {
-        'pubcid': 'crumbs_pubcid'
-      },
-      'ortb2': {
-        'source': {
-          'ext': {
-            'schain': {
-              'ver': '1.0',
-              'complete': 1,
-              'nodes': [
-                {
-                  'asi': 'example.com',
-                  'sid': '0',
-                  'hp': 1,
-                  'rid': 'bidrequestid',
-                  'domain': 'example.com'
-                }
-              ]
-            }
-          }
-        }
       }
     },
-    { // 1
+    {
       'bidder': 'dspx',
       'params': {
         'placement': '101',
@@ -201,7 +136,7 @@ describe('dspxAdapter', function () {
       'bidId': '30b31c1838de1e2',
       'bidderRequestId': '22edbae2733bf62',
       'auctionId': '1d1a030790a476'
-    }, { // 2
+    }, {
       'bidder': 'dspx',
       'params': {
         'placement': '6682',
@@ -223,7 +158,7 @@ describe('dspxAdapter', function () {
       'auctionId': '1d1a030790a477',
       'adUnitCode': 'testDiv2'
     },
-    { // 3
+    {
       'bidder': 'dspx',
       'params': {
         'placement': '101',
@@ -249,7 +184,7 @@ describe('dspxAdapter', function () {
       'auctionId': '1d1a030790a478',
       'adUnitCode': 'testDiv3'
     },
-    { // 4
+    {
       'bidder': 'dspx',
       'params': {
         'placement': '101',
@@ -274,7 +209,7 @@ describe('dspxAdapter', function () {
       'auctionId': '1d1a030790a478',
       'adUnitCode': 'testDiv4'
     },
-    { // 5
+    {
       'bidder': 'dspx',
       'params': {
         'placement': '101',
@@ -339,7 +274,6 @@ describe('dspxAdapter', function () {
             domain: 'buyer'
           },
           page: 'http://buyer/schain.php?ver=8.5.0-pre:latest-dev-build&pbjs_debug=true',
-          pagecat: ['IAB3'],
           ref: 'http://buyer/pbjsv/',
           content: {
             id: 'contentID',
@@ -361,7 +295,6 @@ describe('dspxAdapter', function () {
             ]
           }
         },
-        bcat: ['BSW1', 'BSW2'],
       }
     };
 
@@ -369,15 +302,15 @@ describe('dspxAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
-      const data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250&schain=1.0%2C1!example.com%2C0%2C1%2Cbidrequestid%2C%2Cexample.com&did_cruid=criteo&did_ppuid=1%3Adomain.com%3A1234&did_pubcid=pubcid&did_netid=netid&did_uid2=uidapi&did_sharedid=sharedid&did_tdid=adserver&did_pbmid=pubmatic&did_yhid=yahoo&did_uqid=utiq&did_euid=euid&did_id5=ID5UID&did_id5_linktype=2&did_cpubcid=crumbs_pubcid');
+      let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250&schain%5Bver%5D=1.0&schain%5Bcomplete%5D=1&schain%5Bnodes%5D%5B0%5D%5Basi%5D=example.com&schain%5Bnodes%5D%5B0%5D%5Bsid%5D=0&schain%5Bnodes%5D%5B0%5D%5Bhp%5D=1&schain%5Bnodes%5D%5B0%5D%5Brid%5D=bidrequestid&schain%5Bnodes%5D%5B0%5D%5Bdomain%5D=example.com&did_netid=123&did_id5=ID5-ZHMOcvSShIBZiIth_yYh9odjNFxVEmMQ_i5TArPfWw!ID5*dtrjfV5mPLasyya5TW2IE9oVzQZwx7xRPGyAYS4hcWkAAOoxoFef4bIoREpQys8x&did_id5_linktype=2&did_uid2=456&did_sharedid=01EXPPGZ9C8NKG1MTXVHV98505&did_pubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61&did_tdid=tdid_ID&did_ppuid=1%3Apuburl.com%3Apubid1&did_cpubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
     it('sends bid request to our DEV endpoint via GET', function () {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL_DEV);
-      const data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&prebidDevMode=1&auctionId=1d1a030790a476&media_types%5Bbanner%5D=300x250');
     });
 
@@ -391,7 +324,7 @@ describe('dspxAdapter', function () {
     it('sends bid request without gdprConsent to our endpoint via GET', function () {
       expect(request3.method).to.equal('GET');
       expect(request3.url).to.equal(ENDPOINT_URL);
-      const data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a477&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
     });
 
@@ -399,14 +332,14 @@ describe('dspxAdapter', function () {
     it('sends bid request without gdprConsent  to our DEV endpoint via GET', function () {
       expect(request4.method).to.equal('GET');
       expect(request4.url).to.equal(ENDPOINT_URL_DEV);
-      const data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
     var request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
     it('sends bid video request to our endpoint via GET', function () {
       expect(request5.method).to.equal('GET');
-      const data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv4&media_types%5Bvideo%5D=640x480&vctx=instream&vf=vast4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
@@ -414,7 +347,7 @@ describe('dspxAdapter', function () {
     it('sends bid request without gdprConsent  to our DEV endpoint with overriden DEV params via GET', function () {
       expect(request6.method).to.equal('GET');
       expect(request6.url).to.equal('http://localhost');
-      const data = request6.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      let data = request6.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=107&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&pfilter%5Btest%5D=1&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bmimes%5D%5B0%5D=video%2Fmp4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
@@ -422,8 +355,8 @@ describe('dspxAdapter', function () {
     it('ortb2 iab_content test', function () {
       expect(request7.method).to.equal('GET');
       expect(request7.url).to.equal('http://localhost');
-      const data = request7.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=107&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&pfilter%5Btest%5D=1&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&pfilter%5Biab_content%5D=cat%3AIAB1-1%7CIAB1-2%7CIAB2-10%2Cepisode%3A1%2Ccontext%3A1%2Cid%3AcontentID%2Ctitle%3AcontentTitle%2Cseries%3AcontentSeries%2Cseason%3AcontentSeason%25203%2Cartist%3AcontentArtist%2Cgenre%3Arock%2Cisrc%3AcontentIsrc%2Curl%3Ahttps%253A%252F%252Fcontent-url.com%252F%2Ckeywords%3Akw1%252Ckw2%252Ckeqword%25203&bcat=BSW1%2CBSW2&pcat=IAB3&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bmimes%5D%5B0%5D=video%2Fmp4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
+      let data = request7.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=107&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&pfilter%5Btest%5D=1&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&pfilter%5Biab_content%5D=cat%3AIAB1-1%7CIAB1-2%7CIAB2-10%2Cepisode%3A1%2Ccontext%3A1%2Cid%3AcontentID%2Ctitle%3AcontentTitle%2Cseries%3AcontentSeries%2Cseason%3AcontentSeason%25203%2Cartist%3AcontentArtist%2Cgenre%3Arock%2Cisrc%3AcontentIsrc%2Curl%3Ahttps%253A%252F%252Fcontent-url.com%252F%2Ckeywords%3Akw1%252Ckw2%252Ckeqword%25203&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bmimes%5D%5B0%5D=video%2Fmp4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
     // bidfloor tests
@@ -562,7 +495,7 @@ describe('dspxAdapter', function () {
       };
 
       config.setConfig(INVALID_TOPICS_DATA);
-      const request = spec.buildRequests([defaultRequest], { ...REQPARAMS, ...INVALID_TOPICS_DATA })[0];
+      let request = spec.buildRequests([defaultRequest], { ...REQPARAMS, ...INVALID_TOPICS_DATA })[0];
       expect(request.data).to.not.contain('segtax');
       expect(request.data).to.not.contain('segclass');
       expect(request.data).to.not.contain('segments');
@@ -570,7 +503,7 @@ describe('dspxAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const serverResponse = {
+    let serverResponse = {
       'body': {
         'cpm': 5000000,
         'crid': 100500,
@@ -586,7 +519,7 @@ describe('dspxAdapter', function () {
         'adomain': ['bdomain']
       }
     };
-    const serverVideoResponse = {
+    let serverVideoResponse = {
       'body': {
         'cpm': 5000000,
         'crid': 100500,
@@ -602,7 +535,7 @@ describe('dspxAdapter', function () {
         'renderer': {id: 1, url: '//player.example.com', options: {}}
       }
     };
-    const serverVideoResponseVastUrl = {
+    let serverVideoResponseVastUrl = {
       'body': {
         'cpm': 5000000,
         'crid': 100500,
@@ -620,7 +553,7 @@ describe('dspxAdapter', function () {
       }
     };
 
-    const expectedResponse = [{
+    let expectedResponse = [{
       requestId: '23beaa6af6cdde',
       cpm: 0.5,
       width: 0,
@@ -667,21 +600,21 @@ describe('dspxAdapter', function () {
     }];
 
     it('should get the correct bid response by display ad', function () {
-      const bidRequest = [{
+      let bidRequest = [{
         'method': 'GET',
         'url': ENDPOINT_URL,
         'data': {
           'bid_id': '30b31c1838de1e'
         }
       }];
-      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains.length).to.equal(1);
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     it('should get the correct dspx video bid response by display ad', function () {
-      const bidRequest = [{
+      let bidRequest = [{
         'method': 'GET',
         'url': ENDPOINT_URL,
         'mediaTypes': {
@@ -694,13 +627,13 @@ describe('dspxAdapter', function () {
           'bid_id': '30b31c1838de1e'
         }
       }];
-      const result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
+      let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[1]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
     it('should get the correct dspx video bid response by display ad (vastUrl)', function () {
-      const bidRequest = [{
+      let bidRequest = [{
         'method': 'GET',
         'url': ENDPOINT_URL,
         'mediaTypes': {
@@ -713,16 +646,16 @@ describe('dspxAdapter', function () {
           'bid_id': '30b31c1838de1e'
         }
       }];
-      const result = spec.interpretResponse(serverVideoResponseVastUrl, bidRequest[0]);
+      let result = spec.interpretResponse(serverVideoResponseVastUrl, bidRequest[0]);
       expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[2]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: {}
       };
-      const result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
@@ -757,22 +690,22 @@ describe('dspxAdapter', function () {
     });
     it(`array should have only one object and it should have a property type = 'iframe'`, function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(1);
-      const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses);
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses);
       expect(userSync).to.have.property('type');
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for iframe`, function () {
-      const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
       expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for image`, function () {
-      const [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
       expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('image');
     });
     it(`we have valid sync url for image and iframe`, function () {
-      const userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
       expect(userSync.length).to.be.equal(3);
       expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
       expect(userSync[0].type).to.be.equal('iframe');

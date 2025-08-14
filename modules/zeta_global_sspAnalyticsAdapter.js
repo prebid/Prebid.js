@@ -108,8 +108,8 @@ function bidTimeoutHandler(args) {
 
 /// /////////// ADAPTER DEFINITION ///////////////////////////
 
-const baseAdapter = adapter({analyticsType: 'endpoint'});
-const zetaAdapter = Object.assign({}, baseAdapter, {
+let baseAdapter = adapter({analyticsType: 'endpoint'});
+let zetaAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(config = {}) {
     if (config.options && config.options.sid) {

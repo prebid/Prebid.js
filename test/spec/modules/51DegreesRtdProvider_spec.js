@@ -8,7 +8,7 @@ import {
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
-import {mergeDeep} from '../../../src/utils.js';
+import {mergeDeep} from '../../../src/utils';
 
 const inject51DegreesMeta = () => {
   const meta = document.createElement('meta');

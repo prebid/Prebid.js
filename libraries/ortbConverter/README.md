@@ -328,7 +328,7 @@ Processor overrides are similar to the override options described above, except 
 - `request` processor overrides take `(orig, ortbRequest, bidderRequest, context)`, where:
     - `orig` is the processor function being overridden, and takes `(ortbRequest, bidderRequest, context)`;
     - `ortbRequest` is the partial request to modify;
-    - `bidderRequest` and `context` are the same arguments passed to [request](#request).
+    - `bidderRequest` and `context` are the same arguments passed to [request](#reuqest).
 - `bidResponse` processor overrides take `(orig, bidResponse, bid, context)`, where:
     - `orig` is the processor function being overridden, and takes `(bidResponse, bid, context)`;
     - `bidResponse` is the partial bid response to modify;

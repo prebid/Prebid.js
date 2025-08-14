@@ -143,7 +143,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 // #region Interpreting Responses
 /**
  *
- * @param {Object} responseData
+ * @param {HeaderBiddingResponse} responseData
  * @param { object } bidParams
  * @returns
  */

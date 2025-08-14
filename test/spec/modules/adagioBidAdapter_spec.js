@@ -12,7 +12,6 @@ import { config } from '../../../src/config.js';
 import { executeRenderer } from '../../../src/Renderer.js';
 import { expect } from 'chai';
 import { userSync } from '../../../src/userSync.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -121,7 +120,7 @@ describe('Adagio bid adapter', () => {
 
   afterEach(() => {
     window.ADAGIO = undefined;
-    getGlobal().bidderSettings = {};
+    $$PREBID_GLOBAL$$.bidderSettings = {};
 
     utilsMock.restore();
 
@@ -295,7 +294,7 @@ describe('Adagio bid adapter', () => {
       const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
 
       const bid01 = new BidRequestBuilder().withParams().build();
-      const ortb = {
+      let ortb = {
         ortb2: {
           site: {
             ext: {
@@ -619,13 +618,12 @@ describe('Adagio bid adapter', () => {
       };
 
       it('should add the schain if available at bidder level', function() {
-        const bid01 = new BidRequestBuilder({ ortb2: { source: { ext: { schain } } } }).withParams().build();
+        const bid01 = new BidRequestBuilder({ schain }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data).to.have.all.keys(expectedDataKeys);
-        expect(requests[0].data.schain).to.exist;
         expect(requests[0].data.schain).to.deep.equal(schain);
       });
 
@@ -1001,8 +999,7 @@ describe('Adagio bid adapter', () => {
         const bid01 = new BidRequestBuilder().withParams().build();
         bid01.ortb2Imp = {
           ext: {
-            data: {},
-            gpid,
+            data: { pbadslot: gpid }
           }
         };
         const bidderRequest = new BidderRequestBuilder().build();
@@ -1140,7 +1137,7 @@ describe('Adagio bid adapter', () => {
   });
 
   describe('interpretResponse()', function() {
-    const serverResponse = {
+    let serverResponse = {
       body: {
         data: {
           pred: 1
@@ -1166,7 +1163,7 @@ describe('Adagio bid adapter', () => {
       }
     };
 
-    const bidRequest = {
+    let bidRequest = {
       data: {
         adUnits: [{
           bidder: 'adagio',
@@ -1210,7 +1207,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should handle properly a correct bid response', function() {
-      const expectedResponse = [{
+      let expectedResponse = [{
         ad: '<div style="background-color:red; height:250px; width:300px"></div>',
         cpm: 1,
         creativeId: 'creativeId',
@@ -1243,7 +1240,7 @@ describe('Adagio bid adapter', () => {
       const altServerResponse = utils.deepClone(serverResponse);
       delete altServerResponse.body.bids[0].meta;
 
-      const expectedResponse = [{
+      let expectedResponse = [{
         ad: '<div style="background-color:red; height:250px; width:300px"></div>',
         cpm: 1,
         creativeId: 'creativeId',
@@ -1445,6 +1442,8 @@ describe('Adagio bid adapter', () => {
 
       const bidRequestNative = utils.deepClone(bidRequest)
       bidRequestNative.nativeParams = {
+        sendTargetingKeys: false,
+
         clickUrl: {
           required: true,
         },
@@ -1573,7 +1572,7 @@ describe('Adagio bid adapter', () => {
         }
       }];
 
-      const result = spec.getUserSyncs(syncOptions, serverResponses);
+      let result = spec.getUserSyncs(syncOptions, serverResponses);
 
       expect(result[0].type).to.equal('iframe');
       expect(result[0].url).contain('setuid');

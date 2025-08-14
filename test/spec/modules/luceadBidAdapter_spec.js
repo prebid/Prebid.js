@@ -1,3 +1,4 @@
+ 
 import { expect } from 'chai';
 import { spec } from 'modules/luceadBidAdapter.js';
 import sinon from 'sinon';
@@ -45,7 +46,7 @@ describe('Lucead Adapter', () => {
     ];
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     });
 
     it('should trigger impression pixel', function () {

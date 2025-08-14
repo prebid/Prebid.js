@@ -7,7 +7,7 @@ describe('GDPR FPD enrichment', () => {
   let sandbox, consent;
   beforeEach(() => {
     consent = null;
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => consent);
   });
   afterEach(() => {

@@ -1,8 +1,8 @@
-import {buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {find} from '../src/polyfill.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -56,17 +56,14 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
-      schain: anyBid?.ortb2?.source?.ext?.schain,
-      ver: {
-        pb: getGlobal().version,
-      },
+      schain: anyBid.schain
     };
 
-    const eids = anyBid.userIdAsEids;
+    const userIds = anyBid.userId;
 
-    if (!isEmpty(eids)) {
+    if (!isEmpty(userIds)) {
       basePayload.user = {
-        eids: eids
+        euids: userIds
       };
     }
 
@@ -118,7 +115,11 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
-          meta: {...bidResponse.meta},
+          meta: {
+            advertiserDomains: bidResponse.adomain,
+            dsa: bidResponse.dsa,
+            campaignType: bidResponse.campaignType,
+          },
           mediaType,
         };
 
@@ -264,7 +265,7 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
     return {...floor, size};
   });
 
-  const floorWithCurrency = (([defaultFloor].concat(sizeFloors)) || []).find(floor => floor.currency);
+  const floorWithCurrency = find([defaultFloor].concat(sizeFloors), floor => floor.currency);
 
   if (!floorWithCurrency) {
     return undefined;

@@ -16,15 +16,15 @@ import {
   mergeDeep,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
-import { OUTSTREAM } from '../src/video.js';
+import { OUTSTREAM, validateOrtbVideoFields } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
-import { validateOrtbFields } from '../src/prebid.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -156,7 +156,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'ortb2.source.ext.schain');
+  return deepAccess(bidRequest, 'schain');
 }
 
 function _getEids(bidRequest) {
@@ -195,7 +195,7 @@ function _buildVideoBidRequest(bidRequest) {
   }
 
   bidRequest.mediaTypes.video = videoParams;
-  validateOrtbFields(bidRequest, 'video');
+  validateOrtbVideoFields(bidRequest);
 }
 
 function _parseNativeBidResponse(bid) {
@@ -278,7 +278,7 @@ function _parseNativeBidResponse(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          const script = `<script async src="${tracker.url}"></script>`;
+          const script = `<script async src=\"${tracker.url}\"></script>`;
           if (!native.javascriptTrackers) {
             native.javascriptTrackers = script;
           } else {
@@ -638,16 +638,16 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         bidRequest.gpid = gpid;
       }
 
-      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      let instl = deepAccess(bidRequest, 'ortb2Imp.instl');
       if (instl !== undefined) {
         bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
       }
-      const rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      let rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
       if (rwdd !== undefined) {
         bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
       }
@@ -659,12 +659,7 @@ export const spec = {
         adunit_position: deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position', null)
       }
       // Clean the features object from null or undefined values.
-      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
-        if (v != null) {
-          a[k] = v;
-        }
-        return a;
-      }, {})
+      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => (v == null ? a : (a[k] = v, a)), {})
 
       // Remove some params that are not needed on the server side.
       delete bidRequest.params.siteId;
@@ -747,7 +742,7 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, bidRequest) {
-    const bidResponses = [];
+    let bidResponses = [];
     try {
       const response = serverResponse.body;
       if (response) {
@@ -762,7 +757,7 @@ export const spec = {
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
-            const bidReq = bidRequest.data.adUnits.find(bid => bid.bidId === bidObj.requestId);
+            const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response

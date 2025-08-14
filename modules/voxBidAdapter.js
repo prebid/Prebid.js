@@ -1,8 +1,9 @@
-import {_map, isArray} from '../src/utils.js';
+import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
+import {Renderer} from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -27,7 +28,7 @@ function buildBidRequests(validBidRequests, bidderRequest) {
     const params = bid.params;
     const bidRequest = {
       floorInfo,
-      schain: bid?.ortb2?.source?.ext?.schain,
+      schain: bid.schain,
       userId: bid.userId,
       bidId: bid.bidId,
       // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
@@ -40,6 +41,39 @@ function buildBidRequests(validBidRequests, bidderRequest) {
 
     return bidRequest;
   })
+}
+
+const outstreamRender = bid => {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      rendererOptions: {
+        showBigPlayButton: false,
+        showProgressBar: 'bar',
+        showVolume: false,
+        allowFullscreen: true,
+        skippable: false,
+        content: bid.vastXml
+      }
+    });
+  });
+}
+
+const createRenderer = (bid) => {
+  const renderer = Renderer.install({
+    targetId: bid.adUnitCode,
+    url: VIDEO_RENDERER_URL,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
 }
 
 function buildBid(bidData) {
@@ -55,7 +89,8 @@ function buildBid(bidData) {
     ttl: TTL,
     content: bidData.content,
     meta: {
-      advertiserDomains: bidData.advertiserDomains || []}
+      advertiserDomains: bidData.advertiserDomains || [],
+    }
   };
 
   if (bidData.placement === 'video') {
@@ -68,7 +103,7 @@ function buildBid(bidData) {
       bid.height = video.playerSize[0][1];
 
       if (video.context === 'outstream') {
-        bid.renderer = createRenderer(bid, VIDEO_RENDERER_URL);
+        bid.renderer = createRenderer(bid);
       }
     }
   } else if (bidData.placement === 'inImage') {
@@ -80,6 +115,20 @@ function buildBid(bidData) {
   }
 
   return bid;
+}
+
+function getMediaTypeFromBid(bid) {
+  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
+}
+
+function hasVideoMandatoryParams(mediaTypes) {
+  const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
+
+  const isPlayerSize =
+    !!deepAccess(mediaTypes, 'video.playerSize') &&
+    isArray(deepAccess(mediaTypes, 'video.playerSize'));
+
+  return isHasVideoContext && isPlayerSize;
 }
 
 function wrapInImageBanner(bid, bidData) {
@@ -159,9 +208,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} validBidRequests - an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
@@ -196,12 +244,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidRequests = JSON.parse(bidRequest.data).bidRequests;
+    let bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
-        const rawBid = ((bidRequests) || []).find(function (item) {
+        let rawBid = find(bidRequests, function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;

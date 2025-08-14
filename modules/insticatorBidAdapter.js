@@ -3,6 +3,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
@@ -29,7 +30,8 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
   'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
-  'api': (value) => isArrayOfNums(value)};
+  'api': (value) => isArrayOfNums(value),
+};
 
 const ORTB_SITE_FIRST_PARTY_DATA = {
   'cat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
@@ -112,7 +114,7 @@ function buildVideo(bidRequest) {
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
 
-  const optionalParams = {};
+  let optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (bidRequestVideo[param] && OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
       optionalParams[param] = bidRequestVideo[param];
@@ -135,7 +137,7 @@ function buildVideo(bidRequest) {
     optionalParams['context'] = context;
   }
 
-  const videoObj = {
+  let videoObj = {
     mimes,
     w,
     h,
@@ -168,7 +170,7 @@ function buildImpression(bidRequest) {
     deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
   }
 
-  const bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+  let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
 
   if (!isNaN(bidFloor)) {
     imp.bidfloor = deepAccess(bidRequest, 'params.floor');
@@ -282,7 +284,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function buildRegs(bidderRequest) {
-  const regs = {
+  let regs = {
     ext: {},
   };
   if (bidderRequest.gdprConsent) {
@@ -355,10 +357,9 @@ function buildUser(bid) {
 }
 
 function extractSchain(bids, requestId) {
-  if (!bids || bids.length === 0) return;
+  if (!bids || bids.length === 0 || !bids[0].schain) return;
 
-  const schain = bids[0]?.ortb2?.source?.ext?.schain;
-  if (!schain) return;
+  const schain = bids[0].schain;
   if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }
@@ -443,7 +444,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 }
 
 function buildBid(bid, bidderRequest) {
-  const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
+  const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
   let meta = {}
 
   if (bid.ext && bid.ext.meta) {
@@ -458,7 +459,7 @@ function buildBid(bid, bidderRequest) {
   if (bid.adm && bid.adm.includes('<VAST')) {
     mediaType = 'video';
   }
-  const bidResponse = {
+  let bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
@@ -552,7 +553,7 @@ function validateBanner(bid) {
 function validateVideo(bid) {
   const videoParams = deepAccess(bid, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bid, 'params.video');
-  const video = {
+  let video = {
     ...videoParams,
     ...videoBidderParams // bidder specific overrides for video
   }

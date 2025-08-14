@@ -2,7 +2,7 @@ import {isEmptyStr, isFn, isStr, logError, mergeDeep} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-
+import {includes} from '../src/polyfill.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'medianet';
@@ -33,7 +33,7 @@ function init(config) {
 
 function getBidRequestData(requestBidsProps, callback, config, userConsent) {
   executeCommand(() => {
-    const adUnits = getAdUnits(requestBidsProps.adUnits, requestBidsProps.adUnitCodes);
+    let adUnits = getAdUnits(requestBidsProps.adUnits, requestBidsProps.adUnitCodes);
     const request = window.mnjs.onPrebidRequestBid({requestBidsProps, config, userConsent});
     if (!request) {
       callback();
@@ -91,7 +91,7 @@ function loadRtdScript(customerId) {
 function getAdUnits(adUnits, adUnitCodes) {
   adUnits = adUnits || getGlobal().adUnits || [];
   if (adUnitCodes && adUnitCodes.length) {
-    adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
+    adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
   }
   return adUnits;
 }

@@ -27,8 +27,7 @@ AcuityAds bid adapter supports Banner, Video (instream and outstream) and Native
                             bidder: 'acuityads',
                             params: {
                                 placementId: 'testBanner',
-                                endpointId: 'testBanner',
-                                publisherId: 'testBanner',
+                            }
                         }
                     ]
                 },
@@ -47,8 +46,6 @@ AcuityAds bid adapter supports Banner, Video (instream and outstream) and Native
                             bidder: 'acuityads',
                             params: {
                                 placementId: 'testVideo',
-                                endpointId: 'testVideo',
-                                publisherId: 'testVideo',
                             }
                         }
                     ]
@@ -74,8 +71,6 @@ AcuityAds bid adapter supports Banner, Video (instream and outstream) and Native
                             bidder: 'acuityads',
                             params: {
                                 placementId: 'testNative',
-                                endpointId: 'testNative',
-                                publisherId: 'testNative',
                             }
                         }
                     ]

@@ -2,6 +2,7 @@ import {_map, deepAccess, flatten, isArray, logError, parseSizesInput} from '../
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {find} from '../src/polyfill.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 import {
   createTag, getUserSyncsFn,
@@ -67,7 +68,7 @@ function parseResponse(serverResponse, adapterRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const request = ((adapterRequest.bids) || []).find((bidRequest) => {
+    const request = find(adapterRequest.bids, (bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 

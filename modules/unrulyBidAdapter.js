@@ -41,10 +41,10 @@ const addBidFloorInfo = (validBid) => {
 };
 
 const RemoveDuplicateSizes = (validBid) => {
-  const bannerMediaType = deepAccess(validBid, 'mediaTypes.banner');
+  let bannerMediaType = deepAccess(validBid, 'mediaTypes.banner');
   if (bannerMediaType) {
-    const seenSizes = {};
-    const newSizesArray = [];
+    let seenSizes = {};
+    let newSizesArray = [];
     bannerMediaType.sizes.forEach((size) => {
       if (!seenSizes[size.toString()]) {
         seenSizes[size.toString()] = true;
@@ -65,7 +65,7 @@ const ConfigureProtectedAudience = (validBid, protectedAudienceEnabled) => {
 const getRequests = (conf, validBidRequests, bidderRequest) => {
   const {bids, bidderRequestId, bidderCode, ...bidderRequestData} = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
-  const requestBySiteId = {};
+  let requestBySiteId = {};
 
   validBidRequests.forEach((validBid) => {
     const currSiteId = validBid.params.siteId;
@@ -76,10 +76,10 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
     requestBySiteId[currSiteId].push(validBid);
   });
 
-  const request = [];
+  let request = [];
 
   Object.keys(requestBySiteId).forEach((key) => {
-    const data = {
+    let data = {
       bidderRequest: Object.assign({},
         {
           bids: requestBySiteId[key],
@@ -97,16 +97,16 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
 };
 
 const handleBidResponseByMediaType = (bids) => {
-  const bidResponses = [];
+  let bidResponses = [];
 
   bids.forEach((bid) => {
     let parsedBidResponse;
-    const bidMediaType = deepAccess(bid, 'meta.mediaType');
+    let bidMediaType = deepAccess(bid, 'meta.mediaType');
     if (bidMediaType && bidMediaType.toLowerCase() === 'banner') {
       bid.mediaType = BANNER;
       parsedBidResponse = handleBannerBid(bid);
     } else if (bidMediaType && bidMediaType.toLowerCase() === 'video') {
-      const context = deepAccess(bid, 'meta.videoContext');
+      let context = deepAccess(bid, 'meta.videoContext');
       bid.mediaType = VIDEO;
       if (context === 'instream') {
         parsedBidResponse = handleInStreamBid(bid);
@@ -209,8 +209,8 @@ export const adapter = {
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 36,
   isBidRequestValid: function (bid) {
-    const siteId = deepAccess(bid, 'params.siteId');
-    const isBidValid = siteId && isMediaTypesValid(bid);
+    let siteId = deepAccess(bid, 'params.siteId');
+    let isBidValid = siteId && isMediaTypesValid(bid);
     return !!isBidValid;
   },
 
@@ -243,8 +243,8 @@ export const adapter = {
     }
 
     if (serverResponseBody.auctionConfigs) {
-      const auctionConfigs = serverResponseBody.auctionConfigs;
-      const bidIdList = Object.keys(auctionConfigs);
+      let auctionConfigs = serverResponseBody.auctionConfigs;
+      let bidIdList = Object.keys(auctionConfigs);
       if (bidIdList.length) {
         bidIdList.forEach((bidId) => {
           fledgeAuctionConfigs = [{

@@ -1,6 +1,6 @@
 import { config } from 'src/config.js';
 import * as azerionedgeRTD from 'modules/azerionedgeRtdProvider.js';
-import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import { loadExternalScript } from '../../../src/adloader.js';
 
 describe('Azerion Edge RTD submodule', function () {
   const STORAGE_KEY = 'ht-pa-v1-a';
@@ -17,7 +17,7 @@ describe('Azerion Edge RTD submodule', function () {
 
   const resetAll = () => {
     window.azerionPublisherAudiences.resetHistory();
-    loadExternalScriptStub.resetHistory();
+    loadExternalScript.resetHistory();
   }
 
   let reqBidsConfigObj;
@@ -51,12 +51,12 @@ describe('Azerion Edge RTD submodule', function () {
     });
 
     it('should load external script', function () {
-      expect(loadExternalScriptStub.called).to.be.true;
+      expect(loadExternalScript.called).to.be.true;
     });
 
     it('should load external script with default versioned url', function () {
       const expected = 'https://edge.hyth.io/js/v1/azerion-edge.min.js';
-      expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
+      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
     });
 
     [
@@ -82,7 +82,7 @@ describe('Azerion Edge RTD submodule', function () {
 
       it('should load external script with publisher id url', function () {
         const expected = `https://edge.hyth.io/js/v1/${key}/azerion-edge.min.js`;
-        expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
+        expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
       });
     });
 

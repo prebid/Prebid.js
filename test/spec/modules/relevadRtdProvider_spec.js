@@ -67,19 +67,19 @@ const adUnitsCommon = [
 describe('relevadRtdProvider', function() {
   describe('relevadSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(relevadSubmodule.init()).to.equal(true);
+		      expect(relevadSubmodule.init()).to.equal(true);
     });
   });
 
   describe('Add segments and categories test 1', function() {
     it('adds contextual categories and segments', function() {
-      const moduleConfig = { ...deepClone(moduleConfigCommon) };
-      const reqBids = {
+      let moduleConfig = { ...deepClone(moduleConfigCommon) };
+      let reqBids = {
         ...deepClone(reqBidsCommon),
         'adUnits': deepClone(adUnitsCommon),
       };
 
-      const data = {
+      let data = {
         segments: ['segment1', 'segment2'],
         cats: { 'category3': 100 },
       };
@@ -99,13 +99,13 @@ describe('relevadRtdProvider', function() {
 
   describe('Add segments and categories test 2 to one bidder out of many', function() {
     it('adds contextual categories and segments', function() {
-      const moduleConfig = { ...deepClone(moduleConfigCommon) };
-      const reqBids = {
+      let moduleConfig = { ...deepClone(moduleConfigCommon) };
+      let reqBids = {
         ...deepClone(reqBidsCommon),
         'adUnits': deepClone(adUnitsCommon),
       };
 
-      const data = {
+      let data = {
         segments: ['segment1', 'segment2'],
         cats: { 'category3': 100 },
         wl: { 'appnexus': { 'placementId': '13144370' } },
@@ -127,7 +127,7 @@ describe('relevadRtdProvider', function() {
 
   describe('Add segments and categories test 4', function() {
     it('adds contextual categories and segments', function() {
-      const moduleConfig = {
+      let moduleConfig = {
         'dryrun': true,
         params: {
           setgpt: true,
@@ -136,7 +136,7 @@ describe('relevadRtdProvider', function() {
         }
       };
 
-      const reqBids = {
+      let reqBids = {
         'timeout': 10000,
         'adUnits': deepClone(adUnitsCommon),
         'adUnitCodes': [ '/19968336/header-bid-tag-0' ],
@@ -163,7 +163,7 @@ describe('relevadRtdProvider', function() {
         'defer': { 'promise': {} }
       }
 
-      const data = {
+      let data = {
         segments: ['segment1', 'segment2'],
         cats: {'category3': 100}
       };
@@ -185,7 +185,7 @@ describe('relevadRtdProvider', function() {
         }
       };
 
-      const reqBidsConfigObj = {
+      let reqBidsConfigObj = {
         adUnits: [{
           bids: [{
             bidder: 'appnexus',
@@ -198,14 +198,14 @@ describe('relevadRtdProvider', function() {
         }]
       };
 
-      const data = {
+      let data = {
         segments: ['segment1', 'segment2'],
         cats: {'category3': 100}
       };
 
       getBidRequestData(reqBidsConfigObj, () => {}, moduleConfig, {});
 
-      const request = server.requests[0];
+      let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
 
       expect(reqBidsConfigObj.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
@@ -376,9 +376,9 @@ describe('Process auction end data', function() {
       'userConsent': { 'gdpr': null, 'usp': null, 'gpp': null, 'coppa': false }
     };
 
-    const auctionDetails = auctionEndData['auctionDetails'];
-    const userConsent = auctionEndData['userConsent'];
-    const moduleConfig = auctionEndData['config'];
+    let auctionDetails = auctionEndData['auctionDetails'];
+    let userConsent = auctionEndData['userConsent'];
+    let moduleConfig = auctionEndData['config'];
 
     relevadSubmodule.onAuctionEndEvent(auctionDetails, moduleConfig, userConsent);
     expect(serverData.clientdata).to.deep.equal(

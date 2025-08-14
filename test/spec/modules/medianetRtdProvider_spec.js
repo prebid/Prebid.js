@@ -18,7 +18,7 @@ const conf = {
 
 describe('medianet realtime module', function () {
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     window.mnjs = window.mnjs || {};
     window.mnjs.que = window.mnjs.que || [];
     window.mnjs.setData = setDataSpy = sandbox.spy();

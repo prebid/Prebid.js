@@ -81,14 +81,8 @@ describe('TargetVideo Bid Adapter', function() {
       }]
     };
 
-    const videoRequestCloned = deepClone(videoRequest);
-    videoRequestCloned[0].ortb2 = {
-      source: {
-        ext: {
-          schain: globalSchain
-        }
-      }
-    };
+    let videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].schain = globalSchain;
 
     const request = spec.buildRequests(videoRequestCloned, defaultBidderRequest);
     expect(request).to.not.be.empty;
@@ -97,52 +91,6 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload).to.not.be.empty;
     expect(payload.source.ext.schain).to.exist;
     expect(payload.source.ext.schain).to.deep.equal(globalSchain);
-  });
-
-  it('Test the VIDEO request eids and user data sending', function() {
-    const userData = [
-      {
-        ext: { segtax: 600, segclass: '1' },
-        name: 'example.com',
-        segment: [{ id: '243' }],
-      },
-      {
-        ext: { segtax: 600, segclass: '1' },
-        name: 'ads.example.org',
-        segment: [{ id: '243' }],
-      },
-    ];
-    const userIdAsEids = [
-      {
-        source: 'test1.org',
-        uids: [{id: '123'}]
-      }
-    ];
-    const bidderRequestWithUserData = {
-      ...defaultBidderRequest,
-      ortb2: {
-        user: {
-          data: userData
-        }
-      }
-    };
-    const expected = {
-      ext: {
-        eids: userIdAsEids,
-        data: bidderRequestWithUserData.ortb2.user.data,
-      }
-    };
-
-    const videoRequestCloned = deepClone(videoRequest);
-    videoRequestCloned[0].userIdAsEids = userIdAsEids;
-
-    const request = spec.buildRequests(videoRequestCloned, bidderRequestWithUserData);
-    expect(request).to.not.be.empty;
-
-    const payload = JSON.parse(request[0].data);
-    expect(payload).to.not.be.empty;
-    expect(payload.user).to.exist;
-    expect(payload.user).to.deep.equal(expected);
   });
 
   it('Handle BANNER nobid responses', function() {
@@ -253,8 +201,8 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test BANNER GDPR consent information is present in the request', function() {
-    const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-    const bidderRequest = {
+    let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+    let bidderRequest = {
       'bidderCode': 'targetVideo',
       'auctionId': '1d1a030790a475',
       'bidderRequestId': '22edbae2733bf6',
@@ -278,8 +226,8 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test BANNER US Privacy string is present in the request', function() {
-    const consentString = '1YA-';
-    const bidderRequest = {
+    let consentString = '1YA-';
+    let bidderRequest = {
       'bidderCode': 'targetVideo',
       'auctionId': '1d1a030790a475',
       'bidderRequestId': '22edbae2733bf6',
@@ -296,9 +244,9 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test VIDEO GDPR and USP consents  are present in the request', function() {
-    const gdprConsentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-    const uspConsentString = '1YA-';
-    const bidderRequest = {
+    let gdprConsentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+    let uspConsentString = '1YA-';
+    let bidderRequest = {
       'bidderCode': 'targetVideo',
       'bidderRequestId': '22edbae2733bf6',
       'timeout': 3000,
@@ -320,7 +268,7 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test userSync have only one object and it should have a property type=iframe', function () {
-    const userSync = spec.getUserSyncs({ iframeEnabled: true });
+    let userSync = spec.getUserSyncs({ iframeEnabled: true });
     expect(userSync).to.be.an('array');
     expect(userSync.length).to.be.equal(1);
     expect(userSync[0]).to.have.property('type');
@@ -328,13 +276,13 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test userSync valid sync url for iframe', function () {
-    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
     expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=targetvideo&gdpr=0&gdpr_consent=anyString');
     expect(userSync.type).to.be.equal('iframe');
   });
 
   it('Test userSyncs iframeEnabled=false', function () {
-    const userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    let userSyncs = spec.getUserSyncs({iframeEnabled: false});
     expect(userSyncs).to.have.lengthOf(0);
   });
 });

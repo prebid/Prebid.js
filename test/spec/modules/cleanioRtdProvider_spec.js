@@ -4,8 +4,8 @@ import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
-import { __CLEANIO_TEST__ } from '../../../modules/cleanioRtdProvider.js';
-import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
+import { __TEST__ } from '../../../modules/cleanioRtdProvider.js';
+import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
 
 const {
   readConfig,
@@ -15,7 +15,7 @@ const {
   bidWrapStepAugmentHtml,
   bidWrapStepProtectByWrapping,
   beforeInit,
-} = __CLEANIO_TEST__;
+} = __TEST__;
 
 sinon.assert.expose(chai.assert, { prefix: 'sinon' });
 
@@ -68,7 +68,7 @@ describe('clean.io RTD module', function () {
     });
 
     it('pageInitStepProtectPage() should insert script element', function() {
-      pageInitStepProtectPage(fakeScriptURL, 'clean.io');
+      pageInitStepProtectPage(fakeScriptURL);
 
       sinon.assert.calledOnce(loadExternalScriptStub);
       sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'clean.io');
@@ -100,7 +100,7 @@ describe('clean.io RTD module', function () {
     });
   });
 
-  describe('Submodule execution', function() {
+  describe('Sumbodule execution', function() {
     let submoduleStub;
     let insertElementStub;
     beforeEach(function () {

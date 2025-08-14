@@ -284,7 +284,7 @@ function onBidWon(bid) {
 
 /**
  * Send debug when we timeout
- * @param {Array<Object>} timeoutData
+ * @param {Array[{}]} timeoutData
  */
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);

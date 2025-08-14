@@ -18,16 +18,16 @@ export const spec = {
   aliases: ['saambaa'],
   isBidRequestValid(bidRequest) {
     if (typeof bidRequest !== 'undefined') {
-      if (typeof bidRequest.params === 'undefined') { return false; }
+      if (bidRequest.bidder !== BIDDER_CODE && typeof bidRequest.params === 'undefined') { return false; }
       if (bidRequest === '' || bidRequest.params.placement === '' || bidRequest.params.pubid === '') { return false; }
       return true;
     } else { return false; }
   },
 
   buildRequests(bids, bidderRequest) {
-    const requests = [];
-    const videoBids = bids.filter(bid => isVideoBidValid(bid));
-    const bannerBids = bids.filter(bid => isBannerBidValid(bid));
+    let requests = [];
+    let videoBids = bids.filter(bid => isVideoBidValid(bid));
+    let bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
       pubid = getVideoBidParam(bid, 'pubid');
       requests.push({
@@ -51,10 +51,10 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, { bidRequest }) {
-    const response = serverResponse.body;
+    let response = serverResponse.body;
     if (response !== null && isEmpty(response) === false) {
       if (isVideoBid(bidRequest)) {
-        const bidResponse = {
+        let bidResponse = {
           requestId: response.id,
           cpm: response.seatbid[0].bid[0].price,
           width: response.seatbid[0].bid[0].w,

@@ -1,12 +1,10 @@
 import { expect } from 'chai';
-import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import { config } from '../../../src/config.js';
+import { spec as adapter, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
+import { BANNER } from '../../../src/mediaTypes';
+import { config } from '../../../src/config';
 import sinon from 'sinon';
 
 describe('ExcoBidAdapter', function () {
-  const helpers = new AdapterHelpers();
-
   const BID = {
     bidId: '1731e91fa1236fd',
     adUnitCode: '300x250',
@@ -70,28 +68,6 @@ describe('ExcoBidAdapter', function () {
         },
       }
     },
-  };
-
-  const BID_SERVER_RESPONSE = {
-    body: {
-      ext: {
-        usersync: {
-          exco: {
-            status: 'none',
-            syncs: [
-              {
-                url: 'https://example.com/sync.gif',
-                type: 'image'
-              },
-              {
-                url: 'https://example.com/sync.html',
-                type: 'iframe'
-              }
-            ]
-          }
-        }
-      }
-    }
   };
 
   let BUILT_REQ = null;
@@ -160,9 +136,8 @@ describe('ExcoBidAdapter', function () {
                 id: 'b7b6eddb-9924-425e-aa52-5eba56689abe',
                 impid: BID.bidId,
                 cpm: 10.56,
-                adm: '<iframe>console.log("hello world")</iframe>',
+                ad: '<iframe>console.log("hello world")</iframe>',
                 lurl: 'https://ads-ssp-stg.hit.buzz/loss?loss=${AUCTION_LOSS}&min_to_win=${AUCTION_MIN_TO_WIN}',
-                nurl: 'http://example.com/win/1234',
                 adomain: ['crest.com'],
                 iurl: 'https://thetradedesk-t-general.s3.amazonaws.com/AdvertiserLogos/qrr9d3g.png',
                 crid: 'h6bvt3rl',
@@ -210,10 +185,10 @@ describe('ExcoBidAdapter', function () {
           ],
           mediaType: BANNER
         },
-        ad: '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="http://example.com/win/1234"></div><iframe>console.log("hello world")</iframe>',
+        ad: '<iframe>console.log("hello world")</iframe>',
         netRevenue: true,
-        nurl: 'http://example.com/win/1234',
         currency: 'USD',
+        vastXml: undefined,
         adUrl: undefined,
       });
     });
@@ -234,168 +209,6 @@ describe('ExcoBidAdapter', function () {
         ad: 'great ad',
       }, BUILT_REQ);
       expect(responses).to.have.length(0);
-    });
-  });
-
-  describe('getUserSyncs', function () {
-    const serverResponses = [BID_SERVER_RESPONSE];
-
-    it('should return empty if no server responses', function () {
-      const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
-      expect(syncs).to.deep.equal([]);
-    });
-
-    it('should return iframe only user syncs', function () {
-      const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses);
-      expect(syncs).to.deep.equal([
-        { type: 'iframe', url: 'https://example.com/sync.html' },
-      ]);
-    });
-
-    it('should return pixels only user syncs', function () {
-      const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses);
-      expect(syncs).to.deep.equal([
-        { type: 'image', url: 'https://example.com/sync.gif' },
-      ]);
-    });
-  });
-
-  describe('onTimeout', function () {
-    let stubbedFetch;
-    const bid = {
-      bidder: adapter.code,
-      adUnitCode: 'adunit-code',
-      sizes: [[300, 250]],
-      params: {
-        accountId: 'accountId',
-        publisherId: 'publisherId',
-        tagId: 'tagId',
-      },
-      metrics: {
-        timeSince: () => 500,
-      },
-      ortb2: {}
-    };
-
-    beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
-    afterEach(function() {
-      stubbedFetch.restore();
-    });
-
-    it('should exists and be a function', () => {
-      expect(adapter.onTimeout).to.exist.and.to.be.a('function');
-    });
-
-    it('Should create event url', function() {
-      const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout');
-      adapter.onTimeout([bid]);
-      expect(stubbedFetch.calledWith(pixelUrl)).to.be.true;
-    });
-
-    it('Should trigger event url', function() {
-      adapter.onTimeout([bid]);
-      expect(stubbedFetch.callCount).to.equal(1);
-    });
-  });
-
-  describe('onBidWon', function() {
-    let stubbedFetch;
-
-    beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
-    afterEach(function() {
-      stubbedFetch.restore();
-    });
-
-    it('should exists and be a function', () => {
-      expect(adapter.onBidWon).to.exist.and.to.be.a('function');
-    });
-
-    it('Should trigger nurl pixel', function() {
-      const bid = {
-        bidder: adapter.code,
-        adUnitCode: 'adunit-code',
-        sizes: [[300, 250]],
-        nurl: 'http://example.com/win/1234',
-        mediaType: VIDEO,
-        params: {
-          accountId: 'accountId',
-          publisherId: 'publisherId',
-          tagId: 'tagId',
-        }
-      };
-
-      adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(1);
-    });
-
-    it('Should trigger nurl pixel with correct parameters', function() {
-      const bid = {
-        bidder: adapter.code,
-        adUnitCode: 'adunit-code',
-        sizes: [[300, 250]],
-        nurl: 'http://example.com/win/1234?ad_auction_won',
-        mediaType: VIDEO,
-        params: {
-          accountId: 'accountId',
-          publisherId: 'publisherId',
-          tagId: 'tagId',
-        }
-      };
-
-      adapter.onBidWon(bid);
-
-      expect(stubbedFetch.callCount).to.equal(1);
-      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won');
-    });
-
-    it('Should not trigger pixel if no bid nurl', function() {
-      const bid = {
-        bidder: adapter.code,
-        adUnitCode: 'adunit-code',
-        sizes: [[300, 250]],
-        params: {
-          accountId: 'accountId',
-          publisherId: 'publisherId',
-          tagId: 'tagId',
-        }
-      };
-
-      adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(0);
-    });
-  });
-
-  describe('isDebugEnabled', function () {
-    let originalConfig;
-
-    beforeEach(function () {
-      originalConfig = config.getConfig('debug');
-    });
-
-    afterEach(function () {
-      config.setConfig({ debug: originalConfig });
-    });
-
-    it('should return true if debug is enabled in config', function () {
-      config.setConfig({ debug: true });
-      expect(helpers.isDebugEnabled()).to.be.true;
-    });
-
-    it('should return false if debug is disabled in config', function () {
-      config.setConfig({ debug: false });
-      expect(helpers.isDebugEnabled()).to.be.false;
-    });
-
-    it('should return true if URL contains exco_debug=true', function () {
-      expect(helpers.isDebugEnabled('https://example.com?exco_debug=true')).to.be.true;
-    });
-
-    it('should return false if URL does not contain exco_debug=true', function () {
-      expect(helpers.isDebugEnabled('https://example.com')).to.be.false;
     });
   });
 });

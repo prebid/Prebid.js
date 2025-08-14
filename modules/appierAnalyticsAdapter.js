@@ -35,7 +35,7 @@ export const getCpmInUsd = function (bid) {
 const analyticsOptions = {};
 
 export const parseBidderCode = function (bid) {
-  const bidderCode = bid.bidderCode || bid.bidder;
+  let bidderCode = bid.bidderCode || bid.bidder;
   return bidderCode.toLowerCase();
 };
 

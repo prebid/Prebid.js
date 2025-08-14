@@ -169,7 +169,7 @@ function vdoBuildPlacement(vdoBidRequest) {
       ortb2Imp: vdoBidRequest.ortb2Imp,
       publisherId: vdoBidRequest.params.publisherId,
       userIdAsEids: vdoBidRequest.userIdAsEids,
-      supplyChain: vdoBidRequest?.ortb2?.source?.ext?.schain,
+      supplyChain: vdoBidRequest.schain,
       custom1: vdoBidRequest.params.custom1,
       custom2: vdoBidRequest.params.custom2,
       custom3: vdoBidRequest.params.custom3,

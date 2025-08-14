@@ -121,11 +121,7 @@ describe('DSL', () => {
       });
       it('can remove all invalid properties during scan', () => {
         onError.callsFake((errno, path, obj, field) => {
-          if (Array.isArray(obj)) {
-            obj.splice(field, 1);
-          } else {
-            delete obj[field];
-          }
+          Array.isArray(obj) ? obj.splice(field, 1) : delete obj[field];
         });
         const obj = deepClone(oos);
         scan(obj);

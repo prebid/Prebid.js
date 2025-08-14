@@ -23,7 +23,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  */
 
 const BIDDER_CODE = 'mediaforce';
-const GVLID = 671;
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
 const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop';
 const NATIVE_ID_MAP = {};
@@ -113,7 +112,6 @@ const DEFAULT_CURRENCY = 'USD'
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   /**
@@ -151,10 +149,10 @@ export const spec = {
     let isTest = false;
     validBidRequests.forEach(bid => {
       isTest = isTest || bid.params.is_test;
-      const tagid = bid.params.placement_id;
-      const bidfloor = resolveFloor(bid);
+      let tagid = bid.params.placement_id;
+      let bidfloor = resolveFloor(bid);
       let validImp = false;
-      const impObj = {
+      let impObj = {
         id: bid.bidId,
         tagid: tagid,
         secure: window.location.protocol === 'https:' ? 1 : 0,
@@ -318,8 +316,8 @@ function createBannerRequest(bid) {
   const sizes = bid.mediaTypes.banner.sizes;
   if (!sizes.length) return;
 
-  const format = [];
-  const r = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  let format = [];
+  let r = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
   for (let f = 1; f < sizes.length; f++) {
     format.push(parseGPTSingleSizeArrayToRtbSize(sizes[f]));
   }
@@ -372,8 +370,8 @@ function createNativeRequest(bid) {
         }
         if (aRatios && aRatios[0]) {
           aRatios = aRatios[0];
-          const wmin = aRatios.min_width || 0;
-          const hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+          let wmin = aRatios.min_width || 0;
+          let hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
           assetObj.wmin = wmin;
           assetObj.hmin = hmin;
         }

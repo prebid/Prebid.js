@@ -8,7 +8,7 @@ const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 describe('ablidaBidAdapter', function () {
   const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       adUnitCode: 'adunit-code',
       auctionId: '69e8fef8-5105-4a99-b011-d5669f3bc7f0',
       bidRequestsCount: 1,
@@ -32,7 +32,7 @@ describe('ablidaBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         adUnitCode: 'adunit-code',
         auctionId: '69e8fef8-5105-4a99-b011-d5669f3bc7f0',
@@ -54,7 +54,7 @@ describe('ablidaBidAdapter', function () {
       }
     ];
 
-    const bidderRequests = {
+    let bidderRequests = {
       refererInfo: {
         canonicalUrl: '',
         numIframes: 0,
@@ -71,7 +71,7 @@ describe('ablidaBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const bidRequest = {
+    let bidRequest = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: {
@@ -88,7 +88,7 @@ describe('ablidaBidAdapter', function () {
         referer: 'www.example.com'
       }
     };
-    const serverResponse = {
+    let serverResponse = {
       body: [{
         ad: '<script>console.log("ad");</script>',
         cpm: 1.00,
@@ -107,7 +107,7 @@ describe('ablidaBidAdapter', function () {
       }]
     };
     it('should get the correct bid response', function () {
-      const expectedResponse = [{
+      let expectedResponse = [{
         ad: '<script>console.log("ad");</script>',
         cpm: 1.00,
         creativeId: '2b8c4de0116e54',
@@ -123,7 +123,7 @@ describe('ablidaBidAdapter', function () {
         ttl: 3000,
         width: 300
       }];
-      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
   });

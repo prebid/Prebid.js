@@ -3,6 +3,7 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
 
 /**
@@ -79,8 +80,8 @@ function makeBannerImp(bid) {
 }
 
 function checkTCF(tcData) {
-  const restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
-  const qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
+  let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
+  let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
     : null;
 
@@ -89,14 +90,14 @@ function checkTCF(tcData) {
     return false;
   }
 
-  const vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
-  const purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
+  let vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
+  let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
 
   return !!(vendorConsent && purposeConsent);
 }
 
 function getQuantcastFPA() {
-  const fpa = storage.getCookie(QUANTCAST_FPA)
+  let fpa = storage.getCookie(QUANTCAST_FPA)
   return fpa || ''
 }
 
@@ -108,7 +109,7 @@ let hasUserSynced = false;
  */
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: QUANTCAST_VENDOR_ID,
+  GVLID: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
 
   /**
@@ -149,7 +150,7 @@ export const spec = {
       }
     }
 
-    const bidRequestsList = [];
+    let bidRequestsList = [];
 
     bids.forEach(bid => {
       let imp;
@@ -274,7 +275,7 @@ export const spec = {
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
-      const responseWithUrl = ((serverResponses) || []).find(serverResponse =>
+      const responseWithUrl = find(serverResponses, serverResponse =>
         deepAccess(serverResponse.body, 'userSync.url')
       );
 

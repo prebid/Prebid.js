@@ -9,8 +9,8 @@ import {
 } from '../../src/activities/params.js';
 import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
-const utils = require('../../src/utils.js');
-const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js');
+const utils = require('../../src/utils');
+let { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync');
 
 describe('user sync', function () {
   let triggerPixelStub;
@@ -19,9 +19,9 @@ describe('user sync', function () {
   let shuffleStub;
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;
-  const idPrefix = 'test-generated-id-';
+  let idPrefix = 'test-generated-id-';
   let lastId = 0;
-  const defaultUserSyncConfig = config.getConfig('userSync');
+  let defaultUserSyncConfig = config.getConfig('userSync');
   let regRule, isAllowed;
 
   function mkUserSync(deps) {

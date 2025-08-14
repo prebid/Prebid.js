@@ -10,6 +10,7 @@ const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
 const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
+const GVLID = 1218
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
@@ -107,7 +108,7 @@ function recur(obj) {
 }
 
 function getRegs(bidderRequest) {
-  const regs = {};
+  let regs = {};
   const euConsentManagement = bidderRequest.gdprConsent;
   const usConsentManagement = bidderRequest.uspConsent;
   const coppa = config.getConfig('coppa');
@@ -185,7 +186,7 @@ function hasValidVideoParameters(bidRequest) {
   let valid = true;
   const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
   const bidderParameter = deepAccess(bidRequest, 'params.video');
-  for (const property of REQUIRED_VIDEO_PARAMS) {
+  for (let property of REQUIRED_VIDEO_PARAMS) {
     const hasAdUnitParameter = adUnitsParameters.hasOwnProperty(property);
     const hasBidderParameter = bidderParameter && bidderParameter.hasOwnProperty(property);
     if (!hasAdUnitParameter && !hasBidderParameter) {
@@ -232,6 +233,7 @@ function hasValidParameters(bidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function(bidRequest) {
     logInfo('bid: ', bidRequest);

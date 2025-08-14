@@ -3,7 +3,7 @@
 ```
 Module Name: Relaido Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: hbidding-tech@cmertv.com
+Maintainer: video-dev@cg.relaido.co.jp
 ```
 
 # Description

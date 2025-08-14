@@ -2,9 +2,9 @@ import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events');
+let events = require('src/events');
 
-const prebidAuction = {
+let prebidAuction = {
   'auctionInit': {
     'auctionId': 'ca421611-0bc0-4164-a69c-fe4158c68954',
     'timestamp': 1595850680304,
@@ -124,7 +124,7 @@ const prebidAuction = {
   }
 };
 
-const prebidNativeAuction = {
+let prebidNativeAuction = {
   'auctionInit': {
     'auctionId': '86e005fa-1900-4782-b6df-528500f09128',
     'timestamp': 1595589742100,
@@ -634,7 +634,7 @@ describe('yuktamedia analytics adapter', function () {
     });
 
     it('should build utm data from local storage', function () {
-      const utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
+      let utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
         pubId: '1',
         pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
         enableUTMCollection: true,
@@ -649,7 +649,7 @@ describe('yuktamedia analytics adapter', function () {
     });
 
     it('should return empty object for disabled utm setting', function () {
-      const utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
+      let utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
         pubId: '1',
         pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
         enableUTMCollection: false,

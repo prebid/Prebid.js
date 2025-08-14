@@ -99,24 +99,18 @@ describe('Adyoulike Adapter', function () {
           }
           },
         },
-      'ortb2': {
-        'source': {
-          'ext': {
-            'schain': {
-              validation: 'strict',
-              config: {
-                ver: '1.0',
-                complete: 1,
-                nodes: [
-                  {
-                    asi: 'indirectseller.com',
-                    sid: '00001',
-                    hp: 1
-                  }
-                ]
-              }
+      'schain': {
+        validation: 'strict',
+        config: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '00001',
+              hp: 1
             }
-          }
+          ]
         }
       },
       ortb2Imp: {
@@ -566,7 +560,7 @@ describe('Adyoulike Adapter', function () {
   ];
   const adapter = newBidder(spec);
 
-  const getEndpoint = (dc = defaultDC) => `https://${dc}.omnitagjs.com/hb-api/prebid`;
+  let getEndpoint = (dc = defaultDC) => `https://${dc}.omnitagjs.com/hb-api/prebid`;
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -575,7 +569,7 @@ describe('Adyoulike Adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-1',
@@ -586,7 +580,7 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    const bidWSize = {
+    let bidWSize = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-1',
@@ -597,7 +591,7 @@ describe('Adyoulike Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    const nativeBid = {
+    let nativeBid = {
       'bidId': 'bid_id_1',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-1',
@@ -625,14 +619,14 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.sizes;
 
       expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placement': 0
@@ -666,9 +660,9 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should add gdpr/usp consent information and SChain to the request', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      const uspConsentData = '1YCC';
-      const bidderRequest = {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let uspConsentData = '1YCC';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -688,13 +682,13 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
       expect(payload.uspConsent).to.exist.and.to.equal(uspConsentData);
-      expect(payload.Bids.bid_id_0.SChain).to.exist.and.to.deep.equal(bidRequestWithSinglePlacement[0].ortb2.source.ext.schain);
+      expect(payload.Bids.bid_id_0.SChain).to.exist.and.to.deep.equal(bidRequestWithSinglePlacement[0].schain);
     });
 
     it('should not set a default value for gdpr consentRequired', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      const uspConsentData = '1YCC';
-      const bidderRequest = {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let uspConsentData = '1YCC';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -715,7 +709,7 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should add eids eids information to the request', function () {
-      const bidRequest = bidRequestWithSinglePlacement;
+      let bidRequest = bidRequestWithSinglePlacement;
       bidRequest[0].userIdAsEids = [{
         'source': 'pubcid.org',
         'uids': [{
@@ -820,24 +814,24 @@ describe('Adyoulike Adapter', function () {
 
     it('handles 204 responses', function () {
       serverResponse.body = '';
-      const result = spec.interpretResponse(serverResponse, []);
+      let result = spec.interpretResponse(serverResponse, []);
       expect(result).deep.equal([]);
     });
 
     it('handles nobid responses', function () {
-      const response = [{
+      let response = [{
         BidID: '123dfsdf',
         Attempt: '32344fdse1',
         Placement: '12df1'
       }];
       serverResponse.body = response;
-      const result = spec.interpretResponse(serverResponse, []);
+      let result = spec.interpretResponse(serverResponse, []);
       expect(result).deep.equal([]);
     });
 
     it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
-      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0.5);
@@ -849,7 +843,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
-      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
 
       expect(result.length).to.equal(2);
 
@@ -866,7 +860,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with Native from ad markup', function () {
       serverResponse.body = responseWithSinglePlacement;
-      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
 
       expect(result.length).to.equal(1);
 
@@ -875,7 +869,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with Native ad', function () {
       serverResponse.body = responseWithSingleNative;
-      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidNative) + '}'});
 
       expect(result.length).to.equal(1);
 
@@ -890,7 +884,7 @@ describe('Adyoulike Adapter', function () {
 
     it('receive Vast reponse with Video ad', function () {
       serverResponse.body = responseWithSingleVideo;
-      const result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result).to.deep.equal(videoResult);
@@ -938,7 +932,7 @@ describe('Adyoulike Adapter', function () {
         let sandbox;
 
         this.beforeEach(function() {
-          sandbox = sinon.createSandbox();
+          sandbox = sinon.sandbox.create();
         });
 
         this.afterEach(function() {

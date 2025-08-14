@@ -42,7 +42,7 @@ function kwarrayRule(section) {
   return (ortb2) => {
     const kwarray = ortb2[section]?.kwarray;
     if (kwarray != null) {
-      const kw = (ortb2[section].keywords || '').split(',');
+      let kw = (ortb2[section].keywords || '').split(',');
       if (Array.isArray(kwarray)) kw.push(...kwarray);
       ortb2[section].keywords = kw.join(',');
       return () => delete ortb2[section].kwarray;

@@ -14,7 +14,7 @@ describe('yieldoneBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'yieldone',
       'params': {
         placementId: '36891'
@@ -36,7 +36,7 @@ describe('yieldoneBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -551,7 +551,7 @@ describe('yieldoneBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const bidRequestBanner = [
+    let bidRequestBanner = [
       {
         'method': 'GET',
         'url': 'https://y.one.impact-ad.jp/h_bid',
@@ -569,7 +569,7 @@ describe('yieldoneBidAdapter', function () {
       }
     ];
 
-    const serverResponseBanner = {
+    let serverResponseBanner = {
       body: {
         'adTag': '<!-- adtag -->',
         'uid': '23beaa6af6cdde',
@@ -587,7 +587,7 @@ describe('yieldoneBidAdapter', function () {
     };
 
     it('should get the correct bid response for banner', function () {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 300,
@@ -606,7 +606,7 @@ describe('yieldoneBidAdapter', function () {
         'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
-      const result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
+      let result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
@@ -620,7 +620,7 @@ describe('yieldoneBidAdapter', function () {
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
-    const serverResponseVideo = {
+    let serverResponseVideo = {
       body: {
         'uid': '23beaa6af6cdde',
         'height': 360,
@@ -634,7 +634,7 @@ describe('yieldoneBidAdapter', function () {
       }
     };
 
-    const bidRequestVideo = [
+    let bidRequestVideo = [
       {
         'method': 'GET',
         'url': 'https://y.one.impact-ad.jp/h_bid',
@@ -654,7 +654,7 @@ describe('yieldoneBidAdapter', function () {
     ];
 
     it('should get the correct bid response for video', function () {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 640,
@@ -675,7 +675,7 @@ describe('yieldoneBidAdapter', function () {
           url: VIDEO_PLAYER_URL
         }
       }];
-      const result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
@@ -693,7 +693,7 @@ describe('yieldoneBidAdapter', function () {
     });
 
     it('handles empty bid response', function () {
-      const response = {
+      let response = {
         body: {
           'uid': '2c0b634db95a01',
           'height': 0,
@@ -703,7 +703,7 @@ describe('yieldoneBidAdapter', function () {
           'cpm': 0
         }
       };
-      const result = spec.interpretResponse(response, bidRequestBanner[0]);
+      let result = spec.interpretResponse(response, bidRequestBanner[0]);
       expect(result.length).to.equal(0);
     });
   });

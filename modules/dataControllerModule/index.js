@@ -35,7 +35,7 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
   if (_dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
     return true;
   }
-  const bidderEIDs = eidSourcesMap.get(bidderCode);
+  let bidderEIDs = eidSourcesMap.get(bidderCode);
   if (bidderEIDs == undefined) {
     return false;
   }
@@ -69,8 +69,8 @@ function hasValue(bidderSegement) {
 }
 
 function getSegmentConfig(ortb2Fragments) {
-  const bidderSDAMap = new Map();
-  const globalObject = deepAccess(ortb2Fragments, 'global') || {};
+  let bidderSDAMap = new Map();
+  let globalObject = deepAccess(ortb2Fragments, 'global') || {};
 
   collectSegments(bidderSDAMap, GLOBAL, globalObject);
   if (ortb2Fragments.bidder) {
@@ -82,7 +82,7 @@ function getSegmentConfig(ortb2Fragments) {
 }
 
 function collectSegments(bidderSDAMap, key, data) {
-  const segmentSet = constructSegment(deepAccess(data, 'user.data') || []);
+  let segmentSet = constructSegment(deepAccess(data, 'user.data') || []);
   if (segmentSet && segmentSet.size > 0) bidderSDAMap.set(key, segmentSet);
 }
 
@@ -91,7 +91,7 @@ function constructSegment(userData) {
   if (userData) {
     segmentSet = new Set();
     for (let i = 0; i < userData.length; i++) {
-      const segments = userData[i].segment;
+      let segments = userData[i].segment;
       let segmentPrefix = '';
       if (userData[i].name) {
         segmentPrefix = userData[i].name + ':';
@@ -110,15 +110,15 @@ function constructSegment(userData) {
 }
 
 function getEIDsSource(adUnits) {
-  const bidderEIDSMap = new Map();
+  let bidderEIDSMap = new Map();
   adUnits.forEach(adUnit => {
     (adUnit.bids || []).forEach(bid => {
-      const userEIDs = deepAccess(bid, 'userIdAsEids') || [];
+      let userEIDs = deepAccess(bid, 'userIdAsEids') || [];
 
       if (userEIDs) {
-        const sourceSet = new Set();
+        let sourceSet = new Set();
         for (let i = 0; i < userEIDs.length; i++) {
-          const source = userEIDs[i].source;
+          let source = userEIDs[i].source;
           sourceSet.add(source);
         }
         bidderEIDSMap.set(bid.bidder, sourceSet);
@@ -130,10 +130,10 @@ function getEIDsSource(adUnits) {
 }
 
 function filterSDA(adUnits, ortb2Fragments) {
-  const bidderEIDSMap = getEIDsSource(adUnits);
+  let bidderEIDSMap = getEIDsSource(adUnits);
   let resetGlobal = false;
   for (const [key, value] of Object.entries(ortb2Fragments.bidder)) {
-    const resetSDA = containsConfiguredEIDS(bidderEIDSMap, key);
+    let resetSDA = containsConfiguredEIDS(bidderEIDSMap, key);
     if (resetSDA) {
       deepSetValue(value, 'user.data', []);
       resetGlobal = true;
@@ -145,18 +145,18 @@ function filterSDA(adUnits, ortb2Fragments) {
 }
 
 function filterEIDs(adUnits, ortb2Fragments) {
-  const segementMap = getSegmentConfig(ortb2Fragments);
+  let segementMap = getSegmentConfig(ortb2Fragments);
   let globalEidUpdate = false;
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      const resetEID = containsConfiguredSDA(segementMap, bid.bidder);
+      let resetEID = containsConfiguredSDA(segementMap, bid.bidder);
       if (resetEID) {
         globalEidUpdate = true;
         bid.userIdAsEids = [];
         bid.userId = {};
         if (ortb2Fragments.bidder) {
-          const bidderFragment = ortb2Fragments.bidder[bid.bidder];
-          const userExt = deepAccess(bidderFragment, 'user.ext.eids') || [];
+          let bidderFragment = ortb2Fragments.bidder[bid.bidder];
+          let userExt = deepAccess(bidderFragment, 'user.ext.eids') || [];
           if (userExt) {
             deepSetValue(bidderFragment, 'user.ext.eids', [])
           }

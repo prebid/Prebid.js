@@ -3,7 +3,7 @@
 ```
 Module Name: Welect Bidder Adapter
 Module Type: Welect Adapter
-Maintainer: dev@welect.de
+Maintainer: nick.duitz@9elements.com
 ```
 
 # Description
@@ -17,12 +17,12 @@ var adUnits = [
     bidder: 'welect',
     params: {
       placementId: 'exampleId',
+      domain: 'www.welect.de'
     },
     sizes: [[640, 360]],
     mediaTypes: {
       video: {
-        context: 'instream',
-        playerSize: [640, 480]
+        context: 'instream'
       }
     },
   };

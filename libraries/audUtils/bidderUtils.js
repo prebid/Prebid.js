@@ -1,4 +1,5 @@
 import {
+  deepAccess,
   deepSetValue,
   generateUUID,
   logError
@@ -15,10 +16,10 @@ const NATIVE_ASSETS = [
 ];
 // Function to get Request
 export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
-  const request = [];
+  let request = [];
   // Loop for each bid request
   bidRequests.forEach(bidReq => {
-    const guid = generateUUID();
+    let guid = generateUUID();
     const req = {
       id: guid,
       imp: [getImpDetails(bidReq)],
@@ -70,13 +71,13 @@ export const getNativeResponse = (bidResponse, bidRequest, mediaType) => {
 }
 // Function to format response
 const formatResponse = (bidResponse, mediaType, assets) => {
-  const responseArray = [];
+  let responseArray = [];
   if (bidResponse) {
     try {
-      const bidResp = bidResponse?.body?.seatbid ?? [];
+      let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
       if (bidResp && bidResp[0] && bidResp[0].bid) {
         bidResp[0].bid.forEach(bidReq => {
-          const response = {};
+          let response = {};
           response.requestId = bidReq.impid;
           response.cpm = bidReq.price;
           response.width = bidReq.w;
@@ -94,13 +95,13 @@ const formatResponse = (bidResponse, mediaType, assets) => {
           response.dealId = bidReq.dealId;
           response.mediaType = mediaType;
           if (mediaType == 'native') {
-            const nativeResp = JSON.parse(bidReq.adm).native;
-            const nativeData = {
+            let nativeResp = JSON.parse(bidReq.adm).native;
+            let nativeData = {
               clickUrl: nativeResp.link.url,
               impressionTrackers: nativeResp.imptrackers
             };
             nativeResp.assets.forEach(asst => {
-              const data = getNativeAssestData(asst, assets);
+              let data = getNativeAssestData(asst, assets);
               nativeData[data.key] = data.value;
             });
             response.native = nativeData;
@@ -116,12 +117,12 @@ const formatResponse = (bidResponse, mediaType, assets) => {
 }
 // Function to get imp based on Media Type
 const getImpDetails = (bidReq) => {
-  const imp = {};
+  let imp = {};
   if (bidReq) {
     imp.id = bidReq.bidId;
     imp.bidfloor = getFloorPrice(bidReq);
     if (bidReq.mediaTypes.native) {
-      const assets = { assets: NATIVE_ASSETS };
+      let assets = { assets: NATIVE_ASSETS };
       imp.native = { request: JSON.stringify(assets) };
     } else if (bidReq.mediaTypes.banner) {
       imp.banner = getBannerDetails(bidReq);
@@ -131,11 +132,11 @@ const getImpDetails = (bidReq) => {
 }
 // Function to get banner object
 const getBannerDetails = (bidReq) => {
-  const response = {};
+  let response = {};
   if (bidReq.mediaTypes.banner) {
     // Fetch width and height from MediaTypes object, if not provided in bidReq params
     if (bidReq.mediaTypes.banner.sizes && !bidReq.params.height && !bidReq.params.width) {
-      const sizes = bidReq.mediaTypes.banner.sizes;
+      let sizes = bidReq.mediaTypes.banner.sizes;
       if (sizes.length > 0) {
         response.h = sizes[0][1];
         response.w = sizes[0][0];
@@ -149,7 +150,7 @@ const getBannerDetails = (bidReq) => {
 }
 // Function to get floor price
 const getFloorPrice = (bidReq) => {
-  const bidfloor = bidReq?.params?.bid_floor ?? 0;
+  let bidfloor = deepAccess(bidReq, 'params.bid_floor', 0);
   return bidfloor;
 }
 // Function to get site object
@@ -164,7 +165,7 @@ const getSiteDetails = (bidderRequest) => {
 }
 // Function to build the user object
 const getUserDetails = (bidReq) => {
-  const user = {};
+  let user = {};
   if (bidReq && bidReq.ortb2 && bidReq.ortb2.user) {
     user.id = bidReq.ortb2.user.id ? bidReq.ortb2.user.id : '';
     user.buyeruid = bidReq.ortb2.user.buyeruid ? bidReq.ortb2.user.buyeruid : '';
@@ -182,7 +183,7 @@ const getUserDetails = (bidReq) => {
 }
 // Function to get asset data for response
 const getNativeAssestData = (params, assets) => {
-  const response = {};
+  let response = {};
   if (params.title) {
     response.key = 'title';
     response.value = params.title.text;

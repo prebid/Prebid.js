@@ -12,7 +12,7 @@ const defaultPathName = '/prebid-analytics';
 
 let initOptions;
 let auctionTimestamp;
-const events = {
+let events = {
   bids: []
 };
 
@@ -26,15 +26,12 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
       if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
       } else if (eventType === EVENTS.AUCTION_INIT) {
-        Object.assign(events, {bids: []});
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
       } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(item => { events.bids.push(item) });
       } else if (eventType === EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
-      } else if (eventType === EVENTS.NO_BID) {
-        mapBidResponse(args, 'no_bid');
       } else if (eventType === EVENTS.BID_WON) {
         send({
           bidWon: mapBidResponse(args, 'win')
@@ -49,7 +46,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
 });
 
 function mapBidRequests(params) {
-  const arr = [];
+  let arr = [];
   if (typeof params.bids !== 'undefined' && params.bids.length) {
     params.bids.forEach(function (bid) {
       arr.push({
@@ -70,8 +67,7 @@ function mapBidRequests(params) {
 
 function mapBidResponse(bidResponse, status) {
   if (status !== 'win') {
-    const bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
-    const responseTimestamp = Date.now();
+    let bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
     Object.assign(bid, {
       bidderCode: bidResponse.bidder,
       bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
@@ -85,10 +81,10 @@ function mapBidResponse(bidResponse, status) {
       mediaType: bidResponse.mediaType,
       statusMessage: bidResponse.statusMessage,
       status: bidResponse.status,
-      renderStatus: status === 'timeout' ? 3 : (status === 'no_bid' ? 5 : 2),
+      renderStatus: status === 'timeout' ? 3 : 2,
       timeToRespond: bidResponse.timeToRespond,
       requestTimestamp: bidResponse.requestTimestamp,
-      responseTimestamp: bidResponse.responseTimestamp ? bidResponse.responseTimestamp : responseTimestamp
+      responseTimestamp: bidResponse.responseTimestamp
     });
   } else {
     return {
@@ -108,22 +104,19 @@ function mapBidResponse(bidResponse, status) {
       renderStatus: 4,
       timeToRespond: bidResponse.timeToRespond,
       requestTimestamp: bidResponse.requestTimestamp,
-      responseTimestamp: bidResponse.responseTimestamp,
-      host: window.location.hostname,
-      path: window.location.pathname,
-      search: window.location.search
+      responseTimestamp: bidResponse.responseTimestamp
     }
   }
 }
 
 function send(data, status) {
-  const location = getWindowLocation();
+  let location = getWindowLocation();
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
     Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });
   }
   data.initOptions = initOptions;
 
-  const terceptAnalyticsRequestUrl = buildUrl({
+  let terceptAnalyticsRequestUrl = buildUrl({
     protocol: 'https',
     hostname: (initOptions && initOptions.hostName) || defaultHostName,
     pathname: (initOptions && initOptions.pathName) || defaultPathName,

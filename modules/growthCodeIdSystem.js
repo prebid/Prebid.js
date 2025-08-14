@@ -47,7 +47,7 @@ export const growthCodeIdSubmodule = {
     const configParams = (config && config.params) || {};
 
     let ids = [];
-    const gcid = storage.getDataFromLocalStorage(GCID_KEY, null)
+    let gcid = storage.getDataFromLocalStorage(GCID_KEY, null)
 
     if (gcid !== null) {
       const gcEid = {
@@ -61,9 +61,9 @@ export const growthCodeIdSubmodule = {
       ids = ids.concat(gcEid)
     }
 
-    const additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null)
+    let additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null)
     if (additionalEids !== null) {
-      const data = JSON.parse(additionalEids)
+      let data = JSON.parse(additionalEids)
       ids = ids.concat(data)
     }
 

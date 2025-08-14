@@ -36,7 +36,7 @@ function getSession(configParams) {
 }
 
 function setCookie(name, value, expires) {
-  const expTime = new Date();
+  let expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
   storage.setCookie(name, value, expTime.toUTCString(), 'Lax');
 }
@@ -103,7 +103,7 @@ export const merkleIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{eids:Array}}
+   * @returns {{eids:arrayofields}}
    */
   decode(value) {
     // Legacy support for a single id

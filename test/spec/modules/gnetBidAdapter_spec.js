@@ -20,7 +20,7 @@ describe('gnetAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       bidder: 'gnet',
       params: {
         websiteId: '1', adunitId: '1'
@@ -32,7 +32,7 @@ describe('gnetAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);

@@ -1,3 +1,4 @@
+import { find } from '../../src/polyfill.js';
 import { vastXmlEditorFactory } from '../../libraries/video/shared/vastXmlEditor.js';
 import { generateUUID } from '../../src/utils.js';
 
@@ -55,7 +56,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const vastXmlEditor = vastXmlEditor_;
 
   verifier.trackBid = function(bid) {
-    const { vastXml, vastUrl } = bid;
+    let { vastXml, vastUrl } = bid;
     if (!vastXml && !vastUrl) {
       return;
     }
@@ -85,7 +86,7 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   verifier.trackBid = function (bid, globalAdUnits) {
     const adIdOverride = superTrackBid(bid);
     let { vastXml, vastUrl, adId, adUnitCode } = bid;
-    const adUnit = ((globalAdUnits) || []).find(adUnit => adUnitCode === adUnit.code);
+    const adUnit = find(globalAdUnits, adUnit => adUnitCode === adUnit.code);
     const videoConfig = adUnit && adUnit.video;
     const adServerConfig = videoConfig && videoConfig.adServer;
     const trackingConfig = adServerConfig && adServerConfig.tracking;
@@ -135,7 +136,7 @@ export function baseImpressionVerifier(bidTracker_) {
   const bidTracker = bidTracker_;
 
   function trackBid(bid) {
-    const { adId, adUnitCode, requestId, auctionId } = bid;
+    let { adId, adUnitCode, requestId, auctionId } = bid;
     const trackingId = PB_PREFIX + generateUUID(10 ** 13);
     bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
     return trackingId;
@@ -163,7 +164,7 @@ export function baseImpressionVerifier(bidTracker_) {
     }
 
     const queryParams = url.searchParams;
-    const uuid = queryParams.get(UUID_MARKER);
+    let uuid = queryParams.get(UUID_MARKER);
     return uuid && bidTracker.remove(uuid);
   }
 
@@ -172,7 +173,7 @@ export function baseImpressionVerifier(bidTracker_) {
       return;
     }
 
-    for (const wrapperId of adWrapperIds) {
+    for (const wrapperId in adWrapperIds) {
       const bidInfo = bidTracker.remove(wrapperId);
       if (bidInfo) {
         return bidInfo;

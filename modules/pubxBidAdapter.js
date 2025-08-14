@@ -49,7 +49,7 @@ export const spec = {
         deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains]);
       }
       bidResponses.push(bidResponse);
-    }
+    } else {};
     return bidResponses;
   },
   /**
@@ -80,19 +80,19 @@ export const spec = {
         kwString = kwContents;
       }
       kwEnc = encodeURIComponent(kwString);
-    }
+    } else { }
     if (titleContent) {
       if (titleContent.length > 30) {
         titleContent = titleContent.substr(0, 30);
-      }
+      } else {};
       titleEnc = encodeURIComponent(titleContent);
-    }
+    } else { };
     if (descContent) {
       if (descContent.length > 60) {
         descContent = descContent.substr(0, 60);
-      }
+      } else {};
       descEnc = encodeURIComponent(descContent);
-    }
+    } else { };
     return (syncOptions.iframeEnabled) ? [{
       type: 'iframe',
       url: USER_SYNC_URL + '?pkw=' + kwEnc + '&pd=' + descEnc + '&pu=' + pageEnc + '&pref=' + refEnc + '&pt=' + titleEnc

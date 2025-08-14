@@ -1,6 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter.js';
+import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
+import {deepSetValue} from 'src/utils.js';
+import {createEidsArray} from 'modules/userId/eids.js';
 import {deepAccess} from 'src/utils';
 // load modules that register ORTB processors
 import 'src/prebid.js'
@@ -9,8 +11,9 @@ import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
+import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
-import {BANNER} from '../../../src/mediaTypes.js';
+import {BANNER} from '../../../src/mediaTypes';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -449,21 +452,9 @@ describe('Conversant adapter tests', function() {
   it('Verify supply chain data', () => {
     const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
-
-    // Add schain to bidderRequest
-    bidderRequest.ortb2 = {
-      source: {
-        ext: {schain: schain}
-      }
-    };
-
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({
-        ortb2: {
-          source: {
-            ext: {schain: schain}
-          }
-        }
+        schain: schain
       }, bid);
     });
     const request = spec.buildRequests(bidsWithSchain, bidderRequest);
@@ -602,10 +593,39 @@ describe('Conversant adapter tests', function() {
     }
   })
 
+  it('Verify publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests);
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {crumbs: {pubcid: 12345}});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests, {}).data;
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
+    expect(payload).to.not.have.nested.property('user.ext.eids');
+  });
+
+  it('Verify User ID publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests);
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {userId: {pubcid: 67890}});
+      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests, {}).data;
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
+    expect(payload).to.not.have.nested.property('user.ext.eids');
+  });
+
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {
       // clone bidRequests
-      const requests = utils.deepClone(bidRequests);
+      let requests = utils.deepClone(bidRequests);
 
       const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
 
@@ -615,6 +635,114 @@ describe('Conversant adapter tests', function() {
         {source: 'pubcid.org', uids: [{id: '112233', atype: 1}]},
         {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
       ]);
+    });
+  });
+
+  describe('direct reading pubcid', function() {
+    const ID_NAME = '_pubcid';
+    const CUSTOM_ID_NAME = 'myid';
+    const EXP = '_exp';
+    const TIMEOUT = 2000;
+
+    function cleanUp(key) {
+      window.document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      localStorage.removeItem(key);
+      localStorage.removeItem(key + EXP);
+    }
+
+    function expStr(timeout) {
+      return (new Date(Date.now() + timeout * 60 * 60 * 24 * 1000)).toUTCString();
+    }
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        conversant: {
+          storageAllowed: true
+        }
+      };
+    });
+    afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      cleanUp(ID_NAME);
+      cleanUp(CUSTOM_ID_NAME);
+    });
+
+    it('reading cookie', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid cookie
+      storage.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests, {}).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
+    });
+
+    it('reading custom cookie', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+      requests[0].params.pubcid_name = CUSTOM_ID_NAME;
+
+      // add a pubcid cookie
+      storage.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests, {}).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
+    });
+
+    it('reading local storage with empty exp time', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid in local storage
+      storage.setDataInLocalStorage(ID_NAME + EXP, '');
+      storage.setDataInLocalStorage(ID_NAME, 'abcde');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests, {}).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', 'abcde');
+    });
+
+    it('reading local storage with valid exp time', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid in local storage
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'fghijk');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests, {}).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
+    });
+
+    it('reading expired local storage', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid in local storage
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'lmnopq');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests, {}).data;
+      expect(payload).to.not.have.deep.nested.property('user.ext.fpc');
+    });
+
+    it('reading local storage with custom name', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+      requests[0].params.pubcid_name = CUSTOM_ID_NAME;
+
+      // add a pubcid in local storage
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests, {}).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
     });
   });
 
@@ -697,7 +825,7 @@ describe('Conversant adapter tests', function() {
     const cnvrResponse = {ext: {psyncs: [syncurl_image], fsyncs: [syncurl_iframe]}};
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
     });
     afterEach(function() {
       sandbox.restore();

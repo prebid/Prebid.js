@@ -1,33 +1,26 @@
-import { freepassIdSubmodule } from 'modules/freepassIdSystem';
+import { freepassIdSubmodule, storage, FREEPASS_COOKIE_KEY } from 'modules/freepassIdSystem';
 import sinon from 'sinon';
-import * as utils from '../../../src/utils.js';
+import * as utils from '../../../src/utils';
 
-const expect = require('chai').expect;
+let expect = require('chai').expect;
 
 describe('FreePass ID System', function () {
   const UUID = '15fde1dc-1861-4894-afdf-b757272f3568';
-  let generateUUIDStub;
+  let getCookieStub;
 
   before(function () {
     sinon.stub(utils, 'logMessage');
-    generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(UUID);
+    getCookieStub = sinon.stub(storage, 'getCookie');
   });
 
   after(function () {
     utils.logMessage.restore();
-    generateUUIDStub.restore();
+    getCookieStub.restore();
   });
 
   describe('freepassIdSubmodule', function () {
     it('should expose submodule name', function () {
       expect(freepassIdSubmodule.name).to.equal('freepassId');
-    });
-
-    it('should have eids configuration', function () {
-      expect(freepassIdSubmodule.eids).to.be.an('object');
-      expect(freepassIdSubmodule.eids.freepassId).to.be.an('object');
-      expect(freepassIdSubmodule.eids.freepassId.source).to.equal('freepass.jp');
-      expect(freepassIdSubmodule.eids.freepassId.atype).to.equal(1);
     });
   });
 
@@ -46,39 +39,20 @@ describe('FreePass ID System', function () {
       }
     };
 
-    it('should return an IdObject with generated UUID and freepass data', function () {
+    it('should return an IdObject with a UUID', function () {
+      getCookieStub.withArgs(FREEPASS_COOKIE_KEY).returns(UUID);
       const objectId = freepassIdSubmodule.getId(config, undefined);
       expect(objectId).to.be.an('object');
       expect(objectId.id).to.be.an('object');
       expect(objectId.id.userId).to.equal(UUID);
-      expect(objectId.id.freepassId).to.equal('commonId');
-      expect(objectId.id.ip).to.equal('127.0.0.1');
     });
 
-    it('should return an IdObject with only generated UUID when no freepass data', function () {
-      const configWithoutData = {
-        storage: {
-          name: '_freepassId',
-          type: 'cookie',
-          expires: 30
-        }
-      };
-      const objectId = freepassIdSubmodule.getId(configWithoutData, undefined);
+    it('should return an IdObject without UUID when absent in cookie', function () {
+      getCookieStub.withArgs(FREEPASS_COOKIE_KEY).returns(null);
+      const objectId = freepassIdSubmodule.getId(config, undefined);
       expect(objectId).to.be.an('object');
       expect(objectId.id).to.be.an('object');
-      expect(objectId.id.userId).to.equal(UUID);
-      expect(objectId.id.freepassId).to.be.undefined;
-      expect(objectId.id.ip).to.be.undefined;
-    });
-
-    it('should use stored userId when available', function () {
-      const storedId = { userId: 'stored-uuid-123', ip: '192.168.1.1' };
-      const objectId = freepassIdSubmodule.getId(config, undefined, storedId);
-      expect(objectId).to.be.an('object');
-      expect(objectId.id).to.be.an('object');
-      expect(objectId.id.userId).to.equal('stored-uuid-123');
-      expect(objectId.id.freepassId).to.equal('commonId');
-      expect(objectId.id.ip).to.equal('127.0.0.1');
+      expect(objectId.id.userId).to.be.undefined;
     });
   });
 
@@ -88,17 +62,16 @@ describe('FreePass ID System', function () {
       expect(decodedId).to.be.an('object');
       expect(decodedId).to.have.property('freepassId');
     });
-
-    it('should return the value as-is without stringifying', function () {
+    it('should have IObject as property value', function () {
       const idObject = {
-        freepassId: 'commonId',
-        ip: '127.0.0.1',
+        commonId: 'commonId',
+        userIp: '127.0.0.1',
         userId: UUID
       };
       const decodedId = freepassIdSubmodule.decode(idObject, {});
       expect(decodedId).to.be.an('object');
+      expect(decodedId.freepassId).to.be.an('object');
       expect(decodedId.freepassId).to.equal(idObject);
-      expect(decodedId.freepassId).to.not.be.a('string');
     });
   });
 
@@ -117,107 +90,64 @@ describe('FreePass ID System', function () {
       }
     };
 
-    it('should extend stored ID with new freepass data', function () {
-      const storedId = { userId: 'stored-uuid-123' };
-      const extendedIdObject = freepassIdSubmodule.extendId(config, undefined, storedId);
-      expect(extendedIdObject).to.be.an('object');
-      expect(extendedIdObject.id).to.be.an('object');
-      expect(extendedIdObject.id.userId).to.equal('stored-uuid-123');
-      expect(extendedIdObject.id.ip).to.equal('127.0.0.1');
-      expect(extendedIdObject.id.freepassId).to.equal('commonId');
-    });
-
-    it('should return stored ID if no freepass data provided', function () {
-      const storedId = { userId: 'stored-uuid-123', freepassId: 'oldId' };
-      const configWithoutData = {
-        storage: {
-          name: '_freepassId',
-          type: 'cookie',
-          expires: 30
-        }
-      };
-      const extendedIdObject = freepassIdSubmodule.extendId(configWithoutData, undefined, storedId);
-      expect(extendedIdObject).to.be.an('object');
-      expect(extendedIdObject.id).to.equal(storedId);
-    });
-
-    it('should generate new UUID if no stored userId', function () {
-      const storedId = { freepassId: 'oldId' };
-      const extendedIdObject = freepassIdSubmodule.extendId(config, undefined, storedId);
+    it('should return cachedIdObject if there are no changes', function () {
+      getCookieStub.withArgs(FREEPASS_COOKIE_KEY).returns(UUID);
+      const idObject = freepassIdSubmodule.getId(config, undefined);
+      const cachedIdObject = Object.assign({}, idObject.id);
+      const extendedIdObject = freepassIdSubmodule.extendId(config, undefined, cachedIdObject);
       expect(extendedIdObject).to.be.an('object');
       expect(extendedIdObject.id).to.be.an('object');
       expect(extendedIdObject.id.userId).to.equal(UUID);
-      expect(extendedIdObject.id.freepassId).to.equal('commonId');
+      expect(extendedIdObject.id.userIp).to.equal(config.params.freepassData.userIp);
+      expect(extendedIdObject.id.commonId).to.equal(config.params.freepassData.commonId);
     });
 
-    it('should update freepassId when changed', function () {
-      const storedId = { userId: 'stored-uuid-123', freepassId: 'oldId' };
+    it('should return cachedIdObject if there are no new data', function () {
+      const idObject = freepassIdSubmodule.getId(config, undefined);
+      const cachedIdObject = Object.assign({}, idObject.id);
+      const localConfig = JSON.parse(JSON.stringify(config));
+      delete localConfig.params.freepassData;
+      const extendedIdObject = freepassIdSubmodule.extendId(localConfig, undefined, cachedIdObject);
+      expect(extendedIdObject).to.be.an('object');
+      expect(extendedIdObject.id).to.be.an('object');
+      expect(extendedIdObject.id).to.equal(cachedIdObject);
+    });
+
+    it('should return new commonId if there are changes', function () {
+      const idObject = freepassIdSubmodule.getId(config, undefined);
+      const cachedIdObject = Object.assign({}, idObject.id);
       const localConfig = JSON.parse(JSON.stringify(config));
       localConfig.params.freepassData.commonId = 'newCommonId';
-      const extendedIdObject = freepassIdSubmodule.extendId(localConfig, undefined, storedId);
+      const extendedIdObject = freepassIdSubmodule.extendId(localConfig, undefined, cachedIdObject);
       expect(extendedIdObject).to.be.an('object');
       expect(extendedIdObject.id).to.be.an('object');
-      expect(extendedIdObject.id.freepassId).to.equal('newCommonId');
-      expect(extendedIdObject.id.userId).to.equal('stored-uuid-123');
+      expect(extendedIdObject.id.commonId).to.equal('newCommonId');
     });
 
-    it('should update userIp when changed', function () {
-      const storedId = { userId: 'stored-uuid-123', ip: '127.0.0.1' };
+    it('should return new userIp if there are changes', function () {
+      const idObject = freepassIdSubmodule.getId(config, undefined);
+      const cachedIdObject = Object.assign({}, idObject.id);
       const localConfig = JSON.parse(JSON.stringify(config));
       localConfig.params.freepassData.userIp = '192.168.1.1';
-      const extendedIdObject = freepassIdSubmodule.extendId(localConfig, undefined, storedId);
+      const extendedIdObject = freepassIdSubmodule.extendId(localConfig, undefined, cachedIdObject);
       expect(extendedIdObject).to.be.an('object');
       expect(extendedIdObject.id).to.be.an('object');
-      expect(extendedIdObject.id.ip).to.equal('192.168.1.1');
-      expect(extendedIdObject.id.userId).to.equal('stored-uuid-123');
-    });
-  });
-
-  describe('EID configuration', function () {
-    const eidConfig = freepassIdSubmodule.eids.freepassId;
-
-    it('should have correct source and atype', function () {
-      expect(eidConfig.source).to.equal('freepass.jp');
-      expect(eidConfig.atype).to.equal(1);
+      expect(extendedIdObject.id.userIp).to.equal('192.168.1.1');
     });
 
-    describe('getValue', function () {
-      it('should return freepassId when available', function () {
-        const data = { userId: 'user123', freepassId: 'freepass456' };
-        const value = eidConfig.getValue(data);
-        expect(value).to.equal('freepass456');
-      });
-    });
+    it('should return new userId when changed from cache', function () {
+      getCookieStub.withArgs(FREEPASS_COOKIE_KEY).returns(UUID);
+      const idObject = freepassIdSubmodule.getId(config, undefined);
+      const cachedIdObject = Object.assign({}, idObject.id);
+      const localConfig = JSON.parse(JSON.stringify(config));
+      localConfig.params.freepassData.userIp = '192.168.1.1';
 
-    describe('getUidExt', function () {
-      it('should return extension with ip when available', function () {
-        const data = { userId: 'user123', ip: '127.0.0.1' };
-        const ext = eidConfig.getUidExt(data);
-        expect(ext).to.be.an('object');
-        expect(ext.ip).to.equal('127.0.0.1');
-      });
-
-      it('should return extension with userId when both freepassId and userId available', function () {
-        const data = { userId: 'user123', freepassId: 'freepass456', ip: '127.0.0.1' };
-        const ext = eidConfig.getUidExt(data);
-        expect(ext).to.be.an('object');
-        expect(ext.ip).to.equal('127.0.0.1');
-        expect(ext.userId).to.equal('user123');
-      });
-
-      it('should return undefined when no extensions available', function () {
-        const data = { userId: 'user123' };
-        const ext = eidConfig.getUidExt(data);
-        expect(ext).to.be.undefined;
-      });
-
-      it('should not include userId in extension when no freepassId', function () {
-        const data = { userId: 'user123', ip: '127.0.0.1' };
-        const ext = eidConfig.getUidExt(data);
-        expect(ext).to.be.an('object');
-        expect(ext.ip).to.equal('127.0.0.1');
-        expect(ext.userId).to.be.undefined;
-      });
+      getCookieStub.withArgs(FREEPASS_COOKIE_KEY).returns('NEW_UUID');
+      const extendedIdObject = freepassIdSubmodule.extendId(localConfig, undefined, cachedIdObject);
+      expect(extendedIdObject).to.be.an('object');
+      expect(extendedIdObject.id).to.be.an('object');
+      expect(extendedIdObject.id.userIp).to.equal('192.168.1.1');
+      expect(extendedIdObject.id.userId).to.equal('NEW_UUID');
     });
   });
 });

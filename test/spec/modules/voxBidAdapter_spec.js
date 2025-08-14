@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
-import { addFPDToBidderRequest } from '../../helpers/fpd.js'
+import { setConfig as setCurrencyConfig } from '../../../modules/currency'
+import { addFPDToBidderRequest } from '../../helpers/fpd'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -212,16 +212,10 @@ describe('VOX Adapter', function() {
     it('should set schain if not specified', function () {
       const requests = validBidRequests.map(bid => ({
         ...bid,
-        ortb2: {
-          source: {
-            ext: {
-              schain: {
-                validation: 'strict',
-                config: {
-                  ver: '1.0'
-                }
-              }
-            }
+        schain: {
+          validation: 'strict',
+          config: {
+            ver: '1.0'
           }
         }
       }))

@@ -90,7 +90,7 @@ const VERSION = '1.0.6';
 
 /**
  * @typedef {object} FeedAdServerResponse
- * @augments {Object}
+ * @augments ServerResponse
  * @inner
  *
  * @property {FeedAdApiBidResponse[]} body - the body of a FeedAd server response
@@ -185,8 +185,8 @@ function isValidPlacementId(placementId) {
 
 /**
  * Checks if the given media types contain unsupported settings
- * @param {Object} mediaTypes - the media types to check
- * @return {Object} the unsupported settings, empty when all types are supported
+ * @param {MediaTypes} mediaTypes - the media types to check
+ * @return {MediaTypes} the unsupported settings, empty when all types are supported
  */
 function filterSupportedMediaTypes(mediaTypes) {
   return {
@@ -198,7 +198,7 @@ function filterSupportedMediaTypes(mediaTypes) {
 
 /**
  * Checks if the given media types are empty
- * @param {Object} mediaTypes - the types to check
+ * @param {MediaTypes} mediaTypes - the types to check
  * @return {boolean} true if the types are empty
  */
 function isMediaTypesEmpty(mediaTypes) {
@@ -231,21 +231,19 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (!bidderRequest) {
     return [];
   }
-  const acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
+  let acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
   if (acceptableRequests.length === 0) {
     return [];
   }
-  const data = Object.assign({}, bidderRequest, {
+  let data = Object.assign({}, bidderRequest, {
     bids: acceptableRequests.map(req => {
       req.params = createApiBidRParams(req);
       return req;
     })
   });
-  data.bids.forEach(bid => {
-    BID_METADATA[bid.bidId] = {
-      referer: data.refererInfo.page,
-      transactionId: bid.ortb2Imp?.ext?.tid,
-    };
+  data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
+    referer: data.refererInfo.page,
+    transactionId: bid.ortb2Imp?.ext?.tid,
   });
   if (bidderRequest.gdprConsent) {
     data.consentIabTcf = bidderRequest.gdprConsent.consentString;
@@ -317,7 +315,7 @@ function trackingHandlerFactory(klass) {
     if (!data) {
       return;
     }
-    const params = createTrackingParams(data, klass);
+    let params = createTrackingParams(data, klass);
     if (params) {
       ajax(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
         withCredentials: true,

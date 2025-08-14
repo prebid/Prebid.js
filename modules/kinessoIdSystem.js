@@ -28,7 +28,7 @@ const id = factory();
 
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
- * @param {string} currPrng the current pseudorandom number generator
+ * @param {string} the current pseudorandom number generator
  * @returns {function(*=): *}
  */
 function factory(currPrng) {
@@ -45,7 +45,7 @@ function factory(currPrng) {
 
 /**
  * gets a a random charcter from generated pseudorandom number
- * @param {string} prng the generated pseudorandom number
+ * @param {string} the generated pseudorandom number
  * @returns {string}
  */
 function randomChar(prng) {
@@ -58,8 +58,8 @@ function randomChar(prng) {
 
 /**
  * encodes random character
- * @param {number} len
- * @param {function(): number} prng
+ * @param len
+ * @param prng
  * @returns {string}
  */
 function encodeRandom(len, prng) {
@@ -72,8 +72,8 @@ function encodeRandom(len, prng) {
 
 /**
  * encodes the time based on the length
- * @param {number} now
- * @param {number} len
+ * @param now
+ * @param len
  * @returns {string} encoded time.
  */
 function encodeTime(now, len) {
@@ -112,7 +112,7 @@ function encodeTime(now, len) {
 /**
  * creates and logs the error message
  * @function
- * @param {string} message error message
+ * @param {string} error message
  * @returns {Error}
  */
 function createError(message) {
@@ -125,7 +125,7 @@ function createError(message) {
 /**
  * detects the pseudorandom number generator and generates the random number
  * @function
- * @param {string} root
+ * @param {string} error message
  * @returns {string} a random number
  */
 function detectPrng(root) {
@@ -145,8 +145,9 @@ function detectPrng(root) {
 
 /**
  * existing id generation call back
- * @param {string} storedId
- * @returns {{success: function(Object): void, error: function(): void}}
+ * @param result
+ * @param callback
+ * @returns {{success: success, error: error}}
  */
 function syncId(storedId) {
   return {
@@ -177,7 +178,6 @@ function encodeId(value) {
 
 /**
  * Builds and returns the shared Id URL with attached consent data if applicable
- * @param {number} accountId
  * @param {Object} consentData
  * @return {string}
  */
@@ -206,7 +206,7 @@ export const kinessoIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{kpuid:{id: string}}|undefined}
+   * @returns {{kpuid:{ id: string}} or undefined if value doesn't exists
    */
   decode(value) {
     return (value) ? encodeId(value) : undefined;
@@ -217,7 +217,7 @@ export const kinessoIdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData|undefined} consentData
-   * @returns {string|undefined}
+   * @returns {knssoId}
    */
   getId(config, consentData) {
     const configParams = (config && config.params) || {};

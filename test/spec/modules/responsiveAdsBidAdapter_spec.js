@@ -8,7 +8,7 @@ describe('responsiveAdsBidAdapter', function() {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     sandbox.stub(utils, 'isSafeFrameWindow').returns(false);
     sandbox.stub(utils, 'canAccessWindowTop').returns(true);
     bidRequests = [{

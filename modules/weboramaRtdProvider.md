@@ -136,8 +136,12 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 
 ##### User Consent
 
-In a user-centric configuration, the WAM module will verify user consent when GDPR is applicable. It specifically checks for consent related to the purposes declared by Weborama in the Global Vendor List (Vendor ID 284). 
-If the required consent is not provided, the module will not activate, and it will neither access local storage nor apply any default user profile.
+The WAM User-Centric configuration will check for user consent if gdpr applies. It will check for consent:
+
+* Vendor ID 284 (Weborama)
+* Purpose IDs: 1, 3, 4, 5 and 6
+
+If the user consent does not match such conditions, this module will not load, means we will not check for any data in local storage and the default profile will be ignored.
 
 #### Sfbx LiTE Site-Centric Configuration
 

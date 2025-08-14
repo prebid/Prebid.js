@@ -24,7 +24,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     logInfo(WHO + ' isBidRequestValid() - INPUT bid:', bid);
-    if (typeof bid.params === 'undefined') {
+    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.placementId === 'undefined') {
@@ -41,7 +41,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     logInfo(WHO + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
-    const requests = [];
+    let requests = [];
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
       var bid = validBidRequests[i];
@@ -108,7 +108,7 @@ export const spec = {
         nCPM = request.data.params.testcpm;
       }
 
-      const bidResponse = {
+      let bidResponse = {
         requestId: sRequestID,
         cpm: nCPM,
         width: nWidth,

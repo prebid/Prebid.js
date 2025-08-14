@@ -64,7 +64,7 @@ The VDO.AI Bidder Adapter expects Prebid Cache(for video) to be enabled so that 
 pbjs.setConfig({
     usePrebidCache: true,
     cache: {
-        url: 'https://prebid.example.com/pbc/v1/cache'
+        url: 'https://prebid.adnxs.com/pbc/v1/cache'
     }
 });
 ```

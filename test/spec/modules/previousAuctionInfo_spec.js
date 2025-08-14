@@ -1,9 +1,9 @@
-import * as previousAuctionInfo from '../../../modules/previousAuctionInfo/index.js';
+import * as previousAuctionInfo from '../../../modules/previousAuctionInfo';
 import sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
-import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo/index.js';
+import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo';
 import { REJECTION_REASON } from '../../../src/constants.js';
 
 describe('previous auction info', () => {
@@ -155,10 +155,10 @@ describe('previous auction info', () => {
         ],
         timestamp: Date.now(),
       };
-
+    
       config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
       previousAuctionInfo.onAuctionEndHandler(auctionDetailsWithRejectedBid);
-
+    
       const stored = previousAuctionInfo.auctionState['testBidder1'][0];
       expect(stored).to.include({
         bidId: 'bid456',

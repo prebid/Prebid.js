@@ -13,7 +13,7 @@ const _encodeURIComponent = function (a) {
 
 describe('DailyhuntAdapter', function () {
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'dailyhunt',
       'params': {
         placement_id: 1,
@@ -27,14 +27,14 @@ describe('DailyhuntAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
   describe('buildRequests', function() {
-    const bidRequests = [
+    let bidRequests = [
       {
         bidder: 'dailyhunt',
         params: {
@@ -62,7 +62,7 @@ describe('DailyhuntAdapter', function () {
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
-    const nativeBidRequests = [
+    let nativeBidRequests = [
       {
         bidder: 'dailyhunt',
         params: {
@@ -95,7 +95,7 @@ describe('DailyhuntAdapter', function () {
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
-    const videoBidRequests = [
+    let videoBidRequests = [
       {
         bidder: 'dailyhunt',
         params: {
@@ -121,7 +121,7 @@ describe('DailyhuntAdapter', function () {
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
-    const bidderRequest = {
+    let bidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'bidderCode': 'dailyhunt',
@@ -134,7 +134,7 @@ describe('DailyhuntAdapter', function () {
         'referer': 'http://m.dailyhunt.in/'
       }
     };
-    const nativeBidderRequest = {
+    let nativeBidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'bidderCode': 'dailyhunt',
@@ -147,7 +147,7 @@ describe('DailyhuntAdapter', function () {
         'referer': 'http://m.dailyhunt.in/'
       }
     };
-    const videoBidderRequest = {
+    let videoBidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'bidderCode': 'dailyhunt',
@@ -180,7 +180,7 @@ describe('DailyhuntAdapter', function () {
     });
   });
   describe('interpretResponse', function () {
-    const bidResponses = {
+    let bidResponses = {
       id: 'da32def7-6779-403c-ada7-0b201dbc9744',
       seatbid: [
         {
@@ -227,7 +227,7 @@ describe('DailyhuntAdapter', function () {
               impid: 'native-impid',
               price: 50,
               nurl: 'winUrl',
-              adm: '{"native":{"ver":"1.2","assets":[{"id":1,"required":1,"title":{"text":"Discover Amazing Products Today!"}},{"id":2,"required":1,"img":{"type":3,"url":"https://cdn.prod.website-files.com/64aabfa2adf7363205ea0135/67c168c650acb91b6ce4dfdf_%EC%8D%B8%EB%84%A4%EC%9D%BC_EN.webp","w":600,"h":315}},{"id":3,"data":{"label":"CTA","value":"Click Here To Visit Site","type":12}}],"link":{"url":"https://dailyhunt.in/news/india/english/for+you?launch=true&mode=pwa"},"imptrackers":["https://example.com/impression"]}}',
+              adm: '{"native":{"link":{"url":"url","clicktrackers":[]},"assets":[{"id":1,"required":1,"img":{},"video":{},"data":{},"title":{"text":"TITLE"},"link":{}},{"id":1,"required":1,"img":{},"video":{},"data":{"type":2,"value":"Lorem Ipsum Lorem Ipsum Lorem Ipsum."},"title":{},"link":{}},{"id":1,"required":1,"img":{},"video":{},"data":{"type":12,"value":"Install Here"},"title":{},"link":{}},{"id":1,"required":1,"img":{"type":3,"url":"urk","w":990,"h":505},"video":{},"data":{},"title":{},"link":{}}],"imptrackers":[]}}',
               adid: '968',
               crid: '2370',
               w: 300,
@@ -271,7 +271,7 @@ describe('DailyhuntAdapter', function () {
     };
 
     it('should get correct bid response', function () {
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: '1',
           cpm: 1.4,
@@ -314,17 +314,18 @@ describe('DailyhuntAdapter', function () {
           winUrl: 'winUrl',
           adomain: 'dailyhunt',
           native: {
-            clickUrl: "https://dailyhunt.in/news/india/english/for+you?launch=true&mode=pwa",
+            clickUrl: 'https%3A%2F%2Fmontu1996.github.io%2F',
             clickTrackers: [],
-            impressionTrackers: ["https://example.com/impression"],
+            impressionTrackers: [],
             javascriptTrackers: [],
-            title: "Discover Amazing Products Today!",
-            cta: "Click Here To Visit Site",
+            title: 'TITLE',
+            body: 'Lorem Ipsum Lorem Ipsum Lorem Ipsum.',
+            cta: 'Install Here',
             image: {
-              height: 315,
-              url: "https://cdn.prod.website-files.com/64aabfa2adf7363205ea0135/67c168c650acb91b6ce4dfdf_%EC%8D%B8%EB%84%A4%EC%9D%BC_EN.webp",
-              width: 600,
-            },
+              url: 'url',
+              height: 505,
+              width: 990
+            }
           }
         },
         {
@@ -342,7 +343,7 @@ describe('DailyhuntAdapter', function () {
           vastXml: 'adm',
         },
       ];
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [
           {
             bidId: 'banner-impid',
@@ -376,7 +377,7 @@ describe('DailyhuntAdapter', function () {
           },
         ]
       }
-      const result = spec.interpretResponse({ body: bidResponses }, bidderRequest);
+      let result = spec.interpretResponse({ body: bidResponses }, bidderRequest);
       result.forEach((r, i) => {
         expect(Object.keys(r)).to.have.members(Object.keys(expectedResponse[i]));
       });
@@ -384,7 +385,7 @@ describe('DailyhuntAdapter', function () {
   })
   describe('onBidWon', function () {
     it('should hit win url when bid won', function () {
-      const bid = {
+      let bid = {
         requestId: '1',
         cpm: 1.4,
         creativeId: 'asd5ddbf014cac993.66466212',

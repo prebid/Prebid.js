@@ -147,10 +147,10 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     })
   }
   if (rtdConfig && isPlainObject(rtdConfig.params) && rtdConfig.params.segmentCache) {
-    const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
+    let jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
 
     if (jsonData) {
-      const data = JSON.parse(jsonData);
+      let data = JSON.parse(jsonData);
 
       if (data.rtd) {
         addRealTimeData(bidConfig, data.rtd, rtdConfig);
@@ -167,7 +167,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     userIds['hadronId'] = allUserIds.hadronId;
     logInfo(LOG_PREFIX, 'hadronId user module found', allUserIds.hadronId);
   } else {
-    const hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
+    let hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
     if (isStr(hadronId) && hadronId.length > 0) {
       userIds['hadronId'] = hadronId;
       logInfo(LOG_PREFIX, 'hadronId TAM found', hadronId);

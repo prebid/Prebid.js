@@ -1,5 +1,5 @@
-import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
-import { startAuction } from '../../../src/prebid.js';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
+import { startAuction } from '../../../src/prebid';
 
 describe('getBoundingClientRect', () => {
   let element, getBoundingClientRectSpy;

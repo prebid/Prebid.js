@@ -27,9 +27,6 @@ describe('Unified ID', () => {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'adserver.org',
-        inserter: 'adserver.org',
-        matcher: 'adserver.org',
-        mm: 4,
         uids: [{id: 'some-random-id-value', atype: 1, ext: {rtiPartner: 'TDID'}}]
       });
     });
@@ -42,24 +39,7 @@ describe('Unified ID', () => {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'adserver.org',
-        inserter: 'adserver.org',
-        matcher: 'adserver.org',
-        mm: 4,
         uids: [{id: 'some-sample_id', atype: 1, ext: {rtiPartner: 'TDID', provider: 'some.provider.com'}}]
-      });
-    });
-
-    it('unifiedId: adds inserter and matcher', function () {
-      const userId = {
-        tdid: 'uid123'
-      };
-      const newEids = createEidsArray(userId);
-      expect(newEids.length).to.equal(1);
-      expect(newEids[0]).to.deep.include({
-        source: 'adserver.org',
-        inserter: 'adserver.org',
-        matcher: 'adserver.org',
-        mm: 4
       });
     });
   });

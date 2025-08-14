@@ -2,9 +2,8 @@ import { expect } from 'chai';
 import {
   spec, STORAGE, getLocalStorage,
 } from 'modules/adgridBidAdapter.js';
-import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
-const sandbox = sinon.createSandbox();
+import { sandbox } from 'sinon';
+import { getAmxId } from '../../../libraries/nexx360Utils';
 
 describe('adgrid bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -564,9 +563,9 @@ describe('adgrid bid adapter tests', () => {
       expect(syncs).to.eql([]);
     });
     it('Verifies user sync with no bid body response', () => {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
   });

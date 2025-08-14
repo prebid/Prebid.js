@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/undertoneBidAdapter.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {deepClone, getWinDimensions} from '../../../src/utils.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {deepClone, getWinDimensions} from '../../../src/utils';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -65,8 +65,9 @@ const videoBidReq = [{
   },
   ortb2Imp: {
     ext: {
-      data: {},
-      gpid: '/1111/pbadslot#728x90'
+      data: {
+        pbadslot: '/1111/pbadslot#728x90'
+      }
     }
   },
   mediaTypes: {
@@ -116,7 +117,7 @@ const bidReq = [{
   sizes: [[1, 1]],
   bidId: '453cf42d72bb3c',
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874',
-  ortb2: { source: { ext: { schain: schainObj } } }
+  schain: schainObj
 }];
 
 const supplyChainedBidReqs = [{
@@ -129,7 +130,7 @@ const supplyChainedBidReqs = [{
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  ortb2: { source: { ext: { schain: schainObj } } }
+  schain: schainObj
 }, {
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
@@ -286,7 +287,7 @@ const bidVideoResponse = [
 let element;
 let sandbox;
 
-const elementParent = {
+let elementParent = {
   offsetLeft: 100,
   offsetTop: 100,
   offsetHeight: 100,
@@ -309,11 +310,10 @@ describe('Undertone Adapter', () => {
         offsetLeft: 100,
         offsetTop: 100,
         offsetWidth: 300,
-        offsetHeight: 250,
-        getBoundingClientRect() { return { left: 100, top: 100, width: 300, height: 250 }; }
+        offsetHeight: 250
       };
 
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
       sandbox.stub(document, 'getElementById').withArgs('div-gpt-ad-1460505748561-0').returns(element);
     });
 
@@ -398,7 +398,7 @@ describe('Undertone Adapter', () => {
       const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
       const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
-      const gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      let gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
@@ -408,7 +408,7 @@ describe('Undertone Adapter', () => {
       const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
       const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
-      const ccpa = bidderReqCcpa.uspConsent;
+      let ccpa = bidderReqCcpa.uspConsent;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&ccpa=${ccpa}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
@@ -418,8 +418,8 @@ describe('Undertone Adapter', () => {
       const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
       const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
-      const ccpa = bidderReqCcpaAndGdpr.uspConsent;
-      const gdpr = bidderReqCcpaAndGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      let ccpa = bidderReqCcpaAndGdpr.uspConsent;
+      let gdpr = bidderReqCcpaAndGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}&ccpa=${ccpa}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
@@ -518,14 +518,14 @@ describe('Undertone Adapter', () => {
       const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.coordinates).to.be.an('array');
-      expect(bid1.coordinates[0]).to.equal(100);
-      expect(bid1.coordinates[1]).to.equal(100);
+      expect(bid1.coordinates[0]).to.equal(200);
+      expect(bid1.coordinates[1]).to.equal(200);
     });
   });
 
   describe('interpretResponse', () => {
     it('should build bid array', () => {
-      const result = spec.interpretResponse({body: bidResponse});
+      let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
@@ -562,7 +562,7 @@ describe('Undertone Adapter', () => {
   });
 
   describe('getUserSyncs', () => {
-    const testParams = [
+    let testParams = [
       {
         name: 'with iframe and no gdpr or ccpa data',
         arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, null],
@@ -651,7 +651,7 @@ describe('Undertone Adapter', () => {
     ];
 
     for (let i = 0; i < testParams.length; i++) {
-      const currParams = testParams[i];
+      let currParams = testParams[i];
       it(currParams.name, function () {
         const result = spec.getUserSyncs.apply(this, currParams.arguments);
         expect(result).to.have.lengthOf(currParams.expect.pixels.length);

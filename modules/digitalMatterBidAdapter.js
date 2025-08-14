@@ -36,7 +36,7 @@ export const spec = {
     }
 
     const device = getDevice(common.device);
-    const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
+    const schain = getByKey(validBidRequests, 'schain');
     const eids = getByKey(validBidRequests, 'userIdAsEids');
     const currency = config.getConfig('currency')
     const cur = currency && [currency];
@@ -156,8 +156,8 @@ export const spec = {
             const userSync = response.body.ext.usersync;
 
             userSync.forEach((element) => {
-              const url = element.url;
-              const type = element.type;
+              let url = element.url;
+              let type = element.type;
 
               if (url) {
                 if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
@@ -178,7 +178,7 @@ export const spec = {
   }
 }
 
-const usersSynced = false;
+let usersSynced = false;
 
 function hasBannerMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');

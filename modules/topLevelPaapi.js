@@ -66,7 +66,7 @@ function renderOverrideHook(next, bidPm) {
     bidPm = bidPm.then((bid) => {
       if (isPaapiBid(bid) || bid?.status === BID_STATUS.RENDERED) return bid;
       return getPAAPIBids({adUnitCode: bid.adUnitCode}).then(res => {
-        const paapiBid = bidIfRenderable(res[bid.adUnitCode]);
+        let paapiBid = bidIfRenderable(res[bid.adUnitCode]);
         if (paapiBid) {
           if (!forRender) return paapiBid;
           if (forRender && paapiBid.status !== BID_STATUS.RENDERED) {

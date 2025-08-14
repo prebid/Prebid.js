@@ -1,4 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid'
@@ -32,7 +33,8 @@ export const spec = {
           isAmp: refererInfo.isAmp,
           numIframes: refererInfo.numIframes,
           reachedTop: refererInfo.reachedTop,
-          referer: refererInfo.topmostLocation},
+          referer: refererInfo.topmostLocation,
+        },
         gdprConsent: {
           consentString: gdprConsent.consentString,
           gdprApplies: gdprConsent.gdprApplies
@@ -60,7 +62,7 @@ export const spec = {
         return
       }
 
-      const matchedBid = ((serverResponse.body.bids) || []).find(function (bid) {
+      const matchedBid = find(serverResponse.body.bids, function (bid) {
         return String(bidRequest.bidId) === String(bid.id)
       })
 

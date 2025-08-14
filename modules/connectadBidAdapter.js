@@ -20,7 +20,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const ret = {
+    let ret = {
       method: 'POST',
       url: '',
       data: '',
@@ -67,9 +67,8 @@ export const spec = {
     }
 
     // adding schain object
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      deepSetValue(data, 'source.ext.schain', schain);
+    if (validBidRequests[0].schain) {
+      deepSetValue(data, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
@@ -125,7 +124,7 @@ export const spec = {
         tid: bid.ortb2Imp?.ext?.tid
       });
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         placement.gpid = gpid;
       }
@@ -147,7 +146,7 @@ export const spec = {
     let bids;
     let bidId;
     let bidObj;
-    const bidResponses = [];
+    let bidResponses = [];
 
     bids = bidRequest.bidRequest;
 
@@ -192,7 +191,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
-    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncEndpoint;
 
     if (pixelType == 'iframe') {
@@ -244,7 +243,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  const floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
+  let floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
 
   return floor;
 }

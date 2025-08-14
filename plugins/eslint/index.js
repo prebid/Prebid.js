@@ -22,9 +22,7 @@ module.exports = {
           },
           ImportDeclaration(node) {
             let importPath = node.source.value.trim();
-            if (node.importKind !== 'type') {
-              flagErrors(context, node, importPath);
-            }
+            flagErrors(context, node, importPath);
           },
           'ExportNamedDeclaration[source]'(node) {
             let importPath = node.source.value.trim();

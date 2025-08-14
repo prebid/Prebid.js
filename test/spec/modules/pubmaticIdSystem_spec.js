@@ -1,7 +1,7 @@
 import { pubmaticIdSubmodule, storage } from 'modules/pubmaticIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from 'src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai/index.mjs';
 import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
@@ -62,51 +62,35 @@ describe('pubmaticIdSystem', () => {
       logErrorSpy.restore();
     });
 
-    describe('gdpr', () => {
-      let gdprStub;
-
-      beforeEach(() => {
-        gdprStub = sinon.stub(gdprDataHandler, 'getConsentData');
-      });
-
-      afterEach(() => {
-        gdprStub.restore();
-      });
-
-      context('when GDPR applies', () => {
-        it('should call endpoint with gdpr=1 when GDPR applies and consent string is provided', () => {
-          gdprStub.returns({
-            gdprApplies: true,
-            consentString: 'foo'
-          });
-
-          const completeCallback = sinon.spy();
-          const { callback } = pubmaticIdSubmodule.getId(utils.mergeDeep({}, validCookieConfig));
-
-          callback(completeCallback);
-
-          const [request] = server.requests;
-
-          expect(request.url).to.contain('gdpr=1');
-          expect(request.url).to.contain('gdpr_consent=foo');
+    context('when GDPR applies', () => {
+      it('should call endpoint with gdpr=1 when GDPR applies and consent string is provided', () => {
+        const completeCallback = sinon.spy();
+        const { callback } = pubmaticIdSubmodule.getId(utils.mergeDeep({}, validCookieConfig), {
+          gdprApplies: true,
+          consentString: 'foo'
         });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('gdpr=1');
+        expect(request.url).to.contain('gdpr_consent=foo');
       });
+    });
 
-      context('when GDPR doesn\'t apply', () => {
-        it('should call endpoint with \'gdpr=0\'', () => {
-          gdprStub.returns({
-            gdprApplies: false
-          });
-
-          const completeCallback = () => {};
-          const { callback } = pubmaticIdSubmodule.getId(utils.mergeDeep({}, validCookieConfig));
-
-          callback(completeCallback);
-
-          const [request] = server.requests;
-
-          expect(request.url).to.contain('gdpr=0');
+    context('when GDPR doesn\'t apply', () => {
+      it('should call endpoint with \'gdpr=0\'', () => {
+        const completeCallback = () => {};
+        const { callback } = pubmaticIdSubmodule.getId(utils.mergeDeep({}, validCookieConfig), {
+          gdprApplies: false
         });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('gdpr=0');
       });
     });
 

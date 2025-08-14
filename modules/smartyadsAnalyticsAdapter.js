@@ -16,14 +16,14 @@ const {
   AUCTION_TIMEOUT
 } = EVENTS;
 
-const URL = 'https://ps.ivcsmrt.com';
+const URL = 'https://ps.itdsmr.com';
 const ANALYTICS_TYPE = 'endpoint';
 const BIDDER_CODE = 'smartyads';
 const GVLID = 534;
 
-const smartyParams = {};
+let smartyParams = {};
 
-const smartyadsAdapter = Object.assign({},
+let smartyadsAdapter = Object.assign({},
   adapter({
     url: URL,
     analyticsType: ANALYTICS_TYPE,
@@ -84,7 +84,7 @@ const auctionHandler = (eventType, data) => {
 }
 
 const bidHandler = (eventType, bid) => {
-  const bids = bid.length ? bid : [ bid ];
+  let bids = bid.length ? bid : [ bid ];
 
   for (const bidObj of bids) {
     let bidToSend;

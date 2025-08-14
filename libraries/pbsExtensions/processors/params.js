@@ -1,7 +1,7 @@
 import {deepSetValue} from '../../../src/utils.js';
 
 export function setImpBidParams(imp, bidRequest) {
-  const params = bidRequest.params;
+  let params = bidRequest.params;
   if (params) {
     deepSetValue(
       imp,

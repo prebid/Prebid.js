@@ -99,10 +99,9 @@ export const spec = {
         };
       };
 
-      const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
-      if (schain) {
+      if (bidRequests[0].schain) {
         postBody.source = {
-          ext: { schain: schain }
+          ext: { schain: bidRequests[0].schain }
         };
       }
 

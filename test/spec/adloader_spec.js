@@ -1,8 +1,8 @@
 import * as utils from 'src/utils.js';
 import * as adLoader from 'test/mocks/adloaderStub.js';
-import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities.js';
-import { registerActivityControl } from '../../src/activities/rules.js';
-import { MODULE_TYPE_PREBID } from '../../src/activities/modules.js';
+import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities';
+import { registerActivityControl } from '../../src/activities/rules';
+import { MODULE_TYPE_PREBID } from '../../src/activities/modules';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;
@@ -37,7 +37,7 @@ describe('adLoader', function () {
     });
 
     it('callback function can be passed to the function', function() {
-      const callback = function() {};
+      let callback = function() {};
       adLoader.loadExternalScript('someURL1', MODULE_TYPE_PREBID, 'debugging', callback);
       expect(utilsinsertElementStub.called).to.be.true;
     });
@@ -75,23 +75,23 @@ describe('adLoader', function () {
 
   it('attaches passed attributes to a script', function () {
     const doc = {
-      createElement: function () {
-        return {
-          setAttribute: function (key, value) {
-            this[key] = value;
+        createElement: function () {
+          return {
+            setAttribute: function (key, value) {
+              this[key] = value;
+            }
+          }
+        },
+        getElementsByTagName: function() {
+          return {
+            firstChild: {
+              insertBefore: function() {}
+            }
           }
         }
       },
-      getElementsByTagName: function() {
-        return {
-          firstChild: {
-            insertBefore: function() {}
-          }
-        }
-      }
-    };
-    const attrs = {'z': 'A', 'y': 2};
-    const script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
+      attrs = {'z': 'A', 'y': 2};
+    let script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
   });

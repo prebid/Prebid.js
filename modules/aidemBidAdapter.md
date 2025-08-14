@@ -183,7 +183,7 @@ gulp test --file "test/spec/modules/aidemBidAdapter_spec.js"
 ```
 
 
-For video: gulp serve --modules=aidemBidAdapter,gamAdServerVideo
+For video: gulp serve --modules=aidemBidAdapter,dfpAdServerVideo
 
 # FAQs
 ### How do I view AIDEM bid request?

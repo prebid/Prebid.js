@@ -20,14 +20,8 @@ import {PbPromise} from '../../../src/utils/promise.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
 describe('ID5 ID System', function () {
-  let logInfoStub;
-  before(function () {
-    logInfoStub = sinon.stub(utils, 'logInfo');
-  });
-  after(function () {
-    logInfoStub.restore();
-  });
   const ID5_MODULE_NAME = 'id5Id';
+  const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
   const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
   const ID5_TEST_PARTNER_ID = 173;
@@ -166,7 +160,7 @@ describe('ID5 ID System', function () {
     return {
       name: ID5_MODULE_NAME,
       params: {
-        partner: partner
+        partner
       },
       storage: {
         name: storageName,
@@ -830,17 +824,17 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass gpp_string and gpp_sid to ID5 server', function () {
-      const xhrServerMock = new XhrServerMock(server);
+      let xhrServerMock = new XhrServerMock(server);
       const gppData = {
         ready: true,
         gppString: 'GPP_STRING',
         applicableSections: [2]
       };
-      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          const requestBody = JSON.parse(fetchRequest.requestBody);
+          let requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.gpp_string).is.equal('GPP_STRING');
           expect(requestBody.gpp_sid).contains(2);
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
@@ -851,7 +845,7 @@ describe('ID5 ID System', function () {
     describe('when legacy cookies are set', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.createSandbox();
+        sandbox = sinon.sandbox.create();
         sandbox.stub(id5System.storage, 'getCookie');
       });
       afterEach(() => {
@@ -864,12 +858,12 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass true link info to ID5 server even when true link is not booted', function () {
-      const xhrServerMock = new XhrServerMock(server);
-      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      let xhrServerMock = new XhrServerMock(server);
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          const requestBody = JSON.parse(fetchRequest.requestBody);
+          let requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.true_link).is.eql({booted: false});
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
@@ -877,18 +871,18 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass full true link info to ID5 server when true link is booted', function () {
-      const xhrServerMock = new XhrServerMock(server);
-      const trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
+      let xhrServerMock = new XhrServerMock(server);
+      let trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
       window.id5Bootstrap = {
         getTrueLinkInfo: function () {
           return trueLinkResponse;
         }
       };
-      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          const requestBody = JSON.parse(fetchRequest.requestBody);
+          let requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.true_link).is.eql(trueLinkResponse);
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
@@ -899,7 +893,7 @@ describe('ID5 ID System', function () {
   describe('Local storage', () => {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
       sandbox.stub(id5System.storage, 'localStorageIsEnabled');
     });
     afterEach(() => {
@@ -928,20 +922,17 @@ describe('ID5 ID System', function () {
   });
 
   describe('Request Bids Hook', function () {
-    let adUnits, ortb2Fragments;
+    let adUnits;
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
       mockGdprConsent(sandbox);
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${id5System.ID5_STORAGE_NAME}_last`);
       coreStorage.setDataInLocalStorage(id5System.ID5_STORAGE_NAME + '_cst', getConsentHash());
       adUnits = [getAdUnitMock()];
-      ortb2Fragments = {
-        global: {}
-      }
     });
     afterEach(function () {
       events.getEvents.restore();
@@ -960,18 +951,24 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, () => {
-          expect(ortb2Fragments.global.user.ext.eids[0]).is.eql({
-            source: ID5_SOURCE,
-            uids: [{
-              id: ID5_STORED_ID,
-              atype: 1,
-              ext: {
-                linkType: ID5_STORED_LINK_TYPE
-              }
-            }]
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
+              expect(bid.userId.id5id.uid).is.equal(ID5_STORED_ID);
+              expect(bid.userIdAsEids[0]).is.eql({
+                source: ID5_SOURCE,
+                uids: [{
+                  id: ID5_STORED_ID,
+                  atype: 1,
+                  ext: {
+                    linkType: ID5_STORED_LINK_TYPE
+                  }
+                }]
+              });
+            });
           });
           done();
-        }), {ortb2Fragments});
+        }), {adUnits});
       });
 
       it('should add stored EUID from cache to bids', function (done) {
@@ -982,19 +979,25 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(function () {
-          expect(ortb2Fragments.global.user.ext.eids[0].uids[0].id).is.equal(ID5_STORED_ID);
-          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
-            source: EUID_SOURCE,
-            uids: [{
-              id: EUID_STORED_ID,
-              atype: 3,
-              ext: {
-                provider: ID5_SOURCE
-              }
-            }]
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.euid`);
+              expect(bid.userId.euid.uid).is.equal(EUID_STORED_ID);
+              expect(bid.userIdAsEids[0].uids[0].id).is.equal(ID5_STORED_ID);
+              expect(bid.userIdAsEids[1]).is.eql({
+                source: EUID_SOURCE,
+                uids: [{
+                  id: EUID_STORED_ID,
+                  atype: 3,
+                  ext: {
+                    provider: ID5_SOURCE
+                  }
+                }]
+              });
+            });
           });
           done();
-        }, {ortb2Fragments});
+        }, {adUnits});
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids', function (done) {
@@ -1005,27 +1008,33 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
-            source: TRUE_LINK_SOURCE,
-            uids: [{
-              id: TRUE_LINK_STORED_ID,
-              atype: 1
-            }]
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
+              expect(bid.userId.trueLinkId.uid).is.equal(TRUE_LINK_STORED_ID);
+              expect(bid.userIdAsEids[1]).is.eql({
+                source: TRUE_LINK_SOURCE,
+                uids: [{
+                  id: TRUE_LINK_STORED_ID,
+                  atype: 1
+                }]
+              });
+            });
           });
           done();
-        }), {ortb2Fragments});
+        }), {adUnits});
       });
     });
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
       const xhrServerMock = new XhrServerMock(server);
-      const storedObject = ID5_STORED_OBJ;
+      let storedObject = ID5_STORED_OBJ;
       storedObject.nbPage = 1;
       const initialLocalStorageValue = JSON.stringify(storedObject);
       storeInStorage(id5System.ID5_STORAGE_NAME, initialLocalStorageValue, 1);
       storeInStorage(`${id5System.ID5_STORAGE_NAME}_last`, expDaysStr(-1), 1);
 
-      const id5Config = getFetchLocalStorageConfig();
+      let id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
       id5Config.userSync.auctionDelay = 0; // do not trigger callback before auction
       init(config);
@@ -1048,8 +1057,6 @@ describe('ID5 ID System', function () {
     });
 
     describe('when request with "ids" object stored', function () {
-      // FIXME: all these tests involve base userId logic
-      // (which already has its own tests, so these make it harder to refactor it)
       it('should add stored ID from cache to bids - from ids', function (done) {
         storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_IDS_ID5ID_ONLY), 1);
 
@@ -1058,18 +1065,26 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
         const id5IdEidUid = IDS_ID5ID.eid.uids[0];
         startAuctionHook(wrapAsyncExpects(done, () => {
-          expect(ortb2Fragments.global.user.ext.eids[0]).is.eql({
-            source: IDS_ID5ID.eid.source,
-            uids: [{
-              id: id5IdEidUid.id,
-              atype: id5IdEidUid.atype,
-              ext: id5IdEidUid.ext
-            }]
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
+              expect(bid.userId.id5id).is.eql({
+                uid: id5IdEidUid.id,
+                ext: id5IdEidUid.ext
+              });
+              expect(bid.userIdAsEids[0]).is.eql({
+                source: IDS_ID5ID.eid.source,
+                uids: [{
+                  id: id5IdEidUid.id,
+                  atype: id5IdEidUid.atype,
+                  ext: id5IdEidUid.ext
+                }]
+              });
+            });
           });
           done();
-        }), {ortb2Fragments});
+        }), {adUnits});
       });
-
       it('should add stored EUID from cache to bids - from ids', function (done) {
         storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify({
           ...ID5_STORED_OBJ,
@@ -1084,11 +1099,19 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, () => {
-          const eids = ortb2Fragments.global.user.ext.eids;
-          expect(eids[0]).is.eql(IDS_ID5ID.eid);
-          expect(eids[1]).is.eql(IDS_EUID.eid);
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.euid`);
+              expect(bid.userId.euid).is.eql({
+                uid: IDS_EUID.eid.uids[0].id,
+                ext: IDS_EUID.eid.uids[0].ext
+              });
+              expect(bid.userIdAsEids[0]).is.eql(IDS_ID5ID.eid);
+              expect(bid.userIdAsEids[1]).is.eql(IDS_EUID.eid);
+            });
+          });
           done();
-        }), {ortb2Fragments});
+        }), {adUnits});
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids - from ids', function (done) {
@@ -1105,9 +1128,15 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
+              expect(bid.userId.trueLinkId.uid).is.eql(IDS_TRUE_LINK_ID.eid.uids[0].id);
+              expect(bid.userIdAsEids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
+            });
+          });
           done();
-        }), {ortb2Fragments});
+        }), {adUnits});
       });
 
       it('should add other id from cache to bids', function (done) {
@@ -1140,19 +1169,25 @@ describe('ID5 ID System', function () {
         config.setConfig(getFetchLocalStorageConfig());
 
         startAuctionHook(wrapAsyncExpects(done, function () {
-          expect(ortb2Fragments.global.user.ext.eids[1]).is.eql({
-            source: 'other-id.com',
-            inserter: 'id5-sync.com',
-            uids: [{
-              id: 'other-id-value',
-              atype: 2,
-              ext: {
-                provider: 'id5-sync.com'
-              }
-            }]
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property(`userId.otherId`);
+              expect(bid.userId.otherId.uid).is.eql('other-id-value');
+              expect(bid.userIdAsEids[1]).is.eql({
+                source: 'other-id.com',
+                inserter: 'id5-sync.com',
+                uids: [{
+                  id: 'other-id-value',
+                  atype: 2,
+                  ext: {
+                    provider: 'id5-sync.com'
+                  }
+                }]
+              });
+            });
           });
           done();
-        }), {ortb2Fragments});
+        }), {adUnits});
       });
     });
   });
@@ -1187,7 +1222,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should decode all ids from a stored object with ids', function () {
-      const decoded = id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_IDS_ALL, getId5FetchConfig());
+      let decoded = id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_IDS_ALL, getId5FetchConfig());
       expect(decoded.id5id).is.eql({
         uid: IDS_ID5ID.eid.uids[0].id,
         ext: IDS_ID5ID.eid.uids[0].ext
@@ -1202,137 +1237,6 @@ describe('ID5 ID System', function () {
       });
     });
   });
-
-  describe('Decode should also update GAM tagging if configured', function () {
-    let origGoogletag, setTargetingStub, storedObject;
-    const targetingEnabledConfig = getId5FetchConfig();
-    targetingEnabledConfig.params.gamTargetingPrefix = 'id5';
-
-    beforeEach(function () {
-      // Save original window.googletag if it exists
-      origGoogletag = window.googletag;
-      setTargetingStub = sinon.stub();
-      window.googletag = {
-        cmd: [],
-        pubads: function () {
-          return {
-            setTargeting: setTargetingStub
-          };
-        }
-      };
-      sinon.spy(window.googletag, 'pubads');
-      storedObject = utils.deepClone(ID5_STORED_OBJ);
-    });
-
-    afterEach(function () {
-      // Restore original window.googletag
-      if (origGoogletag) {
-        window.googletag = origGoogletag;
-      } else {
-        delete window.googletag;
-      }
-      id5System.id5IdSubmodule._reset()
-    });
-
-    function verifyTagging(tagName, tagValue) {
-      verifyMultipleTagging({[tagName]: tagValue})
-    }
-
-    function verifyMultipleTagging(tagsObj) {
-      expect(window.googletag.cmd.length).to.be.at.least(1);
-      window.googletag.cmd.forEach(cmd => cmd());
-
-      const tagCount = Object.keys(tagsObj).length;
-      expect(setTargetingStub.callCount).to.equal(tagCount);
-
-      for (const [tagName, tagValue] of Object.entries(tagsObj)) {
-        const fullTagName = `${targetingEnabledConfig.params.gamTargetingPrefix}_${tagName}`;
-
-        const matchingCall = setTargetingStub.getCalls().find(call => call.args[0] === fullTagName);
-        expect(matchingCall, `Tag ${fullTagName} was not set`).to.exist;
-        expect(matchingCall.args[1]).to.equal(tagValue);
-      }
-
-      window.googletag.cmd = [];
-      setTargetingStub.reset();
-      window.googletag.pubads.resetHistory();
-    }
-
-    it('should not set GAM targeting if it is not enabled', function () {
-      id5System.id5IdSubmodule.decode(storedObject, getId5FetchConfig());
-      expect(window.googletag.cmd).to.have.lengthOf(0)
-    })
-
-    it('should set GAM targeting for id tag when universal_uid starts with ID5*', function () {
-      // Setup
-      let config = utils.deepClone(getId5FetchConfig());
-      config.params.gamTargetingPrefix = "id5";
-      let testObj = {...storedObject, universal_uid: 'ID5*test123'};
-      id5System.id5IdSubmodule.decode(testObj, config);
-
-      verifyTagging('id', 'y');
-    })
-
-    it('should set GAM targeting for ab tag with control value', function () {
-      // Setup
-      let testObj = {...storedObject, ab_testing: {result: 'control'}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('ab', 'c');
-    })
-
-    it('should set GAM targeting for ab tag with normal value', function () {
-      // Setup
-      let testObj = {...storedObject, ab_testing: {result: 'normal'}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('ab', 'n');
-    })
-
-    it('should set GAM targeting for enrich tag with enriched=true', function () {
-      // Setup
-      let testObj = {...storedObject, enrichment: {enriched: true}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('enrich', 'y');
-    })
-
-    it('should set GAM targeting for enrich tag with enrichment_selected=true', function () {
-      // Setup
-      let testObj = {...storedObject, enrichment: {enrichment_selected: true}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('enrich', 's');
-    })
-
-    it('should set GAM targeting for enrich tag with enrichment_selected=false', function () {
-      // Setup
-      let testObj = {...storedObject, enrichment: {enrichment_selected: false}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('enrich', 'c');
-    })
-
-    it('should set GAM targeting for multiple tags when all conditions are met', function () {
-      // Setup
-      let testObj = {
-        ...storedObject,
-        universal_uid: 'ID5*test123',
-        ab_testing: {result: 'normal'},
-        enrichment: {enriched: true}
-      };
-
-      // Call decode once with the combined test object
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      // Verify all tags were set correctly
-      verifyMultipleTagging({
-        'id': 'y',
-        'ab': 'n',
-        'enrich': 'y'
-      });
-    })
-  })
 
   describe('A/B Testing', function () {
     const expectedDecodedObjectWithIdAbOff = {id5id: {uid: ID5_STORED_ID, ext: {linkType: ID5_STORED_LINK_TYPE}}};
@@ -1366,7 +1270,6 @@ describe('ID5 ID System', function () {
         let logErrorSpy;
 
         beforeEach(function () {
-          utils.logError.restore?.();
           logErrorSpy = sinon.spy(utils, 'logError');
         });
         afterEach(function () {

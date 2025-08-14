@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script async src="../../build/dev/prebid.js"></script>
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <meta charset="UTF-8">
     <title>Reconciliation RTD Provider Example</title>
     <script>
@@ -67,14 +67,10 @@
         if (pbjs.adserverRequestSent) return;
         pbjs.adserverRequestSent = true;
         googletag.cmd.push(function() {
-          if (pbjs.libLoaded) {
-            pbjs.que.push(function() {
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();
-            });
-          } else {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
             googletag.pubads().refresh();
-          }
+          });
         });
       }
 

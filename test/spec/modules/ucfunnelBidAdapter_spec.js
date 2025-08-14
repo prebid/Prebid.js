@@ -39,25 +39,19 @@ const validBannerBidReq = {
     }
   },
   userId: userId,
-  ortb2: {
-    source: {
-      ext: {
-        schain: {
-          'ver': '1.0',
-          'complete': 1,
-          'nodes': [
-            {
-              'asi': 'exchange1.com',
-              'sid': '1234',
-              'hp': 1,
-              'rid': 'bid-request-1',
-              'name': 'publisher',
-              'domain': 'publisher.com'
-            }
-          ]
-        }
+  'schain': {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'exchange1.com',
+        'sid': '1234',
+        'hp': 1,
+        'rid': 'bid-request-1',
+        'name': 'publisher',
+        'domain': 'publisher.com'
       }
-    }
+    ]
   }
 };
 
@@ -198,7 +192,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     it('should set bidfloor if configured', function() {
-      const bid = deepClone(validBannerBidReq);
+      let bid = deepClone(validBannerBidReq);
       bid.getFloor = function() {
         return {
           currency: 'USD',
@@ -211,7 +205,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     it('should set bidfloor if configured', function() {
-      const bid = deepClone(validBannerBidReq);
+      let bid = deepClone(validBannerBidReq);
       bid.params.bidfloor = 2.01;
       const requests = spec.buildRequests([ bid ], bidderRequest);
       const data = requests[0].data;
@@ -219,7 +213,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     it('should set bidfloor if configured', function() {
-      const bid = deepClone(validBannerBidReq);
+      let bid = deepClone(validBannerBidReq);
       bid.getFloor = function() {
         return {
           currency: 'USD',

@@ -27,6 +27,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'admixer.net',
   'adserver.org',
   'adtelligent.com',
+  'akamai.com',
   'amxdt.net',
   'audigent.com',
   'britepool.com',
@@ -77,20 +78,20 @@ function transformSizes(sizes) {
 }
 
 function extractUserSyncUrls(syncOptions, pixels) {
-  const itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-  const tagNameRegExp = /\w*(?=\s)/;
-  const srcRegExp = /src=("|')(.*?)\1/;
-  const userSyncObjects = [];
+  let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
+  let tagNameRegExp = /\w*(?=\s)/;
+  let srcRegExp = /src=("|')(.*?)\1/;
+  let userSyncObjects = [];
 
   if (pixels) {
-    const matchedItems = pixels.match(itemsRegExp);
+    let matchedItems = pixels.match(itemsRegExp);
     if (matchedItems) {
       matchedItems.forEach(item => {
-        const tagName = item.match(tagNameRegExp)[0];
-        const url = item.match(srcRegExp)[2];
+        let tagName = item.match(tagNameRegExp)[0];
+        let url = item.match(srcRegExp)[2];
 
         if (tagName && url) {
-          const tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
+          let tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
           if ((!syncOptions.iframeEnabled && tagType === 'iframe') ||
                 (!syncOptions.pixelEnabled && tagType === 'image')) {
             return;
@@ -328,9 +329,9 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    const schain = bid?.ortb2?.source?.ext?.schain;
-    if (schain && isArray(schain.nodes) && schain.nodes.length > 0) {
-      outBoundBidRequest.source.ext.schain = schain;
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
+      outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
 
@@ -622,7 +623,7 @@ export const spec = {
     if (!serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) {
       return response;
     }
-    const seatbids = serverResponse.body.seatbid;
+    let seatbids = serverResponse.body.seatbid;
     seatbids.forEach(seatbid => {
       let bid;
 
@@ -632,9 +633,9 @@ export const spec = {
         return response;
       }
 
-      const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
+      let cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
 
-      const bidResponse = {
+      let bidResponse = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         requestId: bid.impid,
         cpm: cpm,

@@ -1,6 +1,6 @@
 import {config} from '../src/config.js';
 import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
-
+import {includes} from '../src/polyfill.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
 
@@ -48,7 +48,7 @@ export function getLabels(bidOrAdUnit, activeLabels) {
  * @returns {boolean}
  */
 export function sizeSupported(size, configs = sizeConfig) {
-  const maps = evaluateSizeConfig(configs);
+  let maps = evaluateSizeConfig(configs);
   if (!maps.shouldFilter) {
     return true;
   }
@@ -77,7 +77,7 @@ if (FEATURES.VIDEO) {
  * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
 export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
-  const maps = evaluateSizeConfig(configs);
+  let maps = evaluateSizeConfig(configs);
 
   let filtered = false;
   let hasSize = false;
@@ -104,7 +104,7 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null
   }
 
-  const results = {
+  let results = {
     active: (
       !Object.keys(SIZE_PROPS).find(mediaType => mediaTypes.hasOwnProperty(mediaType))
     ) || (
@@ -112,11 +112,11 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
-            labels.some(label => activeLabels.includes(label))
+            labels.some(label => includes(activeLabels, label))
           )) ||
           (labelAll && (
             labels.reduce((result, label) => !result ? result : (
-              maps.labels[label] || activeLabels.includes(label)
+              maps.labels[label] || includes(activeLabels, label)
             ), true)
           ))
         )
@@ -154,9 +154,7 @@ function evaluateSizeConfig(configs) {
         }
         ['labels', 'sizesSupported'].forEach(
           type => (config[type] || []).forEach(
-            thing => {
-              results[type][thing] = true
-            }
+            thing => results[type][thing] = true
           )
         );
       }
@@ -173,7 +171,7 @@ function evaluateSizeConfig(configs) {
 
 export function processAdUnitsForLabels(adUnits, activeLabels) {
   return adUnits.reduce((adUnits, adUnit) => {
-    const {
+    let {
       active,
       mediaTypes,
       filterResults
@@ -192,7 +190,7 @@ export function processAdUnitsForLabels(adUnits, activeLabels) {
       adUnit.mediaTypes = mediaTypes;
 
       adUnit.bids = adUnit.bids.reduce((bids, bid) => {
-        const {
+        let {
           active,
           mediaTypes,
           filterResults

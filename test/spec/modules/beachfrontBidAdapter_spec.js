@@ -327,7 +327,7 @@ describe('BeachfrontAdapter', function () {
         };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.ortb2 = { source: { ext: { schain: schain } } };
+        bidRequest.schain = schain;
         const requests = spec.buildRequests([ bidRequest ], {});
         const data = requests[0].data;
         expect(data.source.ext.schain).to.deep.equal(schain);
@@ -565,7 +565,7 @@ describe('BeachfrontAdapter', function () {
         };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
-        bidRequest.ortb2 = { source: { ext: { schain: schain } } };
+        bidRequest.schain = schain;
         const requests = spec.buildRequests([ bidRequest ], {});
         const data = requests[0].data;
         expect(data.schain).to.deep.equal(schain);

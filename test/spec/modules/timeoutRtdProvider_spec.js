@@ -1,4 +1,5 @@
-import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider.js'
+
+import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider'
 import { expect } from 'chai';
 import * as ajax from 'src/ajax.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
@@ -75,7 +76,7 @@ describe('getConnectionSpeed', () => {
 describe('Timeout modifier calculations', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(() => {
@@ -206,7 +207,7 @@ describe('Timeout modifier calculations', () => {
 describe('Timeout RTD submodule', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(() => {

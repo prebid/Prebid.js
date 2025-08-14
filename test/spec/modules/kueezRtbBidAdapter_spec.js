@@ -9,8 +9,8 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {config} from '../../../src/config.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
 import {
   hashCode,
   extractPID,
@@ -21,7 +21,6 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -269,12 +268,12 @@ describe('KueezRtbBidAdapter', function () {
     let sandbox;
     let createFirstPartyDataStub;
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
       createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
         pcid: 'pcid',
@@ -439,7 +438,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -627,14 +626,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -662,14 +661,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();
@@ -709,14 +708,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('First party data', () => {
     before(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       storage.removeDataFromLocalStorage('_iiq_fdata');
     })
 

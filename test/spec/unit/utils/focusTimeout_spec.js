@@ -1,4 +1,4 @@
-import {setFocusTimeout, reset} from '../../../../src/utils/focusTimeout.js';
+import {setFocusTimeout, reset} from '../../../../src/utils/focusTimeout';
 
 export const setDocumentHidden = (hidden) => {
   Object.defineProperty(document, 'hidden', {

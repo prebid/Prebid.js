@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {parseSizesInput} from '../src/utils.js';
-
+import {includes} from '../src/polyfill.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
@@ -13,13 +13,11 @@ import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
  */
 
 const BIDDER_CODE = 'between';
-const GVLID = 724;
-const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['btw'],
   supportedMediaTypes: ['banner', 'video'],
   /**
@@ -38,14 +36,14 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const requests = [];
+    let requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
     const refInfo = bidderRequest?.refererInfo;
 
     validBidRequests.forEach((i) => {
       const video = i.mediaTypes && i.mediaTypes.video;
 
-      const params = {
+      let params = {
         eids: getUsersIds(i),
         sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
@@ -66,7 +64,7 @@ export const spec = {
         params.mind = video.mind;
         params.pos = 'atf';
         params.jst = 'pvc';
-        params.codeType = CODE_TYPES.includes(video.codeType) ? video.codeType : 'inpage';
+        params.codeType = includes(CODE_TYPES, video.codeType) ? video.codeType : 'inpage';
       }
 
       if (i.params.itu !== undefined) {
@@ -82,14 +80,13 @@ export const spec = {
         params.click3rd = i.params.click3rd;
       }
       if (i.params.pubdata !== undefined) {
-        for (const key in i.params.pubdata) {
+        for (let key in i.params.pubdata) {
           params['pubside_macro[' + key + ']'] = encodeURIComponent(i.params.pubdata[key]);
         }
       }
 
-      const schain = i?.ortb2?.source?.ext?.schain;
-      if (schain) {
-        params.schain = encodeToBase64WebSafe(JSON.stringify(schain));
+      if (i.schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
       }
 
       // TODO: is 'page' the right value here?
@@ -123,7 +120,7 @@ export const spec = {
     const bidResponses = [];
 
     for (var i = 0; i < serverResponse.body.length; i++) {
-      const bidResponse = {
+      let bidResponse = {
         requestId: serverResponse.body[i].bidid,
         cpm: serverResponse.body[i].cpm || 0,
         width: serverResponse.body[i].w,
@@ -153,7 +150,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = []
+    let syncs = []
     /* console.log(syncOptions,serverResponses)
      if (syncOptions.iframeEnabled) {
       syncs.push({

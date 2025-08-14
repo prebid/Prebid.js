@@ -13,19 +13,19 @@ describe('betweenBidAdapterTests', function () {
     })).to.equal(true);
   });
   it('validate_generated_params', function () {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {w: 240, h: 400, s: 1112},
       sizes: [[240, 400]]
     }]
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
     expect(req_data.bidid).to.equal('bid1234');
   });
 
   it('validate_video_params', function () {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {w: 240, h: 400, s: 1112},
@@ -39,8 +39,8 @@ describe('betweenBidAdapterTests', function () {
         }
       },
     }];
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.mediaType).to.equal(2);
     expect(req_data.maxd).to.equal(123);
@@ -50,7 +50,7 @@ describe('betweenBidAdapterTests', function () {
   });
 
   it('validate itu param', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -62,13 +62,13 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.itu).to.equal('https://something.url');
   });
   it('validate cur param', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -80,13 +80,13 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.cur).to.equal('THX');
   });
   it('validate default cur USD', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -97,13 +97,13 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.cur).to.equal('USD');
   });
   it('validate subid param', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -115,8 +115,8 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.subid).to.equal(1138);
   });
@@ -131,7 +131,7 @@ describe('betweenBidAdapterTests', function () {
       }
     ];
 
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -143,14 +143,14 @@ describe('betweenBidAdapterTests', function () {
       userIdAsEids: USER_ID_DATA,
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.eids).to.have.deep.members(USER_ID_DATA);
   });
 
   it('validate eids parameter, if userIdAsEids = undefined', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -162,14 +162,14 @@ describe('betweenBidAdapterTests', function () {
       userIdAsEids: undefined
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.eids).to.have.deep.members([]);
   });
 
   it('validate click3rd param', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -181,13 +181,13 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.click3rd).to.equal('https://something.url');
   });
   it('validate pubdata param', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -201,13 +201,13 @@ describe('betweenBidAdapterTests', function () {
       sizes: [[240, 400]]
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data['pubside_macro[param]']).to.equal('%26test%3Dtset');
   });
   it('validate gdprConsent', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       params: {
@@ -217,21 +217,21 @@ describe('betweenBidAdapterTests', function () {
       },
       sizes: [[240, 400]]
     }];
-    const bidderRequest = {
+    let bidderRequest = {
       gdprConsent: {
         consentString: 'BOtGbjbOtGbjbBQABBENC3-AAAAtR7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4u_1vf99yfm1-7etr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Ew_v-_v-b7JCON_IA',
         gdprApplies: true
       }
     }
 
-    const request = spec.buildRequests(bidRequestData, bidderRequest);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData, bidderRequest);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.gdprApplies).to.equal(bidderRequest.gdprConsent.gdprApplies);
     expect(req_data.consentString).to.equal(bidderRequest.gdprConsent.consentString);
   });
   it('validate_response_params', function () {
-    const serverResponse = {
+    let serverResponse = {
       body: [{
         bidid: 'bid1234',
         cpm: 1.12,
@@ -241,9 +241,9 @@ describe('betweenBidAdapterTests', function () {
         ad: 'Ad html'
       }]
     };
-    const bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse);
     expect(bids).to.have.lengthOf(1);
-    const bid = bids[0];
+    let bid = bids[0];
     expect(bid.cpm).to.equal(1.12);
     expect(bid.currency).to.equal('USD');
     expect(bid.width).to.equal(240);
@@ -253,7 +253,7 @@ describe('betweenBidAdapterTests', function () {
     expect(bid.ad).to.equal('Ad html');
   });
   it('validate_response_params', function () {
-    const serverResponse = {
+    let serverResponse = {
       body: [{
         bidid: 'bid1234',
         w: 240,
@@ -262,9 +262,9 @@ describe('betweenBidAdapterTests', function () {
         ad: 'Ad html'
       }]
     };
-    const bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse);
     expect(bids).to.have.lengthOf(1);
-    const bid = bids[0];
+    let bid = bids[0];
     expect(bid.cpm).to.equal(0);
     expect(bid.currency).to.equal('USD');
     expect(bid.width).to.equal(240);
@@ -275,21 +275,21 @@ describe('betweenBidAdapterTests', function () {
   });
 
   it('validate_response_video_params', function () {
-    const serverResponse = {
+    let serverResponse = {
       body: [{
         mediaType: 2,
         vastXml: 'vastXml',
       }]
     };
-    const bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse);
     expect(bids).to.have.lengthOf(1);
-    const bid = bids[0];
+    let bid = bids[0];
     expect(bid.mediaType).to.equal(2);
     expect(bid.vastXml).to.equal('vastXml');
   });
 
   it('validate response params without currency', function () {
-    const serverResponse = {
+    let serverResponse = {
       body: [{
         bidid: 'bid1234',
         w: 240,
@@ -297,9 +297,9 @@ describe('betweenBidAdapterTests', function () {
         ad: 'Ad html'
       }]
     };
-    const bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse);
     expect(bids).to.have.lengthOf(1);
-    const bid = bids[0];
+    let bid = bids[0];
     expect(bid.currency).to.equal('USD');
   });
   it('check getUserSyncs', function() {
@@ -310,7 +310,7 @@ describe('betweenBidAdapterTests', function () {
   });
 
   it('check sizes', function() {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
       mediaTypes: {
@@ -323,8 +323,8 @@ describe('betweenBidAdapterTests', function () {
       },
     }];
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = JSON.parse(request.data)[0].data;
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
 
     expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
   });

@@ -20,13 +20,13 @@ export const spec = {
       return [];
     }
 
-    const queryParams = buildCommonQueryParamsFromBids(validBidRequests, bidderRequest);
+    let queryParams = buildCommonQueryParamsFromBids(validBidRequests, bidderRequest);
 
-    const siteId = deepAccess(validBidRequests[0], 'params.site_id');
+    let siteId = deepAccess(validBidRequests[0], 'params.site_id');
 
     // TODO: should this use auctionId? see #8573
     // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    const url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
+    let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
     return {
       method: 'POST',
@@ -44,10 +44,10 @@ export const spec = {
       return bidResponses;
     }
 
-    const adUnits = serverResponse.seatbid[0].bid;
-    const bidderBid = adUnits[0];
+    let adUnits = serverResponse.seatbid[0].bid;
+    let bidderBid = adUnits[0];
 
-    const responseCPM = parseFloat(bidderBid.price);
+    let responseCPM = parseFloat(bidderBid.price);
     if (responseCPM === 0) {
       return bidResponses;
     }
@@ -55,7 +55,7 @@ export const spec = {
     let responseAd = bidderBid.adm;
 
     if (bidderBid.nurl) {
-      const responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
+      let responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
       responseAd += responseNurl;
     }
 
@@ -106,8 +106,8 @@ export const spec = {
 function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
   let adW = 0;
   let adH = 0;
-  const adSizes = Array.isArray(validBidRequests[0].params.sizes) ? validBidRequests[0].params.sizes : validBidRequests[0].sizes;
-  const sizeArrayLength = adSizes.length;
+  let adSizes = Array.isArray(validBidRequests[0].params.sizes) ? validBidRequests[0].params.sizes : validBidRequests[0].sizes;
+  let sizeArrayLength = adSizes.length;
   if (sizeArrayLength === 2 && typeof adSizes[0] === 'number' && typeof adSizes[1] === 'number') {
     adW = adSizes[0];
     adH = adSizes[1];
@@ -116,10 +116,10 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     adH = adSizes[0][1];
   }
 
-  const domain = window.location.host;
-  const page = window.location.host + window.location.pathname + location.search + location.hash;
+  let domain = window.location.host;
+  let page = window.location.host + window.location.pathname + location.search + location.hash;
 
-  const defaultParams = {
+  let defaultParams = {
     id: getUniqueIdentifierStr(),
     imp: [
       {

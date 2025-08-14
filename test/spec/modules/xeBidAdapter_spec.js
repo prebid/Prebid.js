@@ -128,20 +128,18 @@ describe('xeBidAdapter', () => {
 
     it('should build request with schain', function () {
       const schainRequest = deepClone(defaultRequest);
-      const bidderRequest = {
-        ortb2: {
-          source: {
-            ext: {
-              schain: {
-                ver: '1.0'
-              }
-            }
-          }
+      schainRequest.schain = {
+        validation: 'strict',
+        config: {
+          ver: '1.0'
         }
       };
-      const request = JSON.parse(spec.buildRequests([schainRequest], bidderRequest).data)[0];
+      const request = JSON.parse(spec.buildRequests([schainRequest], {}).data)[0];
       expect(request).to.have.property('schain').and.to.deep.equal({
-        ver: '1.0'
+        validation: 'strict',
+        config: {
+          ver: '1.0'
+        }
       });
     });
 

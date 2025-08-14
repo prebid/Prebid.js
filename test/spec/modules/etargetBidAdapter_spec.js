@@ -7,7 +7,7 @@ describe('etarget adapter', function () {
   let serverResponse, bidRequest, bidResponses;
   let bids = [];
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'etarget',
       'params': {
         'refid': '55410',
@@ -22,30 +22,30 @@ describe('etarget adapter', function () {
 
   describe('buildRequests', function () {
     it('should pass multiple bids via single request', function () {
-      const request = spec.buildRequests(bids);
-      const parsedUrl = parseUrl(request.url);
+      let request = spec.buildRequests(bids);
+      let parsedUrl = parseUrl(request.url);
       assert.lengthOf(parsedUrl.items, 7);
     });
 
     it('should be an object', function () {
-      const request = spec.buildRequests(bids);
+      let request = spec.buildRequests(bids);
       assert.isNotNull(request.metaData);
     });
 
     it('should handle global request parameters', function () {
-      const parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
+      let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       assert.equal(parsedUrl.path, 'https://sk.search.etargetnet.com/hb');
     });
 
     it('should set correct request method', function () {
-      const request = spec.buildRequests([bids[0]]);
+      let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'POST');
     });
 
     it('should attach floor param when either bid param or getFloor function exists', function () {
       // let getFloorResponse = { currency: 'EUR', floor: 5 };
       let request = null;
-      const bidRequest = deepClone(bids[0]);
+      let bidRequest = deepClone(bids[0]);
 
       // floor param has to be NULL
       request = spec.buildRequests([bidRequest]);
@@ -53,9 +53,9 @@ describe('etarget adapter', function () {
     });
 
     it('should correctly form bid items', function () {
-      const bidList = bids;
-      const request = spec.buildRequests(bidList);
-      const parsedUrl = parseUrl(request.url);
+      let bidList = bids;
+      let request = spec.buildRequests(bidList);
+      let parsedUrl = parseUrl(request.url);
       assert.deepEqual(parsedUrl.items, [
         {
           refid: '1',
@@ -105,24 +105,24 @@ describe('etarget adapter', function () {
 
     it('should not change original validBidRequests object', function () {
       var resultBids = JSON.parse(JSON.stringify(bids[0]));
-      const request = spec.buildRequests([bids[0]]);
+      let request = spec.buildRequests([bids[0]]);
       assert.deepEqual(resultBids, bids[0]);
     });
 
     describe('gdpr', function () {
       it('should send GDPR Consent data to etarget if gdprApplies', function () {
-        const resultBids = JSON.parse(JSON.stringify(bids[0]));
-        const request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
-        const parsedUrl = parseUrl(request.url).query;
+        let resultBids = JSON.parse(JSON.stringify(bids[0]));
+        let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
+        let parsedUrl = parseUrl(request.url).query;
 
         assert.equal(parsedUrl.gdpr, 'true');
         assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
       });
 
       it('should not send GDPR Consent data to etarget if gdprApplies is false or undefined', function () {
-        const resultBids = JSON.parse(JSON.stringify(bids[0]));
+        let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
-        const parsedUrl = parseUrl(request.url).query;
+        let parsedUrl = parseUrl(request.url).query;
 
         assert.ok(!parsedUrl.gdpr);
         assert.ok(!parsedUrl.gdpr_consent);
@@ -148,21 +148,21 @@ describe('etarget adapter', function () {
 
   describe('interpretResponse', function () {
     it('should respond with empty response when there is empty serverResponse', function () {
-      const result = spec.interpretResponse({ body: {} }, {});
+      let result = spec.interpretResponse({ body: {} }, {});
       assert.deepEqual(result, []);
     });
     it('should respond with empty response when response from server is not banner', function () {
       serverResponse.body[0].response = 'not banner';
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[0]];
-      const result = spec.interpretResponse(serverResponse, bidRequest);
+      let result = spec.interpretResponse(serverResponse, bidRequest);
 
       assert.deepEqual(result, []);
     });
     it('should interpret server response correctly with one bid', function () {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[0]];
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
+      let result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
       assert.equal(result.requestId, '2a0cf4e');
       assert.equal(result.cpm, 13.9);
@@ -179,13 +179,13 @@ describe('etarget adapter', function () {
       serverResponse.body = [serverResponse.body[0]];
       bidRequest.bids = [bidRequest.bids[1]];
       bidRequest.netRevenue = 'net';
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
+      let result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
       assert.equal(result.netRevenue, true);
     });
 
     it('should create bid response item for every requested item', function () {
-      const result = spec.interpretResponse(serverResponse, bidRequest);
+      let result = spec.interpretResponse(serverResponse, bidRequest);
       assert.lengthOf(result, 5);
     });
 
@@ -242,7 +242,7 @@ describe('etarget adapter', function () {
 
         serverResponse.body = [serverResponse.body[0]];
         bidRequest.bids = [bidRequest.bids[0]];
-        const result = spec.interpretResponse(serverResponse, bidRequest);
+        let result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(serverResponse.body.length, 1);
         assert.equal(serverResponse.body[0].response, 'banner');
@@ -257,7 +257,7 @@ describe('etarget adapter', function () {
         bidRequest.bids = [bidRequest.bids[0]];
 
         bidRequest.bids[0].sizes = [['101', '150']];
-        const result = spec.interpretResponse(serverResponse, bidRequest);
+        let result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(serverResponse.body.length, 1);
         assert.equal(serverResponse.body[0].response, 'banner');
@@ -272,7 +272,7 @@ describe('etarget adapter', function () {
         bidRequest.bids = [bidRequest.bids[0]];
 
         bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
-        const result = spec.interpretResponse(serverResponse, bidRequest);
+        let result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(result[0].width, 300);
         assert.equal(result[0].height, 600);
@@ -281,9 +281,9 @@ describe('etarget adapter', function () {
   });
 
   beforeEach(function () {
-    const sizes = [[250, 300], [300, 250], [300, 600]];
-    const placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    const params = [{refid: 1, country: 1, url: 'some// there'}, {refid: 2, country: 1, someVar: 'someValue', pt: 'gross'}, {refid: 3, country: 1, pdom: 'home'}, {refid: 5, country: 1, pt: 'net'}, {refid: 6, country: 1, pt: 'gross'}];
+    let sizes = [[250, 300], [300, 250], [300, 600]];
+    let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
+    let params = [{refid: 1, country: 1, url: 'some// there'}, {refid: 2, country: 1, someVar: 'someValue', pt: 'gross'}, {refid: 3, country: 1, pdom: 'home'}, {refid: 5, country: 1, pt: 'net'}, {refid: 6, country: 1, pt: 'gross'}];
     bids = [
       {
         adUnitCode: placementCode[0],

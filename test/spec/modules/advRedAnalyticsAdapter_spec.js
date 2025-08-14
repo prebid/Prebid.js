@@ -5,10 +5,10 @@ import {expectEvents} from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
 
-const events = require('src/events');
+let events = require('src/events');
 
 describe('AdvRed Analytics Adapter', function () {
-  const bidWonEvent = {
+  let bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
@@ -45,7 +45,7 @@ describe('AdvRed Analytics Adapter', function () {
     });
 
     it('support custom endpoint', function () {
-      const custom_endpoint = 'custom url';
+      let custom_endpoint = 'custom url';
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {
@@ -58,7 +58,7 @@ describe('AdvRed Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      const publisherId = '1234567890';
+      let publisherId = '1234567890';
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {

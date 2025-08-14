@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -26,25 +25,25 @@ describe('ImpactifyAdapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    getGlobal().bidderSettings = {
+    $$PREBID_GLOBAL$$.bidderSettings = {
       impactify: {
         storageAllowed: true
       }
     };
     sinon.stub(document.body, 'appendChild');
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     getLocalStorageStub = sandbox.stub(STORAGE, 'getDataFromLocalStorage');
     localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled');
   });
 
   afterEach(function () {
-    getGlobal().bidderSettings = {};
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     document.body.appendChild.restore();
     sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
-    const validBids = [
+    let validBids = [
       {
         bidder: 'impactify',
         params: {
@@ -63,7 +62,7 @@ describe('ImpactifyAdapter', function () {
       }
     ];
 
-    const videoBidRequests = [
+    let videoBidRequests = [
       {
         bidder: 'impactify',
         params: {
@@ -98,7 +97,7 @@ describe('ImpactifyAdapter', function () {
         ]
       }
     ];
-    const videoBidderRequest = {
+    let videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -118,12 +117,12 @@ describe('ImpactifyAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, validBids[0]);
+      let bid = Object.assign({}, validBids[0]);
       delete bid.params;
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
 
-      const bid2 = Object.assign({}, validBids[1]);
+      let bid2 = Object.assign({}, validBids[1]);
       delete bid2.params;
       bid2.params = {};
       expect(spec.isBidRequestValid(bid2)).to.equal(false);
@@ -232,7 +231,7 @@ describe('ImpactifyAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    const videoBidRequests = [
+    let videoBidRequests = [
       {
         bidder: 'impactify',
         params: {
@@ -267,7 +266,7 @@ describe('ImpactifyAdapter', function () {
         ]
       }
     ];
-    const videoBidderRequest = {
+    let videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -324,7 +323,7 @@ describe('ImpactifyAdapter', function () {
   });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
-      const response = {
+      let response = {
         id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
         seatbid: [
           {
@@ -358,7 +357,7 @@ describe('ImpactifyAdapter', function () {
                     bidder: {
                       appnexus: {
                         brand_id: 182979,
-                        auction_id: '8657683934873599656',
+                        auction_id: 8657683934873599656,
                         bidder_id: 2,
                         bid_ad_type: 1,
                         creative_info: {
@@ -390,7 +389,7 @@ describe('ImpactifyAdapter', function () {
           }
         }
       };
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [
           {
             bidId: '462c08f20d428',
@@ -406,7 +405,7 @@ describe('ImpactifyAdapter', function () {
           },
         ]
       }
-      const expectedResponse = [
+      let expectedResponse = [
         {
           id: '65820304700829014',
           requestId: '462c08f20d428',
@@ -423,12 +422,12 @@ describe('ImpactifyAdapter', function () {
           creativeId: '97517771'
         }
       ];
-      const result = spec.interpretResponse({ body: response }, bidderRequest);
+      let result = spec.interpretResponse({ body: response }, bidderRequest);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
   });
   describe('getUserSyncs', function () {
-    const videoBidRequests = [
+    let videoBidRequests = [
       {
         bidder: 'impactify',
         params: {
@@ -449,7 +448,7 @@ describe('ImpactifyAdapter', function () {
         transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
       }
     ];
-    const videoBidderRequest = {
+    let videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -462,7 +461,7 @@ describe('ImpactifyAdapter', function () {
         referer: 'https://impactify.io'
       }
     };
-    const validResponse = {
+    let validResponse = {
       id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
       seatbid: [
         {
@@ -496,7 +495,7 @@ describe('ImpactifyAdapter', function () {
                   bidder: {
                     appnexus: {
                       brand_id: 182979,
-                      auction_id: '8657683934873599656',
+                      auction_id: 8657683934873599656,
                       bidder_id: 2,
                       bid_ad_type: 1,
                       creative_info: {

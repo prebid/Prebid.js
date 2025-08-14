@@ -6,7 +6,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 
 const analyticsType = 'endpoint';
 
-const rivrAnalytics = Object.assign(adapter({analyticsType}), {
+let rivrAnalytics = Object.assign(adapter({analyticsType}), {
   track({ eventType, args }) {
     if (window.rivraddon && window.rivraddon.analytics && window.rivraddon.analytics.getContext() && window.rivraddon.analytics.trackPbjsEvent) {
       utils.logInfo(`ARGUMENTS FOR TYPE: ============= ${eventType}`, args);

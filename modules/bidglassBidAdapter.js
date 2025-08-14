@@ -49,11 +49,11 @@ export const spec = {
     }]
     */
 
-    const imps = [];
-    const getReferer = function() {
+    let imps = [];
+    let getReferer = function() {
       return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
     };
-    const getOrigins = function() {
+    let getOrigins = function() {
       var ori = [window.location.protocol + '//' + window.location.hostname];
 
       if (window.location.ancestorOrigins) {
@@ -75,7 +75,7 @@ export const spec = {
       return ori;
     };
 
-    const bidglass = window['bidglass'];
+    let bidglass = window['bidglass'];
 
     _each(validBidRequests, function(bid) {
       bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
@@ -88,7 +88,7 @@ export const spec = {
 
       // Merge externally set targeting params
       if (typeof bidglass === 'object' && bidglass.getTargeting) {
-        const targeting = bidglass.getTargeting(adUnitId, options.targeting);
+        let targeting = bidglass.getTargeting(adUnitId, options.targeting);
 
         if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting;
       }
@@ -129,7 +129,7 @@ export const spec = {
         : ((ortb2Gpp && ortb2Regs.gpp_sid) || '')
     };
 
-    const url = 'https://bid.glass/ad/hb.php?' +
+    let url = 'https://bid.glass/ad/hb.php?' +
       `src=$$REPO_AND_VERSION$$`;
 
     return {
@@ -183,7 +183,7 @@ export const spec = {
       };
 
       if (serverBid.meta) {
-        const meta = serverBid.meta;
+        let meta = serverBid.meta;
 
         if (meta.advertiserDomains && meta.advertiserDomains.length) {
           bidResponse.meta.advertiserDomains = meta.advertiserDomains;

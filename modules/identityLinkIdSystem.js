@@ -48,8 +48,8 @@ export const identityLinkSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
@@ -87,7 +87,7 @@ export const identityLinkSubmodule = {
         });
       } else {
         // try to get envelope directly from storage if ats lib is not present on a page
-        const envelope = getEnvelopeFromStorage();
+        let envelope = getEnvelopeFromStorage();
         if (envelope) {
           utils.logInfo('identityLink: LiveRamp envelope successfully retrieved from storage!');
           callback(JSON.parse(envelope).envelope);
@@ -137,32 +137,20 @@ function getEnvelope(url, callback, configParams) {
 }
 
 function setRetryCookie() {
-  const now = new Date();
+  let now = new Date();
   now.setTime(now.getTime() + 3600000);
   storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
 }
 
 function setEnvelopeSource(src) {
-  const now = new Date();
+  let now = new Date();
   now.setTime(now.getTime() + 2592000000);
   storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
 }
 
 export function getEnvelopeFromStorage() {
-  const rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
-  if (!rawEnvelope) {
-    return undefined;
-  }
-  try {
-    return window.atob(rawEnvelope);
-  } catch (e) {
-    try {
-      return window.atob(rawEnvelope.replace(/-/g, '+').replace(/_/g, '/'));
-    } catch (e2) {
-      utils.logError('identityLink: invalid envelope format');
-      return undefined;
-    }
-  }
+  let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
+  return rawEnvelope ? window.atob(rawEnvelope) : undefined;
 }
 
 submodule('userId', identityLinkSubmodule);

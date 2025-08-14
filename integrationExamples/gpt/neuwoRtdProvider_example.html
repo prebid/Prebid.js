@@ -4,7 +4,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name=viewport content="width=device-width, initial-scale=1">
         <script src="../../build/dev/prebid.js" async type="text/javascript"></script>
-        <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
         <script>
             /* adapted from https://docs.prebid.org/dev-docs/examples/basic-example.html */
             var div_1_sizes = [
@@ -135,14 +135,10 @@
                 if (pbjs.initAdserverSet) return;
                 pbjs.initAdserverSet = true;
                 googletag.cmd.push(function() {
-                    if (pbjs.libLoaded) {
-                        pbjs.que.push(function() {
-                            pbjs.setTargetingForGPTAsync();
-                            googletag.pubads().refresh();
-                        });
-                    } else {
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync();
                         googletag.pubads().refresh();
-                    }
+                    });
                 });
             }
 

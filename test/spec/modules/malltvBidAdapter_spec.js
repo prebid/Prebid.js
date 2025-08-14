@@ -145,7 +145,7 @@ describe('malltvAdapterTest', () => {
     it('all keys present', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
-      const keys = [
+      let keys = [
         'requestId',
         'cpm',
         'width',
@@ -161,7 +161,7 @@ describe('malltvAdapterTest', () => {
         'meta'
       ];
 
-      const resultKeys = Object.keys(result[0]);
+      let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function (key) {
         expect(keys.indexOf(key) !== -1).to.equal(true);
       });

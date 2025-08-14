@@ -101,7 +101,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
       if (!params.bidders || params.bidders.includes(bid.bidder)) {
         const index = interestingBidsRates.findIndex(({ id }) => id === bid._id);
         if (index == -1) {
-          const tmpBid = bid;
+          let tmpBid = bid;
           tmpBid['code'] = adUnits[adUnitIndex].code;
           tmpBid['mediaTypes'] = adUnits[adUnitIndex].mediaTypes;
           tmpBid['originalBidder'] = bidderAliasRegistry[bid.bidder] || bid.bidder;

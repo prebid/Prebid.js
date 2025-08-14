@@ -59,10 +59,9 @@ export const spec = {
       deepSetValue(payload, 'user.ext.eids', eids);
     }
 
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    const schainData = schain?.nodes;
+    const schainData = deepAccess(validBidRequests[0], 'schain.nodes');
     if (isArray(schainData) && schainData.length > 0) {
-      deepSetValue(payload, 'source.ext.schain', schain);
+      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     if (bidderRequest.uspConsent) {
@@ -104,7 +103,7 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
-    const syncs = [];
+    let syncs = [];
     serverResponses.forEach(resp => {
       const userSync = deepAccess(resp, 'body.ext.usersync');
       if (userSync) {

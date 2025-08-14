@@ -1,0 +1,40 @@
+{
+  "src_folders": ["./test/spec/e2e"],
+  "output_folder": "./build/coverage/e2e/reports",
+  "custom_commands_path" : "",
+  "custom_assertions_path" : "./test/spec/e2e/custom-assertions",
+  "page_objects_path" : "",
+  "globals_path" : "",
+  "end_session_on_fail" : true,
+  "skip_testcases_on_fail" : false,
+
+  "selenium" : {
+    "start_process" : true,
+    "server_path" : "${SELENIUM_JAR_PATH}",
+    "log_path" : "",
+    "host" : "127.0.0.1",
+    "port" : 4444,
+    "cli_args" : {
+      "webdriver.ie.driver" : ""
+    }
+  },
+
+  "test_settings" : {
+    "default" : {
+      "launch_url" : "http://localhost",
+      "selenium_port"  : 4444,
+      "selenium_host"  : "localhost",
+      "silent": true,
+      "exclude":["custom-assertions","custom-commands","common","custom-reporter"],
+      "screenshots" : {
+        "enabled" : false,
+        "path" : ""
+      },
+      "desiredCapabilities": {
+        "browserName": "firefox",
+        "javascriptEnabled": true,
+        "acceptSslCerts": true
+      }
+    }
+  }
+}

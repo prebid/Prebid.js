@@ -3,7 +3,6 @@ import {assert, expect} from 'chai';
 import {config} from 'src/config.js';
 import {spec} from 'modules/apstreamBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const validBidRequests = [{
   bidId: 'bidId',
@@ -34,7 +33,7 @@ describe('AP Stream adapter', function() {
 
     let mockConfig;
     beforeEach(function () {
-      getGlobal().bidderSettings = {
+      $$PREBID_GLOBAL$$.bidderSettings = {
         apstream: {
           storageAllowed: true
         }
@@ -50,7 +49,7 @@ describe('AP Stream adapter', function() {
     });
 
     afterEach(function () {
-      getGlobal().bidderSettings = {};
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       config.getConfig.restore();
     });
 

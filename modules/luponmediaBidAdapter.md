@@ -17,14 +17,15 @@ Module that connects to LuponMedia's demand sources
             code: 'test-div',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]]
+                    sizes: [[300, 250]],  // a display size
                 }
             },
             bids: [
                 {
                     bidder: "luponmedia",
                     params: {
-                        keyId: 'uid@test_12345'
+                        siteId: 12345,
+                        keyId: '4o2c4'
                     }
                 }
             ]

@@ -89,7 +89,7 @@ describe('ssmasBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const bidOrtbResponse = {
+    let bidOrtbResponse = {
       'id': 'aa02e2fe-56d9-4713-88f9-d8672ceae8ab',
       'seatbid': [
         {
@@ -138,7 +138,7 @@ describe('ssmasBidAdapter', function () {
       'cur': 'EUR',
       'nbr': -1
     };
-    const bidResponse = {
+    let bidResponse = {
       'mediaType': 'banner',
       'ad': '<a href=\"https://ssmas.com/es\" target=\"blank\"><img src=\"https://source.unsplash.com/featured/300x202\"/></a><style>body{overflow:hidden;}</style>',
       'requestId': '37c658fe8ba57b',
@@ -158,7 +158,7 @@ describe('ssmasBidAdapter', function () {
         ]
       }
     };
-    const bidRequest = {
+    let bidRequest = {
       'imp': [
         {
           'ext': {

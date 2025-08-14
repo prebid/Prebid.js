@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script async src="../../build/dev/prebid.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3000;
@@ -95,14 +95,10 @@
             if (pbjs.initAdserverSet) return;
             pbjs.initAdserverSet = true;
             googletag.cmd.push(function() {
-                if (pbjs.libLoaded) {
-                    pbjs.que.push(function() {
-                        pbjs.setTargetingForGPTAsync('div-gpt-ad-1683695049516-0');
-                        googletag.pubads().refresh();
-                    });
-                } else {
+                pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync('div-gpt-ad-1683695049516-0');
                     googletag.pubads().refresh();
-                }
+                });
             });
         }
 

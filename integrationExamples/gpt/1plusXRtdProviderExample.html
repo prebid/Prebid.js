@@ -65,14 +65,10 @@
       pbjs.adserverRequestSent = true;
 
       googletag.cmd.push(function () {
-        if (pbjs.libLoaded) {
-          pbjs.que.push(function () {
-            pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();
-          });
-        } else {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
           googletag.pubads().refresh();
-        }
+        });
       });
     }
 

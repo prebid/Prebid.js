@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Prebid.js Banner gpt Example</title>
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script async src="../../build/dev/prebid.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
@@ -48,14 +48,10 @@
 
         function sendAdserverRequest() {
             googletag.cmd.push(function () {
-                if (pbjs.libLoaded) {
-                    pbjs.que.push(function () {
-                        pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
-                        googletag.pubads().refresh();
-                    });
-                } else {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
                     googletag.pubads().refresh();
-                }
+                });
             });
         }
 

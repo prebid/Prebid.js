@@ -22,5 +22,5 @@ Where:
     * **`params`:**
         * **`iu`:** required property used to construct valid VAST tag URL
     * **`adUnit`:** ad unit that is being filled
-    * **`bid` [optional]:** if you override the hardcoded `pbjs.adServers.gam.buildVideoUrl(...)` logic that picks the first bid you *must* pass in the `bid` object you select
-    * **`url`:** VAST tag URL, similar to the value returned by `pbjs.adServers.gam.buildVideoUrl(...)`
+    * **`bid` [optional]:** if you override the hardcoded `pbjs.adServers.dfp.buildVideoUrl(...)` logic that picks the first bid you *must* pass in the `bid` object you select
+    * **`url`:** VAST tag URL, similar to the value returned by `pbjs.adServers.dfp.buildVideoUrl(...)`

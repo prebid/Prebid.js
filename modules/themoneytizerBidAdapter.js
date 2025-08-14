@@ -3,12 +3,14 @@ import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'themoneytizer';
+const GVLID = 1265;
 const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 
 export const spec = {
   aliases: [BIDDER_CODE],
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
+  gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
     if (!(bid && bid.params.pid)) {
@@ -31,7 +33,7 @@ export const spec = {
         ortb2: bidderRequest.ortb2,
         eids: bidRequest.userIdAsEids,
         id: bidRequest.auctionId,
-        schain: bidRequest?.ortb2?.source?.ext?.schain,
+        schain: bidRequest.schain,
         version: '$prebid.version$',
         excl_sync: window.tmzrBidderExclSync
       };
@@ -77,7 +79,7 @@ export const spec = {
       return [];
     }
 
-    const s = [];
+    let s = [];
     serverResponses.map((c) => {
       if (c.body.c_sync) {
         c.body.c_sync.bidder_status.map((p) => {

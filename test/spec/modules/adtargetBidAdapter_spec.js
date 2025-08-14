@@ -8,6 +8,7 @@ const DISPLAY_REQUEST = {
   'params': {
     'aid': 12345
   },
+  'schain': { ver: 1 },
   'userId': { criteo: 2 },
   'mediaTypes': { 'banner': { 'sizes': [300, 250] } },
   'bidderRequestId': '7101db09af0db2',
@@ -94,16 +95,7 @@ const displayBidderRequestWithConsents = {
     gdprApplies: true,
     consentString: 'test'
   },
-  uspConsent: 'iHaveIt',
-  ortb2: {
-    source: {
-      ext: {
-        schain: {
-          ver: '1.0'
-        }
-      }
-    }
-  }
+  uspConsent: 'iHaveIt'
 };
 
 const videoEqResponse = [{
@@ -201,16 +193,16 @@ describe('adtargetBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      const bid = Object.assign({}, VIDEO_REQUEST);
+      let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', () => {
-    const videoBidRequests = [VIDEO_REQUEST];
-    const displayBidRequests = [DISPLAY_REQUEST];
-    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    let videoBidRequests = [VIDEO_REQUEST];
+    let displayBidRequests = [DISPLAY_REQUEST];
+    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
     const displayRequest = spec.buildRequests(displayBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});
     const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
@@ -272,7 +264,7 @@ describe('adtargetBidAdapter', () => {
     });
 
     describe('publisher environment', () => {
-      const sandbox = sinon.createSandbox();
+      const sandbox = sinon.sandbox.create();
       sandbox.stub(config, 'getConfig').callsFake((key) => {
         const config = {
           'coppa': true
@@ -292,7 +284,7 @@ describe('adtargetBidAdapter', () => {
         expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1);
       })
       it('sets Schain', () => {
-        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain);
+        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(DISPLAY_REQUEST.schain);
       })
       it('sets UserId\'s', () => {
         expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);

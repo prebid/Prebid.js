@@ -35,7 +35,7 @@ describe('TargetVideo Ad Server Video', function() {
   };
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     bid = {
       videoCacheKey: '123',
       adserverTargeting: {

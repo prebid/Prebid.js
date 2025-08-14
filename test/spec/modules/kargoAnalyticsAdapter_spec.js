@@ -2,7 +2,7 @@ import kargoAnalyticsAdapter from 'modules/kargoAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
-const events = require('src/events');
+let events = require('src/events');
 
 describe('Kargo Analytics Adapter', function () {
   const adapterConfig = {

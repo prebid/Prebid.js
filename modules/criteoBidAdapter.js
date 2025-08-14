@@ -56,7 +56,7 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The ORTB 2.5 imp object.
  */
 function imp(buildImp, bidRequest, context) {
-  const imp = buildImp(bidRequest, context);
+  let imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
   imp.tagid = bidRequest.adUnitCode;
@@ -100,7 +100,7 @@ function imp(buildImp, bidRequest, context) {
   }
 
   if (imp.native && typeof imp.native.request !== 'undefined') {
-    const requestNative = JSON.parse(imp.native.request);
+    let requestNative = JSON.parse(imp.native.request);
 
     // We remove the native asset requirements if we used the bypass to generate the imp
     const hasAssetRequirements = requestNative.assets &&
@@ -162,7 +162,7 @@ function bidResponse(buildBidResponse, bid, context) {
     delete bid.adm_native;
   }
 
-  const bidResponse = buildBidResponse(bid, context);
+  let bidResponse = buildBidResponse(bid, context);
   const {bidRequest} = context;
 
   bidResponse.currency = bid?.ext?.cur;
@@ -198,7 +198,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @returns *
  */
 function response(buildResponse, bidResponses, ortbResponse, context) {
-  const response = buildResponse(bidResponses, ortbResponse, context);
+  let response = buildResponse(bidResponses, ortbResponse, context);
 
   const pafTransmission = ortbResponse?.ext?.paf?.transmission;
   response.bids.forEach(bid => {
@@ -219,7 +219,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
-    const { gppString = '', applicableSections = [] } = gppConsent;
+    let { gppString = '', applicableSections = [] } = gppConsent;
 
     const refererInfo = getRefererInfo();
     const origin = 'criteoPrebidAdapter';
@@ -522,12 +522,12 @@ function buildCdbUrl(context) {
 function checkNativeSendId(bidRequest) {
   return !(bidRequest.nativeParams &&
     (
-      (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true))) ||
-      (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true))) ||
-      (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true))) ||
-      (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true))) ||
-      (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true))) ||
-      (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true)))
+      (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true || bidRequest.nativeParams.image.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
+      (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
     ));
 }
 
@@ -603,17 +603,13 @@ function getFloors(bidRequest) {
       if (bidRequest.mediaTypes?.banner) {
         floors.banner = {};
         const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes)
-        bannerSizes.forEach(bannerSize => {
-          floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER });
-        });
+        bannerSizes.forEach(bannerSize => floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER }));
       }
 
       if (bidRequest.mediaTypes?.video) {
         floors.video = {};
         const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize)
-        videoSizes.forEach(videoSize => {
-          floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO });
-        });
+        videoSizes.forEach(videoSize => floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO }));
       }
 
       if (bidRequest.mediaTypes?.native) {
@@ -640,14 +636,14 @@ function createOutstreamVideoRenderer(bid) {
   }
 
   const render = (_, renderDocument) => {
-    const payload = {
+    let payload = {
       slotid: bid.id,
       vastUrl: bid.ext?.displayurl,
       vastXml: bid.adm,
       documentContext: renderDocument,
     };
 
-    const outstreamConfig = bid.ext.videoPlayerConfig;
+    let outstreamConfig = bid.ext.videoPlayerConfig;
     window.CriteoOutStream[bid.ext.videoPlayerType].play(payload, outstreamConfig)
   };
 

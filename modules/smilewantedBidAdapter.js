@@ -84,7 +84,7 @@ export const spec = {
          */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$',
-        schain: serializeSupplyChain(bid?.ortb2?.source?.ext?.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
+        schain: serializeSupplyChain(bid.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
       };
 
       const floor = getBidFloor(bid);
@@ -120,7 +120,7 @@ export const spec = {
       if (nativeMediaType) {
         payload.context = 'native';
         payload.nativeParams = nativeMediaType;
-        const sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
+        let sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
@@ -215,7 +215,7 @@ export const spec = {
     const syncs = [];
 
     if (syncOptions.iframeEnabled) {
-      const params = [];
+      let params = [];
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined

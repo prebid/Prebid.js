@@ -139,6 +139,7 @@ const createTargetingEngineStub = (getTargetingDataReturnValue = {}, raiseError 
   return window.$nodals.adTargetingEngine[version];
 };
 
+
 describe('NodalsAI RTD Provider', () => {
   let sandbox;
   let validConfig;
@@ -149,7 +150,7 @@ describe('NodalsAI RTD Provider', () => {
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
 
     validConfig = { params: { propertyId: '10312dd2' } };
 
@@ -189,14 +190,6 @@ describe('NodalsAI RTD Provider', () => {
     describe('when initialised with empty consent data', () => {
       it('should return true when initialised with valid config and empty user consent', function () {
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
-        server.respond();
-
-        expect(result).to.be.true;
-        expect(server.requests.length).to.equal(1);
-      });
-
-      it('should return true when initialised with valid config and gdpr consent is null', function () {
-        const result = nodalsAiRtdSubmodule.init(validConfig, {gdpr: null});
         server.respond();
 
         expect(result).to.be.true;
@@ -366,7 +359,7 @@ describe('NodalsAI RTD Provider', () => {
     describe('when performing requests to the publisher endpoint', () => {
       it('should construct the correct URL to the default origin', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        const request = server.requests[0];
+        let request = server.requests[0];
         server.respond();
 
         expect(request.method).to.equal('GET');
@@ -379,7 +372,7 @@ describe('NodalsAI RTD Provider', () => {
         const config = Object.assign({}, validConfig);
         config.params.endpoint = { origin: 'http://localhost:8000' };
         nodalsAiRtdSubmodule.init(config, permissiveUserConsent);
-        const request = server.requests[0];
+        let request = server.requests[0];
         server.respond();
 
         expect(request.method).to.equal('GET');
@@ -390,7 +383,7 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should construct the correct URL with the correct path', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        const request = server.requests[0];
+        let request = server.requests[0];
         server.respond();
 
         const requestUrl = new URL(request.url);
@@ -402,7 +395,7 @@ describe('NodalsAI RTD Provider', () => {
           consentString: 'foobarbaz',
         };
         nodalsAiRtdSubmodule.init(validConfig, generateGdprConsent(consentData));
-        const request = server.requests[0];
+        let request = server.requests[0];
         server.respond();
 
         const requestUrl = new URL(request.url);
@@ -419,7 +412,7 @@ describe('NodalsAI RTD Provider', () => {
     describe('when handling responses from the publisher endpoint', () => {
       it('should store successful response data in local storage', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        const request = server.requests[0];
+        let request = server.requests[0];
         server.respond();
 
         const storedData = JSON.parse(
@@ -438,7 +431,7 @@ describe('NodalsAI RTD Provider', () => {
         config.params.storage = { key: overrideLocalStorageKey };
         nodalsAiRtdSubmodule.init(config, permissiveUserConsent);
         server.respond();
-        const request = server.requests[0];
+        let request = server.requests[0];
         const storedData = JSON.parse(
           nodalsAiRtdSubmodule.storage.getDataFromLocalStorage(overrideLocalStorageKey)
         );

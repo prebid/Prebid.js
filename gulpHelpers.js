@@ -1,30 +1,17 @@
 // this will have all of a copy of the normal fs methods as well
-const fs = require('fs-extra');
+const fs = require('fs.extra');
 const path = require('path');
 const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
-const PluginError = require('plugin-error');
-const execaCmd = require('execa');
+const gutil = require('gulp-util');
 const submodules = require('./modules/.submodules.json').parentModules;
 
-const PRECOMPILED_PATH = './dist/src'
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
-const SOURCE_FOLDERS = [
-  'src',
-  'creative',
-  'libraries',
-  'modules',
-  'test',
-  'public'
-]
-const IGNORE_SOURCES = [
-  'libraries/creative-renderer-*/**/*',
-]
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -38,19 +25,19 @@ function isModuleDirectory(filePath) {
 }
 
 module.exports = {
-  getSourceFolders() {
-    return SOURCE_FOLDERS
-  },
-  getSourcePatterns() {
-    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`])
-  },
-  getIgnoreSources() {
-    return IGNORE_SOURCES
-  },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
   },
 
+  toCapitalCase: function (str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  },
+
+  jsonifyHTML: function (str) {
+    return str.replace(/\n/g, '')
+      .replace(/<\//g, '<\\/')
+      .replace(/\/>/g, '\\/>');
+  },
   getArgModules() {
     var modules = (argv.modules || '')
       .split(',')
@@ -65,7 +52,10 @@ module.exports = {
         );
       }
     } catch (e) {
-      throw new PluginError('modules', 'failed reading: ' + argv.modules + '. Ensure the file exists and contains valid JSON.');
+      throw new gutil.PluginError({
+        plugin: 'modules',
+        message: 'failed reading: ' + argv.modules
+      });
     }
 
     try {
@@ -94,26 +84,14 @@ module.exports = {
     try {
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
-        .filter(file => (/^[^\.]+(\.js|\.tsx?)?$/).test(file))
+        .filter(file => (/^[^\.]+(\.js)?$/).test(file))
         .reduce((memo, file) => {
-          let moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
+          var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
-          let candidates;
           if (fs.lstatSync(modulePath).isDirectory()) {
-            candidates = [
-              path.join(modulePath, 'index.js'),
-              path.join(modulePath, 'index.ts')
-            ]
-          } else {
-            candidates = [modulePath]
+            modulePath = path.join(modulePath, 'index.js')
           }
-          const target = candidates.find(name => fs.existsSync(name));
-          if (target) {
-            modulePath = this.getPrecompiledPath(path.relative(__dirname, path.format({
-              ...path.parse(target),
-              base: null,
-              ext: '.js'
-            })));
+          if (fs.existsSync(modulePath)) {
             memo[modulePath] = moduleName;
           }
           return memo;
@@ -134,19 +112,9 @@ module.exports = {
       return memo;
     }, internalModules));
   }),
-  getMetadataEntry(moduleName) {
-    if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
-      return `${moduleName}.metadata`;
-    } else {
-      return null;
-    }
-  },
+
   getBuiltPath(dev, assetPath) {
     return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
-  },
-
-  getPrecompiledPath(filePath) {
-    return path.resolve(filePath ? path.join(PRECOMPILED_PATH, filePath) : PRECOMPILED_PATH)
   },
 
   getBuiltModules: function(dev, externalModules) {
@@ -215,24 +183,9 @@ module.exports = {
     return options;
   },
   getDisabledFeatures() {
-    function parseFlags(input) {
-      return input
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s);
-    }
-    const disabled = parseFlags(argv.disable || '');
-    const enabled = parseFlags(argv.enable || '');
-    if (!argv.disable) {
-      disabled.push('GREEDY');
-    }
-    return disabled.filter(feature => !enabled.includes(feature));
+    return (argv.disable || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s);
   },
-  getTestDisableFeatures() {
-    // test with all features disabled with exceptions for logging, as tests often assert logs
-    return require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR')
-  },
-  execaTask(cmd) {
-    return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
 };

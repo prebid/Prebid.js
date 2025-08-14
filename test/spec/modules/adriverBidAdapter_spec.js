@@ -220,7 +220,7 @@ describe('adriverAdapter', function () {
       'start': 1622465003762
     };
 
-    const floorTestData = {
+    let floorTestData = {
       'currency': 'USD',
       'floor': floor
     };
@@ -297,7 +297,7 @@ describe('adriverAdapter', function () {
       { adrcid: undefined }
     ]
     cookieValues.forEach(cookieValue => describe('test cookie exist or not behavior', function () {
-      const expectedValues = [
+      let expectedValues = [
         'buyerid',
         'ext'
       ]
@@ -321,7 +321,7 @@ describe('adriverAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const response = {
+    let response = {
       'id': '221594457-1615288400-1-46-',
       'bidid': 'D8JW8XU8-L5m7qFMNQGs7i1gcuPvYMEDOKsktw6e9uLy5Eebo9HftVXb0VpKj4R2dXa93i6QmRhjextJVM4y1SqodMAh5vFOb_eVkHA',
       'seatbid': [{
@@ -355,7 +355,7 @@ describe('adriverAdapter', function () {
     };
 
     it('should get correct bid response', function () {
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: '2c262a7058758d',
           cpm: 4.29,
@@ -371,18 +371,18 @@ describe('adriverAdapter', function () {
           ad: '<IFRAME SRC="https://ad.adriver.ru/cgi-bin/erle.cgi?expid=D8JW8XU8-L5m7qFMNQGs7i1gcuPvYMEDOKsktw6e9uLy5Eebo9HftVXb0VpKj4R2dXa93i6QmRhjextJVM4y1SqodMAh5vFOb_eVkHA&bid=7121351&wprc=4.29&tuid=-1&custom=207=/19968336/header-bid-tag-0" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" STYLE ="WIDTH:300px; HEIGHT:250px"></IFRAME>'
         }
       ];
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       };
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
-      const response = {
+      let response = {
         'version': '0.0.1',
         'tags': [{
           'uuid': '84ab500420319d',
@@ -393,13 +393,13 @@ describe('adriverAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });
 
   describe('function _getFloor', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         bidder: 'adriver',
         params: {
@@ -539,7 +539,7 @@ describe('adriverAdapter', function () {
   });
 
   describe('user ids', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         bidder: 'adriver',
         params: {

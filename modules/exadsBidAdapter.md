@@ -30,7 +30,7 @@ Use `setConfig` to instruct Prebid.js to initilize the exadsBidAdapter, as speci
 ```js
 pbjs.setConfig({
     debug: false,
-    //cache: { url: "https://prebid.example.com/pbc/v1/cache" },
+    //cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
     consentManagement: {
         gdpr: {
             cmpApi: 'static',

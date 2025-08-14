@@ -15,7 +15,7 @@ describe('WelectAdapter', function () {
   });
 
   describe('Check method isBidRequestValid return', function () {
-    const bid = {
+    let bid = {
       bidder: 'welect',
       params: {
         placementId: 'exampleAlias',
@@ -28,7 +28,7 @@ describe('WelectAdapter', function () {
         }
       },
     };
-    const bid2 = {
+    let bid2 = {
       bidder: 'welect',
       params: {
         domain: 'www.welect.de'
@@ -51,27 +51,8 @@ describe('WelectAdapter', function () {
   });
 
   describe('Check buildRequests method', function () {
-    // BidderRequest, additional context info not given by our custom params
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: 1,
-        consentString: 'some_string'
-      },
-      refererInfo: {
-        domain: "welect.de",
-        page: "https://www.welect.de/de/blog/index.html"
-      },
-      ortb2: {
-        site: {
-          cat: ["IAB2"],
-          sectioncat: ["IAB2-2"],
-          pagecat: ["IAB2-2"],
-        }
-      }
-    }
-
-    // Bid without playerSize
-    const bid1 = {
+    // Bids to be formatted
+    let bid1 = {
       bidder: 'welect',
       params: {
         placementId: 'exampleAlias'
@@ -84,36 +65,35 @@ describe('WelectAdapter', function () {
       },
       bidId: 'abdc'
     };
-    // Bid with playerSize
-    const bid2 = {
+    let bid2 = {
       bidder: 'welect',
       params: {
-        placementId: 'exampleAlias'
+        placementId: 'exampleAlias',
+        domain: 'www.welect2.de'
       },
+      sizes: [[640, 360]],
       mediaTypes: {
         video: {
-          context: 'instream',
-          playerSize: [[640, 360]]
+          context: 'instream'
         }
       },
-      bidId: 'abdc'
+      bidId: 'abdc',
+      gdprConsent: {
+        gdprApplies: 1,
+        gdprConsent: 'some_string'
+      }
     };
 
-    const data1 = {
+    let data1 = {
       bid_id: 'abdc',
       width: 640,
       height: 360
     }
 
-    const data2 = {
+    let data2 = {
       bid_id: 'abdc',
       width: 640,
       height: 360,
-      domain: 'welect.de',
-      pageurl: 'https://www.welect.de/de/blog/index.html',
-      sitecat: ["IAB2"],
-      sectioncat: ["IAB2-2"],
-      pagecat: ["IAB2-2"],
       gdpr_consent: {
         gdprApplies: 1,
         tcString: 'some_string'
@@ -121,7 +101,7 @@ describe('WelectAdapter', function () {
     }
 
     // Formatted requets
-    const request1 = {
+    let request1 = {
       method: 'POST',
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data1,
@@ -132,9 +112,9 @@ describe('WelectAdapter', function () {
       }
     };
 
-    const request2 = {
+    let request2 = {
       method: 'POST',
-      url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
+      url: 'https://www.welect2.de/api/v2/preflight/exampleAlias',
       data: data2,
       options: {
         contentType: 'application/json',
@@ -147,20 +127,20 @@ describe('WelectAdapter', function () {
       expect(adapter.buildRequests([bid1])).to.deep.equal([request1]);
     })
 
-    it('must return the right formatted requests, with bidderRequest containing first party data', function () {
-      expect(adapter.buildRequests([bid2], bidderRequest)).to.deep.equal([request2]);
+    it('must return the right formatted requests, with gdpr object', function () {
+      expect(adapter.buildRequests([bid2])).to.deep.equal([request2]);
     });
   });
 
   describe('Check interpretResponse method return', function () {
     // invalid server response
-    const unavailableResponse = {
+    let unavailableResponse = {
       body: {
         available: false
       }
     };
 
-    const availableResponse = {
+    let availableResponse = {
       body: {
         available: true,
         bidResponse: {
@@ -183,11 +163,15 @@ describe('WelectAdapter', function () {
       }
     }
     // bid Request
-    const bid = {
+    let bid = {
       data: {
         bid_id: 'some bid id',
         width: 640,
-        height: 320
+        height: 320,
+        gdpr_consent: {
+          gdprApplies: 1,
+          tcString: 'some_string'
+        }
       },
       method: 'POST',
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
@@ -198,7 +182,7 @@ describe('WelectAdapter', function () {
       }
     };
     // Formatted reponse
-    const result = {
+    let result = {
       ad: {
         video: 'some vast url'
       },

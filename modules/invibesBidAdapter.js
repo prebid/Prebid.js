@@ -53,7 +53,7 @@ registerBidder(spec);
 
 // some state info is required: cookie info, unique user visit id
 const topWin = getTopMostWindow();
-const invibes = topWin.invibes = topWin.invibes || {};
+let invibes = topWin.invibes = topWin.invibes || {};
 invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false, false];
 invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false, false];
 invibes.placementBids = invibes.placementBids || [];
@@ -88,7 +88,7 @@ function isBidRequestValid(bid) {
   if (typeof bid.params !== 'object') {
     return false;
   }
-  const params = bid.params;
+  let params = bid.params;
 
   if (params.placementId == null) {
     return false;
@@ -114,7 +114,7 @@ function buildRequest(bidRequests, bidderRequest) {
   const _placementIds = [];
   const _adUnitCodes = [];
   let _customEndpoint, _userId, _domainId;
-  const _ivAuctionStart = Date.now();
+  let _ivAuctionStart = Date.now();
   window.invibes = window.invibes || {};
   window.invibes.placementIds = window.invibes.placementIds || [];
 
@@ -145,8 +145,8 @@ function buildRequest(bidRequests, bidderRequest) {
   invibes.visitId = invibes.visitId || generateRandomId();
 
   const currentQueryStringParams = parseQueryStringParams();
-  const userIdModel = getUserIds(_userId);
-  const bidParamsJson = {
+  let userIdModel = getUserIds(_userId);
+  let bidParamsJson = {
     placementIds: _placementIds,
     adUnitCodes: _adUnitCodes,
     auctionStartTime: _ivAuctionStart,
@@ -155,7 +155,7 @@ function buildRequest(bidRequests, bidderRequest) {
   if (userIdModel) {
     bidParamsJson.userId = userIdModel;
   }
-  const data = {
+  let data = {
     location: getDocumentLocation(bidderRequest),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
@@ -187,17 +187,17 @@ function buildRequest(bidRequests, bidderRequest) {
     data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
   }
 
-  const hid = invibes.getCookie('handIid');
+  let hid = invibes.getCookie('handIid');
   if (hid) {
     data.handIid = hid;
   }
 
   let lid = readFromLocalStorage('ivbsdid');
   if (!lid) {
-    const str = invibes.getCookie('ivbsdid');
+    let str = invibes.getCookie('ivbsdid');
     if (str) {
       try {
-        const cookieLid = JSON.parse(str);
+        let cookieLid = JSON.parse(str);
         lid = cookieLid.id ? cookieLid.id : cookieLid;
       } catch (e) {
       }
@@ -208,16 +208,16 @@ function buildRequest(bidRequests, bidderRequest) {
   }
 
   const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
-  for (const key in currentQueryStringParams) {
+  for (let key in currentQueryStringParams) {
     if (currentQueryStringParams.hasOwnProperty(key)) {
-      const value = currentQueryStringParams[key];
+      let value = currentQueryStringParams[key];
       if (parametersToPassForward.indexOf(key) > -1 || /^vs|^invib/i.test(key)) {
         data[key] = value;
       }
     }
   }
 
-  const endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
+  let endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
 
   preventPageViewEvent = true;
 
@@ -267,8 +267,8 @@ function handleResponse(responseObj, bidRequests) {
 
   const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
-    const bidRequest = bidRequests[i];
-    const usedPlacementId = responseObj.UseAdUnitCode === true
+    let bidRequest = bidRequests[i];
+    let usedPlacementId = responseObj.UseAdUnitCode === true
       ? bidRequest.params.placementId + '_' + bidRequest.adUnitCode
       : bidRequest.params.placementId;
 
@@ -280,20 +280,20 @@ function handleResponse(responseObj, bidRequests) {
     let requestPlacement = null;
     if (responseObj.AdPlacements != null) {
       for (let j = 0; j < responseObj.AdPlacements.length; j++) {
-        const bidModel = responseObj.AdPlacements[j].BidModel;
+        let bidModel = responseObj.AdPlacements[j].BidModel;
         if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
           requestPlacement = responseObj.AdPlacements[j];
           break;
         }
       }
     } else {
-      const bidModel = responseObj.BidModel;
+      let bidModel = responseObj.BidModel;
       if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
         requestPlacement = responseObj;
       }
     }
 
-    const bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId);
+    let bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId);
     if (bid !== null) {
       invibes.placementBids.push(usedPlacementId);
       bidResponses.push(bid);
@@ -309,8 +309,8 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlace
     return null;
   }
 
-  const bidModel = requestPlacement.BidModel;
-  const ads = requestPlacement.Ads;
+  let bidModel = requestPlacement.BidModel;
+  let ads = requestPlacement.Ads;
   if (!Array.isArray(ads) || ads.length < 1) {
     if (requestPlacement.AdReason != null) {
       logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason);
@@ -320,13 +320,13 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlace
     return null;
   }
 
-  const ad = ads[0];
-  const size = getBiggerSize(bidRequest.sizes);
+  let ad = ads[0];
+  let size = getBiggerSize(bidRequest.sizes);
 
   if (multipositionEnabled === true) {
     if (Object.keys(invibes.pushedCids).length > 0) {
       if (ad.Blcids != null && ad.Blcids.length > 0) {
-        const blacklistsPushedCids = Object.keys(invibes.pushedCids).some(function(pushedCid) {
+        let blacklistsPushedCids = Object.keys(invibes.pushedCids).some(function(pushedCid) {
           return ad.Blcids.indexOf(parseInt(pushedCid)) > -1;
         });
 
@@ -336,7 +336,7 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlace
         }
       }
 
-      const isBlacklisted = Object.keys(invibes.pushedCids).some(function(pushedCid) {
+      let isBlacklisted = Object.keys(invibes.pushedCids).some(function(pushedCid) {
         return invibes.pushedCids[pushedCid].indexOf(ad.Cid) > -1;
       });
       if (isBlacklisted) {
@@ -446,13 +446,13 @@ function getUserIds(bidUserId) {
 function parseQueryStringParams() {
   let params = {};
   try {
-    const storedParam = storage.getDataFromLocalStorage('ivbs');
+    let storedParam = storage.getDataFromLocalStorage('ivbs');
     if (storedParam != null) {
       params = JSON.parse(storedParam);
     }
   } catch (e) {
   }
-  const re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
+  let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
   let m;
   while ((m = re.exec(window.location.href)) != null) {
     if (m.index === re.lastIndex) {
@@ -521,7 +521,7 @@ function getCappedCampaignsAsString() {
     return '';
   }
 
-  const loadData = function () {
+  let loadData = function () {
     try {
       return JSON.parse(storage.getDataFromLocalStorage(key)) || {};
     } catch (e) {
@@ -529,16 +529,16 @@ function getCappedCampaignsAsString() {
     }
   };
 
-  const saveData = function (data) {
+  let saveData = function (data) {
     storage.setDataInLocalStorage(key, JSON.stringify(data));
   };
 
-  const clearExpired = function () {
-    const now = new Date().getTime();
-    const data = loadData();
+  let clearExpired = function () {
+    let now = new Date().getTime();
+    let data = loadData();
     let dirty = false;
     Object.keys(data).forEach(function (k) {
-      const exp = data[k][1];
+      let exp = data[k][1];
       if (exp <= now) {
         delete data[k];
         dirty = true;
@@ -549,9 +549,9 @@ function getCappedCampaignsAsString() {
     }
   };
 
-  const getCappedCampaigns = function () {
+  let getCappedCampaigns = function () {
     clearExpired();
-    const data = loadData();
+    let data = loadData();
     return Object.keys(data)
       .filter(function (k) {
         return data.hasOwnProperty(k);
@@ -576,10 +576,10 @@ function buildSyncUrl() {
 
   let did = readFromLocalStorage('ivbsdid');
   if (!did) {
-    const str = invibes.getCookie('ivbsdid');
+    let str = invibes.getCookie('ivbsdid');
     if (str) {
       try {
-        const cookieLid = JSON.parse(str);
+        let cookieLid = JSON.parse(str);
         did = cookieLid.id ? cookieLid.id : cookieLid;
       } catch (e) {
       }
@@ -605,23 +605,23 @@ function readGdprConsent(gdprConsent, usConsent) {
       return 2;
     }
 
-    const purposeConsents = getPurposeConsents(gdprConsent.vendorData);
+    let purposeConsents = getPurposeConsents(gdprConsent.vendorData);
 
     if (purposeConsents == null) {
       return 0;
     }
-    const purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData);
+    let purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData);
 
     if (!tryCopyValueToArray(purposeConsents, invibes.purposes, purposesLength)) {
       return 0;
     }
 
-    const legitimateInterests = getLegitimateInterests(gdprConsent.vendorData);
+    let legitimateInterests = getLegitimateInterests(gdprConsent.vendorData);
     tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, purposesLength);
 
-    const invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
-    const vendorConsents = getVendorConsents(gdprConsent.vendorData);
-    const vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true;
+    let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
+    let vendorConsents = getVendorConsents(gdprConsent.vendorData);
+    let vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true;
     if (vendorConsents == null || vendorConsents[invibesVendorId] == null) {
       return 4;
     }
@@ -663,13 +663,13 @@ function tryCopyValueToArray(value, target, length) {
   }
   if (typeof value === 'object' && value !== null) {
     let i = 0;
-    for (const prop in value) {
+    for (let prop in value) {
       if (i === length) {
         break;
       }
 
       if (value.hasOwnProperty(prop)) {
-        const parsedProp = parseInt(prop);
+        let parsedProp = parseInt(prop);
         if (isNaN(parsedProp)) {
           target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
         } else {
@@ -749,12 +749,12 @@ function getVendorLegitimateInterest(vendorData) {
 /// Local domain cookie management =====================
 invibes.Uid = {
   generate: function () {
-    const maxRand = parseInt('zzzzzz', 36)
-    const mkRand = function () {
+    let maxRand = parseInt('zzzzzz', 36)
+    let mkRand = function () {
       return Math.floor(Math.random() * maxRand).toString(36);
     };
-    const rand1 = mkRand();
-    const rand2 = mkRand();
+    let rand1 = mkRand();
+    let rand2 = mkRand();
     return rand1 + rand2;
   }
 };
@@ -771,15 +771,20 @@ invibes.getCookie = function (name) {
   return storage.getCookie(name);
 };
 
-const keywords = (function () {
+let keywords = (function () {
   const cap = 300;
-  const headTag = document.getElementsByTagName('head')[0];
-  const metaTag = headTag ? headTag.getElementsByTagName('meta') : [];
+  let headTag = document.getElementsByTagName('head')[0];
+  let metaTag = headTag ? headTag.getElementsByTagName('meta') : [];
 
   function parse(str, cap) {
     let parsedStr = str.replace(/[<>~|\\"`!@#$%^&*()=+?]/g, '');
+
+    function onlyUnique(value, index, self) {
+      return value !== '' && self.indexOf(value) === index;
+    }
+
     let words = parsedStr.split(/[\s,;.:]+/);
-    let uniqueWords = Array.from(new Set(words.filter(word => word)));
+    let uniqueWords = words.filter(onlyUnique);
     parsedStr = '';
 
     for (let i = 0; i < uniqueWords.length; i++) {
@@ -798,7 +803,7 @@ const keywords = (function () {
   function gt(cap, prefix) {
     cap = cap || 300;
     prefix = prefix || '';
-    const title = document.title || headTag
+    let title = document.title || headTag
       ? headTag.getElementsByTagName('title')[0]
         ? headTag.getElementsByTagName('title')[0].innerHTML
         : ''
@@ -815,7 +820,7 @@ const keywords = (function () {
 
     for (let i = 0; i < metaTag.length; i++) {
       if (metaTag[i].name && metaTag[i].name.toLowerCase() === metaName.toLowerCase()) {
-        const kw = prefix + ',' + metaTag[i].content || '';
+        let kw = prefix + ',' + metaTag[i].content || '';
         return parse(kw, cap);
       } else if (metaTag[i].name && metaTag[i].name.toLowerCase().indexOf(metaName.toLowerCase()) > -1) {
         fallbackKw = prefix + ',' + metaTag[i].content || '';

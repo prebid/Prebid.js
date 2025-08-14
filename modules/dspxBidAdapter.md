@@ -29,7 +29,7 @@ DSPx adapter for Prebid.
                     params: {
                         placement: '101',   // [required] info available from your contact with DSPx team
                         /*
-                            bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated
+                            bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated 
                         */
                         /*
                             pfilter: { // [optional]

@@ -54,27 +54,8 @@ const DEFAULT_CURRENCY = 'EUR';
  * @type {MediaType[]}
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
-
-const ORTB_MTYPES = {
-  BANNER: 1,
-  VIDEO: 2,
-  NATIVE: 4
-};
-
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.6.0';
-
-const TRACKER_METHODS = {
-  img: 1,
-  js: 2,
-};
-
-const TRACKER_EVENTS = {
-  impression: 1,
-  'viewable-mrc50': 2,
-  'viewable-mrc100': 3,
-  'viewable-video50': 4,
-};
+const ADAPTER_VERSION = '2.3.0';
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
@@ -331,20 +312,20 @@ function mapBanner(bidRequest) {
 function mapVideo(bidRequest) {
   const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
   if (videoParams) {
-    const { sizes, playerSize } = videoParams;
+      const { sizes, playerSize } = videoParams;
 
-    const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
+      const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
 
-    const [firstSize] = format || [];
+      const [firstSize] = format || [];
 
-    delete videoParams.sizes;
+      delete videoParams.sizes;
 
-    return {
-      ...videoParams,
-      w: firstSize?.w,
-      h: firstSize?.h,
-      format,
-    };
+      return {
+          ...videoParams,
+          w: firstSize?.w,
+          h: firstSize?.h,
+          format,
+      };
   }
 }
 
@@ -366,13 +347,10 @@ function mapNative(bidRequest) {
     });
 
     return {
-      ver: 1.2,
+      ver: 1.1,
       request: JSON.stringify({
-        ver: 1.2,
-        assets,
-        eventtrackers: [
-          { event: TRACKER_EVENTS.impression, methods: [TRACKER_METHODS.img] },
-        ],
+        ver: 1.1,
+        assets
       }),
     };
   }
@@ -434,7 +412,7 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 function interpretResponse(serverResponse, { bidRequest }) {
-  const response = serverResponse.body;
+  let response = serverResponse.body;
   if (!response.seatbid) {
     return [];
   }
@@ -448,7 +426,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
   return bidsReceived.map(bidReceived => {
     const price = bidReceived.price;
     /** @type {Bid} */
-    const prBid = {
+    let prBid = {
       requestId: bidRequest.bidId,
       cpm: price,
       currency: currency,
@@ -465,23 +443,15 @@ function interpretResponse(serverResponse, { bidRequest }) {
       }
     };
 
-    if (bidReceived.lurl) {
-      prBid.lurl = bidReceived.lurl;
-    }
-
-    switch (bidReceived.mtype) {
-      case ORTB_MTYPES.VIDEO:
-        prBid.mediaType = VIDEO;
-        prBid.vastXml = bidReceived.adm;
-        break;
-      case ORTB_MTYPES.NATIVE:
-        prBid.mediaType = NATIVE;
-        prBid.native = interpretNativeAd(bidReceived, price, currency);
-        break;
-      case ORTB_MTYPES.BANNER:
-        prBid.mediaType = BANNER;
-        prBid.ad = bidReceived.adm;
-        break;
+    if (bidReceived.adm.indexOf('{') === 0) {
+      prBid.mediaType = NATIVE;
+      prBid.native = interpretNativeAd(bidReceived, price, currency);
+    } else if (bidReceived.adm.indexOf('<VAST') > -1) {
+      prBid.mediaType = VIDEO;
+      prBid.vastXml = bidReceived.adm;
+    } else {
+      prBid.mediaType = BANNER;
+      prBid.ad = bidReceived.adm;
     }
 
     return prBid;
@@ -515,22 +485,9 @@ function interpretNativeAd(bidReceived, price, currency) {
       }
     });
 
-    const impressionTrackers = _map(native.imptrackers || [], (tracker) =>
+    result.impressionTrackers = _map(native.imptrackers, (tracker) =>
       replaceAuctionPrice(tracker, price, currency)
     );
-
-    _each(native.eventtrackers || [], (eventtracker) => {
-      if (
-        eventtracker.event === TRACKER_EVENTS.impression &&
-        eventtracker.method === TRACKER_METHODS.img
-      ) {
-        impressionTrackers.push(
-          replaceAuctionPrice(eventtracker.url, price, currency)
-        );
-      }
-    });
-
-    result.impressionTrackers = impressionTrackers;
 
     return result;
   } catch (e) {}

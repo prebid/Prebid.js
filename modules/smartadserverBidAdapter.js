@@ -188,7 +188,7 @@ export const spec = {
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.reduce((bidRequests, bid) => {
       // Common bid request attributes for banner, outstream and instream.
-      const payload = {
+      let payload = {
         siteid: bid.params.siteId,
         pageid: bid.params.pageId,
         formatid: bid.params.formatId,
@@ -204,12 +204,12 @@ export const spec = {
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
         prebidVersion: '$prebid.version$',
-        schain: spec.serializeSupplyChain(bid?.ortb2?.source?.ext?.schain),
+        schain: spec.serializeSupplyChain(bid.schain),
         sda: sellerDefinedAudience,
         sdc: sellerDefinedContext
       };
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         payload.gpid = gpid;
       }
@@ -255,7 +255,7 @@ export const spec = {
           payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
 
           if (isSupportedVideoContext) {
-            const videoPayload = deepClone(payload);
+            let videoPayload = deepClone(payload);
             spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
             videoPayload.bidfloor = bid.params.bidfloor || getBidFloor(bid, adServerCurrency, VIDEO);
             bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
@@ -284,12 +284,12 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequestString) {
     const bidResponses = [];
-    const response = serverResponse.body;
+    let response = serverResponse.body;
     try {
       if (response && !response.isNoAd && (response.ad || response.adUrl)) {
         const bidRequest = JSON.parse(bidRequestString.data);
 
-        const bidResponse = {
+        let bidResponse = {
           requestId: bidRequest.bidId,
           cpm: response.cpm,
           width: response.width,

@@ -24,20 +24,21 @@ export const spec = {
       !!(bid.params.hash) &&
       (typeof bid.params.hash === 'string') &&
       !!(bid.mediaTypes) &&
-      (Object.keys(bid.mediaTypes).includes(NATIVE) || Object.keys(bid.mediaTypes).includes(BANNER))
+      (Object.keys(bid.mediaTypes).includes(NATIVE) || Object.keys(bid.mediaTypes).includes(BANNER)) &&
+      (bid.bidder === BIDDER_CODE);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    const bids = [];
+    let bids = [];
     for (let i = 0; i < validBidRequests.length; i++) {
-      const requestData = {
+      let requestData = {
         adUnitCode: validBidRequests[i].adUnitCode,
         bidId: validBidRequests[i].bidId,
         placementHash: validBidRequests[i].params.hash,
-        eids: validBidRequests[i].userIdAsEids,
+        userId: validBidRequests[i].userId,
         referer: bidderRequest.refererInfo.page,
         userAgent: navigator.userAgent,
       }
@@ -60,8 +61,8 @@ export const spec = {
       bids.push(requestData);
     }
 
-    const host = this.getBidderConfig('host') || BIDDER_HOST;
-    const bidRequests = [];
+    let host = this.getBidderConfig('host') || BIDDER_HOST;
+    let bidRequests = [];
     bidRequests.push({
       method: REQUEST_METHOD,
       url: host + '/bidder/bids/',
@@ -92,7 +93,7 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid['requestId']) {
-      const host = this.getBidderConfig('host') || BIDDER_HOST;
+      let host = this.getBidderConfig('host') || BIDDER_HOST;
       triggerPixel(host + '/bidder/won/' + bid['requestId']);
     }
   }

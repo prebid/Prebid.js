@@ -22,16 +22,16 @@ describe('LiveIntent Rtd Provider', function () {
       bidderRequestId: '2a038c6820142b',
       bids: [
         {
-          bidder: 'appnexus',
-          userId: {
-            lipb: {
-              segments: [
-                'asa_1231',
-                'lalo_4311',
-                'liurl_99123'
-              ]
-            }
-          }
+        	bidder: 'appnexus',
+        	userId: {
+        		lipb: {
+        			segments: [
+        				'asa_1231',
+        				'lalo_4311',
+        				'liurl_99123'
+        			]
+        		}
+        	}
         }
       ]
     }
@@ -47,8 +47,8 @@ describe('LiveIntent Rtd Provider', function () {
         bidderRequestId: '2a038c6820142b',
         bids: [
           {
-            bidder: 'appnexus',
-            ortb2: {}
+            	bidder: 'appnexus',
+            	ortb2: {}
           }
         ]
       }

@@ -17,8 +17,6 @@ import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
-
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
@@ -186,7 +184,7 @@ function convertRequest(bid) {
     aw: size[0],
     ah: size[1],
     tf: 0,
-    sc: bid?.ortb2?.source?.ext?.schain || {},
+    sc: bid.schain || {},
     f: ensureFloor(getFloor(bid)),
     rtb: bid.ortb2Imp,
   };
@@ -332,9 +330,9 @@ export const spec = {
       bidRequests[0] != null
         ? bidRequests[0]
         : {
-            bidderRequestsCount: 0,
-            bidderWinsCount: 0,
-            bidRequestsCount: 0 };
+          bidderRequestsCount: 0,
+          bidderWinsCount: 0,
+          bidRequestsCount: 0 };
 
     const payload = {
       a: generateUUID(),
@@ -345,7 +343,7 @@ export const spec = {
       trc: fbid.bidRequestsCount || 0,
       tm: isTrue(testMode),
       V: '$prebid.version$',
-      vg: getGlobalVarName(),
+      vg: '$$PREBID_GLOBAL$$',
       i: testMode && tagId != null ? tagId : getID(loc),
       l: {},
       f: 0.01,
@@ -464,7 +462,7 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
-    const { bidderSettings } = getGlobal();
+    let { bidderSettings } = getGlobal();
     const currentBidder = config.getCurrentBidder();
     const allowAlternateBidderCodes = alternateCodesAllowed(bidderSettings ?? {}, currentBidder) ||
       alternateCodesAllowed(config.getConfig('bidderSettings') ?? {}, currentBidder);
@@ -553,7 +551,7 @@ export const spec = {
           U: getUIDSafe(),
           re: ref,
           V: '$prebid.version$',
-          vg: getGlobalVarName(),
+          vg: '$$PREBID_GLOBAL$$',
         };
       }
 

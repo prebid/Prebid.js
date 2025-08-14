@@ -137,6 +137,7 @@ export const spec = {
   onBidWon: function (bid) {
     let bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
+    if (bidder !== BIDDER_CODE) return;
 
     let params;
     if (bid.params) {

@@ -55,7 +55,7 @@ Example bidsBackHandler for video bids
 pbjs.requestBids({
           timeout : 700,
           bidsBackHandler : function(bids) {
-            var videoUrl = pbjs.adServers.gam.buildVideoUrl({
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
                 adUnit: videoAdUnit,
                 params: {
                     cust_params: {

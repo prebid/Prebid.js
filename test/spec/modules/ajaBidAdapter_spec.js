@@ -7,7 +7,7 @@ describe('AjaAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'aja',
       'params': {
         'asi': '123456'
@@ -24,7 +24,7 @@ describe('AjaAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'asi': 0
@@ -66,32 +66,6 @@ describe('AjaAdapter', function () {
             ext: {
               cdep: 'example_label_1'
             }
-          },
-          source: {
-            ext: {
-              schain: {
-                ver: '1.0',
-                complete: 1,
-                nodes: [
-                  {
-                    asi: 'exchange1.com',
-                    sid: '1234',
-                    hp: 1,
-                    rid: 'bid-request-1',
-                    name: 'publisher',
-                    domain: 'publisher.com'
-                  },
-                  {
-                    asi: 'exchange2.com',
-                    sid: 'abcd',
-                    hp: 1,
-                    rid: 'bid-request-2',
-                    name: 'intermediary',
-                    domain: 'intermediary.com'
-                  }
-                ]
-              }
-            }
           }
         },
         ortb2Imp: {
@@ -100,7 +74,28 @@ describe('AjaAdapter', function () {
             gpid: '/1111/homepage#300x250'
           }
         },
-
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'exchange1.com',
+              sid: '1234',
+              hp: 1,
+              rid: 'bid-request-1',
+              name: 'publisher',
+              domain: 'publisher.com'
+            },
+            {
+              asi: 'exchange2.com',
+              sid: 'abcd',
+              hp: 1,
+              rid: 'bid-request-2',
+              name: 'intermediary',
+              domain: 'intermediary.com'
+            }
+          ]
+        },
       }
     ];
     const serializedSchain = encodeURIComponent('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com')
@@ -159,7 +154,7 @@ describe('AjaAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get correct banner bid response', function () {
-      const response = {
+      let response = {
         'is_ad_return': true,
         'ad': {
           'ad_type': 1,
@@ -184,7 +179,7 @@ describe('AjaAdapter', function () {
         ]
       };
 
-      const expectedResponse = [
+      let expectedResponse = [
         {
           'requestId': '51ef8751f9aead',
           'cpm': 12.34,
@@ -206,18 +201,18 @@ describe('AjaAdapter', function () {
       ];
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
-      const response = {
+      let response = {
         'is_ad_return': false,
         'ad': {}
       };
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });

@@ -22,7 +22,7 @@ describe('pxyzBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'pxyz',
       'params': {
         'placementId': '10433394'
@@ -39,7 +39,7 @@ describe('pxyzBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placementId': 0
@@ -49,7 +49,7 @@ describe('pxyzBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'pxyz',
         'params': {
@@ -143,7 +143,7 @@ describe('pxyzBidAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    const response = {
+    let response = {
       'id': 'bidd_id',
       'seatbid': [ {
         'bid': [
@@ -175,12 +175,12 @@ describe('pxyzBidAdapter', function () {
       'cur': 'AUD'
     };
 
-    const bidderRequest = {
+    let bidderRequest = {
       'bidderCode': 'pxyz'
     };
 
     it('should get correct bid response', function () {
-      const expectedResponse = [
+      let expectedResponse = [
         {
           'requestId': '221f2bdc1fbc31',
           'cpm': 1,
@@ -197,14 +197,14 @@ describe('pxyzBidAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
     });
 
     it('handles nobid response', function () {
       const response = undefined;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });
@@ -213,7 +213,7 @@ describe('pxyzBidAdapter', function () {
     const syncImageUrl = '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
     const syncIframeUrl = '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D';
     it('should return one image type user sync pixel', function () {
-      const result = spec.getUserSyncs();
+      let result = spec.getUserSyncs();
       expect(result.length).to.equal(2);
       expect(result[0].type).to.equal('image')
       expect(result[0].url).to.equal(syncImageUrl);

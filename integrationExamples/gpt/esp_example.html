@@ -2,7 +2,7 @@
 
 <head>
     <link rel="icon" type="image/png" href="/favicon.png">
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
     <script async src="prebid.js"></script>
 
     <script>
@@ -125,15 +125,11 @@
             if (pbjs.initAdserverSet) return;
             pbjs.initAdserverSet = true;
             googletag.cmd.push(function () {
-                if (pbjs.libLoaded) {
-                    pbjs.que.push(function () {
-                        pbjs.setTargetingForGPTAsync();
-                        pbjs.registerSignalSources();
-                        googletag.pubads().refresh();
-                    });
-                } else {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    pbjs.registerSignalSources();
                     googletag.pubads().refresh();
-                }
+                });
             });
         }
         // in case PBJS doesn't load

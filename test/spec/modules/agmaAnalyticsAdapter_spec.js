@@ -1,10 +1,10 @@
-import adapterManager, { gdprDataHandler } from '../../../src/adapterManager.js';
+import adapterManager from '../../../src/adapterManager.js';
 import agmaAnalyticsAdapter, {
   getTiming,
   getOrtb2Data,
   getPayload,
 } from '../../../modules/agmaAnalyticsAdapter.js';
-
+import { gdprDataHandler } from '../../../src/adapterManager.js';
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
@@ -55,7 +55,7 @@ describe('AGMA Analytics Adapter', () => {
   let agmaConfig, sandbox, clock;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);
     agmaConfig = {
@@ -255,7 +255,7 @@ describe('AGMA Analytics Adapter', () => {
 
     const ortb2 = {
       site: {
-        domain: 'initial.com'
+        domain: 'inital.com'
       }
     };
 

@@ -9,7 +9,6 @@ import {
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'boldwin';
-const GVLID = 1151;
 const AD_URL = 'https://ssp.videowalldirect.com/pbjs';
 const SYNC_URL = 'https://sync.videowalldirect.com';
 
@@ -28,7 +27,6 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),

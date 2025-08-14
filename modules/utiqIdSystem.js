@@ -9,10 +9,6 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-/**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- */
-
 const MODULE_NAME = 'utiqId';
 const LOG_PREFIX = 'Utiq module';
 
@@ -23,11 +19,12 @@ export const storage = getStorageManager({
 
 /**
  * Get the "atid" from html5 local storage to make it available to the UserId module.
+ * @param config
  * @returns {{utiq: (*|string)}}
  */
 function getUtiqFromStorage() {
   let utiqPass;
-  const utiqPassStorage = JSON.parse(
+  let utiqPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
   );
 
@@ -90,7 +87,7 @@ export const utiqIdSubmodule = {
   /**
    * Get the id from helper function and initiate a new user sync.
    * @param config
-   * @returns {{callback: Function}|{id: {utiq: string}}}
+   * @returns {{callback: result}|{id: {utiq: string}}}
    */
   getId: function (config) {
     const data = getUtiqFromStorage();

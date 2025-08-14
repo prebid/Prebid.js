@@ -1,4 +1,4 @@
-import { scrubIPv4, scrubIPv6 } from '../../../../src/utils/ipUtils.js'
+import { scrubIPv4, scrubIPv6 } from '../../../../src/utils/ipUtils'
 
 describe('ipUtils', () => {
   describe('ipv4', () => {
@@ -12,46 +12,46 @@ describe('ipUtils', () => {
     });
 
     it('should return null for null input', () => {
-      const input = null;
-      const output = scrubIPv4(input);
+      let input = null;
+      let output = scrubIPv4(input);
       expect(output).to.deep.equal(null);
     });
 
     it('should convert invalid format to null', () => {
-      const invalidIp = '192.130.2';
-      const output = scrubIPv4(invalidIp);
+      let invalidIp = '192.130.2';
+      let output = scrubIPv4(invalidIp);
       expect(output).to.deep.equal(null);
     });
 
     it('should convert invalid format to null', () => {
-      const invalidIp = '2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF';
-      const output = scrubIPv4(invalidIp);
+      let invalidIp = '2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF';
+      let output = scrubIPv4(invalidIp);
       expect(output).to.deep.equal(null);
     });
   });
 
   describe('ipv6', () => {
     it('should mask ip v6', () => {
-      const input = '2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF';
-      const output = scrubIPv6(input);
+      let input = '2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF';
+      let output = scrubIPv6(input);
       expect(output).to.deep.equal('2001:db8:3333:4444:0:0:0:0');
     });
 
     it('should return null for null input', () => {
-      const input = null;
-      const output = scrubIPv6(input);
+      let input = null;
+      let output = scrubIPv6(input);
       expect(output).to.deep.equal(null);
     });
 
     it('should convert invalid format to null', () => {
-      const invalidIp = '2001:db8:3333:4444:CCCC:DDDD:EEEE';
-      const output = scrubIPv4(invalidIp);
+      let invalidIp = '2001:db8:3333:4444:CCCC:DDDD:EEEE';
+      let output = scrubIPv4(invalidIp);
       expect(output).to.deep.equal(null);
     });
 
     it('should convert invalid format to null', () => {
-      const invalidIp = 'invalid';
-      const output = scrubIPv4(invalidIp);
+      let invalidIp = 'invalid';
+      let output = scrubIPv4(invalidIp);
       expect(output).to.deep.equal(null);
     });
   });

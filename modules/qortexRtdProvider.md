@@ -48,7 +48,7 @@ pbjs.setConfig({
 });
 ```
 
-### Parameter Details
+### Paramter Details
 
 #### `groupId` - Required
 - The Qortex groupId linked to the publisher, this is required to make a request using this adapter

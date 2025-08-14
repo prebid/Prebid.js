@@ -1,7 +1,7 @@
 import {SYNC_URL} from './constants.js';
 import {VIDEO} from '../../src/mediaTypes.js';
 import {getRefererInfo} from '../../src/refererDetection.js';
-import {createTrackPixelHtml, getBidRequest, formatQS} from '../../src/utils.js';
+import {createTrackPixelHtml, deepAccess, getBidRequest, formatQS} from '../../src/utils.js';
 
 export function getSizes(request) {
   let sizes = request.sizes;
@@ -146,7 +146,7 @@ export function getBannerHtml(vastUrl) {
 export function getAd(bid) {
   let ad, adUrl, vastXml, vastUrl;
 
-  switch (bid?.ext?.prebid?.type) {
+  switch (deepAccess(bid, 'ext.prebid.type')) {
     case VIDEO:
       if (bid.adm.substr(0, 4) === 'http') {
         vastUrl = bid.adm;

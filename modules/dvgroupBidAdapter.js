@@ -7,6 +7,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 const BIDDER_CODE = 'dvgroup';
 const DEFAULT_ENDPOINT = 'rtb.dvgroup.com';
 const SYNC_ENDPOINT = 'sync.dvgroup.com';
+const SSP_PREBID_UID = 'prebidssp';
 const TIME_TO_LIVE = 360;
 
 const converter = ortbConverter({
@@ -14,7 +15,6 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.adm = replaceAuctionPrice(bidResponse.adm, bidResponse.price);
@@ -28,19 +28,13 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: function(bid) {
-    const valid = bid.params.sspId;
-
-    return !!valid;
-  },
-
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
-      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
-      const bidMediaType = deepAccess(bid, 'mediaTypes.video');
+      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      let bidMediaType = deepAccess(bid, 'mediaTypes.video');
       return {
         method: 'POST',
-        url: `https://${endpoint}/bid?sspuid=${bid.params.sspId}`,
+        url: `https://${endpoint}/bid?sspuid=${SSP_PREBID_UID}`,
         data: converter.toORTB({
           bidRequests: [bid],
           bidderRequest: deepClone(bidderRequest),
@@ -70,29 +64,29 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+      const syncs = []
 
-    if (!hasPurpose1Consent(gdprConsent)) {
-      return syncs;
-    }
-
-    if (syncOptions.pixelEnabled) {
-      let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
-      if (typeof gdprConsent?.gdprApplies === 'boolean') {
-        params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+      if (!hasPurpose1Consent(gdprConsent)) {
+        return syncs;
       }
 
-      syncs.push({
-        type: 'image',
-        url: `//${SYNC_ENDPOINT}/match/sp?${params}`
-      });
-    }
+      if (syncOptions.pixelEnabled) {
+        let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
+        if (typeof gdprConsent?.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        }
 
-    return syncs;
-  },
+        syncs.push({
+          type: 'image',
+          url: `//${SYNC_ENDPOINT}/match/sp?${params}`
+        });
+      }
 
-  supportedMediaTypes: [ BANNER, VIDEO ]
+      return syncs;
+    },
+
+    supportedMediaTypes: [ BANNER, VIDEO ]
 }
 
 registerBidder(spec);

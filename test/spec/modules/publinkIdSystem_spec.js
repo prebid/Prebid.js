@@ -1,8 +1,8 @@
 import {publinkIdSubmodule} from 'modules/publinkIdSystem.js';
-import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
+import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager';
 import {server} from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {parseUrl} from '../../../src/utils.js';
+import {parseUrl} from '../../../src/utils';
 
 const storage = getCoreStorageManager();
 
@@ -72,7 +72,7 @@ describe('PublinkIdSystem', () => {
     });
 
     describe('callout for id', () => {
-      const callbackSpy = sinon.spy();
+      let callbackSpy = sinon.spy();
 
       beforeEach(() => {
         callbackSpy.resetHistory();
@@ -80,7 +80,7 @@ describe('PublinkIdSystem', () => {
 
       it('Has cached id', () => {
         const config = {storage: {type: 'cookie'}};
-        const submoduleCallback = publinkIdSubmodule.getId(config, undefined, TEST_COOKIE_VALUE).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config, undefined, TEST_COOKIE_VALUE).callback;
         submoduleCallback(callbackSpy);
 
         const request = server.requests[0];
@@ -99,7 +99,7 @@ describe('PublinkIdSystem', () => {
 
       it('Request path has priority', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', site_id: '102030'}};
-        const submoduleCallback = publinkIdSubmodule.getId(config, undefined, TEST_COOKIE_VALUE).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config, undefined, TEST_COOKIE_VALUE).callback;
         submoduleCallback(callbackSpy);
 
         const request = server.requests[0];
@@ -119,7 +119,7 @@ describe('PublinkIdSystem', () => {
       it('Fetch with GDPR consent data', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', site_id: '102030'}};
         const consentData = {gdpr: {gdprApplies: 1, consentString: 'myconsentstring'}};
-        const submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
         submoduleCallback(callbackSpy);
 
         const request = server.requests[0];
@@ -141,10 +141,10 @@ describe('PublinkIdSystem', () => {
 
       it('server doesnt respond', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7'}};
-        const submoduleCallback = publinkIdSubmodule.getId(config).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config).callback;
         submoduleCallback(callbackSpy);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
         const parsed = parseUrl(request.url);
 
         expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');
@@ -159,7 +159,7 @@ describe('PublinkIdSystem', () => {
       it('reject plain email address', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'tester@test.com'}};
         const consentData = {gdprApplies: 1, consentString: 'myconsentstring'};
-        const submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
         submoduleCallback(callbackSpy);
 
         expect(server.requests).to.have.lengthOf(0);
@@ -168,14 +168,14 @@ describe('PublinkIdSystem', () => {
     });
 
     describe('usPrivacy', () => {
-      const callbackSpy = sinon.spy();
+      let callbackSpy = sinon.spy();
 
       it('Fetch with usprivacy data', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', api_key: 'abcdefg'}};
-        const submoduleCallback = publinkIdSubmodule.getId(config, {usp: '1YNN'}).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config, {usp: '1YNN'}).callback;
         submoduleCallback(callbackSpy);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
         const parsed = parseUrl(request.url);
 
         expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');

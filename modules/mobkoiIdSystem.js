@@ -12,25 +12,14 @@ import { logError, logInfo, deepAccess, insertUserSyncIframe } from '../src/util
 
 const GVL_ID = 898;
 const MODULE_NAME = 'mobkoiId';
-/**
- * The base URL for the mobkoi integration. It should provide the following endpoints:
- * - /pixeliframe
- * - /getPixel
- */
-export const PROD_PREBID_JS_INTEGRATION_BASE_URL = 'https://pbjs.mobkoi.com';
+export const PROD_AD_SERVER_BASE_URL = 'https://adserver.maximus.mobkoi.com';
 export const EQUATIV_BASE_URL = 'https://sync.smartadserver.com';
 export const EQUATIV_NETWORK_ID = '5290';
-
 /**
- * The parameters that the publisher defined in the userSync.userIds[].params
+ * !IMPORTANT: This value must match the value in mobkoiAnalyticsAdapter.js
+ * The name of the parameter that the publisher can use to specify the ad server endpoint.
  */
-const USER_SYNC_PARAMS = {
-  /**
-   * !IMPORTANT: This value must match the value in mobkoiAnalyticsAdapter.js
-   * The name of the parameter that the publisher can use to specify the integration endpoint.
-   */
-  PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
-}
+const PARAM_NAME_AD_SERVER_BASE_URL = 'adServerBaseUrl';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -42,7 +31,7 @@ export const mobkoiIdSubmodule = {
     return value ? { [MODULE_NAME]: value } : undefined;
   },
 
-  getId(userSyncOptions, consentObject) {
+  getId(userSyncOptions, gdprConsent) {
     logInfo('Getting Equativ SAS ID.');
 
     if (!storage.cookiesAreEnabled()) {
@@ -73,7 +62,7 @@ export const mobkoiIdSubmodule = {
         return new Promise((resolve, _reject) => {
           utils.requestEquativSasId(
             userSyncOptions,
-            consentObject,
+            gdprConsent,
             (sasId) => {
               if (!sasId) {
                 logError('Equativ SAS ID is empty');
@@ -91,50 +80,40 @@ export const mobkoiIdSubmodule = {
       }
     };
   },
-  eids: {
-    'mobkoiId': {
-      source: 'mobkoi.com',
-      atype: 1
-    },
-  }
 };
 
 submodule('userId', mobkoiIdSubmodule);
 
 export const utils = {
-  requestEquativSasId(syncUserOptions, consentObject, onCompleteCallback) {
+  requestEquativSasId(syncUserOptions, gdprConsent, onCompleteCallback) {
     logInfo('Start requesting Equativ SAS ID');
-    const integrationBaseUrl = deepAccess(
+    const adServerBaseUrl = deepAccess(
       syncUserOptions,
-      `params.${USER_SYNC_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`) || PROD_PREBID_JS_INTEGRATION_BASE_URL;
+      `params.${PARAM_NAME_AD_SERVER_BASE_URL}`) || PROD_AD_SERVER_BASE_URL;
 
-    const equativPixelUrl = utils.buildEquativPixelUrl(syncUserOptions, consentObject);
+    const equativPixelUrl = utils.buildEquativPixelUrl(syncUserOptions, gdprConsent);
     logInfo('Equativ SAS ID request URL:', equativPixelUrl);
 
-    const url = integrationBaseUrl + '/pixeliframe?' +
+    const url = adServerBaseUrl + '/pixeliframe?' +
       'pixelUrl=' + encodeURIComponent(equativPixelUrl) +
       '&cookieName=sas_uid';
 
     /**
-     * Listen for messages from the iframe with automatic cleanup
+     * Listen for messages from the iframe
      */
-    const messageHandler = function(event) {
+    window.addEventListener('message', function(event) {
       switch (event.data.type) {
         case 'MOBKOI_PIXEL_SYNC_COMPLETE':
           const sasUid = event.data.syncData;
           logInfo('Parent window Sync completed. SAS ID:', sasUid);
-          window.removeEventListener('message', messageHandler);
           onCompleteCallback(sasUid);
           break;
         case 'MOBKOI_PIXEL_SYNC_ERROR':
           logError('Parent window Sync failed:', event.data.error);
-          window.removeEventListener('message', messageHandler);
           onCompleteCallback(null);
           break;
       }
-    };
-
-    window.addEventListener('message', messageHandler);
+    });
 
     insertUserSyncIframe(url, () => {
       logInfo('insertUserSyncIframe loaded');
@@ -147,16 +126,16 @@ export const utils = {
   /**
    * Build a pixel URL that will be placed in an iframe to fetch the Equativ SAS ID
    */
-  buildEquativPixelUrl(syncUserOptions, consentObject) {
+  buildEquativPixelUrl(syncUserOptions, gdprConsent) {
     logInfo('Generating Equativ SAS ID request URL');
-    const integrationBaseUrl =
+    const adServerBaseUrl =
       deepAccess(
         syncUserOptions,
-        `params.${USER_SYNC_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`) || PROD_PREBID_JS_INTEGRATION_BASE_URL;
+        `params.${PARAM_NAME_AD_SERVER_BASE_URL}`) || PROD_AD_SERVER_BASE_URL;
 
-    const gdprConsentString = consentObject && consentObject.gdpr && consentObject.gdpr.consentString ? consentObject.gdpr.consentString : '';
+    const gdprConsentString = gdprConsent && gdprConsent.gdprApplies ? gdprConsent.consentString : '';
     const smartServerUrl = EQUATIV_BASE_URL + '/getuid?' +
-      `url=` + encodeURIComponent(`${integrationBaseUrl}/getPixel?value=`) + '[sas_uid]' +
+      `url=` + encodeURIComponent(`${adServerBaseUrl}/getPixel?value=`) + '[sas_uid]' +
       `&gdpr_consent=${gdprConsentString}` +
       `&nwid=${EQUATIV_NETWORK_ID}`;
 

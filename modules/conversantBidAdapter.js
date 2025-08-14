@@ -1,17 +1,20 @@
 import {
   buildUrl,
   deepAccess,
+  deepSetValue,
   getBidIdParameter,
   isArray,
   isFn,
   isPlainObject,
   isStr,
+  logError,
   logWarn,
   mergeDeep,
   parseUrl,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
@@ -27,6 +30,7 @@ import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 const GVLID = 24;
 
 const BIDDER_CODE = 'conversant';
+export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 function setSiteId(bidRequest, request) {
@@ -37,6 +41,14 @@ function setSiteId(bidRequest, request) {
     if (request.app) {
       request.app.id = bidRequest.params.site_id;
     }
+  }
+}
+
+function setPubcid(bidRequest, request) {
+  // Add common id if available
+  const pubcid = getPubcid(bidRequest);
+  if (pubcid) {
+    deepSetValue(request, 'user.ext.fpc', pubcid);
   }
 }
 
@@ -52,6 +64,7 @@ const converter = ortbConverter({
     if (context.bidRequests) {
       const bidRequest = context.bidRequests[0];
       setSiteId(bidRequest, request);
+      setPubcid(bidRequest, request);
     }
 
     return request;
@@ -172,7 +185,7 @@ export const spec = {
    * Register User Sync.
    */
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
-    const params = {};
+    let params = {};
     const syncs = [];
 
     // Attaching GDPR Consent Params in UserSync url
@@ -195,7 +208,7 @@ export const spec = {
         })
         .map((entry) => {
           return entry.urls.map((endpoint) => {
-            const urlInfo = parseUrl(endpoint);
+            let urlInfo = parseUrl(endpoint);
             mergeDeep(urlInfo.search, params);
             if (Object.keys(urlInfo.search).length === 0) {
               delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
@@ -210,6 +223,20 @@ export const spec = {
     return syncs;
   }
 };
+
+function getPubcid(bidRequest) {
+  let pubcid = null;
+  if (bidRequest.userId && bidRequest.userId.pubcid) {
+    pubcid = bidRequest.userId.pubcid;
+  } else if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
+    pubcid = bidRequest.crumbs.pubcid;
+  }
+  if (!pubcid) {
+    const pubcidName = getBidIdParameter('pubcid_name', bidRequest.params) || '_pubcid';
+    pubcid = readStoredValue(pubcidName);
+  }
+  return pubcid;
+}
 
 /**
  * Check if it's a video bid request
@@ -232,6 +259,37 @@ function copyOptProperty(src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
   }
+}
+
+/**
+ * Look for a stored value from both cookie and local storage and return the first value found.
+ * @param key Key for the search
+ * @return {string} Stored value
+ */
+function readStoredValue(key) {
+  let storedValue;
+  try {
+    // check cookies first
+    storedValue = storage.getCookie(key);
+
+    if (!storedValue) {
+      // check expiration time before reading local storage
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
+      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+        storedValue = storage.getDataFromLocalStorage(key);
+        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
+      }
+    }
+
+    // deserialize JSON if needed
+    if (isStr(storedValue) && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    logError(e);
+  }
+
+  return storedValue;
 }
 
 /**

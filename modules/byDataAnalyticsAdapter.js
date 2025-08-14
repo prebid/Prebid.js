@@ -10,7 +10,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
-import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'
@@ -168,7 +167,63 @@ ascAdapter.getBidWonData = function(t) {
 
 ascAdapter.getVisitorData = function (data = {}) {
   var ua = data.uid ? data : {};
-  const info = getOsBrowserInfo();
+  var module = {
+    options: [],
+    header: [window.navigator.platform, window.navigator.userAgent, window.navigator.appVersion, window.navigator.vendor, window.opera],
+    dataos: [
+      { name: 'Windows Phone', value: 'Windows Phone', version: 'OS' },
+      { name: 'Windows', value: 'Win', version: 'NT' },
+      { name: 'iPhone', value: 'iPhone', version: 'OS' },
+      { name: 'iPad', value: 'iPad', version: 'OS' },
+      { name: 'Kindle', value: 'Silk', version: 'Silk' },
+      { name: 'Android', value: 'Android', version: 'Android' },
+      { name: 'PlayBook', value: 'PlayBook', version: 'OS' },
+      { name: 'BlackBerry', value: 'BlackBerry', version: '/' },
+      { name: 'Macintosh', value: 'Mac', version: 'OS X' },
+      { name: 'Linux', value: 'Linux', version: 'rv' },
+      { name: 'Palm', value: 'Palm', version: 'PalmOS' }
+    ],
+    databrowser: [
+      { name: 'Chrome', value: 'Chrome', version: 'Chrome' },
+      { name: 'Firefox', value: 'Firefox', version: 'Firefox' },
+      { name: 'Safari', value: 'Safari', version: 'Version' },
+      { name: 'Internet Explorer', value: 'MSIE', version: 'MSIE' },
+      { name: 'Opera', value: 'Opera', version: 'Opera' },
+      { name: 'BlackBerry', value: 'CLDC', version: 'CLDC' },
+      { name: 'Mozilla', value: 'Mozilla', version: 'Mozilla' }
+    ],
+    init: function () { var agent = this.header.join(' '); var os = this.matchItem(agent, this.dataos); var browser = this.matchItem(agent, this.databrowser); return { os: os, browser: browser }; },
+    matchItem: function (string, data) {
+      var i = 0; var j = 0; var regex; var regexv; var match; var matches; var version;
+      for (i = 0; i < data.length; i += 1) {
+        regex = new RegExp(data[i].value, 'i');
+        match = regex.test(string);
+        if (match) {
+          regexv = new RegExp(data[i].version + '[- /:;]([\\d._]+)', 'i');
+          matches = string.match(regexv);
+          version = '';
+          if (matches) { if (matches[1]) { matches = matches[1]; } }
+          if (matches) {
+            matches = matches.split(/[._]+/);
+            for (j = 0; j < matches.length; j += 1) {
+              if (j === 0) {
+                version += matches[j] + '.';
+              } else {
+                version += matches[j];
+              }
+            }
+          } else {
+            version = '0';
+          }
+          return {
+            name: data[i].name,
+            version: parseFloat(version)
+          };
+        }
+      }
+      return { name: 'unknown', version: 0 };
+    }
+  };
 
   function generateUid() {
     try {
@@ -224,14 +279,15 @@ ascAdapter.getVisitorData = function (data = {}) {
   }
   var screenSize = { width: window.screen.width, height: window.screen.height };
   var deviceType = giveDeviceTypeOnScreenSize();
+  var e = module.init();
   if (!ua['uid']) {
     ua['uid'] = userId;
     ua['cid'] = clientId;
     ua['pid'] = window.location.hostname;
-    ua["os"] = info.os.name;
-    ua["osv"] = info.os.version;
-    ua["br"] = info.browser.name;
-    ua["brv"] = info.browser.version;
+    ua['os'] = e.os.name;
+    ua['osv'] = e.os.version;
+    ua['br'] = e.browser.name;
+    ua['brv'] = e.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
     ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -281,12 +337,12 @@ ascAdapter.dataProcess = function (t) {
 
   bidsReceivedData.length > 0 && bidsReceivedData.forEach(bdRecived => {
     const { requestId, bidder, width, height, cpm, currency, timeToRespond } = bdRecived;
-    payload["auctionData"].forEach(rwData => {
-      if (rwData["bid"] === requestId && rwData["aus"] === width + "x" + height) {
-        rwData["brid"] = requestId; rwData["bradv"] = bidder; rwData["br_pb_mg"] = cpm;
-        rwData["cur"] = currency; rwData["br_tr"] = timeToRespond; rwData["brs"] = width + "x" + height;
+    payload['auctionData'].forEach(rwData => {
+      if (rwData['bid'] === requestId && rwData['aus'] === width + 'x' + height) {
+        rwData['brid'] = requestId; rwData['bradv'] = bidder; rwData['br_pb_mg'] = cpm;
+        rwData['cur'] = currency; rwData['br_tr'] = timeToRespond; rwData['brs'] = width + 'x' + height;
       }
-    });
+    })
   });
 
   var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
@@ -320,7 +376,7 @@ ascAdapter.dataProcess = function (t) {
 
 ascAdapter.sendPayload = function (data) {
   var obj = { 'records': [{ 'value': data }] };
-  const strJSON = JSON.stringify(obj);
+  let strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 }
 

@@ -69,7 +69,7 @@ export const pairIdSubmodule = {
 
     const configParams = (config && config.params) || {};
     if (configParams && configParams.liveramp) {
-      const LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY;
+      let LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY;
       const liverampValue = pairIdFromLocalStorage(LRStorageLocation) || pairIdFromCookie(LRStorageLocation);
 
       if (liverampValue) {

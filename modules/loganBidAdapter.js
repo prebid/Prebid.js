@@ -39,7 +39,7 @@ export const spec = {
       const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        schain: bid?.ortb2?.source?.ext?.schain || {},
+        schain: bid.schain || {},
         bidfloor: getBidFloor(bid)
       };
       const mediaType = bid.mediaTypes;

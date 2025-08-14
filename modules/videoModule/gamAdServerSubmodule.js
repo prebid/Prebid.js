@@ -3,10 +3,10 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
  * @class
- * @param {Object} gamModule_ - the GAM ad server module
+ * @param {Object} dfpModule_ - the DFP ad server module
  */
-function GamAdServerProvider(gamModule_) {
-  const dfp = gamModule_;
+function GamAdServerProvider(dfpModule_) {
+  const dfp = dfpModule_;
 
   function getAdTagUrl(adUnit, baseAdTag, params, bid) {
     return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params, bid });
@@ -23,7 +23,7 @@ function GamAdServerProvider(gamModule_) {
 }
 
 export function gamSubmoduleFactory() {
-  const dfp = getGlobal().adServers.gam;
+  const dfp = getGlobal().adServers.dfp;
   const gamProvider = GamAdServerProvider(dfp);
   return gamProvider;
 }

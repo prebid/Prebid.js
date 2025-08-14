@@ -141,7 +141,7 @@ For video ads, Prebid cache must be enabled, as the demand partner does not supp
 ```js
 pbjs.setConfig({
   cache: {
-    url: 'https://prebid.example.com/pbc/v1/cache',
+    url: 'https://prebid.adnxs.com/pbc/v1/cache',
   },
 });
 ```

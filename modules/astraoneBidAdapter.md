@@ -114,7 +114,7 @@ var adUnits = [{
 <head>
   <meta charset="UTF-8">
   <title>Prebid.js Banner gpt Example</title>
-  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
   <script async src="../../../build/dev/prebid.js"></script>
   <style>
     .banner-block {

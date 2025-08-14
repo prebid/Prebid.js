@@ -2,9 +2,9 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
 import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
+import {find} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {parseNativeResponse, getBidFloor} from '../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -12,6 +12,27 @@ const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.
 
 const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=';
 const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=';
+
+const ORTB_NATIVE_TYPE_MAPPING = {
+  img: {
+    '3': 'image',
+    '1': 'icon'
+  },
+  data: {
+    '1': 'sponsoredBy',
+    '2': 'body',
+    '3': 'rating',
+    '4': 'likes',
+    '5': 'downloads',
+    '6': 'price',
+    '7': 'salePrice',
+    '8': 'phone',
+    '9': 'address',
+    '10': 'body2',
+    '11': 'displayUrl',
+    '12': 'cta'
+  }
+}
 
 const ORTB_NATIVE_PARAMS = {
   title: {
@@ -47,7 +68,15 @@ const ORTB_NATIVE_PARAMS = {
     id: 4,
     name: 'data',
     type: 10
-  }};
+  },
+};
+
+// Encode URI.
+const _encodeURIComponent = function (a) {
+  let b = window.encodeURIComponent(a);
+  b = b.replace(/'/g, '%27');
+  return b;
+}
 
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
@@ -66,9 +95,9 @@ const flatten = (arr) => {
 }
 
 const createOrtbRequest = (validBidRequests, bidderRequest) => {
-  const device = createOrtbDeviceObj(validBidRequests);
-  const user = createOrtbUserObj(validBidRequests)
-  const site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.page)
+  let device = createOrtbDeviceObj(validBidRequests);
+  let user = createOrtbUserObj(validBidRequests)
+  let site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.page)
   return {
     id: bidderRequest.bidderRequestId,
     imp: [],
@@ -79,7 +108,7 @@ const createOrtbRequest = (validBidRequests, bidderRequest) => {
 }
 
 const createOrtbDeviceObj = (validBidRequests) => {
-  const device = { ...extractKeyInfo(validBidRequests, `device`) };
+  let device = { ...extractKeyInfo(validBidRequests, `device`) };
   device.ua = navigator.userAgent;
   return device;
 }
@@ -87,8 +116,8 @@ const createOrtbDeviceObj = (validBidRequests) => {
 const createOrtbUserObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `user`) })
 
 const createOrtbSiteObj = (validBidRequests, page) => {
-  const site = { ...extractKeyInfo(validBidRequests, `site`), page };
-  const publisher = createOrtbPublisherObj(validBidRequests);
+  let site = { ...extractKeyInfo(validBidRequests, `site`), page };
+  let publisher = createOrtbPublisherObj(validBidRequests);
   if (!site.publisher) {
     site.publisher = publisher
   }
@@ -97,16 +126,22 @@ const createOrtbSiteObj = (validBidRequests, page) => {
 
 const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `publisher`) })
 
+// get bidFloor Function for different creatives
+function getBidFloor(bid, creative) {
+  let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
+  return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
+}
+
 const createOrtbImpObj = (bid) => {
-  const params = bid.params
-  const testMode = !!bid.params.test_mode
+  let params = bid.params
+  let testMode = !!bid.params.test_mode
 
   // Validate Banner Request.
-  const bannerObj = deepAccess(bid.mediaTypes, `banner`);
-  const nativeObj = deepAccess(bid.mediaTypes, `native`);
-  const videoObj = deepAccess(bid.mediaTypes, `video`);
+  let bannerObj = deepAccess(bid.mediaTypes, `banner`);
+  let nativeObj = deepAccess(bid.mediaTypes, `native`);
+  let videoObj = deepAccess(bid.mediaTypes, `video`);
 
-  const imp = {
+  let imp = {
     id: bid.bidId,
     ext: {
       dailyhunt: {
@@ -142,7 +177,7 @@ const createOrtbImpObj = (bid) => {
 }
 
 const createOrtbImpBannerObj = (bid, bannerObj) => {
-  const format = [];
+  let format = [];
   bannerObj.sizes.forEach(size => format.push({ w: size[0], h: size[1] }))
 
   return {
@@ -179,7 +214,7 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
       return asset;
     }
   }).filter(Boolean);
-  const request = {
+  let request = {
     assets,
     ver: '1,0'
   }
@@ -188,7 +223,7 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
 
 const createOrtbImpVideoObj = (bid, videoObj) => {
   let obj = {};
-  const params = bid.params
+  let params = bid.params
   if (!isEmpty(bid.params.video)) {
     obj = {
       topframe: 1,
@@ -213,8 +248,8 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
 }
 
 export function getProtocols({protocols}) {
-  const defaultValue = [2, 3, 5, 6, 7, 8];
-  const listProtocols = [
+  let defaultValue = [2, 3, 5, 6, 7, 8];
+  let listProtocols = [
     {key: 'VAST_1_0', value: 1},
     {key: 'VAST_2_0', value: 2},
     {key: 'VAST_3_0', value: 3},
@@ -266,7 +301,7 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   currency: 'USD',
   ttl: 360,
   netRevenue: bid.netRevenue === 'net',
-  native: parseNativeResponse(bidResponse),
+  native: parseNative(bidResponse),
   mediaType: 'native',
   winUrl: bidResponse.nurl,
   width: bidResponse.w,
@@ -274,8 +309,34 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   adomain: bidResponse.adomain
 })
 
+const parseNative = (bid) => {
+  let adm = JSON.parse(bid.adm)
+  const { assets, link, imptrackers, jstracker } = adm.native;
+  const result = {
+    clickUrl: _encodeURIComponent(link.url),
+    clickTrackers: link.clicktrackers || [],
+    impressionTrackers: imptrackers || [],
+    javascriptTrackers: jstracker ? [ jstracker ] : []
+  };
+  assets.forEach(asset => {
+    if (!isEmpty(asset.title)) {
+      result.title = asset.title.text
+    } else if (!isEmpty(asset.img)) {
+      result[ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
+        url: asset.img.url,
+        height: asset.img.h,
+        width: asset.img.w
+      }
+    } else if (!isEmpty(asset.data)) {
+      result[ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
+    }
+  });
+
+  return result;
+}
+
 const createPrebidVideoBid = (bid, bidResponse) => {
-  const videoBid = {
+  let videoBid = {
     requestId: bid.bidId,
     cpm: bidResponse.price.toFixed(2),
     creativeId: bidResponse.crid,
@@ -289,7 +350,7 @@ const createPrebidVideoBid = (bid, bidResponse) => {
     adomain: bidResponse.adomain
   };
 
-  const videoContext = bid.mediaTypes.video.context;
+  let videoContext = bid.mediaTypes.video.context;
   switch (videoContext) {
     case OUTSTREAM:
       videoBid.vastXml = bidResponse.adm;
@@ -303,10 +364,10 @@ const createPrebidVideoBid = (bid, bidResponse) => {
 }
 
 const getQueryVariable = (variable) => {
-  const query = window.location.search.substring(1);
-  const vars = query.split('&');
+  let query = window.location.search.substring(1);
+  let vars = query.split('&');
   for (var i = 0; i < vars.length; i++) {
-    const pair = vars[i].split('=');
+    let pair = vars[i].split('=');
     if (decodeURIComponent(pair[0]) == variable) {
       return decodeURIComponent(pair[1]);
     }
@@ -327,13 +388,13 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    const serverRequests = [];
+    let serverRequests = [];
 
     // ORTB Request.
-    const ortbReq = createOrtbRequest(validBidRequests, bidderRequest);
+    let ortbReq = createOrtbRequest(validBidRequests, bidderRequest);
 
     validBidRequests.forEach((bid) => {
-      const imp = createOrtbImpObj(bid)
+      let imp = createOrtbImpObj(bid)
       ortbReq.imp.push(imp);
     });
 
@@ -344,15 +405,15 @@ export const spec = {
 
   interpretResponse: function (serverResponse, request) {
     const { seatbid } = serverResponse.body;
-    const bids = request.bids;
-    const prebidResponse = [];
+    let bids = request.bids;
+    let prebidResponse = [];
 
-    const seatBids = seatbid[0].bid;
+    let seatBids = seatbid[0].bid;
 
     seatBids.forEach(ortbResponseBid => {
-      const bidId = ortbResponseBid.impid;
-      const actualBid = ((bids) || []).find((bid) => bid.bidId === bidId);
-      const bidMediaType = ortbResponseBid.ext.prebid.type
+      let bidId = ortbResponseBid.impid;
+      let actualBid = find(bids, (bid) => bid.bidId === bidId);
+      let bidMediaType = ortbResponseBid.ext.prebid.type
       switch (bidMediaType) {
         case mediaTypes.BANNER:
           prebidResponse.push(createPrebidBannerBid(actualBid, ortbResponseBid));

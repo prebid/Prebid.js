@@ -5,7 +5,6 @@ import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
@@ -111,7 +110,7 @@ describe('ID5 analytics adapter', () => {
       expect(body1.event).to.equal('tcf2Enforcement');
       expect(body1.partnerId).to.equal(12349);
       expect(body1.meta).to.be.a('object');
-      expect(body1.meta.pbjs).to.equal(getGlobal().version);
+      expect(body1.meta.pbjs).to.equal($$PREBID_GLOBAL$$.version);
       expect(body1.meta.sampling).to.equal(1);
       expect(body1.meta.tz).to.be.a('number');
 
@@ -120,7 +119,7 @@ describe('ID5 analytics adapter', () => {
       expect(body2.event).to.equal('auctionEnd');
       expect(body2.partnerId).to.equal(12349);
       expect(body2.meta).to.be.a('object');
-      expect(body2.meta.pbjs).to.equal(getGlobal().version);
+      expect(body2.meta.pbjs).to.equal($$PREBID_GLOBAL$$.version);
       expect(body2.meta.sampling).to.equal(1);
       expect(body2.meta.tz).to.be.a('number');
       expect(body2.payload).to.eql(auction);

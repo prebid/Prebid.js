@@ -3,7 +3,7 @@ import { config } from 'src/config.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import 'modules/currency.js';
 import 'modules/priceFloors.js';
-import { replaceAuctionPrice } from '../../../src/utils.js';
+import { replaceAuctionPrice } from '../../../src/utils';
 
 const ortbBlockParams = {
   battr: [ 13 ],

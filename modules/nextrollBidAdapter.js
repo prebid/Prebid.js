@@ -6,11 +6,14 @@ import {
   isPlainObject,
   isStr,
   parseUrl,
-  replaceAuctionPrice} from '../src/utils.js';
+  replaceAuctionPrice,
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
+
+import {find} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,19 +22,17 @@ import { getOsVersion } from '../libraries/advangUtils/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 const BIDDER_CODE = 'nextroll';
-const GVLID = 130;
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 5;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {Object} bidRequest The bid params to validate.
+   * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
@@ -41,15 +42,14 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {Array} validBidRequests - an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     // TODO: is 'page' the right value here?
-    const topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
+    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -94,22 +94,22 @@ export const spec = {
     if (!serverResponse.body) {
       return [];
     } else {
-      const response = serverResponse.body
-      const bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
+      let response = serverResponse.body
+      let bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
       return bids.map((bid) => _buildResponse(response, bid));
     }
   }
 }
 
 function _getBanner(bidRequest) {
-  const sizes = _getSizes(bidRequest);
+  let sizes = _getSizes(bidRequest);
   if (sizes === undefined) return undefined;
   return {format: sizes};
 }
 
 function _getNative(mediaTypeNative) {
   if (mediaTypeNative === undefined) return undefined;
-  const assets = _getNativeAssets(mediaTypeNative);
+  let assets = _getNativeAssets(mediaTypeNative);
   if (assets === undefined || assets.length == 0) return undefined;
   return {
     request: {
@@ -200,7 +200,7 @@ function _getFloor(bidRequest) {
     return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
   }
 
-  const floor = bidRequest.getFloor({
+  let floor = bidRequest.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
@@ -213,7 +213,7 @@ function _getFloor(bidRequest) {
 }
 
 function _buildResponse(bidResponse, bid) {
-  const response = {
+  let response = {
     requestId: bidResponse.id,
     cpm: bid.price,
     width: bid.w,
@@ -241,7 +241,7 @@ const privacyLink = 'https://app.adroll.com/optout/personalized';
 const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
-  const baseResponse = {
+  let baseResponse = {
     clickTrackers: (adm.link && adm.link.clicktrackers) || [],
     jstracker: adm.jstracker || [],
     clickUrl: replaceAuctionPrice(adm.link.url, price),
@@ -337,7 +337,7 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return ((Object.keys(osTable)) || []).find(os => {
+  return find(Object.keys(osTable), os => {
     if (userAgent.match(osTable[os])) {
       return os;
     }

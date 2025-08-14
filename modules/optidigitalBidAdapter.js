@@ -40,9 +40,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {Array} validBidRequests - an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
@@ -74,9 +73,8 @@ export const spec = {
       payload.pageTemplate = validBidRequests[0].params.pageTemplate;
     }
 
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      payload.schain = schain;
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
     }
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
@@ -220,12 +218,12 @@ function buildImp(bidRequest, ortb2) {
     CUR = bidRequest.params.currency;
   }
 
-  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  let bidFloor = _getFloor(bidRequest, floorSizes, CUR);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
 
-  const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
+  let battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
   if (battr && Array.isArray(battr) && battr.length) {
     imp.battr = battr;
   }
@@ -241,7 +239,7 @@ function getAdContainer(container) {
 
 function _getFloor (bid, sizes, currency) {
   let floor = null;
-  const size = sizes.length === 1 ? sizes[0] : '*';
+  let size = sizes.length === 1 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
     try {
       const floorInfo = bid.getFloor({

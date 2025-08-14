@@ -43,8 +43,7 @@ export const spec = {
     const requests = [];
     const {refererInfo, bidderRequestId, gdprConsent, uspConsent} = bidderRequest;
     validBidRequests.forEach(bidRequest => {
-      const {bidId, adUnitCode, auctionId, ortb2Imp, params} = bidRequest;
-      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      const {bidId, adUnitCode, auctionId, ortb2Imp, schain, params} = bidRequest;
       const video = getVideoMediaType(bidRequest);
 
       const request = {

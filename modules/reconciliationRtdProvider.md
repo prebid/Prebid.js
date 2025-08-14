@@ -1,7 +1,7 @@
-The purpose of this Real Time Data Provider is to allow publishers to match impressions across the supply chain.
+The purpose of this Real Time Data Provider is to allow publishers to match impressions accross the supply chain.
 
 **Reconciliation SDK**
-The purpose of Reconciliation SDK module is to collect supply chain structure information and vendor-specific impression IDs from suppliers participating in ad creative delivery and report it to the Reconciliation Service, allowing publishers, advertisers and other supply chain participants to match and reconcile ad server, SSP, DSP and verification system log file records. Reconciliation SDK was created as part of TAG DLT initiative ( https://www.tagtoday.net/pressreleases/dlt_9_7_2020 ).
+The purpose of Reconciliation SDK module is to collect supply chain structure information and vendor-specific impression IDs from suppliers participating in ad creative delivery and report it to the Reconciliation Service, allowing publishers, advertisers and other supply chain participants to match and reconcile ad server, SSP, DSP and veritifation system log file records. Reconciliation SDK was created as part of TAG DLT initiative ( https://www.tagtoday.net/pressreleases/dlt_9_7_2020 ).
 
 **Usage for Publishers:**
 
@@ -32,7 +32,7 @@ pbjs.setConfig({
 
 where:
 - `publisherMemberId` (required) - ID associated with the publisher
-- `access` (optional) true/false - Whether ad markup will receive Ad Unit Id's via Reconciliation Tag
+- `access` (optional) true/false - Whether ad markup will recieve Ad Unit Id's via Reconciliation Tag
   
 **Example:**
 
@@ -42,7 +42,7 @@ To view an example:
 
 `gulp serve --modules=reconciliationRtdProvider,appnexusBidAdapter`
 
-You could also change 'appnexusBidAdapter' to another one.
+Your could also change 'appnexusBidAdapter' to another one.
 
 - in your browser, navigate to:
 

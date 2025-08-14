@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=gamAdServerVideo" async=true></script>
+    <script src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=dfpAdServerVideo" async=true></script>
 
 
     <script>
@@ -63,13 +63,13 @@
                     enableTIDs: true,
                     debug: true,
                     cache: {
-                        useLocal: true,
+                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
                     }
                 });
         pbjs.requestBids({
           timeout: 10000,
           bidsBackHandler : function(bids) {
-            var videoUrl = pbjs.adServers.gam.buildVideoUrl({
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
               adUnit: videoAdUnit,
               params: {
                 iu: '/19968336/prebid_cache_video_adunit'

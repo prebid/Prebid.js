@@ -17,7 +17,7 @@ describe('truereachBidAdapterTests', function () {
   });
 
   it('validate_generated_params', function () {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: '34ce3f3b15190a',
       mediaTypes: {
         banner: {
@@ -31,8 +31,8 @@ describe('truereachBidAdapterTests', function () {
       sizes: [[300, 250]]
     }];
 
-    const request = spec.buildRequests(bidRequestData, {});
-    const req_data = request.data;
+    let request = spec.buildRequests(bidRequestData, {});
+    let req_data = request.data;
 
     expect(request.method).to.equal('POST');
     expect(req_data.imp[0].id).to.equal('34ce3f3b15190a');
@@ -41,7 +41,7 @@ describe('truereachBidAdapterTests', function () {
   });
 
   it('validate_response_params', function () {
-    const serverResponse = {
+    let serverResponse = {
       body: {
         'id': '34ce3f3b15190a',
         'seatbid': [{
@@ -64,9 +64,9 @@ describe('truereachBidAdapterTests', function () {
       }
     };
 
-    const bids = spec.interpretResponse(serverResponse, {});
+    let bids = spec.interpretResponse(serverResponse, {});
     expect(bids).to.have.lengthOf(1);
-    const bid = bids[0];
+    let bid = bids[0];
     expect(bid.requestId).to.equal('34ce3f3b15190a');
     expect(bid.cpm).to.equal(2.55);
     expect(bid.currency).to.equal('USD');
@@ -82,7 +82,7 @@ describe('truereachBidAdapterTests', function () {
   describe('user_sync', function() {
     const user_sync_url = 'https://ads-sg.momagic.com/jsp/usersync.jsp';
     it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
-      const syncs = spec.getUserSyncs(
+      let syncs = spec.getUserSyncs(
         {iframeEnabled: true}
       );
       expect(syncs).to.be.an('array');
@@ -92,7 +92,7 @@ describe('truereachBidAdapterTests', function () {
     });
 
     it('if_pixelEnabled_is_true', function() {
-      const syncs = spec.getUserSyncs(
+      let syncs = spec.getUserSyncs(
         {pixelEnabled: true}
       );
       expect(syncs).to.be.an('array');

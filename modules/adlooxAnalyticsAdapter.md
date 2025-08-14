@@ -34,9 +34,9 @@ When tracking video you have two options:
 
 To view an [example of an Adloox integration](../integrationExamples/gpt/adloox.html):
 
-    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,gamAdServerVideo,intersectionRtdProvider,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
+    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,intersectionRtdProvider,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
 
-**N.B.** `categoryTranslation` is required by `gamAdServerVideo` that otherwise causes a JavaScript console warning
+**N.B.** `categoryTranslation` is required by `dfpAdServerVideo` that otherwise causes a JavaScript console warning
 
 **N.B.** `intersectionRtdProvider` is used by `adlooxRtdProvider` to provide (above-the-fold) ATF measurement, if not enabled the `atf` segment will not be available
 

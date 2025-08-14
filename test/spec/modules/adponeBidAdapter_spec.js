@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 
 const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
-  const bid = {
+  let bid = {
     bidder: 'adpone',
     adUnitCode: 'adunit-code',
     sizes: [[300, 250]],
@@ -112,7 +112,7 @@ describe('adponeBidAdapter', function () {
   });
   describe('interpretResponse', function () {
     let serverResponse;
-    const bidRequest = { data: {id: '1234'} };
+    let bidRequest = { data: {id: '1234'} };
 
     beforeEach(function () {
       serverResponse = {
@@ -194,7 +194,7 @@ describe('adponeBidAdapter', function () {
     });
     it('should add responses if the cpm is valid', function () {
       serverResponse.body.seatbid[0].bid[0].price = 0.5;
-      const response = spec.interpretResponse(serverResponse, bidRequest);
+      let response = spec.interpretResponse(serverResponse, bidRequest);
       expect(response).to.not.deep.equal([]);
     });
   });

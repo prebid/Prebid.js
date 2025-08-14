@@ -1,7 +1,8 @@
+
 import * as adloader from 'src/adloader.js';
 
 // this export is for adloader's tests against actual implementation
-export const loadExternalScript = adloader.loadExternalScript;
+export let loadExternalScript = adloader.loadExternalScript;
 
 export let loadExternalScriptStub = createStub();
 

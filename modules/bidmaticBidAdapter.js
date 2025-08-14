@@ -1,286 +1,144 @@
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  _map,
-  cleanObj,
-  deepAccess,
-  flatten,
-  getWinDimensions,
-  isArray,
-  isNumber,
-  logWarn,
-  parseSizesInput
-} from '../src/utils.js';
-import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { chunk } from '../libraries/chunk/chunk.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { replaceAuctionPrice, isNumber, deepAccess, isFn } from '../src/utils.js';
 
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
- */
-
-const URL = 'https://adapter.bidmatic.io/bdm/auction';
+const HOST = 'https://adapter.bidmatic.io';
 const BIDDER_CODE = 'bidmatic';
-const SYNCS_DONE = new Set();
+const DEFAULT_CURRENCY = 'USD';
+export const SYNC_URL = `${HOST}/sync.html`;
+export const END_POINT = `${HOST}/ortb-client`;
 
-/** @type {BidderSpec} */
+export const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 290,
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    const floorInfo = isFn(bidRequest.getFloor) ? bidRequest.getFloor({
+      currency: context.currency || 'USD',
+      size: '*',
+      mediaType: '*'
+    }) : {
+      floor: imp.bidfloor || deepAccess(bidRequest, 'params.bidfloor') || 0,
+      currency: DEFAULT_CURRENCY
+    };
+
+    if (floorInfo) {
+      imp.bidfloor = floorInfo.floor;
+      imp.bidfloorcur = floorInfo.currency;
+    }
+    imp.tagid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || bidRequest.adUnitCode;
+
+    return imp;
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    if (!request.cur) {
+      request.cur = [DEFAULT_CURRENCY];
+    }
+    return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const { bidRequest } = context;
+
+    let resMediaType;
+    const reqMediaTypes = Object.keys(bidRequest.mediaTypes);
+    if (reqMediaTypes.length === 1) {
+      resMediaType = reqMediaTypes[0];
+    } else {
+      if (bid.adm.search(/^(<\?xml|<vast)/i) !== -1) {
+        resMediaType = VIDEO;
+      } else {
+        resMediaType = BANNER;
+      }
+    }
+
+    context.mediaType = resMediaType;
+
+    return buildBidResponse(bid, context);
+  }
+});
+
+const PROCESSED_SOURCES = {};
+
+export function createUserSyncs(processedSources, syncOptions, gdprConsent, uspConsent, gppConsent) {
+  if (syncOptions?.iframeEnabled) {
+    return Object.entries(processedSources)
+      .filter(([_, syncMade]) => syncMade === 0)
+      .map(([sourceId]) => {
+        processedSources[sourceId] = 1
+
+        let url = `${SYNC_URL}?aid=${sourceId}`
+        if (gdprConsent && gdprConsent.gdprApplies) {
+          url += `&gdpr=${+(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
+        }
+        if (uspConsent) {
+          url += `&usp=${uspConsent}`;
+        }
+        if (gppConsent) {
+          url += `&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections?.toString()}`
+        }
+        return {
+          type: 'iframe',
+          url
+        };
+      })
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1134,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 1134,
   isBidRequestValid: function (bid) {
-    if (!bid.params) return false;
-    if (bid.params.bidfloor && !isNumber(bid.params.bidfloor)) {
-      logWarn('incorrect floor value, should be a number');
-    }
     return isNumber(deepAccess(bid, 'params.source'))
   },
-  getUserSyncs: getUserSyncsFn,
-  /**
-   * Make a server request from the list of BidRequests
-   * @param bidRequests
-   * @param adapterRequest
-   */
-  buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 5);
-    const { tag, bids } = bidToTag(bidRequests, adapterRequest);
-    const bidChunks = chunk(bids, chunkSize);
-
-    return _map(bidChunks, (bids) => {
-      return {
-        data: Object.assign({}, tag, { BidRequests: bids }),
-        adapterRequest,
-        method: 'POST',
-        url: URL
-      };
-    })
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+    return createUserSyncs(PROCESSED_SOURCES, syncOptions, gdprConsent, uspConsent, gppConsent);
   },
-
-  /**
-   * Unpack the response from the server into a list of bids
-   * @param {*} serverResponse
-   * @param {Object} responseArgs
-   * @param {*} responseArgs.adapterRequest
-   * @return {Bid[]} An array of bids which were nested inside the server
-   */
-  interpretResponse: function (serverResponse, { adapterRequest }) {
-    serverResponse = serverResponse.body;
-    let bids = [];
-
-    if (isArray(serverResponse)) {
-      serverResponse.forEach(serverBidResponse => {
-        bids = flatten(bids, parseResponseBody(serverBidResponse, adapterRequest));
-      });
-      return bids;
-    }
-    return parseResponseBody(serverResponse, adapterRequest);
-  },
-
-};
-
-export function getResponseSyncs(syncOptions, bid) {
-  const types = bid.cookieURLSTypes || [];
-  const uris = bid.cookieURLs;
-  if (!Array.isArray(uris)) return [];
-  return uris.reduce((acc, uri, i) => {
-    const type = types[i] || 'image';
-
-    if ((!syncOptions.pixelEnabled && type === 'image') ||
-      (!syncOptions.iframeEnabled && type === 'iframe') ||
-      SYNCS_DONE.has(uri)) {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const requestsBySource = validBidRequests.reduce((acc, bidRequest) => {
+      acc[bidRequest.params.source] = acc[bidRequest.params.source] || [];
+      acc[bidRequest.params.source].push(bidRequest);
       return acc;
-    }
+    }, {});
 
-    SYNCS_DONE.add(uri);
-    acc.push({
-      type: type,
-      url: uri
+    return Object.entries(requestsBySource).map(([source, bidRequests]) => {
+      if (!PROCESSED_SOURCES[source]) {
+        PROCESSED_SOURCES[source] = 0;
+      }
+      const data = converter.toORTB({ bidRequests, bidderRequest });
+      const url = new URL(END_POINT);
+      url.searchParams.append('source', source);
+      return {
+        method: 'POST',
+        url: url.toString(),
+        data: data,
+        options: {
+          withCredentials: true,
+        }
+      };
     });
-    return acc;
-  }, [])
-}
+  },
 
-export function getUserSyncsFn(syncOptions, serverResponses) {
-  let newSyncs = [];
-  if (!isArray(serverResponses)) return newSyncs;
-  if (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled) return;
-  serverResponses.forEach((response) => {
-    if (!response.body) return
-    if (isArray(response.body)) {
-      response.body.forEach(b => {
-        newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, b));
-      })
-    } else {
-      newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, response.body));
-    }
-  })
-
-  return newSyncs;
-}
-
-export function parseResponseBody(serverResponse, adapterRequest) {
-  const responseBids = [];
-
-  if (!isArray(deepAccess((serverResponse), 'bids'))) {
-    return responseBids;
-  }
-
-  serverResponse.bids.forEach(serverBid => {
-    // avoid errors with id mismatch
-    const bidRequestMatch = ((adapterRequest.bids) || []).find((bidRequest) => {
-      return bidRequest.bidId === serverBid.requestId;
+  interpretResponse: function (serverResponse, bidRequest) {
+    if (!serverResponse || !serverResponse.body) return [];
+    const parsedSeatbid = serverResponse.body.seatbid.map(seatbidItem => {
+      const parsedBid = seatbidItem.bid.map((bidItem) => ({
+        ...bidItem,
+        adm: replaceAuctionPrice(bidItem.adm, bidItem.price),
+        nurl: replaceAuctionPrice(bidItem.nurl, bidItem.price)
+      }));
+      return { ...seatbidItem, bid: parsedBid };
     });
+    const responseBody = { ...serverResponse.body, seatbid: parsedSeatbid };
+    return converter.fromORTB({
+      response: responseBody,
+      request: bidRequest.data,
+    }).bids;
+  },
 
-    if (bidRequestMatch) {
-      responseBids.push(createBid(serverBid));
-    }
-  });
-
-  return responseBids;
-}
-
-export function remapBidRequest(bidRequests, adapterRequest) {
-  const bidRequestBody = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.page'),
-    ...getPlacementEnv()
-  };
-
-  bidRequestBody.USP = deepAccess(adapterRequest, 'uspConsent');
-  bidRequestBody.Coppa = deepAccess(adapterRequest, 'ortb2.regs.coppa') ? 1 : 0;
-  bidRequestBody.AgeVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
-  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp
-  bidRequestBody.GPPSid = adapterRequest.gppConsent ? adapterRequest.gppConsent.applicableSections?.toString() : adapterRequest.ortb2?.regs?.gpp_sid;
-  bidRequestBody.Schain = deepAccess(bidRequests[0], 'schain');
-  bidRequestBody.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
-  bidRequestBody.UserIds = deepAccess(bidRequests[0], 'userId');
-  bidRequestBody.Tmax = adapterRequest.timeout;
-  if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
-    bidRequestBody.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
-    bidRequestBody.GDPR = 1;
-  }
-
-  return cleanObj(bidRequestBody);
-}
-
-export function bidToTag(bidRequests, adapterRequest) {
-  // start publisher env
-  const tag = remapBidRequest(bidRequests, adapterRequest);
-  // end publisher env
-  const bids = [];
-  for (let i = 0, length = bidRequests.length; i < length; i++) {
-    const bid = prepareBidRequests(bidRequests[i]);
-
-    bids.push(bid);
-  }
-
-  return { tag, bids };
-}
-
-const getBidFloor = (bid) => {
-  try {
-    const bidFloor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
-
-    return bidFloor?.floor;
-  } catch (err) {
-    return isNumber(bid.params.bidfloor) ? bid.params.bidfloor : undefined;
-  }
 };
-
-/**
- * @param bidReq {object}
- * @returns {object}
- */
-export function prepareBidRequests(bidReq) {
-  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : 'display'
-  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
-  return cleanObj({
-    'CallbackId': bidReq.bidId,
-    'Aid': bidReq.params.source,
-    'AdType': mediaType,
-    'PlacementId': bidReq.adUnitCode,
-    'Sizes': parseSizesInput(sizes).join(','),
-    'BidFloor': getBidFloor(bidReq),
-    'GPID': deepAccess(bidReq, 'ortb2Imp.ext.gpid'),
-    ...getPlacementInfo(bidReq)
-  });
-}
-
-/**
- * Configure new bid by response
- * @param bidResponse {object}
- * @returns {object}
- */
-export function createBid(bidResponse) {
-  return {
-    requestId: bidResponse.requestId,
-    creativeId: bidResponse.cmpId,
-    height: bidResponse.height,
-    currency: bidResponse.cur,
-    width: bidResponse.width,
-    cpm: bidResponse.cpm,
-    netRevenue: true,
-    mediaType: bidResponse.vastUrl ? VIDEO : BANNER,
-    ttl: 300,
-    ad: bidResponse.ad,
-    adUrl: bidResponse.adUrl,
-    vastUrl: bidResponse.vastUrl,
-    meta: {
-      advertiserDomains: bidResponse.adomain || []
-    }
-  };
-}
-
-function getPlacementInfo(bidReq) {
-  const placementElementNode = document.getElementById(bidReq.adUnitCode);
-  try {
-    return cleanObj({
-      AuctionsCount: bidReq.auctionsCount,
-      DistanceToView: getViewableDistance(placementElementNode)
-    });
-  } catch (e) {
-    logWarn('Error while getting placement info', e);
-    return {};
-  }
-}
-
-/**
- * @param element
- */
-function getViewableDistance(element) {
-  if (!element) return 0;
-  const elementRect = getBoundingClientRect(element);
-
-  if (!elementRect) {
-    return 0;
-  }
-
-  const elementMiddle = elementRect.top + (elementRect.height / 2);
-  const viewportHeight = getWinDimensions().innerHeight
-  if (elementMiddle > window.scrollY + viewportHeight) {
-    // element is below the viewport
-    return Math.round(elementMiddle - (window.scrollY + viewportHeight));
-  }
-  // element is above the viewport -> negative value
-  return Math.round(elementMiddle);
-}
-
-function getPageHeight() {
-  return document.documentElement.scrollHeight || document.body.scrollHeight;
-}
-
-function getPlacementEnv() {
-  return cleanObj({
-    TimeFromNavigation: Math.floor(performance.now()),
-    TabActive: document.visibilityState === 'visible',
-    PageHeight: getPageHeight()
-  })
-}
-
 registerBidder(spec);

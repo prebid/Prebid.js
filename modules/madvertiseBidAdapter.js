@@ -9,11 +9,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
 
-const GVLID = 153;
-
 export const spec = {
   code: 'madvertise',
-  gvlid: GVLID,
   /**
    * @param {object} bid
    * @return boolean
@@ -22,7 +19,7 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    const sizes = parseSizesInput(bid.sizes);
+    let sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
@@ -50,9 +47,7 @@ export const spec = {
         }
       }
 
-      _each(bidRequest.params, (item, key) => {
-        src = src + '&' + key + '=' + item;
-      });
+      _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;
@@ -82,7 +77,7 @@ export const spec = {
       return [];
     }
 
-    const bid = {
+    let bid = {
       requestId: bidRequest.bidId,
       cpm: responseObj.cpm,
       width: responseObj.Width,

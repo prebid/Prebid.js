@@ -12,10 +12,10 @@ export function convertCamelToUnderscore(value) {
 
 export const appnexusAliases = [
   { code: 'appnexusAst', gvlid: 32 },
+  { code: 'emxdigital', gvlid: 183 },
   { code: 'emetriq', gvlid: 213 },
   { code: 'pagescience', gvlid: 32 },
   { code: 'gourmetads', gvlid: 32 },
-  { code: 'newdream', gvlid: 32 },
   { code: 'matomy', gvlid: 32 },
   { code: 'featureforward', gvlid: 32 },
   { code: 'oftmedia', gvlid: 32 },
@@ -31,10 +31,10 @@ export const appnexusAliases = [
  * Creates an array of n length and fills each item with the given value
  */
 export function fill(value, length) {
-  const newArray = [];
+  let newArray = [];
 
   for (let i = 0; i < length; i++) {
-    const valueToPush = isPlainObject(value) ? deepClone(value) : value;
+    let valueToPush = isPlainObject(value) ? deepClone(value) : value;
     newArray.push(valueToPush);
   }
 

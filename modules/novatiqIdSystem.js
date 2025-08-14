@@ -35,10 +35,10 @@ export const novatiqIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {{novatiq: {snowflake: string}}}
+   * @returns {novatiq: {snowflake: string}}
    */
   decode(novatiqId, config) {
-    const responseObj = {
+    let responseObj = {
       novatiq: {
         snowflake: novatiqId
       }
@@ -60,7 +60,7 @@ export const novatiqIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} config
-   * @returns {string}
+   * @returns {id: string}
    */
   getId(config) {
     const configParams = config.params || {};
@@ -85,7 +85,7 @@ export const novatiqIdSubmodule = {
     const sharedStatus = (sharedId != undefined && sharedId != false) ? 'Found' : 'Not Found';
 
     if (useCallbacks) {
-      const res = this.sendAsyncSyncRequest(novatiqId, url); ;
+      let res = this.sendAsyncSyncRequest(novatiqId, url); ;
       res.sharedStatus = sharedStatus;
 
       return res;
@@ -149,7 +149,7 @@ export const novatiqIdSubmodule = {
   },
 
   getSyncUrl(sharedId, sspid, urlParams) {
-    const novatiqId = this.getNovatiqId(urlParams);
+    let novatiqId = this.getNovatiqId(urlParams);
 
     let url = 'https://spadsync.com/sync?' + urlParams.novatiqId + '=' + novatiqId;
 
@@ -158,7 +158,7 @@ export const novatiqIdSubmodule = {
     }
 
     if (urlParams.useSspHost) {
-      const ssphost = getWindowLocation().hostname;
+      let ssphost = getWindowLocation().hostname;
       logInfo('NOVATIQ partner hostname: ' + ssphost);
 
       url = url + '&ssphost=' + ssphost;
@@ -176,7 +176,7 @@ export const novatiqIdSubmodule = {
   },
 
   getUrlParams(configParams) {
-    const urlParams = {
+    let urlParams = {
       novatiqId: 'snowflake',
       useStandardUuid: false,
       useSspId: true,
@@ -224,7 +224,7 @@ export const novatiqIdSubmodule = {
   getSharedId(configParams) {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
-      const cookieOrStorageID = this.getCookieOrStorageID(configParams);
+      let cookieOrStorageID = this.getCookieOrStorageID(configParams);
       const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
       // first check local storage

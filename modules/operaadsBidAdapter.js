@@ -24,7 +24,6 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 const BIDDER_CODE = 'operaads';
 
@@ -187,14 +186,14 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    *
-   * @param {Object} timeoutData Containing timeout specific data
+   * @param {data} timeoutData Containing timeout specific data
    */
   onTimeout: function (timeoutData) { },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    *
-   * @param {Object} bid The bid that won the auction
+   * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     if (!bid || !isStr(bid.nurl)) {
@@ -288,10 +287,10 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
 /**
  * Build bid response from openrtb bid response.
  *
- * @param {Object} bid
+ * @param {OpenRtbBid} bid
  * @param {BidRequest} bidRequest
- * @param {Object} responseBody
- * @returns {Object} bid response
+ * @param {OpenRtbResponseBody} responseBody
+ * @returns {BidResponse}
  */
 function buildBidResponse(bid, bidRequest, responseBody) {
   let mediaType = BANNER;
@@ -385,10 +384,10 @@ function buildBidResponse(bid, bidRequest, responseBody) {
 /**
  * Convert OpenRtb native response to bid native object.
  *
- * @param {Object} nativeResponse
+ * @param {OpenRtbNativeResponse} nativeResponse
  * @param {String} currency
  * @param {String} cpm
- * @returns {Object} native
+ * @returns {BidNative} native
  */
 function interpretNativeAd(nativeResponse, currency, cpm) {
   const native = {};
@@ -487,8 +486,9 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
 /**
  * Create an imp array
  *
- * @param {Object} bidRequest
- * @returns {Array}
+ * @param {BidRequest} bidRequest
+ * @param {Currency} cur
+ * @returns {Imp[]}
  */
 function createImp(bidRequest) {
   const imp = [];
@@ -564,8 +564,8 @@ function createImp(bidRequest) {
 /**
  * Convert bid sizes to size array
  *
- * @param {number[]|number[][]} sizes
- * @returns {number[][]}
+ * @param {Size[]|Size[][]} sizes
+ * @returns {Size[][]}
  */
 function canonicalizeSizesArray(sizes) {
   if (sizes.length === 2 && !isArray(sizes[0])) {
@@ -578,7 +578,7 @@ function canonicalizeSizesArray(sizes) {
  * Create Assets Object for Native request
  *
  * @param {Object} params
- * @returns {Object[]}
+ * @returns {Asset[]}
  */
 function createNativeAssets(params) {
   const assets = [];
@@ -650,7 +650,7 @@ function createNativeAssets(params) {
  *
  * @param {Object} image
  * @param {Number} type
- * @returns {Object}
+ * @returns {NativeImage}
  */
 function mapNativeImage(image, type) {
   const img = { type: type };
@@ -680,18 +680,18 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
-  const operaId = deepAccess(bidRequest, 'userId.operaId');
+  let operaId = deepAccess(bidRequest, 'userId.operaId');
   if (operaId) {
     return operaId;
   }
 
-  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
   }
 
   for (const idModule of ['pubcid', 'tdid']) {
-    const userId = deepAccess(bidRequest, `userId.${idModule}`);
+    let userId = deepAccess(bidRequest, `userId.${idModule}`);
     if (userId) {
       return userId;
     }
@@ -704,10 +704,8 @@ function getUserId(bidRequest) {
  * Get bid floor price
  *
  * @param {BidRequest} bid
- * @param {Object} params
- * @param {string} params.mediaType
- * @param {*} params.size
- * @returns {Object} floor price
+ * @param {Params} params
+ * @returns {Floor} floor price
  */
 function getBidFloor(bid, {mediaType = '*', size = '*'}) {
   if (isFn(bid.getFloor)) {

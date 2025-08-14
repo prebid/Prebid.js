@@ -1,5 +1,5 @@
 import { mygaruIdSubmodule } from 'modules/mygaruIdSystem.js';
-import { server } from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr';
 
 describe('MygaruID module', function () {
   it('should respond with async callback and get valid id', async () => {

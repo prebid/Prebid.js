@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/rediadsBidAdapter.js';
+import { spec } from '../../../modules/rediadsBidAdapter';
 
 describe('rediads Bid Adapter', function () {
   const BIDDER_CODE = 'rediads';

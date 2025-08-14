@@ -10,7 +10,7 @@ import { logMessage } from '../src/utils.js';
 const entries = Object.entries || function(obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
-  const resArray = new Array(i); // preallocate the Array
+  let resArray = new Array(i); // preallocate the Array
   while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
 
   return resArray;
@@ -26,7 +26,7 @@ const ANALYTICS_TYPE = 'endpoint';
 
 let auctionData = {};
 
-const scaleableAnalytics = Object.assign({},
+let scaleableAnalytics = Object.assign({},
   adapter({
     URL,
     ANALYTICS_TYPE
@@ -76,8 +76,8 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 const onAuctionInit = args => {
   const config = scaleableAnalytics.config || {options: {}};
 
-  const adunitObj = {};
-  const adunits = [];
+  let adunitObj = {};
+  let adunits = [];
 
   // Loop through adunit codes first
   args.adUnitCodes.forEach((code) => {
@@ -116,8 +116,8 @@ const onAuctionInit = args => {
 const onAuctionEnd = args => {
   const config = scaleableAnalytics.config || {options: {}};
 
-  const adunitObj = {};
-  const adunits = [];
+  let adunitObj = {};
+  let adunits = [];
 
   // Add Bids Received
   args.bidsReceived.forEach((bidObj) => {

@@ -1,12 +1,10 @@
 const path = require('path');
-const helpers = require('./gulpHelpers.js');
 
 module.exports = {
   mode: 'production',
-  context: helpers.getPrecompiledPath(),
   resolve: {
     modules: [
-      helpers.getPrecompiledPath(),
+      path.resolve('.'),
       'node_modules'
     ],
   },

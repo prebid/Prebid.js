@@ -72,7 +72,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
+      it('should initialize if gdpr applies and consent is ok', function() {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -89,14 +89,7 @@ describe('weboramaRtdProvider', function() {
                   4: true,
                   5: true,
                   6: true,
-                },
-                legitimateInterests: {
-                  2: true,
-                  7: true,
-                  8: true,
                   9: true,
-                  10: true,
-                  11: true,
                 },
               },
               specialFeatureOptins: {
@@ -104,9 +97,6 @@ describe('weboramaRtdProvider', function() {
               },
               vendor: {
                 consents: {
-                  284: true,
-                },
-                legitimateInterests: {
                   284: true,
                 },
               }
@@ -114,92 +104,6 @@ describe('weboramaRtdProvider', function() {
           },
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
-      });
-      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
-        const moduleConfig = {
-          params: {
-            weboUserDataConf: {}
-          }
-        };
-        const userConsent = {
-          gdpr: {
-            gdprApplies: true,
-            vendorData: {
-              purpose: {
-                consents: {
-                  1: true,
-                  3: true,
-                  4: true,
-                  5: true,
-                  6: true,
-                },
-                legitimateInterests: {
-                  2: true,
-                  7: true,
-                  8: true,
-                  9: true,
-                  10: true,
-                  11: true,
-                },
-              },
-              specialFeatureOptins: {
-                1: true,
-              },
-              vendor: {
-                consents: {
-                  284: true,
-                },
-                legitimateInterests: {
-                  284: false,
-                },
-              }
-            },
-          },
-        }
-        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
-      });
-      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function() {
-        const moduleConfig = {
-          params: {
-            weboUserDataConf: {}
-          }
-        };
-        const userConsent = {
-          gdpr: {
-            gdprApplies: true,
-            vendorData: {
-              purpose: {
-                consents: {
-                  1: true,
-                  3: true,
-                  4: true,
-                  5: true,
-                  6: true,
-                },
-                legitimateInterests: {
-                  2: true,
-                  7: true,
-                  8: true,
-                  9: false,
-                  10: true,
-                  11: true,
-                },
-              },
-              specialFeatureOptins: {
-                1: true,
-              },
-              vendor: {
-                consents: {
-                  284: true,
-                },
-                legitimateInterests: {
-                  284: true,
-                },
-              }
-            },
-          },
-        }
-        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
         const moduleConfig = {
@@ -264,7 +168,7 @@ describe('weboramaRtdProvider', function() {
     let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.sandbox.create();
 
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
 
@@ -323,7 +227,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -410,7 +314,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=datasource%3AdocId&url=https%3A%2F%2Fprebid.org&');
@@ -497,7 +401,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=datasource%3AdocId&url=https%3A%2F%2Fprebid.org&');
@@ -730,7 +634,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            const request = server.requests[0];
+            let request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -856,7 +760,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            const request = server.requests[0];
+            let request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1000,7 +904,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            const request = server.requests[0];
+            let request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1143,7 +1047,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            const request = server.requests[0];
+            let request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1226,7 +1130,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1313,7 +1217,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1404,7 +1308,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1518,7 +1422,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        const request = server.requests[0];
+        let request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.test.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');

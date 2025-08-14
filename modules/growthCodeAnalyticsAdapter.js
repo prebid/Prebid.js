@@ -17,7 +17,7 @@ const ENDPOINT_URL = 'https://analytics.gcprivacy.com/v3/pb/analytics'
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 
-const sessionId = utils.generateUUID();
+let sessionId = utils.generateUUID();
 
 let trackEvents = [];
 let pid = DEFAULT_PID;
@@ -27,11 +27,11 @@ let eventQueue = [];
 
 let startAuction = 0;
 let bidRequestTimeout = 0;
-const analyticsType = 'endpoint';
+let analyticsType = 'endpoint';
 
-const growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}), {
+let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}), {
   track({eventType, args}) {
-    const eventData = args ? utils.deepClone(args) : {};
+    let eventData = args ? utils.deepClone(args) : {};
     let data = {};
     if (!trackEvents.includes(eventType)) return;
     switch (eventType) {
@@ -140,9 +140,9 @@ function logToServer() {
   if (pid === DEFAULT_PID) return;
   if (eventQueue.length >= 1) {
     // Get the correct GCID
-    const gcid = storage.getDataFromLocalStorage('gcid');
+    let gcid = storage.getDataFromLocalStorage('gcid');
 
-    const data = {
+    let data = {
       session: sessionId,
       pid: pid,
       gcid: gcid,

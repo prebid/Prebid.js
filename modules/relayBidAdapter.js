@@ -5,7 +5,6 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'relay';
-const GVLID = 631;
 const METHOD = 'POST';
 const ENDPOINT_URL = 'https://e.relay.bid/p/openrtb2';
 
@@ -28,7 +27,7 @@ function buildRequests(bidRequests, bidderRequest) {
     return accu;
   }, {});
   // Send one overall request with all grouped bids per accountId
-  const reqs = [];
+  let reqs = [];
   for (const [accountId, accountBidRequests] of Object.entries(groupedByAccountId)) {
     const url = `${ENDPOINT_URL}?a=${accountId}&pb=1&pbv=${prebidVersion}`;
     const data = CONVERTER.toORTB({ bidRequests: accountBidRequests, bidderRequest })
@@ -51,7 +50,7 @@ function isBidRequestValid(bid) {
 };
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  const syncs = []
+  let syncs = []
   for (const response of serverResponses) {
     const responseSyncs = ((((response || {}).body || {}).ext || {}).user_syncs || [])
     // Relay returns user_syncs in the format expected by prebid. If for any
@@ -82,7 +81,6 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

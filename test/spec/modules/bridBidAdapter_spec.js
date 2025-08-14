@@ -49,8 +49,8 @@ describe('Brid Bid Adapter', function() {
       }]
     };
 
-    const videoRequestCloned = deepClone(videoRequest);
-    videoRequestCloned[0].ortb2 = { source: { ext: { schain: globalSchain } } };
+    let videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].schain = globalSchain;
 
     const request = spec.buildRequests(videoRequestCloned, videoRequestCloned[0]);
     expect(request).to.not.be.empty;
@@ -112,9 +112,9 @@ describe('Brid Bid Adapter', function() {
   });
 
   it('Test GDPR and USP consents are present in the request', function () {
-    const gdprConsentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-    const uspConsentString = '1YA-';
-    const bidderRequest = {
+    let gdprConsentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+    let uspConsentString = '1YA-';
+    let bidderRequest = {
       'bidderCode': 'brid',
       'bidderRequestId': '22edbae2733bf6',
       'timeout': 3000,
@@ -136,8 +136,8 @@ describe('Brid Bid Adapter', function() {
   });
 
   it('Test GDPR is not present', function () {
-    const uspConsentString = '1YA-';
-    const bidderRequest = {
+    let uspConsentString = '1YA-';
+    let bidderRequest = {
       'bidderCode': 'brid',
       'bidderRequestId': '22edbae2733bf6',
       'timeout': 3000,
@@ -153,7 +153,7 @@ describe('Brid Bid Adapter', function() {
   });
 
   it('Test userSync have only one object and it should have a property type=iframe', function () {
-    const userSync = spec.getUserSyncs({ iframeEnabled: true });
+    let userSync = spec.getUserSyncs({ iframeEnabled: true });
     expect(userSync).to.be.an('array');
     expect(userSync.length).to.be.equal(1);
     expect(userSync[0]).to.have.property('type');
@@ -161,13 +161,13 @@ describe('Brid Bid Adapter', function() {
   });
 
   it('Test userSync valid sync url for iframe', function () {
-    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
     expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=brid&gdpr=0&gdpr_consent=anyString');
     expect(userSync.type).to.be.equal('iframe');
   });
 
   it('Test userSyncs iframeEnabled=false', function () {
-    const userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    let userSyncs = spec.getUserSyncs({iframeEnabled: false});
     expect(userSyncs).to.have.lengthOf(0);
   });
 });

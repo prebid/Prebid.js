@@ -8,7 +8,7 @@ const END_POINT_METHOD = 'POST';
 
 // called first
 function isBidRequestValid(bid) {
-  return !(!bid.params || !bid.params.key);
+  return !(bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.key);
 }
 
 function getUrl(url) {
@@ -123,7 +123,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-  const requests = [];
+  let requests = [];
 
   if (validBidRequests && validBidRequests.length) {
     validBidRequests.forEach(bidRequest => {
@@ -132,7 +132,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       let debug = false;
 
       if (bidRequest.params) {
-        for (const key in bidRequest.params) {
+        for (let key in bidRequest.params) {
           // loop over params and remove empty/untouched values
           if (bidRequest.params.hasOwnProperty(key)) {
             // if debug we update url string to get core debug version
@@ -142,7 +142,7 @@ function buildRequests(validBidRequests, bidderRequest) {
               continue;
             }
 
-            const fixedObj = fixRequestParamForServer(key, bidRequest.params[key]);
+            let fixedObj = fixRequestParamForServer(key, bidRequest.params[key]);
             bidRequest.params[key] = fixedObj.value;
 
             // if pageUrl is set by user we should update variable for query string param

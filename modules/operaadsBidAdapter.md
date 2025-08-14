@@ -106,7 +106,7 @@ var adUnits = [{
 ```javascript
 pbjs.setConfig({
   cache: {
-    url: 'https://prebid.example.com/pbc/v1/cache'
+    url: 'https://prebid.adnxs.com/pbc/v1/cache'
   }
 });
 ```

@@ -2,7 +2,7 @@ import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn }
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-
+import { includes as strIncludes } from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
@@ -53,7 +53,7 @@ const getNativeAssetType = id => {
   }
 
   // ...others should be decoded from nativeAssetMap
-  for (const assetName in nativeAssetMap) {
+  for (let assetName in nativeAssetMap) {
     const assetId = nativeAssetMap[assetName];
     if (assetId === id) {
       return assetName;
@@ -269,7 +269,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  */
 const getHighestFloor = (slot) => {
   const currency = requestCurrency
-  const result = { floor: 0, currency };
+  let result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
     let bannerFloor = 0;
@@ -306,7 +306,7 @@ const getHighestFloor = (slot) => {
 const getCurrency = (bidderRequest) => getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
 /**
- * Get value for first occurrence of key within the collection
+ * Get value for first occurence of key within the collection
  */
 const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || deepAccess(next, key), false);
 
@@ -628,7 +628,7 @@ const spec = {
     const ref = bidderRequest.refererInfo.ref;
     const { source = {}, regs = {} } = ortb2 || {};
 
-    source.schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
+    source.schain = setOnAny(validBidRequests, 'schain');
 
     const payload = {
       id: bidderRequest.bidderRequestId,
@@ -713,7 +713,7 @@ const spec = {
             }
           };
 
-          if (bidRequest && site.id && !site.id.includes('bidid')) {
+          if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
             const { adUnitCode } = bidRequest;
 
@@ -793,7 +793,7 @@ const spec = {
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
-    const mySyncs = [];
+    let mySyncs = [];
     if (iframeEnabled) {
       mySyncs.push({
         type: 'iframe',

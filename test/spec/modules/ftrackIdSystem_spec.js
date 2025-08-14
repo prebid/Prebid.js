@@ -1,15 +1,16 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
-import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import { loadExternalScript } from 'src/adloader.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
-import {server} from 'test/mocks/xhr.js';
 import 'src/prebid.js';
 
-const configMock = {
+let server;
+
+let configMock = {
   name: 'ftrack',
   params: {
     url: 'https://d9.flashtalking.com/d9core',
@@ -27,7 +28,7 @@ const configMock = {
   debug: true
 };
 
-const consentDataMock = {
+let consentDataMock = {
   gdprApplies: 0,
   consentString: '<CONSENT_STRING>'
 };
@@ -54,7 +55,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage' property is missing`, () => {
-      const configMock1 = JSON.parse(JSON.stringify(configMock));
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.storage;
       delete configMock1.params;
 
@@ -63,7 +64,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage.name' property is missing`, () => {
-      const configMock1 = JSON.parse(JSON.stringify(configMock));
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.storage.name;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -71,7 +72,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage.name' is not 'ftrackId'`, () => {
-      const configMock1 = JSON.parse(JSON.stringify(configMock));
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
       configMock1.storage.name = 'not-ftrack';
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -79,7 +80,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'congig.storage.type' property is missing`, () => {
-      const configMock1 = JSON.parse(JSON.stringify(configMock));
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.storage.type;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -87,7 +88,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage.type' is not 'html5'`, () => {
-      const configMock1 = JSON.parse(JSON.stringify(configMock));
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
       configMock1.storage.type = 'not-html5';
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -95,7 +96,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.params.url' does not exist`, () => {
-      const configMock1 = JSON.parse(JSON.stringify(configMock));
+      let configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.params.url;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -138,25 +139,25 @@ describe('FTRACK ID System', () => {
 
     it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
       ftrackIdSubmodule.getId(configMock, null, null).callback(() => {});
-      expect(loadExternalScriptStub.called).to.be.ok;
-      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
-      loadExternalScriptStub.resetHistory();
+      expect(loadExternalScript.called).to.be.ok;
+      expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
+      loadExternalScript.resetHistory();
 
       ftrackIdSubmodule.decode('value', configMock);
-      expect(loadExternalScriptStub.called).to.not.be.ok;
-      expect(loadExternalScriptStub.args).to.deep.equal([]);
-      loadExternalScriptStub.resetHistory();
+      expect(loadExternalScript.called).to.not.be.ok;
+      expect(loadExternalScript.args).to.deep.equal([]);
+      loadExternalScript.resetHistory();
 
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
-      expect(loadExternalScriptStub.called).to.not.be.ok;
-      expect(loadExternalScriptStub.args).to.deep.equal([]);
+      expect(loadExternalScript.called).to.not.be.ok;
+      expect(loadExternalScript.args).to.deep.equal([]);
 
-      loadExternalScriptStub.restore();
+      loadExternalScript.restore();
     });
 
     describe(`should use the "ids" setting in the config:`, () => {
       it(`should use default IDs if config.params.id is not populated`, () => {
-        const configMock1 = JSON.parse(JSON.stringify(configMock));
+        let configMock1 = JSON.parse(JSON.stringify(configMock));
         delete configMock1.params.ids;
         ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
@@ -167,7 +168,7 @@ describe('FTRACK ID System', () => {
 
       describe(`should use correct ID settings if config.params.id is populated`, () => {
         it(`- any ID set as strings should not be added to window.D9r`, () => {
-          const configMock1 = JSON.parse(JSON.stringify(configMock));
+          let configMock1 = JSON.parse(JSON.stringify(configMock));
           configMock1.params.ids['device id'] = 'test device ID';
           configMock1.params.ids['single device id'] = 'test single device ID';
           configMock1.params.ids['household id'] = 'test household ID';
@@ -179,7 +180,7 @@ describe('FTRACK ID System', () => {
         })
 
         it(`- any ID set to false should not be added to window.D9r`, () => {
-          const configMock1 = JSON.parse(JSON.stringify(configMock));
+          let configMock1 = JSON.parse(JSON.stringify(configMock));
           configMock1.params.ids['device id'] = false;
           configMock1.params.ids['single device id'] = false;
           configMock1.params.ids['household id'] = false;
@@ -191,7 +192,7 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only device id`, () => {
-          const configMock1 = JSON.parse(JSON.stringify(configMock));
+          let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['single device id'];
           ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
@@ -201,7 +202,7 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only single device id`, () => {
-          const configMock1 = JSON.parse(JSON.stringify(configMock));
+          let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
           ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
@@ -211,7 +212,7 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only household ID`, () => {
-          const configMock1 = JSON.parse(JSON.stringify(configMock));
+          let configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
           delete configMock1.params.ids['single device id'];
           configMock1.params.ids['household id'] = true;
@@ -225,9 +226,9 @@ describe('FTRACK ID System', () => {
     })
 
     it(`should populate localstorage and return the IDS (end-to-end test)`, () => {
-      let ftrackId;
-      let ftrackIdExp;
-      let forceCallback = false;
+      let ftrackId,
+        ftrackIdExp,
+        forceCallback = false;
 
       // Confirm that our item is not in localStorage yet
       expect(window.localStorage.getItem('ftrack-rtd')).to.not.be.ok;
@@ -262,20 +263,20 @@ describe('FTRACK ID System', () => {
   describe(`decode() method`, () => {
     it(`should respond with an object with the key 'ftrackId'`, () => {
       const MOCK_VALUE_STRINGS = {
-        HHID: 'household_test_id',
-        DeviceID: 'device_test_id',
-        SingleDeviceID: 'single_device_test_id'
-      };
-      const MOCK_VALUE_ARRAYS = {
-        HHID: ['household_test_id', 'a', 'b'],
-        DeviceID: ['device_test_id', 'c', 'd'],
-        SingleDeviceID: ['single_device_test_id', 'e', 'f']
-      };
-      const MOCK_VALUE_BOTH = {
-        foo: ['foo', 'a', 'b'],
-        bar: 'bar',
-        baz: ['baz', 'baz', 'baz']
-      };
+          HHID: 'household_test_id',
+          DeviceID: 'device_test_id',
+          SingleDeviceID: 'single_device_test_id'
+        },
+        MOCK_VALUE_ARRAYS = {
+          HHID: ['household_test_id', 'a', 'b'],
+          DeviceID: ['device_test_id', 'c', 'd'],
+          SingleDeviceID: ['single_device_test_id', 'e', 'f']
+        },
+        MOCK_VALUE_BOTH = {
+          foo: ['foo', 'a', 'b'],
+          bar: 'bar',
+          baz: ['baz', 'baz', 'baz']
+        };
 
       // strings are just passed through
       expect(ftrackIdSubmodule.decode(MOCK_VALUE_STRINGS, configMock)).to.deep.equal({
@@ -315,17 +316,23 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should not be making requests to retrieve a new ID, it should just be decoding a response`, () => {
+      server = sinon.createFakeServer();
       ftrackIdSubmodule.decode('value', configMock);
 
       expect(server.requests).to.have.length(0);
+
+      server.restore();
     })
   });
 
   describe(`extendId() method`, () => {
     it(`should not be making requests to retrieve a new ID, it should just be adding additional data to the id object`, () => {
+      server = sinon.createFakeServer();
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
 
       expect(server.requests).to.have.length(0);
+
+      server.restore();
     });
 
     it(`should return cacheIdObj`, () => {

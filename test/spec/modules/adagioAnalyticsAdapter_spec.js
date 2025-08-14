@@ -5,8 +5,8 @@ import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 
-const adapterManager = require('src/adapterManager').default;
-const events = require('src/events');
+let adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
 
 describe('adagio analytics adapter - adagio.js', () => {
   let sandbox;
@@ -53,7 +53,7 @@ describe('adagio analytics adapter - adagio.js', () => {
     it('builds and sends auction data', () => {
       const w = utils.getWindowTop();
 
-      const bidRequest = {
+      let bidRequest = {
         bids: [{
           adUnitCode: 'div-1',
           params: {
@@ -78,7 +78,7 @@ describe('adagio analytics adapter - adagio.js', () => {
           },
         }],
       };
-      const bidResponse = {
+      let bidResponse = {
         bidderCode: 'adagio',
         width: 300,
         height: 250,

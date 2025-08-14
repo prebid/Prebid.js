@@ -35,7 +35,7 @@
             traffic: 'banner',
             bidFloor: 0.12,
             currency: ['USD'],
-            region: 'IND'
+            region: 'NPL'
           }
         }]
       },
@@ -54,7 +54,7 @@
             traffic: 'banner',
             bidFloor: 0.28,
             currency: ['INR'],
-            region: 'IND'
+            region: 'NPL'
           }
         }]
       }
@@ -109,9 +109,7 @@
         },
         enableTIDs: true
       });
-      if (pbjs.libLoaded) {
-        pbjs.setTargetingForGPTAsync();
-      }
+      pbjs.setTargetingForGPTAsync();
       pbjs.requestBids({
         bidsBackHandler: function () {
           // call for the bid response which have the high bid price 

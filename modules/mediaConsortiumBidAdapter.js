@@ -60,7 +60,7 @@ export const spec = {
         }
       }
 
-      const finalizedMediatypes = deepClone(mediaTypes)
+      let finalizedMediatypes = deepClone(mediaTypes)
 
       if (mediaTypes.video && mediaTypes.video.context !== OUTSTREAM) {
         logWarn(`Filtering video request for adUnitCode ${adUnitCode} because context is not ${OUTSTREAM}`)

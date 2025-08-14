@@ -27,7 +27,7 @@ describe('BidlabBidAdapter', function () {
       }
     }
   });
-  const bid = {
+  let bid = {
     bidId: 'testing',
     bidder: 'doceree',
     params: {
@@ -85,9 +85,9 @@ describe('BidlabBidAdapter', function () {
           advertiserDomain: 'doceree.com',
         }
       };
-      const bannerResponses = spec.interpretResponse(banner);
+      let bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl',
         'netRevenue', 'currency', 'mediaType', 'creativeId', 'meta');
       expect(dataItem.requestId).to.equal('G125fzC5NKl3FHeOT8yvL98ILfQS9TVUgk6Q');

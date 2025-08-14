@@ -36,8 +36,8 @@ describe('WinrAdapter', function () {
       cookiesAreEnabledStub.restore();
     });
 
-    const placementId = '21543013';
-    const bid = {
+    let placementId = '21543013';
+    let bid = {
       'bidder': 'winr',
       'params': {
         'placementId': placementId,
@@ -93,7 +93,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should return false when mediaType is not banner', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.mediaTypes;
       invalidBid.mediaTypes = {
         'video': {}
@@ -103,7 +103,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placementId': 0
@@ -114,7 +114,7 @@ describe('WinrAdapter', function () {
 
   describe('buildRequests', function () {
     let getAdUnitsStub;
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'winr',
         'params': {
@@ -140,7 +140,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should parse out private sizes', function () {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -158,7 +158,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should add publisher_id in request', function() {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -200,7 +200,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should attach valid user params to the tag', function () {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -227,9 +227,9 @@ describe('WinrAdapter', function () {
     });
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
-      const getFloorResponse = { currency: 'USD', floor: 3 };
-      let request; let payload = null;
-      const bidRequest = deepClone(bidRequests[0]);
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      let request, payload = null;
+      let bidRequest = deepClone(bidRequests[0]);
 
       // 1 -> reserve not defined, getFloor not defined > empty
       request = spec.buildRequests([bidRequest]);
@@ -257,7 +257,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should contain hb_source value for other media', function() {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           mediaType: 'banner',
@@ -273,7 +273,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -318,7 +318,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should add payment rules to the request', function () {
-      const bidRequest = Object.assign({},
+      let bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -335,9 +335,9 @@ describe('WinrAdapter', function () {
     });
 
     it('should add gpid to the request', function () {
-      const testGpid = '/12345/my-gpt-tag-0';
-      const bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
+      let testGpid = '/12345/my-gpt-tag-0';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -346,8 +346,8 @@ describe('WinrAdapter', function () {
     });
 
     it('should add gdpr consent information to the request', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
         'bidderCode': 'winr',
         'auctionId': '0bc27fb0-ea39-4a5a-b1ba-5d83a5f28a69',
         'bidderRequestId': '1dfdc89563b81a',
@@ -369,8 +369,8 @@ describe('WinrAdapter', function () {
     });
 
     it('should add us privacy string to payload', function() {
-      const consentString = '1YA-';
-      const bidderRequest = {
+      let consentString = '1YA-';
+      let bidderRequest = {
         'bidderCode': 'winr',
         'auctionId': '0bc27fb0-ea39-4a5a-b1ba-5d83a5f28a69',
         'bidderRequestId': '1dfdc89563b81a',
@@ -387,7 +387,7 @@ describe('WinrAdapter', function () {
     });
 
     it('supports sending hybrid mobile app parameters', function () {
-      const appRequest = Object.assign({},
+      let appRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -470,22 +470,16 @@ describe('WinrAdapter', function () {
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        ortb2: {
-          source: {
-            ext: {
-              schain: {
-                ver: '1.0',
-                complete: 1,
-                nodes: [
-                  {
-                    'asi': 'blob.com',
-                    'sid': '001',
-                    'hp': 1
-                  }
-                ]
-              }
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              'asi': 'blob.com',
+              'sid': '001',
+              'hp': 1
             }
-          }
+          ]
         }
       });
 
@@ -505,7 +499,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should populate coppa if set in config', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
+      let bidRequest = Object.assign({}, bidRequests[0]);
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
         .returns(true);
@@ -519,7 +513,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should set the X-Is-Test customHeader if test flag is enabled', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
+      let bidRequest = Object.assign({}, bidRequests[0]);
       sinon.stub(config, 'getConfig')
         .withArgs('apn_test')
         .returns(true);
@@ -531,14 +525,14 @@ describe('WinrAdapter', function () {
     });
 
     it('should always set withCredentials: true on the request.options', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
+      let bidRequest = Object.assign({}, bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       expect(request.options.withCredentials).to.equal(true);
     });
 
     it('should set simple domain variant if purpose 1 consent is not given', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
         'bidderCode': 'winr',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -605,7 +599,7 @@ describe('WinrAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const response = {
+    let response = {
       'version': '3.0.0',
       'tags': [
         {
@@ -655,7 +649,7 @@ describe('WinrAdapter', function () {
     };
 
     it('should get correct bid response', function () {
-      const expectedResponse = [
+      let expectedResponse = [
         {
           'adType': 'banner',
           'requestId': '3db3773286ee59',
@@ -699,7 +693,7 @@ describe('WinrAdapter', function () {
           'ad': '<!-- Wrapped Ad -->'
         }
       ];
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code',
@@ -710,12 +704,12 @@ describe('WinrAdapter', function () {
           }
         }]
       }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
-      const response = {
+      let response = {
         'version': '0.0.1',
         'tags': [{
           'uuid': '84ab500420319d',
@@ -726,42 +720,42 @@ describe('WinrAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
 
     it('should add advertiser id', function() {
-      const responseAdvertiserId = deepClone(response);
+      let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
 
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
 
     it('should add advertiserDomains', function() {
-      const responseAdvertiserId = deepClone(response);
+      let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
 
-      const bidderRequest = {
+      let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });
 
     it('should add params', function() {
-      const responseParams = deepClone(response);
-      const bidderRequest = {
+      let responseParams = deepClone(response);
+      let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code',
@@ -772,7 +766,7 @@ describe('WinrAdapter', function () {
           }
         }]
       }
-      const result = spec.interpretResponse({ body: responseParams }, {bidderRequest});
+      let result = spec.interpretResponse({ body: responseParams }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['placementId', 'domParent', 'child']);
     });
   });

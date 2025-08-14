@@ -1,9 +1,9 @@
-import { logInfo, logError, isStr, isEmptyStr } from '../src/utils.js';
+import { logInfo, logError, isNumber, isStr, isEmptyStr } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from '../src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'pubmaticId';
 const GVLID = 76;
@@ -16,16 +16,15 @@ const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-function generateQueryStringParams(config) {
+function generateQueryStringParams(config, consentData) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
-  const gdprConsent = gdprDataHandler.getConsentData();
 
   const params = {
-    publisherId: Number(config.params.publisherId),
-    gdpr: (gdprConsent && gdprConsent?.gdprApplies) ? 1 : 0,
-    gdpr_consent: gdprConsent && gdprConsent?.consentString ? encodeURIComponent(gdprConsent.consentString) : '',
+    publisherId: config.params.publisherId,
+    gdpr: (consentData && consentData?.gdprApplies) ? 1 : 0,
+    gdpr_consent: consentData && consentData?.consentString ? encodeURIComponent(consentData.consentString) : '',
     src: 'pbjs_uid',
     ver: VERSION,
     coppa: Number(coppaValue),
@@ -37,9 +36,9 @@ function generateQueryStringParams(config) {
   return params;
 }
 
-function buildUrl(config) {
+function buildUrl(config, consentData) {
   let baseUrl = `${API_URL}${config.params.publisherId}`;
-  const params = generateQueryStringParams(config);
+  const params = generateQueryStringParams(config, consentData);
 
   Object.keys(params).forEach((key) => {
     baseUrl += `&${key}=${params[key]}`;
@@ -95,13 +94,8 @@ function hasRequiredConfig(config) {
     return false;
   }
 
-  // convert publisherId to number
-  if (config.params.publisherId) {
-    config.params.publisherId = Number(config.params.publisherId);
-  }
-
-  if (!config.params.publisherId) {
-    logError(LOG_PREFIX + 'config.params.publisherId (Number) should be provided.');
+  if (!isNumber(config.params.publisherId)) {
+    logError(LOG_PREFIX + 'config.params.publisherId (int) should be provided.');
     return false;
   }
 
@@ -132,14 +126,14 @@ export const pubmaticIdSubmodule = {
     }
     return undefined;
   },
-  getId(config) {
+  getId(config, consentData) {
     if (!hasRequiredConfig(config)) {
       return undefined;
     }
 
     const resp = (callback) => {
       logInfo(LOG_PREFIX + 'requesting an ID from the server');
-      const url = buildUrl(config);
+      const url = buildUrl(config, consentData);
       ajax(url, getSuccessAndErrorHandler(callback), null, {
         method: 'GET',
         withCredentials: true,

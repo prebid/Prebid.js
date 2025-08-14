@@ -1,9 +1,8 @@
 import {expect} from 'chai';
 import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT} from 'modules/taboolaBidAdapter.js';
-import {config} from '../../../src/config.js'
-import * as utils from '../../../src/utils.js'
-import {server} from '../../mocks/xhr.js'
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import {config} from '../../../src/config'
+import * as utils from '../../../src/utils'
+import {server} from '../../mocks/xhr'
 
 describe('Taboola Adapter', function () {
   let sandbox, hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
@@ -13,14 +12,14 @@ describe('Taboola Adapter', function () {
   const TBLA_ID_COOKIE_KEY = 'tbla_id';
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     hasLocalStorage = sandbox.stub(userData.storageManager, 'hasLocalStorage');
     cookiesAreEnabled = sandbox.stub(userData.storageManager, 'cookiesAreEnabled');
     getCookie = sandbox.stub(userData.storageManager, 'getCookie');
     getDataFromLocalStorage = sandbox.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sandbox.stub(userData.storageManager, 'localStorageIsEnabled');
     commonBidRequest = createBidRequest();
-    getGlobal().bidderSettings = {
+    $$PREBID_GLOBAL$$.bidderSettings = {
       taboola: {
         storageAllowed: true
       }
@@ -29,7 +28,7 @@ describe('Taboola Adapter', function () {
 
   afterEach(() => {
     sandbox.restore();
-    getGlobal().bidderSettings = {};
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   })
 
   const displayBidRequestParams = {

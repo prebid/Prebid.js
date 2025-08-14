@@ -18,18 +18,11 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'czechAdId' })
 
 // Returns the id string from either cookie or localstorage
-const readId = () => {
-  const id = storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid')
-  return id && isValidUUID(id) ? id : null
-}
-const isValidUUID = (str) => {
-  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/
-  return uuidRegex.test(str)
-}
+const readId = () => { return storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid') }
 
 /** @type {Submodule} */
 export const czechAdIdSubmodule = {
-  version: '0.1.1',
+  version: '0.1.0',
   /**
    * used to link submodule with config
    * @type {string}
@@ -45,10 +38,7 @@ export const czechAdIdSubmodule = {
    * @function decode
    * @returns {(Object|undefined)}
    */
-  decode () {
-    const id = readId()
-    return id ? { czechAdId: readId() } : undefined
-  },
+  decode () { return { czechAdId: readId() } },
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function

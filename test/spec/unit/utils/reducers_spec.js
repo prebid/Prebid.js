@@ -67,11 +67,11 @@ describe('reducers', () => {
 
   describe('getHighestCpm', function () {
     it('should pick the highest cpm', function () {
-      const a = {
+      let a = {
         cpm: 2,
         timeToRespond: 100
       };
-      const b = {
+      let b = {
         cpm: 1,
         timeToRespond: 100
       };
@@ -80,11 +80,11 @@ describe('reducers', () => {
     });
 
     it('should pick the lowest timeToRespond cpm in case of tie', function () {
-      const a = {
+      let a = {
         cpm: 1,
         timeToRespond: 100
       };
-      const b = {
+      let b = {
         cpm: 1,
         timeToRespond: 50
       };
@@ -95,11 +95,11 @@ describe('reducers', () => {
 
   describe('getOldestHighestCpmBid', () => {
     it('should pick the oldest in case of tie using responseTimeStamp', function () {
-      const a = {
+      let a = {
         cpm: 1,
         responseTimestamp: 1000
       };
-      const b = {
+      let b = {
         cpm: 1,
         responseTimestamp: 2000
       };
@@ -109,11 +109,11 @@ describe('reducers', () => {
   });
   describe('getLatestHighestCpmBid', () => {
     it('should pick the latest in case of tie using responseTimeStamp', function () {
-      const a = {
+      let a = {
         cpm: 1,
         responseTimestamp: 1000
       };
-      const b = {
+      let b = {
         cpm: 1,
         responseTimestamp: 2000
       };

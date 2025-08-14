@@ -13,7 +13,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
-    const host = spec.getBidderHost(bid);
+    let host = spec.getBidderHost(bid);
     if (!host || !bid.params.placementId) {
       return false;
     }
@@ -23,16 +23,15 @@ export const spec = {
     return SCRIPT_URL;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const requests = [];
-    const prebidVersion = getGlobal().version;
+    let requests = [];
+    let prebidVersion = getGlobal().version;
     const win = getWinDimensions();
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      const bidRequest = validBidRequests[i];
+      let bidRequest = validBidRequests[i];
       bidRequest.adspiritConId = spec.genAdConId(bidRequest);
       let reqUrl = spec.getBidderHost(bidRequest);
-      const placementId = utils.getBidIdParameter('placementId', bidRequest.params);
-      const eids = spec.getEids(bidRequest);
+      let placementId = utils.getBidIdParameter('placementId', bidRequest.params);
 
       reqUrl = '//' + reqUrl + RTB_URL +
         '&pid=' + placementId +
@@ -44,14 +43,14 @@ export const spec = {
         '&async=' + bidRequest.adspiritConId +
         '&t=' + Math.round(Math.random() * 100000);
 
-      const gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0;
-      const gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : '';
+      let gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0;
+      let gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : '';
 
       if (bidderRequest.gdprConsent) {
         reqUrl += '&gdpr=' + gdprApplies + '&gdpr_consent=' + gdprConsentString;
       }
 
-      const openRTBRequest = {
+      let openRTBRequest = {
         id: bidderRequest.auctionId,
         at: 1,
         cur: ['EUR'],
@@ -72,14 +71,14 @@ export const spec = {
               assets: bidRequest.mediaTypes.native.ortb?.assets?.length
                 ? bidRequest.mediaTypes.native.ortb.assets
                 : [
-                    { id: 1, required: 1, title: { len: 100 } },
-                    { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg'] } },
-                    { id: 4, required: 1, data: {type: 2, len: 150} },
-                    { id: 3, required: 0, data: {type: 12, len: 50} },
-                    { id: 6, required: 0, data: {type: 1, len: 50} },
-                    { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] } }
+                  { id: 1, required: 1, title: { len: 100 } },
+                  { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg'] } },
+                  { id: 4, required: 1, data: {type: 2, len: 150} },
+                  { id: 3, required: 0, data: {type: 12, len: 50} },
+                  { id: 6, required: 0, data: {type: 1, len: 50} },
+                  { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] } }
 
-                  ]
+                ]
             })
           } : undefined,
           ext: {
@@ -97,9 +96,9 @@ export const spec = {
           }
         },
         user: {
+          id: bidRequest.userId || '',
           data: bidRequest.userData || [],
           ext: {
-            eids: eids,
             consent: gdprConsentString || ''
           }
         },
@@ -131,14 +130,14 @@ export const spec = {
         }
       };
 
-      const schain = bidRequest?.ortb2?.source?.ext?.schain;
-      if (schain) {
+      if (bidRequest.schain) {
         openRTBRequest.source = {
           ext: {
-            schain: schain
+            schain: bidRequest.schain
           }
         };
       }
+
       requests.push({
         method: 'POST',
         url: reqUrl,
@@ -150,13 +149,10 @@ export const spec = {
 
     return requests;
   },
-  getEids: function (bidRequest) {
-    return utils.deepAccess(bidRequest, 'userIdAsEids') || [];
-  },
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const bidObj = bidRequest.bidRequest;
-    const host = spec.getBidderHost(bidObj);
+    let host = spec.getBidderHost(bidObj);
 
     if (!serverResponse || !serverResponse.body) {
       utils.logWarn(`adspirit: Empty response from bidder`);
@@ -244,8 +240,8 @@ export const spec = {
         });
       });
     } else {
-      const adData = serverResponse.body;
-      const cpm = adData.cpm;
+      let adData = serverResponse.body;
+      let cpm = adData.cpm;
 
       if (!cpm) return [];
       const bidResponse = {
@@ -261,7 +257,7 @@ export const spec = {
           advertiserDomains: adData.adomain || []
         }
       };
-      const adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
+      let adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
       bidResponse.ad = adm;
       bidResponse.mediaType = BANNER;
 

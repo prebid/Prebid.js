@@ -4,8 +4,8 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 function createBidderRequest(auctionId, timeout, pageUrl, addGdprConsent) {
   const gdprConsent = addGdprConsent ? {
@@ -66,7 +66,7 @@ describe('KoblerAdapter', function () {
   let sandbox;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(() => {
@@ -689,8 +689,8 @@ describe('KoblerAdapter', function () {
 
     it('Should trigger pixel with replaced nurl if nurl is not empty', function () {
       setCurrencyConfig({ adServerCurrency: 'NOK' });
-      const validBidRequests = [{ params: {} }];
-      const refererInfo = { page: 'page' };
+      let validBidRequests = [{ params: {} }];
+      let refererInfo = { page: 'page' };
       const bidderRequest = { refererInfo };
       return addFPDToBidderRequest(bidderRequest).then(res => {
         JSON.parse(spec.buildRequests(validBidRequests, res).data);

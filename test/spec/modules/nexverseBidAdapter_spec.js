@@ -7,7 +7,7 @@ const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 
 describe('nexverseBidAdapterTests', () => {
   describe('isBidRequestValid', function () {
-    const sbid = {
+    let sbid = {
       'adUnitCode': 'div',
       'bidder': 'nexverse',
       'params': {
@@ -17,26 +17,26 @@ describe('nexverseBidAdapterTests', () => {
     };
 
     it('should not accept bid without required params', function () {
-      const isValid = spec.isBidRequestValid(sbid);
+      let isValid = spec.isBidRequestValid(sbid);
       expect(isValid).to.equal(false);
     });
 
     it('should return false when params are not passed', function () {
-      const bid = Object.assign({}, sbid);
+      let bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid params are not passed', function () {
-      const bid = Object.assign({}, sbid);
+      let bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {uid: '', pubId: '', pubEpid: ''};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid params are not passed', function () {
-      const bid = Object.assign({}, sbid);
+      let bid = Object.assign({}, sbid);
       delete bid.params;
       bid.adUnitCode = '';
       bid.mediaTypes = {
@@ -48,7 +48,7 @@ describe('nexverseBidAdapterTests', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return true when valid params are passed as nums', function () {
-      const bid = Object.assign({}, sbid);
+      let bid = Object.assign({}, sbid);
       delete bid.params;
       bid.mediaTypes = {
         banner: {
@@ -139,22 +139,9 @@ describe('nexverseBidAdapterTests', () => {
       expect(result).to.deep.equal({});
     });
     it('should parse and return the native object from a valid JSON string', function () {
-      const adm = '{"native":{"ver":"1.2","assets":[{"id":1,"required":1,"title":{"text":"Discover Amazing Products Today!"}},{"id":2,"required":1,"img":{"type":3,"url":"https://cdn.prod.website-files.com/64aabfa2adf7363205ea0135/67c168c650acb91b6ce4dfdf_%EC%8D%B8%EB%84%A4%EC%9D%BC_EN.webp","w":600,"h":315}},{"id":3,"data":{"label":"CTA","value":"Click Here To Visit Site","type":12}}],"link":{"url":"https://dailyhunt.in/news/india/english/for+you?launch=true&mode=pwa"},"imptrackers":["https://example.com/impression"]}}'; // JSON string
+      const adm = '{"native": "sample native ad"}'; // JSON string
       const result = parseNativeResponse(adm);
-      expect(result).to.deep.equal({
-        clickTrackers: [],
-        clickUrl:
-          "https://dailyhunt.in/news/india/english/for+you?launch=true&mode=pwa",
-        cta: "Click Here To Visit Site",
-        image: {
-          height: 315,
-          url: "https://cdn.prod.website-files.com/64aabfa2adf7363205ea0135/67c168c650acb91b6ce4dfdf_%EC%8D%B8%EB%84%A4%EC%9D%BC_EN.webp",
-          width: 600,
-        },
-        impressionTrackers: ["https://example.com/impression"],
-        javascriptTrackers: [],
-        title: "Discover Amazing Products Today!",
-      });
+      expect(result).to.deep.equal('sample native ad');
     });
   });
 

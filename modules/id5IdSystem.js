@@ -102,7 +102,6 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {Diagnostics} [diagnostics] - Diagnostics options. Supported only in multiplexing
  * @property {Array<Segment>} [segments] - A list of segments to push to partners. Supported only in multiplexing.
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
- * @property {string} [gamTargetingPrefix] - When set, the GAM targeting tags will be set and use the specified prefix, for example 'id5'.
  */
 
 const DEFAULT_EIDS = {
@@ -174,8 +173,8 @@ export const id5IdSubmodule = {
       const responseObj = {};
       const eids = {};
       Object.entries(value.ids).forEach(([key, value]) => {
-        const eid = value.eid;
-        const uid = eid?.uids?.[0]
+        let eid = value.eid;
+        let uid = eid?.uids?.[0]
         responseObj[key] = {
           uid: uid?.id,
           ext: uid?.ext
@@ -185,7 +184,6 @@ export const id5IdSubmodule = {
         }; // register function to get eid for each id (key) decoded
       });
       this.eids = eids; // overwrite global eids
-      updateTargeting(value, config);
       return responseObj;
     }
 
@@ -200,7 +198,7 @@ export const id5IdSubmodule = {
       return undefined;
     }
     this.eids = DEFAULT_EIDS;
-    const responseObj = {
+    let responseObj = {
       id5id: {
         uid: universalUid,
         ext: ext
@@ -240,7 +238,6 @@ export const id5IdSubmodule = {
     }
 
     logInfo(LOG_PREFIX + 'Decoded ID', responseObj);
-    updateTargeting(value, config);
 
     return responseObj;
   },
@@ -338,6 +335,7 @@ export class IdFetchFlow {
     return typeof this.submoduleConfig.params.externalModuleUrl === 'string';
   }
 
+
   async #externalModuleFlow(configCallPromise) {
     await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
@@ -345,9 +343,11 @@ export class IdFetchFlow {
     return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData, this.gppData);
   }
 
+
   #getExternalIntegration() {
     return window.id5Prebid && window.id5Prebid.integration;
   }
+
 
   async #regularFlow(configCallPromise) {
     const fetchFlowConfig = await configCallPromise;
@@ -356,8 +356,9 @@ export class IdFetchFlow {
     return this.#processFetchCallResponse(fetchCallResponse);
   }
 
+
   async #callForConfig() {
-    const url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
+    let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
       method: 'POST',
       body: JSON.stringify({
@@ -373,6 +374,7 @@ export class IdFetchFlow {
     logInfo(LOG_PREFIX + 'config response received from the server', dynamicConfig);
     return dynamicConfig;
   }
+
 
   async #callForExtensions(extensionsCallConfig) {
     if (extensionsCallConfig === undefined) {
@@ -390,6 +392,7 @@ export class IdFetchFlow {
     return extensions;
   }
 
+
   async #callId5Fetch(fetchCallConfig, extensionsData) {
     const fetchUrl = fetchCallConfig.url;
     const additionalData = fetchCallConfig.overrides || {};
@@ -406,6 +409,7 @@ export class IdFetchFlow {
     logInfo(LOG_PREFIX + 'fetch response received from the server', fetchResponse);
     return fetchResponse;
   }
+
 
   #createFetchRequestData() {
     const params = this.submoduleConfig.params;
@@ -462,6 +466,7 @@ export class IdFetchFlow {
     return data;
   }
 
+
   #processFetchCallResponse(fetchCallResponse) {
     try {
       if (fetchCallResponse.privacy) {
@@ -499,7 +504,7 @@ function validateConfig(config) {
 
   const partner = config.params.partner;
   if (typeof partner === 'string' || partner instanceof String) {
-    const parsedPartnerId = parseInt(partner);
+    let parsedPartnerId = parseInt(partner);
     if (isNaN(parsedPartnerId) || parsedPartnerId < 0) {
       logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
       return false;
@@ -527,41 +532,6 @@ function incrementNb(cachedObj) {
     return cachedObj.nbPage + 1;
   } else {
     return 1;
-  }
-}
-
-function updateTargeting(fetchResponse, config) {
-  if (config.params.gamTargetingPrefix) {
-    const tags = {};
-    let universalUid = fetchResponse.universal_uid;
-    if (universalUid.startsWith('ID5*')) {
-      tags.id = "y";
-    }
-    let abTestingResult = fetchResponse.ab_testing?.result;
-    switch (abTestingResult) {
-      case 'control':
-        tags.ab = 'c';
-        break;
-      case 'normal':
-        tags.ab = 'n';
-        break;
-    }
-    let enrichment = fetchResponse.enrichment;
-    if (enrichment?.enriched === true) {
-      tags.enrich = 'y';
-    } else if (enrichment?.enrichment_selected === true) {
-      tags.enrich = 's';
-    } else if (enrichment?.enrichment_selected === false) {
-      tags.enrich = 'c';
-    }
-
-    window.googletag = window.googletag || {cmd: []};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      for (const tag in tags) {
-        window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
-      }
-    });
   }
 }
 

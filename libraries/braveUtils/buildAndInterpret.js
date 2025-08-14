@@ -30,7 +30,7 @@ export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defa
   prepareConsents(data, bidderRequest);
   prepareEids(data, validBidRequests[0]);
 
-  if (bidderRequest?.ortb2?.source?.ext?.schain) data.source = { ext: { schain: bidderRequest.ortb2.source.ext.schain } };
+  if (validBidRequests[0].schain) data.source = { ext: { schain: validBidRequests[0].schain } };
 
   return { method: 'POST', url: endpoint, data };
 };
@@ -38,7 +38,7 @@ export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defa
 export const interpretResponse = (serverResponse, defaultCur, parseNative) => {
   if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
-  const bids = [];
+  let bids = [];
   serverResponse.body.seatbid.forEach(response => {
     response.bid.forEach(bid => {
       const mediaType = bid.ext?.mediaType || 'banner';

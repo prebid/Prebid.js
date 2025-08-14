@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/widespaceBidAdapter.js';
+import {includes} from 'src/polyfill.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -202,7 +203,7 @@ describe('+widespaceAdatperTest', function () {
   describe('+interpretResponse', function () {
     it('-required params available in response', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
-      const requiredKeys = [
+      let requiredKeys = [
         'requestId',
         'cpm',
         'width',
@@ -217,7 +218,7 @@ describe('+widespaceAdatperTest', function () {
       ];
       const resultKeys = Object.keys(result[0]);
       requiredKeys.forEach((key) => {
-        expect(resultKeys.includes(key)).to.equal(true);
+        expect(includes(resultKeys, key)).to.equal(true);
       });
 
       // Each value except referrer should not be empty|null|undefined

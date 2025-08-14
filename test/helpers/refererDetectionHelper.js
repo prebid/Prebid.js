@@ -32,9 +32,9 @@ export function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, a
   const topOrigin = getOrigin(urls[0]);
 
   const windowList = urls.map((url, index) => {
-    const thisOrigin = getOrigin(url);
-    const sameOriginAsPrevious = index === 0 ? true : (getOrigin(urls[index - 1]) === thisOrigin);
-    const sameOriginAsTop = thisOrigin === topOrigin;
+    const thisOrigin = getOrigin(url),
+      sameOriginAsPrevious = index === 0 ? true : (getOrigin(urls[index - 1]) === thisOrigin),
+      sameOriginAsTop = thisOrigin === topOrigin;
 
     const win = {
       location: {

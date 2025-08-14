@@ -1,7 +1,7 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { internal, resetWinDimensions } from '../../../src/utils.js';
+import { internal, resetWinDimensions } from '../../../src/utils';
 
 var marsAdapter = spec;
 
@@ -69,7 +69,7 @@ describe('marsmedia adapter tests', function () {
       }
     ];
 
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     sandbox.stub(document, 'getElementById').withArgs('Unit-Code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -612,13 +612,7 @@ describe('marsmedia adapter tests', function () {
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead',
-        'ortb2': {
-          'source': {
-            'ext': {
-              'schain': schain
-            }
-          }
-        }
+        'schain': schain
       }
     ];
 

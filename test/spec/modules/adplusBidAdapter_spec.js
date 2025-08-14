@@ -13,7 +13,7 @@ describe('AplusBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      const validRequest = {
+      let validRequest = {
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]
@@ -28,7 +28,7 @@ describe('AplusBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const validRequest = {
+      let validRequest = {
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]
@@ -42,7 +42,7 @@ describe('AplusBidAdapter', function () {
     });
 
     it('should return false when required param types are wrong', function () {
-      const validRequest = {
+      let validRequest = {
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]
@@ -57,7 +57,7 @@ describe('AplusBidAdapter', function () {
     });
 
     it('should return false when size is not exists', function () {
-      const validRequest = {
+      let validRequest = {
         params: {
           inventoryId: 30,
           adUnitId: '1',
@@ -67,7 +67,7 @@ describe('AplusBidAdapter', function () {
     });
 
     it('should return false when size is wrong', function () {
-      const validRequest = {
+      let validRequest = {
         mediaTypes: {
           banner: {
             sizes: [[300]]
@@ -83,7 +83,7 @@ describe('AplusBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const validRequest = [
+    let validRequest = [
       {
         bidder: BIDDER_CODE,
         mediaTypes: {
@@ -99,7 +99,7 @@ describe('AplusBidAdapter', function () {
       },
     ];
 
-    const bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         referer: 'https://test.domain'
       }

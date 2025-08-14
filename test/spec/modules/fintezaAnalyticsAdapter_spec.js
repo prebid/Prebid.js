@@ -1,11 +1,12 @@
 import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
+import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-const adapterManager = require('src/adapterManager').default;
-const events = require('src/events');
+let adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
 
 function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +

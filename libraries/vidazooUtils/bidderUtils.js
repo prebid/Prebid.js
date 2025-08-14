@@ -1,5 +1,6 @@
 import {
   _each,
+  deepAccess,
   formatQS,
   isArray,
   isFn,
@@ -172,7 +173,7 @@ export function createUserSyncGetter(options = {
     const {gppString, applicableSections} = gppConsent;
     const coppa = config.getConfig('coppa') ? 1 : 0;
 
-    const cidArr = responses.filter(resp => resp?.body?.cid).map(resp => resp.body.cid).filter(uniques);
+    const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
     let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}&coppa=${encodeURIComponent((coppa))}`;
     if (gppString && applicableSections?.length) {
       params += '&gpp=' + encodeURIComponent(gppString);
@@ -239,14 +240,14 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
 
-  const gpid = bid?.ortb2Imp?.ext?.gpid || '';
-  const cat = bidderRequest?.ortb2?.site?.cat || [];
-  const pagecat = bidderRequest?.ortb2?.site?.pagecat || [];
-  const contentData = bidderRequest?.ortb2?.site?.content?.data || [];
-  const userData = bidderRequest?.ortb2?.user?.data || [];
-  const contentLang = bidderRequest?.ortb2?.site?.content?.language || document.documentElement.lang;
-  const coppa = bidderRequest?.ortb2?.regs?.coppa ?? 0;
-  const device = bidderRequest?.ortb2?.device || {};
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
+  const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
+  const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa', 0);
+  const device = deepAccess(bidderRequest, 'ortb2.device', {});
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -260,7 +261,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  const data = {
+  let data = {
     url: encodeURIComponent(topWindowUrl),
     uqs: getTopWindowQueryParams(),
     cb: Date.now(),
@@ -296,7 +297,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
 
   appendUserIdsToRequestPayload(data, userId);
 
-  const sua = bidderRequest?.ortb2?.device?.sua;
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
 
   if (sua) {
     data.sua = sua;
@@ -323,15 +324,15 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   }
 
   if (bidderRequest.paapi?.enabled) {
-    const fledge = bidderRequest?.ortb2Imp?.ext?.ae;
+    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
     if (fledge) {
       data.fledge = fledge;
     }
   }
 
-  const api = mediaTypes?.video?.api || [];
+  const api = deepAccess(mediaTypes, 'video.api', []);
   if (api.includes(7)) {
-    const sourceExt = bidderRequest?.ortb2?.source?.ext;
+    const sourceExt = deepAccess(bidderRequest, 'ortb2.source.ext');
     if (sourceExt?.omidpv) {
       data.omidpv = sourceExt.omidpv;
     }
@@ -340,12 +341,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
+  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
   if (dsa) {
     data.dsa = dsa;
-  }
-  if (params.placementId) {
-    data.placementId = params.placementId;
   }
 
   _each(ext, (value, key) => {
@@ -362,10 +360,10 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     }
 
     const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
-    const reqBidId = request?.data?.bidId;
+    const reqBidId = deepAccess(request, 'data.bidId');
     const {results} = serverResponse.body;
 
-    const output = [];
+    let output = [];
 
     try {
       results.forEach((result, i) => {

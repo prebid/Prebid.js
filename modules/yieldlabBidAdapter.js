@@ -1,5 +1,6 @@
 import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { find } from '../src/polyfill.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -52,7 +53,8 @@ export const spec = {
     const timestamp = Date.now();
     const query = {
       ts: timestamp,
-      json: true};
+      json: true,
+    };
 
     _each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId);
@@ -75,9 +77,8 @@ export const spec = {
           query[prop] = bid.params.customParams[prop];
         }
       }
-      const schain = bid?.ortb2?.source?.ext?.schain;
-      if (schain && isPlainObject(schain) && Array.isArray(schain.nodes)) {
-        query.schain = createSchainString(schain);
+      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
+        query.schain = createSchainString(bid.schain);
       }
 
       const iabContent = getContentObject(bid);
@@ -173,7 +174,7 @@ export const spec = {
         return;
       }
 
-      const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
+      const matchedBid = find(serverResponse.body, function (bidResponse) {
         return bidRequest.params.adslotId == bidResponse.id;
       });
 
@@ -195,7 +196,7 @@ export const spec = {
           creativeId: '' + matchedBid.id,
           dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
-          netRevenue: matchedBid.netRevenue,
+          netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
@@ -233,11 +234,11 @@ export const spec = {
           const { assets } = native;
           bidResponse.adUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
           bidResponse.mediaType = NATIVE;
-          const nativeIconAssetObj = ((assets) || []).find(isImageAssetOfType(IMG_TYPE_ICON));
-          const nativeImageAssetObj = ((assets) || []).find(isImageAssetOfType(IMG_TYPE_MAIN));
+          const nativeIconAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_ICON));
+          const nativeImageAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_MAIN));
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
-          const nativeTitleAsset = ((assets) || []).find(asset => hasValidProperty(asset, 'title'));
-          const nativeBodyAsset = ((assets) || []).find(asset => hasValidProperty(asset, 'data'));
+          const nativeTitleAsset = find(assets, asset => hasValidProperty(asset, 'title'));
+          const nativeBodyAsset = find(assets, asset => hasValidProperty(asset, 'data'));
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
@@ -421,8 +422,7 @@ function createSchainString(schain) {
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : '';
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
   const nodesString = schain.nodes.reduce((acc, node) => {
-    acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
-    return acc;
+    return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
   }, '');
   return `${ver},${complete}${nodesString}`;
 }
@@ -451,7 +451,7 @@ function getContentObject(bid) {
  * Creates a string for iab_content object by
  * 1. flatten the iab content object
  * 2. encoding the values
- * 3. joining array of defined keys ('keyword', 'cat') into one value separated with '|'
+ * 3. joining array of defined keys ('keyword', 'cat') into one value seperated with '|'
  * 4. encoding the whole string
  * @param {Object} iabContent
  * @returns {String}

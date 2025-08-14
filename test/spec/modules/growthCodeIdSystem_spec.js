@@ -25,20 +25,13 @@ describe('growthCodeIdSystem', () => {
   let logErrorStub;
 
   beforeEach(function () {
-    if (utils.logError.restore) {
-      utils.logError.restore();
-    }
     logErrorStub = sinon.stub(utils, 'logError');
     storage.setDataInLocalStorage('gcid', GCID, null);
     storage.setDataInLocalStorage('customerEids', EIDS, null);
   });
 
   afterEach(function () {
-    if (logErrorStub && logErrorStub.restore) {
-      logErrorStub.restore();
-    } else if (utils.logError.restore) {
-      utils.logError.restore();
-    }
+    logErrorStub.restore();
   });
 
   describe('name', () => {

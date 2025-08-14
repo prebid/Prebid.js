@@ -14,7 +14,6 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleParams} SubmoduleParams
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
 const openLinkID = {
@@ -58,7 +57,7 @@ function deserializeMwOlId(mwOlIdStr) {
 }
 
 function serializeMwOlId(mwOlId) {
-  const components = [];
+  let components = [];
 
   if (mwOlId.eid) {
     components.push('eid:' + mwOlId.eid);
@@ -125,8 +124,8 @@ export const mwOpenLinkIdSubModule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {Object} mwOlId
-   * @return {(Object|undefined)}
+   * @param {MwOlId} mwOlId
+   * @return {(Object|undefined}
    */
   decode(mwOlId) {
     const id = mwOlId && isPlainObject(mwOlId) ? mwOlId.eid : undefined;
@@ -136,8 +135,8 @@ export const mwOpenLinkIdSubModule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleConfig} [submoduleConfig]
-   * @returns {(Object|undefined)}
+   * @param {SubmoduleParams} [submoduleParams]
+   * @returns {id:MwOlId | undefined}
    */
   getId(submoduleConfig) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};

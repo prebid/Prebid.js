@@ -23,6 +23,11 @@ describe('adWMGBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return false when bidder is not set to "adWMG"', function() {
+      bid.bidder = 'bidder';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('should return false when \'publisherId\' param are not set', function() {
       delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -39,32 +44,32 @@ describe('adWMGBidAdapter', function () {
     });
 
     it('should return correct device type: desktop', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_desktop);
+      let userDeviceInfo = spec.parseUserAgent(ua_desktop);
       expect(userDeviceInfo.devicetype).to.equal(2);
     });
 
     it('should return correct device type: TV', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_tv);
+      let userDeviceInfo = spec.parseUserAgent(ua_tv);
       expect(userDeviceInfo.devicetype).to.equal(3);
     });
 
     it('should return correct device type: mobile', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_mobile);
+      let userDeviceInfo = spec.parseUserAgent(ua_mobile);
       expect(userDeviceInfo.devicetype).to.equal(4);
     });
 
     it('should return correct device type: tablet', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_tablet);
+      let userDeviceInfo = spec.parseUserAgent(ua_tablet);
       expect(userDeviceInfo.devicetype).to.equal(5);
     });
 
     it('should return correct OS name', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_desktop);
+      let userDeviceInfo = spec.parseUserAgent(ua_desktop);
       expect(userDeviceInfo.os).to.equal('Windows');
     });
 
     it('should return correct OS version', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_desktop);
+      let userDeviceInfo = spec.parseUserAgent(ua_desktop);
       expect(userDeviceInfo.osv).to.equal('10.0');
     });
   });
@@ -121,7 +126,7 @@ describe('adWMGBidAdapter', function () {
       ];
     });
 
-    const bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         referer: 'https://test.com'
       },
@@ -136,7 +141,7 @@ describe('adWMGBidAdapter', function () {
     it('should not contain a sizes when sizes is not set', function() {
       delete bidRequests[0].sizes;
       delete bidRequests[1].sizes;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).sizes).to.be.an('undefined');
       expect(JSON.parse(requests[1].data).sizes).to.be.an('undefined');
     });
@@ -144,31 +149,31 @@ describe('adWMGBidAdapter', function () {
     it('should not contain a userId when userId is not set', function() {
       delete bidRequests[0].userId;
       delete bidRequests[1].userId;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).userId).to.be.an('undefined');
       expect(JSON.parse(requests[1].data).userId).to.be.an('undefined');
     });
 
     it('should have a post method', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].method).to.equal('POST');
       expect(requests[1].method).to.equal('POST');
     });
 
     it('should contain a request id equals to the bid id', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).requestId).to.equal(bidRequests[0].bidId);
       expect(JSON.parse(requests[1].data).requestId).to.equal(bidRequests[1].bidId);
     });
 
     it('should have an url that match the default endpoint', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal('https://hb.adwmg.com/hb');
       expect(requests[1].url).to.equal('https://hb.adwmg.com/hb');
     });
 
     it('should contain GDPR consent data if GDPR set', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).gdpr.applies).to.be.true;
       expect(JSON.parse(requests[0].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(JSON.parse(requests[1].data).gdpr.applies).to.be.true;
@@ -177,14 +182,14 @@ describe('adWMGBidAdapter', function () {
 
     it('should not contain GDPR consent data if GDPR not set', function() {
       delete bidderRequest.gdprConsent;
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).gdpr).to.be.an('undefined');
       expect(JSON.parse(requests[1].data).gdpr).to.be.an('undefined');
     })
 
     it('should set debug mode in requests if enabled', function() {
       sinon.stub(config, 'getConfig').withArgs('debug').returns(true);
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).debug).to.be.true;
       expect(JSON.parse(requests[1].data).debug).to.be.true;
       config.getConfig.restore();
@@ -214,7 +219,7 @@ describe('adWMGBidAdapter', function () {
       var responses = spec.interpretResponse(serverResponse);
       expect(responses).to.be.an('array').that.is.not.empty;
 
-      const response = responses[0];
+      let response = responses[0];
       expect(response).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'meta', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency');
       expect(response.requestId).to.equal('request-id');
@@ -244,7 +249,7 @@ describe('adWMGBidAdapter', function () {
         'pixelEnabled': false
       };
 
-      const syncs = spec.getUserSyncs(syncOptions);
+      let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs).to.deep.equal([]);
     });
 
@@ -254,7 +259,7 @@ describe('adWMGBidAdapter', function () {
         'pixelEnabled': false
       };
 
-      const syncs = spec.getUserSyncs(syncOptions);
+      let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
@@ -265,7 +270,7 @@ describe('adWMGBidAdapter', function () {
         'pixelEnabled': true
       };
 
-      const syncs = spec.getUserSyncs(syncOptions);
+      let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
     });
@@ -282,7 +287,7 @@ describe('adWMGBidAdapter', function () {
         apiVersion: 2
       };
       const serverResponse = {};
-      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
       expect(syncs[0].url).includes('gdpr=1');
       expect(syncs[0].url).includes(`gdpr_consent=${gdprConsent.consentString}`);
     });
@@ -323,7 +328,7 @@ describe('adWMGBidAdapter', function () {
         apiVersion: 2
       };
       const serverResponse = {};
-      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
       expect(syncs[0].url.slice(-1)).to.not.equal('&');
     });
   });

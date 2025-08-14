@@ -2,7 +2,7 @@
 <html>
 <head>
 <script async src=
-"https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+"https://www.googletagservices.com/tag/js/gpt.js"></script>
 <script async src="http://localhost:9999/build/dev/prebid.js"></script>
 <title>Contxtful Rtd Provider Example</title>
 <script>
@@ -151,14 +151,10 @@ function refreshBids() {
 
 function initAdserver() {
   googletag.cmd.push(function () {
-    if (pbjs.libLoaded) {
-      pbjs.que.push(function () {
-        pbjs.setTargetingForGPTAsync();
-        googletag.pubads().refresh();
-      });
-    } else {
+    pbjs.que.push(function () {
+      pbjs.setTargetingForGPTAsync();
       googletag.pubads().refresh();
-    }
+    });
   });
 }
 

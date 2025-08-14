@@ -4,7 +4,6 @@ import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 
 export const OVERTONE_URL = 'https://prebid-1.overtone.ai/contextual';
 
-// eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
   _logMessage('Overtone', ...args);
 };

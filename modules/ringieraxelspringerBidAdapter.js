@@ -187,6 +187,7 @@ function parseNativeResponse(ad) {
   const { dsaurl, height, width, adclick } = ad.data.meta;
   const link = adclick + (url || Thirdpartyclicktracker);
   const nativeResponse = {
+    sendTargetingKeys: false,
     title: title || Headline || '',
     image: {
       url: image || Image || '',
@@ -292,7 +293,7 @@ const getSlots = (bidRequests) => {
 
 const getGdprParams = (bidderRequest) => {
   const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-  const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+  let consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
   let queryString = '';
   if (gdprApplies !== undefined) {
     queryString += `&gdpr_applies=${encodeURIComponent(gdprApplies)}`;
@@ -339,7 +340,7 @@ const getAdUnitCreFormat = (adUnit) => {
   }
 
   let creFormat = 'html';
-  const mediaTypes = Object.keys(adUnit.mediaTypes);
+  let mediaTypes = Object.keys(adUnit.mediaTypes);
 
   if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
     creFormat = 'native';

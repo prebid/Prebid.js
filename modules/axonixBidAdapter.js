@@ -44,7 +44,7 @@ function isConnectedTV() {
 }
 
 function getURL(params, path) {
-  const { supplyId, region, endpoint } = params;
+  let { supplyId, region, endpoint } = params;
   let url;
 
   if (endpoint) {
@@ -80,7 +80,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     // device.connectiontype
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     let connectionType = 'unknown';
     let effectiveType = '';
 

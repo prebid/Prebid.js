@@ -3,29 +3,29 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events');
+let events = require('src/events');
 
 describe('Roxot Prebid Analytic', function () {
-  const roxotConfigServerUrl = 'config-server';
-  const roxotEventServerUrl = 'event-server';
-  const publisherId = 'test_roxot_prebid_analytics_publisher_id';
+  let roxotConfigServerUrl = 'config-server';
+  let roxotEventServerUrl = 'event-server';
+  let publisherId = 'test_roxot_prebid_analytics_publisher_id';
 
-  const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
-  const timeout = 3000;
-  const auctionStartTimestamp = Date.now();
-  const bidder = 'rubicon';
+  let auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
+  let timeout = 3000;
+  let auctionStartTimestamp = Date.now();
+  let bidder = 'rubicon';
 
-  const bidAdUnit = 'div_with_bid';
-  const noBidAdUnit = 'div_no_bid';
-  const bidAfterTimeoutAdUnit = 'div_after_timeout';
+  let bidAdUnit = 'div_with_bid';
+  let noBidAdUnit = 'div_no_bid';
+  let bidAfterTimeoutAdUnit = 'div_after_timeout';
 
-  const auctionInit = {
+  let auctionInit = {
     timestamp: auctionStartTimestamp,
     auctionId: auctionId,
     timeout: timeout
   };
 
-  const bidRequested = {
+  let bidRequested = {
     auctionId: auctionId,
     auctionStart: auctionStartTimestamp,
     bidderCode: bidder,
@@ -67,7 +67,7 @@ describe('Roxot Prebid Analytic', function () {
     timeout: timeout
   };
 
-  const bidAdjustmentWithBid = {
+  let bidAdjustmentWithBid = {
     ad: 'html',
     adId: '298bf14ecbafb',
     adUnitCode: bidAdUnit,
@@ -91,7 +91,7 @@ describe('Roxot Prebid Analytic', function () {
     width: 300
   };
 
-  const bidAdjustmentAfterTimeout = {
+  let bidAdjustmentAfterTimeout = {
     ad: 'html',
     adId: '36c6375e2dceba',
     adUnitCode: bidAfterTimeoutAdUnit,
@@ -115,7 +115,7 @@ describe('Roxot Prebid Analytic', function () {
     width: 300
   };
 
-  const bidAdjustmentNoBid = {
+  let bidAdjustmentNoBid = {
     ad: 'html',
     adId: '36c6375e2dce21',
     adUnitCode: noBidAdUnit,
@@ -139,11 +139,11 @@ describe('Roxot Prebid Analytic', function () {
     width: 0
   };
 
-  const auctionEnd = {
+  let auctionEnd = {
     auctionId: auctionId
   };
 
-  const bidTimeout = [
+  let bidTimeout = [
     {
       adUnitCode: bidAfterTimeoutAdUnit,
       auctionId: auctionId,
@@ -153,11 +153,11 @@ describe('Roxot Prebid Analytic', function () {
     }
   ];
 
-  const bidResponseWithBid = bidAdjustmentWithBid;
-  const bidResponseAfterTimeout = bidAdjustmentAfterTimeout;
-  const bidResponseNoBid = bidAdjustmentNoBid;
-  const bidderDone = bidRequested;
-  const bidWon = bidAdjustmentWithBid;
+  let bidResponseWithBid = bidAdjustmentWithBid;
+  let bidResponseAfterTimeout = bidAdjustmentAfterTimeout;
+  let bidResponseNoBid = bidAdjustmentNoBid;
+  let bidderDone = bidRequested;
+  let bidWon = bidAdjustmentWithBid;
 
   describe('correct build and send events', function () {
     beforeEach(function () {
@@ -200,7 +200,7 @@ describe('Roxot Prebid Analytic', function () {
       expect(server.requests[2].url).to.equal('https://' + roxotEventServerUrl + '/bat?publisherId=' + publisherId + '&host=localhost');
       expect(server.requests[3].url).to.equal('https://' + roxotEventServerUrl + '/i?publisherId=' + publisherId + '&host=localhost');
 
-      const auction = JSON.parse(server.requests[1].requestBody);
+      let auction = JSON.parse(server.requests[1].requestBody);
       expect(auction).to.include.all.keys('event', 'eventName', 'options', 'data');
       expect(auction.event).to.equal('a');
 
@@ -217,7 +217,7 @@ describe('Roxot Prebid Analytic', function () {
       expect(auction.data.adUnits[bidAfterTimeoutAdUnit].bidders[bidder].status).to.equal('timeout');
       expect(auction.data.adUnits[noBidAdUnit].bidders[bidder].status).to.equal('noBid');
 
-      const bidAfterTimeout = JSON.parse(server.requests[2].requestBody);
+      let bidAfterTimeout = JSON.parse(server.requests[2].requestBody);
       expect(bidAfterTimeout).to.include.all.keys('event', 'eventName', 'options', 'data');
       expect(bidAfterTimeout.event).to.equal('bat');
 
@@ -226,7 +226,7 @@ describe('Roxot Prebid Analytic', function () {
       expect(bidAfterTimeout.data.bidder).to.equal(bidder);
       expect(bidAfterTimeout.data.cpm).to.equal(bidAdjustmentAfterTimeout.cpm);
 
-      const impression = JSON.parse(server.requests[3].requestBody);
+      let impression = JSON.parse(server.requests[3].requestBody);
       expect(impression).to.include.all.keys('event', 'eventName', 'options', 'data');
       expect(impression.event).to.equal('i');
 
@@ -278,7 +278,7 @@ describe('Roxot Prebid Analytic', function () {
       expect(server.requests[1].url).to.equal('https://' + roxotEventServerUrl + '/a?publisherId=' + publisherId + '&host=localhost');
       expect(server.requests[2].url).to.equal('https://' + roxotEventServerUrl + '/bat?publisherId=' + publisherId + '&host=localhost');
 
-      const auction = JSON.parse(server.requests[1].requestBody);
+      let auction = JSON.parse(server.requests[1].requestBody);
       expect(auction.data.adUnits).to.include.all.keys(noBidAdUnit, bidAfterTimeoutAdUnit);
       expect(auction.data.adUnits).to.not.include.all.keys(bidAdUnit);
     });
@@ -295,7 +295,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('correct parse publisher config', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl,
         server: roxotEventServerUrl,
@@ -311,7 +311,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support deprecated options', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherIds: [publisherId],
       };
 
@@ -325,7 +325,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support default end-points', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId,
       };
 
@@ -339,7 +339,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support custom config end-point', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl
       };
@@ -354,7 +354,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support custom config and event end-point', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId,
         server: roxotEventServerUrl
       };
@@ -369,7 +369,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support different config and event end-points', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl,
         server: roxotEventServerUrl
@@ -385,7 +385,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support adUnit filter', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId,
         adUnits: ['div1', 'div2']
       };
@@ -399,7 +399,7 @@ describe('Roxot Prebid Analytic', function () {
     });
 
     it('support fail loading server config', function () {
-      const publisherOptions = {
+      let publisherOptions = {
         publisherId: publisherId
       };
 
@@ -432,7 +432,7 @@ describe('Roxot Prebid Analytic', function () {
       localStorage.removeItem('roxot_analytics_utm_ttl');
     });
     it('should build utm data from local storage', function () {
-      const utmTagData = roxotAnalytic.buildUtmTagData();
+      let utmTagData = roxotAnalytic.buildUtmTagData();
       expect(utmTagData.utm_source).to.equal('utm_source');
       expect(utmTagData.utm_medium).to.equal('utm_medium');
       expect(utmTagData.utm_campaign).to.equal('');

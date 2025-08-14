@@ -17,6 +17,7 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -74,12 +75,12 @@ export const spec = {
     const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
-    const serverRequests = [];
+    let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
     const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
-      const serverRequest = {
+      let serverRequest = {
         pbav: '$prebid.version$',
         p: [],
         // TODO: is 'page' the right value here?
@@ -95,7 +96,8 @@ export const spec = {
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
           gpp_sid:
-            deepAccess(bidderRequest, 'gppConsent.applicableSections') || []}),
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
+        }),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {
@@ -138,9 +140,8 @@ export const spec = {
         if (criteoId) {
           serverRequest.cri_prebid = criteoId;
         }
-        const schain = deepAccess(request, 'ortb2.source.ext.schain');
-        if (schain) {
-          serverRequest.schain = JSON.stringify(schain);
+        if (request.schain) {
+          serverRequest.schain = JSON.stringify(request.schain);
         }
         if (deepAccess(request, 'params.lr_env')) {
           serverRequest.ats_envelope = request.params.lr_env;
@@ -195,7 +196,7 @@ export const spec = {
    * @return {Bid[]} an array of bids
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = [];
+    let bids = [];
     const data = serverResponse.body;
     if (data.length > 0) {
       data.forEach(response => {
@@ -257,7 +258,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
   const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
@@ -326,9 +327,9 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = (deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
+  const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
 
-  const result = {
+  let result = {
     dealId: response.dealid,
     requestId: imp.id,
     cpm: response.price,
@@ -414,8 +415,8 @@ function getId(request, idType) {
  * @return Object OpenRTB request object
  */
 function openRtbRequest(bidRequests, bidderRequest) {
-  const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
-  const openRtbRequest = {
+  const schain = bidRequests[0].schain;
+  let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
     tmax: bidderRequest.timeout || 400,
     at: 1,
@@ -462,7 +463,7 @@ function getTopics(bidderRequest) {
   })[0];
 
   if (topicsData) {
-    const topicsObject = {
+    let topicsObject = {
       taxonomy: topicsData.ext.segtax,
       classifier: topicsData.ext.segclass,
       // topics needs to be array of numbers
@@ -478,7 +479,7 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);
@@ -499,17 +500,13 @@ function openRtbImpression(bidRequest) {
 
   const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
-    .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
-    .forEach(param => {
-      imp.video[param] = mediaTypesParams[param];
-    });
+    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
   const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
-    .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
-    .forEach(param => {
-      imp.video[param] = videoParams[param];
-    });
+    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .forEach(param => imp.video[param] = videoParams[param]);
 
   if (imp.video.skippable) {
     imp.video.skip = 1;
@@ -561,7 +558,7 @@ function extractPlayerSize(bidRequest) {
  * @return Object OpenRTB's 'site' object
  */
 function openRtbSite(bidRequest, bidderRequest) {
-  const result = {};
+  let result = {};
 
   const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
   if (!isEmpty(loc)) {
@@ -580,10 +577,8 @@ function openRtbSite(bidRequest, bidderRequest) {
   const siteParams = deepAccess(bidRequest, 'params.site');
   if (siteParams) {
     Object.keys(siteParams)
-      .filter(param => OPENRTB_VIDEO_SITEPARAMS.includes(param))
-      .forEach(param => {
-        result[param] = siteParams[param];
-      });
+      .filter(param => includes(OPENRTB_VIDEO_SITEPARAMS, param))
+      .forEach(param => result[param] = siteParams[param]);
   }
   return result;
 }

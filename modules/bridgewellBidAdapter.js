@@ -1,6 +1,7 @@
 import {_each, deepSetValue, inIframe} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -96,7 +97,8 @@ export const spec = {
         referrer: bidderRequest.refererInfo.ref,
         adUnits: adUnits,
         // TODO: please do not send internal data structures over the network
-        refererInfo: bidderRequest.refererInfo.legacy},
+        refererInfo: bidderRequest.refererInfo.legacy,
+      },
       validBidRequests: validBidRequests
     };
   },
@@ -119,12 +121,12 @@ export const spec = {
         return;
       }
 
-      const matchedResponse = ((serverResponse.body) || []).find(function (res) {
+      let matchedResponse = find(serverResponse.body, function (res) {
         let valid = false;
 
         if (res && !res.consumed) {
-          const mediaTypes = req.mediaTypes;
-          const adUnitCode = req.adUnitCode;
+          let mediaTypes = req.mediaTypes;
+          let adUnitCode = req.adUnitCode;
           if (res.adUnitCode) {
             return res.adUnitCode === adUnitCode;
           } else if (res.width && res.height && mediaTypes) {
@@ -132,14 +134,14 @@ export const spec = {
               valid = true;
             } else if (mediaTypes.banner) {
               if (mediaTypes.banner.sizes) {
-                const width = res.width;
-                const height = res.height;
-                const sizes = mediaTypes.banner.sizes;
+                let width = res.width;
+                let height = res.height;
+                let sizes = mediaTypes.banner.sizes;
                 // check response size validation
                 if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
                   valid = width === sizes[0] && height === sizes[1];
                 } else { // for format Array[Array[Number]] check
-                  valid = !!((sizes) || []).find(function (size) {
+                  valid = !!find(sizes, function (size) {
                     return (width === size[0] && height === size[1]);
                   });
                 }
@@ -195,11 +197,11 @@ export const spec = {
               return;
             }
 
-            const reqNativeLayout = req.mediaTypes.native;
-            const resNative = matchedResponse.native;
+            let reqNativeLayout = req.mediaTypes.native;
+            let resNative = matchedResponse.native;
 
             // check title
-            const title = reqNativeLayout.title;
+            let title = reqNativeLayout.title;
             if (title && title.required) {
               if (typeof resNative.title !== 'string') {
                 return;
@@ -209,7 +211,7 @@ export const spec = {
             }
 
             // check body
-            const body = reqNativeLayout.body;
+            let body = reqNativeLayout.body;
             if (body && body.required) {
               if (typeof resNative.body !== 'string') {
                 return;
@@ -217,7 +219,7 @@ export const spec = {
             }
 
             // check image
-            const image = reqNativeLayout.image;
+            let image = reqNativeLayout.image;
             if (image && image.required) {
               if (resNative.image) {
                 if (typeof resNative.image.url !== 'string') { // check image url
@@ -233,7 +235,7 @@ export const spec = {
             }
 
             // check sponsoredBy
-            const sponsoredBy = reqNativeLayout.sponsoredBy;
+            let sponsoredBy = reqNativeLayout.sponsoredBy;
             if (sponsoredBy && sponsoredBy.required) {
               if (typeof resNative.sponsoredBy !== 'string') {
                 return;
@@ -241,7 +243,7 @@ export const spec = {
             }
 
             // check icon
-            const icon = reqNativeLayout.icon;
+            let icon = reqNativeLayout.icon;
             if (icon && icon.required) {
               if (resNative.icon) {
                 if (typeof resNative.icon.url !== 'string') { // check icon url
@@ -262,7 +264,7 @@ export const spec = {
             }
 
             // check clickTracker
-            const clickTrackers = resNative.clickTrackers;
+            let clickTrackers = resNative.clickTrackers;
             if (clickTrackers) {
               if (clickTrackers.length === 0) {
                 return;
@@ -272,7 +274,7 @@ export const spec = {
             }
 
             // check impressionTrackers
-            const impressionTrackers = resNative.impressionTrackers;
+            let impressionTrackers = resNative.impressionTrackers;
             if (impressionTrackers) {
               if (impressionTrackers.length === 0) {
                 return;

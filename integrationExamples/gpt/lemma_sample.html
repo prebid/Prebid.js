@@ -52,9 +52,12 @@
             }];
             var videoAdUnits = [{
                 code: 'video1',
+                sizes: [
+                    [1920, 1080]
+                ],
                 mediaTypes: {
                     video: {
-                        playerSize: [[1920, 1080]], // required
+                        playerSize: [1920, 1080], // required
                         context: 'instream'
                     }
                 },

@@ -9,7 +9,7 @@ describe('greenbidsBidAdapter', () => {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function () {
@@ -23,7 +23,7 @@ describe('greenbidsBidAdapter', () => {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    let bid = {
       'bidder': 'greenbids',
       'params': {
         'placementId': 4242
@@ -41,14 +41,14 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should return false when required params are not found', function () {
-      const bidNonGbCompatible = {
+      let bidNonGbCompatible = {
         'bidder': 'greenbids',
       };
       expect(spec.isBidRequestValid(bidNonGbCompatible)).to.equal(false);
     });
 
     it('should return false when the placement is not a number', function () {
-      const bidNonGbCompatible = {
+      let bidNonGbCompatible = {
         'bidder': 'greenbids',
         'params': {
           'placementId': 'toto'
@@ -73,8 +73,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send US Privacy to endpoint', function () {
-      const usPrivacy = 'OHHHFCP1'
-      const bidderRequest = {
+      let usPrivacy = 'OHHHFCP1'
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -89,9 +89,9 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GPP values to endpoint when available and valid', function () {
-      const consentString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
-      const applicableSectionIds = [7, 8];
-      const bidderRequest = {
+      let consentString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
+      let applicableSectionIds = [7, 8];
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -110,7 +110,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send default GPP values to endpoint when available but invalid', function () {
-      const bidderRequest = {
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -129,7 +129,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should not set the GPP object in the request sent to the endpoint when not present', function () {
-      const bidderRequest = {
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000
@@ -142,8 +142,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint', function () {
-      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -565,8 +565,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 11 status', function () {
-      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -590,8 +590,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR TCF2 to endpoint with 12 status', function () {
-      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -615,7 +615,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 22 status', function () {
-      const bidderRequest = {
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -637,8 +637,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 0 status', function () {
-      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -662,7 +662,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 0 status when gdprApplies = false (vendorData = undefined)', function () {
-      const bidderRequest = {
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -684,8 +684,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 12 status when apiVersion = 0', function () {
-      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      const bidderRequest = {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -794,7 +794,7 @@ describe('greenbidsBidAdapter', () => {
   });
 
   describe('Global Placement Id', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'greenbids',
         'params': {
@@ -917,7 +917,7 @@ describe('greenbidsBidAdapter', () => {
 
   describe('interpretResponse', function () {
     it('should get correct bid responses', function () {
-      const bids = {
+      let bids = {
         'body': {
           'responses': [{
             'ad': AD_SCRIPT,
@@ -954,7 +954,7 @@ describe('greenbidsBidAdapter', () => {
           }]
         }
       };
-      const expectedResponse = [
+      let expectedResponse = [
         {
           'cpm': 0.5,
           'width': 300,
@@ -997,30 +997,30 @@ describe('greenbidsBidAdapter', () => {
       ]
         ;
 
-      const result = spec.interpretResponse(bids);
+      let result = spec.interpretResponse(bids);
       expect(result).to.eql(expectedResponse);
     });
 
     it('handles nobid responses', function () {
-      const bids = {
+      let bids = {
         'body': {
           'responses': []
         }
       };
 
-      const result = spec.interpretResponse(bids);
+      let result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });
   });
 });
 
-const bidderRequestDefault = {
+let bidderRequestDefault = {
   'auctionId': '1d1a030790a475',
   'bidderRequestId': '22edbae2733bf6',
   'timeout': 3000
 };
 
-const bidRequests = [
+let bidRequests = [
   {
     'bidder': 'greenbids',
     'params': {

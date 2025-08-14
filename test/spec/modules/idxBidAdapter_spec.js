@@ -10,7 +10,7 @@ const DEFAULT_BANNER_HEIGHT = 250
 
 describe('idxBidAdapter', function () {
   describe('isBidRequestValid', function () {
-    const validBid = {
+    let validBid = {
       bidder: BIDDER_CODE,
       mediaTypes: {
         banner: {
@@ -24,13 +24,13 @@ describe('idxBidAdapter', function () {
     })
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, validBid)
+      let bid = Object.assign({}, validBid)
       bid.mediaTypes = {}
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
   })
   describe('buildRequests', function () {
-    const bidRequests = [
+    let bidRequests = [
       {
         bidder: BIDDER_CODE,
         bidId: 'asdf12345',
@@ -41,7 +41,7 @@ describe('idxBidAdapter', function () {
         },
       }
     ]
-    const bidderRequest = {
+    let bidderRequest = {
       bidderCode: BIDDER_CODE,
       bidderRequestId: '12345asdf',
       bids: [
@@ -59,7 +59,7 @@ describe('idxBidAdapter', function () {
   })
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
-      const response = {
+      let response = {
         id: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
         seatbid: [
           {
@@ -81,7 +81,7 @@ describe('idxBidAdapter', function () {
         ],
       }
 
-      const expectedResponse = [
+      let expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
           cpm: DEFAULT_PRICE,
@@ -95,7 +95,7 @@ describe('idxBidAdapter', function () {
           meta: { advertiserDomains: [] },
         }
       ]
-      const result = spec.interpretResponse({ body: response })
+      let result = spec.interpretResponse({ body: response })
 
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
     })

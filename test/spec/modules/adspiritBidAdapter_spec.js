@@ -154,22 +154,16 @@ describe('Adspirit Bidder Spec', function () {
           mediaTypes: {
             banner: { sizes: [[300, 250]] }
           },
-          ortb2: {
-            source: {
-              ext: {
-                schain: {
-                  ver: '1.0',
-                  complete: 1,
-                  nodes: [
-                    {
-                      asi: 'publisher.com',
-                      sid: '1234',
-                      hp: 1
-                    }
-                  ]
-                }
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'publisher.com',
+                sid: '1234',
+                hp: 1
               }
-            }
+            ]
           }
         }
       ];
@@ -180,7 +174,7 @@ describe('Adspirit Bidder Spec', function () {
       const requestData = JSON.parse(request.data);
       expect(requestData.source).to.exist;
       expect(requestData.source.ext).to.exist;
-      expect(requestData.source.ext.schain).to.deep.equal(bidRequest[0].ortb2.source.ext.schain);
+      expect(requestData.source.ext.schain).to.deep.equal(bidRequest[0].schain);
     });
     it('should correctly handle bidfloor values (valid, missing, and non-numeric)', function () {
       const bidRequest = [
@@ -295,27 +289,6 @@ describe('Adspirit Bidder Spec', function () {
     });
   });
 
-  // getEids function
-  describe('getEids', function () {
-    it('should return userIdAsEids when present', function () {
-      const bidRequest = {
-        userIdAsEids: [
-          {
-            source: 'pubcid.org',
-            uids: [{ id: 'test-pubcid', atype: 1 }]
-          }
-        ]
-      };
-      const result = spec.getEids(bidRequest);
-      expect(result).to.deep.equal(bidRequest.userIdAsEids);
-    });
-
-    it('should return an empty array when userIdAsEids is missing', function () {
-      const bidRequest = {};
-      const result = spec.getEids(bidRequest);
-      expect(result).to.deep.equal([]);
-    });
-  });
   // interpretResponse
   describe('interpretResponse', function () {
     const validBidRequestMock = {

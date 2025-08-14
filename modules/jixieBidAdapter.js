@@ -20,13 +20,13 @@ const sidTTLMins_ = 30;
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {(number|null)}
+ * @returns {float||null}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return null;
   }
-  const floor = bid.getFloor({
+  let floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
@@ -47,8 +47,8 @@ function setIds_(clientId, sessionId) {
     dd = window.location.hostname.match(/[^.]*\.[^.]{2,3}(?:\.[^.]{2,3})?$/mg);
   } catch (err1) {}
   try {
-    const expC = (new Date(new Date().setFullYear(new Date().getFullYear() + 1))).toUTCString();
-    const expS = (new Date(new Date().setMinutes(new Date().getMinutes() + sidTTLMins_))).toUTCString();
+    let expC = (new Date(new Date().setFullYear(new Date().getFullYear() + 1))).toUTCString();
+    let expS = (new Date(new Date().setMinutes(new Date().getMinutes() + sidTTLMins_))).toUTCString();
 
     storage.setCookie('_jxx', clientId, expC, 'None', null);
     storage.setCookie('_jxx', clientId, expC, 'None', dd);
@@ -73,7 +73,7 @@ const defaultGenIds_ = [
 ];
 
 function fetchIds_(cfg) {
-  const ret = {
+  let ret = {
     client_id_c: '',
     client_id_ls: '',
     session_id_c: '',
@@ -91,7 +91,7 @@ function fetchIds_(cfg) {
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
 
-    const arr = cfg.genids ? cfg.genids : defaultGenIds_;
+    let arr = cfg.genids ? cfg.genids : defaultGenIds_;
     arr.forEach(function(o) {
       tmp = storage.getCookie(o.ck ? o.ck : o.id);
       if (tmp) ret.jxeids[o.id] = tmp;
@@ -141,7 +141,7 @@ function createRenderer_(bidAd, scriptUrl, createFcn) {
 }
 
 function getMiscDims_() {
-  const ret = {
+  let ret = {
     pageurl: '',
     domain: '',
     device: 'unknown',
@@ -149,13 +149,13 @@ function getMiscDims_() {
   }
   try {
     // TODO: this should pick refererInfo from bidderRequest
-    const refererInfo_ = getRefererInfo();
+    let refererInfo_ = getRefererInfo();
     // TODO: does the fallback make sense here?
-    const url_ = refererInfo_?.page || window.location.href
+    let url_ = refererInfo_?.page || window.location.href
     ret.pageurl = url_;
     ret.domain = refererInfo_?.domain || window.location.host
     ret.device = getDevice_();
-    const keywords = document.getElementsByTagName('meta')['keywords'];
+    let keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
       ret.mkeywords = keywords.content;
     }
@@ -175,7 +175,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
-    if (typeof bid.params === 'undefined') {
+    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.unit === 'undefined') {
@@ -187,10 +187,10 @@ export const spec = {
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
-    const bids = [];
+    let bids = [];
     validBidRequests.forEach(function(one) {
-      const gpid = deepAccess(one, 'ortb2Imp.ext.gpid', '');
-      const tmp = {
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
         mediaTypes: (one.mediaTypes === 'undefined' ? {} : one.mediaTypes),
@@ -198,26 +198,26 @@ export const spec = {
         params: one.params,
         gpid: gpid
       };
-      const bidFloor = getBidFloor(one);
+      let bidFloor = getBidFloor(one);
       if (bidFloor) {
         tmp.bidFloor = bidFloor;
       }
       bids.push(tmp);
     });
-    const jxCfg = config.getConfig('jixie') || {};
+    let jxCfg = config.getConfig('jixie') || {};
 
-    const ids = fetchIds_(jxCfg);
+    let ids = fetchIds_(jxCfg);
     let eids = [];
-    const miscDims = internal.getMiscDims();
-    const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain');
+    let miscDims = internal.getMiscDims();
+    let schain = deepAccess(validBidRequests[0], 'schain');
 
-    const eids1 = validBidRequests[0].userIdAsEids;
+    let eids1 = validBidRequests[0].userIdAsEids;
     // all available user ids are sent to our backend in the standard array layout:
     if (eids1 && eids1.length) {
       eids = eids1;
     }
     // we want to send this blob of info to our backend:
-    const transformedParams = Object.assign({}, {
+    let transformedParams = Object.assign({}, {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionid: bidderRequest.auctionId || '',
       aid: jxCfg.aid || '',
@@ -265,7 +265,7 @@ export const spec = {
     if (response && response.body && isArray(response.body.bids)) {
       const bidResponses = [];
       response.body.bids.forEach(function(oneBid) {
-        const bnd = {};
+        let bnd = {};
         Object.assign(bnd, oneBid);
         if (oneBid.osplayer) {
           bnd.adResponse = {
@@ -274,7 +274,7 @@ export const spec = {
             height: oneBid.height,
             width: oneBid.width
           };
-          const rendererScript = (oneBid.osparams.script ? oneBid.osparams.script : JX_OUTSTREAM_RENDERER_URL);
+          let rendererScript = (oneBid.osparams.script ? oneBid.osparams.script : JX_OUTSTREAM_RENDERER_URL);
           bnd.renderer = createRenderer_(oneBid, rendererScript, jxOutstreamRender_);
         }
         // a note on advertiserDomains: our adserver is not responding in
@@ -301,7 +301,7 @@ export const spec = {
     if (!serverResponses.length || !serverResponses[0].body || !serverResponses[0].body.userSyncs) {
       return false;
     }
-    const syncs = [];
+    let syncs = [];
     serverResponses[0].body.userSyncs.forEach(function(sync) {
       if (syncOptions.iframeEnabled) {
         syncs.push(sync.uf ? { url: sync.uf, type: 'iframe' } : { url: sync.up, type: 'image' });

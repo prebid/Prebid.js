@@ -51,12 +51,12 @@ const SERVER_BID_STATUS = {
 
 let auctions = {}
 let initOptions = {}
-const eventsQueue = []
+let eventsQueue = []
 
 const onAuctionInit = (args) => {
   const { auctionId, adUnits, timestamp } = args
 
-  const auction = auctions[auctionId] = {
+  let auction = auctions[auctionId] = {
     ...args,
     adUnits: {},
     auctionStart: timestamp,
@@ -99,7 +99,7 @@ const onBidResponse = (args) => {
   const { auctionId, adUnitCode } = args
   const auction = auctions[auctionId]
   const bidId = parseBidId(args)
-  const bid = auction.adUnits[adUnitCode].bids[bidId]
+  let bid = auction.adUnits[adUnitCode].bids[bidId]
 
   Object.assign(bid, args, {
     bidStatus: SERVER_BID_STATUS.BID_RECEIVED,
@@ -113,7 +113,7 @@ const onNoBid = (args) => {
   const bidId = parseBidId(args)
   const end = Date.now()
   const auction = auctions[auctionId]
-  const bid = auction.adUnits[adUnitCode].bids[bidId]
+  let bid = auction.adUnits[adUnitCode].bids[bidId]
 
   Object.assign(bid, args, {
     bidStatus: SERVER_BID_STATUS.NO_BID,
@@ -148,7 +148,7 @@ const onBidTimeout = (args) => {
   _each(args, bid => {
     const { auctionId, adUnitCode } = bid
     const bidId = parseBidId(bid)
-    const bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
+    let bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
 
     Object.assign(bidCache, bid, {
       bidStatus: SERVER_BID_STATUS.BID_TIMEDOUT,
@@ -233,7 +233,7 @@ function handleEvent(eventType, args) {
 }
 
 function sendEvent(eventType, args, isRaw) {
-  const data = deepClone(args)
+  let data = deepClone(args)
 
   Object.assign(data, buildCommonDataProperties(), {
     eventType

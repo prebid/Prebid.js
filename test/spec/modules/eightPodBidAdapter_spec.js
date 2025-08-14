@@ -3,7 +3,7 @@ import { spec, getPageKeywords, parseUserAgent } from 'modules/eightPodBidAdapte
 import 'modules/priceFloors.js'
 import { config } from 'src/config.js'
 import { newBidder } from 'src/adapters/bidderFactory'
-import * as utils from '../../../src/utils.js';
+import * as utils from '../../../src/utils';
 import sinon from 'sinon';
 
 describe('eightPodBidAdapter', function () {

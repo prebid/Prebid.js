@@ -145,38 +145,5 @@ export const ORTB_MAP = {
     type: TYPES.object,
     isArray: true,
     childType: TYPES.string
-  },
-  source: {
-    type: TYPES.object,
-    children: {
-      ext: {
-        type: TYPES.object,
-        isArray: false
-      },
-      schain: {
-        type: TYPES.object,
-        children: {
-          complete: { type: TYPES.number },
-          ver: { type: TYPES.string },
-          nodes: {
-            type: TYPES.object,
-            isArray: true,
-            childType: TYPES.object,
-            required: ['asi', 'sid', 'hp'],
-            children: {
-              asi: { type: TYPES.string },
-              sid: { type: TYPES.string },
-              hp: { type: TYPES.number },
-              rid: { type: TYPES.string },
-              name: { type: TYPES.string },
-              domain: { type: TYPES.string },
-              ext: { type: TYPES.object }
-            }
-          },
-          ext: { type: TYPES.object }
-        },
-        required: ['complete', 'nodes', 'ver']
-      }
-    }
   }
 }

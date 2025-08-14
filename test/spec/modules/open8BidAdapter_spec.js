@@ -7,7 +7,7 @@ describe('Open8Adapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function() {
-    const bid = {
+    let bid = {
       'bidder': 'open8',
       'params': {
         'slotKey': 'slotkey1234'
@@ -32,7 +32,7 @@ describe('Open8Adapter', function() {
   });
 
   describe('buildRequests', function() {
-    const bidRequests = [
+    let bidRequests = [
       {
         'bidder': 'open8',
         'params': {
@@ -117,7 +117,7 @@ describe('Open8Adapter', function() {
     };
 
     it('should get correct banner bid response', function() {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'slotKey': 'slotkey1234',
         'userId': 'userid1234',
         'impId': 'impid1234',
@@ -143,13 +143,13 @@ describe('Open8Adapter', function() {
       }];
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: bannerResponse }, { bidderRequest });
+      let result = spec.interpretResponse({ body: bannerResponse }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
     it('handles video responses', function() {
-      const expectedResponse = [{
+      let expectedResponse = [{
         'slotKey': 'slotkey1234',
         'userId': 'userid1234',
         'impId': 'impid1234',
@@ -177,19 +177,19 @@ describe('Open8Adapter', function() {
       }];
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: videoResponse }, { bidderRequest });
+      let result = spec.interpretResponse({ body: videoResponse }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
     it('handles nobid responses', function() {
-      const response = {
+      let response = {
         isAdReturn: false,
         'ad': {}
       };
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, { bidderRequest });
+      let result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

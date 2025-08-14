@@ -1,10 +1,10 @@
-## Taboola User ID Submodule
+## IDx User ID Submodule
 
-For assistance setting up your module please contact us at [ps-team@taboola.com].
+For assistance setting up your module please contact us at [ps-team@taboola.com](prebid@idx.lat).
 
 ### Prebid Params
 
-Individual params may be set for the Taboola Submodule.
+Individual params may be set for the IDx Submodule.
 ```
 pbjs.setConfig({
     userSync: {
@@ -15,7 +15,7 @@ pbjs.setConfig({
 });
 ```
 ## Parameter Descriptions for the `userSync` Configuration Section
-The below parameters apply only to the Taboola integration.
+The below parameters apply only to the IDx integration.
 
 | Param under usersync.userIds[] | Scope | Type | Description                    | Example     |
 | --- | --- | --- |--------------------------------|-------------|

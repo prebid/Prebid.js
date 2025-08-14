@@ -5,60 +5,25 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'resetdigital';
-const GVLID = 1162;
 const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const stack =
+    let stack =
       bidderRequest.refererInfo && bidderRequest.refererInfo.stack
         ? bidderRequest.refererInfo.stack
         : [];
 
-    const spb =
+    let spb =
       config.getConfig('userSync') &&
       config.getConfig('userSync').syncsPerBidder
         ? config.getConfig('userSync').syncsPerBidder
         : 5;
-
-    function extractUserIdsFromEids(eids) {
-      const result = {};
-
-      if (!Array.isArray(eids)) return result;
-
-      eids.forEach(eid => {
-        const source = eid.source;
-        if (!source || !Array.isArray(eid.uids)) return;
-
-        if (eid.uids.length === 1) {
-          const uid = eid.uids[0];
-          result[source] = { id: uid.id };
-          if (uid.ext) {
-            result[source].ext = uid.ext;
-          }
-        } else {
-          const subObj = {};
-          eid.uids.forEach(uid => {
-            if (uid.ext && uid.ext.rtiPartner) {
-              subObj[uid.ext.rtiPartner] = uid.id;
-            }
-          });
-          if (Object.keys(subObj).length > 0) {
-            result[source] = subObj;
-          }
-        }
-      });
-
-      return result;
-    }
-
-    const userIds = extractUserIdsFromEids(bidderRequest.userIdAsEids);
 
     const payload = {
       start_time: timestamp(),
@@ -66,12 +31,14 @@ export const spec = {
       site: {
         domain: getOrigin(),
         iframe: !bidderRequest.refererInfo.reachedTop,
-        url: stack && stack.length > 0 ? stack[stack.length - 1] : null,
+        // TODO: the last element in refererInfo.stack is window.location.href, that's unlikely to have been the intent here
+        url: stack && stack.length > 0 ? [stack.length - 1] : null,
         https: window.location.protocol === 'https:',
+        // TODO: is 'page' the right value here?
         referrer: bidderRequest.refererInfo.page,
       },
       imps: [],
-      user_ids: userIds,
+      user_ids: validBidRequests[0].userId,
       sync_limit: spb,
     };
 
@@ -94,24 +61,26 @@ export const spec = {
         'app.keywords',
         'app.content.keywords',
       ];
-      const result = [];
+      let result = [];
 
       fields.forEach((path) => {
-        const keyStr = deepAccess(ortb2Obj, path);
+        let keyStr = deepAccess(ortb2Obj, path);
         if (isStr(keyStr)) result.push(keyStr);
       });
       return result;
     }
 
-    const ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
-    const ortb2KeywordsList = getOrtb2Keywords(ortb2);
+    // get the ortb2 keywords data (if it exists)
+    let ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
+    let ortb2KeywordsList = getOrtb2Keywords(ortb2);
+    // get meta keywords data (if it exists)
     let metaKeywords = document.getElementsByTagName('meta')['keywords'];
     if (metaKeywords && metaKeywords.content) {
       metaKeywords = metaKeywords.content.split(',');
     }
 
     for (let x = 0; x < validBidRequests.length; x++) {
-      const req = validBidRequests[x];
+      let req = validBidRequests[x];
 
       let bidFloor = req.params.bidFloor ? req.params.bidFloor : null;
       let bidFloorCur = req.params.bidFloor ? req.params.bidFloorCur : null;
@@ -132,7 +101,9 @@ export const spec = {
         }
       }
 
-      let paramsKeywords = req.params.keywords;
+      // get param keywords (if it exists)
+      let paramsKeywords = req.params.keywords
+
       if (typeof req.params.keywords === 'string') {
         paramsKeywords = req.params.keywords.split(',');
       } else if (Array.isArray(req.params.keywords)) {
@@ -140,8 +111,8 @@ export const spec = {
       } else {
         paramsKeywords = [];
       }
-
-      const keywords = ortb2KeywordsList
+      // merge all keywords
+      let keywords = ortb2KeywordsList
         .concat(paramsKeywords)
         .concat(metaKeywords);
 
@@ -158,7 +129,8 @@ export const spec = {
         keywords: keywords.join(','),
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
-        imp_id: req.bidId,
+        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+        imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -166,8 +138,8 @@ export const spec = {
       });
     }
 
-    const params = validBidRequests[0].params;
-    const url = params.endpoint ? params.endpoint : '//ads.resetsrv.com';
+    let params = validBidRequests[0].params;
+    let url = params.endpoint ? params.endpoint : '//ads.resetsrv.com';
     return {
       method: 'POST',
       url: url,
@@ -181,13 +153,13 @@ export const spec = {
       return bidResponses;
     }
 
-    const res = serverResponse.body;
+    let res = serverResponse.body;
     if (!res.bids || !res.bids.length) {
       return [];
     }
 
     for (let x = 0; x < serverResponse.body.bids.length; x++) {
-      const bid = serverResponse.body.bids[x];
+      let bid = serverResponse.body.bids[x];
 
       bidResponses.push({
         requestId: bid.bid_id,
@@ -212,7 +184,7 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
+    let syncs = [];
     if (!serverResponses.length || !serverResponses[0].body) {
       return syncs;
     }

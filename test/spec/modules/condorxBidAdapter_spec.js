@@ -5,7 +5,6 @@ import * as utils from 'src/utils.js';
 describe('CondorX Bid Adapter Tests', function () {
   let basicBidRequests;
   let nativeBidData;
-  let ortbBidRequests;
   const defaultRequestParams = {
     widget: 274572,
     website: 195491,
@@ -16,9 +15,7 @@ describe('CondorX Bid Adapter Tests', function () {
     basicBidRequests = [
       {
         bidder: 'condorx',
-        params: defaultRequestParams,
-        bidId: 'test-bid-id-1',
-        sizes: [[300, 250]]
+        params: defaultRequestParams
       }
     ];
 
@@ -26,8 +23,6 @@ describe('CondorX Bid Adapter Tests', function () {
       {
         bidder: 'condorx',
         params: defaultRequestParams,
-        bidId: 'test-bid-id-2',
-        sizes: [[100, 100]],
         nativeParams: {
           title: {
             required: true,
@@ -41,18 +36,6 @@ describe('CondorX Bid Adapter Tests', function () {
             required: true
           }
         }
-      }
-    ];
-
-    ortbBidRequests = [
-      {
-        bidder: 'condorx',
-        params: {
-          ...defaultRequestParams,
-          useOpenRTB: true
-        },
-        bidId: 'test-bid-id-3',
-        sizes: [[300, 250]]
       }
     ];
   });
@@ -80,24 +63,6 @@ describe('CondorX Bid Adapter Tests', function () {
       const isValid = adapterSpec.isBidRequestValid(bid);
       expect(isValid).to.be.true;
     });
-
-    it('should accept any valid size', function () {
-      bid.sizes = [[728, 90]];
-      const isValid = adapterSpec.isBidRequestValid(bid);
-      expect(isValid).to.be.true;
-    });
-
-    it('should reject invalid size', function () {
-      bid.sizes = [[0, 0]];
-      const isValid = adapterSpec.isBidRequestValid(bid);
-      expect(isValid).to.be.false;
-    });
-
-    it('should reject negative size', function () {
-      bid.sizes = [[-1, -1]];
-      const isValid = adapterSpec.isBidRequestValid(bid);
-      expect(isValid).to.be.false;
-    });
   });
 
   describe('Bid Request Validation', function () {
@@ -108,19 +73,6 @@ describe('CondorX Bid Adapter Tests', function () {
         sizes: [[300, 250]]
       };
       const isValid = adapterSpec.isBidRequestValid(validBid);
-      expect(isValid).to.be.true;
-    });
-
-    it('should validate a correct OpenRTB bid request', function () {
-      const validOrtbBid = {
-        bidder: 'condorx',
-        params: {
-          ...defaultRequestParams,
-          useOpenRTB: true
-        },
-        sizes: [[300, 250]]
-      };
-      const isValid = adapterSpec.isBidRequestValid(validOrtbBid);
       expect(isValid).to.be.true;
     });
 
@@ -137,7 +89,7 @@ describe('CondorX Bid Adapter Tests', function () {
       const invalidBid = {
         bidder: 'condorx',
         params: {
-          widget: '55765a',
+          widget: '55765a', // Invalid value for widget
           website: 195491,
           url: 'current url'
         },
@@ -145,236 +97,6 @@ describe('CondorX Bid Adapter Tests', function () {
       };
       const isValid = adapterSpec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
-    });
-  });
-
-  describe('OpenRTB Format Support', function () {
-    let bidderRequest;
-
-    beforeEach(function () {
-      bidderRequest = {
-        auctionId: 'test-auction-id',
-        bids: ortbBidRequests,
-        ortb2: {
-          site: {
-            page: 'https://condorx.io'
-          }
-        },
-        refererInfo: {
-          page: 'https://condorx.io'
-        }
-      };
-    });
-
-    it('should build OpenRTB request when useOpenRTB is true', function () {
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.include('/openrtb.json');
-      expect(request.data).to.be.an('object');
-    });
-
-    it('should build correct OpenRTB endpoint URL', function () {
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const expectedBase64 = btoa('195491_274572');
-      expect(request.url).to.equal(`https://api.condorx.io/cxb/${expectedBase64}/openrtb.json`);
-    });
-
-    it('should include ortbRequest in request object', function () {
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      expect(request.ortbRequest).to.exist;
-      expect(request.ortbRequest).to.be.an('object');
-    });
-
-    it('should parse JSON data in OpenRTB request', function () {
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const ortbData = request.data;
-      expect(ortbData).to.have.property('id');
-      expect(ortbData).to.have.property('imp');
-      expect(ortbData.imp).to.be.an('array');
-      expect(ortbData.imp[0]).to.have.property('ext');
-      expect(ortbData.imp[0].ext).to.have.property('widget', 274572);
-      expect(ortbData.imp[0].ext).to.have.property('website', 195491);
-    });
-
-    it('should use legacy format when useOpenRTB is false', function () {
-      const request = adapterSpec.buildRequests(basicBidRequests, bidderRequest)[0];
-      expect(request.method).to.equal('GET');
-      expect(request.url).to.include('https://api.condorx.io/cxb/get.json');
-      expect(request.data).to.equal('');
-    });
-
-    it('should return OpenRTB request format when useOpenRTB is true', function () {
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.include('/openrtb.json');
-      expect(request.data).to.be.an('object');
-      expect(request.ortbRequest).to.exist;
-    });
-  });
-
-  describe('First Party Data (ORTB2)', function () {
-    let bidderRequest;
-
-    beforeEach(function () {
-      bidderRequest = {
-        auctionId: 'test-auction-id',
-        bids: ortbBidRequests,
-        ortb2: {
-          site: {
-            page: 'https://condorx.io'
-          }
-        },
-        refererInfo: {
-          page: 'https://condorx.io'
-        }
-      };
-    });
-
-    it('should pass user data in OpenRTB request', function () {
-      bidderRequest.ortb2.user = {
-        id: 'user123',
-        buyeruid: 'buyer456',
-        yob: 1990
-      };
-
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const ortbData = request.data;
-
-      expect(ortbData.user.id).to.equal('user123');
-      expect(ortbData.user.buyeruid).to.equal('buyer456');
-      expect(ortbData.user.yob).to.equal(1990);
-    });
-
-    it('should pass device data in OpenRTB request', function () {
-      bidderRequest.ortb2.device = {
-        ua: 'Mozilla/5.0 Test Browser',
-        language: 'en-US',
-        devicetype: 1,
-        make: 'Apple',
-        model: 'iPhone'
-      };
-
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const ortbData = request.data;
-
-      expect(ortbData.device.ua).to.equal('Mozilla/5.0 Test Browser');
-      expect(ortbData.device.language).to.equal('en-US');
-      expect(ortbData.device.devicetype).to.equal(1);
-      expect(ortbData.device.make).to.equal('Apple');
-      expect(ortbData.device.model).to.equal('iPhone');
-    });
-
-    it('should pass site data in OpenRTB request', function () {
-      bidderRequest.ortb2.site = {
-        page: 'https://condorx.io/test-page',
-        domain: 'condorx.io',
-        cat: ['IAB1'],
-        keywords: 'test,keywords'
-      };
-
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const ortbData = request.data;
-
-      expect(ortbData.site.page).to.equal('https://condorx.io/test-page');
-      expect(ortbData.site.domain).to.equal('condorx.io');
-      expect(ortbData.site.cat).to.deep.equal(['IAB1']);
-      expect(ortbData.site.keywords).to.equal('test,keywords');
-    });
-
-    it('should pass custom extensions in OpenRTB request', function () {
-      bidderRequest.ortb2.ext = {
-        pageType: 'article',
-        customData: 'test-value'
-      };
-
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const ortbData = request.data;
-
-      expect(ortbData.ext.pageType).to.equal('article');
-      expect(ortbData.ext.customData).to.equal('test-value');
-    });
-
-    it('should pass blocked categories and domains', function () {
-      bidderRequest.ortb2.bcat = ['IAB25', 'IAB26'];
-      bidderRequest.ortb2.badv = ['blocked-advertiser.com'];
-
-      const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-      const ortbData = request.data;
-
-      expect(ortbData.bcat).to.deep.equal(['IAB25', 'IAB26']);
-      expect(ortbData.badv).to.deep.equal(['blocked-advertiser.com']);
-    });
-  });
-
-  describe('Bid Floor Support', function () {
-    it('should include bid floor in request URL when provided in params', function () {
-      const bidWithFloor = {
-        bidder: 'condorx',
-        params: {
-          ...defaultRequestParams,
-          bidfloor: 0.75
-        },
-        sizes: [[300, 250]]
-      };
-      const request = adapterSpec.buildRequests([bidWithFloor])[0];
-      const urlParams = new URL(request.url).searchParams;
-      expect(urlParams.get('bf')).to.equal('0.75');
-    });
-
-    it('should include -1 bid floor when no floor is provided', function () {
-      const bidWithoutFloor = {
-        bidder: 'condorx',
-        params: defaultRequestParams,
-        sizes: [[300, 250]]
-      };
-      const request = adapterSpec.buildRequests([bidWithoutFloor])[0];
-      const urlParams = new URL(request.url).searchParams;
-      expect(urlParams.get('bf')).to.equal('-1');
-    });
-
-    it('should prioritize params.bidfloor over getFloor function', function () {
-      const bidWithBothFloors = {
-        bidder: 'condorx',
-        params: {
-          ...defaultRequestParams,
-          bidfloor: 0.5
-        },
-        sizes: [[300, 250]],
-        getFloor: function() {
-          return { floor: 1.25 };
-        }
-      };
-      const request = adapterSpec.buildRequests([bidWithBothFloors])[0];
-      const urlParams = new URL(request.url).searchParams;
-      expect(urlParams.get('bf')).to.equal('0.5');
-    });
-
-    it('should handle getFloor function errors gracefully', function () {
-      const bidWithErrorFloor = {
-        bidder: 'condorx',
-        params: defaultRequestParams,
-        sizes: [[300, 250]],
-        getFloor: function() {
-          throw new Error('Floor error');
-        }
-      };
-      const request = adapterSpec.buildRequests([bidWithErrorFloor])[0];
-      const urlParams = new URL(request.url).searchParams;
-      expect(urlParams.get('bf')).to.equal('-1');
-    });
-
-    it('should handle invalid bidfloor params', function () {
-      const bidWithInvalidFloor = {
-        bidder: 'condorx',
-        params: {
-          ...defaultRequestParams,
-          bidfloor: 'invalid'
-        },
-        sizes: [[300, 250]]
-      };
-      const request = adapterSpec.buildRequests([bidWithInvalidFloor])[0];
-      const urlParams = new URL(request.url).searchParams;
-      expect(urlParams.get('bf')).to.equal('-1');
     });
   });
 
@@ -405,7 +127,7 @@ describe('CondorX Bid Adapter Tests', function () {
     });
 
     it('should validate the custom URL parameter', function () {
-      const customUrl = 'https://condorx.io/custom-page';
+      const customUrl = 'https://i.am.url';
       basicBidRequests[0].params.url = customUrl;
       const request = adapterSpec.buildRequests(basicBidRequests)[0];
       const urlParams = new URL(request.url).searchParams;
@@ -416,7 +138,6 @@ describe('CondorX Bid Adapter Tests', function () {
   describe('Response Validation', function () {
     let nativeResponseData;
     let bannerResponseData;
-    let ortbResponseData;
 
     beforeEach(() => {
       const baseResponse = {
@@ -453,23 +174,6 @@ describe('CondorX Bid Adapter Tests', function () {
         widget: {
           config: '{"css":".__condorx_banner_title{display:block!important;}"}'
         },
-      };
-
-      ortbResponseData = {
-        id: 'response-123',
-        seatbid: [{
-          bid: [{
-            id: 'bid-123',
-            impid: 'condorx121212',
-            price: 0.5,
-            adm: '<div>Test Banner Ad</div>',
-            w: 300,
-            h: 250,
-            crid: '12345',
-            adomain: ['condorx.test']
-          }]
-        }],
-        cur: 'USD'
       };
     });
 

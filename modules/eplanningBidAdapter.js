@@ -41,7 +41,7 @@ export const spec = {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
-    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+    const schain = bidRequests[0].schain;
     let url;
     let params;
     const urlConfig = getUrlConfig(bidRequests);
@@ -114,7 +114,7 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const response = serverResponse.body;
-    const bidResponses = [];
+    let bidResponses = [];
 
     if (response && !isEmpty(response.sp)) {
       response.sp.forEach(space => {
@@ -192,7 +192,7 @@ function getUrlConfig(bidRequests) {
     return getTestConfig(bidRequests.filter(br => br.params.t));
   }
 
-  const config = {};
+  let config = {};
   bidRequests.forEach(bid => {
     PARAMS.forEach(param => {
       if (bid.params[param] && !config[param]) {
@@ -213,9 +213,7 @@ function isTestRequest(bidRequests) {
 }
 function getTestConfig(bidRequests) {
   let isv;
-  bidRequests.forEach(br => {
-    isv = isv || br.params.isv;
-  });
+  bidRequests.forEach(br => isv = isv || br.params.isv);
   return {
     t: true,
     isv: (isv || DEFAULT_ISV)
@@ -251,9 +249,9 @@ function getSize(bid, first) {
 }
 
 function getSpacesStruct(bids) {
-  const e = {};
+  let e = {};
   bids.forEach(bid => {
-    const size = getSize(bid, true);
+    let size = getSize(bid, true);
     e[size] = e[size] ? e[size] : [];
     e[size].push(bid);
   });
@@ -266,7 +264,7 @@ function getFirstSizeVast(sizes) {
     return undefined;
   }
 
-  const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
+  let size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
 
   return (Array.isArray(size) && size.length == 2) ? size : undefined;
 }
@@ -277,7 +275,7 @@ function cleanName(name) {
 
 function getFloorStr(bid) {
   if (typeof bid.getFloor === 'function') {
-    const bidFloor = bid.getFloor({
+    let bidFloor = bid.getFloor({
       currency: DOLLAR_CODE,
       mediaType: '*',
       size: '*'
@@ -291,22 +289,22 @@ function getFloorStr(bid) {
 }
 
 function getSpaces(bidRequests, ml) {
-  const impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
+  let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
   if (impType) {
     bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
   }
 
-  const spacesStruct = getSpacesStruct(bidRequests);
-  const es = {str: '', vs: '', map: {}, impType: impType};
+  let spacesStruct = getSpacesStruct(bidRequests);
+  let es = {str: '', vs: '', map: {}, impType: impType};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 
     let name;
 
     if (impType) {
-      const firstSize = getFirstSizeVast(bid.mediaTypes[VIDEO].playerSize);
-      const sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
+      let firstSize = getFirstSizeVast(bid.mediaTypes[VIDEO].playerSize);
+      let sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
       name = 'video_' + sizeVast + '_' + i;
       es.map[name] = bid.bidId;
       return name + ':' + sizeVast + ';1' + getFloorStr(bid);
@@ -337,9 +335,9 @@ function getVs(bid) {
 }
 
 function getViewabilityData(bid) {
-  const r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
-  const v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
-  const ratio = r > 0 ? (v / r) : 0;
+  let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
+  let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
+  let ratio = r > 0 ? (v / r) : 0;
   return {
     render: r,
     ratio: window.parseInt(ratio * 10, 10)
@@ -366,7 +364,7 @@ function waitForElementsPresent(elements) {
             adView = ad;
             if (index < 0) {
               elements.forEach(code => {
-                const div = _getAdSlotHTMLElement(code);
+                let div = _getAdSlotHTMLElement(code);
                 if (div && div.contains(ad) && getBoundingClientRect(div).width > 0) {
                   index = elements.indexOf(div.id);
                   adView = div;
@@ -425,9 +423,9 @@ function _getAdSlotHTMLElement(adUnitCode) {
 }
 
 function registerViewabilityAllBids(bids) {
-  const elementsNotPresent = [];
+  let elementsNotPresent = [];
   bids.forEach(bid => {
-    const div = _getAdSlotHTMLElement(bid.adUnitCode);
+    let div = _getAdSlotHTMLElement(bid.adUnitCode);
     if (div) {
       registerViewability(div, bid.adUnitCode);
     } else {
@@ -440,12 +438,12 @@ function registerViewabilityAllBids(bids) {
 }
 
 function getViewabilityTracker() {
-  const TIME_PARTITIONS = 5;
-  const VIEWABILITY_TIME = 1000;
-  const VIEWABILITY_MIN_RATIO = 0.5;
+  let TIME_PARTITIONS = 5;
+  let VIEWABILITY_TIME = 1000;
+  let VIEWABILITY_MIN_RATIO = 0.5;
   let publicApi;
   let observer;
-  const visibilityAds = {};
+  let visibilityAds = {};
 
   function intersectionCallback(entries) {
     entries.forEach(function(entry) {
@@ -475,7 +473,7 @@ function getViewabilityTracker() {
     }
   }
   function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
-    const visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
+    let visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
     if (visibleIntervals === TIME_PARTITIONS) {
       stopObserveViewability(element)
       callback();

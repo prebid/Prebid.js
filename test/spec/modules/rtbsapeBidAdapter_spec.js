@@ -18,18 +18,18 @@ describe('rtbsapeBidAdapterTests', function () {
   });
 
   it('buildRequests', function () {
-    const bidRequestData = [{
+    let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'rtbsape',
       params: {placeId: 4321},
       sizes: [[240, 400]]
     }];
-    const bidderRequest = {
+    let bidderRequest = {
       auctionId: '2e208334-cafe-4c2c-b06b-f055ff876852',
       bidderRequestId: '1392d0aa613366',
       refererInfo: {}
     };
-    const request = spec.buildRequests(bidRequestData, bidderRequest);
+    let request = spec.buildRequests(bidRequestData, bidderRequest);
     expect(request.data.auctionId).to.equal('2e208334-cafe-4c2c-b06b-f055ff876852');
     expect(request.data.requestId).to.equal('1392d0aa613366');
     expect(request.data.bids[0].bidId).to.equal('bid1234');
@@ -38,7 +38,7 @@ describe('rtbsapeBidAdapterTests', function () {
 
   describe('interpretResponse', function () {
     it('banner', function () {
-      const serverResponse = {
+      let serverResponse = {
         body: {
           bids: [{
             requestId: 'bid1234',
@@ -54,9 +54,9 @@ describe('rtbsapeBidAdapterTests', function () {
           }]
         }
       };
-      const bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      let bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
       expect(bids).to.have.lengthOf(1);
-      const bid = bids[0];
+      let bid = bids[0];
       expect(bid.cpm).to.equal(2.21);
       expect(bid.currency).to.equal('RUB');
       expect(bid.width).to.equal(240);
@@ -70,7 +70,7 @@ describe('rtbsapeBidAdapterTests', function () {
       let bid;
 
       before(() => {
-        const serverResponse = {
+        let serverResponse = {
           body: {
             bids: [{
               requestId: 'bid1234',
@@ -88,7 +88,7 @@ describe('rtbsapeBidAdapterTests', function () {
             }]
           }
         };
-        const serverRequest = {
+        let serverRequest = {
           data: {
             bids: [{
               bidId: 'bid1234',
@@ -107,7 +107,7 @@ describe('rtbsapeBidAdapterTests', function () {
             }]
           }
         };
-        const bids = spec.interpretResponse(serverResponse, serverRequest);
+        let bids = spec.interpretResponse(serverResponse, serverRequest);
         expect(bids).to.have.lengthOf(1);
         bid = bids[0];
       });
@@ -144,7 +144,7 @@ describe('rtbsapeBidAdapterTests', function () {
     });
 
     it('skip adomain', function () {
-      const serverResponse = {
+      let serverResponse = {
         body: {
           bids: [{
             requestId: 'bid1234',
@@ -168,9 +168,9 @@ describe('rtbsapeBidAdapterTests', function () {
           }]
         }
       };
-      const bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      let bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
       expect(bids).to.have.lengthOf(1);
-      const bid = bids[0];
+      let bid = bids[0];
       expect(bid.cpm).to.equal(2.23);
       expect(bid.currency).to.equal('RUB');
       expect(bid.width).to.equal(300);

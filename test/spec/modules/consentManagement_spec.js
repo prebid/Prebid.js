@@ -4,7 +4,7 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import 'src/prebid.js';
 
-const expect = require('chai').expect;
+let expect = require('chai').expect;
 
 describe('consentManagement', function () {
   function mockCMP(cmpResponse) {
@@ -54,7 +54,7 @@ describe('consentManagement', function () {
 
       it('should not produce any consent metadata', async function () {
         await setConsentConfig(undefined)
-        const consentMetadata = gdprDataHandler.getConsentMeta();
+        let consentMetadata = gdprDataHandler.getConsentMeta();
         expect(consentMetadata).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       })
@@ -71,7 +71,7 @@ describe('consentManagement', function () {
       });
 
       it('results in all user settings overriding system defaults', async function () {
-        const allConfig = {
+        let allConfig = {
           cmpApi: 'iab',
           timeout: 7500,
           defaultGdprScope: true
@@ -233,7 +233,7 @@ describe('consentManagement', function () {
   });
 
   describe('requestBidsHook tests:', function () {
-    const goodConfig = {
+    let goodConfig = {
       cmpApi: 'iab',
       timeout: 7500,
     };
@@ -272,13 +272,13 @@ describe('consentManagement', function () {
       });
 
       it('should throw a warning and return to hooked function when an unknown CMP framework ID is used', async function () {
-        const badCMPConfig = {
+        let badCMPConfig = {
           cmpApi: 'bad'
         };
         await setConsentConfig(badCMPConfig);
         expect(consentConfig.cmpHandler).to.be.equal(badCMPConfig.cmpApi);
         expect(await runHook()).to.be.true;
-        const consent = gdprDataHandler.getConsentData();
+        let consent = gdprDataHandler.getConsentData();
         sinon.assert.calledOnce(utils.logWarn);
         expect(consent).to.be.null;
       });
@@ -292,7 +292,7 @@ describe('consentManagement', function () {
       it('should throw proper errors when CMP is not found', async function () {
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.false;
-        const consent = gdprDataHandler.getConsentData();
+        let consent = gdprDataHandler.getConsentData();
         // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
         sinon.assert.calledTwice(utils.logError);
         expect(consent).to.be.null;
@@ -356,7 +356,7 @@ describe('consentManagement', function () {
       });
 
       it('should bypass CMP and simply use previously stored consentData', async function () {
-        const testConsentData = {
+        let testConsentData = {
           gdprApplies: true,
           tcString: 'xyz',
         };
@@ -364,17 +364,17 @@ describe('consentManagement', function () {
         cmpStub = sinon.stub(window, '__tcfapi').callsFake(mockCMP(testConsentData));
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.true;
-        cmpStub.resetHistory();
+        cmpStub.reset();
 
         expect(await runHook()).to.be.true;
-        const consent = gdprDataHandler.getConsentData();
+        let consent = gdprDataHandler.getConsentData();
         expect(consent.consentString).to.equal(testConsentData.tcString);
         expect(consent.gdprApplies).to.be.true;
         sinon.assert.notCalled(cmpStub);
       });
 
       it('should not set consent.gdprApplies to true if defaultGdprScope is true', async function () {
-        const testConsentData = {
+        let testConsentData = {
           gdprApplies: false,
           tcString: 'xyz',
         };
@@ -388,7 +388,7 @@ describe('consentManagement', function () {
         });
 
         expect(await runHook()).to.be.true;
-        const consent = gdprDataHandler.getConsentData();
+        let consent = gdprDataHandler.getConsentData();
         expect(consent.gdprApplies).to.be.false;
       });
     });
@@ -398,7 +398,7 @@ describe('consentManagement', function () {
       let stringifyResponse;
 
       function createIFrameMarker(frameName) {
-        const ifr = document.createElement('iframe');
+        let ifr = document.createElement('iframe');
         ifr.width = 0;
         ifr.height = 0;
         ifr.name = frameName;
@@ -409,10 +409,10 @@ describe('consentManagement', function () {
       function creatCmpMessageHandler(prefix, returnValue) {
         return function (event) {
           if (event && event.data) {
-            const data = event.data;
+            let data = event.data;
             if (data[`${prefix}Call`]) {
-              const callId = data[`${prefix}Call`].callId;
-              const response = {
+              let callId = data[`${prefix}Call`].callId;
+              let response = {
                 [`${prefix}Return`]: {
                   callId,
                   returnValue,
@@ -430,7 +430,7 @@ describe('consentManagement', function () {
           stringifyResponse = messageFormatString;
           await setConsentConfig(goodConfig);
           expect(await runHook()).to.be.true;
-          const consent = gdprDataHandler.getConsentData();
+          let consent = gdprDataHandler.getConsentData();
           sinon.assert.notCalled(utils.logError);
           expect(consent.consentString).to.equal(tarConsentString);
           expect(consent.gdprApplies).to.be.true;
@@ -486,9 +486,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        if (window.__tcfapi) {
-          cmpStub.restore();
-        }
+        cmpStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();
         resetConsentData();
@@ -504,7 +502,7 @@ describe('consentManagement', function () {
         });
 
         it('performs lookup check and stores consentData for a valid existing user', async function () {
-          const testConsentData = {
+          let testConsentData = {
             tcString: 'abc12345234',
             gdprApplies: true,
             purposeOneTreatment: false,
@@ -516,7 +514,7 @@ describe('consentManagement', function () {
 
           await setConsentConfig(goodConfig);
           expect(await runHook()).to.be.true;
-          const consent = gdprDataHandler.getConsentData();
+          let consent = gdprDataHandler.getConsentData();
           sinon.assert.notCalled(utils.logError);
           expect(consent.consentString).to.equal(testConsentData.tcString);
           expect(consent.gdprApplies).to.be.true;
@@ -524,7 +522,7 @@ describe('consentManagement', function () {
         });
 
         it('produces gdpr metadata', async function () {
-          const testConsentData = {
+          let testConsentData = {
             tcString: 'abc12345234',
             gdprApplies: true,
             purposeOneTreatment: false,
@@ -540,7 +538,7 @@ describe('consentManagement', function () {
           await setConsentConfig(goodConfig);
 
           expect(await runHook()).to.be.true;
-          const consentMeta = gdprDataHandler.getConsentMeta();
+          let consentMeta = gdprDataHandler.getConsentMeta();
           sinon.assert.notCalled(utils.logError);
           expect(consentMeta.consentStringSize).to.be.above(0)
           expect(consentMeta.gdprApplies).to.be.true;
@@ -549,7 +547,7 @@ describe('consentManagement', function () {
         });
 
         it('performs lookup check and stores consentData for a valid existing user with additional consent', async function () {
-          const testConsentData = {
+          let testConsentData = {
             tcString: 'abc12345234',
             addtlConsent: 'superduperstring',
             gdprApplies: true,
@@ -562,7 +560,7 @@ describe('consentManagement', function () {
 
           await setConsentConfig(goodConfig);
           expect(await runHook()).to.be.true;
-          const consent = gdprDataHandler.getConsentData();
+          let consent = gdprDataHandler.getConsentData();
           sinon.assert.notCalled(utils.logError);
           expect(consent.consentString).to.equal(testConsentData.tcString);
           expect(consent.addtlConsent).to.equal(testConsentData.addtlConsent);
@@ -571,7 +569,7 @@ describe('consentManagement', function () {
         });
 
         it('throws an error when processCmpData check fails + does not call requestBids callback', async function () {
-          const testConsentData = {};
+          let testConsentData = {};
           let bidsBackHandlerReturn = false;
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
@@ -583,10 +581,10 @@ describe('consentManagement', function () {
           sinon.assert.notCalled(utils.logWarn);
           sinon.assert.notCalled(utils.logError);
 
-          [utils.logWarn, utils.logError].forEach((stub) => stub.resetHistory());
+          [utils.logWarn, utils.logError].forEach((stub) => stub.reset());
 
           expect(await runHook({bidsBackHandler: () => bidsBackHandlerReturn = true})).to.be.false;
-          const consent = gdprDataHandler.getConsentData();
+          let consent = gdprDataHandler.getConsentData();
 
           sinon.assert.calledOnce(utils.logError);
           sinon.assert.notCalled(utils.logWarn);
@@ -715,7 +713,7 @@ describe('consentManagement', function () {
 
         it('It still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
           // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
-          const testConsentData = {
+          let testConsentData = {
             tcString: 'abc12345234',
             purposeOneTreatment: false,
             eventStatus: 'tcloaded'
@@ -730,7 +728,7 @@ describe('consentManagement', function () {
             defaultGdprScope: true
           });
           expect(await runHook()).to.be.true;
-          const consent = gdprDataHandler.getConsentData();
+          let consent = gdprDataHandler.getConsentData();
           sinon.assert.notCalled(utils.logError);
           expect(consent.consentString).to.equal(testConsentData.tcString);
           expect(consent.gdprApplies).to.be.true;

@@ -132,7 +132,7 @@ describe('LoyalBidAdapter', function () {
     });
 
     it('Returns general data valid', function () {
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
@@ -212,7 +212,7 @@ describe('LoyalBidAdapter', function () {
         }
       ];
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
@@ -247,7 +247,7 @@ describe('LoyalBidAdapter', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('object');
       expect(data.gdpr).to.have.property('consentString');
@@ -261,7 +261,7 @@ describe('LoyalBidAdapter', function () {
       bidderRequest.uspConsent = '1---';
       delete bidderRequest.gdprConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let data = serverRequest.data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -276,8 +276,8 @@ describe('LoyalBidAdapter', function () {
         applicableSections: [8]
       };
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
@@ -291,13 +291,13 @@ describe('LoyalBidAdapter', function () {
       bidderRequest.ortb2.regs.gpp = 'abc123';
       bidderRequest.ortb2.regs.gpp_sid = [8];
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
 
-      expect(bidderRequest).to.have.property('ortb2');
+      bidderRequest.ortb2;
     })
   });
 
@@ -322,9 +322,9 @@ describe('LoyalBidAdapter', function () {
           }
         }]
       };
-      const bannerResponses = spec.interpretResponse(banner);
+      let bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(banner.body[0].requestId);
@@ -356,10 +356,10 @@ describe('LoyalBidAdapter', function () {
           }
         }]
       };
-      const videoResponses = spec.interpretResponse(video);
+      let videoResponses = spec.interpretResponse(video);
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      const dataItem = videoResponses[0];
+      let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -393,10 +393,10 @@ describe('LoyalBidAdapter', function () {
           }
         }]
       };
-      const nativeResponses = spec.interpretResponse(native);
+      let nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      const dataItem = nativeResponses[0];
+      let dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -427,7 +427,7 @@ describe('LoyalBidAdapter', function () {
         }]
       };
 
-      const serverResponses = spec.interpretResponse(invBanner);
+      let serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid video response is passed', function () {
@@ -443,7 +443,7 @@ describe('LoyalBidAdapter', function () {
           dealId: '1'
         }]
       };
-      const serverResponses = spec.interpretResponse(invVideo);
+      let serverResponses = spec.interpretResponse(invVideo);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid native response is passed', function () {
@@ -460,7 +460,7 @@ describe('LoyalBidAdapter', function () {
           currency: 'USD',
         }]
       };
-      const serverResponses = spec.interpretResponse(invNative);
+      let serverResponses = spec.interpretResponse(invNative);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -473,7 +473,7 @@ describe('LoyalBidAdapter', function () {
           dealId: '1'
         }]
       };
-      const serverResponses = spec.interpretResponse(invalid);
+      let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });

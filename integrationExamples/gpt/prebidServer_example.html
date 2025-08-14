@@ -82,21 +82,16 @@
 </script>
 
 <script>
-googletag.cmd.push(function() {
-    var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+    googletag.cmd.push(function() {
+        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
-    if (pbjs.libLoaded) { // Check if Prebid.js is loaded
         pbjs.que.push(function() {
             pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();
         });
-    } else {
-        googletag.pubads().refresh();
-    }
 
-    googletag.pubads().enableSingleRequest();
-    googletag.enableServices();
-});
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+    });
     </script>
 </head>
 

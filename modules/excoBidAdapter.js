@@ -1,9 +1,9 @@
+
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {
   mergeDeep,
   deepAccess,
@@ -17,22 +17,14 @@ import {
 } from '../src/utils.js';
 
 export const SID = window.excoPid || generateUUID();
-export const ENDPOINT = 'https://v.ex.co/se/openrtb/hb/pbjs';
-const SYNC_URL = 'https://cdn.ex.co/sync/e15e216-l/cookie_sync.html';
-
+export const ENDPOINT = '//v.ex.co/se/openrtb/hb/pbjs';
+const SYNC_URL = '//cdn.ex.co/sync/e15e216-l/cookie_sync.html';
 export const BIDDER_CODE = 'exco';
-const VERSION = '0.0.3';
+const VERSION = '0.0.1';
 const CURRENCY = 'USD';
 
 const SYNC = {
   done: false,
-};
-
-const EVENTS = {
-  TYPE: 'exco-adapter',
-  PING: 'exco-adapter-ping',
-  PONG: 'exco-adapter-pong',
-  subscribed: false,
 };
 
 export class AdapterHelpers {
@@ -44,14 +36,13 @@ export class AdapterHelpers {
 
   createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
-      const url = new URL(SYNC_URL);
+      const url = new URL(window.location.protocol + SYNC_URL);
       const networks = [ '368531133' ];
 
       if (network) {
         networks.push(network);
       }
 
-      url.searchParams.set('pbv', '$prebid.version$');
       url.searchParams.set('network', networks.join(','));
       url.searchParams.set('gdpr', encodeURIComponent((Number(gdprApplies) || 0).toString()));
       url.searchParams.set('gdpr_consent', encodeURIComponent(consentString || ''));
@@ -122,12 +113,10 @@ export class AdapterHelpers {
   adoptBidResponse(bidResponse, bid, context) {
     bidResponse.bidderCode = BIDDER_CODE;
 
-    if (!bid.vastXml && bid.mediaType === VIDEO) {
-      bidResponse.vastXml = bidResponse.ad || bid.adm;
-    }
+    bidResponse.vastXml = bidResponse.ad || bid.adm;
 
+    bidResponse.ad = bid.ad;
     bidResponse.adUrl = bid.adUrl;
-    bidResponse.nurl = bid.nurl;
 
     bidResponse.mediaType = bid.mediaType || VIDEO;
     bidResponse.meta.mediaType = bid.mediaType || VIDEO;
@@ -151,105 +140,6 @@ export class AdapterHelpers {
     return bidResponse;
   }
 
-  replaceMacro(str) {
-    return str.replace('[TIMESTAMP]', Date.now());
-  }
-
-  postToAllParentFrames = (message) => {
-    window.parent.postMessage(message, '*');
-
-    for (let i = 0; i < window.parent.frames.length; i++) {
-      window.parent.frames[i].postMessage(message, '*');
-    }
-  }
-
-  sendMessage(eventName, data = {}) {
-    this.postToAllParentFrames({
-      type: EVENTS.TYPE,
-      eventName,
-      metadata: data
-    });
-  }
-
-  listenForMessages() {
-    window.addEventListener('message', ({ data }) => {
-      if (data && data.type === EVENTS.TYPE && data.eventName === EVENTS.PING) {
-        const { href, sid } = data.metadata;
-
-        if (href) {
-          const frame = document.querySelector(`iframe[src*="${href}"]`);
-
-          if (frame) {
-            const viewPercent = percentInView(frame);
-            this.sendMessage(EVENTS.PONG, { viewPercent, sid });
-          }
-        }
-      }
-    });
-  }
-
-  getEventUrl(data, eventName) {
-    const bid = data[0];
-    const params = {
-      adapterVersion: VERSION,
-      prebidVersion: '$prebid.version$',
-      pageLoadUid: SID,
-      eventName,
-      extraData: {
-        timepassed: bid.metrics.timeSince('requestBids'),
-      }
-    };
-
-    if (bid) {
-      params.adUnitCode = bid.adUnitCode;
-      params.auctionId = bid.auctionId;
-      params.bidId = bid.bidId;
-      params.bidderRequestId = bid.bidderRequestId;
-      params.bidderRequestsCount = bid.bidderRequestsCount;
-      params.bidderWinsCount = bid.bidderWinsCount;
-      params.maxBidderCalls = bid.maxBidderCalls;
-      params.transactionId = bid.transactionId;
-
-      if (bid.params && bid.params[0]) {
-        params.publisherId = bid.params[0].publisherId;
-        params.accountId = bid.params[0].accountId;
-        params.tagId = bid.params[0].tagId;
-      }
-
-      if (bid.ortb2.device) {
-        params.width = bid.ortb2.device.w;
-        params.height = bid.ortb2.device.h;
-      }
-
-      if (bid.ortb2.site) {
-        params.domain = bid.ortb2.site.domain;
-        params.parentUrl = bid.ortb2.site.page;
-        params.parentReferrer = bid.ortb2.site.referrer;
-      }
-
-      if (bid.ortb2.app) {
-        params.environment = 'app';
-      }
-    }
-
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (typeof value === 'object' && Array.isArray(value) === false) {
-        Object.entries(value).forEach(([k, v]) => {
-          searchParams.append(`${key}.${k}`, v);
-        });
-      } else if (value !== undefined) {
-        searchParams.append(key, value);
-      }
-    });
-
-    return `https://v.ex.co/event?${searchParams}`;
-  }
-
-  triggerUrl(url) {
-    fetch(url, { keepalive: true });
-  }
-
   log(severity, message) {
     const msg = `${BIDDER_CODE.toUpperCase()}: ${message}`;
 
@@ -262,10 +152,6 @@ export class AdapterHelpers {
     if (severity === 'info') {
       logInfo(msg);
     }
-  }
-
-  isDebugEnabled(url = '') {
-    return config.getConfig('debug') || url.includes('exco_debug=true');
   }
 }
 
@@ -283,7 +169,7 @@ export const converter = ortbConverter({
     }
 
     data.cur = [CURRENCY];
-    data.test = helpers.isDebugEnabled(window.location.href) ? 1 : 0;
+    data.test = config.getConfig('debug') ? 1 : 0;
 
     helpers.addOrtbFirstPartyData(data, context.bidRequests || []);
 
@@ -392,15 +278,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const body = response?.body?.Result || response?.body || {};
-    const converted = converter.fromORTB({response: body, request: request?.data});
-    const bids = converted.bids || [];
-
-    if (bids.length && !EVENTS.subscribed) {
-      EVENTS.subscribed = true;
-      helpers.listenForMessages();
-    }
-
-    return bids;
+    return converter.fromORTB({response: body, request: request?.data}).bids || [];
   },
 
   /**
@@ -416,69 +294,12 @@ export const spec = {
     gdprConsent,
     uspConsent
   ) {
-    const result = [];
-
-    const collectSyncs = (syncs) => {
-      if (syncs) {
-        syncs.forEach(sync => {
-          if (syncOptions.iframeEnabled && sync.type === 'iframe') {
-            result.push({ type: sync.type, url: sync.url });
-          } else if (syncOptions.pixelEnabled && ['image', 'pixel'].includes(sync.type)) {
-            result.push({ type: 'image', url: sync.url });
-          }
-        });
-      }
-    }
-
-    serverResponses.forEach(response => {
-      const { body = {} } = response;
-      const { ext } = body;
-
-      if (ext && ext.syncs) {
-        collectSyncs(ext.syncs);
-      }
-
-      if (ext && ext.usersync) {
-        Object.keys(ext.usersync).forEach(key => {
-          collectSyncs(ext.usersync[key].syncs);
-        });
-      }
-    });
-
     if (syncOptions.iframeEnabled && !SYNC.done) {
       helpers.doSync(gdprConsent);
       SYNC.done = true;
     }
 
-    return result;
-  },
-
-  /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {Object} data - Contains timeout specific data
-   */
-  onTimeout: function (data) {
-    const eventUrl = helpers.getEventUrl(data, 'mcd_bidder_auction_timeout');
-
-    if (eventUrl) {
-      helpers.triggerUrl(eventUrl);
-    }
-  },
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {import('../src/auction.js').BidResponse} bid - The bid that won the auction
-   */
-  onBidWon: function (bid) {
-    if (bid == null) {
-      return;
-    }
-
-    if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
-      const url = helpers.replaceMacro(bid.nurl)
-        .replace('ad_auction_won', 'ext_auction_won');
-      helpers.triggerUrl(url);
-    }
+    return [];
   },
 };
 

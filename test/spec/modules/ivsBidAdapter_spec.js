@@ -1,10 +1,10 @@
 import { spec, converter } from 'modules/ivsBidAdapter.js';
 import { assert } from 'chai';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils';
 
 describe('ivsBidAdapter', function () {
   describe('isBidRequestValid()', function () {
-    const validBid = {
+    let validBid = {
       bidder: 'ivs',
       mediaTypes: {
         video: {
@@ -24,19 +24,19 @@ describe('ivsBidAdapter', function () {
     });
 
     it('should return false if publisherId info is missing', function () {
-      const bid = deepClone(validBid);
+      let bid = deepClone(validBid);
       delete bid.params.publisherId;
       assert.isFalse(spec.isBidRequestValid(bid));
     });
 
     it('should return false for empty video parameters', function () {
-      const bid = deepClone(validBid);
+      let bid = deepClone(validBid);
       delete bid.mediaTypes.video;
       assert.isFalse(spec.isBidRequestValid(bid));
     });
 
     it('should return false for non instream context', function () {
-      const bid = deepClone(validBid);
+      let bid = deepClone(validBid);
       bid.mediaTypes.video.context = 'outstream';
       assert.isFalse(spec.isBidRequestValid(bid));
     });

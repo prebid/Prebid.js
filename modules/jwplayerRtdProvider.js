@@ -13,6 +13,7 @@ import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import { deepAccess, logError, logWarn } from '../src/utils.js'
+import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 /**
@@ -54,7 +55,7 @@ export const jwplayerSubmodule = {
 
 config.getConfig('realTimeData', ({realTimeData}) => {
   const providers = realTimeData.dataProviders;
-  const jwplayerProvider = providers && ((providers) || []).find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
+  const jwplayerProvider = providers && find(providers, pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
   const params = jwplayerProvider && jwplayerProvider.params;
   if (!params) {
     return;
@@ -116,16 +117,12 @@ function parsePlaylistItem(response) {
   try {
     const data = JSON.parse(response);
     if (!data) {
-      const msg = 'Empty response';
-      logError(msg);
-      return item;
+      throw ('Empty response');
     }
 
     const playlist = data.playlist;
     if (!playlist || !playlist.length) {
-      const msg = 'Empty playlist';
-      logError(msg);
-      return item;
+      throw ('Empty playlist');
     }
 
     item = playlist[0];
@@ -271,7 +268,7 @@ export function getVatFromPlayer(playerDivId, mediaID) {
     return null;
   }
 
-  const item = mediaID ? ((player.getPlaylist()) || []).find(item => item.mediaid === mediaID) : player.getPlaylistItem();
+  const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
     return null;
   }
@@ -344,7 +341,7 @@ export function getContentData(mediaId, segments) {
   };
 
   if (mediaId) {
-    contentData.ext.cids = contentData.cids = [mediaId];
+    contentData.ext.cids = [mediaId];
   }
 
   if (segments) {
@@ -360,8 +357,8 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
     ortb2 = {};
   }
 
-  const site = ortb2.site = ortb2.site || {};
-  const content = site.content = site.content || {};
+  let site = ortb2.site = ortb2.site || {};
+  let content = site.content = site.content || {};
 
   if (shouldOverride(content.id, contentId, overrideContentId)) {
     content.id = contentId;
@@ -450,7 +447,7 @@ export function getPlayer(playerDivId) {
     return;
   }
 
-  const errorMessage = `player Div ID ${playerDivId} did not match any players.`;
+  let errorMessage = `player Div ID ${playerDivId} did not match any players.`;
 
   // If there are multiple instances on the page, we cannot guess which one should be targeted.
   if (playerOnPageCount > 1) {

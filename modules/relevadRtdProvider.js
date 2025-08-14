@@ -9,8 +9,9 @@
 import {deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
+import {findIndex} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import {config} from '../src/config.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'RelevadRTDModule';
@@ -30,16 +31,16 @@ export let serverData = {}; // Tracks data returned from Relevad RTD server
 /**
  * Provides contextual IAB categories and segments to the bidders.
  *
- * @param      {Object}    reqBidsConfigObj  Bids request configuration
- * @param      {Function}  onDone            Ajax callback
- * @param      {Object}    moduleConfig      Rtd module configuration
- * @param      {Object}    userConsent       user GDPR consent
+ * @param      {<type>}    reqBidsConfigObj  Bids request configuration
+ * @param      {Function}  onDone            Ajax callbacek
+ * @param      {<type>}    moduleConfig      Rtd module configuration
+ * @param      {<type>}    userConsent       user GDPR consent
  */
 export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
   moduleConfig.params = moduleConfig.params || {};
   moduleConfig.params.partnerid = moduleConfig.params.partnerid ? moduleConfig.params.partnerid : 1;
 
-  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
+  let adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
   serverData.page = moduleConfig.params.actualUrl || getRefererInfo().page || '';
   const url = (RELEVAD_API_DOMAIN + '/apis/rweb2/' +
                 '?url=' + encodeURIComponent(serverData.page) +
@@ -80,12 +81,12 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
 /**
  * Sets global ORTB user and site data
  *
- * @param      {Object}  ortb2     The global ORTB structure
- * @param      {Object}  rtdData   Rtd segments and categories
+ * @param      {dictionary}  ortb2     The gloabl ORTB structure
+ * @param      {dictionary}  rtdData   Rtd segments and categories
  */
 export function setGlobalOrtb2(ortb2, rtdData) {
   try {
-    const addOrtb2 = composeOrtb2Data(rtdData, 'site');
+    let addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(addOrtb2) && mergeDeep(ortb2, addOrtb2);
   } catch (e) {
     logError(e)
@@ -95,15 +96,15 @@ export function setGlobalOrtb2(ortb2, rtdData) {
 /**
  * Compose ORTB2 data fragment from RTD data
  *
- * @param  {Object}  rtdData RTD segments and categories
+ * @param  {dictionary}  rtdData RTD segments and categories
  * @param  {string}      prefix  Site path prefix
- * @return {Object} ORTB2 fragment ready to be merged into global or bidder ORTB
+ * @return {dictionary} ORTB2 fragment ready to be merged into global or bidder ORTB
  */
 function composeOrtb2Data(rtdData, prefix) {
   const segments = rtdData.segments;
   const categories = rtdData.categories;
   const content = rtdData.content;
-  const addOrtb2 = {};
+  let addOrtb2 = {};
 
   !isEmpty(segments) && deepSetValue(addOrtb2, 'user.ext.data.relevad_rtd', segments);
   !isEmpty(categories.cat) && deepSetValue(addOrtb2, prefix + '.cat', categories.cat);
@@ -126,13 +127,13 @@ function composeOrtb2Data(rtdData, prefix) {
 /**
  * Sets ORTB user and site data for a given bidder
  *
- * @param      {Object}  bidderOrtbFragment  The bidder ORTB fragment
- * @param      {Object}  bidder     The bidder name
- * @param      {Object}  rtdData    RTD categories and segments
+ * @param      {dictionary}  bidderOrtbFragment  The bidder ORTB fragment
+ * @param      {object}  bidder     The bidder name
+ * @param      {object}  rtdData    RTD categories and segments
  */
 function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
   try {
-    const addOrtb2 = composeOrtb2Data(rtdData, 'site');
+    let addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.relevad_rtd', rtdData.segments);
     !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.segments', rtdData.segments);
     !isEmpty(rtdData.categories) && deepSetValue(addOrtb2, 'user.ext.data.contextual_categories', rtdData.categories.pagecat);
@@ -149,9 +150,9 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
 /**
  * Filters dictionary entries
  *
- * @param      {Object}   dict A dictionary with numeric values
+ * @param      {array of {key:value}}   dict A dictionary with numeric values
  * @param      {string}  minscore       The minimum value
- * @return     {Array<string>} Array of category names with scores greater or equal to minscore
+ * @return     {array[names]} Array of category names with scores greater or equal to minscore
  */
 function filterByScore(dict, minscore) {
   if (dict && !isEmpty(dict)) {
@@ -174,7 +175,7 @@ function filterByScore(dict, minscore) {
  * @return     {object}  Filtered RTD
  */
 function getFiltered(data, minscore) {
-  const relevadData = {'segments': []};
+  let relevadData = {'segments': []};
 
   minscore = minscore && typeof minscore == 'number' ? minscore : 30;
 
@@ -190,7 +191,7 @@ function getFiltered(data, minscore) {
 
   try {
     if (data && data.segments) {
-      for (const segId in data.segments) {
+      for (let segId in data.segments) {
         if (data.segments.hasOwnProperty(segId)) {
           relevadData.segments.push(data.segments[segId].toString());
         }
@@ -205,9 +206,9 @@ function getFiltered(data, minscore) {
 /**
  * Adds Rtd data to global ORTB structure and bidder requests
  *
- * @param      {Object}  reqBids       The bid requests list
- * @param      {Object}  data          The Rtd data
- * @param      {Object}  moduleConfig  The Rtd module configuration
+ * @param      {<type>}  reqBids       The bid requests list
+ * @param      {<type>}  data          The Rtd data
+ * @param      {<type>}  moduleConfig  The Rtd module configuration
  */
 export function addRtdData(reqBids, data, moduleConfig) {
   moduleConfig = moduleConfig || {};
@@ -225,7 +226,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
   noWhitelists && setGlobalOrtb2(reqBids.ortb2Fragments?.global, relevadData);
 
   // Target GAM/GPT
-  const setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
+  let setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
   if (moduleConfig.dryrun || (typeof window.googletag !== 'undefined' && setgpt)) {
     try {
       if (window.googletag && window.googletag.pubads && (typeof window.googletag.pubads === 'function')) {
@@ -246,7 +247,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
     noWhitelists && deepSetValue(adUnit, 'ortb2Imp.ext.data.relevad_rtd', relevadList);
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      const bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? moduleConfig.params.bidders.findIndex(function (i) {
+      let bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function (i) {
         return i.bidder === bid.bidder;
       }) : false);
       const indexFound = !!(typeof bidderIndex == 'number' && bidderIndex >= 0);
@@ -263,7 +264,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
           if (!wb && !isEmpty(wl[bid.bidder])) {
             wb = true;
             for (const [key, value] of entries(wl[bid.bidder])) {
-              const params = bid?.params || {};
+              let params = bid?.params || {};
               wb = wb && (key in params) && params[key] == value;
             }
           }
@@ -272,7 +273,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
             setBidderSiteAndContent(bid, 'ortb2', relevadData);
             deepSetValue(bid, 'params.keywords.relevad_rtd', relevadList);
             !(bid.params?.target || '').includes('relevad_rtd=') && deepSetValue(bid, 'params.target', [].concat(bid.params?.target ? [bid.params.target] : []).concat(relevadList.map(entry => { return 'relevad_rtd=' + entry; })).join(';'));
-            const firstPartyData = {};
+            let firstPartyData = {};
             firstPartyData[bid.bidder] = { firstPartyData: { relevad_rtd: relevadList } };
             config.setConfig(firstPartyData);
           }
@@ -294,7 +295,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
  * @param      {object}  config  Configuraion
  */
 function sendBids(data, config) {
-  const dataJson = JSON.stringify(data);
+  let dataJson = JSON.stringify(data);
 
   if (!config.dryrun) {
     ajax(RELEVAD_API_DOMAIN + '/apis/bids/', () => {}, dataJson, AJAX_OPTIONS);
@@ -310,8 +311,8 @@ function sendBids(data, config) {
  * @param      {object}  userConsent     User GDPR consent object
  */
 function onAuctionEnd(auctionDetails, config, userConsent) {
-  const adunitObj = {};
-  const adunits = [];
+  let adunitObj = {};
+  let adunits = [];
 
   // Add Bids Received
   auctionDetails.bidsReceived.forEach((bidObj) => {
@@ -332,7 +333,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     adunits.push({code: adunitCode, bids: bidsReceived});
   });
 
-  const data = {
+  let data = {
     event: 'bids',
     adunits: adunits,
     reledata: serverData.rawdata,

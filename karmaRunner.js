@@ -40,8 +40,8 @@ process.on('message', function (options) {
 
   process.on('SIGINT', () => quit());
 
-  function runKarma(file, chunkNo) {
-    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, file, options.disableFeatures, chunkNo);
+  function runKarma(file) {
+    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, file, options.disableFeatures);
     if (options.browsers && options.browsers.length) {
       cfg.browsers = options.browsers;
     }
@@ -80,7 +80,7 @@ process.on('message', function (options) {
       if (process.env['TEST_CHUNK'] && Number(process.env['TEST_CHUNK']) !== i + 1) return;
       pm = pm.then(() => {
         info(`Starting chunk ${i + 1} of ${chunks.length}: ${chunkDesc(chunk)}`);
-        return runKarma(chunk, i + 1);
+        return runKarma(chunk);
       }).catch(() => {
         failures.push([i, chunks.length, chunk]);
         if (!process.env['TEST_ALL']) quit();

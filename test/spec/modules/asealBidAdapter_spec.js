@@ -4,12 +4,13 @@ import {
   BIDDER_CODE,
   API_ENDPOINT,
   HEADER_AOTTER_VERSION,
-  WEB_SESSION_ID_KEY, storage
+  WEB_SESSION_ID_KEY,
 } from 'modules/asealBidAdapter.js';
 import { getRefererInfo } from 'src/refererDetection.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import { storage } from 'modules/asealBidAdapter.js';
 
 const TEST_CLIENT_ID = 'TEST_CLIENT_ID';
 const TEST_WEB_SESSION_ID = 'TEST_WEB_SESSION_ID';
@@ -40,7 +41,7 @@ describe('asealBidAdapter', () => {
       },
     };
 
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     sandbox.stub(utils, 'getWindowTop').returns(w);
     sandbox.stub(utils, 'getWindowSelf').returns(w);
     done();
@@ -86,7 +87,7 @@ describe('asealBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      const invalidBid = Object.assign({}, bid);
+      let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);

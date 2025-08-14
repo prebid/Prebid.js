@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, converter } from 'modules/performaxBidAdapter.js';
 
 describe('Performax adapter', function () {
-  const bids = [{
+  let bids = [{
     bidder: 'performax',
     params: {
       tagid: 'sample'
@@ -67,7 +67,7 @@ describe('Performax adapter', function () {
       device: {}
     }}];
 
-  const bidderRequest = {
+  let bidderRequest = {
     bidderCode: 'performax2',
     auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
     id: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
@@ -87,7 +87,7 @@ describe('Performax adapter', function () {
       device: {}
     }};
 
-  const serverResponse = {
+  let serverResponse = {
     body: {
       cur: 'CZK',
       seatbid: [
@@ -105,7 +105,7 @@ describe('Performax adapter', function () {
   }
 
   describe('isBidRequestValid', function () {
-    const bid = {};
+    let bid = {};
     it('should return false when missing "tagid" param', function() {
       bid.params = {slotId: 'param'};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -121,47 +121,47 @@ describe('Performax adapter', function () {
 
   describe('buildRequests', function () {
     it('should set correct request method and url', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const request = requests[0];
+      let request = requests[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://dale.performax.cz/ortb');
       expect(request.data).to.be.an('object');
     });
 
     it('should pass correct imp', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
-      const {data} = requests[0];
-      const {imp} = data;
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(1);
       expect(imp[0]).to.be.an('object');
-      const bid = imp[0];
+      let bid = imp[0];
       expect(bid.id).to.equal('2bc545c347dbbe');
       expect(bid.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
     });
 
     it('should process multiple bids', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
+      let requests = spec.buildRequests(bids, bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const {data} = requests[0];
-      const {imp} = data;
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(bids.length);
-      const bid1 = imp[0];
+      let bid1 = imp[0];
       expect(bid1.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
-      const bid2 = imp[1];
+      let bid2 = imp[1];
       expect(bid2.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 600}]});
     });
   });
 
   describe('interpretResponse', function () {
     it('should map params correctly', function () {
-      const ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
+      let ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
       serverResponse.body.id = ortbRequest.data.id;
       serverResponse.body.seatbid[0].bid[0].imp_id = ortbRequest.data.imp[0].id;
 
-      const result = spec.interpretResponse(serverResponse, ortbRequest);
+      let result = spec.interpretResponse(serverResponse, ortbRequest);
       expect(result).to.be.an('array').that.has.lengthOf(1);
-      const bid = result[0];
+      let bid = result[0];
 
       expect(bid.cpm).to.equal(20);
       expect(bid.ad).to.equal('My ad');

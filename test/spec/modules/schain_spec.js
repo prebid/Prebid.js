@@ -1,253 +1,496 @@
-import {expect} from 'chai/index.js';
-import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
-import {applySchainConfig} from 'modules/schain.js';
+import { isValidSchainConfig, isSchainObjectValid, makeBidRequestsHook } from '../../../modules/schain.js';
+import { deepClone } from '../../../src/utils.js';
+import {config} from '../../../src/config.js';
+import { expect } from 'chai';
 
-describe('Supply Chain fpd', function() {
-  const SAMPLE_SCHAIN = {
-    ver: '1.0',
-    complete: 1,
-    nodes: [{ asi: 'example.com', sid: '00001', hp: 1 }]
-  };
+describe('#isValidSchainConfig: module config validation', function() {
+  it('if config is undefined or not an objct then return false', function() {
+    expect(isValidSchainConfig()).to.false;
+    expect(isValidSchainConfig('')).to.false;
+    expect(isValidSchainConfig([])).to.false;
+    expect(isValidSchainConfig(12)).to.false;
+    expect(isValidSchainConfig(3.14)).to.false;
+  })
 
-  const SAMPLE_SCHAIN_2 = {
-    ver: '2.0',
-    complete: 1,
-    nodes: [{ asi: 'bidder.com', sid: '00002', hp: 1 }]
-  };
+  it('if config is an object then return true', function() {
+    expect(isValidSchainConfig({})).to.true;
+  })
+});
 
-  let sandbox;
-  let logWarnStub;
-  let configGetConfigStub;
-  let configGetBidderConfigStub;
+describe('#isSchainObjectValid: schain object validation', function() {
+  let schainConfig;
 
   beforeEach(function() {
-    sandbox = sinon.createSandbox();
-    logWarnStub = sandbox.stub(utils, 'logWarn');
-    configGetConfigStub = sandbox.stub(config, 'getConfig');
-    configGetBidderConfigStub = sandbox.stub(config, 'getBidderConfig');
+    schainConfig = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'indirectseller.com',
+          'sid': '00001',
+          'hp': 1
+        },
+
+        {
+          'asi': 'indirectseller-2.com',
+          'sid': '00002',
+          'hp': 2
+        }
+      ]
+    };
   });
 
-  afterEach(function() {
-    sandbox.restore();
+  it('Return true for correct config', function() {
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
   });
 
-  describe('applySchainConfig', function() {
-    describe('preserves existing schain values', function() {
-      it('should preserve existing global.source.schain', function() {
-        const existingSchain = {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{ asi: 'existing.com', sid: '99999', hp: 1 }]
-        };
+  it('Return false for string config', function() {
+    schainConfig = JSON.stringify(schainConfig);
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        const input = {
-          global: {
-            source: {
-              schain: existingSchain
-            }
-          }
-        };
+  it('Returns false if complete param is not an Integer', function() {
+    schainConfig.complete = 1; // integer
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.complete = '1'; // string
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.complete = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.complete = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.complete; // undefined
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.complete = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.complete = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        const schainConfig = {
-          config: SAMPLE_SCHAIN
-        };
+  it('Returns false if version param is not a String', function() {
+    schainConfig.ver = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ver = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ver = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.ver; // undefined
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ver = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ver = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        configGetConfigStub.returns(schainConfig);
-        configGetBidderConfigStub.returns(null);
+  it('Returns false if ext param is not an Object', function() {
+    schainConfig.ext = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ext = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ext = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    delete schainConfig.ext; // undefined // param is optional thus this will result true
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.ext = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.ext = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        const result = applySchainConfig(input);
+  it('Returns false if nodes param is not an Array', function() {
+    // by default schainConfig.nodes is array
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes; // undefined
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        expect(result.global.source.schain).to.deep.equal(existingSchain);
-        expect(result.global.source.schain).to.not.deep.equal(SAMPLE_SCHAIN);
-        sinon.assert.called(logWarnStub);
-      });
+  it('Returns false if nodes[].asi is not a String', function() {
+    schainConfig.nodes[0].asi = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].asi = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].asi = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes[0].asi; // undefined
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].asi = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].asi = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-      it('should preserve existing bidder-specific schain ', function() {
-        const existingBidderSchain = {
-          ver: '3.0',
-          complete: 1,
-          nodes: [{ asi: 'existingbidder.com', sid: '88888', hp: 1 }]
-        };
+  it('Returns false if nodes[].sid is not a String', function() {
+    schainConfig.nodes[1].sid = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].sid = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].sid = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes[0].sid; // undefined
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].sid = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].sid = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        const input = {
-          bidder: {
-            'bidderA': {
-              source: {
-                schain: existingBidderSchain
-              }
-            }
-          }
-        };
+  it('Returns false if nodes[].hp is not an Integer', function() {
+    schainConfig.nodes[0].hp = '1'; // string
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].hp = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].hp = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes[0].hp; // undefined
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].hp = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].hp = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        const bidderConfigs = {
-          'bidderA': {
-            schain: {
-              config: SAMPLE_SCHAIN
-            }
-          }
-        };
+  it('Returns false if nodes[].rid is not a String', function() {
+    schainConfig.nodes[1].rid = 'rid value'; // string
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[1].rid = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].rid = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].rid = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes[1].rid; // undefined // param is optional thus this will result true
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[1].rid = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].rid = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        configGetConfigStub.returns(null);
-        configGetBidderConfigStub.returns(bidderConfigs);
+  it('Returns false if nodes[].name is not a String', function() {
+    schainConfig.nodes[0].name = 'name value'; // string
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[0].name = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].name = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].name = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes[0].name; // undefined // param is optional thus this will result true
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[0].name = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].name = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        const result = applySchainConfig(input);
+  it('Returns false if nodes[].domain is not a String', function() {
+    schainConfig.nodes[1].domain = 'domain value'; // string
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[1].domain = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].domain = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].domain = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    delete schainConfig.nodes[1].domain; // undefined // param is optional thus this will result true
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[1].domain = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[1].domain = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-        expect(result.bidder.bidderA.source.schain).to.deep.equal(existingBidderSchain);
-        expect(result.bidder.bidderA.source.schain).to.not.deep.equal(SAMPLE_SCHAIN);
-        sinon.assert.called(logWarnStub);
-      });
-    });
+  it('Returns false if nodes[].ext param is not an Object', function() {
+    schainConfig.nodes[0].ext = 1; // Integer
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].ext = 1.1; // float
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].ext = {}; // object
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    delete schainConfig.nodes[0].ext; // undefined // param is optional thus this will result true
+    expect(isSchainObjectValid(schainConfig, true)).to.true;
+    schainConfig.nodes[0].ext = true; // boolean
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+    schainConfig.nodes[0].ext = []; // array
+    expect(isSchainObjectValid(schainConfig, true)).to.false;
+  });
 
-    describe('handles edge cases', function() {
-      it('should handle edge cases and no-op scenarios', function() {
-        expect(applySchainConfig(null)).to.be.null;
-        expect(applySchainConfig(undefined)).to.be.undefined;
-        expect(applySchainConfig({})).to.deep.equal({});
+  it('Relaxed mode: Returns true even for invalid config if second argument is set to false', function() {
+    schainConfig = {
+      'ver': 1.0, // invalid
+      'complete': '1', // invalid
+      'nodes': [
+        {
+          'asi': 'indirectseller.com',
+          'sid': 1, // invalid
+          'hp': '1' // invalid
+        },
 
-        const input = {
-          global: {
-            source: {
-              tid: '123'
-            }
-          }
-        };
-        configGetConfigStub.returns(null);
-        configGetBidderConfigStub.returns(null);
+        {
+          'asi': 'indirectseller-2.com',
+          'sid': '00002',
+          'hp': 2
+        }
+      ]
+    };
+    expect(isSchainObjectValid(schainConfig, false)).to.true;
 
-        const result = applySchainConfig(input);
-        expect(result).to.deep.equal(input);
-      });
-    });
+    schainConfig = {};
+    expect(isSchainObjectValid(schainConfig, false)).to.true;
+  })
+});
 
-    describe('global schain config handling', function() {
-      let input;
-
-      beforeEach(function() {
-        input = {
-          global: {
-            source: {}
-          }
-        };
-        configGetBidderConfigStub.returns(null);
-      });
-
-      it('should correctly handle different global schain config scenarios', function() {
-        const validSchainConfig = {
-          config: SAMPLE_SCHAIN
-        };
-        configGetConfigStub.returns(validSchainConfig);
-
-        let result = applySchainConfig(input);
-        expect(result.global.source.schain).to.deep.equal(SAMPLE_SCHAIN);
-
-        logWarnStub.reset();
-        input = { global: { source: {} } };
-
-        const invalidSchainConfig = {
-          validation: 'strict'
-        };
-        configGetConfigStub.returns(invalidSchainConfig);
-
-        result = applySchainConfig(input);
-        expect(result.global.source.schain).to.be.undefined;
-      });
-    });
-
-    describe('bidder-specific schain config handling', function() {
-      let input;
-
-      beforeEach(function() {
-        input = {
-          global: {},
-          bidder: {}
-        };
-        configGetConfigStub.returns(null);
-        logWarnStub.reset();
-      });
-
-      it('should handle various bidder-specific schain scenarios', function() {
-        const singleBidderConfig = {
-          'bidderA': {
-            schain: {
-              config: SAMPLE_SCHAIN
-            }
-          }
-        };
-        configGetBidderConfigStub.returns(singleBidderConfig);
-
-        let result = applySchainConfig(input);
-        expect(result.bidder.bidderA.source.schain).to.deep.equal(SAMPLE_SCHAIN);
-
-        logWarnStub.reset();
-        input = { global: {}, bidder: {} };
-
-        const multiBidderConfig = {
-          'bidderA': {
-            schain: {
-              config: SAMPLE_SCHAIN
+describe('#makeBidRequestsHook', function() {
+  const bidderRequests = [
+    {
+      'bidderCode': 'rubicon',
+      'bids': [
+        {
+          'bidder': 'rubicon',
+          'params': {
+            'accountId': 14062,
+            'siteId': 70608,
+            'zoneId': 498816
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]]
             }
           },
-          'bidderB': {
-            schain: {
-              config: SAMPLE_SCHAIN_2
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '2e6d166eb869c3'
+
+        }
+      ],
+    },
+    {
+      'bidderCode': 'districtm',
+      'bids': [
+        {
+          'bidder': 'districtm',
+          'params': {
+            'placementId': 13144370
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]]
             }
           },
-          'bidderC': {
-          }
-        };
-        configGetBidderConfigStub.returns(multiBidderConfig);
-
-        result = applySchainConfig(input);
-        expect(result.bidder.bidderA.source.schain).to.deep.equal(SAMPLE_SCHAIN);
-        expect(result.bidder.bidderB.source.schain).to.deep.equal(SAMPLE_SCHAIN_2);
-        expect(result.bidder.bidderC).to.be.undefined;
-        input = { global: {}, bidder: {} };
-
-        const invalidBidderConfig = {
-          'bidderA': {
-            schain: {
-              validation: 'strict'
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '41cdeddf7b6905'
+        }
+      ],
+    },
+    {
+      'bidderCode': 'appnexus',
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': 13144370
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]]
             }
-          }
-        };
-        configGetBidderConfigStub.returns(invalidBidderConfig);
+          },
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '626cc7f1c4ccfc'
+        }
+      ],
 
-        result = applySchainConfig(input);
-        expect(result.bidder.bidderA.source.schain).to.deep.equal({});
-      });
+    }
+  ];
+
+  const globalSchainConfig = {
+    'schain': {
+      'validation': 'off',
+      'config': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 1
+          }
+        ]
+      }
+    }
+  };
+
+  const goodStrictBidderConfig = {
+    bidders: ['appnexus'],
+    config: {
+      'schain': {
+        'validation': 'strict',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride1.com',
+              'sid': '00001',
+              'hp': 1,
+              'name': 'node1'
+            },
+            {
+              'asi': 'myoverride2.com',
+              'sid': '00001',
+              'hp': 1,
+              'name': 'node2'
+            }
+          ]
+        }
+      }
+    }
+  }
+
+  const badStrictBidderConfig = {
+    bidders: ['appnexus'],
+    config: {
+      'schain': {
+        'validation': 'strict',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride1.com',
+              'sid': 1,
+              'hp': 1,
+              'name': 342
+            },
+            {
+              'asi': 'myoverride2.com',
+              'sid': 2,
+              'hp': 1,
+              'name': '342'
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const goodRelaxedBidderConfig = {
+    bidders: ['districtm'],
+    config: {
+      'schain': {
+        'validation': 'relaxed',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride.com',
+              'sid': '00001',
+              'hp': 1,
+              'name': 'goodConfig'
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const badRelaxedBidderConfig = {
+    bidders: ['districtm'],
+    config: {
+      'schain': {
+        'validation': 'relaxed',
+        'config': {
+          'ver': 1,
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride.com',
+              'sid': 1,
+              'hp': 1
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  beforeEach(function () {
+    config.setConfig(globalSchainConfig);
+  });
+
+  afterEach(function () {
+    config.resetConfig();
+
+    config.setBidderConfig({
+      bidders: ['districtm'],
+      config: {
+        schain: null
+      }
     });
 
-    // Test case: both global and bidder-specific schain configs
-    it('should apply both global and bidder-specific schain configs', function() {
-      const input = {
-        global: {},
-        bidder: {}
-      };
-      const globalSchainConfig = {
-        config: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{ asi: 'global.com', sid: '00001', hp: 1 }]
-        }
-      };
-      const bidderConfigs = {
-        'bidderA': {
-          schain: {
-            config: {
-              ver: '1.0',
-              complete: 1,
-              nodes: [{ asi: 'bidderA.com', sid: '00001', hp: 1 }]
-            }
-          }
-        }
-      };
-      configGetConfigStub.returns(globalSchainConfig);
-      configGetBidderConfigStub.returns(bidderConfigs);
-
-      const result = applySchainConfig(input);
-      expect(result.global.source.schain).to.deep.equal(globalSchainConfig.config);
-      expect(result.bidder.bidderA.source.schain).to.deep.equal(bidderConfigs.bidderA.schain.config);
+    config.setBidderConfig({
+      bidders: ['appnexus'],
+      config: {
+        schain: null
+      }
     });
+  });
+
+  it('should properly read from bidder schain + global schain configs', function() {
+    function testCallback(bidderRequests) {
+      expect(bidderRequests[0].bids[0].schain).to.exist;
+      expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
+      expect(bidderRequests[1].bids[0].schain).to.exist;
+      expect(bidderRequests[1].bids[0].schain).to.deep.equal(goodRelaxedBidderConfig.config.schain.config);
+      expect(bidderRequests[2].bids[0].schain).to.exist;
+      expect(bidderRequests[2].bids[0].schain).to.deep.equal(goodStrictBidderConfig.config.schain.config);
+    }
+
+    const testBidderRequests = deepClone(bidderRequests);
+    config.setBidderConfig(goodStrictBidderConfig);
+    config.setBidderConfig(goodRelaxedBidderConfig);
+
+    makeBidRequestsHook(testCallback, testBidderRequests);
+  });
+
+  it('should not share the same schain object between different bid requests', (done) => {
+    config.setBidderConfig(goodStrictBidderConfig);
+    makeBidRequestsHook((requests) => {
+      requests[0].bids[0].schain.field = 'value';
+      expect(requests[1].bids[0].schain.field).to.not.exist;
+      done();
+    }, deepClone(bidderRequests))
+  });
+
+  it('should reject bad strict config but allow a bad relaxed config for bidders trying to override it', function () {
+    function testCallback(bidderRequests) {
+      expect(bidderRequests[0].bids[0].schain).to.exist;
+      expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
+      expect(bidderRequests[1].bids[0].schain).to.exist;
+      expect(bidderRequests[1].bids[0].schain).to.deep.equal(badRelaxedBidderConfig.config.schain.config);
+      expect(bidderRequests[2].bids[0].schain).to.be.undefined;
+    }
+
+    const testBidderRequests = deepClone(bidderRequests);
+    config.setBidderConfig(badStrictBidderConfig);
+    config.setBidderConfig(badRelaxedBidderConfig);
+
+    makeBidRequestsHook(testCallback, testBidderRequests);
   });
 });

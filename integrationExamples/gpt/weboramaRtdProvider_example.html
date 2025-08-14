@@ -4,9 +4,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>weborama rtd submodule example</title>
   </head>
-  <body> 
+  <body>
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
     <script src="../../build/dev/prebid.js" async></script>
-    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
     <script>
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
@@ -14,44 +18,6 @@
       pbjs.que.push(function () {
         pbjs.setConfig({
           debug: true,
-          enableTIDs: false,
-          consentManagement: {
-            gdpr: {
-              cmpApi: "static",
-              timeout: 8000,
-              consentData: {
-                getTCData: {
-                  tcString: "sample_tc_string",
-                  gdprApplies: true,
-                  purpose: {
-                    consents: {
-                      1: true,
-                      3: true,
-                      4: true,
-                      5: true,
-                      6: true,
-                    },
-                    legitimateInterests: {
-                      2: true,
-                      7: true,
-                      8: true,
-                      9: true,
-                      10: true,
-                      11: true,
-                    },
-                  },
-                  vendor: {
-                    consents: {
-                      284: true,
-                    },
-                    legitimateInterests: {
-                      284: true,
-                    },
-                  }
-                }
-              }
-            }
-          },
           realTimeData: {
             auctionDelay: 1000,
             dataProviders: [
@@ -77,11 +43,11 @@
                       webo_ds: ["bar"],
                     },
                     baseURLProfileAPI: "ctx-preprod.weborama.com",
-                    enabled: false,
+                    // enabled: false,
                     //, onData: function (data,...) { ...}
                   },
                   weboUserDataConf: {
-                    enabled: true,
+                    enabled: false,
                     accountId: 12345, // recommended
                     setPrebidTargeting: true, // override param.setPrebidTargeting or default true
                     sendToBidders: ["smartadserver"], // specify the bidder to share data
@@ -187,14 +153,10 @@
         if (pbjs.initAdserverSet) return;
         pbjs.initAdserverSet = true;
         googletag.cmd.push(function () {
-          if (pbjs.libLoaded) {
-            pbjs.que.push(function () {
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();
-            });
-          } else {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
             googletag.pubads().refresh();
-          }
+          });
         });
       }
 

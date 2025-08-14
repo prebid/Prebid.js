@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { testPageURL, setupTest } = require('../../../helpers/testing-utils.js');
+const { testPageURL, setupTest } = require('../../../helpers/testing-utils');
 
 const TEST_PAGE_URL = testPageURL('instream.html?pbjs_debug=true');
 const ALERT_BOX_CSS_SELECTOR = 'div[id="event-window"] > p[id="statusText"]';

@@ -2,10 +2,10 @@ import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
 import {EVENTS} from 'src/constants.js';
 import {server} from '../../mocks/xhr.js';
-import {logError} from '../../../src/utils.js';
+import {logError} from '../../../src/utils';
 
-const utils = require('src/utils');
-const events = require('src/events');
+let utils = require('src/utils');
+let events = require('src/events');
 
 const SAMPLE_EVENTS = {
   AUCTION_END: {
@@ -526,7 +526,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
   let requests;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.sandbox.create();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
     config.setConfig({ pageUrl: 'https://www.config.domain.com/index.html' })
