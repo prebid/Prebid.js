@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/adgenerationBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {NATIVE} from 'src/mediaTypes.js';
-import prebid from '../../../package.json';
+import prebid from 'package.json';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
