@@ -320,7 +320,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
 
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
-  data.tmax = (bidderRequest.timeout == null) ? undefined : parseInt(bidderRequest.timeout);
+  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
