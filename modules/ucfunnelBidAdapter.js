@@ -299,7 +299,7 @@ function getRequestData(bid, bidderRequest) {
     }
   }
 
-  if (size !== undefined && size.length > 0 && size[0].length === 2) {
+  if (size?.length && size[0].length === 2) {
     bidData.w = size[0][0];
     bidData.h = size[0][1];
   }
