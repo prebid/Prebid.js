@@ -4,13 +4,13 @@
       "identifier": "utiqPass",
       "type": "web",
       "domains": ["*"],
-      "purposes": []
+      "purposes": [1]
     },
     {
       "identifier": "netid_utiq_adtechpass",
       "type": "web",
       "domains": ["*"],
-      "purposes": []
+      "purposes": [1]
     }
   ],
   "domains": [
