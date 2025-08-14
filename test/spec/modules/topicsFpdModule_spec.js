@@ -12,21 +12,20 @@ import {config} from 'src/config.js';
 import {deepClone, safeJSONParse} from '../../../src/utils.js';
 import {getCoreStorageManager} from 'src/storageManager.js';
 import * as activities from '../../../src/activities/rules.js';
-import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
-import {sandbox} from 'sinon';
 import {registerActivityControl} from '../../../src/activities/rules.js';
+import {ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
 
 describe('topics', () => {
-  let unregister, accessDeviceRule;
+  let unregister, enrichUfpdRule;
   before(() => {
-    unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => accessDeviceRule(params), 0)
+    unregister = registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => enrichUfpdRule(params), 0)
   });
   after(() => {
     unregister()
   });
 
   beforeEach(() => {
-    accessDeviceRule = () => ({allow: true});
+    enrichUfpdRule = () => ({allow: true});
     reset();
   });
 
@@ -305,7 +304,7 @@ describe('topics', () => {
     });
 
     it('does not load frames when accessDevice is not allowed', () => {
-      accessDeviceRule = ({component}) => {
+      enrichUfpdRule = ({component}) => {
         if (component === 'bidder.mockBidder') {
           return {allow: false}
         }
@@ -394,9 +393,7 @@ describe('topics', () => {
         });
 
         it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
-          sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
-            return !(activity === ACTIVITY_ENRICH_UFPD && params.component === 'bidder.pubmatic');
-          });
+          enrichUfpdRule = (params) => ({allow: params.component !== 'bidder.pubmatic'})
           expect(getCachedTopics()).to.eql([]);
         });
       });
