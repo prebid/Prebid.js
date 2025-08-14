@@ -80,7 +80,7 @@ export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMark
     body.style.display = 'block';
     sendMessage(MESSAGE_NATIVE, {
       action: ACTION_RESIZE,
-      height: body.offsetHeight,
+      height: body.offsetHeight || win.document.documentElement.scrollHeight,
       width: body.offsetWidth
     });
   }

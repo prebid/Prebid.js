@@ -212,11 +212,15 @@ export const spec = {
         slid: currentBidRequest.params.slid ? currentBidRequest.params.slid : 'Preroll_1',
         slau: currentBidRequest.params.slau ? currentBidRequest.params.slau : 'preroll',
       }
-      if (currentBidRequest.params.minD) {
-        slotParams.mind = currentBidRequest.params.minD;
+      const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {};
+      const mind = video.minduration || currentBidRequest.params.minD;
+      const maxd = video.maxduration || currentBidRequest.params.maxD;
+
+      if (mind) {
+        slotParams.mind = mind;
       }
-      if (currentBidRequest.params.maxD) {
-        slotParams.maxd = currentBidRequest.params.maxD
+      if (maxd) {
+        slotParams.maxd = maxd;
       }
       return slotParams
     }
