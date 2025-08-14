@@ -30,7 +30,8 @@
     "dist/src/prebid.js",
     "dist/src/prebid.public.js",
     "dist/src/public/**/*.js",
-    "dist/src/modules/**/*.js"
+    "dist/src/modules/**/*.js",
+    "dist/src/metadata/**/*.js"
   ],
   "browserslist": [
     "> 0.25%",
