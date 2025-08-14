@@ -289,7 +289,7 @@ function getRequestData(bid, bidderRequest) {
 
   if (storage.cookiesAreEnabled()) {
     let ucfUid = '';
-    if (storage.getCookie(COOKIE_NAME) !== undefined) {
+    if (storage.getCookie(COOKIE_NAME) !== null) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;
     } else {
