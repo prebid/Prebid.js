@@ -66,7 +66,7 @@ export const spec = {
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
-      if (bid.meta.advertiserDomains.length == 0) {
+      if (bid.meta.advertiserDomains.length === 0) {
         bid.meta.advertiserDomains.push(ADOMAIN);
       }
 

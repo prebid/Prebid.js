@@ -48,7 +48,7 @@ export const spec = {
     if (bannerParams) {
       const sizes = bannerParams.sizes;
 
-      if (!sizes || parseSizesInput(sizes).length == 0) {
+      if (!sizes || parseSizesInput(sizes).length === 0) {
         logError('mediaTypes.banner.sizes must be set for banner placement at the right format.');
         return false;
       }
@@ -207,7 +207,7 @@ export const spec = {
               nurl: bidResponse.nurl ? bidResponse.nurl : []
             };
 
-            if (bidResponse.type == VIDEO) {
+            if (bidResponse.type === VIDEO) {
               if (bidResponse.ad_url) {
                 bid.vastUrl = bidResponse.ad_url;
               } else {

@@ -195,7 +195,7 @@ function isOWPubmaticBid(adapterName) {
 }
 
 function getAdUnit(adUnits, adUnitId) {
-  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
+  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID === adUnitId) || (adUnit.code === adUnitId))[0];
 }
 
 function getTgId() {

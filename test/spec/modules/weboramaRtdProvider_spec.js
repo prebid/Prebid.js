@@ -661,7 +661,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder == 'appnexus'
+            return bid.bidder === 'appnexus'
           },
         };
 
@@ -755,7 +755,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   site: {
                     ext: {
@@ -787,7 +787,7 @@ describe('weboramaRtdProvider', function() {
             'appnexus': ['adunit1']
           },
           'callback': (bid, adUnitCode) => {
-            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
+            return bid.bidder === 'appnexus' && adUnitCode === 'adunit1';
           },
         };
 
@@ -1044,7 +1044,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-            return adUnitCode == 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 
@@ -1452,13 +1452,13 @@ describe('weboramaRtdProvider', function() {
               token: 'foo',
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
-                if (adUnitCode == 'adunit1') {
+                if (adUnitCode === 'adunit1') {
                   data['webo_foo'] = ['bar'];
                 }
                 return true;
               },
               sendToBidders: (bid, adUnitCode, data, meta) => {
-                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
+                if (bid.bidder === 'appnexus' && adUnitCode === 'adunit1') {
                   data['webo_bar'] = ['baz'];
                 }
                 return true;
@@ -1546,7 +1546,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.be.undefined;
         });
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
+          if (v === 'appnexus') {
             expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
               site: {
                 ext: {
@@ -1692,7 +1692,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder == 'appnexus'
+            return bid.bidder === 'appnexus'
           },
         };
 
@@ -1786,7 +1786,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   user: {
                     ext: {
@@ -1818,7 +1818,7 @@ describe('weboramaRtdProvider', function() {
             'appnexus': ['adunit1']
           },
           'callback': (bid, adUnitCode) => {
-            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
+            return bid.bidder === 'appnexus' && adUnitCode === 'adunit1';
           },
         };
 
@@ -1911,7 +1911,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   user: {
                     ext: {
@@ -2091,7 +2091,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-            return adUnitCode == 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 
@@ -2639,13 +2639,13 @@ describe('weboramaRtdProvider', function() {
               accoundId: 12345,
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
-                if (adUnitCode == 'adunit1') {
+                if (adUnitCode === 'adunit1') {
                   data['webo_foo'] = ['bar'];
                 }
                 return true;
               },
               sendToBidders: (bid, adUnitCode, data, meta) => {
-                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
+                if (bid.bidder === 'appnexus' && adUnitCode === 'adunit1') {
                   data['webo_bar'] = ['baz'];
                 }
                 return true;
@@ -2735,7 +2735,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.be.undefined;
         });
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
+          if (v === 'appnexus') {
             expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
               user: {
                 ext: {
@@ -2874,7 +2874,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder == 'appnexus'
+            return bid.bidder === 'appnexus'
           },
         };
 
@@ -2967,7 +2967,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   site: {
                     ext: {
@@ -3000,7 +3000,7 @@ describe('weboramaRtdProvider', function() {
             'appnexus': ['adunit1']
           },
           'callback': (bid, adUnitCode) => {
-            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
+            return bid.bidder === 'appnexus' && adUnitCode === 'adunit1';
           },
         };
 
@@ -3096,7 +3096,7 @@ describe('weboramaRtdProvider', function() {
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
 
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   site: {
                     ext: {
@@ -3272,7 +3272,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-            return adUnitCode == 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 
@@ -3828,13 +3828,13 @@ describe('weboramaRtdProvider', function() {
             sfbxLiteDataConf: {
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
-                if (adUnitCode == 'adunit1') {
+                if (adUnitCode === 'adunit1') {
                   data['lito_foo'] = ['bar'];
                 }
                 return true;
               },
               sendToBidders: (bid, adUnitCode, data, meta) => {
-                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
+                if (bid.bidder === 'appnexus' && adUnitCode === 'adunit1') {
                   data['lito_bar'] = ['baz'];
                 }
                 return true;
@@ -3924,7 +3924,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.be.undefined;
         });
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
+          if (v === 'appnexus') {
             expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
               site: {
                 ext: {

@@ -29,7 +29,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests = [], bidderRequest = {}) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const chtnwId = (storage.getCookie(COOKIE_NAME) != undefined) ? storage.getCookie(COOKIE_NAME) : generateUUID();
+    const chtnwId = storage.getCookie(COOKIE_NAME) ?? generateUUID();
     if (storage.cookiesAreEnabled()) {
       storage.setCookie(COOKIE_NAME, chtnwId);
     }

@@ -262,13 +262,13 @@ function getSpacesStruct(bids) {
 }
 
 function getFirstSizeVast(sizes) {
-  if (sizes == undefined || !Array.isArray(sizes)) {
+  if (sizes === undefined || !Array.isArray(sizes)) {
     return undefined;
   }
 
   const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
 
-  return (Array.isArray(size) && size.length == 2) ? size : undefined;
+  return (Array.isArray(size) && size.length === 2) ? size : undefined;
 }
 
 function cleanName(name) {
@@ -291,10 +291,10 @@ function getFloorStr(bid) {
 }
 
 function getSpaces(bidRequests, ml) {
-  const impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
+  const impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context === 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
   if (impType) {
-    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
+    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context === 'instream') : (bid.mediaTypes[VIDEO].context === 'outstream')));
   }
 
   const spacesStruct = getSpacesStruct(bidRequests);
