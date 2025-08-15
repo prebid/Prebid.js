@@ -83,6 +83,9 @@ export const spec = {
           sid: bidderRequest.ortb2.regs.gpp_sid
         });
       }
+      if (bidderRequest.ortb2?.user?.ext?.data?.im_segments) {
+        deepSetValue(data, 'params.kv.imsids', bidderRequest.ortb2.user.ext.data.im_segments);
+      }
       data.sizes = [];
       _each(request.sizes, (size) => {
         data.sizes.push({
