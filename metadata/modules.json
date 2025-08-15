@@ -2698,6 +2698,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "stellorMediaRtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "smootai",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -5150,6 +5164,13 @@
     },
     {
       "componentType": "userId",
+      "componentName": "adplusId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
       "componentName": "qid",
       "gvlid": 902,
       "disclosureURL": null,
@@ -5537,14 +5558,14 @@
       "componentType": "userId",
       "componentName": "utiqId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/utiqDeviceStorageDisclosure.json",
       "aliasOf": null
     },
     {
       "componentType": "userId",
       "componentName": "utiqMtpId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/utiqDeviceStorageDisclosure.json",
       "aliasOf": null
     },
     {
