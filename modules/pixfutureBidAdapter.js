@@ -1,16 +1,16 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {deepAccess, isArray, isNumber, isPlainObject} from '../src/utils.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {transformSizes} from '../libraries/sizeUtils/tranformSize.js';
-import {addUserId, hasUserInfo, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { deepAccess, isArray, isNumber, isPlainObject } from '../src/utils.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
+import { hasUserInfo, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 const SOURCE = 'pbjs';
-const storageManager = getStorageManager({bidderCode: 'pixfuture'});
+const storageManager = getStorageManager({ bidderCode: 'pixfuture' });
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 let pixID = '';
 const GVLID = 839;
@@ -31,7 +31,7 @@ export const spec = {
 
   isBidRequestValid(bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
-                (bid.params.pix_id && (typeof bid.params.pix_id === 'string')));
+      (bid.params.pix_id && (typeof bid.params.pix_id === 'string')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -50,7 +50,7 @@ export const spec = {
       const userObjBid = ((validBidRequests) || []).find(hasUserInfo);
       let userObj = {};
       if (config.getConfig('coppa') === true) {
-        userObj = {'coppa': true};
+        userObj = { 'coppa': true };
       }
 
       if (userObjBid) {
@@ -62,7 +62,7 @@ export const spec = {
               const segs = [];
               userObjBid.params.user[param].forEach(val => {
                 if (isNumber(val)) {
-                  segs.push({'id': val});
+                  segs.push({ 'id': val });
                 } else if (isPlainObject(val)) {
                   segs.push(val);
                 }
@@ -101,22 +101,13 @@ export const spec = {
         payload.referrer_detection = refererinfo;
       }
 
-      if (validBidRequests[0].userId) {
-        const eids = [];
+      if (validBidRequests[0].userIdAsEids && validBidRequests[0].userIdAsEids.length > 0) {
+        const userIdAsEids = validBidRequests[0].userIdAsEids;
 
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.criteoId`), 'criteo.com', null);
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.unifiedId`), 'thetradedesk.com', null);
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.id5Id`), 'id5.io', null);
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.sharedId`), 'thetradedesk.com', null);
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.identityLink`), 'liveramp.com', null);
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.liveIntentId`), 'liveintent.com', null);
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.fabrickId`), 'home.neustar', null);
-
-        if (eids.length) {
-          payload.eids = eids;
+        if (userIdAsEids.length) {
+          payload.userIdAsEids = userIdAsEids;
         }
       }
-
       if (tags[0].publisher_id) {
         payload.publisher_id = tags[0].publisher_id;
       }
@@ -124,18 +115,19 @@ export const spec = {
       const ret = {
         url: `${hostname}/pixservices`,
         method: 'POST',
-        options: {withCredentials: true},
+        options: { withCredentials: true },
         data: {
           v: 'v' + '$prebid.version$',
           pageUrl: referer,
-          bidId: bidRequest.bidId,
-          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-          auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.ortb2Imp?.ext?.tid,
-          adUnitCode: bidRequest.adUnitCode,
-          bidRequestCount: bidRequest.bidRequestCount,
-          sizes: bidRequest.sizes,
-          params: bidRequest.params,
+          bids: validBidRequests.map(bidRequest => ({
+            bidId: bidRequest.bidId,
+            auctionId: bidRequest.auctionId,
+            transactionId: bidRequest.ortb2Imp?.ext?.tid,
+            adUnitCode: bidRequest.adUnitCode,
+            bidRequestCount: bidRequest.bidRequestCount,
+            sizes: bidRequest.sizes,
+            params: bidRequest.params
+          })),
           pubext: payload
         }
       };
@@ -245,7 +237,7 @@ function bidToTag(bid) {
     tag.reserve = bidFloor;
   }
   if (bid.params.position) {
-    tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+    tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   } else {
     const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
     // only support unknown, atf, and btf values for position at this time
@@ -283,7 +275,7 @@ function bidToTag(bid) {
   }
 
   if (bid.renderer) {
-    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
+    tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
   }
 
   if (bid.params.frameworks && isArray(bid.params.frameworks)) {
