@@ -11,7 +11,8 @@ import {
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
-  syncDelay, COOKIE_SUFFIXES, HTML5_SUFFIXES,
+  COOKIE_SUFFIXES, HTML5_SUFFIXES,
+  syncDelay, adUnitEidsHook,
 } from 'modules/userId/index.js';
 import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG, getEids} from 'modules/userId/eids.js';
@@ -3092,6 +3093,92 @@ describe('User ID', function () {
 
         unregisterRule();
       });
+    })
+  });
+  describe('adUnitEidsHook', () => {
+    let next, auction, adUnits, ortb2Fragments;
+    beforeEach(() => {
+      next = sinon.stub();
+      adUnits = [
+        {
+          code: 'au1',
+          bids: [
+            {
+              bidder: 'bidderA'
+            },
+            {
+              bidder: 'bidderB'
+            }
+          ]
+        },
+        {
+          code: 'au2',
+          bids: [
+            {
+              bidder: 'bidderC'
+            }
+          ]
+        }
+      ]
+      ortb2Fragments = {}
+      auction = {
+        getAdUnits: () => adUnits,
+        getFPD: () => ortb2Fragments
+      }
+    });
+    it('should not set userIdAsEids when no eids are provided', () => {
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        expect(bid.userIdAsEids).to.not.exist;
+      })
+    });
+    it('should add global eids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['some-eid']
+          }
+        }
+      };
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        expect(bid.userIdAsEids).to.eql(['some-eid']);
+      })
+    })
+    it('should add bidder-specific eids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['global']
+          }
+        }
+      };
+      ortb2Fragments.bidder = {
+        bidderA: {
+          user: {
+            ext: {
+              eids: ['bidder']
+            }
+          }
+        }
+      }
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        const expected = bid.bidder === 'bidderA' ? ['global', 'bidder'] : ['global'];
+        expect(bid.userIdAsEids).to.eql(expected);
+      })
+    });
+    it('should add global eids to bidderless bids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['global']
+          }
+        }
+      }
+      delete adUnits[0].bids[0].bidder;
+      adUnitEidsHook(next, auction);
+      expect(adUnits[0].bids[0].userIdAsEids).to.eql(['global']);
     })
   });
 

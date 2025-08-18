@@ -2,11 +2,9 @@ import {getBidIdParameter, getValue} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
-const GVLID = 547;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {

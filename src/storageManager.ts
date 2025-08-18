@@ -39,13 +39,13 @@ export type StorageManager = {
 } & {
   [M in BrowserStorage as `${M}IsEnabled`]: AcceptsCallback<() => boolean>;
 } & {
-  // eslint-disable-next-line no-restricted-globals
+
   [M in BrowserStorage as `setDataIn${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.setItem>;
 } & {
-  // eslint-disable-next-line no-restricted-globals
+
   [M in BrowserStorage as `getDataFrom${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.getItem>;
 } & {
-  // eslint-disable-next-line no-restricted-globals
+
   [M in BrowserStorage as `removeDataFrom${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.removeItem>
 } & {
   setCookie: AcceptsCallback<(name: string, value: string, expires?: string, sameSite?: string, domain?: string) => void>;

@@ -1,4 +1,4 @@
-import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
+import {isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn} from './utils.js';
 import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
@@ -7,6 +7,8 @@ import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {Size} from "./types/common.d.ts";
 import type {AdUnitDefinition} from "./adUnits.ts";
+
+import {getGlobalVarName} from "./buildOptions.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -100,42 +102,6 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
 }
 
 /**
- * validateOrtbVideoFields mutates the `adUnit.mediaTypes.video` object by removing invalid ortb properties (default).
- * The onInvalidParam callback can be used to handle invalid properties differently.
- * Other properties are ignored and kept as is.
- *
- * @param {Object} adUnit - The adUnit object.
- * @param {Function=} onInvalidParam - The callback function to be called with key, value, and adUnit.
- * @returns {void}
- */
-export function validateOrtbVideoFields(adUnit, onInvalidParam?) {
-  const videoParams = adUnit?.mediaTypes?.video;
-
-  if (!isPlainObject(videoParams)) {
-    logWarn(`validateOrtbVideoFields: videoParams must be an object.`);
-    return;
-  }
-
-  if (videoParams != null) {
-    Object.entries(videoParams)
-      .forEach(([key, value]: any) => {
-        if (!ORTB_VIDEO_PARAMS.has(key)) {
-          return
-        }
-        const isValid = ORTB_VIDEO_PARAMS.get(key)(value);
-        if (!isValid) {
-          if (typeof onInvalidParam === 'function') {
-            onInvalidParam(key, value, adUnit);
-          } else {
-            delete videoParams[key];
-            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
-          }
-        }
-      });
-  }
-}
-
-/**
  * Validate that the assets required for video context are present on the bid
  */
 export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = {}): boolean {
@@ -169,8 +135,8 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling either prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
-        or local cache with $$PREBID_GLOBAL$$.setConfig({ cache: { useLocal: true }});
+        Try enabling either prebid cache with ${getGlobalVarName()}.setConfig({ cache: {url: "..."} });
+        or local cache with ${getGlobalVarName()}.setConfig({ cache: { useLocal: true }});
       `);
       return false;
     }

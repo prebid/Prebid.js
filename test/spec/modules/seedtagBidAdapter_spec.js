@@ -400,6 +400,30 @@ describe('Seedtag Adapter', function () {
         expect(bidRequests[0].bidFloor).to.be.equal(bidFloor)
         expect(bidRequests[1]).not.to.have.property('bidFloor')
       })
+
+      it('should not launch an exception when request a video with no playerSize', function () {
+        const validBidRequests = [
+          getSlotConfigs(
+            {
+              video: {
+                context: 'instream',
+                playerSize: [],
+              },
+              banner: {
+                sizes: [[300, 250], [300, 600]],
+              },
+            },
+            mandatoryVideoParams
+          ),
+        ];
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        const bidRequests = data.bidRequests;
+        const firstBidRequest = bidRequests[0];
+
+        expect(firstBidRequest).to.not.have.property('videoParams')
+      });
     });
 
     describe('COPPA param', function () {
