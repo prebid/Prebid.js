@@ -65,7 +65,7 @@
     "@wdio/mocha-framework": "^9.12.6",
     "@wdio/spec-reporter": "^8.29.0",
     "assert": "^2.0.0",
-    "babel-loader": "^8.0.5",
+    "babel-loader": "^8.4.1",
     "babel-plugin-istanbul": "^6.1.1",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
