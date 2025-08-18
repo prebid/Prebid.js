@@ -575,7 +575,7 @@ const getConnectionType = () => {
  */
 function optimizeImps(imps, bidderRequest) {
   const optimizedImpsByAdUnit = {};
-  
+
   bidderRequest.bids.forEach(bid => {
     const correspondingImp = imps.find(imp => imp.id === bid.bidId);
     if (!correspondingImp) return;
@@ -585,9 +585,9 @@ function optimizeImps(imps, bidderRequest) {
       optimizedImpsByAdUnit[adUnitCode] = deepClone(correspondingImp);
       return;
     }
-    
+
     const baseImp = optimizedImpsByAdUnit[adUnitCode];
-    const copyPropertytoPath = (propPath,propName, toMerge) => {
+    const copyPropertytoPath = (propPath, propName, toMerge) => {
       if (correspondingImp[propPath] && correspondingImp[propPath][propName]) {
         if (!baseImp[propPath]) baseImp[propPath] = {};
         if (toMerge) {
@@ -600,9 +600,9 @@ function optimizeImps(imps, bidderRequest) {
         }
       }
     };
-    copyPropertytoPath('ext','key_val', false);
-    copyPropertytoPath('ext','pmZoneId', false);
-    copyPropertytoPath('pmp','deals', true);
+    copyPropertytoPath('ext', 'key_val', false);
+    copyPropertytoPath('ext', 'pmZoneId', false);
+    copyPropertytoPath('pmp', 'deals', true);
   });
   return Object.values(optimizedImpsByAdUnit);
 }
@@ -833,7 +833,7 @@ export const spec = {
         allowedIabCategories = allowedIabCategories.concat(acat);
       }
     })
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+    const data = converter.toORTB({ validBidRequests, bidderRequest });
 
     const serverRequest = {
       method: 'POST',
