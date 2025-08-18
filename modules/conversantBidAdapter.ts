@@ -32,17 +32,32 @@ const ENV = {
   GVLID: 24
 } as const;
 
-// parameters for the conversant adapter
+/**
+ * Conversant/Epsilon bid adapter parameters
+ */
 type ConversantBidParams = {
+  /** Required. Site ID from Epsilon */
   site_id: string;
-  tag_id: string;
+  /** Optional. Identifies specific ad placement */
+  tag_id?: string;
+  /** Optional. Minimum bid floor in USD */
   bidfloor?: number;
+  /**
+   * Optional. If impression requires secure HTTPS URL creative assets and markup. 0 for non-secure, 1 for secure.
+   * Default is non-secure
+   */
   secure?: boolean;
+  /** Optional. Override the destination URL the request is sent to */
   white_label_url?: string;
+  /** Optional. Ad position on the page (1-7, where 1 is above the fold) */
   position?: number;
+  /** Optional. Array of supported video MIME types (e.g., ['video/mp4', 'video/webm']) */
   mimes?: string[];
+  /** Optional. Maximum video duration in seconds */
   maxduration?: number;
+  /** Optional. Array of supported video protocols (1-10) */
   protocols?: number[];
+  /** Optional. Array of supported video API frameworks (1-6) */
   api?: number[];
 }
 
