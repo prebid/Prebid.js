@@ -1,0 +1,14 @@
+[
+    "consentManagementGpp",
+    "consentManagementTcf",
+    "gppControl_usnat",
+    "gppControl_usstates",
+    "gptPreAuction",
+    "storageControl",
+    "tcfControl",
+    "mobianRtdProvider",
+    "greenbidsRtdProvider",
+    "hadronRtdProvider",
+    "nodalsAiRtdProvider",
+    "scope3RtdProvider"
+]

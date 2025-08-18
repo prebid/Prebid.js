@@ -1,5 +1,6 @@
 /**
  * This module adds the Scope3 RTD provider to the real time data module
+ * Enables Scope3's agentic execution engine for real-time media buying decisions
  * The {@link module:modules/realTimeData} module is required
  * @module modules/scope3RtdProvider
  * @requires module:modules/realTimeData
@@ -7,7 +8,7 @@
 
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { logMessage, logError, logWarn, mergeDeep, isPlainObject } from '../src/utils.js';
+import { logMessage, logError, logWarn, mergeDeep, isPlainObject, getBidderCodes } from '../src/utils.js';
 import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /**
@@ -17,9 +18,8 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 const MODULE_NAME = 'scope3';
 const LOG_PREFIX = 'Scope3 RTD:';
 
-// Endpoints - will transition to the prebid endpoint when available
-const SCOPE3_ENDPOINT = 'https://rtdp.scope3.com/amazonaps/rtii';
-// const SCOPE3_PREBID_ENDPOINT = 'https://rtdp.scope3.com/prebid'; // Future endpoint - will be used when available
+// Endpoints
+const SCOPE3_ENDPOINT = 'https://prebid.scope3.com/prebid';
 
 // Module configuration
 let moduleConfig = {};
@@ -41,24 +41,21 @@ function init(config, userConsent) {
   }
 
   // Validate required parameters
-  if (!config.params.publisherId) {
-    logError(`${LOG_PREFIX} Missing required publisherId parameter`);
+  if (!config.params.orgId) {
+    logError(`${LOG_PREFIX} Missing required orgId parameter`);
     return false;
   }
 
-  if (!config.params.apiKey && !config.params.endpoint) {
-    logWarn(`${LOG_PREFIX} No API key provided. Using default endpoint without authentication.`);
-  }
-
   moduleConfig = {
-    publisherId: config.params.publisherId, // Required publisher identifier
-    apiKey: config.params.apiKey,
+    orgId: config.params.orgId, // Required organization identifier
     endpoint: config.params.endpoint || SCOPE3_ENDPOINT,
     timeout: config.params.timeout || 1000,
     bidders: config.params.bidders || [], // Empty array means all bidders
     publisherTargeting: config.params.publisherTargeting !== false, // Default true
     advertiserTargeting: config.params.advertiserTargeting !== false, // Default true
-    keyPrefix: config.params.keyPrefix || 'scope3',
+    includeKey: config.params.includeKey || 's3i',  // Key for include segments
+    excludeKey: config.params.excludeKey || 's3x',  // Key for exclude segments
+    macroKey: config.params.macroKey || 's3m',      // Key for macro blob
     cacheEnabled: config.params.cacheEnabled !== false, // Default true
     debugMode: config.params.debugMode || false
   };
@@ -71,7 +68,7 @@ function init(config, userConsent) {
 }
 
 /**
- * Get bid request data and enrich with Scope3 carbon footprint data
+ * Get bid request data and send to Scope3 agents for real-time decisioning
  * @param {Object} reqBidsConfigObj - Bid request configuration object
  * @param {Function} callback - Callback to be called when processing is complete
  * @param {Object} config - Module configuration
@@ -89,8 +86,8 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     const cachedData = getCachedData(cacheKey);
 
     if (cachedData) {
-      logMessage(`${LOG_PREFIX} Using cached Scope3 data`);
-      enrichBidRequest(reqBidsConfigObj, cachedData);
+      logMessage(`${LOG_PREFIX} Using cached agent decisions`);
+      applyAgentDecisions(reqBidsConfigObj, cachedData);
       callback();
       return;
     }
@@ -102,23 +99,23 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
       logMessage(`${LOG_PREFIX} Sending request to Scope3:`, payload);
     }
 
-    // Make the API request
+    // Request agent decisions
     makeApiRequest(payload, (response) => {
       try {
-        const scope3Data = parseResponse(response);
+        const agentDecisions = parseResponse(response);
 
-        if (scope3Data) {
+        if (agentDecisions) {
           // Cache the response
           if (moduleConfig.cacheEnabled) {
-            setCachedData(cacheKey, scope3Data);
+            setCachedData(cacheKey, agentDecisions);
           }
 
-          // Enrich the bid request with Scope3 data
-          enrichBidRequest(reqBidsConfigObj, scope3Data);
+          // Apply agent decisions to bid request
+          applyAgentDecisions(reqBidsConfigObj, agentDecisions);
 
           // Set publisher targeting if enabled
           if (moduleConfig.publisherTargeting) {
-            setPublisherTargeting(scope3Data);
+            setPublisherTargeting(agentDecisions);
           }
         }
       } catch (error) {
@@ -127,8 +124,8 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
       callback();
     }, () => {
-      // On error or timeout, continue without enrichment
-      logWarn(`${LOG_PREFIX} Request failed or timed out, continuing without enrichment`);
+      // On error or timeout, continue without agent decisions
+      logWarn(`${LOG_PREFIX} Agent request failed or timed out, continuing without decisions`);
       callback();
     });
   } catch (error) {
@@ -138,45 +135,59 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 }
 
 /**
- * Extract OpenRTB 2.x data from the bid request
+ * Extract complete OpenRTB 2.x data from the bid request
  * @param {Object} reqBidsConfigObj - Bid request configuration
- * @returns {Object} - Extracted OpenRTB data
+ * @returns {Object} - Complete OpenRTB data
  */
 function extractOrtb2Data(reqBidsConfigObj) {
+  // Deep copy the complete OpenRTB object from global fragments to preserve all data
   const ortb2 = reqBidsConfigObj.ortb2Fragments?.global || {};
 
-  return {
-    site: ortb2.site || {},
-    device: ortb2.device || {},
-    user: ortb2.user || {},
-    imp: reqBidsConfigObj.adUnits?.map(adUnit => ({
-      id: adUnit.code,
-      mediaTypes: adUnit.mediaTypes,
-      bidders: adUnit.bids?.map(bid => bid.bidder) || []
-    })) || [],
-    ext: {
-      prebid: {
-        version: '$prebid.version$'
-      }
-    }
-  };
+  // Deep clone to avoid modifying the original
+  const ortb2Request = JSON.parse(JSON.stringify(ortb2));
+
+  // Build impression array with full ad unit data
+  ortb2Request.imp = reqBidsConfigObj.adUnits?.map(adUnit => ({
+    id: adUnit.code,
+    mediaTypes: adUnit.mediaTypes,
+    bidfloor: adUnit.bidfloor,
+    bidfloorcur: adUnit.bidfloorcur,
+    ortb2Imp: adUnit.ortb2Imp || {},
+    bidders: adUnit.bids?.map(bid => bid.bidder) || []
+  })) || [];
+
+  // Ensure we have ext.prebid.version
+  if (!ortb2Request.ext) {
+    ortb2Request.ext = {};
+  }
+  if (!ortb2Request.ext.prebid) {
+    ortb2Request.ext.prebid = {};
+  }
+  if (!ortb2Request.ext.prebid.version) {
+    ortb2Request.ext.prebid.version = '$prebid.version$';
+  }
+
+  return ortb2Request;
 }
 
 /**
  * Prepare the payload for the Scope3 API
- * @param {Object} ortb2Data - OpenRTB data
+ * @param {Object} ortb2Data - Complete OpenRTB data
  * @param {Object} reqBidsConfigObj - Bid request configuration
  * @returns {Object} - Prepared payload
  */
 function preparePayload(ortb2Data, reqBidsConfigObj) {
+  // Get the list of bidders - use configured list or default to all bidders from ad units
+  let bidders = moduleConfig.bidders;
+  if (!bidders || bidders.length === 0) {
+    // Get all unique bidder codes from the ad units
+    bidders = getBidderCodes(reqBidsConfigObj.adUnits);
+  }
+
   return {
-    publisherId: moduleConfig.publisherId, // Include publisher identifier
-    ortb2: ortb2Data,
-    adUnits: reqBidsConfigObj.adUnits?.map(adUnit => ({
-      code: adUnit.code,
-      mediaTypes: adUnit.mediaTypes,
-      bidders: adUnit.bids?.map(bid => bid.bidder) || []
-    })) || [],
+    orgId: moduleConfig.orgId,
+    ortb2: ortb2Data,  // Send complete OpenRTB request
+    bidders: bidders,  // List of bidders to get data for
     timestamp: Date.now(),
     source: 'prebid-rtd'
   };
@@ -191,31 +202,22 @@ function preparePayload(ortb2Data, reqBidsConfigObj) {
 function makeApiRequest(payload, onSuccess, onError) {
   const ajax = ajaxBuilder(moduleConfig.timeout);
 
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-
-  // Add authentication header if API key is provided
-  if (moduleConfig.apiKey) {
-    headers['Authorization'] = `Bearer ${moduleConfig.apiKey}`;
-  }
-
   ajax(
     moduleConfig.endpoint,
     {
       success: (response, xhr) => {
-        logMessage(`${LOG_PREFIX} Received response from Scope3`);
+        logMessage(`${LOG_PREFIX} Received agent decisions from Scope3`);
         onSuccess(response);
       },
       error: (error, xhr) => {
-        logError(`${LOG_PREFIX} API request failed:`, error);
+        logError(`${LOG_PREFIX} Agent request failed:`, error);
         onError(error);
       }
     },
     JSON.stringify(payload),
     {
       method: 'POST',
-      customHeaders: headers,
+      contentType: 'application/json',
       withCredentials: false
     }
   );
@@ -237,20 +239,10 @@ function parseResponse(response) {
 
     // Expected response format:
     // {
-    //   scores: {
-    //     overall: 0.5,
-    //     byBidder: {
-    //       'bidderA': 0.3,
-    //       'bidderB': 0.7
-    //     }
-    //   },
-    //   recommendations: {
-    //     'bidderA': { carbonScore: 0.3, recommended: true },
-    //     'bidderB': { carbonScore: 0.7, recommended: false }
-    //   },
-    //   metadata: {
-    //     calculationId: 'xxx',
-    //     timestamp: 123456789
+    //   aee_signals: {
+    //     include: ["seg1", "seg2"],
+    //     exclude: ["seg3", "seg4"],
+    //     macro: "blob"
     //   }
     // }
 
@@ -262,21 +254,30 @@ function parseResponse(response) {
 }
 
 /**
- * Enrich bid request with Scope3 data
+ * Apply AEE signals to bid request configuration
  * @param {Object} reqBidsConfigObj - Bid request configuration
- * @param {Object} scope3Data - Scope3 response data
+ * @param {Object} aeeResponse - AEE signals response
  */
-function enrichBidRequest(reqBidsConfigObj, scope3Data) {
-  // Add to global ortb2 if advertiser targeting is enabled
+function applyAgentDecisions(reqBidsConfigObj, aeeResponse) {
+  // Check if we have aee_signals in the response
+  const aeeSignals = aeeResponse.aee_signals || aeeResponse;
+
+  if (!aeeSignals) {
+    logWarn(`${LOG_PREFIX} No AEE signals in response`);
+    return;
+  }
+
+  // Add global AEE signals if advertiser targeting is enabled
   if (moduleConfig.advertiserTargeting) {
+    // Add global signals that apply to all bidders
     const globalData = {
       site: {
         ext: {
           data: {
-            scope3: {
-              carbonScore: scope3Data.scores?.overall,
-              calculationId: scope3Data.metadata?.calculationId,
-              timestamp: scope3Data.metadata?.timestamp
+            scope3_aee: {
+              include: aeeSignals.include || [],
+              exclude: aeeSignals.exclude || [],
+              macro: aeeSignals.macro || ''
             }
           }
         }
@@ -284,105 +285,88 @@ function enrichBidRequest(reqBidsConfigObj, scope3Data) {
     };
 
     mergeDeep(reqBidsConfigObj.ortb2Fragments.global, globalData);
-  }
 
-  // Add bidder-specific data if available
-  if (scope3Data.scores?.byBidder && moduleConfig.advertiserTargeting) {
-    const bidderData = {};
+    // Process bidder-specific signals if available
+    if (aeeSignals.bidders) {
+      const bidderFragments = {};
 
-    Object.entries(scope3Data.scores.byBidder).forEach(([bidder, score]) => {
-      // Only add data for configured bidders (or all if none configured)
-      if (moduleConfig.bidders.length === 0 || moduleConfig.bidders.includes(bidder)) {
-        bidderData[bidder] = {
-          site: {
-            ext: {
-              data: {
-                scope3: {
-                  carbonScore: score,
-                  recommended: scope3Data.recommendations?.[bidder]?.recommended,
-                  calculationId: scope3Data.metadata?.calculationId
+      Object.entries(aeeSignals.bidders).forEach(([bidderCode, bidderData]) => {
+        // Only process if bidder is in our configured list (or list is empty)
+        if (moduleConfig.bidders.length === 0 || moduleConfig.bidders.includes(bidderCode)) {
+          // Add bidder-specific segments using standard OpenRTB user.data format
+          bidderFragments[bidderCode] = {
+            user: {
+              data: [{
+                name: 'scope3.com',
+                ext: { segtax: 4 },  // IAB Audience Taxonomy
+                segment: (bidderData.segments || []).map(seg => ({ id: seg }))
+              }]
+            },
+            site: {
+              ext: {
+                data: {
+                  scope3_bidder: {
+                    segments: bidderData.segments || [],
+                    deals: bidderData.deals || []
+                  }
                 }
               }
             }
-          }
-        };
-      }
-    });
+          };
 
-    if (Object.keys(bidderData).length > 0) {
-      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, bidderData);
+          // Also add deal IDs to each ad unit for this bidder
+          if (bidderData.deals && bidderData.deals.length > 0) {
+            reqBidsConfigObj.adUnits?.forEach(adUnit => {
+              // Find bids for this bidder in the ad unit
+              const bidderBids = adUnit.bids?.filter(bid => bid.bidder === bidderCode);
+              if (bidderBids && bidderBids.length > 0) {
+                // Add deals to imp-level data for this bidder
+                adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+                adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+                adUnit.ortb2Imp.ext[bidderCode] = adUnit.ortb2Imp.ext[bidderCode] || {};
+                adUnit.ortb2Imp.ext[bidderCode].deals = bidderData.deals;
+              }
+            });
+          }
+        }
+      });
+
+      if (Object.keys(bidderFragments).length > 0) {
+        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, bidderFragments);
+      }
     }
   }
 
-  // Add data to individual ad units if needed
-  if (scope3Data.adUnitScores) {
-    reqBidsConfigObj.adUnits?.forEach(adUnit => {
-      const adUnitScore = scope3Data.adUnitScores[adUnit.code];
-      if (adUnitScore) {
-        adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-        mergeDeep(adUnit.ortb2Imp, {
-          ext: {
-            data: {
-              scope3: {
-                carbonScore: adUnitScore,
-                calculationId: scope3Data.metadata?.calculationId
-              }
-            }
-          }
-        });
-      }
-    });
-  }
-
-  logMessage(`${LOG_PREFIX} Bid request enriched with Scope3 data`);
+  logMessage(`${LOG_PREFIX} AEE signals applied to bid request`);
 }
 
 /**
- * Set publisher targeting key-values for GAM
- * @param {Object} scope3Data - Scope3 response data
+ * Set publisher targeting key-values for GAM based on AEE signals
+ * @param {Object} aeeResponse - AEE signals response
  */
-function setPublisherTargeting(scope3Data) {
-  if (!scope3Data || !scope3Data.scores) {
+function setPublisherTargeting(aeeResponse) {
+  const aeeSignals = aeeResponse.aee_signals || aeeResponse;
+
+  if (!aeeSignals) {
     return;
   }
 
-  const prefix = moduleConfig.keyPrefix;
-
-  // Set overall carbon score
-  if (scope3Data.scores.overall !== undefined) {
-    const score = Math.round(scope3Data.scores.overall * 100);
-    setKeyValue(`${prefix}_score`, score.toString());
+  // Set include segments with configured key
+  if (aeeSignals.include && aeeSignals.include.length > 0) {
+    setKeyValue(moduleConfig.includeKey, aeeSignals.include);
   }
 
-  // Set carbon tier (low/medium/high)
-  if (scope3Data.scores.overall !== undefined) {
-    const tier = getCarbonTier(scope3Data.scores.overall);
-    setKeyValue(`${prefix}_tier`, tier);
+  // Set exclude segments with configured key
+  if (aeeSignals.exclude && aeeSignals.exclude.length > 0) {
+    setKeyValue(moduleConfig.excludeKey, aeeSignals.exclude);
   }
 
-  // Set recommended bidders list if available
-  if (scope3Data.recommendations) {
-    const recommendedBidders = Object.entries(scope3Data.recommendations)
-      .filter(([_, data]) => data.recommended)
-      .map(([bidder, _]) => bidder);
-
-    if (recommendedBidders.length > 0) {
-      setKeyValue(`${prefix}_rec`, recommendedBidders);
-    }
+  // Set macro blob with configured key
+  if (aeeSignals.macro) {
+    setKeyValue(moduleConfig.macroKey, aeeSignals.macro);
   }
 
-  logMessage(`${LOG_PREFIX} Publisher targeting set`);
-}
-
-/**
- * Determine carbon tier based on score
- * @param {number} score - Carbon score (0-1)
- * @returns {string} - Carbon tier
- */
-function getCarbonTier(score) {
-  if (score < 0.33) return 'low';
-  if (score < 0.66) return 'medium';
-  return 'high';
+  logMessage(`${LOG_PREFIX} Publisher targeting set with AEE signals`);
 }
 
 /**
@@ -391,11 +375,19 @@ function getCarbonTier(score) {
  * @returns {string} - Cache key
  */
 function generateCacheKey(ortb2Data) {
-  // Create a simple hash of the relevant data
+  // Create a cache key from relevant OpenRTB fields
   const keyData = {
     site: ortb2Data.site?.page || ortb2Data.site?.domain,
-    device: ortb2Data.device?.ua,
-    impCount: ortb2Data.imp?.length
+    device: {
+      ua: ortb2Data.device?.ua,
+      geo: ortb2Data.device?.geo?.country
+    },
+    user: {
+      id: ortb2Data.user?.id,
+      eids: ortb2Data.user?.eids?.length || 0
+    },
+    impCount: ortb2Data.imp?.length,
+    imp: ortb2Data.imp?.map(i => i.id).join(',')
   };
   return JSON.stringify(keyData);
 }

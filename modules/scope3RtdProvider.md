@@ -2,16 +2,25 @@
 
 ## Overview
 
-The Scope3 RTD module provides carbon footprint scoring and sustainability metrics for programmatic advertising. It analyzes bid requests in real-time and enriches them with environmental impact data, helping publishers and advertisers make more sustainable advertising decisions.
+The Scope3 RTD module enables real-time agentic execution for programmatic advertising. It connects Prebid.js with Scope3's Agentic Execution Engine (AEE) that analyzes complete OpenRTB bid requests and returns intelligent signals for optimizing media buying decisions.
+
+### What It Does
+
+This module:
+1. Captures the **complete OpenRTB request** including all user IDs, geo data, device info, and site context
+2. Sends it to Scope3's AEE for real-time analysis
+3. Receives back targeting signals that indicate which segments to include/exclude
+4. Applies these signals as targeting keys for the ad server
+
+The AEE operates on the full context of each bid opportunity to make intelligent decisions about audience targeting and optimization.
 
 ### Features
 
-- **Carbon Footprint Scoring**: Provides carbon scores for overall auctions and individual bidders
-- **Bidder Recommendations**: Identifies environmentally-friendly bidders based on carbon emissions
-- **Publisher Targeting**: Sets key-value pairs for GAM targeting based on carbon scores
-- **Advertiser Data**: Enriches OpenRTB bid requests with sustainability metrics
-- **Intelligent Caching**: Reduces API calls by caching responses for similar requests
-- **Flexible Configuration**: Supports various targeting and filtering options
+- **Complete OpenRTB Capture**: Sends full OpenRTB 2.x specification data including all extensions
+- **AEE Signal Integration**: Receives include/exclude segments and macro data
+- **Configurable Targeting Keys**: Customize the ad server keys for each signal type
+- **Intelligent Caching**: Reduces latency by caching responses for similar contexts
+- **Privacy Compliant**: Works with all consent frameworks and user IDs
 
 ## Configuration
 
@@ -24,16 +33,21 @@ pbjs.setConfig({
     dataProviders: [{
       name: 'scope3',
       params: {
-        publisherId: 'YOUR_PUBLISHER_ID',  // Required - your Scope3 publisher identifier
-        apiKey: 'YOUR_API_KEY',  // Required for authentication (temporary)
-        endpoint: 'https://rtdp.scope3.com/prebid',  // Optional, defaults to production endpoint
-        timeout: 1000,  // Optional, milliseconds (default: 1000)
-        publisherTargeting: true,  // Optional, enable GAM targeting (default: true)
-        advertiserTargeting: true,  // Optional, enrich bid requests (default: true)
-        keyPrefix: 'scope3',  // Optional, prefix for targeting keys (default: 'scope3')
-        bidders: [],  // Optional, list of bidders to enrich (empty = all bidders)
-        cacheEnabled: true,  // Optional, enable response caching (default: true)
-        debugMode: false  // Optional, enable debug logging (default: false)
+        orgId: 'YOUR_ORG_ID',  // Required - your Scope3 organization identifier
+        
+        // Optional - customize targeting keys (defaults shown)
+        includeKey: 's3i',      // Key for include segments
+        excludeKey: 's3x',      // Key for exclude segments  
+        macroKey: 's3m',        // Key for macro blob
+        
+        // Optional - other settings
+        endpoint: 'https://prebid.scope3.com/prebid',  // API endpoint
+        timeout: 1000,          // Milliseconds (default: 1000)
+        publisherTargeting: true,   // Set GAM targeting keys (default: true)
+        advertiserTargeting: true,  // Enrich bid requests (default: true)
+        bidders: [],            // Specific bidders to get data for (empty = all bidders in auction)
+        cacheEnabled: true,     // Enable response caching (default: true)
+        debugMode: false        // Enable debug logging (default: false)
       }
     }]
   }
@@ -42,23 +56,24 @@ pbjs.setConfig({
 
 ### Advanced Configuration Examples
 
-#### Specific Bidders Only
+#### Custom Targeting Keys
+Use your own naming convention for targeting keys:
 ```javascript
 params: {
-  publisherId: 'YOUR_PUBLISHER_ID',
-  apiKey: 'YOUR_API_KEY',
-  bidders: ['rubicon', 'appnexus', 'amazon'],  // Only enrich these bidders
-  advertiserTargeting: true,
-  publisherTargeting: false  // Disable GAM targeting
+  orgId: 'YOUR_ORG_ID',
+  includeKey: 'aee_include',
+  excludeKey: 'aee_exclude',
+  macroKey: 'aee_data'
 }
 ```
 
-#### Custom Targeting Keys
+#### Specific Bidders Only
+Apply AEE signals only to certain bidders:
 ```javascript
 params: {
-  publisherId: 'YOUR_PUBLISHER_ID',
-  apiKey: 'YOUR_API_KEY',
-  keyPrefix: 'carbon',  // Use 'carbon_score', 'carbon_tier', etc.
+  orgId: 'YOUR_ORG_ID',
+  bidders: ['rubicon', 'appnexus', 'amazon'],
+  advertiserTargeting: true,
   publisherTargeting: true
 }
 ```
@@ -66,109 +81,114 @@ params: {
 #### Development/Testing
 ```javascript
 params: {
-  publisherId: 'YOUR_PUBLISHER_ID',
-  apiKey: 'YOUR_API_KEY',
-  endpoint: 'https://staging.rtdp.scope3.com/prebid',
+  orgId: 'YOUR_ORG_ID',
+  endpoint: 'https://staging.prebid.scope3.com/prebid',
   timeout: 2000,
-  debugMode: true,  // Enable verbose logging
-  cacheEnabled: false  // Disable caching for testing
+  debugMode: true,
+  cacheEnabled: false
 }
 ```
 
 ## Data Flow
 
-### 1. Request Phase
-The module extracts OpenRTB 2.x data from the bid request including:
-- Site information (domain, page URL)
-- Device data
-- User information (if available)
-- Ad unit configurations
-- Bidder list
+### 1. Complete OpenRTB Capture
+The module captures ALL available OpenRTB data:
+- **Site**: page URL, domain, referrer, keywords, content, categories
+- **Device**: user agent, geo location, IP, device type, screen size
+- **User**: ID, buyer UIDs, year of birth, gender, keywords, data segments, **all extended IDs (eids)**
+- **Impressions**: ad unit details, media types, floor prices, custom data
+- **Regulations**: GDPR, COPPA, consent strings
+- **App**: if in-app, all app details
 
-### 2. API Communication
-Sends a POST request to the Scope3 API with:
+### 2. Request to AEE
+Sends the complete OpenRTB request with list of bidders:
 ```json
 {
-  "publisherId": "YOUR_PUBLISHER_ID",
+  "orgId": "YOUR_ORG_ID",
   "ortb2": {
-    "site": { /* site data */ },
-    "device": { /* device data */ },
-    "user": { /* user data */ },
-    "imp": [ /* impressions */ ]
+    "site": { 
+      "page": "https://example.com/page",
+      "domain": "example.com",
+      "cat": ["IAB1-1"],
+      "keywords": "news,sports"
+    },
+    "device": { 
+      "ua": "Mozilla/5.0...",
+      "geo": {
+        "country": "USA",
+        "region": "CA",
+        "city": "San Francisco"
+      },
+      "ip": "192.0.2.1"
+    },
+    "user": {
+      "id": "user123",
+      "eids": [
+        {
+          "source": "liveramp.com",
+          "uids": [{"id": "XY123456"}]
+        },
+        {
+          "source": "id5-sync.com", 
+          "uids": [{"id": "ID5*abc"}]
+        }
+      ],
+      "data": [...]
+    },
+    "imp": [...],
+    "regs": { "gdpr": 1, "us_privacy": "1YNN" }
   },
-  "adUnits": [ /* ad unit details */ ],
+  "bidders": ["rubicon", "appnexus", "amazon", "pubmatic"],
   "timestamp": 1234567890,
   "source": "prebid-rtd"
 }
 ```
 
-### 3. Response Processing
-Receives carbon scoring data:
+### 3. AEE Response
+Receives targeting signals with bidder-specific segments and deals:
 ```json
 {
-  "scores": {
-    "overall": 0.5,
-    "byBidder": {
-      "bidderA": 0.3,
-      "bidderB": 0.7
-    }
-  },
-  "recommendations": {
-    "bidderA": { "carbonScore": 0.3, "recommended": true },
-    "bidderB": { "carbonScore": 0.7, "recommended": false }
-  },
-  "adUnitScores": {
-    "ad-unit-1": 0.4
-  },
-  "metadata": {
-    "calculationId": "calc-123",
-    "timestamp": 1234567890
-  }
-}
-```
-
-### 4. Data Enrichment
-
-#### Publisher Targeting (GAM)
-Sets the following key-value pairs:
-- `scope3_score`: Carbon score as percentage (0-100)
-- `scope3_tier`: Carbon tier classification (`low`, `medium`, `high`)
-- `scope3_rec`: Array of recommended bidders
-
-#### Advertiser Targeting (OpenRTB)
-Enriches bid requests with sustainability data:
-
-**Global ORTB2:**
-```javascript
-ortb2: {
-  site: {
-    ext: {
-      data: {
-        scope3: {
-          carbonScore: 0.5,
-          calculationId: "calc-123",
-          timestamp: 1234567890
-        }
+  "aee_signals": {
+    "include": ["sports_fan", "auto_intender", "premium_user"],
+    "exclude": ["competitor_exposed", "frequency_cap_reached"],
+    "macro": "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ==",
+    "bidders": {
+      "rubicon": {
+        "segments": ["rub_luxury_auto", "rub_sports_fan"],
+        "deals": ["RUBICON_DEAL_123", "RUBICON_DEAL_456"]
+      },
+      "appnexus": {
+        "segments": ["apn_high_value", "apn_auto_intent"],
+        "deals": ["APX_PREMIUM_DEAL"]
+      },
+      "amazon": {
+        "segments": ["amz_prime_member"],
+        "deals": []
       }
     }
   }
 }
 ```
 
-**Bidder-specific ORTB2:**
+### 4. Signal Application
+
+#### Publisher Targeting (GAM)
+Sets the configured targeting keys:
+- `s3i` (or your includeKey): ["sports_fan", "auto_intender", "premium_user"]
+- `s3x` (or your excludeKey): ["competitor_exposed", "frequency_cap_reached"]
+- `s3m` (or your macroKey): "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
+
+#### Advertiser Data (OpenRTB)
+Enriches bid requests with AEE signals:
 ```javascript
-ortb2Fragments: {
-  bidder: {
-    bidderA: {
-      site: {
-        ext: {
-          data: {
-            scope3: {
-              carbonScore: 0.3,
-              recommended: true,
-              calculationId: "calc-123"
-            }
-          }
+ortb2: {
+  site: {
+    ext: {
+      data: {
+        scope3_aee: {
+          include: ["sports_fan", "auto_intender", "premium_user"],
+          exclude: ["competitor_exposed", "frequency_cap_reached"],
+          macro: "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
         }
       }
     }
@@ -178,46 +198,66 @@ ortb2Fragments: {
 
 ## Integration Examples
 
-### Google Ad Manager Line Item Targeting
+### Google Ad Manager Line Items
 
-Create line items targeting based on carbon scores:
+Create targeted line items using the AEE signals:
 
 ```
-Low Carbon Tier:
-scope3_tier = low
+Target Sports Fans:
+s3i contains "sports_fan"
 
-Medium Carbon Tier:
-scope3_tier = medium
+Exclude Frequency Capped Users:
+s3x does not contain "frequency_cap_reached"
 
-High Carbon Tier:
-scope3_tier = high
+Target Auto Intenders without Competitor Exposure:
+s3i contains "auto_intender" AND s3x does not contain "competitor_exposed"
 
-Specific Score Range:
-scope3_score >= 0 AND scope3_score <= 30
-
-Recommended Bidders Only:
-scope3_rec contains "rubicon" OR scope3_rec contains "appnexus"
+High Value Users (using macro):
+s3m contains "high_value"
 ```
 
-### Bidder Integration
+### Custom Key Configuration
+If you use custom keys:
+```javascript
+// Configuration
+params: {
+  orgId: 'YOUR_ORG_ID',
+  includeKey: 'targeting',
+  excludeKey: 'blocking',
+  macroKey: 'context'
+}
 
-Bidders can access Scope3 data in their adapters:
+// GAM Line Items would use:
+targeting contains "sports_fan"
+blocking does not contain "frequency_cap_reached"
+context contains "high_value"
+```
+
+### Bidder Adapter Integration
+
+Bidders can access AEE signals in their adapters:
 
 ```javascript
-// In a bid adapter
 buildRequests: function(validBidRequests, bidderRequest) {
-  const scope3Data = bidderRequest.ortb2?.site?.ext?.data?.scope3;
+  const aeeSignals = bidderRequest.ortb2?.site?.ext?.data?.scope3_aee;
   
-  if (scope3Data) {
-    // Use carbon score for bid adjustments
-    const carbonScore = scope3Data.carbonScore;
-    const isRecommended = scope3Data.recommended;
+  if (aeeSignals) {
+    // Use include segments for targeting
+    payload.targeting_segments = aeeSignals.include;
     
-    // Include in bid request to SSP
-    payload.sustainability = {
-      carbonScore: carbonScore,
-      calculationId: scope3Data.calculationId
-    };
+    // Respect exclude segments
+    payload.exclude_segments = aeeSignals.exclude;
+    
+    // Parse macro data if needed
+    if (aeeSignals.macro) {
+      try {
+        const macroData = JSON.parse(atob(aeeSignals.macro));
+        payload.context_data = macroData;
+      } catch (e) {
+        // Handle as string if not base64 JSON
+        payload.context_blob = aeeSignals.macro;
+      }
+    }
   }
 }
 ```
@@ -226,110 +266,93 @@ buildRequests: function(validBidRequests, bidderRequest) {
 
 ### Caching
 - Responses are cached for 30 seconds by default
-- Cache key is based on site, device, and impression count
-- Reduces redundant API calls for similar requests
-- Cache size is limited to 100 entries with LRU eviction
+- Cache key includes: page, user agent, geo, user IDs, and ad units
+- Reduces redundant API calls for similar contexts
+
+### Data Completeness
+The module sends ALL available OpenRTB data to maximize AEE intelligence:
+- Extended user IDs (LiveRamp, ID5, UID2, etc.)
+- Geo location data
+- Device characteristics
+- Site categorization and keywords
+- User data and segments
+- Regulatory consent status
 
 ### Timeout Handling
 - Default timeout: 1000ms
-- Module continues auction if API fails or times out
-- No delay added if data is cached
-
-### API Limits
-- Check with Scope3 for rate limiting policies
-- Use caching to minimize API calls
-- Consider increasing timeout for high-latency connections
+- Auction continues if AEE doesn't respond in time
+- No blocking - graceful degradation
 
 ## Privacy and Compliance
 
-- No personal data is sent to Scope3
-- Only contextual and technical data is transmitted
-- Module respects user consent signals
+- Sends only data already available in the bid request
+- Respects all consent signals (GDPR, CCPA, etc.)
+- No additional user tracking or cookies
 - All data transmission uses HTTPS
+- Works with any identity solution
 
 ## Troubleshooting
 
 ### Enable Debug Mode
 ```javascript
 params: {
-  publisherId: 'YOUR_PUBLISHER_ID',
-  apiKey: 'YOUR_API_KEY',
+  orgId: 'YOUR_ORG_ID',
   debugMode: true
 }
 ```
 
 ### Common Issues
 
-1. **No enrichment occurring**
-   - Check API key is valid
-   - Verify endpoint is accessible
-   - Check browser console for errors
+1. **No signals appearing**
+   - Verify orgId is correct
+   - Check endpoint is accessible
    - Ensure timeout is sufficient
+   - Look for console errors in debug mode
 
-2. **Targeting keys not appearing**
+2. **Targeting keys not in GAM**
    - Verify `publisherTargeting: true`
-   - Check GAM setup for key-value targeting
-   - Ensure scores are being returned from API
+   - Check key names match GAM setup
+   - Ensure AEE is returning signals
 
-3. **Specific bidders not enriched**
-   - Check bidder names match exactly
-   - Verify bidder is in the `bidders` array (if specified)
-   - Confirm bidder data is returned from API
+3. **Missing user IDs or geo data**
+   - Confirm this data exists in your Prebid setup
+   - Check that consent allows data usage
+   - Verify identity modules are configured
 
-## Testing
+## Simple Configuration
 
-### Unit Tests
-Run the module tests:
-```bash
-gulp test --file test/spec/modules/scope3RtdProvider_spec.js
-```
-
-### Integration Testing
-1. Enable debug mode
-2. Load a test page with Prebid
-3. Check browser console for Scope3 RTD logs
-4. Verify targeting keys in ad server calls
-5. Inspect bid requests for enriched data
-
-## Support
-
-For technical support and API access:
-- Documentation: https://docs.scope3.com
-- API Status: https://status.scope3.com
-- Support: support@scope3.com
-
-## Migration Notes
-
-### Transitioning to Production Endpoint
-When the `https://rtdp.scope3.com/prebid` endpoint becomes available:
-
-1. Update configuration to remove API key:
-```javascript
-params: {
-  publisherId: 'YOUR_PUBLISHER_ID',
-  endpoint: 'https://rtdp.scope3.com/prebid',
-  // apiKey no longer needed
-}
-```
-
-2. The module will automatically detect the missing API key and skip authentication headers.
-
-### API Key Security
-**IMPORTANT**: Never commit API keys to version control. Use environment-specific configuration:
+Minimal setup with defaults:
 
 ```javascript
-// Load from environment variable or secure configuration service
-const scope3ApiKey = getSecureConfig('SCOPE3_API_KEY');
-
 pbjs.setConfig({
   realTimeData: {
     dataProviders: [{
       name: 'scope3',
       params: {
-        publisherId: 'YOUR_PUBLISHER_ID',
-        apiKey: scope3ApiKey
+        orgId: 'YOUR_ORG_ID'  // Only required parameter
       }
     }]
   }
 });
 ```
+
+This will:
+- Send complete OpenRTB data to Scope3's AEE
+- Set targeting keys: `s3i` (include), `s3x` (exclude), `s3m` (macro)
+- Enrich all bidders with AEE signals
+- Cache responses for performance
+
+## About the Agentic Execution Engine
+
+Scope3's AEE implements the [Ad Context Protocol](https://adcontextprotocol.org) to analyze the complete context of each bid opportunity. By processing the full OpenRTB request including all user IDs, geo data, and site context, the AEE can:
+- Identify optimal audience segments in real-time
+- Detect and prevent unwanted targeting scenarios
+- Apply complex business rules at scale
+- Optimize for multiple objectives simultaneously
+
+## Support
+
+For technical support and AEE configuration:
+- Documentation: https://docs.scope3.com
+- Ad Context Protocol: https://adcontextprotocol.org
+- Support: support@scope3.com
