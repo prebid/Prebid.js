@@ -38,6 +38,6 @@ export const MAX_REQUEST_LENGTH = {
 };
 
 export const CH_KEYS = [
-  'brands', 'mobile', 'bitness', 'wow64', 'architecture',
-  'model', 'platform', 'platformVersion', 'fullVersionList'
+  'brands', 'mobile', 'platform', 'bitness', 'wow64', 'architecture',
+  'model', 'platformVersion', 'fullVersionList'
 ];
