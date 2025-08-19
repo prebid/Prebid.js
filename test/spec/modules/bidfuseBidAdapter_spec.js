@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/bidfuseBidAdapter';
+import { spec } from '../../../modules/bidfuseBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
-import {config} from "../../../src/config";
+import { config } from "../../../src/config.ts";
 
 const bidder = 'bidfuseprebid';
 
