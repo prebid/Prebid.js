@@ -29,10 +29,6 @@ export function findUtiqService(storage: any, refreshUserIds: () => void, logPre
 
   logInfo(`${logPrefix}: frame found: `, Boolean(utiqFrame));
   if (utiqFrame) {
-    utiqFrame.postMessage({
-      action: 'getIdGraphEntry',
-      description: { moduleName },
-    }, "*");
     window.addEventListener('message', (event) => {
       const {action, idGraphData, description} = event.data;
       if (action === 'returnIdGraphEntry' && description.moduleName === moduleName) {
@@ -53,5 +49,9 @@ export function findUtiqService(storage: any, refreshUserIds: () => void, logPre
         }
       }
     });
+    utiqFrame.postMessage({
+      action: 'getIdGraphEntry',
+      description: { moduleName },
+    }, "*");
   }
 }
