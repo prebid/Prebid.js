@@ -11,7 +11,6 @@ import {submodule} from '../src/hook.js'
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
-import {makeEmptyCH} from '../libraries/intentIqUtils/clientHintsUtils.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {readData, storeData, defineStorageType, removeDataByKey, tryParse} from '../libraries/intentIqUtils/storageUtils.js';
 import {
@@ -337,6 +336,7 @@ export const intentIqIdSubmodule = {
     sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData) : '';
     sourceMetaDataExternal = isNumber(configParams.sourceMetaDataExternal) ? configParams.sourceMetaDataExternal : undefined;
     const additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
+    const chTimeout = Number(configParams?.chTimeout) >= 0 ? Number(configParams.chTimeout) : 10;
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
@@ -387,26 +387,47 @@ export const intentIqIdSubmodule = {
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
 
-    function getClientHintsFast(timeoutMs = configParams?.timeoutInMillis ?? 150) {
-      if (clientHints) return Promise.resolve(clientHints);
+    function supportsHighEntropyCH() {
+      return !!(navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
+    }
 
-      const raw = (navigator?.userAgentData?.getHighEntropyValues)
-        ? navigator.userAgentData.getHighEntropyValues(CH_KEYS)
-            .then(ch => {
-              const handled = handleClientHints(ch);
-              if (handled) {
-                clientHints = handled;
-                storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-              }
-              return clientHints || handleClientHints(makeEmptyCH());
-            })
-            .catch(() => handleClientHints(makeEmptyCH()))
-        : Promise.resolve(handleClientHints(makeEmptyCH()));
-          
+    function refreshCHInBackground() {
+      if (!supportsHighEntropyCH()) return;
+      navigator.userAgentData.getHighEntropyValues(CH_KEYS)
+        .then(ch => {
+          const handled = handleClientHints(ch) || '';
+          if (handled && handled !== clientHints) {
+            clientHints = handled;
+            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+          }
+        })
+        .catch(err => {
+          logError('CH fetch failed', err);
+          return '';
+        });
+    }
+
+    function getClientHintsFast(timeoutMs = chTimeout) {
+      if (clientHints) return Promise.resolve(clientHints);
+    
+      if (!supportsHighEntropyCH()) {
+        return Promise.resolve('');
+      }
+    
+      const getCh = navigator.userAgentData.getHighEntropyValues(CH_KEYS)
+        .then(ch => {
+          const handled = handleClientHints(ch) || '';
+          if (handled) {
+            clientHints = handled;
+            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+          }
+          return handled;
+        })
+        .catch(() => '');
+      
       return Promise.race([
-        raw,
-        new Promise(resolve => setTimeout(() =>
-          resolve(clientHints || handleClientHints(makeEmptyCH())), timeoutMs))
+        getCh,
+        new Promise(resolve => setTimeout(() => resolve(''), timeoutMs))
       ]);
     }
 
@@ -636,13 +657,10 @@ export const intentIqIdSubmodule = {
       if (clientHints) {
         url += '&uh=' + encodeURIComponent(clientHints);
         ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+        refreshCHInBackground();
       } else {
-        const chStart = (performance && performance.now) ? performance.now() : Date.now(); // для таймера (видалю)
         getClientHintsFast().then(ch => {
-          const nowTs = (performance && performance.now) ? performance.now() : Date.now();// для таймера (видалю)
-          const elapsed = nowTs - chStart; // для таймера (видалю) 
-          console.log('CH:', ch ? 'отримали' : 'не отримали', 'чекали: ', elapsed.toFixed(1), 'мс'); // для таймера (видалю)
-          url += '&uh=' + encodeURIComponent(ch);
+          if (ch) url += '&uh=' + encodeURIComponent(ch);
           ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
         }).catch(() => {
           ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
