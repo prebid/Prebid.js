@@ -169,14 +169,14 @@ function getQueryString(auctionObj, adUnitCode, logType, winningBidObj) {
   return `${queryString}${bidStrings}`;
 }
 
-function getErrorTracker(bidResponse, error) {
+function getErrorTracker(bidResponse, error, context) {
   const stack = {
     acid: bidResponse.auctionId,
     bidId: bidResponse.requestId,
     crid: bidResponse.creativeId,
     ttl: bidResponse.ttl,
     bidder: bidResponse.bidderCode || bidResponse.adapterCode,
-    context: bidResponse.context,
+    context: context || bidResponse.context,
   };
   return [
     {
@@ -202,12 +202,12 @@ function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
     }
     const requestId = bidResponse.originalRequestId || bidResponse.requestId;
     const bidRequestObj = findBidObj(auctionObject.bidsRequested, 'bidId', requestId);
-    if (!bidRequestObj) {
-      return getErrorTracker(bidResponse, 'missing_bidrequest');
-    }
     const context = auctionObject.adSlots[bidRequestObj?.adUnitCode]?.context;
     if (context !== VIDEO_CONTEXT.INSTREAM) {
       return [];
+    }
+    if (!bidRequestObj) {
+      return getErrorTracker(bidResponse, 'missing_bidrequest', context);
     }
     bidRequestObj.status = VIDEO_UUID_PENDING;
     const { validBidResponseObj } = processBidResponse(auctionObject, bidRequestObj, bidResponse);
@@ -397,6 +397,9 @@ function addS2sInfo(auctionObj, bidderRequests) {
 
       bidObjs.forEach((bidObj) => {
         bidObj.serverLatencyMillis = bidderRequest.serverResponseTimeMs;
+        bidObj.pbsExt = Object.fromEntries(
+          Object.entries(bidderRequest.pbsExt || {}).filter(([key]) => key !== 'debug')
+        );
         const serverError = deepAccess(bidderRequest, `serverErrors.0`);
         if (serverError && bidObj.status !== BID_SUCCESS) {
           bidObj.status = PBS_ERROR_STATUS_START + serverError.code;
@@ -619,7 +622,10 @@ function auctionInitHandler(eventType, auction) {
     });
 
   // addUidData
-  const userIds = deepAccess(auction.bidderRequests, '0.bids.0.userId');
+  let userIds;
+  if (typeof getGlobal().getUserIds === 'function') {
+    userIds = getGlobal().getUserIds();
+  }
   if (isPlainObject(userIds)) {
     const enabledUids = mnetGlobals.configuration.enabledUids || [];
     auctionObj.availableUids = Object.keys(userIds).sort();
