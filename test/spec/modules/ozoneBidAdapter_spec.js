@@ -2629,8 +2629,8 @@ describe('ozone Adapter', function () {
       bidderRequest.ortb2 = {regs: {gpp: gppString, gpp_sid: gppSections}};
       const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
       const payload = JSON.parse(request.data);
-      expect(payload.regs.gpp).to.equal(gppString);
-      expect(payload.regs.gpp_sid).to.have.same.members(gppSections);
+      expect(payload.regs.ext.gpp).to.equal(gppString);
+      expect(payload.regs.ext.gpp_sid).to.have.same.members(gppSections);
     });
     it('should not set gpp and gpp_sid keys when not available', function() {
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest);
