@@ -192,7 +192,7 @@ describe('Scope3 RTD Module', function() {
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data).to.have.lengthOf(1);
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0]).to.deep.include({
         name: 'scope3.com',
-        ext: { segtax: 604 }
+        ext: { segtax: 3333 }
       });
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment).to.deep.equal([
         { id: 'x82s' },
@@ -202,7 +202,7 @@ describe('Scope3 RTD Module', function() {
       // Check bidder-specific enrichment with segtax
       expect(reqBidsConfigObj.ortb2Fragments.bidder.bidderA.user.data[0]).to.deep.include({
         name: 'scope3.com',
-        ext: { segtax: 604 }
+        ext: { segtax: 3333 }
       });
       expect(reqBidsConfigObj.ortb2Fragments.bidder.bidderA.user.data[0].segment).to.deep.equal([
         { id: 'seg1' },
@@ -297,11 +297,11 @@ describe('Scope3 RTD Module', function() {
 
       // Check AppNexus gets keywords in their format
       expect(reqBidsConfigObj.ortb2Fragments.bidder.appnexus.site.keywords).to.equal('s3_seg=apn1,s3_seg=apn2');
-      
+
       // Also check they get the standard user.data format with segtax
       expect(reqBidsConfigObj.ortb2Fragments.bidder.appnexus.user.data[0]).to.deep.include({
         name: 'scope3.com',
-        ext: { segtax: 604 }
+        ext: { segtax: 3333 }
       });
       expect(reqBidsConfigObj.ortb2Fragments.bidder.appnexus.user.data[0].segment).to.deep.equal([
         { id: 'apn1' },

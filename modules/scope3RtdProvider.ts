@@ -249,12 +249,12 @@ function applyAgentDecisions(
     if (aeeSignals.include && aeeSignals.include.length > 0) {
       reqBidsConfigObj.ortb2Fragments.global.site.content = reqBidsConfigObj.ortb2Fragments.global.site.content || {};
       reqBidsConfigObj.ortb2Fragments.global.site.content.data = reqBidsConfigObj.ortb2Fragments.global.site.content.data || [];
-      
+
       // Add as OpenRTB segment taxonomy data
       (reqBidsConfigObj.ortb2Fragments.global.site.content.data as any[]).push({
         name: 'scope3.com',
         ext: {
-          segtax: 604  // Scope3 AEE Targeting Signals (pending registration)
+          segtax: 3333  // Scope3 Agentic Execution Engine (AEE) Targeting Signals
         },
         segment: aeeSignals.include.map(id => ({ id }))
       });
@@ -282,7 +282,7 @@ function applyAgentDecisions(
         reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data.push({
           name: 'scope3.com',
           ext: {
-            segtax: 604  // Scope3 AEE Targeting Signals (pending registration)
+            segtax: 3333  // Scope3 Agentic Execution Engine (AEE) Targeting Signals
           },
           segment: bidderData.segments.map(seg => ({ id: seg }))
         });
@@ -291,7 +291,7 @@ function applyAgentDecisions(
         if (bidder === 'appnexus' || bidder === 'appnexusAst') {
           reqBidsConfigObj.ortb2Fragments.bidder[bidder].site = reqBidsConfigObj.ortb2Fragments.bidder[bidder].site || {};
           reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords = reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords || '';
-          
+
           // Append Scope3 segments as keywords in AppNexus format
           const s3Keywords = bidderData.segments.map(seg => `s3_seg=${seg}`).join(',');
           if (reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords) {
