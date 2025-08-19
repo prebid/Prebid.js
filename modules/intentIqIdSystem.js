@@ -652,8 +652,6 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
 
-      const chStart = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-
       if (clientHints) {
         url += '&uh=' + encodeURIComponent(clientHints);
         ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
