@@ -254,7 +254,7 @@ function applyAgentDecisions(
       (reqBidsConfigObj.ortb2Fragments.global.site.content.data as any[]).push({
         name: 'scope3.com',
         ext: {
-          segtax: 600  // Using 600+ range for vendor-specific taxonomies
+          segtax: 604  // Scope3 AEE Targeting Signals (pending registration)
         },
         segment: aeeSignals.include.map(id => ({ id }))
       });
@@ -282,7 +282,7 @@ function applyAgentDecisions(
         reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data.push({
           name: 'scope3.com',
           ext: {
-            segtax: 600  // Vendor-specific taxonomy
+            segtax: 604  // Scope3 AEE Targeting Signals (pending registration)
           },
           segment: bidderData.segments.map(seg => ({ id: seg }))
         });
