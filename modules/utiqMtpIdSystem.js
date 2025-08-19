@@ -65,6 +65,7 @@ export const utiqMtpIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/utiqDeviceStorageDisclosure.json',
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function

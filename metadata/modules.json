@@ -1151,6 +1151,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "newdream",
+      "aliasOf": "appnexus",
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "matomy",
       "aliasOf": "appnexus",
       "gvlid": 32,
@@ -1278,6 +1285,13 @@
     {
       "componentType": "bidder",
       "componentName": "cordless",
+      "aliasOf": "aso",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adklip",
       "aliasOf": "aso",
       "gvlid": null,
       "disclosureURL": null
@@ -1895,6 +1909,13 @@
       "componentType": "bidder",
       "componentName": "digitalmatter",
       "aliasOf": "digitalMatter",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "digitalcaramel",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -2671,6 +2692,20 @@
     {
       "componentType": "bidder",
       "componentName": "streamvision",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "stellorMediaRtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "smootai",
       "aliasOf": "limelightDigital",
       "gvlid": null,
       "disclosureURL": null
@@ -3751,6 +3786,13 @@
       "componentName": "openwebxchange",
       "aliasOf": "rise",
       "gvlid": 280,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "risemediatech",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5122,6 +5164,13 @@
     },
     {
       "componentType": "userId",
+      "componentName": "adplusId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
       "componentName": "qid",
       "gvlid": 902,
       "disclosureURL": null,
@@ -5509,14 +5558,14 @@
       "componentType": "userId",
       "componentName": "utiqId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/utiqDeviceStorageDisclosure.json",
       "aliasOf": null
     },
     {
       "componentType": "userId",
       "componentName": "utiqMtpId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/utiqDeviceStorageDisclosure.json",
       "aliasOf": null
     },
     {
@@ -5566,6 +5615,11 @@
     {
       "componentType": "analytics",
       "componentName": "adnuntius",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "adplus",
       "gvlid": null
     },
     {

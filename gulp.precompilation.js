@@ -1,3 +1,4 @@
+const webpackStream = require('webpack-stream');
 const gulp = require('gulp');
 const helpers = require('./gulpHelpers.js');
 const {argv} = require('yargs');
@@ -6,14 +7,11 @@ const babel = require('gulp-babel');
 const {glob} = require('glob');
 const path = require('path');
 const tap = require('gulp-tap');
+const wrap = require('gulp-wrap')
 const _ = require('lodash');
 const fs = require('fs');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
-
-
-// do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
-const PRECOMP_TASKS = new Map();
 
 function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) {
   if (dev && distUrlBase == null) {
@@ -26,13 +24,11 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
   }
 }
 
-function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
-  const key = `${distUrlBase}::${disableFeatures}`;
-  if (!PRECOMP_TASKS.has(key)) {
+const babelPrecomp = _.memoize(
+  function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
-    const precompile = function () {
-      // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`
-      return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(precompile)})
+    return function () {
+      return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev}))})
         .pipe(sourcemaps.init())
         .pipe(babel(babelConfig))
         .pipe(sourcemaps.write('.', {
@@ -40,10 +36,9 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
         }))
         .pipe(gulp.dest(helpers.getPrecompiledPath()));
     }
-    PRECOMP_TASKS.set(key, precompile)
-  }
-  return PRECOMP_TASKS.get(key);
-}
+  },
+  ({dev, distUrlBase, disableFeatures} = {}) => `${dev}::${distUrlBase ?? ''}::${(disableFeatures ?? []).join(':')}`
+)
 
 /**
  * Generate a "metadata module" for each json file in metadata/modules
@@ -62,7 +57,7 @@ function generateMetadataModules() {
     })
     return JSON.stringify(data);
   }
-  return  gulp.src('./metadata/modules/*.json')
+  return  gulp.src('./metadata/modules/*.json', {since: gulp.lastRun(generateMetadataModules)})
     .pipe(tap(file => {
       const {dir, name} = path.parse(file.path);
       file.contents = Buffer.from(tpl({
@@ -82,9 +77,8 @@ function copyVerbatim() {
     `${name}/**/*.json`,
     `${name}/**/*.d.ts`,
   ]).concat([
-    './package.json',
     '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
-  ]), {base: '.'})
+  ]), {base: '.', since: gulp.lastRun(copyVerbatim)})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
@@ -97,43 +91,45 @@ function copyVerbatim() {
  *   - removes the need for awkward "index" imports, e.g. userId/index
  *   - hides their exports from NPM consumers
  */
-function generatePublicModules(ext, template) {
-  const publicDir = helpers.getPrecompiledPath('public');
+const generatePublicModules = _.memoize(
+  function (ext, template) {
+    const publicDir = helpers.getPrecompiledPath('public');
 
-  function getNames(file) {
-    const filePath = path.parse(file.path);
-    const fileName = filePath.name.replace(/\.d$/gi, '');
-    const moduleName = fileName === 'index' ? path.basename(filePath.dir) : fileName;
-    const publicName = `${moduleName}.${ext}`;
-    const modulePath = path.relative(publicDir, file.path);
-    const publicPath = path.join(publicDir, publicName);
-    return {modulePath, publicPath}
-  }
+    function getNames(file) {
+      const filePath = path.parse(file.path);
+      const fileName = filePath.name.replace(/\.d$/gi, '');
+      const moduleName = fileName === 'index' ? path.basename(filePath.dir) : fileName;
+      const publicName = `${moduleName}.${ext}`;
+      const modulePath = path.relative(publicDir, file.path);
+      const publicPath = path.join(publicDir, publicName);
+      return {modulePath, publicPath}
+    }
 
-  function publicVersionDoesNotExist(file) {
-    // allow manual definition of a module's public version by leaving it
-    // alone if it exists under `public`
-    return !fs.existsSync(getNames(file).publicPath)
-  }
+    function publicVersionDoesNotExist(file) {
+      // allow manual definition of a module's public version by leaving it
+      // alone if it exists under `public`
+      return !fs.existsSync(getNames(file).publicPath)
+    }
 
-  return function (done) {
-    filter.then(({default: filter}) => {
-      gulp.src([
-        helpers.getPrecompiledPath(`modules/*.${ext}`),
-        helpers.getPrecompiledPath(`modules/**/index.${ext}`),
-        `!${publicDir}/**/*`
-      ])
-        .pipe(filter(publicVersionDoesNotExist))
-        .pipe(tap((file) => {
-          const {modulePath, publicPath} = getNames(file);
-          file.contents = Buffer.from(template({modulePath}));
-          file.path = publicPath;
-        }))
-        .pipe(gulp.dest(publicDir))
-        .on('end', done);
-    })
-  }
-}
+    return function (done) {
+      filter.then(({default: filter}) => {
+        gulp.src([
+          helpers.getPrecompiledPath(`modules/*.${ext}`),
+          helpers.getPrecompiledPath(`modules/**/index.${ext}`),
+          `!${publicDir}/**/*`
+        ], {since: gulp.lastRun(generatePublicModules(ext, template))})
+          .pipe(filter(publicVersionDoesNotExist))
+          .pipe(tap((file) => {
+            const {modulePath, publicPath} = getNames(file);
+            file.contents = Buffer.from(template({modulePath}));
+            file.path = publicPath;
+          }))
+          .pipe(gulp.dest(publicDir))
+          .on('end', done);
+      })
+    }
+  },
+)
 
 function generateTypeSummary(folder, dest, ignore = dest) {
   const template = _.template(`<% _.forEach(files, (file) => { %>import '<%= file %>';
@@ -178,7 +174,7 @@ function generateGlobalDef(options) {
 }
 
 function generateBuildOptions(options = {}) {
-  return function (done) {
+  return function mkBuildOptions(done) {
     options = buildOptions(getDefaults(options));
     import('./customize/buildOptions.mjs').then(({getBuildOptionsModule}) => {
       const dest = getBuildOptionsModule();
@@ -191,16 +187,46 @@ function generateBuildOptions(options = {}) {
 
 }
 
+
+const buildCreative = _.memoize(
+  function buildCreative({dev = false} = {}) {
+    const opts = {
+      mode: dev ? 'development' : 'production',
+      devtool: false
+    };
+    return function() {
+      return gulp.src(['creative/**/*'], {since: gulp.lastRun(buildCreative({dev}))})
+        .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
+        .pipe(gulp.dest('build/creative'))
+    }
+  },
+  ({dev}) => dev
+)
+
+function generateCreativeRenderers() {
+  return gulp.src(['build/creative/renderers/**/*.js'], {since: gulp.lastRun(generateCreativeRenderers)})
+    .pipe(wrap('// this file is autogenerated, see creative/README.md\nexport const RENDERER = <%= JSON.stringify(contents.toString()) %>'))
+    .pipe(gulp.dest(helpers.getCreativeRendererPath()))
+}
+
+
 function precompile(options = {}) {
   return gulp.series([
-    gulp.parallel(['ts', generateMetadataModules, generateBuildOptions(options)]),
+    gulp.parallel([options.dev ? 'ts-dev' : 'ts', generateMetadataModules, generateBuildOptions(options)]),
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
-    gulp.parallel([publicModules, generateCoreSummary, generateModuleSummary, generateGlobalDef(options)])
+    gulp.parallel([
+      gulp.series([buildCreative(options), generateCreativeRenderers]),
+      publicModules,
+      generateCoreSummary,
+      generateModuleSummary,
+      generateGlobalDef(options),
+    ])
   ]);
 }
 
 
 gulp.task('ts', helpers.execaTask('tsc'));
+gulp.task('ts-dev', helpers.execaTask('tsc --incremental'))
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());

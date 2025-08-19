@@ -230,10 +230,31 @@ describe('omsBidAdapter', function () {
 
       const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
 
-      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.exist.and.to.be.a('string');
-      expect(data.user.ext.consent).to.equal(consentString);
+      expect(data.regs.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.gdpr).to.equal(1);
+      expect(data.user.consent).to.exist.and.to.be.a('string');
+      expect(data.user.consent).to.equal(consentString);
+    });
+
+    it('sends usp info if exists', function () {
+      const uspConsent = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
+        'bidderCode': 'oms',
+        'auctionId': '1d1a030790a437',
+        'bidderRequestId': '22edbae2744bf5',
+        'timeout': 3000,
+        uspConsent,
+        refererInfo: {
+          page: 'http://example.com/page.html',
+          domain: 'example.com',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.us_privacy).to.exist.and.to.be.a('string');
+      expect(data.regs.us_privacy).to.equal(uspConsent);
     });
 
     it('sends coppa', function () {
