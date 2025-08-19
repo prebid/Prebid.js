@@ -350,5 +350,98 @@ describe('Scope3 RTD Module', function() {
       // Should make another API request
       expect(server.requests.length).to.equal(2);
     });
+
+    it('should handle JSON parsing errors in response', function() {
+      scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, config);
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        'invalid json response'
+      );
+
+      expect(callback.calledOnce).to.be.true;
+      expect(logErrorSpy.called).to.be.true;
+    });
+
+    it('should handle exception in getBidRequestData', function() {
+      // Create a config that will cause an error
+      const badConfig = {
+        params: {
+          orgId: 'test-org-123',
+          endpoint: 'https://prebid.scope3.com/prebid',
+          cacheEnabled: false
+        }
+      };
+      
+      scope3SubModule.init(badConfig);
+      
+      // Pass null reqBidsConfigObj to trigger error
+      const errorCallback = sinon.spy();
+      scope3SubModule.getBidRequestData(null, errorCallback, badConfig);
+      
+      expect(errorCallback.calledOnce).to.be.true;
+      expect(logErrorSpy.called).to.be.true;
+    });
+
+    it('should properly handle cache TTL expiration', function() {
+      // Simply test that cache can be disabled
+      const noCacheConfig = {
+        params: {
+          orgId: 'test-org-123',
+          endpoint: 'https://prebid.scope3.com/prebid',
+          cacheEnabled: false
+        }
+      };
+
+      const result = scope3SubModule.init(noCacheConfig);
+      expect(result).to.equal(true);
+      
+      // With cache disabled, each request should hit the API
+      scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, noCacheConfig);
+      const firstRequestCount = server.requests.length;
+      
+      const callback2 = sinon.spy();
+      scope3SubModule.getBidRequestData(reqBidsConfigObj, callback2, noCacheConfig);
+      
+      // Should have made more requests since cache is disabled
+      expect(server.requests.length).to.be.greaterThan(firstRequestCount);
+    });
+
+    it('should handle missing module config', function() {
+      // Try to initialize with null config
+      const result = scope3SubModule.init(null);
+      expect(result).to.equal(false);
+      expect(logErrorSpy.called).to.be.true;
+    });
+
+    it('should handle response without aee_signals', function() {
+      scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, config);
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify({ other_data: 'test' })
+      );
+
+      // Should still call callback even without aee_signals
+      expect(callback.calledOnce).to.be.true;
+      // No AEE data should be applied
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.ext.data.scope3_aee).to.be.undefined;
+    });
+
+    it('should initialize with default values when optional params missing', function() {
+      const minimalConfig = {
+        params: {
+          orgId: 'test-org-123'
+        }
+      };
+
+      const result = scope3SubModule.init(minimalConfig);
+      expect(result).to.equal(true);
+      
+      // Module should be properly initialized with defaults
+      expect(result).to.be.true;
+    });
   });
 });

@@ -145,16 +145,16 @@ Sends the complete OpenRTB request with list of bidders:
 ```
 
 ### 3. AEE Response
-Receives targeting signals with bidder-specific segments and deals:
+Receives targeting signals with bidder-specific segments and deals. Note that Scope3 uses short, brand-specific segment codes (e.g., 'x82s', 'a91k') rather than standard IAB taxonomy for efficiency and privacy:
 ```json
 {
   "aee_signals": {
-    "include": ["sports_fan", "auto_intender", "premium_user"],
-    "exclude": ["competitor_exposed", "frequency_cap_reached"],
+    "include": ["x82s", "a91k", "p2m7"],
+    "exclude": ["c4x9", "f7r2"],
     "macro": "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ==",
     "bidders": {
       "rubicon": {
-        "segments": ["rub_luxury_auto", "rub_sports_fan"],
+        "segments": ["r4x2", "r9s1"],
         "deals": ["RUBICON_DEAL_123", "RUBICON_DEAL_456"]
       },
       "appnexus": {
@@ -173,9 +173,9 @@ Receives targeting signals with bidder-specific segments and deals:
 ### 4. Signal Application
 
 #### Publisher Targeting (GAM)
-Sets the configured targeting keys:
-- `s3i` (or your includeKey): ["sports_fan", "auto_intender", "premium_user"]
-- `s3x` (or your excludeKey): ["competitor_exposed", "frequency_cap_reached"]
+Sets the configured targeting keys (GAM automatically converts to lowercase):
+- `s3i` (or your includeKey): ["x82s", "a91k", "p2m7"] (short brand-specific segments)
+- `s3x` (or your excludeKey): ["c4x9", "f7r2"] (exclusion segments)
 - `s3m` (or your macroKey): "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
 
 #### Advertiser Data (OpenRTB)
@@ -186,8 +186,8 @@ ortb2: {
     ext: {
       data: {
         scope3_aee: {
-          include: ["sports_fan", "auto_intender", "premium_user"],
-          exclude: ["competitor_exposed", "frequency_cap_reached"],
+          include: ["x82s", "a91k", "p2m7"],
+          exclude: ["c4x9", "f7r2"],
           macro: "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
         }
       }
@@ -204,13 +204,13 @@ Create targeted line items using the AEE signals:
 
 ```
 Target Sports Fans:
-s3i contains "sports_fan"
+s3i contains "x82s"
 
 Exclude Frequency Capped Users:
-s3x does not contain "frequency_cap_reached"
+s3x does not contain "f7r2"
 
 Target Auto Intenders without Competitor Exposure:
-s3i contains "auto_intender" AND s3x does not contain "competitor_exposed"
+s3i contains "a91k" AND s3x does not contain "c4x9"
 
 High Value Users (using macro):
 s3m contains "high_value"
@@ -228,8 +228,8 @@ params: {
 }
 
 // GAM Line Items would use:
-targeting contains "sports_fan"
-blocking does not contain "frequency_cap_reached"
+targeting contains "x82s"
+blocking does not contain "f7r2"
 context contains "high_value"
 ```
 
