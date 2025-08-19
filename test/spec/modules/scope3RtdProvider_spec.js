@@ -123,7 +123,7 @@ describe('Scope3 RTD Module', function() {
       };
 
       callback = sinon.spy();
-      
+
       // Initialize the module first
       scope3SubModule.init(config);
     });
@@ -137,7 +137,7 @@ describe('Scope3 RTD Module', function() {
 
       expect(server.requests.length).to.equal(1);
       const request = server.requests[0];
-      
+
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://prebid.scope3.com/prebid');
       expect(request.requestHeaders['Content-Type']).to.include('application/json');
@@ -299,7 +299,7 @@ describe('Scope3 RTD Module', function() {
           cacheEnabled: true  // Enable cache for this test
         }
       };
-      
+
       scope3SubModule.init(cacheConfig);
       scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, cacheConfig);
 
