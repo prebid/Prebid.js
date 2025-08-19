@@ -373,13 +373,13 @@ describe('Scope3 RTD Module', function() {
           cacheEnabled: false
         }
       };
-      
+
       scope3SubModule.init(badConfig);
-      
+
       // Pass null reqBidsConfigObj to trigger error
       const errorCallback = sinon.spy();
       scope3SubModule.getBidRequestData(null, errorCallback, badConfig);
-      
+
       expect(errorCallback.calledOnce).to.be.true;
       expect(logErrorSpy.called).to.be.true;
     });
@@ -396,14 +396,14 @@ describe('Scope3 RTD Module', function() {
 
       const result = scope3SubModule.init(noCacheConfig);
       expect(result).to.equal(true);
-      
+
       // With cache disabled, each request should hit the API
       scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, noCacheConfig);
       const firstRequestCount = server.requests.length;
-      
+
       const callback2 = sinon.spy();
       scope3SubModule.getBidRequestData(reqBidsConfigObj, callback2, noCacheConfig);
-      
+
       // Should have made more requests since cache is disabled
       expect(server.requests.length).to.be.greaterThan(firstRequestCount);
     });
@@ -439,7 +439,7 @@ describe('Scope3 RTD Module', function() {
 
       const result = scope3SubModule.init(minimalConfig);
       expect(result).to.equal(true);
-      
+
       // Module should be properly initialized with defaults
       expect(result).to.be.true;
     });
