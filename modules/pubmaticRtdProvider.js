@@ -1,21 +1,17 @@
 import { submodule } from '../src/hook.js';
-import { logError, logInfo, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
-import { config as conf } from '../src/config.js';
-import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
-import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../libraries/pubmaticUtils/pubmaticUtils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { REJECTION_REASON } from '../src/constants.js';
-//import { setBidderOptimisationConfig, getBidderDecision } from '../libraries/pubmaticUtils/bidderOptimisation.js';
+import { logError, isStr, mergeDeep, isPlainObject, isEmpty } from '../src/utils.js';
+
+import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js';
+import { FloorProvider } from '../libraries/pubmaticUtils/plugins/floorProvider.js';
+import { UnifiedPricingRule } from '../libraries/pubmaticUtils/plugins/unifiedPricingRule.js';
 
 /**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
-
 /**
  * This RTD module has a dependency on the priceFloors module.
  * We utilize the continueAuction function from the priceFloors module to incorporate price floors data into the current auction.
  */
-import { continueAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
 export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
@@ -24,438 +20,82 @@ export const CONSTANTS = Object.freeze({
   ENDPOINTS: {
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     CONFIGS: 'config.json'
-  },
-  BID_STATUS: {
-    NOBID: 0,
-    WON: 1,
-    FLOORED: 2
-  },
-  MULTIPLIERS: {
-    WIN: 1.0,
-    FLOORED: 0.8,
-    NOBID: 1.2
-  },
-  TARGETING_KEYS: {
-    PM_YM_FLRS: 'pm_ym_flrs', // Whether RTD floor was applied
-    PM_YM_FLRV: 'pm_ym_flrv', // Final floor value (after applying multiplier)
-    PM_YM_BID_S: 'pm_ym_bid_s' // Bid status (0: No bid, 1: Won, 2: Floored)
   }
 });
 
-export const defaultValueTemplate = {
-    currency: 'USD',
-    skipRate: 0,
-    schema: {
-        fields: ['mediaType', 'size']
-    }
-};
+let _ymConfigPromise;
+export const getYmConfigPromise = () => _ymConfigPromise;
+export const setYmConfigPromise = (promise) => { _ymConfigPromise = promise; };
 
-export let _ymConfigPromise = null;
-export let _configData = {};
-export let _country;
-// Store multipliers from floors.json, will use default values from CONSTANTS if not available
-export let _multipliers = null;
+export function ConfigJsonManager() {
+  let _ymConfig = {};
+  const getYMConfig = () => _ymConfig;
+  const setYMConfig = (config) => { _ymConfig = config; }
+  let country;
 
-// Use a private variable for profile configs
-let _profileConfigs;
-// Export getter and setter functions for _profileConfigs
-export const getProfileConfigs = () => _profileConfigs;
-export const setProfileConfigs = (configs) => { _profileConfigs = configs; };
-
-// Find all bids for a specific ad unit
-function findBidsForAdUnit(auction, code) {
-  return auction?.bidsReceived?.filter(bid => bid.adUnitCode === code) || [];
-}
-
-// Find rejected bids for a specific ad unit
-function findRejectedBidsForAdUnit(auction, code) {
-  if (!auction?.bidsRejected) return [];
-
-  // If bidsRejected is an array
-  if (Array.isArray(auction.bidsRejected)) {
-    return auction.bidsRejected.filter(bid => bid.adUnitCode === code);
-  }
-
-  // If bidsRejected is an object mapping bidders to their rejected bids
-  if (typeof auction.bidsRejected === 'object') {
-    return Object.values(auction.bidsRejected)
-      .filter(Array.isArray)
-      .flatMap(bidderBids => bidderBids.filter(bid => bid.adUnitCode === code));
-  }
-
-  return [];
-}
-
-// Find a rejected bid due to price floor
-function findRejectedFloorBid(rejectedBids) {
-  return rejectedBids.find(bid => {
-    return bid.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET &&
-           (bid.floorData?.floorValue && bid.cpm < bid.floorData.floorValue);
-  });
-}
-
-// Find the winning or highest bid for an ad unit
-function findWinningBid(adUnitCode) {
-  try {
-    const pbjs = getGlobal();
-    if (!pbjs?.getHighestCpmBids) return null;
-
-    const highestCpmBids = pbjs.getHighestCpmBids(adUnitCode);
-    if (!highestCpmBids?.length) {
-      logInfo(CONSTANTS.LOG_PRE_FIX, `No highest CPM bids found for ad unit: ${adUnitCode}`);
-      return null;
-    }
-
-    const highestCpmBid = highestCpmBids[0];
-    logInfo(CONSTANTS.LOG_PRE_FIX, `Found highest CPM bid using pbjs.getHighestCpmBids() for ad unit: ${adUnitCode}, CPM: ${highestCpmBid.cpm}`);
-    return highestCpmBid;
-  } catch (error) {
-    logError(CONSTANTS.LOG_PRE_FIX, `Error finding highest CPM bid: ${error}`);
-    return null;
-  }
-}
-
-// Find floor value from bidder requests
-function findFloorValueFromBidderRequests(auction, code) {
-  if (!auction?.bidderRequests?.length) return 0;
-
-  // Find all bids in bidder requests for this ad unit
-  const bidsFromRequests = auction.bidderRequests
-    .flatMap(request => request.bids || [])
-    .filter(bid => bid.adUnitCode === code);
-
-  if (!bidsFromRequests.length) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `No bids found for ad unit: ${code}`);
-    return 0;
-  }
-
-  const bidWithGetFloor = bidsFromRequests.find(bid => bid.getFloor);
-  if (!bidWithGetFloor) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `No bid with getFloor method found for ad unit: ${code}`);
-    return 0;
-  }
-
-  // Helper function to extract sizes with their media types from a source object
-  const extractSizes = (source) => {
-    if (!source) return null;
-
-    const result = [];
-
-    // Extract banner sizes
-    if (source.mediaTypes?.banner?.sizes) {
-      source.mediaTypes.banner.sizes.forEach(size => {
-        result.push({
-          size,
-          mediaType: 'banner'
-        });
-      });
-    }
-
-    // Extract video sizes
-    if (source.mediaTypes?.video?.playerSize) {
-      const playerSize = source.mediaTypes.video.playerSize;
-      // Handle both formats: [[w, h]] and [w, h]
-      const videoSizes = Array.isArray(playerSize[0]) ? playerSize : [playerSize];
-
-      videoSizes.forEach(size => {
-        result.push({
-          size,
-          mediaType: 'video'
-        });
-      });
-    }
-
-    // Use general sizes as fallback if no specific media types found
-    if (result.length === 0 && source.sizes) {
-      source.sizes.forEach(size => {
-        result.push({
-          size,
-          mediaType: 'banner' // Default to banner for general sizes
-        });
-      });
-    }
-
-    return result.length > 0 ? result : null;
-  };
-
-  // Try to get sizes from different sources in order of preference
-  const adUnit = auction.adUnits?.find(unit => unit.code === code);
-  let sizes = extractSizes(adUnit) || extractSizes(bidWithGetFloor);
-
-  // Handle fallback to wildcard size if no sizes found
-  if (!sizes) {
-    sizes = [{ size: ['*', '*'], mediaType: 'banner' }];
-    logInfo(CONSTANTS.LOG_PRE_FIX, `No sizes found, using wildcard size for ad unit: ${code}`);
-  }
-
-  // Try to get floor values for each size
-  let minFloor = -1;
-
-  for (const sizeObj of sizes) {
-    // Extract size and mediaType from the object
-    const { size, mediaType } = sizeObj;
-
-    // Call getFloor with the appropriate media type
-    const floorInfo = bidWithGetFloor.getFloor({
-      currency: 'USD', // Default currency
-      mediaType: mediaType, // Use the media type we extracted
-      size: size
-    });
-
-    if (floorInfo?.floor && !isNaN(parseFloat(floorInfo.floor))) {
-      const floorValue = parseFloat(floorInfo.floor);
-      logInfo(CONSTANTS.LOG_PRE_FIX, `Floor value for ${mediaType} size ${size}: ${floorValue}`);
-
-      // Update minimum floor value
-      minFloor = minFloor === -1 ? floorValue : Math.min(minFloor, floorValue);
-    }
-  }
-
-  if (minFloor !== -1) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `Calculated minimum floor value ${minFloor} for ad unit: ${code}`);
-    return minFloor;
-  }
-
-  logInfo(CONSTANTS.LOG_PRE_FIX, `No floor data found for ad unit: ${code}`);
-  return 0;
-}
-
-// Select multiplier based on priority order: floors.json → config.json → default
-function selectMultiplier(multiplierKey, profileConfigs) {
-  // Define sources in priority order
-  const multiplierSources = [
-    {
-      name: 'config.json',
-      getValue: () => {
-        const configPath = profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.multiplier;
-        const lowerKey = multiplierKey.toLowerCase();
-        return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
-      }
-    },
-    {
-      name: 'floor.json',
-      getValue: () => {
-        const configPath = profileConfigs?.plugins?.dynamicFloors?.data?.multiplier;
-        const lowerKey = multiplierKey.toLowerCase();
-        return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
-      }
-    },
-    {
-      name: 'default',
-      getValue: () => CONSTANTS.MULTIPLIERS[multiplierKey]
-    }
-  ];
-
-  // Find the first source with a non-null value
-  for (const source of multiplierSources) {
-    const value = source.getValue();
-    if (value != null) {
-      return { value, source: source.name };
-    }
-  }
-
-  // Fallback (shouldn't happen due to default source)
-  return { value: CONSTANTS.MULTIPLIERS[multiplierKey], source: 'default' };
-}
-
-// Identify winning bid scenario and return scenario data
-function handleWinningBidScenario(winningBid, code) {
-  return {
-    scenario: 'winning',
-    bidStatus: CONSTANTS.BID_STATUS.WON,
-    baseValue: winningBid.cpm,
-    multiplierKey: 'WIN',
-    logMessage: `Bid won for ad unit: ${code}, CPM: ${winningBid.cpm}`
-  };
-}
-
-// Identify rejected floor bid scenario and return scenario data
-function handleRejectedFloorBidScenario(rejectedFloorBid, code) {
-  const baseValue = rejectedFloorBid.floorData?.floorValue || 0;
-  return {
-    scenario: 'rejected',
-    bidStatus: CONSTANTS.BID_STATUS.FLOORED,
-    baseValue,
-    multiplierKey: 'FLOORED',
-    logMessage: `Bid rejected due to price floor for ad unit: ${code}, Floor value: ${baseValue}, Bid CPM: ${rejectedFloorBid.cpm}`
-  };
-}
-
-// Identify no bid scenario and return scenario data
-function handleNoBidScenario(auction, code) {
-  const baseValue = findFloorValueFromBidderRequests(auction, code);
-  return {
-    scenario: 'nobid',
-    bidStatus: CONSTANTS.BID_STATUS.NOBID,
-    baseValue,
-    multiplierKey: 'NOBID',
-    logMessage: `No bids for ad unit: ${code}, Floor value: ${baseValue}`
-  };
-}
-
-// Determine which scenario applies based on bid conditions
-function determineScenario(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
-  return winningBid ? handleWinningBidScenario(winningBid, code)
-       : rejectedFloorBid ? handleRejectedFloorBidScenario(rejectedFloorBid, code)
-       : handleNoBidScenario(auction, code);
-}
-
-// Main function that determines bid status and calculates values
-function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
-  const profileConfigs = getProfileConfigs();
-
-  // Determine the scenario based on bid conditions
-  const { bidStatus, baseValue, multiplierKey, logMessage } =
-    determineScenario(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code);
-
-  // Select the appropriate multiplier
-  const { value: multiplier, source } = selectMultiplier(multiplierKey, profileConfigs);
-  logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using ${source} multiplier: ${multiplier})`);
-
-  return { bidStatus, baseValue, multiplier };
-}
-
-/**
- * Filter out specified bidders from adUnits with matching code
- * @param {Array} bidderList - List of bidder names to be filtered out
- * @param {Object} reqBidsConfigObj - The bid request configuration object
- * @param {string} adUnitCode - The code of the adUnit to filter bidders from
- */
-export const filterBidders = (bidderList, reqBidsConfigObj, adUnitCode) => {
-  // Validate inputs
-  if (!bidderList || !Array.isArray(bidderList) || bidderList.length === 0 ||
-      !reqBidsConfigObj || !reqBidsConfigObj.adUnits || !Array.isArray(reqBidsConfigObj.adUnits)) {
-    return;
-  }
-  // Find the adUnit with the matching code
-  const adUnit = reqBidsConfigObj.adUnits.find(unit => unit.code === adUnitCode);
-
-  // If adUnit exists and has bids array, filter out the specified bidders
-  if (adUnit && adUnit.bids && Array.isArray(adUnit.bids)) {
-    adUnit.bids = adUnit.bids.filter(bid => !bidderList.includes(bid.bidder));
-  }
-};
-
-// Getter Functions
-export const getTimeOfDay = () => getCurrentTimeOfDay();
-export const getBrowser = () => getBrowserType();
-export const getOs = () => getOS().toString();
-export const getDeviceType = () => fetchDeviceType().toString();
-export const getCountry = () => _country;
-export const getBidder = (request) => request?.bidder;
-export const getUtm = () => getUtmValue();
-
-export const setFloorsConfig = () => {
-    const dynamicFloors = _configData?.plugins?.dynamicFloors;
-
-    // Extract multipliers from floors.json if available
-    if (dynamicFloors?.data?.multiplier) {
-      // Map of source keys to destination keys
-      const multiplierKeys = {
-        'win': 'WIN',
-        'floored': 'FLOORED',
-        'nobid': 'NOBID'
-      };
-
-      // Initialize _multipliers and only add keys that exist in data.multiplier
-      _multipliers = Object.entries(multiplierKeys)
-        .reduce((acc, [srcKey, destKey]) => {
-          if (srcKey in dynamicFloors.data.multiplier) {
-            acc[destKey] = dynamicFloors.data.multiplier[srcKey];
-          }
-          return acc;
-        }, {});
-
-      logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
-    }
-
-    if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
-      return undefined;
-    }
-
-    // Floor configs from adunit / setconfig
-    const defaultFloorConfig = conf.getConfig('floors') ?? {};
-    if (defaultFloorConfig?.endpoint) {
-      delete defaultFloorConfig.endpoint;
-    }
-
-    let ymUiConfig = { ...dynamicFloors.config };
-
-    // default values provided by publisher on YM UI
-    const defaultValues = ymUiConfig.defaultValues ?? {};
-    // If floorsData is not present, use default values
-    const ymFloorsData = dynamicFloors.data ?? { ...defaultValueTemplate, values: { ...defaultValues } };
-
-    delete ymUiConfig.defaultValues;
-    // If skiprate is provided in configs, overwrite the value in ymFloorsData
-    (ymUiConfig.skipRate !== undefined) && (ymFloorsData.skipRate = ymUiConfig.skipRate);
-
-    // merge default configs from page, configs
-    return {
-        floors: {
-            ...defaultFloorConfig,
-            ...ymUiConfig,
-            data: ymFloorsData,
-            additionalSchemaFields: {
-                deviceType: getDeviceType,
-                timeOfDay: getTimeOfDay,
-                browser: getBrowser,
-                os: getOs,
-                utm: getUtm,
-                country: getCountry,
-                bidder: getBidder,
-            },
-        },
-    };
-};
-
-export const getRtdConfig = async (publisherId, profileId) => {
-  const apiResponse = await fetchData(publisherId, profileId);
-
-  if (!isPlainObject(apiResponse) || isEmpty(apiResponse)) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
-  } else {
-    // Check for each module in config
-    if (apiResponse.plugins?.dynamicFloors) {
-      try {
-        conf.setConfig(setFloorsConfig());
-        logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicFloors config set successfully`);
-      } catch (error) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicFloors config: ${error}`);
-      }
-    }
-
-    // if (apiResponse.plugins?.dynamicBidderOptimisation) {
-    //   try {
-    //    setBidderOptimisationConfig(apiResponse.plugins.dynamicBidderOptimisation.data);
-    //    logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicBidderOptimisation config set successfully`);
-    //   } catch (error) {
-    //     logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicBidderOptimisation config: ${error}`);
-    //   }
-    // }
-  }
-};
-
-export const fetchData = async (publisherId, profileId) => {
+  /**
+   * Fetch configuration from the server
+   * @param {string} publisherId - Publisher ID
+   * @param {string} profileId - Profile ID
+   * @returns {Promise<Object>} - Promise resolving to the config object
+   */
+  async function fetchConfig(publisherId, profileId) {
     try {
       const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
       const response = await fetch(url);
 
       if (!response.ok) {
         logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: Not ok`);
-        return;
+        return null;
       }
 
+      // Extract country code if available
       const cc = response.headers?.get('country_code');
-      _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
-      _configData = await response.json();
-      setProfileConfigs(_configData);
+      country = cc ? cc.split(',')?.map(code => code.trim())[0] : "IN";
 
-      return _configData;
+      // Parse the JSON response
+      const ymConfigs = await response.json();
+
+      if (!isPlainObject(ymConfigs) || isEmpty(ymConfigs)) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
+        return null;
+      }
+
+      // Store the configuration
+      setYMConfig(ymConfigs);
+
+      return true;
     } catch (error) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`);
+      return null;
     }
-};
+  }
+
+  /**
+   * Get configuration by name
+   * @param {string} name - Plugin name
+   * @returns {Object} - Plugin configuration
+   */
+  const getConfigByName = (name) => {
+    return getYMConfig()?.plugins?.[name];
+  }
+
+  return {
+    fetchConfig,
+    getYMConfig,
+    setYMConfig,
+    getConfigByName,
+    get country() { return country; }
+  };
+}
+
+// Create core components
+export const pluginManager = PluginManager();
+export const configJsonManager = ConfigJsonManager();
+
+// Register plugins
+pluginManager.register('dynamicFloors', FloorProvider);
+pluginManager.register('unifiedPricingRule', UnifiedPricingRule);
 
 /**
  * Initialize the Pubmatic RTD Module.
@@ -464,26 +104,28 @@ export const fetchData = async (publisherId, profileId) => {
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-    const { publisherId, profileId } = config?.params || {};
+  const { publisherId, profileId } = config?.params || {};
 
-    if (!publisherId || !profileId) {
-      logError(
-        `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`
-      );
-      return false;
-    }
+  if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
+    logError(
+      `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
+        : !isStr(publisherId) ? 'Publisher Id should be a string.'
+          : !profileId ? 'Missing profile Id.'
+            : 'Profile Id should be a string.'
+      }`
+    );
+    return false;
+  }
 
-    publisherId = String(publisherId).trim();
-    profileId = String(profileId).trim();
-
-    if (!isFn(continueAuction)) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
-      return false;
-    }
-
-    _ymConfigPromise = getRtdConfig(publisherId, profileId);
-
-    return true;
+  // Fetch configuration and initialize plugins
+  _ymConfigPromise = configJsonManager.fetchConfig(publisherId, profileId)
+    .then(success => {
+      if (!success) {
+        return Promise.reject(new Error('Failed to fetch configuration'));
+      }
+      return pluginManager.initialize(configJsonManager);
+    });
+  return true;
 };
 
 /**
@@ -492,55 +134,29 @@ const init = (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   _ymConfigPromise.then(() => {
-
-  //   const decision = getBidderDecision({
-  //     auctionId: reqBidsConfigObj?.auctionId,
-  //     browser: getBrowserType(),
-  //     reqBidsConfigObj
-  //   });
-  //  if(!decision?.skipped){
-  //   for(const [adUnitCode, bidderList] of Object.entries(decision?.excludedBiddersByAdUnit)) {
-  //     filterBidders(bidderList, reqBidsConfigObj, adUnitCode);
-  //   }
-  //  }else {
-  //   //BO is skipped, set in ortb2 to use in reporting
-  //   const ortb2 = {
-  //     ext: {
-  //       bo_skipped: true,
-  //     }
-  //   }
-  //   mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-  //     [CONSTANTS.SUBMODULE_NAME]: ortb2
-  //   });
-  //  }
-
-    const hookConfig = {
-      reqBidsConfigObj,
-      context: this,
-            nextFn: () => true,
-            haveExited: false,
-            timer: null
-        };
-        continueAuction(hookConfig);
-        if (_country) {
-          const ortb2 = {
-              user: {
-                  ext: {
-                      ctr: _country,
-                  }
-              }
+    pluginManager.executeHook('processBidRequest', reqBidsConfigObj);
+    // Apply country information if available
+    const country = configJsonManager.country;
+    if (country) {
+      const ortb2 = {
+        user: {
+          ext: {
+            ctr: country,
           }
-
-          mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-              [CONSTANTS.SUBMODULE_NAME]: ortb2
-          });
         }
-        callback();
-    }).catch((error) => {
-        logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
-        callback();
-    });
-}
+      };
+
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+        [CONSTANTS.SUBMODULE_NAME]: ortb2
+      });
+    }
+
+    callback();
+  }).catch(error => {
+    logError(CONSTANTS.LOG_PRE_FIX, error);
+    callback();
+  });
+};
 
 /**
  * Returns targeting data for ad units
@@ -551,62 +167,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @return {Object} - Targeting data for ad units
  */
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
-  // Access the profile configs stored globally
-  const profileConfigs = getProfileConfigs();
-
-  // Return empty object if profileConfigs is undefined or pmTargetingKeys.enabled is explicitly set to false
-  if (!profileConfigs || profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.enabled === false) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} pmTargetingKeys is disabled or profileConfigs is undefined`);
-    return {};
-  }
-
-  // Helper to check if RTD floor is applied to a bid
-  const isRtdFloorApplied = bid => bid.floorData?.floorProvider === "PM" && !bid.floorData.skipped;
-
-  // Check if any bid has RTD floor applied
-  const hasRtdFloorAppliedBid =
-    auction?.adUnits?.some(adUnit => adUnit.bids?.some(isRtdFloorApplied)) ||
-    auction?.bidsReceived?.some(isRtdFloorApplied);
-
-  // Only log when RTD floor is applied
-  if (hasRtdFloorAppliedBid) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData:');
-  }
-
-  // Process each ad unit code
-  const targeting = {};
-
-  adUnitCodes.forEach(code => {
-    targeting[code] = {};
-
-    // For non-RTD floor applied cases, only set pm_ym_flrs to 0
-    if (!hasRtdFloorAppliedBid) {
-      targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 0;
-      return;
-    }
-
-    // Find bids and determine status for RTD floor applied cases
-    const bidsForAdUnit = findBidsForAdUnit(auction, code);
-    const rejectedBidsForAdUnit = findRejectedBidsForAdUnit(auction, code);
-    const rejectedFloorBid = findRejectedFloorBid(rejectedBidsForAdUnit);
-    const winningBid = findWinningBid(code);
-
-    // Determine bid status and values
-    const { bidStatus, baseValue, multiplier } = determineBidStatusAndValues(
-      winningBid,
-      rejectedFloorBid,
-      bidsForAdUnit,
-      auction,
-      code
-    );
-
-    // Set all targeting keys
-    targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 1;
-    targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = (baseValue * multiplier).toFixed(2);
-    targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
-  });
-
-  return targeting;
+  return pluginManager.executeHook('getTargeting', adUnitCodes, config, userConsent, auction);
 };
 
 export const pubmaticSubmodule = {
