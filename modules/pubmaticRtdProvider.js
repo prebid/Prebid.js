@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, logInfo, isStr, isPlainObject, isEmpty, isFn, mergeDeep, logMessage } from '../src/utils.js';
+import { logError, logInfo, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../libraries/pubmaticUtils/pubmaticUtils.js';
@@ -466,16 +466,15 @@ export const fetchData = async (publisherId, profileId) => {
 const init = (config, _userConsent) => {
     const { publisherId, profileId } = config?.params || {};
 
-    if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
+    if (!publisherId || !profileId) {
       logError(
-        `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
-          : !isStr(publisherId) ? 'Publisher Id should be a string.'
-            : !profileId ? 'Missing profile Id.'
-              : 'Profile Id should be a string.'
-        }`
+        `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`
       );
       return false;
     }
+
+    publisherId = String(publisherId).trim();
+    profileId = String(profileId).trim();
 
     if (!isFn(continueAuction)) {
       logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
