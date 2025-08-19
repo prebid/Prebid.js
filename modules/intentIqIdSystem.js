@@ -11,6 +11,7 @@ import {submodule} from '../src/hook.js'
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
+import {makeEmptyCH} from '../libraries/intentIqUtils/clientHintsUtils.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {readData, storeData, defineStorageType, removeDataByKey, tryParse} from '../libraries/intentIqUtils/storageUtils.js';
 import {
@@ -21,7 +22,7 @@ import {
   EMPTY,
   GVLID,
   VERSION, INVALID_ID, SCREEN_PARAMS, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
-  HOURS_24
+  HOURS_24, CH_KEYS
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
 import {iiqPixelServerAddress, iiqServerAddress} from '../libraries/intentIqUtils/intentIqConfig.js';
@@ -386,24 +387,27 @@ export const intentIqIdSubmodule = {
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
 
-    // Get client hints and save to storage
-    if (navigator?.userAgentData?.getHighEntropyValues) {
-      navigator.userAgentData
-        .getHighEntropyValues([
-          'brands',
-          'mobile',
-          'bitness',
-          'wow64',
-          'architecture',
-          'model',
-          'platform',
-          'platformVersion',
-          'fullVersionList'
-        ])
-        .then(ch => {
-          clientHints = handleClientHints(ch);
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData)
-        });
+    function getClientHintsFast(timeoutMs = configParams?.timeoutInMillis ?? 150) {
+      if (clientHints) return Promise.resolve(clientHints);
+
+      const raw = (navigator?.userAgentData?.getHighEntropyValues)
+        ? navigator.userAgentData.getHighEntropyValues(CH_KEYS)
+            .then(ch => {
+              const handled = handleClientHints(ch);
+              if (handled) {
+                clientHints = handled;
+                storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+              }
+              return clientHints || handleClientHints(makeEmptyCH());
+            })
+            .catch(() => handleClientHints(makeEmptyCH()))
+        : Promise.resolve(handleClientHints(makeEmptyCH()));
+          
+      return Promise.race([
+        raw,
+        new Promise(resolve => setTimeout(() =>
+          resolve(clientHints || handleClientHints(makeEmptyCH())), timeoutMs))
+      ]);
     }
 
     const savedData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage))
@@ -456,9 +460,17 @@ export const intentIqIdSubmodule = {
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
-      const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData)
-      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser)
-      return
+
+      if (clientHints) {
+        const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData);
+        sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+      } else {
+        getClientHintsFast().then(ch => {
+          const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
+          sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+        });
+      }
+      return;
     }
 
     if (!shouldCallServer) {
@@ -478,7 +490,7 @@ export const intentIqIdSubmodule = {
     url = appendCMPData(url, cmpData);
     url += '&japs=' + encodeURIComponent(configParams.siloEnabled === true);
     url = appendCounters(url);
-    url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
+    // url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
@@ -619,7 +631,23 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
 
-      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      const chStart = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+      if (clientHints) {
+        url += '&uh=' + encodeURIComponent(clientHints);
+        ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      } else {
+        const chStart = (performance && performance.now) ? performance.now() : Date.now(); // для таймера (видалю)
+        getClientHintsFast().then(ch => {
+          const nowTs = (performance && performance.now) ? performance.now() : Date.now();// для таймера (видалю)
+          const elapsed = nowTs - chStart; // для таймера (видалю) 
+          console.log('CH:', ch ? 'отримали' : 'не отримали', 'чекали: ', elapsed.toFixed(1), 'мс'); // для таймера (видалю)
+          url += '&uh=' + encodeURIComponent(ch);
+          ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+        }).catch(() => {
+          ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+        });
+      }
     };
     const respObj = {callback: resp};
 
