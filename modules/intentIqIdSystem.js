@@ -387,48 +387,40 @@ export const intentIqIdSubmodule = {
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
 
-    function supportsHighEntropyCH() {
+    function hasCHSupport() {
       return !!(navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
     }
 
-    function refreshCHInBackground() {
-      if (!supportsHighEntropyCH()) return;
-      navigator.userAgentData.getHighEntropyValues(CH_KEYS)
-        .then(ch => {
-          const handled = handleClientHints(ch) || '';
-          if (handled && handled !== clientHints) {
-            clientHints = handled;
-            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-          }
-        })
-        .catch(err => {
-          logError('CH fetch failed', err);
-          return '';
-        });
+    function fetchAndHandleCH() {
+      if (!hasCHSupport()) return Promise.resolve('');
+      return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
+        
+      .then(raw => {
+        const handled = handleClientHints(raw) || '';
+        if (handled && handled !== clientHints) {
+          clientHints = handled;
+          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+        }
+        return handled;
+      })
+      .catch(err => {
+        logError('CH fetch failed', err);
+        return '';
+      });
     }
 
-    function getClientHintsFast(timeoutMs = chTimeout) {
-      if (clientHints) return Promise.resolve(clientHints);
-    
-      if (!supportsHighEntropyCH()) {
-        return Promise.resolve('');
-      }
-    
-      const getCh = navigator.userAgentData.getHighEntropyValues(CH_KEYS)
-        .then(ch => {
-          const handled = handleClientHints(ch) || '';
-          if (handled) {
-            clientHints = handled;
-            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-          }
-          return handled;
-        })
-        .catch(() => '');
+    function refreshCH() {
+      fetchAndHandleCH();
+    }
       
-      return Promise.race([
-        getCh,
-        new Promise(resolve => setTimeout(() => resolve(''), timeoutMs))
-      ]);
+    function getClientHints(timeoutMs = chTimeout) {
+      if (clientHints) return Promise.resolve(clientHints);
+      if (!hasCHSupport()) return Promise.resolve('');
+
+      const fetchPromise = fetchAndHandleCH();
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(''), timeoutMs));
+
+      return Promise.race([fetchPromise, timeoutPromise]);
     }
 
     const savedData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage))
@@ -481,14 +473,17 @@ export const intentIqIdSubmodule = {
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
-
       if (clientHints) {
         const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData);
+
         sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+        refreshCH();
       } else {
-        getClientHintsFast().then(ch => {
+        getClientHints(chTimeout).then(ch => {
           const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
+
           sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+          refreshCH();
         });
       }
       return;
@@ -511,7 +506,6 @@ export const intentIqIdSubmodule = {
     url = appendCMPData(url, cmpData);
     url += '&japs=' + encodeURIComponent(configParams.siloEnabled === true);
     url = appendCounters(url);
-    // url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
@@ -655,9 +649,9 @@ export const intentIqIdSubmodule = {
       if (clientHints) {
         url += '&uh=' + encodeURIComponent(clientHints);
         ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
-        refreshCHInBackground();
+        refreshCH();
       } else {
-        getClientHintsFast().then(ch => {
+        getClientHints(chTimeout).then(ch => {
           if (ch) url += '&uh=' + encodeURIComponent(ch);
           ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
         }).catch(() => {
