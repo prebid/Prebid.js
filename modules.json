@@ -42,6 +42,7 @@
     "priceFloors",
     "pubmaticBidAdapter",
     "pubProvidedIdSystem",
+    "richaudienceBidAdapter",
     "riseBidAdapter",
     "rtdModule",
     "rubiconBidAdapter",
