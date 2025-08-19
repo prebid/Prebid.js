@@ -15,6 +15,7 @@ import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import { Renderer } from '../src/Renderer.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import {toOrtb25} from "../libraries/ortb2.5Translator/translator.js";
 const BIDDER_CODE = 'ozone';
 const ORIGIN = 'https://elb.the-ozone-project.com';
 const AUCTIONURI = '/openrtb2/auction';
@@ -337,8 +338,8 @@ export const spec = {
       logInfo('WILL NOT ADD USP consent info; no bidderRequest.uspConsent.');
     }
     if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(ozoneRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(ozoneRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+      deepSetValue(ozoneRequest, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(ozoneRequest, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
     }
     if (schain) {
       logInfo('schain found');
@@ -361,6 +362,7 @@ export const spec = {
         }
         ozoneRequest.imp = tosendtags.slice(i, i + batchRequestsVal);
         ozoneRequest.ext = extObj;
+        toOrtb25(ozoneRequest);
         if (ozoneRequest.imp.length > 0) {
           arrRet.push({
             method: 'POST',
@@ -378,6 +380,7 @@ export const spec = {
       ozoneRequest.id = generateUUID();
       ozoneRequest.imp = tosendtags;
       ozoneRequest.ext = extObj;
+      toOrtb25(ozoneRequest);
       deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
       if (auctionId) {
         deepSetValue(ozoneRequest, 'source.tid', auctionId);
@@ -402,6 +405,7 @@ export const spec = {
       if (auctionId) {
         deepSetValue(ozoneRequestSingle, 'source.tid', auctionId);
       }
+      toOrtb25(ozoneRequest);
       return {
         method: 'POST',
         url: this.getAuctionUrl(),
