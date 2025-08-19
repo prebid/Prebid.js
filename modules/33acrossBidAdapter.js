@@ -63,7 +63,7 @@ const VIDEO_ORTB_PARAMS = [
 ];
 
 const adapterState = {
-  uniqueSiteIds: []
+  uniqueZoneIds: []
 };
 
 const NON_MEASURABLE = 'nm';
@@ -102,34 +102,29 @@ function collapseFalsy(obj) {
 // **************************** VALIDATION *************************** //
 function isBidRequestValid(bid) {
   return (
-    _validateBasic(bid) &&
-    _validateBanner(bid) &&
-    _validateVideo(bid)
+    hasValidBasicProperties(bid) &&
+    hasValidBannerProperties(bid) &&
+    hasValidVideoProperties(bid)
   );
 }
 
-function _validateBasic(bid) {
+function hasValidBasicProperties(bid) {
   if (!bid.params) {
     return false;
   }
 
-  if (!_validateGUID(bid)) {
-    return false;
-  }
-
-  return true;
+  return hasValidGUID(bid);
 }
 
-function _validateGUID(bid) {
-  const siteID = deepAccess(bid, 'params.siteId', '') || '';
-  if (siteID.trim().match(GUID_PATTERN) === null) {
-    return false;
-  }
+function hasValidGUID(bid) {
+  const zoneId = deepAccess(bid, 'params.zoneId', '') ||
+    deepAccess(bid, 'params.siteId', '') ||
+    '';
 
-  return true;
+  return zoneId.trim().match(GUID_PATTERN) !== null;
 }
 
-function _validateBanner(bid) {
+function hasValidBannerProperties(bid) {
   const banner = deepAccess(bid, 'mediaTypes.banner');
 
   // If there's no banner no need to validate against banner rules
@@ -137,14 +132,10 @@ function _validateBanner(bid) {
     return true;
   }
 
-  if (!Array.isArray(banner.sizes)) {
-    return false;
-  }
-
-  return true;
+  return Array.isArray(banner.sizes);
 }
 
-function _validateVideo(bid) {
+function hasValidVideoProperties(bid) {
   const videoAdUnit = deepAccess(bid, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bid, 'params.video', {});
 
@@ -230,7 +221,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest.gdprConsent);
 
-  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
+  adapterState.uniqueZoneIds = bidRequests.map(req => (req.params.zoneId || req.params.siteId)).filter(uniques);
 
   return {
     ttxSettings,
@@ -261,7 +252,9 @@ function _groupBidRequests(bidRequests, keyFunc) {
 }
 
 function _getSRAKey(bidRequest) {
-  return `${bidRequest.params.siteId}:${bidRequest.params.productId}`;
+  const zoneId = bidRequest.params.zoneId || bidRequest.params.siteId;
+
+  return `${zoneId}:${bidRequest.params.productId}`;
 }
 
 function _getMRAKey(bidRequest) {
@@ -271,11 +264,11 @@ function _getMRAKey(bidRequest) {
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSettings, convertedORTB }) {
   const firstBidRequest = bidRequests[0];
-  const { siteId, test } = firstBidRequest.params;
+  const { siteId, zoneId = siteId, test } = firstBidRequest.params;
   const ttxRequest = collapseFalsy({
     imp: bidRequests.map(req => _buildImpORTB(req)),
     site: {
-      id: siteId,
+      id: zoneId,
       ref: referer
     },
     device: {
@@ -308,7 +301,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
   // Return the server request
   return {
     'method': 'POST',
-    'url': ttxSettings.url || `${END_POINT}?guid=${siteId}`, // Allow the ability to configure the HB endpoint for testing purposes.
+    'url': ttxSettings.url || `${END_POINT}?guid=${zoneId}`, // Allow the ability to configure the HB endpoint for testing purposes.
     'data': data,
     'options': {
       contentType: 'text/plain',
@@ -520,7 +513,7 @@ function contributeViewability(viewabilityAmount) {
 }
 
 // **************************** INTERPRET RESPONSE ******************************** //
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse(serverResponse) {
   const { seatbid, cur = CURRENCY } = serverResponse.body;
 
   if (!isArray(seatbid)) {
@@ -583,18 +576,18 @@ function _createBidResponse(bid, cur) {
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   const syncUrls = (
     (syncOptions.iframeEnabled)
-      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, gppConsent, siteId }))
+      ? adapterState.uniqueZoneIds.map((zoneId) => _createSync({ gdprConsent, uspConsent, gppConsent, zoneId }))
       : ([])
   );
 
-  // Clear adapter state of siteID's since we don't need this info anymore.
-  adapterState.uniqueSiteIds = [];
+  // Clear adapter state of zone IDs since we don't need this info anymore.
+  adapterState.uniqueZoneIds = [];
 
   return syncUrls;
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
+function _createSync({ zoneId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
   const ttxSettings = getTTXConfig();
   const syncUrl = ttxSettings.syncUrl || SYNC_ENDPOINT;
 
@@ -603,7 +596,7 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
+    url: `${syncUrl}&id=${zoneId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
   };
 
   if (typeof gdprApplies === 'boolean') {
