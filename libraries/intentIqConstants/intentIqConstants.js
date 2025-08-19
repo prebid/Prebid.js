@@ -36,3 +36,8 @@ export const MAX_REQUEST_LENGTH = {
   firefox: 65536,
   ie: 2048
 };
+
+export const CH_KEYS = [
+  'brands', 'mobile', 'bitness', 'wow64', 'architecture',
+  'model', 'platform', 'platformVersion', 'fullVersionList'
+];
