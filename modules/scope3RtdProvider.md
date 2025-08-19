@@ -151,7 +151,7 @@ Receives targeting instructions with opaque codes (e.g., 'x82s', 'a91k') that te
   "aee_signals": {
     "include": ["x82s", "a91k", "p2m7"],
     "exclude": ["c4x9", "f7r2"],
-    "macro": "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ==",
+    "macro": "ctx9h3v8s5",
     "bidders": {
       "rubicon": {
         "segments": ["r4x2", "r9s1"],
@@ -176,7 +176,7 @@ Receives targeting instructions with opaque codes (e.g., 'x82s', 'a91k') that te
 Sets the configured targeting keys (GAM automatically converts to lowercase):
 - `s3i` (or your includeKey): ["x82s", "a91k", "p2m7"] - line items to include
 - `s3x` (or your excludeKey): ["c4x9", "f7r2"] - line items to exclude
-- `s3m` (or your macroKey): "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
+- `s3m` (or your macroKey): "ctx9h3v8s5" - opaque context data
 
 #### Advertiser Data (OpenRTB)
 Enriches bid requests with AEE signals:
@@ -188,7 +188,7 @@ ortb2: {
         scope3_aee: {
           include: ["x82s", "a91k", "p2m7"],
           exclude: ["c4x9", "f7r2"],
-          macro: "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
+          macro: "ctx9h3v8s5"
         }
       }
     }
@@ -248,15 +248,9 @@ buildRequests: function(validBidRequests, bidderRequest) {
     // Respect exclude segments
     payload.exclude_segments = aeeSignals.exclude;
     
-    // Parse macro data if needed
+    // Include macro data as opaque string
     if (aeeSignals.macro) {
-      try {
-        const macroData = JSON.parse(atob(aeeSignals.macro));
-        payload.context_data = macroData;
-      } catch (e) {
-        // Handle as string if not base64 JSON
-        payload.context_blob = aeeSignals.macro;
-      }
+      payload.context_code = aeeSignals.macro;
     }
   }
 }
