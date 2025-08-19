@@ -156,9 +156,9 @@ describe('Scope3 RTD Module', function() {
 
       const responseData = {
         aee_signals: {
-          include: ['sports_fan', 'auto_intender'],
-          exclude: ['competitor_exposed'],
-          macro: 'eyJjb250ZXh0IjogImhpZ2hfdmFsdWUifQ==',
+          include: ['x82s', 'a91k'],
+          exclude: ['c4x9'],
+          macro: 'ctx9h3v8s5',
           bidders: {
             'bidderA': {
               segments: ['seg1', 'seg2'],
@@ -180,12 +180,30 @@ describe('Scope3 RTD Module', function() {
 
       // Check global ortb2 enrichment with AEE signals
       expect(reqBidsConfigObj.ortb2Fragments.global.site.ext.data.scope3_aee).to.deep.equal({
-        include: ['sports_fan', 'auto_intender'],
-        exclude: ['competitor_exposed'],
-        macro: 'eyJjb250ZXh0IjogImhpZ2hfdmFsdWUifQ=='
+        include: ['x82s', 'a91k'],
+        exclude: ['c4x9'],
+        macro: 'ctx9h3v8s5'
       });
 
-      // Check bidder-specific enrichment
+      // Check s3kw for broader compatibility
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.ext.data.s3kw).to.deep.equal(['x82s', 'a91k']);
+
+      // Check site.content.data with segtax
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data).to.have.lengthOf(1);
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0]).to.deep.include({
+        name: 'scope3.com',
+        ext: { segtax: 600 }
+      });
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment).to.deep.equal([
+        { id: 'x82s' },
+        { id: 'a91k' }
+      ]);
+
+      // Check bidder-specific enrichment with segtax
+      expect(reqBidsConfigObj.ortb2Fragments.bidder.bidderA.user.data[0]).to.deep.include({
+        name: 'scope3.com',
+        ext: { segtax: 600 }
+      });
       expect(reqBidsConfigObj.ortb2Fragments.bidder.bidderA.user.data[0].segment).to.deep.equal([
         { id: 'seg1' },
         { id: 'seg2' }
@@ -254,6 +272,41 @@ describe('Scope3 RTD Module', function() {
       // Only bidderA should be enriched
       expect(reqBidsConfigObj.ortb2Fragments.bidder.bidderA).to.exist;
       expect(reqBidsConfigObj.ortb2Fragments.bidder.bidderB).to.not.exist;
+    });
+
+    it('should handle AppNexus keyword format', function() {
+      scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, config);
+
+      const responseData = {
+        aee_signals: {
+          include: ['x82s'],
+          bidders: {
+            'appnexus': {
+              segments: ['apn1', 'apn2'],
+              deals: []
+            }
+          }
+        }
+      };
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify(responseData)
+      );
+
+      // Check AppNexus gets keywords in their format
+      expect(reqBidsConfigObj.ortb2Fragments.bidder.appnexus.site.keywords).to.equal('s3_seg=apn1,s3_seg=apn2');
+      
+      // Also check they get the standard user.data format with segtax
+      expect(reqBidsConfigObj.ortb2Fragments.bidder.appnexus.user.data[0]).to.deep.include({
+        name: 'scope3.com',
+        ext: { segtax: 600 }
+      });
+      expect(reqBidsConfigObj.ortb2Fragments.bidder.appnexus.user.data[0].segment).to.deep.equal([
+        { id: 'apn1' },
+        { id: 'apn2' }
+      ]);
     });
 
     it('should handle bidder-specific deals', function() {
