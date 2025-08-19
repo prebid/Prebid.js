@@ -9,10 +9,10 @@ The Scope3 RTD module enables real-time agentic execution for programmatic adver
 This module:
 1. Captures the **complete OpenRTB request** including all user IDs, geo data, device info, and site context
 2. Sends it to Scope3's AEE for real-time analysis
-3. Receives back targeting signals that indicate which segments to include/exclude
+3. Receives back targeting instructions: which line items to include/exclude this impression from
 4. Applies these signals as targeting keys for the ad server
 
-The AEE operates on the full context of each bid opportunity to make intelligent decisions about audience targeting and optimization.
+The AEE returns opaque codes (e.g., "x82s") that instruct GAM which line items should or shouldn't serve. These are NOT audience segments - they're proprietary signals for line item targeting decisions.
 
 ### Features
 
@@ -145,7 +145,7 @@ Sends the complete OpenRTB request with list of bidders:
 ```
 
 ### 3. AEE Response
-Receives targeting signals with bidder-specific segments and deals. Note that Scope3 uses short, brand-specific segment codes (e.g., 'x82s', 'a91k') rather than standard IAB taxonomy for efficiency and privacy:
+Receives targeting instructions with opaque codes (e.g., 'x82s', 'a91k') that tell GAM which line items to include/exclude. These are NOT audience segments or IAB taxonomy:
 ```json
 {
   "aee_signals": {
@@ -174,8 +174,8 @@ Receives targeting signals with bidder-specific segments and deals. Note that Sc
 
 #### Publisher Targeting (GAM)
 Sets the configured targeting keys (GAM automatically converts to lowercase):
-- `s3i` (or your includeKey): ["x82s", "a91k", "p2m7"] (short brand-specific segments)
-- `s3x` (or your excludeKey): ["c4x9", "f7r2"] (exclusion segments)
+- `s3i` (or your includeKey): ["x82s", "a91k", "p2m7"] - line items to include
+- `s3x` (or your excludeKey): ["c4x9", "f7r2"] - line items to exclude
 - `s3m` (or your macroKey): "eyJjb250ZXh0IjogImhpZ2hfdmFsdWUiLCAic2NvcmUiOiAwLjg1fQ=="
 
 #### Advertiser Data (OpenRTB)
@@ -200,20 +200,20 @@ ortb2: {
 
 ### Google Ad Manager Line Items
 
-Create targeted line items using the AEE signals:
+Create line items that respond to agent targeting instructions. The codes (e.g., "x82s") tell GAM "include this impression in this line item" or "exclude from this line item":
 
 ```
-Target Sports Fans:
+Include impression in this line item:
 s3i contains "x82s"
 
-Exclude Frequency Capped Users:
+Exclude impression from this line item:
 s3x does not contain "f7r2"
 
-Target Auto Intenders without Competitor Exposure:
+Multiple targeting conditions:
 s3i contains "a91k" AND s3x does not contain "c4x9"
 
-High Value Users (using macro):
-s3m contains "high_value"
+Macro data for creative:
+s3m is present
 ```
 
 ### Custom Key Configuration
@@ -228,9 +228,9 @@ params: {
 }
 
 // GAM Line Items would use:
-targeting contains "x82s"
-blocking does not contain "f7r2"
-context contains "high_value"
+targeting contains "x82s"  // Include in line item
+blocking does not contain "f7r2"  // Exclude from line item
+context is present  // Macro data available
 ```
 
 ### Bidder Adapter Integration
