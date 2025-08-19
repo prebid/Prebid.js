@@ -1,18 +1,17 @@
 /**
  * Scope3 RTD Provider
- * 
+ *
  * This module integrates Scope3's Agentic Execution Engine (AEE) to provide
  * real-time contextual signals for programmatic advertising optimization.
  */
 
 import { submodule } from '../src/hook.js';
-import { logMessage, logError, logWarn, deepClone, isPlainObject, mergeDeep, isEmpty, getBidderCodes } from '../src/utils.js';
+import { logMessage, logError, logWarn, deepClone, isEmpty, getBidderCodes } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import type { RtdProviderSpec } from './rtdModule/spec.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
-import type { AllConsentData } from '../src/consentHandler.ts';
 
 declare module './rtdModule/spec' {
   interface ProviderConfig {
@@ -90,7 +89,6 @@ interface CacheEntry {
 
 const MODULE_NAME = 'scope3RtdProvider';
 const MODULE_VERSION = '1.0.0';
-const STORAGE_KEY = 'scope3_rtd';
 const DEFAULT_ENDPOINT = 'https://prebid.scope3.com/prebid';
 const DEFAULT_TIMEOUT = 1000;
 const DEFAULT_CACHE_TTL = 300000; // 5 minutes
@@ -104,11 +102,11 @@ let responseCache: Map<string, CacheEntry> = new Map();
  */
 function initModule(config: any): boolean {
   moduleConfig = config;
-  
+
   if (!storage) {
     storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
   }
-  
+
   // Set defaults
   moduleConfig.endpoint = moduleConfig.endpoint || DEFAULT_ENDPOINT;
   moduleConfig.timeout = moduleConfig.timeout || DEFAULT_TIMEOUT;
@@ -119,7 +117,7 @@ function initModule(config: any): boolean {
   moduleConfig.advertiserTargeting = moduleConfig.advertiserTargeting !== false;
   moduleConfig.cacheEnabled = moduleConfig.cacheEnabled !== false;
   moduleConfig.cacheTtl = moduleConfig.cacheTtl || DEFAULT_CACHE_TTL;
-  
+
   logMessage(`Scope3 RTD Provider initialized with config:`, moduleConfig);
   return true;
 }
@@ -130,10 +128,10 @@ function initModule(config: any): boolean {
 function extractOrtb2Data(reqBidsConfigObj: StartAuctionOptions): any {
   // Deep copy the complete OpenRTB object from global fragments to preserve all data
   const ortb2 = reqBidsConfigObj.ortb2Fragments?.global || {};
-  
+
   // Deep clone to avoid modifying the original
   const ortb2Request = deepClone(ortb2);
-  
+
   // Build impression array from ad units with full mediaType information
   ortb2Request.imp = reqBidsConfigObj.adUnits?.map(adUnit => ({
     id: adUnit.code,
@@ -154,7 +152,7 @@ function extractOrtb2Data(reqBidsConfigObj: StartAuctionOptions): any {
     } : undefined,
     ext: adUnit.ortb2Imp?.ext || {}
   })) || [];
-  
+
   return ortb2Request;
 }
 
@@ -178,7 +176,7 @@ function getCachedData(cacheKey: string): AEESignals | null {
   if (!moduleConfig?.cacheEnabled) {
     return null;
   }
-  
+
   const cached = responseCache.get(cacheKey);
   if (cached) {
     const now = Date.now();
@@ -199,12 +197,12 @@ function setCachedData(cacheKey: string, data: AEESignals): void {
   if (!moduleConfig?.cacheEnabled) {
     return;
   }
-  
+
   responseCache.set(cacheKey, {
     data: data,
     timestamp: Date.now()
   });
-  
+
   // Clean up old cache entries
   const now = Date.now();
   const ttl = moduleConfig.cacheTtl || DEFAULT_CACHE_TTL;
@@ -223,51 +221,51 @@ function applyAgentDecisions(
   aeeSignals: AEESignals
 ): void {
   if (!aeeSignals) return;
-  
+
   // Initialize fragments if needed
   reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
   reqBidsConfigObj.ortb2Fragments.global = reqBidsConfigObj.ortb2Fragments.global || {};
   reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {};
-  
+
   // Apply global AEE signals to site.ext.data
   if (aeeSignals.include || aeeSignals.exclude || aeeSignals.macro) {
     reqBidsConfigObj.ortb2Fragments.global.site = reqBidsConfigObj.ortb2Fragments.global.site || {};
     reqBidsConfigObj.ortb2Fragments.global.site.ext = reqBidsConfigObj.ortb2Fragments.global.site.ext || {};
     reqBidsConfigObj.ortb2Fragments.global.site.ext.data = reqBidsConfigObj.ortb2Fragments.global.site.ext.data || {};
-    
+
     (reqBidsConfigObj.ortb2Fragments.global.site.ext.data as any).scope3_aee = {
       include: aeeSignals.include || [],
       exclude: aeeSignals.exclude || [],
       macro: aeeSignals.macro || ''
     };
-    
+
     logMessage('Scope3 RTD: Applied global AEE signals', (reqBidsConfigObj.ortb2Fragments.global.site.ext.data as any).scope3_aee);
   }
-  
+
   // Apply bidder-specific segments and deals
   if (aeeSignals.bidders && !isEmpty(aeeSignals.bidders)) {
     const allowedBidders = moduleConfig?.bidders || Object.keys(aeeSignals.bidders);
-    
+
     allowedBidders.forEach(bidder => {
       const bidderData = aeeSignals.bidders![bidder];
       if (!bidderData) return;
-      
+
       // Initialize bidder fragment
       reqBidsConfigObj.ortb2Fragments.bidder[bidder] = reqBidsConfigObj.ortb2Fragments.bidder[bidder] || {};
-      
+
       // Apply segments to user.data
       if (bidderData.segments && bidderData.segments.length > 0) {
         reqBidsConfigObj.ortb2Fragments.bidder[bidder].user = reqBidsConfigObj.ortb2Fragments.bidder[bidder].user || {};
         reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data = reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data || [];
-        
+
         reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data.push({
           name: 'scope3.com',
           segment: bidderData.segments.map(seg => ({ id: seg }))
         });
-        
+
         logMessage(`Scope3 RTD: Applied segments for ${bidder}`, bidderData.segments);
       }
-      
+
       // Apply deals to ad units
       if (bidderData.deals && bidderData.deals.length > 0) {
         reqBidsConfigObj.adUnits?.forEach(adUnit => {
@@ -276,7 +274,7 @@ function applyAgentDecisions(
           adUnit.ortb2Imp.ext[bidder] = adUnit.ortb2Imp.ext[bidder] || {};
           (adUnit.ortb2Imp.ext[bidder] as any).deals = bidderData.deals;
         });
-        
+
         logMessage(`Scope3 RTD: Applied deals for ${bidder}`, bidderData.deals);
       }
     });
@@ -293,7 +291,7 @@ function preparePayload(ortb2Data: any, reqBidsConfigObj: StartAuctionOptions): 
     // Get all bidders from the ad units
     bidders = getBidderCodes(reqBidsConfigObj.adUnits);
   }
-  
+
   return {
     orgId: moduleConfig?.orgId,
     ortb2: ortb2Data,
@@ -308,26 +306,26 @@ function preparePayload(ortb2Data: any, reqBidsConfigObj: StartAuctionOptions): 
  */
 export const scope3SubModule: RtdProviderSpec<'scope3RtdProvider'> = {
   name: 'scope3RtdProvider',
-  
+
   init(config, consent) {
     try {
       if (!config || !config.params) {
         logError('Scope3 RTD: Missing configuration');
         return false;
       }
-      
+
       if (!config.params.orgId) {
         logError('Scope3 RTD: Missing required orgId parameter');
         return false;
       }
-      
+
       return initModule(config.params);
     } catch (e) {
       logError('Scope3 RTD: Error during initialization', e);
       return false;
     }
   },
-  
+
   getBidRequestData(reqBidsConfigObj, callback, config, consent, timeout) {
     try {
       if (!moduleConfig) {
@@ -335,23 +333,23 @@ export const scope3SubModule: RtdProviderSpec<'scope3RtdProvider'> = {
         callback();
         return;
       }
-      
+
       // Extract complete OpenRTB data
       const ortb2Data = extractOrtb2Data(reqBidsConfigObj);
-      
+
       // Check cache first
       const cacheKey = generateCacheKey(ortb2Data);
       const cachedData = getCachedData(cacheKey);
-      
+
       if (cachedData) {
         applyAgentDecisions(reqBidsConfigObj, cachedData);
         callback();
         return;
       }
-      
+
       // Prepare payload
       const payload = preparePayload(ortb2Data, reqBidsConfigObj);
-      
+
       // Make API request
       ajax(
         moduleConfig.endpoint!,
@@ -360,11 +358,11 @@ export const scope3SubModule: RtdProviderSpec<'scope3RtdProvider'> = {
             try {
               const data = JSON.parse(response) as AEEResponse;
               logMessage('Scope3 RTD: Received response', data);
-              
+
               if (data.aee_signals) {
                 // Cache the response
                 setCachedData(cacheKey, data.aee_signals);
-                
+
                 // Apply the signals
                 applyAgentDecisions(reqBidsConfigObj, data.aee_signals);
               }
