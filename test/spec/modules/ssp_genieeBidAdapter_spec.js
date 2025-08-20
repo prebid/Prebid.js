@@ -132,6 +132,20 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[0].data.zoneid).to.deep.equal(BANNER_BID.params.zoneId);
       });
 
+      it('should set the title query to the encoded page title', function () {
+        const testTitle = "Test Page Title with 'special' & \"chars\"";
+        document.title = testTitle;
+        const request = spec.buildRequests([BANNER_BID]);
+        const expectedEncodedTitle = encodeURIComponent(testTitle).replace(/'/g, '%27');
+        expect(request[0].data.title).to.deep.equal(expectedEncodedTitle);
+      });
+
+      it('should not set the title query when the page title is empty', function () {
+        document.title = '';
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('title');
+      });
+
       it('should sets the values for loc and referer queries when bidderRequest.refererInfo.referer has a value', function () {
         const referer = 'https://example.com/';
         const request = spec.buildRequests([BANNER_BID], {

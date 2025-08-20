@@ -161,6 +161,11 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     ...(gpid ? { gpid } : {}),
   };
 
+  const pageTitle = document.title;
+  if (pageTitle) {
+    data.title = encodeURIComponentIncludeSingleQuotation(pageTitle);
+  }
+
   try {
     if (window.self.toString() !== '[object Window]' || window.parent.toString() !== '[object Window]') {
       data.err = '1';
