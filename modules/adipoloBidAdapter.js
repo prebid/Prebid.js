@@ -17,8 +17,8 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: bid => isBidRequestValid(bid, ['pid']),
   buildRequests: (validBidRequests, bidderRequest) => {
-    const region = validBidRequests[0]?.params.ext?.region
-    const endpoint = region ? ENDPOINTS[region] : ENDPOINTS["us-east"]
+    const region = validBidRequests[0]?.params.ext?.region;
+    const endpoint = ENDPOINTS[region] || ENDPOINTS['us-east'];
     return buildRequests(validBidRequests, bidderRequest, endpoint)
   },
   interpretResponse,
