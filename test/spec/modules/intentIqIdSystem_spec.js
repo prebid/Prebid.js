@@ -841,7 +841,6 @@ describe('IntentIQ tests', function () {
     expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
   });
 
-  // 2 
   it('should add clientHints to the URL if provided', function () {
     const firstPartyData = {};
     const clientHints = 'exampleClientHints';
@@ -854,7 +853,6 @@ describe('IntentIQ tests', function () {
     expect(url).to.include(`&uh=${encodeURIComponent(clientHints)}`);
   });
 
-  // 3
   it('should not add clientHints to the URL if not provided', function () {
     const firstPartyData = {};
     const configParams = { partner: 'testPartner', domainName: 'example.com' };
@@ -865,7 +863,6 @@ describe('IntentIQ tests', function () {
 
     expect(url).to.not.include('&uh=');
   });
-  
 
   it('should run callback from params', async () => {
     let wasCallbackCalled = false

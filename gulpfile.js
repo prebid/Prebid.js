@@ -567,20 +567,6 @@ gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-p
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); 
 
-gulp.task('test-single', function (done) {
-  const file = argv.file || '';
-  const grep = argv.grep || '';
-
-  const options = {
-    file: file,
-    grep: grep,
-    watch: false 
-  };
-
-  const testTask = testTaskMaker(options); 
-  testTask(done);
-});
-
 gulp.task('extract-metadata', function (done) {
   /**
    * Run the complete bundle in a headless browser to extract metadata (such as aliases & GVL IDs) from all modules,
