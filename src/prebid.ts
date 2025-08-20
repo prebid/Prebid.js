@@ -651,10 +651,7 @@ type RenderAdOptions = {
  * @param  id adId of the bid to render
  * @param options
  */
-async function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
-  if (getGlobal().scheduler !== false) {
-    await pbYield();
-  }
+function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
   renderAdDirect(doc, id, options);
 }
 addApiMethod('renderAd', renderAd);
