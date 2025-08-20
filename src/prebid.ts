@@ -652,7 +652,9 @@ type RenderAdOptions = {
  * @param options
  */
 async function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
-  await pbYield();
+  if (getGlobal().scheduler !== false) {
+    await pbYield();
+  }
   renderAdDirect(doc, id, options);
 }
 addApiMethod('renderAd', renderAd);
@@ -1211,7 +1213,11 @@ async function _processQueue(queue) {
         logError('Error processing command :', 'prebid.js', e);
       }
     }
-    await pbYield();
+    if (pbjsInstance.scheduler !== false) {
+      // `await` will yield the thread even if GreedyPromise attempts to hold on to it,
+      // so skip it entirely when yielding is turned off
+      await pbYield();
+    }
   }
 }
 

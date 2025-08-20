@@ -27,6 +27,7 @@ import {deepAccess, deepSetValue, generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -260,6 +261,23 @@ describe('Unit: Prebid Module', function () {
           pushToQueue();
           expect(ran).to.be.true;
         });
+        describe('when pbjs.scheduler is false', () => {
+          beforeEach(() => {
+            getGlobal().scheduler = false;
+          });
+          afterEach(() => {
+            delete getGlobal().scheduler;
+          })
+          it('should not yield', async () => {
+            pushToQueue();
+            expect(ran).to.be.false;
+            const pm = new Promise((resolve) => {resolve()});
+            getGlobal().processQueue();
+            await pm;
+            expect(ran).to.be.true;
+          });
+        });
+
       })
     });
   })

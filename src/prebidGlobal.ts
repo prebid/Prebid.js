@@ -22,9 +22,9 @@ export interface PrebidJS {
    */
   installedModules: string[]
   /**
-   * Optional scheduler used by pbYield().
+   * Optional scheduler to use for yielding the main thread. If false, turn off yielding.
    */
-  scheduler?: { yield: () => Promise<void> }
+  scheduler?: false | { yield: () => Promise<void> }
 }
 
 // if the global already exists in global document scope, use it, if not, create the object
