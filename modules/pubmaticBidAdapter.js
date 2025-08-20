@@ -587,6 +587,7 @@ function optimizeImps(imps, bidderRequest) {
     }
 
     const baseImp = optimizedImpsByAdUnit[adUnitCode];
+    baseImp.tagid = isStr(correspondingImp.tagid) ? correspondingImp.tagid : baseImp.tagid;
     const copyPropertytoPath = (propPath, propName, toMerge) => {
       if (correspondingImp[propPath] && correspondingImp[propPath][propName]) {
         if (!baseImp[propPath]) baseImp[propPath] = {};
