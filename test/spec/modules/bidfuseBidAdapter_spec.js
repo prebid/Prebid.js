@@ -291,7 +291,7 @@ describe('BidfuseBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=0'
+        url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=0'
       }]);
     });
 
@@ -299,7 +299,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=0'
+        url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=0'
       }]);
     });
 
@@ -307,7 +307,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=0',
+        'url': 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=0',
         'type': 'image'
       }]);
     });
@@ -319,7 +319,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=1'
+        url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=1'
       }]);
     });
 
