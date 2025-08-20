@@ -307,7 +307,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=0',
+        'url': 'https://syncbf.bidfuse.com/image?pbjs=1&coppa=0',
         'type': 'image'
       }]);
     });
