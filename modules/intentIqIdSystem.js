@@ -392,29 +392,35 @@ export const intentIqIdSubmodule = {
     }
 
     function fetchAndHandleCH() {
-      if (!hasCHSupport()) return Promise.resolve('');
-      return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
-        
-      .then(raw => {
-        const handled = handleClientHints(raw) || '';
-        if (handled && handled !== clientHints) {
-          clientHints = handled;
+      if (!hasCHSupport()) {
+        if (clientHints !== '') {
+          clientHints = '';
           storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
         }
-        return handled;
-      })
-      .catch(err => {
-        logError('CH fetch failed', err);
-        return '';
-      });
+        return Promise.resolve('');
+      }
+    
+      return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
+        .then(raw => {
+          const nextCH = handleClientHints(raw) || '';
+          const prevCH = clientHints || '';
+          if (nextCH !== prevCH) {
+            clientHints = nextCH;
+            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+          }
+          return nextCH;
+        })
+        .catch(err => {
+          logError('CH fetch failed', err);
+          if (clientHints !== '') {
+            clientHints = '';
+            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+          }
+          return '';
+        });
     }
 
-    function refreshCH() {
-      fetchAndHandleCH();
-    }
-      
     function getClientHints(timeoutMs = chTimeout) {
-      if (clientHints) return Promise.resolve(clientHints);
       if (!hasCHSupport()) return Promise.resolve('');
 
       const fetchPromise = fetchAndHandleCH();
@@ -477,13 +483,13 @@ export const intentIqIdSubmodule = {
         const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData);
 
         sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
-        refreshCH();
+        fetchAndHandleCH();
       } else {
         getClientHints(chTimeout).then(ch => {
           const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
 
           sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
-          refreshCH();
+          fetchAndHandleCH();
         });
       }
       return;
@@ -649,7 +655,7 @@ export const intentIqIdSubmodule = {
       if (clientHints) {
         url += '&uh=' + encodeURIComponent(clientHints);
         ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
-        refreshCH();
+        fetchAndHandleCH();
       } else {
         getClientHints(chTimeout).then(ch => {
           if (ch) url += '&uh=' + encodeURIComponent(ch);
