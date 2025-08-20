@@ -415,7 +415,9 @@ export const intentIqIdSubmodule = {
 
     if (hasCHSupport()) {
       chPromise = fetchAndHandleCH();
-      chPromise.catch(() => {});
+      chPromise.catch(err => {
+        logError('fetchAndHandleCH failed', err);
+      });
     }
 
     function waitOnCH(timeoutMs) {
@@ -469,6 +471,11 @@ export const intentIqIdSubmodule = {
       firePartnerCallback()
     }
 
+    function buildAndSendPixel(ch) {
+      const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
+      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+    }
+
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
@@ -477,15 +484,10 @@ export const intentIqIdSubmodule = {
       if (!hasCHSupport()) {
         clientHints = '';
         storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-
-        const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData);
-        sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+        buildAndSendPixel(clientHints);
       } else {
-        waitOnCH(chTimeout).then(ch => {
-          const uh = ch || clientHints || '';
-          const url = createPixelUrl(firstPartyData, uh, configParams, partnerData, cmpData);
-          sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
-        });
+        waitOnCH(chTimeout)
+          .then(ch => buildAndSendPixel(ch || clientHints || ''));
       }
       return;
     }
