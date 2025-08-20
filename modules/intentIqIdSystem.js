@@ -386,20 +386,13 @@ export const intentIqIdSubmodule = {
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
+    let chPromise = null;
 
     function hasCHSupport() {
       return !!(navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
     }
 
     function fetchAndHandleCH() {
-      if (!hasCHSupport()) {
-        if (clientHints !== '') {
-          clientHints = '';
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-        }
-        return Promise.resolve('');
-      }
-    
       return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
         .then(raw => {
           const nextCH = handleClientHints(raw) || '';
@@ -420,13 +413,14 @@ export const intentIqIdSubmodule = {
         });
     }
 
-    function getClientHints(timeoutMs = chTimeout) {
-      if (!hasCHSupport()) return Promise.resolve('');
+    if (hasCHSupport()) {
+      chPromise = fetchAndHandleCH();
+      chPromise.catch(() => {});
+    }
 
-      const fetchPromise = fetchAndHandleCH();
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(''), timeoutMs));
-
-      return Promise.race([fetchPromise, timeoutPromise]);
+    function waitOnCH(timeoutMs) {
+      const timeout = new Promise(resolve => setTimeout(() => resolve(''), timeoutMs));
+      return Promise.race([chPromise, timeout]);
     }
 
     const savedData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage))
@@ -479,17 +473,18 @@ export const intentIqIdSubmodule = {
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
-      if (clientHints) {
+
+      if (!hasCHSupport()) {
+        clientHints = '';
+        storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+
         const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData);
-
         sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
-        fetchAndHandleCH();
       } else {
-        getClientHints(chTimeout).then(ch => {
-          const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
-
+        waitOnCH(chTimeout).then(ch => {
+          const uh = ch || clientHints || '';
+          const url = createPixelUrl(firstPartyData, uh, configParams, partnerData, cmpData);
           sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
-          fetchAndHandleCH();
         });
       }
       return;
@@ -652,16 +647,15 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
 
-      if (clientHints) {
-        url += '&uh=' + encodeURIComponent(clientHints);
-        ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
-        fetchAndHandleCH();
+      if (!hasCHSupport()) {
+          clientHints = '';
+          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+          ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
       } else {
-        getClientHints(chTimeout).then(ch => {
+        waitOnCH(chTimeout).then(ch => {
+          const uh = ch || clientHints || '';
           if (ch) url += '&uh=' + encodeURIComponent(ch);
-          ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
-        }).catch(() => {
-          ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+          ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
         });
       }
     };
