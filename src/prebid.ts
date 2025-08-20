@@ -32,17 +32,12 @@ import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {storageCallbacks} from './storageManager.js';
-import adapterManager, {
-  type AliasBidderOptions,
-  type BidRequest,
-  getS2SBidderSet
-} from './adapterManager.js';
+import adapterManager, {type AliasBidderOptions, type BidRequest, getS2SBidderSet} from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
-import type {EventHandler, EventIDs, Event} from "./events.js";
+import type {Event, EventHandler, EventIDs} from "./events.js";
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {type Defer, defer, PbPromise} from './utils/promise.js';
-import {pbYield} from './utils/yield.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
@@ -66,7 +61,7 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
-import {ORTB_AUDIO_PARAMS, fillAudioDefaults} from './audio.ts';
+import {fillAudioDefaults, ORTB_AUDIO_PARAMS} from './audio.ts';
 
 import {getGlobalVarName} from "./buildOptions.ts";
 
