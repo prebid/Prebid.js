@@ -262,7 +262,7 @@ export const spec = {
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
-      window.addEventListener('message', function handler(event) {
+      function handleGumMessage(event) {
         if (!event.data || event.origin != 'https://gum.criteo.com') {
           return;
         }
@@ -271,7 +271,7 @@ export const spec = {
           return;
         }
 
-        this.removeEventListener('message', handler);
+        window.removeEventListener('message', handleGumMessage, true);
 
         event.stopImmediatePropagation();
 
@@ -288,7 +288,10 @@ export const spec = {
 
           response?.callbacks?.forEach?.(triggerPixel);
         }
-      }, true);
+      }
+
+      window.removeEventListener('message', handleGumMessage, true);
+      window.addEventListener('message', handleGumMessage, true);
 
       const jsonHashSerialized = JSON.stringify(jsonHash).replace(/"/g, '%22');
 
