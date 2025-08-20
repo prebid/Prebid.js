@@ -41,7 +41,7 @@ pbjs.setConfig({
         macroKey: 's3m',        // Key for macro blob
         
         // Optional - other settings
-        endpoint: 'https://rtdp.scope3.com/prebid',  // API endpoint (default)
+        endpoint: 'https://prebid.scope3.com/prebid',  // API endpoint (default)
         timeout: 1000,          // Milliseconds (default: 1000)
         publisherTargeting: true,   // Set GAM targeting keys (default: true)
         advertiserTargeting: true,  // Enrich bid requests (default: true)
