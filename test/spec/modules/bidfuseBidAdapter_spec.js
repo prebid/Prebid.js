@@ -115,14 +115,7 @@ describe('BidfuseBidAdapter', function () {
         'exp': 30,
         'width': 300,
         'height': 250,
-        'advertiserDomains': ['securepubads.g.doubleclick.net'],
-        'cookies': [{
-          'src': 'https://sync.com',
-          'type': 'iframe'
-        }, {
-          'src': 'https://sync.com',
-          'type': 'img'
-        }]
+        'advertiserDomains': ['securepubads.g.doubleclick.net']
       }]
     }
   };
@@ -298,7 +291,7 @@ describe('BidfuseBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://syncbf.bidfuse.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+        url: 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=0'
       }]);
     });
 
@@ -306,7 +299,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://syncbf.bidfuse.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+        url: 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=0'
       }]);
     });
 
@@ -314,7 +307,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://syncbf.bidfuse.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
+        'url': 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=0',
         'type': 'image'
       }]);
     });
@@ -326,7 +319,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://syncbf.bidfuse.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
+        url: 'https://syncbf.bidfuse.com/api/sync/iframe?pbjs=1&coppa=1'
       }]);
     });
 
@@ -344,7 +337,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
-        'url': 'https://syncbf.bidfuse.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
+        'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&gpp=gpp_string&gpp_sid=7&coppa=1',
         'type': 'image'
       }]);
     });
