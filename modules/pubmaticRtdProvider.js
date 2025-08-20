@@ -4,6 +4,7 @@ import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { REJECTION_REASON } from '../src/constants.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -53,18 +54,18 @@ export const CONSTANTS = Object.freeze({
 });
 
 const BROWSER_REGEX_MAP = [
-  { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 }, // Chrome for iOS
-  { regex: /(edg|edge)(?:e|ios|a)?(?:\/([\w\.]+))?/i, id: 2 }, // Edge
-  { regex: /(opera|opr)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 }, // Opera
-  { regex: /(?:ms|\()(ie) ([\w\.]+)|(?:trident\/[\w\.]+)/i, id: 4 }, // Internet Explorer
-  { regex: /fxios\/([-\w\.]+)/i, id: 5 }, // Firefox for iOS
-  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 }, // Facebook In-App Browser
-  { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 }, // Chrome WebView
-  { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 }, // Android Browser
-  { regex: /(chrome|crios)(?:\/v?([\w\.]+))?\b/i, id: 9 }, // Chrome
-  { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 }, // Safari Mobile
-  { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 }, // Safari
-  { regex: /(firefox)\/([\w\.]+)/i, id: 12 } // Firefox
+  { regex: /\b(?:crios)\/([\w.]+)/i, id: 1 }, // Chrome for iOS
+  { regex: /(edg|edge)(?:e|ios|a)?(?:\/([\w.]+))?/i, id: 2 }, // Edge
+  { regex: /(opera|opr)(?:.+version\/|[/ ]+)([\w.]+)/i, id: 3 }, // Opera
+  { regex: /(?:ms|\()(ie) ([\w.]+)|(?:trident\/[\w.]+)/i, id: 4 }, // Internet Explorer
+  { regex: /fxios\/([-\w.]+)/i, id: 5 }, // Firefox for iOS
+  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w.]+);)/i, id: 6 }, // Facebook In-App Browser
+  { regex: / wv\).+(chrome)\/([\w.]+)/i, id: 7 }, // Chrome WebView
+  { regex: /droid.+ version\/([\w.]+)\b.+(?:mobile safari|safari)/i, id: 8 }, // Android Browser
+  { regex: /(chrome|crios)(?:\/v?([\w.]+))?\b/i, id: 9 }, // Chrome
+  { regex: /version\/([\w.,]+) .*mobile\/\w+ (safari)/i, id: 10 }, // Safari Mobile
+  { regex: /version\/([\w(.|,]+) .*(mobile ?safari|safari)/i, id: 11 }, // Safari
+  { regex: /(firefox)\/([\w.]+)/i, id: 12 } // Firefox
 ];
 
 export const defaultValueTemplate = {
@@ -79,7 +80,7 @@ let initTime;
 let _fetchFloorRulesPromise = null; let _fetchConfigPromise = null;
 export let configMerged;
 // configMerged is a reference to the function that can resolve configMergedPromise whenever we want
-const configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
+let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
 // Store multipliers from floors.json, will use default values from CONSTANTS if not available
 export let _multipliers = null;
@@ -155,9 +156,8 @@ function findRejectedBidsForAdUnit(auction, code) {
 // Find a rejected bid due to price floor
 function findRejectedFloorBid(rejectedBids) {
   return rejectedBids.find(bid => {
-    const errorMessage = bid.statusMessage || bid.status || '';
-    return errorMessage.includes('price floor') ||
-           (bid.floorData?.floorValue && bid.cpm < bid.floorData.floorValue);
+    return bid.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET &&
+      (bid.floorData?.floorValue && bid.cpm < bid.floorData.floorValue);
   });
 }
 
@@ -180,30 +180,6 @@ function findWinningBid(adUnitCode) {
     logError(CONSTANTS.LOG_PRE_FIX, `Error finding highest CPM bid: ${error}`);
     return null;
   }
-}
-
-// Find a bid with the minimum floor value
-function findBidWithFloor(bids) {
-  let bidWithMinFloor = null;
-  let minFloorValue = Infinity;
-
-  if (!bids || !bids.length) return null;
-
-  for (const bid of bids) {
-    if (bid.floorData?.floorValue &&
-        !isNaN(parseFloat(bid.floorData.floorValue)) &&
-        parseFloat(bid.floorData.floorValue) < minFloorValue) {
-      minFloorValue = parseFloat(bid.floorData.floorValue);
-      bidWithMinFloor = bid;
-    }
-  }
-
-  // Log the result for debugging
-  if (bidWithMinFloor) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `Found bid with minimum floor value: ${minFloorValue}`);
-  }
-
-  return bidWithMinFloor;
 }
 
 // Find floor value from bidder requests
@@ -368,18 +344,6 @@ function handleRejectedFloorBidScenario(rejectedFloorBid, code) {
   };
 }
 
-// Identify floored bid scenario and return scenario data
-function handleFlooredBidScenario(bidWithFloor, code) {
-  const baseValue = bidWithFloor.floorData.floorValue;
-  return {
-    scenario: 'floored',
-    bidStatus: CONSTANTS.BID_STATUS.FLOORED,
-    baseValue,
-    multiplierKey: 'FLOORED',
-    logMessage: `Floored bid for ad unit: ${code}, Floor value: ${baseValue}`
-  };
-}
-
 // Identify no bid scenario and return scenario data
 function handleNoBidScenario(auction, code) {
   const baseValue = findFloorValueFromBidderRequests(auction, code);
@@ -394,20 +358,9 @@ function handleNoBidScenario(auction, code) {
 
 // Determine which scenario applies based on bid conditions
 function determineScenario(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
-  if (winningBid) {
-    return handleWinningBidScenario(winningBid, code);
-  }
-
-  if (rejectedFloorBid) {
-    return handleRejectedFloorBidScenario(rejectedFloorBid, code);
-  }
-
-  const bidWithFloor = findBidWithFloor(bidsForAdUnit);
-  if (bidWithFloor?.floorData?.floorValue) {
-    return handleFlooredBidScenario(bidWithFloor, code);
-  }
-
-  return handleNoBidScenario(auction, code);
+  return winningBid ? handleWinningBidScenario(winningBid, code)
+    : rejectedFloorBid ? handleRejectedFloorBidScenario(rejectedFloorBid, code)
+      : handleNoBidScenario(auction, code);
 }
 
 // Main function that determines bid status and calculates values
@@ -543,11 +496,11 @@ const init = (config, _userConsent) => {
 
   if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
     logError(
-        `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
-          : !isStr(publisherId) ? 'Publisher Id should be a string.'
-            : !profileId ? 'Missing profile Id.'
-              : 'Profile Id should be a string.'
-        }`
+      `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
+        : !isStr(publisherId) ? 'Publisher Id should be a string.'
+          : !profileId ? 'Missing profile Id.'
+            : 'Profile Id should be a string.'
+      }`
     );
     return false;
   }

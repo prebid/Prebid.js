@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { getWinDimensions } from '../../../src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -308,7 +309,7 @@ describe('InsticatorBidAdapter', function () {
     let serverRequests, serverRequest;
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         insticator: {
           storageAllowed: true
         }
@@ -328,7 +329,7 @@ describe('InsticatorBidAdapter', function () {
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     before(() => {

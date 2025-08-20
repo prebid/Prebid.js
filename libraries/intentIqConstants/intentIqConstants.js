@@ -9,7 +9,7 @@ export const BLACK_LIST = 'L';
 export const CLIENT_HINTS_KEY = '_iiq_ch';
 export const EMPTY = 'EMPTY';
 export const GVLID = '1323';
-export const VERSION = 0.29;
+export const VERSION = 0.3;
 export const PREBID = 'pbjs';
 export const HOURS_24 = 86400000;
 
