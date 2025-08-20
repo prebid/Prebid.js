@@ -551,8 +551,21 @@ gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-p
 
 // other tasks
 gulp.task(bundleToStdout);
-gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+gulp.task('bundle', gulpBundle.bind(null, false)); 
 
+gulp.task('test-single', function (done) {
+  const file = argv.file || '';
+  const grep = argv.grep || '';
+
+  const options = {
+    file: file,
+    grep: grep,
+    watch: false 
+  };
+
+  const testTask = testTaskMaker(options); 
+  testTask(done);
+});
 
 gulp.task('extract-metadata', function (done) {
   /**
