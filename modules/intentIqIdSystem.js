@@ -648,13 +648,13 @@ export const intentIqIdSubmodule = {
       clearCountersAndStore(allowedStorage, partnerData);
 
       if (!hasCHSupport()) {
-          clientHints = '';
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-          ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+        clientHints = '';
+        storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+        ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
       } else {
         waitOnCH(chTimeout).then(ch => {
           const uh = ch || clientHints || '';
-          if (ch) url += '&uh=' + encodeURIComponent(ch);
+          if (uh) url += '&uh=' + encodeURIComponent(uh);
           ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
         });
       }
