@@ -4,7 +4,7 @@ import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 import { config } from "../../../src/config.ts";
 
-const bidder = 'bidfuseprebid';
+const bidder = 'bidfuse';
 
 describe('BidfuseBidAdapter', function () {
   const userIdAsEids = [{
