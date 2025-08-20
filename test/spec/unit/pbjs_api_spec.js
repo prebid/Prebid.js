@@ -253,7 +253,9 @@ describe('Unit: Prebid Module', function () {
         })
 
         function pushToQueue() {
-          queue.push(() => { ran = true });
+          queue.push(() => {
+            ran = true;
+          });
         }
 
         it(`should patch .push`, () => {
@@ -267,20 +269,21 @@ describe('Unit: Prebid Module', function () {
           });
           afterEach(() => {
             delete getGlobal().scheduler;
-          })
+          });
           it('should not yield', async () => {
             pushToQueue();
             expect(ran).to.be.false;
-            const pm = new Promise((resolve) => {resolve()});
+            const pm = new Promise((resolve) => {
+              resolve();
+            });
             getGlobal().processQueue();
             await pm;
             expect(ran).to.be.true;
           });
         });
-
-      })
+      });
     });
-  })
+  });
 
   describe('and global adUnits', () => {
     const startingAdUnits = [
