@@ -105,6 +105,20 @@ describe('adipoloBidAdapter', () => {
       expect(request.url).to.equal(ENDPOINTS['eu-center'] + '/bid');
     });
 
+    it('should fallback to default us-east endpoint when region is undefined', function () {
+      const noRegionRequest = deepClone(defaultRequest);
+
+      const request = spec.buildRequests([noRegionRequest], {});
+      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
+    });
+
+    it('should fallback to default us-east endpoint when region is invalid', function () {
+      const invalidRegionRequest = deepClone(defaultRequest);
+      invalidRegionRequest.params.ext.region = 'invalid-region';
+      const request = spec.buildRequests([invalidRegionRequest], {});
+      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
+    });
+
     it('should build basic request structure', function () {
       const request = JSON.parse(spec.buildRequests([defaultRequest], {}).data)[0];
       expect(request).to.have.property('tmax').and.to.equal(defaultRequest.tmax);
