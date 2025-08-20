@@ -1210,11 +1210,6 @@ async function _processQueue(queue) {
         logError('Error processing command :', 'prebid.js', e);
       }
     }
-    if (pbjsInstance.scheduler !== false) {
-      // `await` will yield the thread even if GreedyPromise attempts to hold on to it,
-      // so skip it entirely when yielding is turned off
-      await pbYield();
-    }
   }
 }
 
