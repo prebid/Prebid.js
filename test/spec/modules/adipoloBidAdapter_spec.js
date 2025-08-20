@@ -4,7 +4,10 @@ import {spec} from 'modules/adipoloBidAdapter.js';
 import {deepClone} from 'src/utils';
 import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
 
-const ENDPOINT = 'https://prebid.adipolo.live';
+const ENDPOINTS = {
+  'us-east': 'https://prebid.adipolo.live',
+  'eu-center': 'https://prebid-eu.adipolo.live',
+};
 
 const defaultRequest = {
   tmax: 0,
@@ -89,9 +92,31 @@ describe('adipoloBidAdapter', () => {
     it('should send request with correct structure', function () {
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal(ENDPOINT + '/bid');
+      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
       expect(request.options).to.have.property('contentType').and.to.equal('application/json');
       expect(request).to.have.property('data');
+    });
+
+    it('should send request to correct endpoint for region eu-center', function () {
+      const euRequest = deepClone(defaultRequest);
+      euRequest.params.ext.region = 'eu-center';
+
+      const request = spec.buildRequests([euRequest], {});
+      expect(request.url).to.equal(ENDPOINTS['eu-center'] + '/bid');
+    });
+
+    it('should fallback to default us-east endpoint when region is undefined', function () {
+      const noRegionRequest = deepClone(defaultRequest);
+
+      const request = spec.buildRequests([noRegionRequest], {});
+      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
+    });
+
+    it('should fallback to default us-east endpoint when region is invalid', function () {
+      const invalidRegionRequest = deepClone(defaultRequest);
+      invalidRegionRequest.params.ext.region = 'invalid-region';
+      const request = spec.buildRequests([invalidRegionRequest], {});
+      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
     });
 
     it('should build basic request structure', function () {
