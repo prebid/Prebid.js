@@ -89,7 +89,7 @@ interface CacheEntry {
 
 const MODULE_NAME = 'scope3RtdProvider';
 const MODULE_VERSION = '1.0.0';
-const DEFAULT_ENDPOINT = 'https://prebid.scope3.com/prebid';
+const DEFAULT_ENDPOINT = 'https://rtdp.scope3.com/prebid';
 const DEFAULT_TIMEOUT = 1000;
 const DEFAULT_CACHE_TTL = 300000; // 5 minutes
 

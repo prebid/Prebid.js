@@ -81,7 +81,7 @@ describe('Scope3 RTD Module', function() {
       config = {
         params: {
           orgId: 'test-org-123',
-          endpoint: 'https://prebid.scope3.com/prebid',
+          endpoint: 'https://rtdp.scope3.com/prebid',
           timeout: 1000,
           publisherTargeting: true,
           advertiserTargeting: true,
@@ -139,7 +139,7 @@ describe('Scope3 RTD Module', function() {
       const request = server.requests[0];
 
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://prebid.scope3.com/prebid');
+      expect(request.url).to.equal('https://rtdp.scope3.com/prebid');
       expect(request.requestHeaders['Content-Type']).to.include('application/json');
 
       const payload = JSON.parse(request.requestBody);
@@ -232,7 +232,7 @@ describe('Scope3 RTD Module', function() {
       const filteredConfig = {
         params: {
           orgId: 'test-org-123',
-          endpoint: 'https://prebid.scope3.com/prebid',
+          endpoint: 'https://rtdp.scope3.com/prebid',
           bidders: ['bidderA'],
           cacheEnabled: false
         }
@@ -345,7 +345,7 @@ describe('Scope3 RTD Module', function() {
       const cacheConfig = {
         params: {
           orgId: 'test-org-123',
-          endpoint: 'https://prebid.scope3.com/prebid',
+          endpoint: 'https://rtdp.scope3.com/prebid',
           timeout: 1000,
           publisherTargeting: true,
           advertiserTargeting: true,
@@ -387,7 +387,7 @@ describe('Scope3 RTD Module', function() {
       const noCacheConfig = {
         params: {
           orgId: 'test-org-123',
-          endpoint: 'https://prebid.scope3.com/prebid',
+          endpoint: 'https://rtdp.scope3.com/prebid',
           cacheEnabled: false
         }
       };
@@ -422,7 +422,7 @@ describe('Scope3 RTD Module', function() {
       const badConfig = {
         params: {
           orgId: 'test-org-123',
-          endpoint: 'https://prebid.scope3.com/prebid',
+          endpoint: 'https://rtdp.scope3.com/prebid',
           cacheEnabled: false
         }
       };
@@ -442,7 +442,7 @@ describe('Scope3 RTD Module', function() {
       const noCacheConfig = {
         params: {
           orgId: 'test-org-123',
-          endpoint: 'https://prebid.scope3.com/prebid',
+          endpoint: 'https://rtdp.scope3.com/prebid',
           cacheEnabled: false
         }
       };
