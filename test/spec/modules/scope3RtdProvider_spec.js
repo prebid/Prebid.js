@@ -49,7 +49,7 @@ describe('Scope3 RTD Module', function() {
         }
       };
       expect(scope3SubModule.init(config)).to.equal(false);
-      expect(logErrorSpy.calledWith('Scope3 RTD: Missing required orgId parameter')).to.be.true;
+      expect(logErrorSpy.calledWith('Scope3 RTD: Missing required orgId parameter. Config params:', config.params)).to.be.true;
     });
 
     it('should initialize with just orgId', function() {

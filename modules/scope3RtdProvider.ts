@@ -15,7 +15,7 @@ import type { StartAuctionOptions } from '../src/prebid.ts';
 
 declare module './rtdModule/spec' {
   interface ProviderConfig {
-    scope3RtdProvider: {
+    scope3: {
       params: {
         /**
          * Scope3 organization ID (required)
@@ -342,18 +342,20 @@ function preparePayload(ortb2Data: any, reqBidsConfigObj: StartAuctionOptions): 
 /**
  * Main RTD provider specification
  */
-export const scope3SubModule: RtdProviderSpec<'scope3RtdProvider'> = {
-  name: 'scope3RtdProvider',
+export const scope3SubModule: RtdProviderSpec<'scope3'> = {
+  name: 'scope3',
 
   init(config, consent) {
     try {
+      logMessage('Scope3 RTD: Initializing module', config);
+
       if (!config || !config.params) {
-        logError('Scope3 RTD: Missing configuration');
+        logError('Scope3 RTD: Missing configuration or params', config);
         return false;
       }
 
       if (!config.params.orgId) {
-        logError('Scope3 RTD: Missing required orgId parameter');
+        logError('Scope3 RTD: Missing required orgId parameter. Config params:', config.params);
         return false;
       }
 
@@ -434,5 +436,4 @@ export const scope3SubModule: RtdProviderSpec<'scope3RtdProvider'> = {
 function registerSubModule() {
   submodule('realTimeData', scope3SubModule);
 }
-
 registerSubModule();
