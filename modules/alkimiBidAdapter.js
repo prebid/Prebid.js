@@ -53,7 +53,7 @@ export const spec = {
     const id = getUserId()
     const alkimiConfig = config.getConfig('alkimi')
     const fpa = ortb2?.source?.ext?.fpa
-    const source = fpa != null ? { ext: { fpa } } : undefined
+    const source = fpa !== null && fpa !== undefined ? { ext: { fpa } } : undefined
     const walletID = alkimiConfig && alkimiConfig.walletID
     const userParams = alkimiConfig && alkimiConfig.userParams
     const user = (walletID != null || userParams != null || id != null) ? { id, ext: { walletID, userParams } } : undefined
