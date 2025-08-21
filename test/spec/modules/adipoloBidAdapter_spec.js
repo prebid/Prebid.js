@@ -3,11 +3,10 @@ import {config} from 'src/config.js';
 import {spec} from 'modules/adipoloBidAdapter.js';
 import {deepClone} from 'src/utils';
 import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
+import sinon from 'sinon';
 
-const ENDPOINTS = {
-  'us-east': 'https://prebid.adipolo.live',
-  'eu-center': 'https://prebid-eu.adipolo.live',
-};
+const US_ENDPOINT = 'https://prebid.adipolo.live';
+const EU_ENDPOINT = 'https://prebid-eu.adipolo.live';
 
 const defaultRequest = {
   tmax: 0,
@@ -90,33 +89,45 @@ describe('adipoloBidAdapter', () => {
     });
 
     it('should send request with correct structure', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'America/New_York' })
+      });
+
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
+      expect(request.url).to.equal(US_ENDPOINT + '/bid');
       expect(request.options).to.have.property('contentType').and.to.equal('application/json');
       expect(request).to.have.property('data');
+
+      stub.restore();
     });
 
-    it('should send request to correct endpoint for region eu-center', function () {
-      const euRequest = deepClone(defaultRequest);
-      euRequest.params.ext.region = 'eu-center';
+    it('should use EU endpoint if timezone is in Europe', function () {
+      const clock = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'Europe/Warsaw' })
+      });
 
-      const request = spec.buildRequests([euRequest], {});
-      expect(request.url).to.equal(ENDPOINTS['eu-center'] + '/bid');
+      const built = spec.buildRequests([defaultRequest], {});
+      expect(built.url).to.equal(EU_ENDPOINT + '/bid');
+
+      clock.restore();
     });
 
-    it('should fallback to default us-east endpoint when region is undefined', function () {
-      const noRegionRequest = deepClone(defaultRequest);
-
-      const request = spec.buildRequests([noRegionRequest], {});
-      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
+    it('should fallback to default US endpoint if timezone cannot be resolved', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').throws(new Error('Timezone error'));
+      const request = spec.buildRequests([defaultRequest], {});
+      expect(request.url).to.equal(US_ENDPOINT + '/bid');
+      stub.restore();
     });
 
-    it('should fallback to default us-east endpoint when region is invalid', function () {
-      const invalidRegionRequest = deepClone(defaultRequest);
-      invalidRegionRequest.params.ext.region = 'invalid-region';
-      const request = spec.buildRequests([invalidRegionRequest], {});
-      expect(request.url).to.equal(ENDPOINTS['us-east'] + '/bid');
+    it('should use default US endpoint if timezone is outside Europe', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'Asia/Tokyo' })
+      });
+
+      const request = spec.buildRequests([defaultRequest], {});
+      expect(request.url).to.equal(US_ENDPOINT + '/bid');
+      stub.restore();
     });
 
     it('should build basic request structure', function () {
