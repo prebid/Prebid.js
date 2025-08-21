@@ -289,7 +289,7 @@ export const spec = {
             ttl,
           };
 
-          if (bid.adomain != null) {
+          if (bid.adomain !== undefined && bid.adomain !== null) {
             bidObj.meta = { advertiserDomains: bid.adomain };
           }
 
