@@ -101,6 +101,7 @@ export class GPPClient {
         logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
       }
       this.initialized = true;
+      gppDataHandler.setCmpApi(this.cmp);
       this.cmp({
         command: 'addEventListener',
         callback: (event, success) => {
@@ -119,6 +120,10 @@ export class GPPClient {
           // to decide if consent data is likely to change
           if (gppDataHandler.getConsentData() != null && event?.pingData != null && !this.isCMPReady(event.pingData)) {
             gppDataHandler.setConsentData(null);
+          }
+
+          if (event?.listenerId !== null && event?.listenerId !== undefined) {
+            gppDataHandler.setCmpListenerId(event?.listenerId);
           }
         }
       });
