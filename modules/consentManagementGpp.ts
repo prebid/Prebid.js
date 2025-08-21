@@ -109,7 +109,7 @@ export class GPPClient {
             this.#reject(new GPPError('Received error response from CMP', event));
           } else if (event?.pingData?.cmpStatus === 'error') {
             this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event));
-          } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {          
+          } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {
             this.#resolve(this.updateConsent(event.pingData));
           }
           // NOTE: according to https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md,
@@ -122,8 +122,8 @@ export class GPPClient {
             gppDataHandler.setConsentData(null);
           }
 
-          if(event?.listenerId !== null && event?.listenerId !== undefined){
-            gppDataHandler.setCmpListenerId(event?.listenerId);          
+          if (event?.listenerId !== null && event?.listenerId !== undefined) {
+            gppDataHandler.setCmpListenerId(event?.listenerId);
           }
         }
       });

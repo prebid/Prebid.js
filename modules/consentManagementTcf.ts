@@ -87,8 +87,8 @@ function lookupIabConsent(setProvisionalConsent) {
 
         if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
           try {
-            if(tcfData.listenerId !== null && tcfData.listenerId !== undefined){
-              gdprDataHandler.setCmpListenerId(tcfData.listenerId);          
+            if (tcfData.listenerId !== null && tcfData.listenerId !== undefined) {
+              gdprDataHandler.setCmpListenerId(tcfData.listenerId);
             }
             gdprDataHandler.setConsentData(parseConsentData(tcfData));
             resolve();

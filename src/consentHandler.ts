@@ -185,11 +185,6 @@ export class ConsentHandler<T> {
 }
 
 class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP>> {
-  /**
-   * Remove CMP event listener using CMP API
-   * This will be just a placeholder for now as we don't have any removeEventListener for USP
-   */
-  removeCmpEventListener() {}
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
