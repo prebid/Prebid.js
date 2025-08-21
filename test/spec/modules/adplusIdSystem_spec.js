@@ -4,6 +4,7 @@ import {
   ADPLUS_COOKIE_NAME,
 } from 'modules/adplusIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const UID_VALUE = '191223.3413767593';
 
@@ -53,5 +54,21 @@ describe('adplusId module', function () {
       const decoded = adplusIdSystemSubmodule.decode(1);
       expect(decoded).to.equal(undefined);
     });
+  });
+
+  it('should generate correct EID', () => {
+    const TEST_UID = 'test-uid-value';
+    const eids = createEidsArray(adplusIdSystemSubmodule.decode(TEST_UID), new Map(Object.entries(adplusIdSystemSubmodule.eids)));
+    expect(eids).to.eql([
+      {
+        source: "ad-plus.com.tr",
+        uids: [
+          {
+            atype: 1,
+            id: TEST_UID
+          }
+        ]
+      }
+    ]);
   });
 });
