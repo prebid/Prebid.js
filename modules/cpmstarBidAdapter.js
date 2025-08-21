@@ -175,7 +175,7 @@ export const spec = {
         bidResponse.ad = rawBid.code + (rawBid.px_cr ? "\n<img width=0 height=0 src='" + rawBid.px_cr + "' />" : '');
       } else if (mediaType === VIDEO && rawBid.creativemacros && rawBid.creativemacros.HTML5VID_VASTSTRING) {
         var playerSize = spec.getPlayerSize(bidRequest);
-        if (playerSize !== null) {
+        if (playerSize !== null && playerSize !== undefined) {
           bidResponse.width = playerSize[0];
           bidResponse.height = playerSize[1];
         }
