@@ -267,10 +267,6 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
   const { siteId, zoneId = siteId, test } = firstBidRequest.params;
   const ttxRequest = collapseFalsy({
     imp: bidRequests.map(req => _buildImpORTB(req)),
-    site: {
-      id: zoneId,
-      ref: referer
-    },
     device: {
       ext: {
         ttx: {
@@ -293,6 +289,18 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
     test: test === 1 ? 1 : null
   });
 
+  if (convertedORTB.app) {
+    ttxRequest.app = {
+      ...convertedORTB.app,
+      id: zoneId
+    };
+  } else {
+    ttxRequest.site = {
+      ...convertedORTB.site,
+      id: zoneId,
+      ref: referer
+    };
+  }
   // The imp attribute built from this adapter should be used instead of the converted one;
   // The converted one is based on SRA, whereas our adapter has to check if SRA is enabled or not.
   delete convertedORTB.imp;

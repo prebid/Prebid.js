@@ -20,18 +20,16 @@ function validateBuiltServerRequest(builtReq, expectedReq) {
 }
 
 describe('33acrossBidAdapter:', function () {
-  const BIDDER_CODE = '33across';
   const ZONE_ID = 'sample33xGUID123456789';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 
-  function TtxRequestBuilder(zoneId = ZONE_ID) {
+  function TtxRequestBuilder(additionalAttributes = {
+    site: { id: ZONE_ID }
+  }) {
     const ttxRequest = {
       imp: [{
         id: 'b1'
       }],
-      site: {
-        id: zoneId
-      },
       device: {
         w: 1024,
         h: 728,
@@ -67,7 +65,8 @@ describe('33acrossBidAdapter:', function () {
           }]
         }
       },
-      test: 0
+      test: 0,
+      ...additionalAttributes
     };
 
     this.addImp = (id = 'b2') => {
@@ -208,7 +207,13 @@ describe('33acrossBidAdapter:', function () {
     };
 
     this.withSite = site => {
-      Object.assign(ttxRequest, { site });
+      utils.mergeDeep(ttxRequest, { site });
+
+      return this;
+    };
+
+    this.withApp = app => {
+      utils.mergeDeep(ttxRequest, { app });
 
       return this;
     };
@@ -813,6 +818,58 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('buildRequests()', function() {
+    context('when the zone ID is for a site request', function() {
+      it('sets it in the site attribute', function() {
+        const serverRequest = this.buildServerRequest(
+          new TtxRequestBuilder()
+            .withBanner()
+            .withProduct()
+            .withSite({
+              id: ZONE_ID
+            })
+            .build()
+        );
+
+        const bidRequests = this.buildBannerBidRequests(); // Bids have the default zone ID configured
+        const bidderRequest = this.buildBidderRequest(bidRequests);
+
+        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(buildRequest, serverRequest);
+      })
+    });
+
+    context('when the zone ID is for an app request', function() {
+      it('sets it in the app attribute', function() {
+        const serverRequest = this.buildServerRequest(
+          new TtxRequestBuilder({
+            app: {
+              id: ZONE_ID
+            }
+          })
+            .withBanner()
+            .withProduct()
+            .withApp({
+              foo: 'bar'
+            })
+            .build()
+        );
+
+        const bidRequests = this.buildBannerBidRequests(); // Bids have the default zone ID configured
+        const bidderRequest = this.buildBidderRequest(bidRequests, {
+          ortb2: {
+            app: {
+              foo: 'bar'
+            }
+          }
+        });
+
+        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(buildRequest, serverRequest);
+      });
+    });
+
     context('when element is fully in view', function() {
       it('returns 100', function() {
         const serverRequest = this.buildServerRequest(
@@ -1965,7 +2022,7 @@ describe('33acrossBidAdapter:', function () {
           .withVideo()
           .build();
 
-        const req2 = new TtxRequestBuilder('sample33xGUID123456780')
+        const req2 = new TtxRequestBuilder({ site: { id: 'sample33xGUID123456780' } })
           .withProduct('siab')
           .withBanner()
           .withVideo()
@@ -1973,7 +2030,7 @@ describe('33acrossBidAdapter:', function () {
 
         req2.imp[0].id = 'b3';
 
-        const req3 = new TtxRequestBuilder('sample33xGUID123456780')
+        const req3 = new TtxRequestBuilder({ site: { id: 'sample33xGUID123456780' } })
           .withProduct('inview')
           .withBanner()
           .withVideo()
@@ -2026,7 +2083,7 @@ describe('33acrossBidAdapter:', function () {
 
         req2.imp[0].id = 'b2';
 
-        const req3 = new TtxRequestBuilder('sample33xGUID123456780')
+        const req3 = new TtxRequestBuilder({ site: { id: 'sample33xGUID123456780' } })
           .withProduct('siab')
           .withBanner()
           .withVideo()
