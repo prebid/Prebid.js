@@ -113,7 +113,7 @@ export const spec = {
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
-        placementId: bidReq.params.placementId != null ? bidReq.params.placementId : null,
+        placementId: bidReq.params.placementId ?? null,
         publisherId: bidReq.params.publisherId,
         gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', ''),
         sizes: bidReq.sizes,
