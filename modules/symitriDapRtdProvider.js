@@ -619,7 +619,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         return;
       }
 
-      if (identity == null || typeof (identity) === typeof (undefined)) {
+      if (identity === null || identity === undefined) {
         onError(null, 'Invalid identity object', 'ClientError', onDone);
         return;
       }
