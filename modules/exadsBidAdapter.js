@@ -233,7 +233,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
               native.impressionTrackers = [];
 
               responseADM.native.eventtrackers.forEach(tracker => {
-                if (tracker.method === 1) {
+                if (Number(tracker.method) === 1) {
                   native.impressionTrackers.push(tracker.url);
                 }
               });
