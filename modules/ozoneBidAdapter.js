@@ -22,7 +22,7 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const KEY_PREFIX = 'oz';
-const OZONEVERSION = '4.0.0';
+const OZONEVERSION = '4.0.1';
 export const spec = {
   gvlid: 524,
   version: OZONEVERSION,
@@ -338,8 +338,8 @@ export const spec = {
       logInfo('WILL NOT ADD USP consent info; no bidderRequest.uspConsent.');
     }
     if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(ozoneRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(ozoneRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+      deepSetValue(ozoneRequest, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(ozoneRequest, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
     }
     if (schain) {
       logInfo('schain found');
@@ -674,10 +674,8 @@ export const spec = {
   },
   findAllUserIdsFromEids(bidRequest) {
     const ret = {};
-    if (!bidRequest.hasOwnProperty('userIdAsEids')) {
-      logInfo('findAllUserIdsFromEids - no bidRequest.userIdAsEids object was found on the bid!');
-      this.tryGetPubCidFromOldLocation(ret, bidRequest);
-      return ret;
+    if (!Array.isArray(bidRequest.userIdAsEids)) {
+      bidRequest.userIdAsEids = [];
     }
     for (const obj of bidRequest.userIdAsEids) {
       ret[obj.source] = deepAccess(obj, 'uids.0.id');
