@@ -174,8 +174,7 @@ export const spec = {
       }
 
       const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
-        // eslint-disable-next-line eqeqeq
-        return bidRequest.params.adslotId == bidResponse.id;
+        return String(bidRequest.params.adslotId) === String(bidResponse.id);
       });
 
       if (matchedBid) {
