@@ -64,6 +64,7 @@ import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
 import {fillAudioDefaults, ORTB_AUDIO_PARAMS} from './audio.ts';
 
 import {getGlobalVarName} from "./buildOptions.ts";
+import {yieldAll, yieldsIf} from "./utils/yield.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -646,9 +647,9 @@ type RenderAdOptions = {
  * @param  id adId of the bid to render
  * @param options
  */
-function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
+const renderAd = yieldsIf(() => getGlobal().yield === true || (getGlobal().yield as any)?.render, function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
   renderAdDirect(doc, id, options);
-}
+})
 addApiMethod('renderAd', renderAd);
 
 /**
@@ -1195,17 +1196,21 @@ function quePush(command) {
   }
 }
 
-async function _processQueue(queue) {
-  for (const cmd of queue) {
-    if (typeof cmd.called === 'undefined') {
-      try {
-        cmd.call();
-        cmd.called = true;
-      } catch (e) {
-        logError('Error processing command :', 'prebid.js', e);
-      }
+function runCommand(cmd) {
+  if (typeof cmd.called === 'undefined') {
+    try {
+      cmd.call();
+      cmd.called = true;
+    } catch (e) {
+      logError('Error processing command :', 'prebid.js', e);
     }
   }
+}
+function _processQueue(queue, cb?) {
+  yieldAll(() => getGlobal().yield === true || (getGlobal().yield as any)?.queue, queue.map(cmd => (cb) => {
+    runCommand(cmd);
+    cb();
+  }), cb);
 }
 
 /**
@@ -1217,8 +1222,9 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, a
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
-  await _processQueue(pbjsInstance.que);
-  await _processQueue(pbjsInstance.cmd);
+  _processQueue(pbjsInstance.que, () => {
+    _processQueue(pbjsInstance.cmd);
+  });
 })
 addApiMethod('processQueue', processQueue, false);
 
