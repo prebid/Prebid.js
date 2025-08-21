@@ -64,7 +64,7 @@ export const spec = {
       }
 
       var targetKey = 0;
-      if (bySlotTargetKey[bidReq.adUnitCode] !== undefined) {
+      if (bySlotTargetKey[bidReq.adUnitCode] !== undefined && bySlotTargetKey[bidReq.adUnitCode] !== null) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
       } else {
         var biggestSize = _getBiggestSize(bidReq.sizes);
