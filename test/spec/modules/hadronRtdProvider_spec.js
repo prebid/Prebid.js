@@ -512,7 +512,7 @@ describe('hadronRtdProvider', function () {
       const rtdConfig = {
         params: {
           handleRtd: function (bidConfig, rtd, rtdConfig, pbConfig) {
-            if (rtd.ortb2.user.data[0].segment[0].id === '1776') {
+            if (String(rtd.ortb2.user.data[0].segment[0].id) === '1776') {
               pbConfig.setConfig({ortb2: rtd.ortb2});
             } else {
               pbConfig.setConfig({ortb2: {}});
