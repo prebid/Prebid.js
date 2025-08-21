@@ -1207,10 +1207,10 @@ function runCommand(cmd) {
   }
 }
 function _processQueue(queue, cb?) {
-  yieldAll(() => getGlobal().yield === true || (getGlobal().yield as any)?.queue, queue.map(cmd => (cb) => {
-    runCommand(cmd);
-    cb();
-  }), cb);
+  yieldAll(
+    () => getGlobal().yield === true || (getGlobal().yield as any)?.queue,
+    queue.map(cmd => () => runCommand(cmd)), cb
+  );
 }
 
 /**
