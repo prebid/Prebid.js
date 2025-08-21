@@ -69,7 +69,7 @@ export const spec = {
       } else {
         var biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
-          if (bySlotSizesCount[biggestSize] !== undefined) {
+          if (bySlotSizesCount[biggestSize] !== undefined && bySlotSizesCount[biggestSize] !== null) {
             bySlotSizesCount[biggestSize]++
             targetKey = bySlotSizesCount[biggestSize];
           } else {
