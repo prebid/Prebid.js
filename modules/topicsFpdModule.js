@@ -196,8 +196,17 @@ function isCachedDataExpired(storedTime, cacheTime) {
 /**
  * Function to get random bidders based on count passed with array of bidders
  */
-function getRandomBidders(arr, count) {
-  return ([...arr].sort(() => 0.5 - Math.random())).slice(0, count)
+function getRandomAllowedConfigs(arr, count) {
+  const configs = [];
+  for (const config of [...arr].sort(() => 0.5 - Math.random())) {
+    if (config.bidder && isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_BIDDER, config.bidder))) {
+      configs.push(config);
+    }
+    if (configs.length >= count) {
+      break;
+    }
+  }
+  return configs;
 }
 
 /**
@@ -216,7 +225,7 @@ export function loadTopicsForBidders(doc = document) {
 
   if (topics) {
     listenMessagesFromTopicIframe();
-    const randomBidders = getRandomBidders(topics.bidders || [], topics.maxTopicCaller || 1)
+    const randomBidders = getRandomAllowedConfigs(topics.bidders || [], topics.maxTopicCaller || 1)
     randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
         const ifrm = doc.createElement('iframe');

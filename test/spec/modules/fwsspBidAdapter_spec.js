@@ -268,6 +268,8 @@ describe('fwsspBidAdapter', () => {
         'mediaTypes': {
           'video': {
             'playerSize': [300, 600],
+            'minduration': 30,
+            'maxduration': 60,
           }
         },
         'sizes': [[300, 250], [300, 600]],
@@ -298,8 +300,6 @@ describe('fwsspBidAdapter', () => {
           'tpos': 300,
           'slid': 'Midroll',
           'slau': 'midroll',
-          'minD': 30,
-          'maxD': 60,
           'adRequestKeyValues': {
             '_fw_player_width': '1920',
             '_fw_player_height': '1080'
@@ -473,6 +473,8 @@ describe('fwsspBidAdapter', () => {
             'placement': 2,
             'plcmt': 3,
             'playerSize': [300, 600],
+            'minduration': 30,
+            'maxduration': 60,
           }
         },
         'sizes': [[300, 250], [300, 600]],
@@ -490,8 +492,6 @@ describe('fwsspBidAdapter', () => {
           'mode': 'live',
           'vclr': 'js-7.10.0-prebid-',
           'timePosition': 120,
-          'minD': 30,
-          'maxD': 60,
         }
       }];
       const request = spec.buildRequests(bidRequests);
