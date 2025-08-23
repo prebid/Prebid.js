@@ -3667,4 +3667,51 @@ describe('ozone Adapter', function () {
       expect(ret.h).to.equal(100);
     });
   });
+  describe('getUserIdFromEids', function() {
+    it('should iterate over userIdAsEids when it is an object', function () {
+      let bid = { userIdAsEids:
+            [
+              {
+                source: 'pubcid.org',
+                uids: [{
+                  id: 'some-random-id-value',
+                  atype: 1
+                }]
+              },
+              {
+                source: 'adserver.org',
+                uids: [{
+                  id: 'some-random-id-value',
+                  atype: 1,
+                  ext: {
+                    rtiPartner: 'TDID'
+                  }
+                }]
+              }
+            ]
+      };
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(2);
+    });
+    it('should have no problem with userIdAsEids when it is present but null', function () {
+      let bid = { userIdAsEids: null };
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(0);
+    });
+    it('should have no problem with userIdAsEids when it is present but undefined', function () {
+      let bid = { userIdAsEids: undefined };
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(0);
+    });
+    it('should have no problem with userIdAsEids when it is absent', function () {
+      let bid = {};
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(0);
+    });
+    it('find pubcid in the old location when there are eids and when there arent', function () {
+      let bid = {crumbs: {pubcid: 'some-random-id-value' }};
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(1);
+    });
+  });
 });
