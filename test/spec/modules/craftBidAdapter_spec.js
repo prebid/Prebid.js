@@ -2,9 +2,10 @@ import {expect} from 'chai';
 import {spec} from 'modules/craftBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('craftAdapter', function () {
-  let adapter = newBidder(spec);
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -14,7 +15,7 @@ describe('craftAdapter', function () {
 
   describe('isBidRequestValid', function () {
     before(function() {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         craft: {
           storageAllowed: true
         }
@@ -24,10 +25,10 @@ describe('craftAdapter', function () {
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       window.context = this.windowContext;
     });
-    let bid = {
+    const bid = {
       bidder: 'craft',
       params: {
         sitekey: 'craft-prebid-example',
@@ -40,7 +41,7 @@ describe('craftAdapter', function () {
     });
 
     it('should return false when params.sitekey not found', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         placementId: '1234abcd'
@@ -49,7 +50,7 @@ describe('craftAdapter', function () {
     });
 
     it('should return false when params.placementId not found', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         sitekey: 'craft-prebid-example'
@@ -67,16 +68,16 @@ describe('craftAdapter', function () {
 
   describe('buildRequests', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         craft: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
-    let bidRequests = [{
+    const bidRequests = [{
       bidder: 'craft',
       params: {
         'sitekey': 'craft-prebid-example',
@@ -89,16 +90,16 @@ describe('craftAdapter', function () {
       auctionId: '8720f980-4639-4150-923a-e96da2f1de36',
       transactionId: 'e0c52da2-c008-491c-a910-c6765d948700',
     }];
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
       }
     };
     it('sends bid request to ENDPOINT via POST', function () {
-      let request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://gacraft.jp/prebid-v3/craft-prebid-example');
-      let data = JSON.parse(request.data);
+      const data = JSON.parse(request.data);
       expect(data.tags).to.deep.equals([{
         sitekey: 'craft-prebid-example',
         placementId: '1234abcd',
@@ -114,7 +115,7 @@ describe('craftAdapter', function () {
   });
 
   describe('interpretResponse', function() {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         tags: [{
           uuid: '0396fae4eb5f47',
@@ -137,14 +138,14 @@ describe('craftAdapter', function () {
         }],
       }
     };
-    let bidderRequest = {
+    const bidderRequest = {
       bids: [{
         bidId: '0396fae4eb5f47',
         adUnitCode: 'craft-prebid-example'
       }]
     };
     it('should get correct bid response', function() {
-      let bids = spec.interpretResponse(serverResponse, {bidderRequest: bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, {bidderRequest: bidderRequest});
       expect(bids).to.have.lengthOf(1);
       expect(bids[0]).to.deep.equals({
         _adUnitCode: 'craft-prebid-example',

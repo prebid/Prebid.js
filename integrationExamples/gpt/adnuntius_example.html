@@ -64,10 +64,14 @@
             if (pbjs.initAdserverSet) return;
             pbjs.initAdserverSet = true;
             googletag.cmd.push(function() {
-                pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync('div-gpt-ad-1683695049516-0');
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync('div-gpt-ad-1683695049516-0');
+                        googletag.pubads().refresh();
+                    });
+                } else {
                     googletag.pubads().refresh();
-                });
+                }
             });
         }
 

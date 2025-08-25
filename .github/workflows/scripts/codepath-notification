@@ -15,4 +15,5 @@ rubicon|magnite : header-bidding@magnite.com
 appnexus : prebid@microsoft.com
 pubmatic : header-bidding@pubmatic.com
 openx : prebid@openx.com
-medianet : prebid@media.net
+(modules|libraries)/medianet : prebid@media.net
+teads : tech-ssp-video@teads.tv

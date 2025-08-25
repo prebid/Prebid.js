@@ -14,7 +14,7 @@ describe('paapiForGpt module', () => {
   let sandbox, fledgeAuctionConfig;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     fledgeAuctionConfig = {
       seller: 'bidder',
       mock: 'config'

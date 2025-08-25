@@ -8,7 +8,6 @@ export function adjustCpm(cpm, bidResponse, bidRequest, {index = auctionManager.
   const bidderCode = bidResponse?.bidderCode || bidRequest?.bidder;
   const adjustAlternateBids = bs.get(bidResponse?.adapterCode, 'adjustAlternateBids');
   const bidCpmAdjustment = bs.getOwn(bidderCode, 'bidCpmAdjustment') || bs.get(adjustAlternateBids ? adapterCode : bidderCode, 'bidCpmAdjustment');
-
   if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
     try {
       return bidCpmAdjustment(cpm, Object.assign({}, bidResponse), bidRequest);

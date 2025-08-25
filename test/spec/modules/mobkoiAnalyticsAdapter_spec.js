@@ -1,5 +1,5 @@
-import mobkoiAnalyticsAdapter, { DEBUG_EVENT_LEVELS, utils, SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP, SUB_PAYLOAD_TYPES } from 'modules/mobkoiAnalyticsAdapter.js';
-import {internal} from '../../../src/utils.js';
+import mobkoiAnalyticsAdapter, { DEBUG_EVENT_LEVELS, utils, SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP, SUB_PAYLOAD_TYPES, PROD_PREBID_JS_INTEGRATION_ENDPOINT } from 'modules/mobkoiAnalyticsAdapter.js';
+import * as prebidUtils from 'src/utils';
 import adapterManager from '../../../src/adapterManager.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
@@ -14,7 +14,7 @@ const transactionId = 'test-transaction-id'
 const impressionId = 'test-impression-id'
 const adUnitId = 'test-ad-unit-id'
 const auctionId = 'test-auction-id'
-const adServerBaseUrl = 'http://adServerBaseUrl';
+const integrationBaseUrl = 'http://integrationBaseUrl';
 
 const adm = '<div>test ad</div>';
 const lurl = 'test.com/loss';
@@ -30,7 +30,7 @@ const getOrtb2 = () => ({
   site: {
     publisher: {
       id: publisherId,
-      ext: { adServerBaseUrl }
+      ext: { integrationEndpoint: integrationBaseUrl }
     }
   }
 })
@@ -178,6 +178,19 @@ const getBidderRequest = () => ({
 })
 
 describe('mobkoiAnalyticsAdapter', function () {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(prebidUtils, 'logInfo');
+    sandbox.stub(prebidUtils, 'logWarn');
+    sandbox.stub(prebidUtils, 'logError');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   it('should registers with the adapter manager', function () {
     // should refer to the BIDDER_CODE in the mobkoiAnalyticsAdapter
     const adapter = adapterManager.getAnalyticsAdapter('mobkoi');
@@ -208,15 +221,11 @@ describe('mobkoiAnalyticsAdapter', function () {
       adapter.disableAnalytics();
       adapter.enableAnalytics({
         options: {
-          endpoint: adServerBaseUrl,
+          endpoint: integrationBaseUrl,
           pid: 'test-pid',
           timeout: defaultTimeout,
         }
       });
-
-      sandbox.stub(internal, 'logInfo');
-      sandbox.stub(internal, 'logWarn');
-      sandbox.stub(internal, 'logError');
 
       // Create spies after enabling analytics to ensure localContext exists
       postAjaxStub = sandbox.stub(utils, 'postAjax');
@@ -229,8 +238,8 @@ describe('mobkoiAnalyticsAdapter', function () {
     afterEach(function () {
       adapter.disableAnalytics();
       sandbox.restore();
-      postAjaxStub.reset();
-      sendGetRequestStub.reset();
+      postAjaxStub.resetHistory();
+      sendGetRequestStub.resetHistory();
     });
 
     it('should call sendGetRequest while tracking BIDDER_DONE / BID_WON events', function () {
@@ -268,7 +277,7 @@ describe('mobkoiAnalyticsAdapter', function () {
       performStandardAuction(eventSequence);
 
       expect(postAjaxStub.calledOnce).to.be.true;
-      expect(postAjaxStub.firstCall.args[0]).to.equal(`${adServerBaseUrl}/debug`);
+      expect(postAjaxStub.firstCall.args[0]).to.equal(`${integrationBaseUrl}/debug`);
     })
 
     it('should track complete auction workflow in correct sequence and trigger a loss beacon', function () {
@@ -418,18 +427,17 @@ describe('mobkoiAnalyticsAdapter', function () {
       });
     })
 
-    describe('getAdServerEndpointBaseUrl', function () {
-      it('should return the adServerBaseUrl from the given object', function () {
-        expect(utils.getAdServerEndpointBaseUrl(bidderRequest))
-          .to.equal(adServerBaseUrl);
+    describe('getIntegrationEndpoint', function () {
+      it('should return the integrationEndpoint from the given object', function () {
+        expect(utils.getIntegrationEndpoint(bidderRequest))
+          .to.equal(integrationBaseUrl);
       });
 
-      it('should throw error when adServerBaseUrl is missing', function () {
-        delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
+      it('should use the default integrationEndpoint when integrationEndpoint is missing in ortb2.site.publisher.ext', function () {
+        delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
 
-        expect(() => {
-          utils.getAdServerEndpointBaseUrl(bidderRequest);
-        }).to.throw();
+        expect(utils.getIntegrationEndpoint(bidderRequest))
+          .to.equal(PROD_PREBID_JS_INTEGRATION_ENDPOINT);
       });
     })
 

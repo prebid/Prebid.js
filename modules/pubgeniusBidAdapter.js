@@ -71,7 +71,7 @@ export const spec = {
       deepSetValue(data, 'regs.ext.us_privacy', usp);
     }
 
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
       deepSetValue(data, 'source.ext.schain', schain);
     }
@@ -117,7 +117,7 @@ export const spec = {
     const syncs = []
 
     if (syncOptions.iframeEnabled) {
-      let params = {};
+      const params = {};
 
       if (gdprConsent) {
         params.gdpr = numericBoolean(gdprConsent.gdprApplies);

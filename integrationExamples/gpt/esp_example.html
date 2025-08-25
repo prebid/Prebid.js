@@ -125,11 +125,15 @@
             if (pbjs.initAdserverSet) return;
             pbjs.initAdserverSet = true;
             googletag.cmd.push(function () {
-                pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
-                    pbjs.registerSignalSources();
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function () {
+                        pbjs.setTargetingForGPTAsync();
+                        pbjs.registerSignalSources();
+                        googletag.pubads().refresh();
+                    });
+                } else {
                     googletag.pubads().refresh();
-                });
+                }
             });
         }
         // in case PBJS doesn't load

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-import { internal as utilInternal } from '../../../src/utils.js';
+import { internal as utilInternal, deepClone } from '../../../src/utils.js';
 import {
   isUsingNewSizeMapping,
   checkAdUnitSetupHook,
@@ -17,15 +17,14 @@ import {
 } from '../../../modules/sizeMappingV2.js';
 
 import { adUnitSetupChecks } from '../../../src/prebid.js';
-import {deepClone} from '../../../src/utils.js';
 
 const AD_UNITS = [{
   code: 'div-gpt-ad-1460505748561-0',
   mediaTypes: {
     banner: {
       sizeConfig: [
-        { minViewPort: [0, 0], sizes: [] },		// remove if < 750px
-        { minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },		// between 750px and 1199px
+        { minViewPort: [0, 0], sizes: [] },    // remove if < 750px
+        { minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },    // between 750px and 1199px
         { minViewPort: [1200, 0], sizes: [[970, 90], [728, 90], [300, 250]] }, // between 1200px and 1599px
         { minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]] } // greater than 1600px
       ]
@@ -175,7 +174,7 @@ describe('sizeMappingV2', function () {
     });
 
     it('should return "true" if sizeConfig is declared both at the adUnits level and at the bids level', function () {
-      let adUnits = utils.deepClone(AD_UNITS);
+      const adUnits = utils.deepClone(AD_UNITS);
 
       const usingNewSizeMappingBool = isUsingNewSizeMapping(adUnits);
 
@@ -236,7 +235,7 @@ describe('sizeMappingV2', function () {
       });
 
       it('should log an error message if mediaTypes.banner does not contain "sizes" or "sizeConfig" property', function () {
-        let adUnits = utils.deepClone(AD_UNITS);
+        const adUnits = utils.deepClone(AD_UNITS);
         // deleteing the sizeConfig property from the first ad unit.
         delete adUnits[0].mediaTypes.banner.sizeConfig;
 
@@ -1174,7 +1173,7 @@ describe('sizeMappingV2', function () {
     });
   });
 
-  describe('getFilteredMediaTypes(mediaTypes)', function () {    
+  describe('getFilteredMediaTypes(mediaTypes)', function () {
     beforeEach(function () {
       utils.resetWinDimensions();
       sinon

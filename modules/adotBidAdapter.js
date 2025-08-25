@@ -4,7 +4,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { find } from '../src/polyfill.js';
 import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';
 import { OUTSTREAM } from '../src/video.js';
 import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
@@ -124,7 +123,7 @@ function getOpenRTBSiteObject(bidderRequest) {
       id: publisherId
     },
     ext: {
-      schain: bidderRequest.schain
+      schain: bidderRequest?.ortb2?.source?.ext?.schain
     }
   };
 }
@@ -150,7 +149,6 @@ function getOpenRTBUserObject(bidderRequest) {
   return {
     ext: {
       consent: bidderRequest.gdprConsent.consentString,
-      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
     },
   };
 }
@@ -590,7 +588,7 @@ function buildBidResponse(bid, bidResponse, imp) {
 function getImpfromBid(bid, bidRequest) {
   if (!bidRequest || !bidRequest.imp) return null;
   const imps = bidRequest.imp;
-  return find(imps, (imp) => imp.id === bid.impid);
+  return ((imps) || []).find((imp) => imp.id === bid.impid);
 }
 
 /**

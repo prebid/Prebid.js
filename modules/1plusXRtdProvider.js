@@ -86,10 +86,14 @@ export const extractConsent = ({ gdpr }) => {
   }
   const { gdprApplies, consentString } = gdpr
   if (!(gdprApplies == '0' || gdprApplies == '1')) {
-    throw 'TCF Consent: gdprApplies has wrong format'
+    const msg = 'TCF Consent: gdprApplies has wrong format'
+    logError(msg)
+    return null
   }
   if (consentString && typeof consentString != 'string') {
-    throw 'TCF Consent: consentString must be string if defined'
+    const msg = 'TCF Consent: consentString must be string if defined'
+    logError(msg)
+    return null
   }
   const result = {
     'gdpr_applies': gdprApplies,
@@ -218,7 +222,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
 };
 
 /**
- * Updates bidder configs with the targeting data retreived from Profile API
+ * Updates bidder configs with the targeting data retrieved from Profile API
  * @param {Object} papiResponse Response from Profile API
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration

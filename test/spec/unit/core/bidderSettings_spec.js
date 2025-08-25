@@ -1,6 +1,6 @@
 import {bidderSettings, ScopedSettings} from '../../../../src/bidderSettings.js';
 import {expect} from 'chai';
-import * as prebidGlobal from '../../../../src/prebidGlobal';
+import * as prebidGlobal from '../../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
 describe('ScopedSettings', () => {
@@ -110,7 +110,7 @@ describe('ScopedSettings', () => {
 describe('bidderSettings', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(prebidGlobal, 'getGlobal').returns({
       bidderSettings: {
         scope: {

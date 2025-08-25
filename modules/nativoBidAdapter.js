@@ -110,7 +110,7 @@ const campaignsToFilter = new Set()
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
-// Validity checks for optionsl paramters
+// Validity checks for optional parameters
 const validParameter = {
   url: (value) => typeof value === 'string',
   placementId: (value) => {
@@ -141,7 +141,7 @@ export const spec = {
       const value = bid.params[key]
       const validityCheck = validParameter[key]
 
-      // We don't have a test for this so it's not a paramter we care about
+      // We don't have a test for this so it's not a parameter we care about
       if (!validityCheck) return false
 
       // Return if the check is not passed
@@ -212,7 +212,7 @@ export const spec = {
     const adUnitData = buildAdUnitData(validBidRequests)
 
     // Build basic required QS Params
-    let params = [
+    const params = [
       // Prebid version
       {
         key: 'ntv_pbv',
@@ -280,7 +280,7 @@ export const spec = {
       // Convert Set to Array (IE 11 Safe)
       const placements = []
       placementIds.forEach((value) => placements.push(value))
-      // Append to query string paramters
+      // Append to query string parameters
       params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
@@ -313,7 +313,7 @@ export const spec = {
     ]
     const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
 
-    let serverRequest = {
+    const serverRequest = {
       method: 'POST',
       url: requestUrl,
       data: openRTBDataString,
@@ -523,7 +523,7 @@ export class RequestData {
   }
 
   processBidRequestData(bidRequest, bidderRequest) {
-    for (let bidRequestDataSource of this.bidRequestDataSources) {
+    for (const bidRequestDataSource of this.bidRequestDataSources) {
       bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
     }
   }
@@ -591,15 +591,15 @@ export function parseFloorPriceData(bidRequest) {
   if (typeof bidRequest.getFloor !== 'function') return
 
   // Setup price floor data per bid request
-  let bidRequestFloorPriceData = {}
-  let bidMediaTypes = bidRequest.mediaTypes
-  let sizeOptions = new Set()
+  const bidRequestFloorPriceData = {}
+  const bidMediaTypes = bidRequest.mediaTypes
+  const sizeOptions = new Set()
   // Step through meach media type so we can get floor data for each media type per bid request
   Object.keys(bidMediaTypes).forEach((mediaType) => {
     // Setup price floor data per media type
-    let mediaTypeData = bidMediaTypes[mediaType]
-    let mediaTypeFloorPriceData = {}
-    let mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
+    const mediaTypeData = bidMediaTypes[mediaType]
+    const mediaTypeFloorPriceData = {}
+    const mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
     // Step through each size of the media type so we can get floor data for each size per media type
     mediaTypeSizes.forEach((size) => {
       // Get floor price data per the getFloor method and respective media type / size combination
@@ -804,7 +804,7 @@ export function getPageUrlFromBidRequest(bidRequest) {
 }
 
 export function hasProtocol(url) {
-  const protocolRegexp = /^http[s]?\:/
+  const protocolRegexp = /^http[s]?:/
   return protocolRegexp.test(url)
 }
 

@@ -23,7 +23,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
-const NM_VERSION = '4.3.0';
+const NM_VERSION = '4.4.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -227,7 +227,7 @@ export const spec = {
     const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
     if (bidder != BIDDER_CODE) return;
 
-    let params = [];
+    const params = [];
     _each(bids, bid => {
       if (bid.params) {
         params.push(bid.params);
@@ -265,17 +265,21 @@ export const spec = {
   },
 };
 
-function getExtNextMilImp(bid) {
+export function getExtNextMilImp(bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
+  const {adSlots, allowedAds} = bid.params
   const nextMilImp = {
     impId: bid.bidId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
-      refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
+      refresh_count: window?.nmmRefreshCounts?.[bid.adUnitCode] || 0,
+      scrollTop: window?.pageYOffset || getWinDimensions()?.document?.documentElement?.scrollTop,
     },
   };
+
+  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots
+  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
 
   return nextMilImp;
 }
@@ -294,9 +298,7 @@ export function getImp(bid, id, mediaTypes) {
   };
 
   const gpid = bid?.ortb2Imp?.ext?.gpid;
-  const pbadslot = bid?.ortb2Imp?.ext?.data?.pbadslot;
   if (gpid) imp.ext.gpid = gpid;
-  if (pbadslot) imp.ext.data = { pbadslot };
 
   getImpBanner(imp, banner);
   getImpVideo(imp, video);
@@ -385,7 +387,7 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 };
 
 export function setOrtb2Parameters(postBody, ortb2 = {}) {
-  for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
+  for (const parameter of ALLOWED_ORTB2_PARAMETERS) {
     const value = deepAccess(ortb2, parameter);
     if (value) deepSetValue(postBody, parameter, value);
   }
@@ -433,7 +435,7 @@ function getCurrency(bid = {}) {
     };
 
     if (typeof bid.getFloor === 'function') {
-      let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      const floorInfo = bid.getFloor({currency, mediaType, size: '*'});
       mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
       mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
@@ -453,7 +455,7 @@ export function getPlacementId(bid) {
   const placementId = getBidIdParameter('placement_id', bid.params);
   if (!groupId) return placementId;
 
-  let windowTop = getTopWindow(window);
+  const windowTop = getTopWindow(window);
   let sizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.banner) sizes = [...bid.mediaTypes.banner.sizes];
@@ -510,8 +512,7 @@ function getDeviceObj() {
 }
 
 export function getSourceObj(validBidRequests, bidderRequest) {
-  const schain = validBidRequests?.[0]?.schain ||
-    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain || bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
 
   if (!schain) return;
 
@@ -523,7 +524,7 @@ export function getSourceObj(validBidRequests, bidderRequest) {
 }
 
 function getSua() {
-  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  const {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {

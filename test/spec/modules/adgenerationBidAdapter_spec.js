@@ -2,9 +2,9 @@ import {expect} from 'chai';
 import {spec} from 'modules/adgenerationBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {NATIVE} from 'src/mediaTypes.js';
-import prebid from '../../../package.json';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import prebid from 'package.json';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -30,7 +30,7 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);

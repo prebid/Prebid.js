@@ -1,13 +1,12 @@
 import {deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject} from '../../src/utils.js';
 import {getAdUnitSizes} from '../sizeUtils/sizeUtils.js';
-import {findIndex} from '../../src/polyfill.js';
 
 export function getBidFloor(bid, currency = 'USD') {
   if (!isFn(bid.getFloor)) {
     return null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency,
     mediaType: '*',
     size: '*'
@@ -20,15 +19,17 @@ export function getBidFloor(bid, currency = 'USD') {
   return null;
 }
 
-export function isBidRequestValid(bid) {
+export function isBidRequestValid(bid, requiredParams = ['pid', 'env']) {
   if (bid && typeof bid.params !== 'object') {
     logError('Params is not defined or is incorrect in the bidder settings');
     return false;
   }
 
-  if (!getBidIdParameter('env', bid.params) || !getBidIdParameter('pid', bid.params)) {
-    logError('Env or pid is not present in bidder params');
-    return false;
+  for (const param of requiredParams) {
+    if (!getBidIdParameter(param, bid.params)) {
+      logError(`Required param "${param}" is missing in bidder params`);
+      return false;
+    }
   }
 
   if (deepAccess(bid, 'mediaTypes.video') && !isArray(deepAccess(bid, 'mediaTypes.video.playerSize'))) {
@@ -49,7 +50,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
     request.auctionId = req.ortb2?.source?.tid;
     request.transactionId = req.ortb2Imp?.ext?.tid;
     request.sizes = parseSizesInput(getAdUnitSizes(req));
-    request.schain = req.schain;
+    request.schain = bidderRequest?.ortb2?.source?.ext?.schain;
     request.location = {
       page: refererInfo.page,
       location: refererInfo.location,
@@ -114,9 +115,9 @@ export function interpretResponse(serverResponse, {bidderRequest}) {
   }
 
   serverResponse.body.data.forEach(serverBid => {
-    const bidIndex = findIndex(bidderRequest.bids, (bidRequest) => {
-      return bidRequest.bidId === serverBid.requestId;
-    });
+    const bidIndex = Array.isArray(bidderRequest.bids)
+      ? bidderRequest.bids.findIndex(bidRequest => bidRequest.bidId === serverBid.requestId)
+      : undefined;
 
     if (bidIndex !== -1) {
       const bid = {
