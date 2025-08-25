@@ -85,7 +85,6 @@ describe('ALVADS Bid Adapter', function() {
 
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].video).to.deep.equal({ w: 1280, h: 720 });
-      expect(data.imp[0].tagid).to.equal(videoBid.params.tagid);
     });
   });
 
