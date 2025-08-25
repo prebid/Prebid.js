@@ -100,7 +100,7 @@ export function s2sActivityParams(s2sConfig) {
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, tids}) {
   return adUnits.reduce((result, adUnit) => {
     const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
     if (bidderCode == null && bids.length === 0 && adUnit.s2sBid != null) {
@@ -108,8 +108,11 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
     }
     result.push(
       bids.reduce((bids, bid) => {
+        if (!tids.hasOwnProperty(adUnit.transactionId)) {
+          tids[adUnit.transactionId] = generateUUID();
+        }
         bid = Object.assign({}, bid,
-          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp)},
+          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp, {ext: {tid: tids[adUnit.transactionId]}})},
           getDefinedParams(adUnit, [
             'nativeParams',
             'nativeOrtbRequest',
@@ -310,6 +313,16 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
+  const sourceTids = {};
+  const extTids = {};
+
+  function tidFor(tids, bidderCode, makeTid) {
+    const tid = tids.hasOwnProperty(bidderCode) ? tids[bidderCode] : makeTid();
+    if (bidderCode != null) {
+      tids[bidderCode] = tid;
+    }
+    return tid;
+  }
 
   function moveUserEidsToExt(o) {
     const eids = o.user?.eids;
@@ -326,7 +339,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         ? s2sActivityParams
         : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
     );
-    const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
+    const tid = tidFor(sourceTids, bidderRequest.bidderCode, generateUUID);
+    const merged = mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode], {source: {tid}});
     moveUserEidsToExt(merged);
     const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;
@@ -346,6 +360,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       let uniquePbsTid = generateUUID();
 
       (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
+        const tids = tidFor(extTids, bidderCode, () => ({}));
         const bidderRequestId = getUniqueIdentifierStr();
         const metrics = auctionMetrics.fork();
         const bidderRequest = addOrtb2({
@@ -353,7 +368,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics }),
+          bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics, tids}),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
           src: S2S.SRC,
@@ -385,13 +400,14 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
   clientBidders.forEach(bidderCode => {
+    const tids = tidFor(extTids, bidderCode, () => ({}));
     const bidderRequestId = getUniqueIdentifierStr();
     const metrics = auctionMetrics.fork();
     const bidderRequest = addOrtb2({
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), labels, src: 'client', metrics}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), labels, src: 'client', metrics, tids}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo,

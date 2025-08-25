@@ -660,6 +660,7 @@ export function getAdUnits() {
   return [
     {
       'code': '/19968336/header-bid-tag1',
+      transactionId: 'au1',
       'mediaTypes': {
         'banner': {
           'sizes': [[728, 90], [970, 90]]
@@ -689,6 +690,7 @@ export function getAdUnits() {
       ]
     },
     {
+      transactionId: 'au2',
       'code': '/19968336/header-bid-tag-0',
       'mediaTypes': {
         'banner': {
