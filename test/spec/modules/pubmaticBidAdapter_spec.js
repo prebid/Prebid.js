@@ -7,7 +7,7 @@ import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
-  const PUBMATIC_ALIAS = 'pubmaticAlias';
+  const PUBMATIC_ALIAS_BIDDER = 'pubmaticAlias';
   const request = {};
   firstBid = {
     adUnitCode: 'Div1',
@@ -94,7 +94,7 @@ describe('PubMatic adapter', () => {
   }
   firstAliasBid = {
     adUnitCode: 'Div1',
-    bidder: PUBMATIC_ALIAS,
+    bidder: PUBMATIC_ALIAS_BIDDER,
     mediaTypes: {
       banner: {
         sizes: [[728, 90], [160, 600]],
@@ -272,7 +272,7 @@ describe('PubMatic adapter', () => {
     bids: [firstAliasBid],
     auctionId: 'ee3074fe-97ce-4681-9235-d7622aede74c',
     auctionStart: 1725514077194,
-    bidderCode: PUBMATIC_ALIAS,
+    bidderCode: PUBMATIC_ALIAS_BIDDER,
     bidderRequestId: '1c56ad30b9b8ca8',
     refererInfo: {
       page: 'https://ebay.com',
@@ -409,10 +409,10 @@ describe('PubMatic adapter', () => {
       });
 
       it('should have build request with alias bidder', () => {
-        getGlobal().aliasBidder('pubmatic', PUBMATIC_ALIAS);
+        getGlobal().aliasBidder('pubmatic', PUBMATIC_ALIAS_BIDDER);
         const request = spec.buildRequests(validAliasBidRequests, bidderAliasRequest);
         expect(request.data).to.have.property('ext').to.have.property('wrapper').to.have.property('biddercode');
-        expect(request.data.ext.wrapper.biddercode).to.equal(PUBMATIC_ALIAS);
+        expect(request.data.ext.wrapper.biddercode).to.equal(PUBMATIC_ALIAS_BIDDER);
       });
 
       it('should add pmp if deals are present in parameters', () => {
