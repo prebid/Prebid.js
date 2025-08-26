@@ -328,8 +328,8 @@ export function newBidder(spec) {
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
             bid.deferBilling = bidRequest.deferBilling;
-            bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
-            const prebidBid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
+            bid.deferRendering = bid.deferBilling && (bid.deferRendering ?? typeof spec.onBidBillable !== 'function');
+            const prebidBid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
