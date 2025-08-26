@@ -125,6 +125,13 @@ export type BidderError<B extends BidderCode> = {
 export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
   code: BIDDER;
   supportedMediaTypes?: readonly MediaType[];
+
+  /**
+   * General Vendorlist ID.
+   * Required, if you want to handle bid requests under the GDPR legislation with the TCF (Transparency and Consent Framework).
+   * @see https://iabeurope.eu/tcf-for-vendors/
+   */
+  gvlid?: number;
   aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
   isBidRequestValid(request: BidRequest<BIDDER>): boolean;
   buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
