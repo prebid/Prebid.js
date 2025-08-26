@@ -386,11 +386,8 @@ export const intentIqIdSubmodule = {
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
+    const chSupported = !!(navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
     let chPromise = null;
-
-    function hasCHSupport() {
-      return !!(navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
-    }
 
     function fetchAndHandleCH() {
       return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
@@ -407,17 +404,20 @@ export const intentIqIdSubmodule = {
           logError('CH fetch failed', err);
           if (clientHints !== '') {
             clientHints = '';
-            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+            removeDataByKey(CLIENT_HINTS_KEY, allowedStorage)
           }
           return '';
         });
     }
 
-    if (hasCHSupport()) {
+    if (chSupported) {
       chPromise = fetchAndHandleCH();
       chPromise.catch(err => {
         logError('fetchAndHandleCH failed', err);
       });
+    } else {
+      clientHints = '';
+      removeDataByKey(CLIENT_HINTS_KEY, allowedStorage)
     }
 
     function waitOnCH(timeoutMs) {
@@ -481,13 +481,11 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
 
-      if (!hasCHSupport()) {
-        clientHints = '';
-        storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-        buildAndSendPixel(clientHints);
-      } else {
+      if (chSupported) {
         waitOnCH(chTimeout)
-          .then(ch => buildAndSendPixel(ch || clientHints || ''));
+          .then(ch => buildAndSendPixel(ch || clientHints));
+      } else {
+        buildAndSendPixel(clientHints);
       }
       return;
     }
@@ -649,16 +647,14 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
 
-      if (!hasCHSupport()) {
-        clientHints = '';
-        storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
-        ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
-      } else {
+      if (chSupported) {
         waitOnCH(chTimeout).then(ch => {
-          const uh = ch || clientHints || '';
+          const uh = ch || clientHints;
           if (uh) url += '&uh=' + encodeURIComponent(uh);
           ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
         });
+      } else {
+        ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
       }
     };
     const respObj = {callback: resp};
