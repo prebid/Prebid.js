@@ -87,7 +87,6 @@ describe('ALVADS Bid Adapter', function() {
       expect(data.imp[0].video).to.deep.equal({ w: 1280, h: 720 });
     });
   });
-
   // -----------------------------
   describe('interpretResponse', function() {
     it('returns empty array if no bids', function() {
