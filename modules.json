@@ -37,6 +37,7 @@
     "mediafuseBidAdapter",
     "medianetBidAdapter",
     "mobkoiBidAdapter",
+    "onetagBidAdapter",
     "openxBidAdapter",
     "pairIdSystem",
     "prebidServerBidAdapter",
