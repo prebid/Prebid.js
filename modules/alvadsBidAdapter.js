@@ -87,7 +87,7 @@ export const spec = {
         method: 'POST',
         url: endpoint,
         data: JSON.stringify(payload),
-        options: { contentType: 'application/json', withCredentials: false },
+        options: { withCredentials: false },
         bid: bid
       };
     });
