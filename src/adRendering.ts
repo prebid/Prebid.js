@@ -53,10 +53,8 @@ declare module './events' {
   }
 }
 
-export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
-  return override
-    .then(bid => bid ?? auctionManager.findBidByAdId(adId))
-    .catch(() => {})
+export const getBidToRender = hook('sync', function (adId, forRender, cb) {
+  cb(auctionManager.findBidByAdId(adId));
 })
 
 export const markWinningBid = hook('sync', function (bid) {
@@ -350,7 +348,7 @@ export function renderAdDirect(doc, adId, options) {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      getBidToRender(adId).then(bidResponse => {
+      getBidToRender(adId, true, (bidResponse) => {
         bid = bidResponse;
         handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
       });

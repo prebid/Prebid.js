@@ -21,9 +21,9 @@ import {getGlobal} from '../../../src/prebidGlobal.js';
 describe('secureCreatives', () => {
   let sandbox;
 
-  function getBidToRenderHook(next, adId) {
+  function getBidToRenderHook(next, ...args) {
     // make sure that bids can be retrieved asynchronously
-    next(adId, new Promise((resolve) => setTimeout(resolve)))
+    setTimeout(() => next(...args))
   }
   before(() => {
     getBidToRender.before(getBidToRenderHook);
@@ -45,7 +45,9 @@ describe('secureCreatives', () => {
   }
 
   function receive(ev) {
-    return Promise.resolve(receiveMessage(ev));
+    return new Promise((resolve) => {
+      receiveMessage(ev, resolve);
+    })
   }
 
   describe('getReplier', () => {

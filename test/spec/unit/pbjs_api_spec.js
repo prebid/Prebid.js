@@ -201,9 +201,9 @@ window.apntag = {
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub, sandbox;
-  function getBidToRenderHook(next, adId) {
+  function getBidToRenderHook(next, ...args) {
     // make sure we can handle async bidToRender
-    next(adId, new Promise((resolve) => setTimeout(resolve)))
+    setTimeout(() => next(...args));
   }
   before((done) => {
     hook.ready();
