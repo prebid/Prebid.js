@@ -8,13 +8,17 @@ function getSlotConfigs(mediaTypes, params) {
     bidId: '2df8c0733f284e',
     bidder: 'astraone',
     mediaTypes: mediaTypes,
-    transactionId: '31a58515-3634-4e90-9c96-f86196db1459'
+    ortb2Imp: {
+      ext: {
+        tid: '31a58515-3634-4e90-9c96-f86196db1459'
+      }
+    }
   }
 }
 
 describe('AstraOne Adapter', function() {
   describe('isBidRequestValid method', function() {
-    const PLACE_ID = '5af45ad34d506ee7acad0c26';
+    const PLACE_ID = '5f477bf94d506ebe2c4240f3';
     const IMAGE_URL = 'https://creative.astraone.io/files/default_image-1-600x400.jpg';
 
     describe('returns true', function() {
@@ -176,21 +180,23 @@ describe('AstraOne Adapter', function() {
       describe('the bid is a banner', function() {
         it('should return a banner bid', function() {
           const serverResponse = {
-            body: [
-              {
-                bidId: '2df8c0733f284e',
-                price: 0.5,
-                currency: 'USD',
-                content: {
-                  content: 'html',
-                  actionUrls: {},
-                  seanceId: '123123'
-                },
-                width: 100,
-                height: 100,
-                ttl: 360
-              }
-            ]
+            body: {
+              bids: [
+                {
+                  bidId: '2df8c0733f284e',
+                  price: 0.5,
+                  currency: 'USD',
+                  content: {
+                    content: 'html',
+                    actionUrls: {},
+                    seanceId: '123123'
+                  },
+                  width: 100,
+                  height: 100,
+                  ttl: 360
+                }
+              ]
+            }
           }
           const bids = spec.interpretResponse(serverResponse)
           expect(bids.length).to.equal(1)

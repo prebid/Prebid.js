@@ -1,12 +1,19 @@
-import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
+import { parseSizesInput, _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
 
+const GVLID = 153;
+
 export const spec = {
   code: 'madvertise',
+  gvlid: GVLID,
   /**
    * @param {object} bid
    * @return boolean
@@ -15,15 +22,12 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let sizes = utils.parseSizesInput(bid.sizes);
+    const sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
     if (sizes.length > 0 && sizes[0] === undefined) {
       return false;
-    }
-    if (typeof bid.params.floor == 'undefined' || parseFloat(bid.params.floor) < 0.01) {
-      bid.params.floor = 0.01;
     }
 
     return typeof bid.params.s != 'undefined';
@@ -46,14 +50,16 @@ export const spec = {
         }
       }
 
-      utils._each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
+      _each(bidRequest.params, (item, key) => {
+        src = src + '&' + key + '=' + item;
+      });
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=' + config.getConfig('consentManagement.cmpApi') + '&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
+        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=iab&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
       }
 
       return {
@@ -76,7 +82,7 @@ export const spec = {
       return [];
     }
 
-    let bid = {
+    const bid = {
       requestId: bidRequest.bidId,
       cpm: responseObj.cpm,
       width: responseObj.Width,
@@ -86,7 +92,11 @@ export const spec = {
       creativeId: responseObj.creativeId,
       netRevenue: responseObj.netRevenue,
       currency: responseObj.currency,
-      dealId: responseObj.dealId
+      dealId: responseObj.dealId,
+      meta: {
+        advertiserDomains: Array.isArray(responseObj.adomain) ? responseObj.adomain : []
+      }
+
     };
     return [bid];
   },

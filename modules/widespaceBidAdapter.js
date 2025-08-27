@@ -1,14 +1,8 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {
-  parseQueryStringParameters,
-  parseSizesInput
-} from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -17,6 +11,7 @@ const LS_KEYS = {
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
 };
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 let preReqTime = 0;
 
@@ -33,7 +28,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let serverRequests = [];
+    const serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
@@ -49,7 +44,7 @@ export const spec = {
     }
 
     validBidRequests.forEach((bid, i) => {
-      let data = {
+      const data = {
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'adSpaceHttpRefUrl': getTopWindowReferrer(),
@@ -61,7 +56,7 @@ export const spec = {
         'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
-        'hb.floor': bid.bidfloor || '',
+        'hb.floor': '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': 'prebidjs-$prebid.version$',
@@ -95,10 +90,9 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        const DEBUG_AD = (find(window.top.location.hash.split('&'),
-          val => includes(val, 'WS_DEBUG_FORCEADID')
+        data.forceAdId = (((window.top.location.hash.split('&')) || []).find(
+          val => val.includes('WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
-        data.forceAdId = DEBUG_AD;
       }
 
       // GDPR Consent info
@@ -133,7 +127,7 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
-    let bidResponses = [];
+    const bidResponses = [];
     successBids.forEach((bid) => {
       storeData({
         'perf_status': 'OK',
@@ -151,7 +145,10 @@ export const spec = {
           netRevenue: Boolean(bid.netRev),
           ttl: bid.ttl,
           referrer: getTopWindowReferrer(),
-          ad: bid.code
+          ad: bid.code,
+          meta: {
+            advertiserDomains: bid.adomain || []
+          }
         });
       }
     });
@@ -187,29 +184,7 @@ function storeData(data, name, stringify = true) {
 }
 
 function getData(name, remove = true) {
-  let data = [];
-  if (storage.hasLocalStorage()) {
-    Object.keys(localStorage).filter((key) => {
-      if (key.indexOf(name) > -1) {
-        data.push(storage.getDataFromLocalStorage(key));
-        if (remove) {
-          storage.removeDataFromLocalStorage(key);
-        }
-      }
-    });
-  }
-
-  if (storage.cookiesAreEnabled()) {
-    document.cookie.split(';').forEach((item) => {
-      let value = item.split('=');
-      if (value[0].indexOf(name) > -1) {
-        data.push(value[1]);
-        if (remove) {
-          storage.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
-        }
-      }
-    });
-  }
+  const data = [];
   return data;
 }
 
@@ -219,11 +194,10 @@ function pixelSyncPossibility() {
 }
 
 function visibleOnLoad(element) {
-  if (element && element.getBoundingClientRect) {
-    const topPos = element.getBoundingClientRect().top;
+  if (element) {
+    const topPos = getBoundingClientRect(element).top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
   }
-  ;
   return '';
 }
 
@@ -238,7 +212,7 @@ function getLcuid() {
 }
 
 function encodedParamValue(value) {
-  const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
+  const requiredStringify = typeof deepClone(value) === 'object';
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 

@@ -4,38 +4,42 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var PluginError = require('plugin-error');
+var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
-var uglify = require('gulp-uglify');
 var gulpClean = require('gulp-clean');
-var KarmaServer = require('karma').Server;
-var karmaConfMaker = require('./karma.conf.maker');
 var opens = require('opn');
-var webpackConfig = require('./webpack.conf');
-var helpers = require('./gulpHelpers');
+var webpackConfig = require('./webpack.conf.js');
+const standaloneDebuggingConfig = require('./webpack.debugging.js');
+var helpers = require('./gulpHelpers.js');
+const execaTask = helpers.execaTask;
 var concat = require('gulp-concat');
-var header = require('gulp-header');
-var footer = require('gulp-footer');
 var replace = require('gulp-replace');
-var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
+const execaCmd = require('execa');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
-const execa = require('execa');
+const {minify} = require('terser');
+const Vinyl = require('vinyl');
+const wrap = require('gulp-wrap');
+const rename = require('gulp-rename');
+const merge = require('merge-stream');
 
 var prebid = require('./package.json');
-var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
-const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
-const FAKE_SERVER_PORT = 4444;
-const { spawn } = require('child_process');
+const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
+const INTEG_SERVER_PORT = 4444;
+const { spawn, fork } = require('child_process');
+const TerserPlugin = require('terser-webpack-plugin');
+
+const {precompile, babelPrecomp} = require('./gulp.precompilation.js');
+
+const TEST_CHUNKS = 4;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -49,11 +53,23 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['build'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
     .pipe(gulpClean());
+}
+
+function requireNodeVersion(version) {
+  return (done) => {
+    const [major] = process.versions.node.split('.');
+
+    if (major < version) {
+      throw new Error(`This task requires Node v${version}`)
+    }
+
+    done();
+  }
 }
 
 // Dependant task for building postbid. It escapes postbid-config file.
@@ -68,138 +84,217 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
+  const args = ['eslint', '--cache', '--cache-strategy', 'content'];
+  if (!argv.nolintfix) {
+    args.push('--fix');
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
-    .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
-    .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError())
-    .pipe(gulpif(isFixed, gulp.dest('./')));
-};
-
-// View the code coverage report in the browser.
-function viewCoverage(done) {
-  var coveragePort = 1999;
-  var mylocalhost = (argv.host) ? argv.host : 'localhost';
-
-  connect.server({
-    port: coveragePort,
-    root: 'build/coverage/lcov-report',
-    livereload: false,
-    debug: true
+  if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
+    args.push('--quiet')
+  }
+  return execaTask(args.join(' '))().then(() => {
+    done();
+  }, (err) => {
+    done(err);
   });
-  opens('http://' + mylocalhost + ':' + coveragePort);
-  done();
 };
 
-viewCoverage.displayName = 'view-coverage';
-
-// View the reviewer tools page
-function viewReview(done) {
-  var mylocalhost = (argv.host) ? argv.host : 'localhost';
-  var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
-
-  // console.log(`stdout: opening` + reviewUrl);
-
-  opens(reviewUrl);
-  done();
-};
-
-viewReview.displayName = 'view-review';
-
-// Watch Task with Live Reload
-function watch(done) {
-  var mainWatcher = gulp.watch([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'test/spec/**/*.js',
-    '!test/spec/loaders/**/*.js'
-  ]);
-  var loaderWatcher = gulp.watch([
-    'loaders/**/*.js',
-    'test/spec/loaders/**/*.js'
-  ]);
-
-  connect.server({
-    https: argv.https,
-    port: port,
-    host: FAKE_SERVER_HOST,
-    root: './',
-    livereload: true
+function makeVerbose(config = webpackConfig) {
+  return _.merge({}, config, {
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          parallel: true,
+          terserOptions: {
+            mangle: false,
+            format: {
+              comments: 'all'
+            }
+          },
+          extractComments: false,
+        }),
+      ],
+    }
   });
-
-  mainWatcher.on('all', gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)));
-  loaderWatcher.on('all', gulp.series(lint));
-  done();
-};
-
-function makeDevpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
-  cloned.devtool = 'source-map';
-  var externalModules = helpers.getArgModules();
-
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
-
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(gulp.dest('build/dev'))
-    .pipe(connect.reload());
 }
 
-function makeWebpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
-  delete cloned.devtool;
-
+function prebidSource(webpackCfg) {
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+  return gulp.src([].concat(moduleSources, analyticsSources, helpers.getPrecompiledPath('src/prebid.js')))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(uglify())
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
-    .pipe(gulp.dest('build/dist'));
+    .pipe(webpackStream(webpackCfg, webpack));
+}
+
+function makeDevpackPkg(config = webpackConfig) {
+  return function() {
+    var cloned = _.cloneDeep(config);
+    Object.assign(cloned, {
+      devtool: 'source-map',
+      mode: 'development'
+    })
+
+    return prebidSource(cloned)
+      .pipe(gulp.dest('build/dev'))
+      .pipe(connect.reload());
+  }
+}
+
+function makeWebpackPkg(config = webpackConfig) {
+  var cloned = _.cloneDeep(config)
+  if (!argv.sourceMaps) {
+    delete cloned.devtool;
+  }
+
+  return function buildBundle() {
+    return prebidSource(cloned)
+      .pipe(gulp.dest('build/dist'));
+  }
+}
+
+function buildCreative(mode = 'production') {
+  const opts = {mode};
+  if (mode === 'development') {
+    opts.devtool = 'inline-source-map'
+  }
+  return function() {
+    return gulp.src(['creative/**/*'])
+      .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
+      .pipe(gulp.dest('build/creative'))
+  }
+}
+
+function updateCreativeRenderers() {
+  return gulp.src(['build/creative/renderers/**/*'])
+    .pipe(wrap('// this file is autogenerated, see creative/README.md\nexport const RENDERER = <%= JSON.stringify(contents.toString()) %>'))
+    .pipe(gulp.dest(helpers.getCreativeRendererPath()))
+}
+
+function updateCreativeExample(cb) {
+  const CREATIVE_EXAMPLE = 'integrationExamples/gpt/x-domain/creative.html';
+  const root = require('node-html-parser').parse(fs.readFileSync(CREATIVE_EXAMPLE));
+  root.querySelectorAll('script')[0].textContent = fs.readFileSync('build/creative/creative.js')
+  fs.writeFileSync(CREATIVE_EXAMPLE, root.toString())
+  cb();
+}
+
+function getModulesListToAddInBanner(modules) {
+  if (!modules || modules.length === helpers.getModuleNames().length) {
+    return 'All available modules for this version.'
+  } else {
+    return modules.join(', ')
+  }
 }
 
 function gulpBundle(dev) {
   return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
-function nodeBundle(modules) {
+function nodeBundle(modules, dev = false) {
   return new Promise((resolve, reject) => {
-    bundle(false, modules)
+    bundle(dev, modules)
       .on('error', (err) => {
         reject(err);
       })
       .pipe(through.obj(function (file, enc, done) {
-        resolve(file.contents.toString(enc));
+        if (file.path.endsWith('.js')) {
+          resolve(file.contents.toString(enc));
+        }
         done();
       }));
   });
 }
 
+function memoryVinyl(name, contents) {
+  return new Vinyl({
+    cwd: '',
+    base: 'generated',
+    path: name,
+    contents: Buffer.from(contents, 'utf-8')
+  });
+}
+
+function wrapWithHeaderAndFooter(dev, modules) {
+  // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
+  // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
+  return function wrap(stream) {
+    const wrapped = through.obj();
+    const placeholder = '$$PREBID_SOURCE$$';
+    const tpl = _.template(fs.readFileSync('./bundle-template.txt'))({
+      prebid,
+      modules: getModulesListToAddInBanner(modules),
+      enable: !argv.manualEnable
+    });
+    (dev ? Promise.resolve(tpl) : minify(tpl, {format: {comments: true}}).then((res) => res.code))
+      .then((tpl) => {
+        // wrap source placeholder in an IIFE to make it an expression (so that it works with minify output)
+        const parts = tpl.replace(placeholder, `(function(){$$${placeholder}$$})()`).split(placeholder);
+        if (parts.length !== 2) {
+          throw new Error(`Cannot parse bundle template; it must contain exactly one instance of '${placeholder}'`);
+        }
+        const [header, footer] = parts;
+        wrapped.push(memoryVinyl('prebid-header.js', header));
+        stream.pipe(wrapped, {end: false});
+        stream.on('end', () => {
+          wrapped.push(memoryVinyl('prebid-footer.js', footer));
+          wrapped.push(null);
+        });
+      })
+      .catch((err) => {
+        wrapped.destroy(err);
+      });
+    return wrapped;
+  }
+}
+
+function disclosureSummary(modules, summaryFileName) {
+  const stream = through.obj();
+  import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
+    const summary = getStorageDisclosureSummary(modules, (moduleName) => {
+      const metadataPath = `./metadata/modules/${moduleName}.json`;
+      if (fs.existsSync(metadataPath)) {
+        return JSON.parse(fs.readFileSync(metadataPath).toString());
+      } else {
+        return null;
+      }
+    })
+    stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
+    stream.push(null);
+  })
+  return stream;
+}
+
+const MODULES_REQUIRING_METADATA = ['storageControl'];
+
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
+  const sm = dev || argv.sourceMaps;
 
   if (modules.length === 0) {
     modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
   } else {
     var diff = _.difference(modules, allModules);
     if (diff.length !== 0) {
-      throw new gutil.PluginError({
-        plugin: 'bundle',
-        message: 'invalid modules: ' + diff.join(', ')
-      });
+      throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
 
-  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+  const metadataModules = modules.find(module => MODULES_REQUIRING_METADATA.includes(module))
+    ? modules.concat(['prebid-core']).map(helpers.getMetadataEntry).filter(name => name != null)
+    : [];
+
+  const coreFile = helpers.getBuiltPrebidCoreFile(dev);
+  const moduleFiles = helpers.getBuiltModules(dev, modules)
+    .concat(metadataModules.map(mod => helpers.getBuiltPath(dev, `${mod}.js`)));
+  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
+  const dependencies = new Set();
+  [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
+    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
+  });
+  const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
@@ -207,21 +302,30 @@ function bundle(dev, moduleArr) {
   if (argv.tag && argv.tag.length) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
+  const disclosureFile = path.parse(outputFileName).name + '_disclosures.json';
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
+  fancyLog('Concatenating files:\n', entries);
+  fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
+  fancyLog('Generating bundle:', outputFileName);
+  fancyLog('Generating storage use disclosure summary:', disclosureFile);
 
-  return gulp.src(
-    entries
-  )
-    .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
+  const wrap = wrapWithHeaderAndFooter(dev, modules);
+  const source = wrap(gulp.src(entries))
+    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
-    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-      global: prebid.globalVarName
-    }
-    )))
-    .pipe(gulpif(dev, sourcemaps.write('.')));
+    .pipe(gulpif(sm, sourcemaps.write('.')));
+  const disclosure = disclosureSummary(['prebid-core'].concat(modules), disclosureFile);
+  return merge(source, disclosure);
+}
+
+function setupDist() {
+  return gulp.src(['build/dist/**/*'])
+    .pipe(rename(function (path) {
+      if (path.dirname === '.' && path.basename === 'prebid') {
+        path.dirname = '../not-for-prod';
+      }
+    }))
+    .pipe(gulp.dest('dist/chunks'))
 }
 
 // Run the unit tests.
@@ -234,86 +338,102 @@ function bundle(dev, moduleArr) {
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
-function test(done) {
-  if (argv.notest) {
-    done();
-  } else if (argv.e2e) {
-    let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
-    let wdioConf = path.join(__dirname, 'wdio.conf.js');
-    let wdioOpts;
+function testTaskMaker(options = {}) {
+  ['watch', 'file', 'browserstack', 'notest'].forEach(opt => {
+    options[opt] = options.hasOwnProperty(opt) ? options[opt] : argv[opt];
+  })
 
-    if (argv.file) {
-      wdioOpts = [
-        wdioConf,
-        `--spec`,
-        `${argv.file}`
-      ]
+  return function test(done) {
+    if (options.notest) {
+      done();
     } else {
-      wdioOpts = [
-        wdioConf
-      ];
+      runKarma(options, done)
     }
+  }
+}
 
-    // run fake-server
-    const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
-    fakeServer.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
-    });
-    fakeServer.stderr.on('data', (data) => {
-      console.log(`stderr: ${data}`);
-    });
+const test = testTaskMaker();
 
-    execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
+function e2eTestTaskMaker() {
+  return function test(done) {
+    const integ = startIntegServer();
+    startLocalServer();
+    runWebdriver({})
       .then(stdout => {
         // kill fake server
-        fakeServer.kill('SIGINT');
+        integ.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
         // kill fake server
-        fakeServer.kill('SIGINT');
+        integ.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
       });
-  } else {
-    var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
-
-    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
-    if (browserOverride.length > 0) {
-      karmaConf.browsers = browserOverride;
-    }
-
-    new KarmaServer(karmaConf, newKarmaCallback(done)).start();
   }
 }
 
-function newKarmaCallback(done) {
-  return function (exitCode) {
+function runWebdriver({file}) {
+  process.env.TEST_SERVER_HOST = argv.host || 'localhost';
+
+  let local = argv.local || false;
+
+  let wdioConfFile = local === true ? 'wdio.local.conf.js' : 'wdio.conf.js';
+  let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
+  let wdioConf = path.join(__dirname, wdioConfFile);
+  let wdioOpts;
+
+  if (file) {
+    wdioOpts = [
+      wdioConf,
+      `--spec`,
+      `${file}`
+    ]
+  } else {
+    wdioOpts = [
+      wdioConf
+    ];
+  }
+  return execaCmd(wdioCmd, wdioOpts, {
+    stdio: 'inherit',
+    env: Object.assign({}, process.env, {FORCE_COLOR: '1'})
+  });
+}
+
+function runKarma(options, done) {
+  // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
+  // here we run it in a separate process to bypass the problem
+  options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  const env = Object.assign({}, options.env, process.env);
+  if (!env.TEST_CHUNKS) {
+    env.TEST_CHUNKS = TEST_CHUNKS;
+  }
+  const child = fork('./karmaRunner.js', null, {
+    env
+  });
+  child.on('exit', (exitCode) => {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
-      if (argv.browserstack) {
-        process.exit(exitCode);
-      }
     } else {
       done();
-      if (argv.browserstack) {
-        process.exit(exitCode);
-      }
     }
-  }
+  })
+  child.send(options);
 }
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
-  new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
-}
-
-function coveralls() { // 2nd arg is a dependency: 'test' must be finished
-  // first send results of istanbul's test coverage to coveralls.io.
-  return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
-    // have to read it.
-    .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
+  runKarma({
+    coverage: true,
+    browserstack: false,
+    watch: false,
+    file: argv.file,
+    env: {
+      NODE_OPTIONS: '--max-old-space-size=8096',
+      TEST_CHUNKS
+    }
+  }, done);
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
@@ -327,42 +447,60 @@ function buildPostbid() {
     .pipe(gulp.dest('build/postbid/'));
 }
 
-function setupE2e(done) {
-  if (!argv.host) {
-    throw new gutil.PluginError({
-      plugin: 'E2E test',
-      message: gutil.colors.red('Host should be defined e.g. ap.localhost, anlocalhost. localhost cannot be used as safari browserstack is not able to connect to localhost')
-    });
+function startIntegServer(dev = false) {
+  const args = ['./test/fake-server/index.js', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`];
+  if (dev) {
+    args.push('--dev=true')
   }
-  process.env.TEST_SERVER_HOST = argv.host;
-  if (argv.https) {
-    process.env.TEST_SERVER_PROTOCOL = argv.https;
-  }
-  argv.e2e = true;
-  done();
-}
-
-function injectFakeServerEndpoint() {
-  return gulp.src(['build/dist/*.js'])
-    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}`))
-    .pipe(gulp.dest('build/dist'));
-}
-
-function injectFakeServerEndpointDev() {
-  return gulp.src(['build/dev/*.js'])
-    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}`))
-    .pipe(gulp.dest('build/dev'));
-}
-
-function startFakeServer() {
-  const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
-  fakeServer.stdout.on('data', (data) => {
+  const srv = spawn('node', args);
+  srv.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
   });
-  fakeServer.stderr.on('data', (data) => {
+  srv.stderr.on('data', (data) => {
     console.log(`stderr: ${data}`);
   });
+  return srv;
 }
+
+function startLocalServer(options = {}) {
+  return connect.server({
+    https: argv.https,
+    port: port,
+    host: INTEG_SERVER_HOST,
+    root: './',
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
+  });
+}
+
+// Watch Task with Live Reload
+function watchTaskMaker(options = {}) {
+  if (options.livereload == null) {
+    options.livereload = true;
+  }
+  return function watch(done) {
+    gulp.watch(helpers.getSourcePatterns(), {delay: 200}, precompile(options));
+
+    gulp.watch([
+      helpers.getPrecompiledPath('**/*.js'),
+      `!${helpers.getPrecompiledPath('test/**/*')}`,
+    ], {delay: 2000}, options.task());
+
+    startLocalServer(options);
+
+    done();
+  }
+}
+
+const watch = watchTaskMaker({task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev-no-precomp', test))});
+const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp.series('build-bundle-dev-no-precomp')});
 
 // support tasks
 gulp.task(lint);
@@ -372,33 +510,68 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
-gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
+
+gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-dev', gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp'));
+gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+// build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
+// of dead code elimination.
+gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
-gulp.task('test', gulp.series(clean, lint, test));
+gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
+gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'))
+gulp.task('test-only-nobuild', gulp.series('test-build-logic', testTaskMaker({coverage: true})))
+gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
-gulp.task('test-coverage', gulp.series(clean, testCoverage));
-gulp.task(viewCoverage);
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
+gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
 
-gulp.task('coveralls', gulp.series('test-coverage', coveralls));
+gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
+gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
+
+// npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
+gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
+gulp.task('build-release', gulp.series('build', updateCreativeExample, 'update-browserslist', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watch)));
-gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
+gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast)));
+gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
+gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
+gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
+gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
 
-gulp.task('default', gulp.series(clean, makeWebpackPkg));
+gulp.task('default', gulp.series('build'));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), injectFakeServerEndpoint, test));
+gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
+gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
+
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
-// build task for reviewers, runs test-coverage, serves, without watching
-gulp.task(viewReview);
-gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
+gulp.task('extract-metadata', function (done) {
+  /**
+   * Run the complete bundle in a headless browser to extract metadata (such as aliases & GVL IDs) from all modules,
+   * with help from `modules/_moduleMetadata.js`
+   */
+  const server = startLocalServer();
+  import('./metadata/extractMetadata.mjs').then(({default: extract}) => {
+    extract().then(metadata => {
+      fs.writeFileSync('./metadata/modules.json', JSON.stringify(metadata, null, 2))
+    }).finally(() => {
+      server.close()
+    }).then(() => done(), done);
+  });
+})
+gulp.task('compile-metadata', function (done) {
+  import('./metadata/compileMetadata.mjs').then(({default: compile}) => {
+    compile().then(() => done(), done);
+  })
+})
+gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));
 module.exports = nodeBundle;

@@ -45,7 +45,7 @@ const RESPONSE = {
             'price': 0.18,
             'adm': '<script>adm</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
@@ -61,7 +61,7 @@ const RESPONSE = {
               'bidder': {
                 'appnexus': {
                   'brand_id': 334553,
-                  'auction_id': 514667951122925701,
+                  'auction_id': '514667951122925701',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
@@ -74,7 +74,7 @@ const RESPONSE = {
             'price': 0.1,
             'adm': '<script>adm2</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
@@ -90,7 +90,7 @@ const RESPONSE = {
               'bidder': {
                 'appnexus': {
                   'brand_id': 386046,
-                  'auction_id': 517067951122925501,
+                  'auction_id': '517067951122925501',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
@@ -132,7 +132,7 @@ const RESPONSE = {
 describe('YieldLift', function () {
   describe('isBidRequestValid', function () {
     it('should accept request if only unitId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'yieldlift',
         params: {
           unitId: 'unitId',
@@ -141,7 +141,7 @@ describe('YieldLift', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should accept request if only networkId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'yieldlift',
         params: {
           networkId: 'networkId',
@@ -150,7 +150,7 @@ describe('YieldLift', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should accept request if only publisherId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'yieldlift',
         params: {
           publisherId: 'publisherId',
@@ -160,7 +160,7 @@ describe('YieldLift', function () {
     });
 
     it('reject requests without params', function () {
-      let bid = {
+      const bid = {
         bidder: 'yieldlift',
         params: {}
       };
@@ -170,7 +170,7 @@ describe('YieldLift', function () {
 
   describe('buildRequests', function () {
     it('creates request data', function () {
-      let request = spec.buildRequests(REQUEST.bidRequest, REQUEST);
+      const request = spec.buildRequests(REQUEST.bidRequest, REQUEST);
 
       expect(request).to.exist.and.to.be.a('object');
       const payload = JSON.parse(request.data);
@@ -185,17 +185,37 @@ describe('YieldLift', function () {
           gdprApplies: true,
         }
       });
-      let request = spec.buildRequests(REQUEST.bidRequest, req);
+      const request = spec.buildRequests(REQUEST.bidRequest, req);
 
       const payload = JSON.parse(request.data);
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
       expect(payload.regs.ext).to.have.property('gdpr', 1);
     });
+
+    it('should properly forward eids parameters', function () {
+      const req = Object.assign({}, REQUEST);
+      req.bidRequest[0].userIdAsEids = [
+        {
+          source: 'dummy.com',
+          uids: [
+            {
+              id: 'd6d0a86c-20c6-4410-a47b-5cba383a698a',
+              atype: 1
+            }
+          ]
+        }];
+      const request = spec.buildRequests(req.bidRequest, req);
+
+      const payload = JSON.parse(request.data);
+      expect(payload.user.ext.eids[0].source).to.equal('dummy.com');
+      expect(payload.user.ext.eids[0].uids[0].id).to.equal('d6d0a86c-20c6-4410-a47b-5cba383a698a');
+      expect(payload.user.ext.eids[0].uids[0].atype).to.equal(1);
+    });
   });
 
   describe('interpretResponse', function () {
     it('have bids', function () {
-      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+      const bids = spec.interpretResponse(RESPONSE, REQUEST);
       expect(bids).to.be.an('array').that.is.not.empty;
       validateBidOnIndex(0);
       validateBidOnIndex(1);
@@ -208,7 +228,8 @@ describe('YieldLift', function () {
         expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h);
         expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm);
         expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid);
-        expect(bids[index]).to.have.property('ttl', 30);
+        expect(bids[index].meta).to.have.property('advertiserDomains', RESPONSE.body.seatbid[0].bid[index].advertiserDomains);
+        expect(bids[index]).to.have.property('ttl', 300);
         expect(bids[index]).to.have.property('netRevenue', true);
       }
     });
@@ -223,17 +244,17 @@ describe('YieldLift', function () {
 
   describe('getUserSyncs', function () {
     it('handles no parameters', function () {
-      let opts = spec.getUserSyncs({});
+      const opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
+      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -241,7 +262,7 @@ describe('YieldLift', function () {
     });
 
     it('pixel sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -249,7 +270,7 @@ describe('YieldLift', function () {
     });
 
     it('all sync enabled should return all results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
 
       expect(opts.length).to.equal(2);
     });

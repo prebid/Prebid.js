@@ -1,6 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {isArray, logError, logInfo} from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'pxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
@@ -32,7 +37,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const referer = bidderRequest.refererInfo.referer;
+    const referer = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const parts = referer.split('/');
 
     let protocol, hostname;
@@ -42,7 +47,7 @@ export const spec = {
     }
 
     const payload = {
-      id: bidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         domain: protocol + '//' + hostname,
         name: hostname,
@@ -61,15 +66,15 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       const consentString = bidderRequest.gdprConsent.consentString;
-      utils.logInfo(`PXYZ: GDPR applies ${gdpr}`);
-      utils.logInfo(`PXYZ: GDPR consent string ${consentString}`);
+      logInfo(`PXYZ: GDPR applies ${gdpr}`);
+      logInfo(`PXYZ: GDPR consent string ${consentString}`);
       payload.Regs.ext.gdpr = gdpr;
       payload.User = { ext: { consent: consentString } };
     }
 
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
+      logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
       payload.Regs.ext['us_privacy'] = bidderRequest.uspConsent;
     }
 
@@ -95,14 +100,14 @@ export const spec = {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
       if (serverResponse && serverResponse.error) {
         errorMessage += `: ${serverResponse.error}`;
-        utils.logError(errorMessage);
+        logError(errorMessage);
       }
       return bids;
     }
 
-    if (!utils.isArray(serverResponse.seatbid)) {
+    if (!isArray(serverResponse.seatbid)) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
-      utils.logError(errorMessage += 'Malformed seatbid response');
+      logError(errorMessage += 'Malformed seatbid response');
       return bids;
     }
 
@@ -124,15 +129,19 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function () {
     return [{
       type: 'image',
       url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+    }, {
+      type: 'iframe',
+      url: '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D'
     }];
   }
 }
 
 function newBid(bid, currency) {
+  const { adomain } = bid;
   return {
     requestId: bid.impid,
     mediaType: BANNER,
@@ -144,6 +153,9 @@ function newBid(bid, currency) {
     ttl: 300,
     netRevenue: true,
     currency: currency,
+    meta: {
+      ...(adomain && adomain.length > 0 ? { advertiserDomains: adomain } : {})
+    }
   };
 }
 

@@ -1,24 +1,23 @@
 import {expect} from 'chai';
-import {spec} from 'modules/mantisBidAdapter.js';
+import {spec, storage} from 'modules/mantisBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
-  let sandbox;
+  const sandbox = sinon.createSandbox();
   let clock;
 
-  beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+  beforeEach(function () {
     clock = sandbox.useFakeTimers();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'mantis',
       'params': {
         'property': '10433394',
@@ -36,10 +35,10 @@ describe('MantisAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -106,7 +105,7 @@ describe('MantisAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'mantis',
         'params': {
@@ -171,13 +170,12 @@ describe('MantisAdapter', function () {
     });
 
     it('use storage uuid', function () {
-      window.localStorage.setItem('mantis:uuid', 'bar');
+      sandbox.stub(storage, 'hasLocalStorage').callsFake(() => true);
+      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('mantis:uuid').returns('bar');
 
       const request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.include('uuid=bar');
-
-      window.localStorage.removeItem('mantis:uuid');
     });
 
     it('detect amp', function () {
@@ -201,7 +199,7 @@ describe('MantisAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('iframe', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -210,7 +208,7 @@ describe('MantisAdapter', function () {
     });
 
     it('pixel', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         pixelEnabled: true
       });
 
@@ -221,7 +219,7 @@ describe('MantisAdapter', function () {
 
   describe('interpretResponse', function () {
     it('use ad ttl if provided', function () {
-      let response = {
+      const response = {
         body: {
           ttl: 360,
           uuid: 'uuid',
@@ -239,7 +237,7 @@ describe('MantisAdapter', function () {
         }
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: 'bid',
           cpm: 1,
@@ -249,17 +247,20 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: []
+          },
           currency: 'USD'
         }
       ];
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, {bidderRequest});
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('use global ttl if provded', function () {
-      let response = {
+      const response = {
         body: {
           ttl: 360,
           uuid: 'uuid',
@@ -268,6 +269,7 @@ describe('MantisAdapter', function () {
               bid: 'bid',
               cpm: 1,
               view: 'view',
+              domains: ['foobar.com'],
               width: 300,
               height: 250,
               html: '<!-- Creative -->'
@@ -276,7 +278,7 @@ describe('MantisAdapter', function () {
         }
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: 'bid',
           cpm: 1,
@@ -286,17 +288,20 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: ['foobar.com']
+          },
           currency: 'USD'
         }
       ];
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, {bidderRequest});
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('display ads returned', function () {
-      let response = {
+      const response = {
         body: {
           uuid: 'uuid',
           ads: [
@@ -305,6 +310,7 @@ describe('MantisAdapter', function () {
               cpm: 1,
               view: 'view',
               width: 300,
+              domains: ['foobar.com'],
               height: 250,
               html: '<!-- Creative -->'
             }
@@ -312,7 +318,7 @@ describe('MantisAdapter', function () {
         }
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: 'bid',
           cpm: 1,
@@ -322,26 +328,33 @@ describe('MantisAdapter', function () {
           ad: '<!-- Creative -->',
           creativeId: 'view',
           netRevenue: true,
+          meta: {
+            advertiserDomains: ['foobar.com']
+          },
           currency: 'USD'
         }
       ];
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      sandbox.stub(storage, 'hasLocalStorage').returns(true);
+      const spy = sandbox.spy(storage, 'setDataInLocalStorage');
+
+      const result = spec.interpretResponse(response, {bidderRequest});
+
+      expect(spy.calledWith('mantis:uuid', 'uuid'));
       expect(result[0]).to.deep.equal(expectedResponse[0]);
       expect(window.mantis_uuid).to.equal(response.body.uuid);
-      expect(window.localStorage.getItem('mantis:uuid')).to.equal(response.body.uuid);
     });
 
     it('no ads returned', function () {
-      let response = {
+      const response = {
         body: {
           ads: []
         }
       };
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });

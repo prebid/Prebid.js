@@ -1,22 +1,41 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/smartyadsBidAdapter.js';
+import { config } from '../../../src/config.js';
+import {server} from '../../mocks/xhr.js';
 
 describe('SmartyadsAdapter', function () {
-  let bid = {
+  const bid = {
     bidId: '23fhj33i987f',
     bidder: 'smartyads',
     params: {
-      placementId: 0,
+      host: 'prebid',
+      sourceid: '0',
+      accountid: '0',
       traffic: 'banner'
     }
   };
 
+  const bidResponse = {
+    width: 300,
+    height: 250,
+    mediaType: 'banner',
+    ad: `<img src='https://dummyimage.com/300x250&text=Test+Mode' width=300 height=250 alt='test mode'>`,
+    requestId: '23fhj33i987f',
+    cpm: 0.1,
+    ttl: 120,
+    creativeId: '123',
+    netRevenue: true,
+    currency: 'USD',
+    dealId: 'HASH',
+    sid: 1234
+  };
+
   describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and placementId parameters present', function () {
+    it('Should return true if there are bidId, params and sourceid parameters present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.placementId;
+      delete bid.params.sourceid;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -33,30 +52,50 @@ describe('SmartyadsAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ssp-nj.webtradehub.com/?c=o&m=multi');
+      expect(serverRequest.url).to.be.oneOf([
+        'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+        'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+        'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
+      ]);
     });
     it('Returns valid data if array of bids is valid', function () {
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'host', 'page', 'placements', 'coppa', 'eeid', 'ifa');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
-      expect(data.language).to.be.a('string');
-      expect(data.secure).to.be.within(0, 1);
+      expect(data.coppa).to.be.a('number');
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
-      let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes');
-      expect(placement.placementId).to.equal(0);
+      const placement = data['placements'][0];
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'publisherId');
+      expect(placement.placementId).to.equal('0');
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
     });
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('with COPPA', function() {
+    beforeEach(function() {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+    });
+    afterEach(function() {
+      config.getConfig.restore();
+    });
+
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
+      const serverRequest = spec.buildRequests([bid]);
+      expect(serverRequest.data.coppa).to.equal(1);
+    });
+  });
+
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {
@@ -71,19 +110,22 @@ describe('SmartyadsAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          dealId: '1'
+          dealId: '1',
+          meta: {advertiserDomains: ['example.com']}
         }]
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.width).to.equal(300);
       expect(dataItem.height).to.equal(250);
       expect(dataItem.ad).to.equal('Test');
+      expect(dataItem.meta).to.have.property('advertiserDomains');
+      expect(dataItem.meta.advertiserDomains).to.be.an('array');
       expect(dataItem.ttl).to.equal(120);
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
@@ -103,12 +145,12 @@ describe('SmartyadsAdapter', function () {
           dealId: '1'
         }]
       };
-      let videoResponses = spec.interpretResponse(video);
+      const videoResponses = spec.interpretResponse(video);
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = videoResponses[0];
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -135,11 +177,11 @@ describe('SmartyadsAdapter', function () {
           currency: 'USD',
         }]
       };
-      let nativeResponses = spec.interpretResponse(native);
+      const nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      const dataItem = nativeResponses[0];
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
@@ -168,7 +210,7 @@ describe('SmartyadsAdapter', function () {
         }]
       };
 
-      let serverResponses = spec.interpretResponse(invBanner);
+      const serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid video response is passed', function () {
@@ -184,7 +226,7 @@ describe('SmartyadsAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invVideo);
+      const serverResponses = spec.interpretResponse(invVideo);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid native response is passed', function () {
@@ -201,7 +243,7 @@ describe('SmartyadsAdapter', function () {
           currency: 'USD',
         }]
       };
-      let serverResponses = spec.interpretResponse(invNative);
+      const serverResponses = spec.interpretResponse(invNative);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -214,18 +256,23 @@ describe('SmartyadsAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invalid);
+      const serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
   describe('getUserSyncs', function () {
-    let userSync = spec.getUserSyncs();
+    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a/iframe?pbjs=1&coppa=0';
+    const syncOptions = {
+      iframeEnabled: true
+    };
+    const userSync = spec.getUserSyncs(syncOptions);
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://ssp-nj.webtradehub.com/?c=o&m=cookie');
+      expect(userSync).to.deep.equal([
+        { type: 'iframe', url: syncUrl }
+      ]);
     });
   });
 });

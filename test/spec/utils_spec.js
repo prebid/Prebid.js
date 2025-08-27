@@ -1,22 +1,73 @@
-import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
-import { expect } from 'chai';
-import CONSTANTS from 'src/constants.json';
+import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
+import {expect} from 'chai';
+import {TARGETING_KEYS} from 'src/constants.js';
 import * as utils from 'src/utils.js';
+import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
+import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
+import { getWinDimensions, internal } from '../../src/utils.js';
 
 var assert = require('assert');
 
 describe('Utils', function () {
-  var obj_string = 's',
-    obj_number = 1,
-    obj_object = {},
-    obj_array = [],
-    obj_function = function () {};
+  var obj_string = 's';
+  var obj_number = 1;
+  var obj_object = {};
+  var obj_array = [];
+  var obj_function = function () {};
 
-  var type_string = 'String',
-    type_number = 'Number',
-    type_object = 'Object',
-    type_array = 'Array',
-    type_function = 'Function';
+  var type_string = 'String';
+  var type_number = 'Number';
+  var type_object = 'Object';
+  var type_array = 'Array';
+  var type_function = 'Function';
+
+  describe('canAccessWindowTop', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+    it('should return true if window.top is accessible', function () {
+      assert.equal(utils.canAccessWindowTop(), true);
+    });
+
+    it('should return false if window.top is not accessible', function () {
+      sandbox.stub(utils.internal, 'getWindowTop').returns(false);
+      assert.equal(utils.canAccessWindowTop(), false);
+    });
+  });
+
+  describe('isSafeFrameWindow', function () {
+    // SafeFrames implementation
+    // https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+    const $sf = {
+      ext: {
+        geom: function() {}
+      }
+    };
+
+    afterEach(function() {
+      delete window.$sf;
+    })
+
+    it('should return true if window.$sf is accessible', function () {
+      window.$sf = $sf;
+      assert.equal(utils.isSafeFrameWindow(), true);
+    });
+
+    it('should return false if window.$sf is missimplemented', function () {
+      window.$sf = {};
+      assert.equal(utils.isSafeFrameWindow(), false);
+    });
+
+    it('should return false if window.$sf is missing', function () {
+      assert.equal(utils.isSafeFrameWindow(), false);
+    });
+  });
 
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
@@ -35,28 +86,6 @@ describe('Utils', function () {
       };
       var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
-    });
-  });
-
-  describe('tryAppendQueryString', function () {
-    it('should append query string to existing url', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = 'c';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-
-      var expectedResult = url + key + '=' + encodeURIComponent(value) + '&';
-      assert.equal(output, expectedResult);
-    });
-
-    it('should return existing url, if the value is empty', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = '';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-      assert.equal(output, url);
     });
   });
 
@@ -84,7 +113,7 @@ describe('Utils', function () {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=0x0%2C300x250%2C300x600&' + CONSTANTS.TARGETING_KEYS.SIZE + '=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '=appnexus&' + CONSTANTS.TARGETING_KEYS.SIZE + '_triplelift=0x0&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + CONSTANTS.TARGETING_KEYS.SIZE + '_appnexus=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + CONSTANTS.TARGETING_KEYS.SIZE + '_pagescience=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + CONSTANTS.TARGETING_KEYS.SIZE + '_brightcom=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + CONSTANTS.TARGETING_KEYS.SIZE + '_brealtime=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + CONSTANTS.TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + CONSTANTS.TARGETING_KEYS.SIZE + '_rubicon=300x600&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
+      var expected = 'foobar=300x250%2C300x600%2C0x0&' + TARGETING_KEYS.SIZE + '=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '=appnexus&' + TARGETING_KEYS.SIZE + '_triplelift=0x0&' + TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + TARGETING_KEYS.SIZE + '_appnexus=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + TARGETING_KEYS.SIZE + '_pagescience=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + TARGETING_KEYS.SIZE + '_brightcom=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + TARGETING_KEYS.SIZE + '_brealtime=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + TARGETING_KEYS.SIZE + '_rubicon=300x600&' + TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
@@ -137,6 +166,43 @@ describe('Utils', function () {
       assert.deepEqual(output, target);
     });
   });
+
+  describe('sizesToSizeTuples', () => {
+    Object.entries({
+      'single size, numerical': {
+        in: [1, 2],
+        out: [[1, 2]]
+      },
+      'single size, numerical, nested': {
+        in: [[1, 2]],
+        out: [[1, 2]]
+      },
+      'multiple sizes, numerical': {
+        in: [[1, 2], [3, 4]],
+        out: [[1, 2], [3, 4]]
+      },
+      'single size, string': {
+        in: '1x2',
+        out: [[1, 2]]
+      },
+      'multiple sizes, string': {
+        in: '1x2, 4x3',
+        out: [[1, 2], [4, 3]]
+      },
+      'incorrect size, numerical': {
+        in: [1],
+        out: []
+      },
+      'incorrect size, string': {
+        in: '1x',
+        out: []
+      }
+    }).forEach(([t, {in: input, out}]) => {
+      it(`can parse ${t}`, () => {
+        expect(sizesToSizeTuples(input)).to.eql(out);
+      })
+    })
+  })
 
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
@@ -439,15 +505,15 @@ describe('Utils', function () {
   });
 
   describe('contains', function () {
-    	it('should return true if the input string contains in the input obj', function () {
+    it('should return true if the input string contains in the input obj', function () {
       var output = utils.contains('123', '1');
       assert.deepEqual(output, true);
-    	});
+    });
 
-    	it('should return false if the input string do not contain in the input obj', function () {
+    it('should return false if the input string do not contain in the input obj', function () {
       var output = utils.contains('234', '1');
       assert.deepEqual(output, false);
-    	});
+    });
 
     it('should return false if the input string is empty', function () {
       var output = utils.contains();
@@ -456,37 +522,37 @@ describe('Utils', function () {
   });
 
   describe('_map', function () {
-    	it('return empty array when input object is empty', function () {
+    it('return empty array when input object is empty', function () {
       var input = {};
       var callback = function () {};
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, []);
-    	});
+    });
 
-    	it('return value array with vaild input object', function () {
+    it('return value array with vaild input object', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v) { return v; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
-    	});
+    });
 
-    	it('return value array with vaild input object_callback func changed 1', function () {
+    it('return value array with vaild input object_callback func changed 1', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k) { return v + k; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
-    	});
+    });
 
-    	it('return value array with vaild input object_callback func changed 2', function () {
+    it('return value array with vaild input object_callback func changed 2', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k, o) { return o; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
-    	});
+    });
   });
 
   describe('createInvisibleIframe', function () {
@@ -534,72 +600,6 @@ describe('Utils', function () {
 
     it('return iframe - style', function () {
       assert.ok(output.style);
-    });
-  });
-
-  describe('getHighestCpm', function () {
-    it('should pick the existing highest cpm', function () {
-      let previous = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), previous);
-    });
-
-    it('should pick the new highest cpm', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the fastest cpm in case of tie', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the oldest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
-    });
-
-    it('should pick the latest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
@@ -763,41 +763,13 @@ describe('Utils', function () {
 
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
-      let var1 = 'placementIdTest';
-      let test1 = utils.convertCamelToUnderscore(var1);
+      const var1 = 'placementIdTest';
+      const test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
-      let var2 = 'my_test_value';
-      let test2 = utils.convertCamelToUnderscore(var2);
+      const var2 = 'my_test_value';
+      const test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
-    });
-  });
-
-  describe('getAdUnitSizes', function () {
-    it('returns an empty response when adUnits is undefined', function () {
-      let sizes = utils.getAdUnitSizes();
-      expect(sizes).to.be.undefined;
-    });
-
-    it('returns an empty array when invalid data is present in adUnit object', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: 300 });
-      expect(sizes).to.deep.equal([]);
-    });
-
-    it('retuns an array of arrays when reading from adUnit.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
-    });
-
-    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 
@@ -891,95 +863,50 @@ describe('Utils', function () {
         expect(parsed.search).to.equal('?search=test&foo=bar&bar=foo&foo=xxx');
       });
     });
+
+    describe('encodeMacroURI', () => {
+      [
+        ['https://www.example.com', 'https://www.example.com'],
+        ['https://www.example/${MACRO}', 'https://www.example/${MACRO}'],
+        ['http://www.example/è', `http://www.example/${encodeURIComponent('è')}`],
+        ['https://www.${MACRO_1}/${MACRO_1}/${MACRO_2}è', 'https://www.${MACRO_1}/${MACRO_1}/${MACRO_2}' + encodeURIComponent('è')],
+        ['http://${MACRO}${MACRO}/${MACRO}', 'http://${MACRO}${MACRO}/${MACRO}'],
+        ['{MACRO}${MACRO}', `${encodeURIComponent('{MACRO}')}\${MACRO}`],
+        ['https://www.example.com?p=${AUCTION_PRICE}', 'https://www.example.com?p=${AUCTION_PRICE}']
+      ].forEach(([input, expected]) => {
+        it(`can encode ${input} -> ${expected}`, () => {
+          expect(encodeMacroURI(input)).to.eql(expected);
+        })
+      })
+    })
   });
 
-  describe('transformBidderParamKeywords', function () {
-    it('returns an array of objects when keyvalue is an array', function () {
-      let keywords = {
-        genre: ['rock', 'pop']
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['rock', 'pop']
-      }]);
+  describe('insertElement', function () {
+    let doc;
+
+    beforeEach(function () {
+      doc = document.implementation.createHTMLDocument('insertElementTest');
     });
 
-    it('returns an array of objects when keyvalue is a string', function () {
-      let keywords = {
-        genre: 'opera'
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['opera']
-      }]);
+    it('returns a node at the top of the target by default', function () {
+      const toInsert = doc.createElement('div');
+      const target = doc.getElementsByTagName('body')[0];
+      const inserted = utils.insertElement(toInsert, doc, 'body');
+      expect(inserted).to.equal(target.firstChild);
     });
 
-    it('returns an array of objects when keyvalue is a number', function () {
-      let keywords = {
-        age: 15
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'age',
-        value: ['15']
-      }]);
+    it('returns a node at bottom of target if 4th argument is true', function () {
+      const toInsert = doc.createElement('div');
+      const target = doc.getElementsByTagName('html')[0];
+      const inserted = utils.insertElement(toInsert, doc, 'html', true);
+      expect(inserted).to.equal(target.lastChild);
     });
 
-    it('returns an array of objects when using multiple keys with values of differing types', function () {
-      let keywords = {
-        genre: 'classical',
-        mix: ['1', 2, '3', 4],
-        age: 10
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['classical']
-      }, {
-        key: 'mix',
-        value: ['1', '2', '3', '4']
-      }, {
-        key: 'age',
-        value: ['10']
-      }]);
-    });
-
-    it('returns an array of objects when the keyvalue uses an empty string', function() {
-      let keywords = {
-        test: [''],
-        test2: ''
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'test',
-        value: ['']
-      }, {
-        key: 'test2',
-        value: ['']
-      }]);
-    });
-
-    describe('insertElement', function () {
-      it('returns a node at the top of the target by default', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('body')[0];
-        const inserted = utils.insertElement(toInsert, document, 'body');
-        expect(inserted).to.equal(target.firstChild);
-      });
-      it('returns a node at bottom of target if 4th argument is true', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('html')[0];
-        const inserted = utils.insertElement(toInsert, document, 'html', true);
-        expect(inserted).to.equal(target.lastChild);
-      });
-      it('returns a node at top of the head if no target is given', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('head')[0];
-        const inserted = utils.insertElement(toInsert);
-        expect(inserted).to.equal(target.firstChild);
-      });
+    it('returns a node at top of the head if no target is given', function () {
+      const toInsert = doc.createElement('div');
+      const target = doc.getElementsByTagName('head')[0];
+      const inserted = utils.insertElement(toInsert, doc);
+      expect(inserted).to.equal(target.firstChild);
     });
   });
 
@@ -1177,6 +1104,21 @@ describe('Utils', function () {
       }
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
+    it('should check types if {matchTypes: true}', () => {
+      function Typed(obj) {
+        Object.assign(this, obj);
+      }
+      const obj = {key: 'value'};
+      expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
+    });
+    it('should work when adding properties to the prototype of Array', () => {
+      after(function () {
+        delete Array.prototype.unitTestTempProp;
+      });
+      // eslint-disable-next-line no-extend-native
+      Array.prototype.unitTestTempProp = 'testing';
+      expect(deepEqual([], [])).to.be.true;
+    });
 
     describe('cyrb53Hash', function() {
       it('should return the same hash for the same string', function() {
@@ -1197,5 +1139,323 @@ describe('Utils', function () {
         expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
       });
     });
+  });
+
+  describe('waitForElementToLoad', () => {
+    let element;
+    let callbacks;
+
+    function callback() {
+      callbacks++;
+    }
+
+    function delay(delay = 0) {
+      return new Promise((resolve) => {
+        window.setTimeout(resolve, delay);
+      })
+    }
+
+    beforeEach(() => {
+      callbacks = 0;
+      element = window.document.createElement('div');
+    });
+
+    it('should respect timeout if set', () => {
+      waitForElementToLoad(element, 50).then(callback);
+      return delay(60).then(() => {
+        expect(callbacks).to.equal(1);
+      });
+    });
+
+    ['load', 'error'].forEach((event) => {
+      it(`should complete on '${event} event'`, () => {
+        waitForElementToLoad(element).then(callback);
+        element.dispatchEvent(new Event(event));
+        return delay().then(() => {
+          expect(callbacks).to.equal(1);
+        })
+      });
+    });
+  });
+
+  describe('getUnixTimestampFromNow', () => {
+    it('correctly obtains unix timestamp', () => {
+      const nowValue = new Date('2024-01-01').valueOf();
+      sinon.stub(Date, 'now').returns(nowValue);
+      let val = utils.getUnixTimestampFromNow();
+      expect(val).equal(nowValue);
+
+      val = utils.getUnixTimestampFromNow(1);
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24));
+
+      val = utils.getUnixTimestampFromNow(1, 'd');
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24));
+
+      val = utils.getUnixTimestampFromNow(1, 'm');
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24 / 1440));
+
+      val = utils.getUnixTimestampFromNow(2, 'm');
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24 * 2 / 1440));
+
+      // any value that isn't 'm' or 'd' gets treated as Date.now();
+      val = utils.getUnixTimestampFromNow(10, 'o');
+      expect(val).equal(nowValue);
+    });
+  });
+
+  describe('convertObjectToArray', () => {
+    it('correctly converts object to array', () => {
+      const obj = {key: 1, anotherKey: 'fred', third: ['fred'], fourth: {sub: {obj: 'test'}}};
+      const array = utils.convertObjectToArray(obj);
+
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({'key': 1}))
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({'anotherKey': 'fred'}))
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({'third': ['fred']}))
+      expect(JSON.stringify(array[3])).equal(JSON.stringify({'fourth': {sub: {obj: 'test'}}}));
+      expect(array.length).to.equal(4);
+    });
+  });
+
+  describe('setScriptAttributes', () => {
+    it('correctly adds attributes from an object', () => {
+      const script = document.createElement('script');
+      const attrs = {
+        'data-first_prop': '1',
+        'data-second_prop': 'b',
+        'id': 'newId'
+      };
+      script.id = 'oldId';
+      utils.setScriptAttributes(script, attrs);
+      expect(script.dataset['first_prop']).to.equal('1');
+      expect(script.dataset.second_prop).to.equal('b');
+      expect(script.id).to.equal('newId');
+    });
+  });
+
+  describe('safeJSONParse', () => {
+    it('correctly encodes valid input', () => {
+      const jsonObj = {
+        key1: 'val1',
+        key2: {
+          key3: 100,
+          key4: true
+        }
+      };
+      const result = utils.safeJSONEncode(jsonObj);
+      expect(result).to.equal(`{"key1":"val1","key2":{"key3":100,"key4":true}}`);
+    });
+    it('return empty string for stringify errors', () => {
+      const jsonObj = {k: 2n};
+      const result = utils.safeJSONEncode(jsonObj);
+      expect(result).to.equal('');
+    });
+  });
+
+  describe('isGzipCompressionSupported', () => {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'isGzipCompressionSupported').callsFake((() => {
+        let cachedResult;
+        return function () {
+          if (cachedResult !== undefined) {
+            return cachedResult;
+          }
+          try {
+            if (typeof window.CompressionStream === 'undefined') {
+              cachedResult = false;
+            } else {
+              const newCompressionStream = new window.CompressionStream('gzip');
+              cachedResult = true;
+            }
+          } catch (error) {
+            cachedResult = false;
+          }
+          return cachedResult;
+        };
+      })());
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should return true if CompressionStream is available', () => {
+      window.CompressionStream = class {}; // Mock valid CompressionStream
+      expect(utils.isGzipCompressionSupported()).to.be.true;
+    });
+
+    it('should return false if CompressionStream is undefined', () => {
+      delete window.CompressionStream; // Simulate an unsupported environment
+      expect(utils.isGzipCompressionSupported()).to.be.false;
+    });
+
+    it('should cache the result after first execution', () => {
+      window.CompressionStream = class {}; // Mock valid CompressionStream
+
+      const firstCall = utils.isGzipCompressionSupported();
+      const secondCall = utils.isGzipCompressionSupported();
+
+      expect(firstCall).to.equal(secondCall); // Ensure memoization is working
+    });
+  });
+
+  describe('compressDataWithGZip', () => {
+    let originalCompressionStream;
+
+    beforeEach(() => {
+      originalCompressionStream = global.CompressionStream;
+      global.CompressionStream = class {
+        constructor(type) {
+          if (type !== 'gzip') {
+            throw new Error('Unsupported compression type');
+          }
+          this.readable = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+              controller.close();
+            }
+          });
+          this.writable = new WritableStream();
+        }
+      };
+    });
+
+    afterEach(() => {
+      if (originalCompressionStream) {
+        global.CompressionStream = originalCompressionStream;
+      } else {
+        delete global.CompressionStream;
+      }
+    });
+
+    it('should compress data correctly when CompressionStream is available', async () => {
+      const data = JSON.stringify({ test: 'data' });
+      const compressedData = await utils.compressDataWithGZip(data);
+
+      expect(compressedData).to.be.instanceOf(Uint8Array);
+      expect(compressedData.length).to.be.greaterThan(0);
+      expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
+    });
+
+    it('should handle non-string input by stringifying it', async () => {
+      const nonStringData = { test: 'data' };
+      const compressedData = await utils.compressDataWithGZip(nonStringData);
+
+      expect(compressedData).to.be.instanceOf(Uint8Array);
+      expect(compressedData.length).to.be.greaterThan(0);
+      expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
+    });
+  });
+});
+
+describe('memoize', () => {
+  let fn;
+
+  beforeEach(() => {
+    fn = sinon.stub().callsFake(function() {
+      return Array.from(arguments);
+    });
+  });
+
+  it('delegates to fn', () => {
+    expect(memoize(fn)('one', 'two')).to.eql(['one', 'two']);
+  });
+
+  it('caches result after first call, if first argument is the same', () => {
+    const mem = memoize(fn);
+    mem('one', 'two');
+    expect(mem('one', 'three')).to.eql(['one', 'two']);
+    expect(fn.callCount).to.equal(1);
+  });
+
+  it('delegates again when the first argument changes', () => {
+    const mem = memoize(fn);
+    mem('one', 'two');
+    expect(mem('two', 'one')).to.eql(['two', 'one']);
+    expect(fn.callCount).to.eql(2);
+  });
+
+  it('can clear cache with .clear', () => {
+    const mem = memoize(fn);
+    mem('arg');
+    mem.clear();
+    expect(mem('arg')).to.eql(['arg']);
+    expect(fn.callCount).to.equal(2);
+  });
+
+  it('allows setting cache keys', () => {
+    const mem = memoize(fn, (...args) => args.join(','))
+    mem('one', 'two');
+    mem('one', 'three');
+    expect(mem('one', 'three')).to.eql(['one', 'three']);
+    expect(fn.callCount).to.eql(2);
+  });
+
+  describe('binarySearch', () => {
+    [
+      {
+        arr: [],
+        tests: [
+          ['any', 0]
+        ]
+      },
+      {
+        arr: [10],
+        tests: [
+          [5, 0],
+          [10, 0],
+          [20, 1],
+        ],
+      },
+      {
+        arr: [10, 20, 30, 30, 40],
+        tests: [
+          [5, 0],
+          [15, 1],
+          [10, 0],
+          [30, 2],
+          [35, 4],
+          [40, 4],
+          [100, 5]
+        ]
+      }
+    ].forEach(({arr, tests}) => {
+      describe(`on ${arr}`, () => {
+        tests.forEach(([el, pos]) => {
+          it(`finds index for ${el} => ${pos}`, () => {
+            expect(binarySearch(arr, el)).to.equal(pos);
+          });
+        });
+      });
+    })
+  })
+})
+
+describe('getWinDimensions', () => {
+  let clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers({ now: new Date() });
+  });
+
+  afterEach(() => {
+    clock.restore();
+  });
+
+  it('should invoke resetWinDimensions once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(internal, 'resetWinDimensions');
+    getWinDimensions();
+    clock.tick(1);
+    getWinDimensions();
+    clock.tick(1);
+    getWinDimensions();
+    clock.tick(1);
+    getWinDimensions();
+    sinon.assert.calledOnce(resetWinDimensionsSpy);
+    clock.tick(18);
+    getWinDimensions();
+    sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
 });

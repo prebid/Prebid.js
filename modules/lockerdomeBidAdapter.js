@@ -1,6 +1,6 @@
-import * as utils from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 export const spec = {
   code: 'lockerdome',
@@ -12,21 +12,21 @@ export const spec = {
     let schain;
 
     const adUnitBidRequests = bidRequests.map(function (bid) {
-      if (bid.schain) schain = schain || bid.schain;
+      const bidSchain = bid?.ortb2?.source?.ext?.schain;
+      if (bidSchain) schain = schain || bidSchain;
       return {
         requestId: bid.bidId,
         adUnitCode: bid.adUnitCode,
-        adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
+        adUnitId: getBidIdParameter('adUnitId', bid.params),
         sizes: bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes
       };
     });
 
-    const bidderRequestCanonicalUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.canonicalUrl) || '';
-    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
     const payload = {
       bidRequests: adUnitBidRequests,
-      url: encodeURIComponent(bidderRequestCanonicalUrl),
-      referrer: encodeURIComponent(bidderRequestReferer)
+      // TODO: are these the right refererInfo values?
+      url: encodeURIComponent(bidderRequest?.refererInfo?.canonicalUrl || ''),
+      referrer: encodeURIComponent(bidderRequest?.refererInfo?.topmostLocation || '')
     };
     if (schain) {
       payload.schain = schain;
@@ -66,7 +66,10 @@ export const spec = {
         currency: bid.currency,
         netRevenue: bid.netRevenue,
         ad: bid.ad,
-        ttl: bid.ttl
+        ttl: bid.ttl,
+        meta: {
+          advertiserDomains: bid.adomain && Array.isArray(bid.adomain) ? bid.adomain : []
+        }
       };
     });
   },

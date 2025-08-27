@@ -3,6 +3,21 @@
 ```
 userIdAsEids = [
     {
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'utiq.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'pubcid.org',
         uids: [{
             id: 'some-random-id-value',
@@ -16,8 +31,25 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1,
             ext: {
-                rtiPartner: 'TDID'
+                rtiPartner: 'TDID',
+                provider: 'liveintent.com'
             }
+        }]
+    },
+
+    {
+        source: 'navegg.com',
+        uids: [{
+            id: 'naveggId',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
         }]
     },
 
@@ -33,18 +65,18 @@ userIdAsEids = [
         source: 'id5-sync.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 1
-        },
-        ext: {
-            linkType: 2,
-            abTestingControlGroup: false
+            atype: 1,
+            ext: {
+                linkType: 2,
+                abTestingControlGroup: false
+            }
         }]
     },
 
     {
-        source: 'parrable.com',
+        source: 'flashtalking.com',
         uids: [{
-            id: 'some-random-id-value',
+            id: 'the-ids-object-stringified',
             atype: 1
         }]
     },
@@ -69,6 +101,94 @@ userIdAsEids = [
     },
 
     {
+        source: 'bidswitch.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'liveintent.indexexchange.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'liveintent.sovrn.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'openx.net'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'pubmatic.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'media.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+    
+    {
+        source: 'rubiconproject.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'fpid.liveintent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
         source: 'merkleinc.com',
         uids: [{
             id: 'some-random-id-value',
@@ -81,6 +201,14 @@ userIdAsEids = [
         uids: [{
             id: 'some-random-id-value',
             atype: 1
+        }]
+    },
+
+    {
+        source: 'hcn.health',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
         }]
     },
 
@@ -98,17 +226,6 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
-    },
-
-    {
-        source: 'sharedid.org',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1,
-            ext: {
-                third: 'some-random-id-value'
-             }
-         }]
     },
 
     {
@@ -137,6 +254,83 @@ userIdAsEids = [
 
     {
         source: 'verizonmedia.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'mediawallahscript.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'tapad.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'novatiq.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'uidapi.com',
+        uids: [{
+            id: 'some-random-id-value',
+             atype: 3
+        }]
+    },
+    {
+        source: 'admixer.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'deepintent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+         source: 'kpuid.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+         source: 'yahoo.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+        source: 'thenewco.it',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'euid.eu',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'mygaru.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1

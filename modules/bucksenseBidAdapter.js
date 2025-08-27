@@ -1,13 +1,19 @@
+import { logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
-const URL = 'https://prebid.bksn.se/prebidjs/';
+const URL = 'https://directo.prebidserving.com/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 235,
   supportedMediaTypes: [BANNER],
 
   /**
@@ -15,10 +21,10 @@ export const spec = {
    *
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   isBidRequestValid: function (bid) {
-    utils.logInfo(WHO + ' isBidRequestValid() - INPUT bid:', bid);
-    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    logInfo(WHO + ' isBidRequestValid() - INPUT bid:', bid);
+    if (typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.placementId === 'undefined') {
@@ -28,14 +34,14 @@ export const spec = {
   },
 
   /**
-    * Make a server request from the list of BidRequests.
-    *
-    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
-    * @return ServerRequest Info describing the request to the server.
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    utils.logInfo(WHO + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
-    let requests = [];
+    logInfo(WHO + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
+    const requests = [];
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
       var bid = validBidRequests[i];
@@ -64,7 +70,7 @@ export const spec = {
         data: sendData
       });
     }
-    utils.logInfo(WHO + ' buildRequests() - requests:', requests);
+    logInfo(WHO + ' buildRequests() - requests:', requests);
     return requests;
   },
 
@@ -73,9 +79,9 @@ export const spec = {
    *
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   */
   interpretResponse: function (serverResponse, request) {
-    utils.logInfo(WHO + ' interpretResponse() - INPUT serverResponse:', serverResponse, 'INPUT request:', request);
+    logInfo(WHO + ' interpretResponse() - INPUT serverResponse:', serverResponse, 'INPUT request:', request);
 
     const bidResponses = [];
     if (serverResponse.body) {
@@ -90,18 +96,19 @@ export const spec = {
       var sCurrency = oResponse.currency || 'USD';
       var bNetRevenue = oResponse.netRevenue || true;
       var sAd = oResponse.ad || '';
+      var sAdomains = oResponse.adomains || [];
 
       if (request && sRequestID.length == 0) {
-        utils.logInfo(WHO + ' interpretResponse() - use RequestID from Placments');
+        logInfo(WHO + ' interpretResponse() - use RequestID from Placments');
         sRequestID = request.data.bid_id || '';
       }
 
       if (request && request.data.params.hasOwnProperty('testcpm')) {
-        utils.logInfo(WHO + ' interpretResponse() - use Test CPM ');
+        logInfo(WHO + ' interpretResponse() - use Test CPM ');
         nCPM = request.data.params.testcpm;
       }
 
-      let bidResponse = {
+      const bidResponse = {
         requestId: sRequestID,
         cpm: nCPM,
         width: nWidth,
@@ -110,13 +117,16 @@ export const spec = {
         creativeId: sCreativeID,
         currency: sCurrency,
         netRevenue: bNetRevenue,
-        ad: sAd
+        ad: sAd,
+        meta: {
+          advertiserDomains: sAdomains
+        }
       };
       bidResponses.push(bidResponse);
     } else {
-      utils.logInfo(WHO + ' interpretResponse() - serverResponse not valid');
+      logInfo(WHO + ' interpretResponse() - serverResponse not valid');
     }
-    utils.logInfo(WHO + ' interpretResponse() - return', bidResponses);
+    logInfo(WHO + ' interpretResponse() - return', bidResponses);
     return bidResponses;
   },
 

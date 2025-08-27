@@ -1,11 +1,19 @@
-
-import * as utils from '../src/utils.js';
+import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
 
 const BIDDER_CODE = 'concert';
 const CONCERT_ENDPOINT = 'https://bids.concert.io';
-const USER_SYNC_URL = 'https://cdn.concert.io/lib/bids/sync.html';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,11 +21,10 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     if (!bid.params.partnerId) {
-      utils.logWarn('Missing partnerId bid parameter');
+      logWarn('Missing partnerId bid parameter');
       return false;
     }
 
@@ -27,50 +34,71 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @param {bidderRequest} -
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - the bidder request object
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    utils.logMessage(validBidRequests);
-    utils.logMessage(bidderRequest);
-    let payload = {
+    logMessage(validBidRequests);
+    logMessage(bidderRequest);
+
+    const eids = [];
+
+    const payload = {
       meta: {
         prebidVersion: '$prebid.version$',
-        pageUrl: bidderRequest.refererInfo.referer,
+        pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
-        debug: utils.debugTurnedOn(),
-        uid: getUid(bidderRequest),
+        browserLanguage: window.navigator.language,
+        debug: debugTurnedOn(),
+        uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
-        adapterVersion: '1.1.1',
+        adapterVersion: '1.3.0',
         uspConsent: bidderRequest.uspConsent,
-        gdprConsent: bidderRequest.gdprConsent
-      }
+        gdprConsent: bidderRequest.gdprConsent,
+        gppConsent: bidderRequest.gppConsent,
+        tdid: getTdid(bidderRequest, validBidRequests),
+      },
+    };
+
+    if (!payload.meta.gppConsent && bidderRequest.ortb2?.regs?.gpp) {
+      payload.meta.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid,
+      };
     }
 
-    payload.slots = validBidRequests.map(bidRequest => {
-      let slot = {
+    payload.slots = validBidRequests.map((bidRequest) => {
+      eids.push(...(bidRequest.userIdAsEids || []));
+      const adUnitElement = document.getElementById(bidRequest.adUnitCode);
+      const coordinates = getOffset(adUnitElement);
+
+      const slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         sizes: bidRequest.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
         slotType: bidRequest.params.slotType,
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
-        site: bidRequest.params.site || bidderRequest.refererInfo.referer
-      }
+        site: bidRequest.params.site || bidderRequest.refererInfo.page,
+        ref: bidderRequest.refererInfo.ref,
+        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top },
+      };
 
       return slot;
     });
 
-    utils.logMessage(payload);
+    payload.meta.eids = eids.filter(Boolean);
+
+    logMessage(payload);
 
     return {
       method: 'POST',
       url: `${CONCERT_ENDPOINT}/bids/prebid`,
-      data: JSON.stringify(payload)
-    }
+      data: JSON.stringify(payload),
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -79,8 +107,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    utils.logMessage(serverResponse);
-    utils.logMessage(bidRequest);
+    logMessage(serverResponse);
+    logMessage(bidRequest);
 
     const serverBody = serverResponse.body;
 
@@ -90,7 +118,7 @@ export const spec = {
 
     let bidResponses = [];
 
-    bidResponses = serverBody.bids.map(bid => {
+    bidResponses = serverBody.bids.map((bid) => {
       return {
         requestId: bid.bidId,
         cpm: bid.cpm,
@@ -98,94 +126,89 @@ export const spec = {
         height: bid.height,
         ad: bid.ad,
         ttl: bid.ttl,
+        meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
         creativeId: bid.creativeId,
         netRevenue: bid.netRevenue,
-        currency: bid.currency
-      }
+        currency: bid.currency,
+        ...(bid.dealid && { dealId: bid.dealid }),
+      };
     });
 
-    if (utils.debugTurnedOn() && serverBody.debug) {
-      utils.logMessage(`CONCERT`, serverBody.debug);
+    if (debugTurnedOn() && serverBody.debug) {
+      logMessage(`CONCERT`, serverBody.debug);
     }
 
-    utils.logMessage(bidResponses);
+    logMessage(bidResponses);
     return bidResponses;
   },
 
   /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param {gdprConsent} object GDPR consent object.
-   * @param {uspConsent} string US Privacy String.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-    if (syncOptions.iframeEnabled && !hasOptedOutOfPersonalization()) {
-      let params = [];
-
-      if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
-        params.push(`gdpr_applies=${gdprConsent.gdprApplies ? '1' : '0'}`);
-      }
-      if (gdprConsent && (typeof gdprConsent.consentString === 'string')) {
-        params.push(`gdpr_consent=${gdprConsent.consentString}`);
-      }
-      if (uspConsent && (typeof uspConsent === 'string')) {
-        params.push(`usp_consent=${uspConsent}`);
-      }
-
-      syncs.push({
-        type: 'iframe',
-        url: USER_SYNC_URL + (params.length > 0 ? `?${params.join('&')}` : '')
-      });
-    }
-    return syncs;
-  },
-
-  /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
    */
   onTimeout: function(data) {
-    utils.logMessage('concert bidder timed out');
-    utils.logMessage(data);
+    logMessage('concert bidder timed out');
+    logMessage(data);
   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function(bid) {
-    utils.logMessage('concert bidder won bid');
-    utils.logMessage(bid);
-  }
-
-}
+    logMessage('concert bidder won bid');
+    logMessage(bid);
+  },
+};
 
 registerBidder(spec);
 
-const storage = getStorageManager();
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Check or generate a UID for the current user.
  */
-function getUid(bidderRequest) {
+function getUid(bidderRequest, validBidRequests) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
   }
 
-  const CONCERT_UID_KEY = 'c_uid';
+  const { sharedId, pubcId } = getUserIdsFromEids(validBidRequests[0]);
 
+  if (sharedId) return sharedId;
+  if (pubcId) return pubcId;
+  if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+    return deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  }
+
+  const CONCERT_UID_KEY = 'vmconcert_uid';
   let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
 
   if (!uid) {
-    uid = utils.generateUUID();
+    uid = generateUUID();
     storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
   }
 
   return uid;
+}
+
+function getUserIdsFromEids(bid) {
+  const sourceMapping = {
+    'sharedid.org': 'sharedId',
+    'pubcid.org': 'pubcId',
+    'adserver.org': 'tdid',
+  };
+
+  const defaultUserIds = { sharedId: null, pubcId: null, tdid: null };
+
+  if (!bid?.userIdAsEids) return defaultUserIds;
+
+  return bid.userIdAsEids.reduce((userIds, eid) => {
+    const key = sourceMapping[eid.source];
+    if (key && eid.uids?.[0]?.id) {
+      userIds[key] = eid.uids[0].id;
+    }
+    return userIds;
+  }, defaultUserIds);
 }
 
 /**
@@ -200,12 +223,44 @@ function hasOptedOutOfPersonalization() {
 /**
  * Whether the privacy consent strings allow personalization.
  *
- * @param {BidderRequest} bidderRequest Object which contains any data consent signals
+ * @param {Object} bidderRequest Object which contains any data consent signals
  */
 function consentAllowsPpid(bidderRequest) {
-  /* NOTE: We cannot easily test GDPR consent, without the
-   * `consent-string` npm module; so will have to rely on that
-   * happening on the bid-server. */
-  return !(bidderRequest.uspConsent === 'string' &&
-           bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY')
+  let uspConsentAllows = true;
+
+  // if a us privacy string was provided, but they explicitly opted out
+  if (
+    typeof bidderRequest?.uspConsent === 'string' &&
+    bidderRequest?.uspConsent[0] === '1' &&
+    bidderRequest?.uspConsent[2].toUpperCase() === 'Y' // user has opted-out
+  ) {
+    uspConsentAllows = false;
+  }
+
+  /*
+   * True if the gdprConsent is null-y; or GDPR does not apply; or if purpose 1 consent was given.
+   * Much more nuanced GDPR requirements are tested on the bid server using the @iabtcf/core npm module;
+   */
+  const gdprConsentAllows = hasPurpose1Consent(bidderRequest?.gdprConsent);
+
+  return uspConsentAllows && gdprConsentAllows;
+}
+
+function getOffset(el) {
+  if (el) {
+    const rect = getBoundingClientRect(el);
+    const viewport = getViewportCoordinates();
+    return {
+      left: rect.left + (viewport.left || 0),
+      top: rect.top + (viewport.top || 0)
+    };
+  }
+}
+
+function getTdid(bidderRequest, validBidRequests) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
+    return null;
+  }
+
+  return getUserIdsFromEids(validBidRequests[0]).tdid;
 }

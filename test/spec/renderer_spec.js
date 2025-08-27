@@ -1,9 +1,20 @@
 import { expect } from 'chai';
-import { Renderer } from 'src/Renderer.js';
+import { Renderer, executeRenderer } from 'src/Renderer.js';
 import * as utils from 'src/utils.js';
-import { loadExternalScript } from 'src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 describe('Renderer', function () {
+  let oldAdUnits;
+  beforeEach(function () {
+    oldAdUnits = getGlobal().adUnits;
+    getGlobal().adUnits = [];
+  });
+
+  afterEach(function () {
+    getGlobal().adUnits = oldAdUnits;
+  });
+
   describe('Renderer: A renderer installed on a bid response', function () {
     let testRenderer1;
     let testRenderer2;
@@ -41,7 +52,7 @@ describe('Renderer', function () {
       expect(testRenderer2.getConfig()).to.deep.equal({ test: 'config2' });
     });
 
-    it('sets a render function with setRender method', function () {
+    it('sets a render function with the setRender method', function () {
       testRenderer1.setRender(spyRenderFn);
       expect(typeof testRenderer1.render).to.equal('function');
       testRenderer1.render();
@@ -96,23 +107,34 @@ describe('Renderer', function () {
       sinon.assert.calledOnce(func2);
       expect(testRenderer1.cmd.length).to.equal(0);
     });
+
+    it('renders immediately when requested', function () {
+      const testRenderer3 = Renderer.install({
+        config: { test: 'config2' },
+        id: 2,
+        renderNow: true
+      });
+      const func1 = sinon.spy();
+      const testArg = 'testArgument';
+
+      testRenderer3.setRender(func1);
+      testRenderer3.render(testArg);
+      func1.calledWith(testArg).should.be.ok;
+    });
   });
 
   describe('3rd party renderer', function () {
-    let adUnitsOld;
     let utilsSpy;
     before(function () {
-      adUnitsOld = $$PREBID_GLOBAL$$.adUnits;
       utilsSpy = sinon.spy(utils, 'logWarn');
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.adUnits = adUnitsOld;
       utilsSpy.restore();
     });
 
     it('should not load renderer and log warn message', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         renderer: {
           url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -120,7 +142,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -133,7 +155,7 @@ describe('Renderer', function () {
     });
 
     it('should load renderer adunit renderer when backupOnly', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         renderer: {
           url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -142,7 +164,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -152,11 +174,11 @@ describe('Renderer', function () {
       testRenderer.setRender(() => {})
 
       testRenderer.render()
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         mediaTypes: {
           video: {
@@ -172,7 +194,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -182,27 +204,42 @@ describe('Renderer', function () {
       testRenderer.setRender(() => {})
 
       testRenderer.render()
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         renderer: {
           url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
           render: sinon.spy()
         }
       }];
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
         adUnitCode: undefined
       });
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
 
       testRenderer.render()
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
+    });
+
+    it('call\'s documentResolver when configured', function () {
+      const documentResolver = sinon.spy(function(bid, sDoc, tDoc) {
+        return document;
+      });
+
+      const testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { documentResolver: documentResolver }
+      });
+
+      executeRenderer(testRenderer, {}, {});
+
+      expect(documentResolver.called).to.be.true;
     });
   });
 });
