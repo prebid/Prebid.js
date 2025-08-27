@@ -72,7 +72,7 @@ export const spec = {
     try {
       const bidResponse = serverResponse.body;
       const bidResponses = [];
-      if (bidResponse && bidRequest.options.mediaType == NATIVE) {
+      if (bidResponse && bidRequest.options.mediaType === NATIVE) {
         bidResponse.ads.forEach(function(ad) {
           bidResponses.push({
             requestId: bidRequest.options.requestId,
@@ -106,7 +106,7 @@ export const spec = {
             },
           });
         });
-      } else if (bidResponse && bidRequest.options.mediaType == 'display') {
+      } else if (bidResponse && bidRequest.options.mediaType === 'display') {
         bidResponse.ads.forEach(function(ad) {
           const w = ad.assets.width || 300;
           const h = ad.assets.height || 250;

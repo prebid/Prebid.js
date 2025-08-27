@@ -1,10 +1,10 @@
 export function getWalletPresence() {
   return {
-    ada: typeof window != 'undefined' && !!window.cardano,
-    bnb: typeof window != 'undefined' && !!window.BinanceChain,
-    eth: typeof window != 'undefined' && !!window.ethereum,
-    sol: typeof window != 'undefined' && !!window.solana,
-    tron: typeof window != 'undefined' && !!window.tron,
+    ada: typeof window !== 'undefined' && !!window.cardano,
+    bnb: typeof window !== 'undefined' && !!window.BinanceChain,
+    eth: typeof window !== 'undefined' && !!window.ethereum,
+    sol: typeof window !== 'undefined' && !!window.solana,
+    tron: typeof window !== 'undefined' && !!window.tron,
   };
 }
 

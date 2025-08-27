@@ -29,9 +29,9 @@ export const spec = {
   interpretResponse: (bResponse, bRequest) => {
     let Response = {};
     const mediaType = JSON.parse(bRequest.data)[0].MediaType;
-    if (mediaType == BANNER) {
+    if (mediaType === BANNER) {
       Response = getBannerResponse(bResponse, BANNER);
-    } else if (mediaType == NATIVE) {
+    } else if (mediaType === NATIVE) {
       Response = getNativeResponse(bResponse, bRequest, NATIVE);
     }
     return Response;

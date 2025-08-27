@@ -53,7 +53,7 @@ const TRION_BID_RESPONSE = {
 const getPublisherUrl = function () {
   var url = null;
   try {
-    if (window.top == window) {
+    if (window.top === window) {
       url = window.location.href;
     } else {
       try {

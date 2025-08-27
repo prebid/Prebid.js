@@ -62,7 +62,7 @@ export const spec = {
       bid.meta = bid.meta || {};
       bid.ttl = bid.ttl || TIME_TO_LIVE;
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
-      if (bid.meta.advertiserDomains.length == 0) {
+      if (bid.meta.advertiserDomains.length === 0) {
         bid.meta.advertiserDomains.push('dvgroup.com');
       }
     });

@@ -62,7 +62,7 @@ export const spec = {
     const windowDimensions = getWinDimensions();
     const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
     const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
-    const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
+    const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
       'uids': validBidRequests[0].userId,
@@ -113,7 +113,7 @@ export const spec = {
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
-        placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
+        placementId: bidReq.params.placementId ?? null,
         publisherId: bidReq.params.publisherId,
         gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', ''),
         sizes: bidReq.sizes,
@@ -187,7 +187,7 @@ export const spec = {
     }
 
     if (usPrivacy) {
-      if (iframePrivacyParams != '') {
+      if (iframePrivacyParams !== '') {
         iframePrivacyParams += '&'
       } else {
         iframePrivacyParams += '?'

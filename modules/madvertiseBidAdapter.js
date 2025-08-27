@@ -30,7 +30,7 @@ export const spec = {
       return false;
     }
 
-    return typeof bid.params.s != 'undefined';
+    return typeof bid.params.s !== 'undefined';
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -45,7 +45,7 @@ export const spec = {
       var src = '?rt=bid_request&v=1.0';
 
       for (var i = 0; i < bidRequest.sizes.length; i++) {
-        if (Array.isArray(bidRequest.sizes[i]) && bidRequest.sizes[i].length == 2) {
+        if (Array.isArray(bidRequest.sizes[i]) && bidRequest.sizes[i].length === 2) {
           src = src + '&sizes[' + i + ']=' + bidRequest.sizes[i][0] + 'x' + bidRequest.sizes[i][1];
         }
       }
@@ -54,7 +54,7 @@ export const spec = {
         src = src + '&' + key + '=' + item;
       });
 
-      if (typeof bidRequest.params.u == 'undefined') {
+      if (typeof bidRequest.params.u === 'undefined') {
         src = src + '&u=' + navigator.userAgent;
       }
 
@@ -78,7 +78,7 @@ export const spec = {
   interpretResponse: function (responseObj, bidRequest) {
     responseObj = responseObj.body;
     // check overall response
-    if (responseObj == null || typeof responseObj !== 'object' || !responseObj.hasOwnProperty('ad')) {
+    if (responseObj === null || responseObj === undefined || typeof responseObj !== 'object' || !responseObj.hasOwnProperty('ad')) {
       return [];
     }
 

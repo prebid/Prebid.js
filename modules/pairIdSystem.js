@@ -59,7 +59,7 @@ export const pairIdSubmodule = {
   getId(config) {
     const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
     let ids = []
-    if (pairIdsString && typeof pairIdsString == 'string') {
+    if (pairIdsString && typeof pairIdsString === 'string') {
       try {
         ids = ids.concat(JSON.parse(atob(pairIdsString)))
       } catch (error) {
@@ -94,7 +94,7 @@ export const pairIdSubmodule = {
       }
     }
 
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       logInfo('PairId not found.')
       return undefined;
     }

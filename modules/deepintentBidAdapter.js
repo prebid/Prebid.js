@@ -228,12 +228,12 @@ function buildCustomParams(bid) {
 function buildUser(bid) {
   if (bid && bid.params && bid.params.user) {
     return {
-      id: bid.params.user.id && typeof bid.params.user.id == 'string' ? bid.params.user.id : undefined,
-      buyeruid: bid.params.user.buyeruid && typeof bid.params.user.buyeruid == 'string' ? bid.params.user.buyeruid : undefined,
-      yob: bid.params.user.yob && typeof bid.params.user.yob == 'number' ? bid.params.user.yob : null,
-      gender: bid.params.user.gender && typeof bid.params.user.gender == 'string' ? bid.params.user.gender : undefined,
-      keywords: bid.params.user.keywords && typeof bid.params.user.keywords == 'string' ? bid.params.user.keywords : undefined,
-      customdata: bid.params.user.customdata && typeof bid.params.user.customdata == 'string' ? bid.params.user.customdata : undefined
+      id: bid.params.user.id && typeof bid.params.user.id === 'string' ? bid.params.user.id : undefined,
+      buyeruid: bid.params.user.buyeruid && typeof bid.params.user.buyeruid === 'string' ? bid.params.user.buyeruid : undefined,
+      yob: bid.params.user.yob && typeof bid.params.user.yob === 'number' ? bid.params.user.yob : null,
+      gender: bid.params.user.gender && typeof bid.params.user.gender === 'string' ? bid.params.user.gender : undefined,
+      keywords: bid.params.user.keywords && typeof bid.params.user.keywords === 'string' ? bid.params.user.keywords : undefined,
+      customdata: bid.params.user.customdata && typeof bid.params.user.customdata === 'string' ? bid.params.user.customdata : undefined
     }
   }
 }
@@ -281,7 +281,7 @@ function buildDevice() {
   return {
     ua: navigator.userAgent,
     js: 1,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack === '1') ? 1 : 0,
+    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1') ? 1 : 0,
     h: screen.height,
     w: screen.width,
     language: navigator.language
