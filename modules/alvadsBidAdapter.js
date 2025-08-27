@@ -80,7 +80,6 @@ export const spec = {
           user_fingerprint: utils.generateUUID()
         }
       };
-
       const endpoint = bid.params.endpoint || ENDPOINT_BANNER;
 
       return {
