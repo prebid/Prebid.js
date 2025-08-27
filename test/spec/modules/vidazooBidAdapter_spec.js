@@ -817,13 +817,7 @@ describe('VidazooBidAdapter', function () {
       bid.userIdAsEids = [
         {
           "source": "audigent.com",
-          "uids":
-            [
-              {
-                "id": "fakeidi6j6dlc6e",
-                "atype": 1
-              }
-            ]
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
         }
       ]
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
@@ -834,23 +828,11 @@ describe('VidazooBidAdapter', function () {
       bid.userIdAsEids = [
         {
           "source": "audigent.com",
-          "uids":
-            [
-              {
-                "id": "fakeidi6j6dlc6e",
-                "atype": 1
-              }
-            ]
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
         },
         {
           "source": "rwdcntrl.net",
-          "uids":
-            [
-              {
-                "id": "fakeid6f35197d5c",
-                "atype": 1
-              }
-            ]
+          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
         }
       ]
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
@@ -865,13 +847,7 @@ describe('VidazooBidAdapter', function () {
           eids: [
             {
               "source": "pubcid.org",
-              "uids":
-                [
-                  {
-                    "id": "fakeid8888dlc6e",
-                    "atype": 1
-                  }
-                ]
+              "uids": [{"id": "fakeid8888dlc6e"}]
             }
           ]
         }
@@ -886,23 +862,11 @@ describe('VidazooBidAdapter', function () {
           eids: [
             {
               "source": "pubcid.org",
-              "uids":
-                [
-                  {
-                    "id": "fakeid8888dlc6e",
-                    "atype": 1
-                  }
-                ]
+              "uids": [{"id": "fakeid8888dlc6e"}]
             },
             {
               "source": "adserver.org",
-              "uids":
-                [
-                  {
-                    "id": "fakeid495ff1",
-                    "atype": 1,
-                  }
-                ]
+              "uids": [{"id": "fakeid495ff1"}]
             }
           ]
         }
