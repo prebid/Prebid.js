@@ -82,7 +82,7 @@ describe('waardexBidAdapter', () => {
           ],
         }
       });
-      const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
+      const ENDPOINT = `https://hb.justbidit2.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
       expect(url).to.equal(ENDPOINT);
       expect(method).to.equal('POST');
     });

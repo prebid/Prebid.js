@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
-const domain = 'hb.justbidit.xyz';
+const domain = 'hb.justbidit2.xyz';
 const httpsPort = 8843;
 const path = '/prebid';
 
