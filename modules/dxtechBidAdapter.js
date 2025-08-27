@@ -21,7 +21,7 @@ const BIDDER_CODE = 'dxtech';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_OUTSTREAM_RENDERER_URL = 'https://cdn.dxkulture.com/players/dxOutstreamPlayer.js';
+const DEFAULT_OUTSTREAM_RENDERER_URL = 'https://cdn.dxtech.ai/players/dxOutstreamPlayer.js';
 
 const converter = ortbConverter({
   context: {
