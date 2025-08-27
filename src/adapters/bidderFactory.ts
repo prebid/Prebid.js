@@ -127,7 +127,6 @@ export type BidderError<B extends BidderCode> = {
 
 export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
   code: BIDDER;
-  gvlid?: number;
   supportedMediaTypes?: readonly MediaType[];
 
   /**
