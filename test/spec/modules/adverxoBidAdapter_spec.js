@@ -262,7 +262,7 @@ describe('Adverxo Bid Adapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
 
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://egrevirda.com/pickpbs?id=1&auth=authExample');
+      expect(request.url).to.equal('https://arcantila.com/pickpbs?id=1&auth=authExample');
     });
 
     it('should use correct default bidUrl', () => {
