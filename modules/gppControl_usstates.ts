@@ -153,12 +153,12 @@ export const getSections = (() => {
       const normalizeAs = ov.normalizeAs || sid;
       if (!NORMALIZATIONS.hasOwnProperty(normalizeAs)) {
         logger.logError(`no normalization rules are known for SID ${normalizeAs}`)
-        return;
+        return null;
       }
       const api = ov.name || DEFAULT_SID_MAPPING[sid];
       if (typeof api !== 'string') {
         logger.logError(`cannot determine GPP section name`)
-        return;
+        return null;
       }
       return [
         api,
