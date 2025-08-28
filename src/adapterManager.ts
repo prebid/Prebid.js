@@ -867,6 +867,10 @@ const adapterManager = {
   callAdRenderSucceededBidder(bidder, bid) {
     tryCallBidderMethod(bidder, 'onAdRenderSucceeded', bid);
   },
+  callOnInterventionBidder(bidder, bid, intervention) {
+    const param = { bid, intervention }
+    tryCallBidderMethod(bidder, 'onIntervention', param);
+  },
   /**
    * Ask every adapter to delete PII.
    * See https://github.com/prebid/Prebid.js/issues/9081

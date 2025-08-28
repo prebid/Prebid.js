@@ -8,6 +8,15 @@ import {
   PB_LOCATOR
 } from './constants.js';
 
+const observer = new ReportingObserver((reports) => {
+  sendMessage(MESSAGE_EVENT, {
+    event: "browserIntervention",
+    intervention: reports[0]
+  });
+}, { buffered: true, types: ['intervention'] });
+
+observer.observe();
+
 const mkFrame = (() => {
   const DEFAULTS = {
     frameBorder: 0,
@@ -48,6 +57,8 @@ export function renderer(win) {
       channel.port1.onmessage = guard(responseListener);
       target.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
     }
+
+    window.sendMessage = sendMessage;
 
     function onError(e) {
       sendMessage(MESSAGE_EVENT, {
