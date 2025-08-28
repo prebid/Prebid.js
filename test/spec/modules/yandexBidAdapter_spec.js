@@ -902,7 +902,6 @@ describe('Yandex adapter', function () {
     })
   });
 
-
   describe('onTimeout callback', () => {
     it('will always call server', () => {
       const ajaxStub = sandbox.stub(ajax, 'ajax');
