@@ -8,6 +8,16 @@ const userId = {
   'sharedid': {'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7'},
   'uid2': {'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777'},
 }
+const userIdAsEids = [{
+  source: 'test.org',
+  uids: [{
+    id: '01**********',
+    atype: 1,
+    ext: {
+      third: '01***********'
+    }
+  }]
+}];
 
 describe('bridgewellBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -95,6 +105,7 @@ describe('bridgewellBidAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
         'userId': userId,
+        'userIdAsEids': userIdAsEids,
       },
       {
         'bidder': 'bridgewell',
@@ -135,6 +146,7 @@ describe('bridgewellBidAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
         'userId': userId,
+        'userIdAsEids': userIdAsEids,
       }
     ];
 
@@ -161,6 +173,8 @@ describe('bridgewellBidAdapter', function () {
         expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
         expect(u).to.have.property('userIds');
         expect(u.userIds).to.deep.equal(userId);
+        expect(u).to.have.property('userIdAsEids');
+        expect(u.userIdAsEids).to.deep.equal(userIdAsEids);
       }
     });
 
@@ -188,7 +202,8 @@ describe('bridgewellBidAdapter', function () {
           'bidId': '3150ccb55da321',
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
-          'userId': userId
+          'userId': userId,
+          'userIdAsEids': userIdAsEids,
         },
       ];
 
@@ -206,6 +221,8 @@ describe('bridgewellBidAdapter', function () {
         expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
         expect(u).to.have.property('userIds');
         expect(u.userIds).to.deep.equal(userId);
+        expect(u).to.have.property('userIdAsEids');
+        expect(u.userIdAsEids).to.deep.equal(userIdAsEids);
       }
     });
 

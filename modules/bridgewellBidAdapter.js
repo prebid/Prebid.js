@@ -46,36 +46,25 @@ export const spec = {
 
     const adUnits = [];
     var bidderUrl = REQUEST_ENDPOINT + Math.random();
-    var userIds;
 
     _each(validBidRequests, function (bid) {
-      userIds = bid.userId;
-
+      const adUnit = {
+        adUnitCode: bid.adUnitCode,
+        requestId: bid.bidId,
+        mediaTypes: bid.mediaTypes || {
+          banner: {
+            sizes: bid.sizes
+          }
+        },
+        userIds: bid.userId || {},
+        userIdAsEids: bid.userIdAsEids || {}
+      };
       if (bid.params.cid) {
-        adUnits.push({
-          cid: bid.params.cid,
-          adUnitCode: bid.adUnitCode,
-          requestId: bid.bidId,
-          mediaTypes: bid.mediaTypes || {
-            banner: {
-              sizes: bid.sizes
-            }
-          },
-          userIds: userIds || {}
-        });
+        adUnit.cid = bid.params.cid;
       } else {
-        adUnits.push({
-          ChannelID: bid.params.ChannelID,
-          adUnitCode: bid.adUnitCode,
-          requestId: bid.bidId,
-          mediaTypes: bid.mediaTypes || {
-            banner: {
-              sizes: bid.sizes
-            }
-          },
-          userIds: userIds || {}
-        });
+        adUnit.ChannelID = bid.params.ChannelID;
       }
+      adUnits.push(adUnit);
     });
 
     let topUrl = '';

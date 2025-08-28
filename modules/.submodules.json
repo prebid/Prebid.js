@@ -123,6 +123,7 @@
       "raynRtdProvider",
       "reconciliationRtdProvider",
       "relevadRtdProvider",
+      "scope3RtdProvider",
       "semantiqRtdProvider",
       "sirdataRtdProvider",
       "symitriDapRtdProvider",

@@ -1280,13 +1280,28 @@ describe('paapi module', () => {
           bidId: 'bidId',
           adUnitCode: 'au',
           auctionId: 'aid',
+          ortb2: {
+            source: {
+              tid: 'aid'
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[123, 321]]
             }
           }
         }];
-        bidderRequest = {auctionId: 'aid', bidderCode: 'mockBidder', paapi: {enabled: true}, bids};
+        bidderRequest = {
+          auctionId: 'aid',
+          bidderCode: 'mockBidder',
+          paapi: {enabled: true},
+          bids,
+          ortb2: {
+            source: {
+              tid: 'aid'
+            }
+          }
+        };
         restOfTheArgs = [{more: 'args'}];
         mockConfig = {
           seller: 'mock.seller',

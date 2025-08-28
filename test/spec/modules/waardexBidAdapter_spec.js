@@ -213,7 +213,7 @@ describe('waardexBidAdapter', () => {
         method
       } = spec.buildRequests(validBidRequests, bidderRequest);
 
-      const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
+      const ENDPOINT = `https://hb.justbidit2.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
 
       expect(payload.bidRequests[0]).deep.equal({
         bidId: validBidRequests[0].bidId,

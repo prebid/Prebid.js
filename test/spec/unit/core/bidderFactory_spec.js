@@ -22,19 +22,17 @@ const MOCK_BIDS_REQUEST = {
   bids: [
     {
       bidId: 1,
-      auctionId: 'first-bid-id',
       adUnitCode: 'mock/placement',
       params: {
         param: 5
-      }
+      },
     },
     {
       bidId: 2,
-      auctionId: 'second-bid-id',
       adUnitCode: 'mock/placement2',
       params: {
         badParam: 6
-      }
+      },
     }
   ]
 }
@@ -237,20 +235,27 @@ describe('bidderFactory', () => {
         });
 
         Object.entries({
-          'be hidden': false,
-          'not be hidden': true,
-        }).forEach(([t, allowed]) => {
-          const expectation = allowed ? (val) => expect(val).to.exist : (val) => expect(val).to.not.exist;
-
-          function checkBidRequest(br) {
-            ['auctionId', 'transactionId'].forEach((prop) => expectation(br[prop]));
-          }
-
-          function checkBidderRequest(br) {
-            expectation(br.auctionId);
-            br.bids.forEach(checkBidRequest);
-          }
-
+          'be hidden': {
+            allowed: false,
+            checkBidderRequest(br) {
+              expect(br.auctionId).to.not.exist;
+            },
+            checkBidRequest(br) {
+              expect(br.auctionId).to.not.exist;
+              expect(br.transactionId).to.not.exist;
+            },
+          },
+          'be an alias to the bidder specific tid': {
+            allowed: true,
+            checkBidderRequest(br) {
+              expect(br.auctionId).to.eql('bidder-tid');
+            },
+            checkBidRequest(br) {
+              expect(br.auctionId).to.eql('bidder-tid');
+              expect(br.transactionId).to.eql('bidder-ext-tid');
+            },
+          },
+        }).forEach(([t, {allowed, checkBidderRequest, checkBidRequest}]) => {
           it(`should ${t} from the spec logic when the transmitTid activity is${allowed ? '' : ' not'} allowed`, () => {
             spec.isBidRequestValid.callsFake(br => {
               checkBidRequest(br);
@@ -268,12 +273,27 @@ describe('bidderFactory', () => {
             bidder.callBids({
               bidderCode: 'mockBidder',
               auctionId: 'aid',
+              ortb2: {
+                source: {
+                  tid: 'bidder-tid'
+                }
+              },
               bids: [
                 {
                   adUnitCode: 'mockAU',
                   bidId: 'bid',
                   transactionId: 'tid',
-                  auctionId: 'aid'
+                  auctionId: 'aid',
+                  ortb2: {
+                    source: {
+                      tid: 'bidder-tid'
+                    },
+                  },
+                  ortb2Imp: {
+                    ext: {
+                      tid: 'bidder-ext-tid'
+                    }
+                  }
                 }
               ]
             }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
