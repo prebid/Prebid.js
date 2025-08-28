@@ -492,7 +492,7 @@ describe('dxtechBidAdapter', function() {
         it('should create a POST request for every bid', function () {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(requests.method).to.equal('POST');
-          expect(requests.url.trim()).to.equal(spec.ENDPOINT + '?pid=' + videoBidRequest.params.publisherId);
+          expect(requests.url.trim()).to.equal(spec.ENDPOINT + '?publisher_id=' + videoBidRequest.params.publisherId);
         });
 
         it('should attach request data', function () {
@@ -514,7 +514,7 @@ describe('dxtechBidAdapter', function() {
           bidRequestsWithMediaTypes[0].params.e2etest = true;
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(requests.method).to.equal('POST');
-          expect(requests.url).to.equal(spec.ENDPOINT + '?pid=e2etest');
+          expect(requests.url).to.equal(spec.ENDPOINT + '?publisher_id=e2etest');
         });
 
         it('should attach End 2 End test data', function () {
