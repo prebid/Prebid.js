@@ -1217,9 +1217,9 @@ describe('VisxAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com'], 'ext': {'prebid': {'targeting': {'hb_visx_product': 'understitial', 'hb_visx_width': 300, 'hb_visx_height': 250}}}}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'impid': '4dff80cc4ee346', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-      {'bid': [{'price': 0.15, 'impid': '5703af74d0472a', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'adomain': ['some_domain.com'], 'ext': {'prebid': {'targeting': {'hb_visx_product': 'understitial', 'hb_visx_width': 300, 'hb_visx_height': 250}}}}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'impid': '4dff80cc4ee346', 'adm': '<div>test content 2</div>', 'auid': 903536, 'crid': 'visx_2', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'impid': '5703af74d0472a', 'adm': '<div>test content 3</div>', 'auid': 903535, 'crid': 'visx_3', 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       {'bid': [{'price': 0, 'impid': '300bfeb0d7190gf', 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       undefined,
@@ -1246,7 +1246,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1318,7 +1318,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1346,7 +1346,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '4dff80cc4ee346',
           'cpm': 0.5,
-          'creativeId': 903536,
+          'creativeId': 'visx_2',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -1362,7 +1362,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '5703af74d0472a',
           'cpm': 0.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_3',
           'dealId': undefined,
           'width': 728,
           'height': 90,
@@ -1401,7 +1401,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1478,11 +1478,11 @@ describe('VisxAdapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'impid': '2164be6358b9', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'impid': '4e111f1b66e4', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'impid': '26d6f897b516', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'impid': '326bde7fbf69', 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'impid': '1751cd90161', 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'impid': '2164be6358b9', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'adomain': ['some_domain.com']}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '4e111f1b66e4', 'adm': '<div>test content 2</div>', 'auid': 903536, 'crid': 'visx_1', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'impid': '26d6f897b516', 'adm': '<div>test content 3</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'impid': '326bde7fbf69', 'adm': '<div>test content 4</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '1751cd90161', 'adm': '<div>test content 5</div>', 'auid': 903536, 'crid': 'visx_1', 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1546,7 +1546,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '2164be6358b9',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1562,7 +1562,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '4e111f1b66e4',
           'cpm': 0.5,
-          'creativeId': 903536,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -1578,7 +1578,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '26d6f897b516',
           'cpm': 0.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 728,
           'height': 90,
@@ -1594,7 +1594,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '326bde7fbf69',
           'cpm': 0.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -1610,7 +1610,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '1751cd90161',
           'cpm': 0.5,
-          'creativeId': 903536,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 350,
           'height': 600,
@@ -1631,8 +1631,8 @@ describe('VisxAdapter', function () {
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'impid': '5126e301f4be', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'impid': '57b2ebe70e16', 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'impid': '5126e301f4be', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '57b2ebe70e16', 'adm': '<div>test content 2</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1674,7 +1674,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '5126e301f4be',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1690,7 +1690,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '57b2ebe70e16',
           'cpm': 0.5,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1711,7 +1711,7 @@ describe('VisxAdapter', function () {
 
     it('handles video bid', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'crid': 'visx_1', 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1740,7 +1740,7 @@ describe('VisxAdapter', function () {
           'mediaType': 'video',
           'requestId': '2164be6358b9',
           'cpm': 0.5,
-          'creativeId': 903537,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 400,
           'height': 300,
@@ -1760,7 +1760,7 @@ describe('VisxAdapter', function () {
 
     it('handles multiformat bid response with outstream+banner as banner', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'crid': 'visx_1', 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1792,7 +1792,7 @@ describe('VisxAdapter', function () {
           'ad': '<VAST/>',
           'requestId': '2164be6358b9',
           'cpm': 0.5,
-          'creativeId': 903537,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 400,
           'height': 300,
@@ -1831,7 +1831,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
