@@ -193,6 +193,13 @@ const VIDEO_SERVER_RESPONSE = {
   }
 };
 
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {"content": {"language": "en"}
+  }
+};
+
 const REQUEST = {
   data: {
     width: 300,
@@ -359,6 +366,8 @@ describe('programmaticXBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: VIDEO_BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           placementId: "testBanner",
           userData: [],
           coppa: 0
@@ -428,6 +437,8 @@ describe('programmaticXBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           placementId: "testBanner",
           userData: [],
           coppa: 0

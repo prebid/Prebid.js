@@ -51,7 +51,7 @@ const BID = {
   'ortb2Imp': {
     'ext': {
       'gpid': '0123456789',
-      'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
+      'tid': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf'
     }
   }
 };
@@ -191,6 +191,13 @@ const VIDEO_SERVER_RESPONSE = {
       'price': 2,
       'cookies': []
     }]
+  }
+};
+
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {"content": {"language": "en"}
   }
 };
 
@@ -361,6 +368,8 @@ describe('ShinezRtbBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: VIDEO_BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           userData: [],
           coppa: 0
         }
@@ -389,7 +398,7 @@ describe('ShinezRtbBidAdapter', function () {
           bidderWinsCount: 1,
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
-          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+          transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
           sizes: ['300x250', '300x600'],
           sua: {
             'source': 2,
@@ -430,6 +439,8 @@ describe('ShinezRtbBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           userData: [],
           coppa: 0
         }

@@ -190,6 +190,13 @@ const VIDEO_SERVER_RESPONSE = {
   }
 };
 
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {"content": {"language": "en"}
+  }
+};
+
 const REQUEST = {
   data: {
     width: 300,
@@ -360,6 +367,7 @@ describe('KueezRtbBidAdapter', function () {
           contentLang: 'en',
           contentData: [],
           isStorageAllowed: true,
+          ortb2: ORTB2_OBJ,
           pagecat: [],
           userData: [],
           coppa: 0
@@ -423,6 +431,8 @@ describe('KueezRtbBidAdapter', function () {
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           mediaTypes: [BANNER],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',

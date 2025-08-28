@@ -368,6 +368,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     data['ext.' + key] = value;
   });
 
+  if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2
+  if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
+
   return data;
 }
 
@@ -484,6 +487,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     });
   }
 
+  // validBidRequests - an array of bids validated via the isBidRequestValid function.
+  // bidderRequest    - an object with data common to all bid requests.
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
