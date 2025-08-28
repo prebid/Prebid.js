@@ -8,7 +8,7 @@ import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
-  const ADGENE_PREBID_VERSION = '1.6.4';
+  const ADGENE_PREBID_VERSION = '1.6.5';
   const ENDPOINT_STG = 'https://api-test.scaleout.jp/adgen/prebid';
   const ENDPOINT_RELEASE = 'https://d.socdm.com/adgen/prebid';
 
@@ -791,7 +791,7 @@ describe('AdgenerationAdapter', function () {
         method: 'POST',
         url: 'https://api-test.scaleout.jp/adgen/prebid?id=15410&posall=SSPLOC&sdktype=0',
         data: {
-          'currency': 'JPY',
+          'currency': 'USD',
           'pbver': prebid.version,
           'sdkname': 'prebidjs',
           'adapterver': ADGENE_PREBID_VERSION,
@@ -1235,7 +1235,10 @@ describe('AdgenerationAdapter', function () {
         }
       };
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, { ...bidRequests.upperBillboard, bidderRequest: res })[0];
+        const sr = {body: serverResponse.normal.upperBillboard};
+        const br = {  bidderRequest: res, ...bidRequests.upperBillboard };
+
+        const result = spec.interpretResponse(sr, br)[0];
         expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
         expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
         expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
@@ -1339,6 +1342,123 @@ describe('AdgenerationAdapter', function () {
       // no adomain
       expect(result).to.not.have.any.keys('meta');
       expect(result).to.not.have.any.keys('advertiserDomains');
+    });
+
+    describe('currency handling', function () {
+      const bidRequest = {
+        method: 'POST',
+        url: 'https://d.socdm.com/adgen/prebid',
+        data: {
+          currency: 'USD',
+          pbver: prebid.version,
+          sdkname: 'prebidjs',
+          adapterver: ADGENE_PREBID_VERSION,
+          ortb: {
+            imp: [{
+              id: 'test-imp-id',
+              ext: {
+                params: { id: '58278' },
+                mediaTypes: { banner: { sizes: [[300, 250]] } }
+              }
+            }]
+          }
+        }
+      };
+
+      it('uses currency from data when available', function () {
+        const serverResponse = {
+          body: {
+            results: [{
+              cpm: 100,
+              w: 300,
+              h: 250,
+              creativeid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              ad: '<div>Test Ad</div>'
+            }]
+          }
+        };
+        
+        const result = spec.interpretResponse(serverResponse, bidRequest)[0];
+        expect(result.currency).to.equal('USD');
+        expect(result.cpm).to.equal(100);
+      });
+
+      it('defaults to JPY when no currency information available', function () {
+        const requestWithoutCurrency = {
+          method: 'POST',
+          url: 'https://d.socdm.com/adgen/prebid',
+          data: {
+            pbver: prebid.version,
+            sdkname: 'prebidjs',
+            adapterver: ADGENE_PREBID_VERSION,
+            ortb: {
+              imp: [{
+                id: 'test-imp-id',
+                ext: {
+                  params: { id: '58278' },
+                  mediaTypes: { banner: { sizes: [[300, 250]] } }
+                }
+              }]
+            }
+          }
+        };
+
+        const serverResponse = {
+          body: {
+            results: [{
+              cpm: 300,
+              w: 300,
+              h: 250,
+              creativeid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              ad: '<div>Test Ad</div>'
+            }]
+          }
+        };
+        
+        const result = spec.interpretResponse(serverResponse, requestWithoutCurrency)[0];
+        expect(result.currency).to.equal('JPY');
+      });
+
+      it('handles currency correctly with getCurrencyType function logic', function () {
+        // Test the current implementation which uses bidRequests?.data?.currency || 'JPY'
+        const bidRequestWithJPY = {
+          method: 'POST',
+          url: 'https://d.socdm.com/adgen/prebid',
+          data: {
+            currency: 'JPY',
+            pbver: prebid.version,
+            sdkname: 'prebidjs',
+            adapterver: ADGENE_PREBID_VERSION,
+            ortb: {
+              imp: [{
+                id: 'test-imp-id',
+                ext: {
+                  params: { id: '58278' },
+                  mediaTypes: { banner: { sizes: [[300, 250]] } }
+                }
+              }]
+            }
+          }
+        };
+
+        const serverResponse = {
+          body: {
+            results: [{
+              cpm: 150,
+              w: 300,
+              h: 250,
+              creativeid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              ad: '<div>Test Ad</div>'
+            }]
+          }
+        };
+        
+        const result = spec.interpretResponse(serverResponse, bidRequestWithJPY)[0];
+        expect(result.currency).to.equal('JPY');
+      });
     });
   });
 });

@@ -16,7 +16,7 @@ const adgLogger = prefixLog('Adgeneration: ');
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
-const ADGENE_PREBID_VERSION = '1.6.4';
+const ADGENE_PREBID_VERSION = '1.6.5';
 const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
 const URL = 'https://d.socdm.com/adgen/prebid';
 
@@ -139,7 +139,8 @@ export const spec = {
     const adResult = body?.results[0];
     const targetImp = bidRequests?.data?.ortb?.imp[0];
     const requestId = targetImp?.id;
-
+        
+    
     const bidResponse = {
       requestId: requestId,
       cpm: adResult.cpm || 0,
@@ -147,7 +148,7 @@ export const spec = {
       height: adResult.h ? adResult.h : 1,
       creativeId: adResult.creativeid || '',
       dealId: adResult.dealid || '',
-      currency: getCurrencyType(bidRequests.bidderRequest),
+      currency: bidRequests?.data?.currency || 'JPY',
       netRevenue: true,
       ttl: adResult.ttl || 10,
     };
