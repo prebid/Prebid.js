@@ -10,6 +10,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
+import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js'
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {readData, storeData, defineStorageType, removeDataByKey, tryParse} from '../libraries/intentIqUtils/storageUtils.js';
@@ -386,7 +387,7 @@ export const intentIqIdSubmodule = {
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
-    const chSupported = !!(navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
+    const chSupported = isCHSupported();
     let chPromise = null;
 
     function fetchAndHandleCH() {
@@ -482,10 +483,14 @@ export const intentIqIdSubmodule = {
       if (configParams.callback) configParams.callback('');
 
       if (chSupported) {
-        waitOnCH(chTimeout)
-          .then(ch => buildAndSendPixel(ch || clientHints));
+        if (clientHints) {
+          buildAndSendPixel(clientHints)
+        } else {
+          waitOnCH(chTimeout)
+            .then(ch => buildAndSendPixel(ch || ''));
+        }
       } else {
-        buildAndSendPixel(clientHints);
+        buildAndSendPixel('');
       }
       return;
     }
@@ -647,14 +652,25 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
 
+      const sendAjax = uh => {
+        if (uh) url += '&uh=' + encodeURIComponent(uh);
+        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
+      }
+
       if (chSupported) {
-        waitOnCH(chTimeout).then(ch => {
-          const uh = ch || clientHints;
-          if (uh) url += '&uh=' + encodeURIComponent(uh);
-          ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-        });
+        if (clientHints) {
+          // CH found in LS: send immediately; background fetch will refresh/clear later
+          sendAjax(clientHints);
+        } else {
+          // No CH in LS: wait up to chTimeout, then send
+          waitOnCH(chTimeout).then(ch => {
+            // Send with received CH or without it
+            sendAjax(ch || '');
+          })
+        }
       } else {
-        ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+        // CH not supported: send without uh
+        sendAjax('');
       }
     };
     const respObj = {callback: resp};
