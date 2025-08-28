@@ -603,11 +603,11 @@ function eventLog(name, resp) {
     resp.adapterVersion = ADAPTER_VERSION;
     resp.prebidVersion = '$prebid.version$';
 
-    const data = JSON.stringify({
+    const data = {
       name: name,
       unixtime: Math.floor(Date.now() / 1000),
       data: resp,
-    });
+    };
 
     ajax(EVENT_TRACKER_URL, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
   }
