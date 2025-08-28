@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <title>Heavy Ad Test</title>
 
-  <script src="../../../build/dev/prebid.js" async></script>
   <script 
     async 
     src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" 
     crossorigin="anonymous">
   </script>
+
+    <script src="../../../build/dev/prebid.js" async></script>
 
   <script>
     window.googletag = window.googletag || { cmd: [] };
@@ -26,7 +27,7 @@
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
-    const adUnitCode = 'adUnit-0000';
+    const adUnitCode = 'div-gpt-ad-1756369646964-0';
 
     const adUnits = [
       {
@@ -85,7 +86,7 @@
       googletag.cmd.push(function () {
         if (pbjs.libLoaded) {
           pbjs.que.push(function () {
-            pbjs.setTargetingForGPTAsync();
+            pbjs.setTargetingForGPTAsync([adUnitCode]);
             googletag.pubads().refresh();
           });
         } else {
