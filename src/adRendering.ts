@@ -131,8 +131,8 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
 
 /**
  * Data for the BROWSER_INTERVENTION event.
-*/
-type BrowserInterventionData = { 
+ */
+type BrowserInterventionData = {
   bid: Bid;
   adId: string;
   intervention: any;
