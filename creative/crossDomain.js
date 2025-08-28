@@ -9,7 +9,7 @@ import {
 } from './constants.js';
 
 const observer = new ReportingObserver((reports) => {
-  sendMessage(MESSAGE_EVENT, {
+  window.sendMessage(MESSAGE_EVENT, {
     event: "browserIntervention",
     intervention: reports[0]
   });
