@@ -30,7 +30,6 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.params', bidRequest.params);
     deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes);
-    deepSetValue(imp, 'ext.novatiqSyncResponse', bidRequest?.userId?.novatiq?.snowflake?.syncResponse);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -69,13 +68,6 @@ export const spec = {
       const customParams = impObj?.ext?.params;
       const id = getBidIdParameter('id', customParams);
       const additionalParams = JSON.parse(JSON.stringify(rest));
-
-      // hyperIDが有効ではない場合、パラメータから削除する
-      if (!impObj?.ext?.novatiqSyncResponse || impObj?.ext?.novatiqSyncResponse !== 1) {
-        if (additionalParams?.user?.ext?.eids && Array.isArray(additionalParams?.user?.ext?.eids)) {
-          additionalParams.user.ext.eids = additionalParams?.user?.ext?.eids.filter((eid) => eid?.source !== 'novatiq.com');
-        }
-      }
 
       let urlParams = ``;
       urlParams = tryAppendQueryString(urlParams, 'id', id);

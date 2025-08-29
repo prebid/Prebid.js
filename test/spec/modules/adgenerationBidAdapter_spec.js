@@ -117,23 +117,6 @@ describe('AdgenerationAdapter', function () {
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
         transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
       },
-      { // bannerWithHyperId
-        bidder: 'adg',
-        params: {
-          id: '58278', // banner
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[320, 100]],
-        bidId: '2f6ac468a9c15e',
-        bidderRequestId: '14a9f773e30243',
-        auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
-        transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a',
-        userId: {
-          novatiq: {
-            snowflake: {'id': 'novatiqId', syncResponse: 1}
-          }
-        }
-      },
       { // bannerWithAdgextCriteoId
         bidder: 'adg',
         params: {
@@ -296,32 +279,8 @@ describe('AdgenerationAdapter', function () {
       expect(request.data.sdkname).to.equal('prebidjs');
       expect(request.data.adapterver).to.equal(ADGENE_PREBID_VERSION);
       expect(request.data.ortb.imp[0].id).to.equal('2f6ac468a9c15e');
-      expect(request.data.ortb.imp[0].ext.novatiqSyncResponse).to.equal(undefined);
       expect(request.data.ortb.imp[0].ext.params.id).to.equal('58278');
       expect(request.data.ortb.imp[0].ext.mediaTypes).to.deep.equal(expectedMediaTypes);
-    });
-
-    it('should attache params to the bannerWithHyperId request', function () {
-      const hyperIdParams = {
-        user: {
-          ext: {
-            eids: [
-              {
-                source: 'novatiq.com',
-                uids: [
-                  {
-                    'id': 'xxxxxx'
-                  }
-                ]
-              },
-            ]
-          }
-        }
-      }
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: hyperIdParams})[2];
-
-      expect(request.data.ortb.imp[0].ext.novatiqSyncResponse).to.equal(1);
-      expect(request.data.ortb.user).to.deep.equal(hyperIdParams.user);
     });
 
     it('should attache params to the bannerWithAdgextCriteoId request', function () {
@@ -395,7 +354,7 @@ describe('AdgenerationAdapter', function () {
           }
         },
       }
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: idparams})[4];
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: idparams})[3];
       expect(request.data.ortb.user).to.deep.equal(idparams.user);
 
       // gpid
@@ -668,8 +627,7 @@ describe('AdgenerationAdapter', function () {
                         'sendId': false
                       }
                     }
-                  },
-                  'novatiqSyncResponse': 2
+                  }
                 },
                 'id': '2f6ac468a9c15e',
                 'native': {
@@ -833,8 +791,7 @@ describe('AdgenerationAdapter', function () {
                         ]
                       ]
                     }
-                  },
-                  'novatiqSyncResponse': 2
+                  }
                 },
                 'id': '2f6ac468a9c15e',
                 'banner': {
