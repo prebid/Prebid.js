@@ -74,11 +74,12 @@ const converter = ortbConverter({
     if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
       return null;
     }
+    imp.ext = imp.ext || {};
+    imp.ext.pbcode = adUnitCode;
     if (deals) addPMPDeals(imp, deals, LOG_WARN_PREFIX);
     if (dctr) addDealCustomTargetings(imp, dctr, LOG_WARN_PREFIX);
     const customTargetings = shouldAddDealTargeting(ortb2);
     if (customTargetings) {
-      imp.ext = imp.ext || {};
       const targetingValues = Object.values(customTargetings).filter(Boolean);
       if (targetingValues.length) {
         imp.ext['key_val'] = imp.ext['key_val']
@@ -106,7 +107,9 @@ const converter = ortbConverter({
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    // Optimize the imps array before building the request
+    const optimizedImps = optimizeImps(imps, bidderRequest);
+    const request = buildRequest(optimizedImps, bidderRequest, context);
     if (blockedIabCategories.length || request.bcat) {
       const validatedBCategories = validateBlockedCategories([...(blockedIabCategories || []), ...(request.bcat || [])]);
       if (validatedBCategories.length) request.bcat = validatedBCategories;
@@ -565,6 +568,45 @@ const getConnectionType = () => {
   return types[connection?.effectiveType] || 0;
 }
 
+/**
+ * Optimizes the impressions array by consolidating impressions for the same ad unit and media type
+ * @param {Array} imps - Array of impression objects
+ * @param {Object} bidderRequest - The bidder request object
+ * @returns {Array} - Optimized impressions array
+ */
+function optimizeImps(imps, bidderRequest) {
+  const optimizedImps = {};
+
+  bidderRequest.bids.forEach(bid => {
+    const correspondingImp = imps.find(imp => imp.id === bid.bidId);
+    if (!correspondingImp) return;
+    const uniqueKey = bid.adUnitId;
+    if (!optimizedImps[uniqueKey]) {
+      optimizedImps[uniqueKey] = deepClone(correspondingImp);
+      return;
+    }
+    const baseImp = optimizedImps[uniqueKey];
+
+    if (isStr(correspondingImp.tagid)) {
+      baseImp.tagid = correspondingImp.tagid;
+    }
+
+    const copyPropertytoPath = (propPath, propName, toMerge) => {
+      if (!correspondingImp[propPath] || !correspondingImp[propPath][propName]) return;
+      if (!baseImp[propPath]) baseImp[propPath] = {};
+      if (toMerge) {
+        if (!baseImp[propPath][propName]) baseImp[propPath][propName] = [];
+        baseImp[propPath][propName] = [...baseImp[propPath][propName], ...correspondingImp[propPath][propName]];
+      } else {
+        baseImp[propPath][propName] = correspondingImp[propPath][propName];
+      }
+    };
+    copyPropertytoPath('ext', 'key_val', false);
+    copyPropertytoPath('ext', 'pmZoneId', false);
+    copyPropertytoPath('pmp', 'deals', true);
+  });
+  return Object.values(optimizedImps);
+}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
