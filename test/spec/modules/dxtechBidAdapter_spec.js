@@ -1,6 +1,5 @@
 import {expect} from 'chai';
-import {spec, SYNC_URL} from 'modules/dxtechBidAdapter.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.js';
+import {spec} from 'modules/dxtechBidAdapter.js';  // Removed SYNC_URL import
 
 const getBannerRequest = () => {
   return {
@@ -399,14 +398,14 @@ describe('dxtechBidAdapter', function() {
     });
 
     it('returns false when video protocols is invalid', function () {
-      const invalidMimes = [
+      const invalidProtocols = [
         undefined,
         'test',
         1,
         []
       ]
 
-      invalidMimes.forEach((protocols) => {
+      invalidProtocols.forEach((protocols) => {
         this.bid.mediaTypes.video.protocols = protocols;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
       })
@@ -492,14 +491,13 @@ describe('dxtechBidAdapter', function() {
         it('should create a POST request for every bid', function () {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(requests.method).to.equal('POST');
-          expect(requests.url.trim()).to.equal(spec.ENDPOINT + '?publisher_id=' + videoBidRequest.params.publisherId);
+          expect(requests.url.trim()).to.equal(spec.ENDPOINT + '?publisher_id=' + 'km123');
         });
 
         it('should attach request data', function () {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           const data = requests.data;
           const [width, height] = videoBidRequest.sizes;
-          const VERSION = '1.0.0';
 
           expect(data.imp[1].video.w).to.equal(width);
           expect(data.imp[1].video.h).to.equal(height);
@@ -618,7 +616,8 @@ describe('dxtechBidAdapter', function() {
       const opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
     });
-    it('returns non if sync is not allowed', function () {
+    
+    it('returns none if sync is not allowed', function () {
       const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
 
       expect(opts).to.be.an('array').that.is.empty;
