@@ -576,14 +576,11 @@ const getConnectionType = () => {
  */
 function optimizeImps(imps, bidderRequest) {
   const optimizedImps = {};
-  const mediaTypes = ['banner', 'video', 'native'];
 
   bidderRequest.bids.forEach(bid => {
     const correspondingImp = imps.find(imp => imp.id === bid.bidId);
     if (!correspondingImp) return;
-    const adUnitCode = bid.adUnitCode;
-    const mediaType = mediaTypes.find(type => isPlainObject(correspondingImp[type])) || 'unknown';
-    const uniqueKey = `${adUnitCode}_${mediaType}`;
+    const uniqueKey = bid.adUnitId;
     if (!optimizedImps[uniqueKey]) {
       optimizedImps[uniqueKey] = deepClone(correspondingImp);
       return;
@@ -592,10 +589,6 @@ function optimizeImps(imps, bidderRequest) {
 
     if (isStr(correspondingImp.tagid)) {
       baseImp.tagid = correspondingImp.tagid;
-    }
-
-    if (mediaType !== 'unknown' && isPlainObject(correspondingImp[mediaType])) {
-      baseImp[mediaType] = correspondingImp[mediaType];
     }
 
     const copyPropertytoPath = (propPath, propName, toMerge) => {
