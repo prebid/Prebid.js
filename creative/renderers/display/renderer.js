@@ -1,6 +1,16 @@
+import { MESSAGE_EVENT } from '../../constants.js';
 import {ERROR_NO_AD} from './constants.js';
 
-export function render({ad, adUrl, width, height, instl}, {mkFrame}, win) {
+export function render({ad, adUrl, width, height, instl}, {mkFrame, sendMessage}, win) {
+  const observer = new ReportingObserver((reports) => {
+    sendMessage(MESSAGE_EVENT, {
+      event: "browserIntervention",
+      intervention: reports[0]
+    });
+  }, { buffered: true, types: ['intervention'] });
+
+  observer.observe();
+
   if (!ad && !adUrl) {
     const err = new Error('Missing ad markup or URL');
     err.reason = ERROR_NO_AD;
