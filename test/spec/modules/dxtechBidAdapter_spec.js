@@ -486,7 +486,7 @@ describe('dxtechBidAdapter', function() {
   describe('interpretResponse', function() {
     context('when mediaType is banner', function() {
       let bidRequest, bidderResponse;
-      
+
       beforeEach(function() {
         const bidderRequest = getBannerRequest();
         bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);

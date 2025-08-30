@@ -2,7 +2,6 @@ import {
   logInfo,
   logWarn,
   logError,
-  logMessage,
   deepAccess,
   deepSetValue,
   mergeDeep
@@ -273,53 +272,57 @@ export const UrlUtils = {
 export const UserSyncUtils = {
   processUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, adapterCode) {
     logInfo(`${adapterCode}.getUserSyncs`, 'syncOptions', syncOptions, 'serverResponses', serverResponses);
-    let syncs = [];
 
-    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return syncs;
+    const syncResults = [];
+    const canIframe = syncOptions.iframeEnabled;
+    const canPixel = syncOptions.pixelEnabled;
+
+    if (!canIframe && !canPixel) {
+        return syncResults;
     }
 
-    serverResponses.forEach(resp => {
-      const userSync = deepAccess(resp, 'body.ext.usersync');
-      if (userSync) {
-        let syncDetails = [];
-        Object.keys(userSync).forEach(key => {
-          const value = userSync[key];
-          if (value.syncs && value.syncs.length) {
-            syncDetails = syncDetails.concat(value.syncs);
-          }
-        });
+    for (const response of serverResponses) {
+        const syncData = deepAccess(response, 'body.ext.usersync');
+        if (!syncData) continue;
 
-        syncDetails.forEach(syncData => {
-          const queryParamStrings = [];
-          let syncUrl = syncData.url;
-
-          if (syncData.type === 'iframe') {
-            if (gdprConsent) {
-              queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-              queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+        const allSyncItems = [];
+        for (const [key, syncInfo] of Object.entries(syncData)) {
+            if (syncInfo.syncs && Array.isArray(syncInfo.syncs)) {
+                allSyncItems.push(...syncInfo.syncs);
             }
-            if (uspConsent) {
-              queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
-            }
-            syncUrl = `${syncData.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`;
-          }
-
-          syncs.push({
-            type: syncData.type === 'iframe' ? 'iframe' : 'image',
-            url: syncUrl
-          });
-        });
-
-        if (syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type === 'iframe');
-        } else if (syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type === 'image');
         }
-      }
-    });
 
-    logInfo(`${adapterCode}.getUserSyncs result=%o`, syncs);
-    return syncs;
-  }
+        for (const syncItem of allSyncItems) {
+            const isIframeSync = syncItem.type === 'iframe';
+            let finalUrl = syncItem.url;
+
+            if (isIframeSync) {
+                const urlParams = [];
+                if (gdprConsent) {
+                    urlParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+                    urlParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+                }
+                if (uspConsent) {
+                    urlParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+                }
+                if (urlParams.length) {
+                    finalUrl = `${syncItem.url}?${urlParams.join('&')}`;
+                }
+            }
+
+            const syncType = isIframeSync ? 'iframe' : 'image';
+            const shouldInclude = (isIframeSync && canIframe) || (!isIframeSync && canPixel);
+
+            if (shouldInclude) {
+                syncResults.push({
+                    type: syncType,
+                    url: finalUrl
+                });
+            }
+        }
+    }
+
+    logInfo(`${adapterCode}.getUserSyncs result=%o`, syncResults);
+    return syncResults;
+    }
 };
