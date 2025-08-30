@@ -322,6 +322,14 @@ export const UserSyncUtils = {
       }
     }
 
+    if (canIframe && canPixel) {
+      return syncResults.filter(s => s.type === 'iframe');
+    } else if (canIframe) {
+      return syncResults.filter(s => s.type === 'iframe');
+    } else if (canPixel) {
+      return syncResults.filter(s => s.type === 'image');
+    }
+
     logInfo(`${adapterCode}.getUserSyncs result=%o`, syncResults);
     return syncResults;
   }
