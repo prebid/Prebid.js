@@ -278,51 +278,51 @@ export const UserSyncUtils = {
     const canPixel = syncOptions.pixelEnabled;
 
     if (!canIframe && !canPixel) {
-        return syncResults;
+      return syncResults;
     }
 
     for (const response of serverResponses) {
-        const syncData = deepAccess(response, 'body.ext.usersync');
-        if (!syncData) continue;
+      const syncData = deepAccess(response, 'body.ext.usersync');
+      if (!syncData) continue;
 
-        const allSyncItems = [];
-        for (const [key, syncInfo] of Object.entries(syncData)) {
-            if (syncInfo.syncs && Array.isArray(syncInfo.syncs)) {
-                allSyncItems.push(...syncInfo.syncs);
-            }
+      const allSyncItems = [];
+      for (const [syncInfo] of Object.entries(syncData)) {
+        if (syncInfo.syncs && Array.isArray(syncInfo.syncs)) {
+          allSyncItems.push(...syncInfo.syncs);
         }
+      }
 
-        for (const syncItem of allSyncItems) {
-            const isIframeSync = syncItem.type === 'iframe';
-            let finalUrl = syncItem.url;
+      for (const syncItem of allSyncItems) {
+      const isIframeSync = syncItem.type === 'iframe';
+      let finalUrl = syncItem.url;
 
-            if (isIframeSync) {
-                const urlParams = [];
-                if (gdprConsent) {
-                    urlParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
-                    urlParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
-                }
-                if (uspConsent) {
-                    urlParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
-                }
-                if (urlParams.length) {
-                    finalUrl = `${syncItem.url}?${urlParams.join('&')}`;
-                }
-            }
-
-            const syncType = isIframeSync ? 'iframe' : 'image';
-            const shouldInclude = (isIframeSync && canIframe) || (!isIframeSync && canPixel);
-
-            if (shouldInclude) {
-                syncResults.push({
-                    type: syncType,
-                    url: finalUrl
-                });
-            }
+      if (isIframeSync) {
+        const urlParams = [];
+        if (gdprConsent) {
+          urlParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+          urlParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
         }
+        if (uspConsent) {
+          urlParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+        }
+        if (urlParams.length) {
+          finalUrl = `${syncItem.url}?${urlParams.join('&')}`;
+        }
+      }
+
+      const syncType = isIframeSync ? 'iframe' : 'image';
+      const shouldInclude = (isIframeSync && canIframe) || (!isIframeSync && canPixel);
+
+      if (shouldInclude) {
+        syncResults.push({
+          type: syncType,
+          url: finalUrl
+        });
+        }
+      }
     }
 
     logInfo(`${adapterCode}.getUserSyncs result=%o`, syncResults);
     return syncResults;
-    }
+  }
 };
