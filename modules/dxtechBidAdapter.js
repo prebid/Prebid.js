@@ -57,11 +57,12 @@ export const spec = {
     });
 
     let publisherId = validBidRequests[0].params.publisherId;
-    const placementId = validBidRequests[0].params.placementId;
+    let placementId = validBidRequests[0].params.placementId;
 
     if (validBidRequests[0].params.e2etest) {
       logMessage('dxtech: E2E test mode enabled');
       publisherId = 'e2etest';
+      placementId = null;
     }
 
     const url = UrlUtils.buildEndpoint(

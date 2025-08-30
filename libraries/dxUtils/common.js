@@ -286,7 +286,7 @@ export const UserSyncUtils = {
       if (!syncData) continue;
 
       const allSyncItems = [];
-      for (const [syncInfo] of Object.entries(syncData)) {
+      for (const syncInfo of Object.values(syncData)) {
         if (syncInfo.syncs && Array.isArray(syncInfo.syncs)) {
           allSyncItems.push(...syncInfo.syncs);
         }
