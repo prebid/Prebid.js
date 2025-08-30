@@ -41,7 +41,7 @@ const ortbConfig = ortbConverter({
 
 function createImpBuilder(buildImp, bidRequest, context) {
   const impression = buildImp(bidRequest, context);
-  
+
   if (!impression.bidfloor) {
     impression.bidfloor = bidRequest.params.bidfloor || 0;
     impression.bidfloorcur = bidRequest.params.currency || ADAPTER_CONFIG.currency;
@@ -51,7 +51,7 @@ function createImpBuilder(buildImp, bidRequest, context) {
 
 function createRequestBuilder(buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
-  
+
   mergeDeep(request, {
     ext: {
       hb: 1,
@@ -135,7 +135,7 @@ const ValidationRules = {
     if (!MediaTypeChecker.hasBanner(bidRequest)) {
       return true;
     }
-    
+
     const bannerConfig = deepAccess(bidRequest, 'mediaTypes.banner');
     if (!Array.isArray(bannerConfig.sizes)) {
       return false;
@@ -181,8 +181,8 @@ const ValidationRules = {
       return false;
     }
 
-    if (typeof combinedVideoConfig.playerSize === 'undefined' || 
-        !Array.isArray(combinedVideoConfig.playerSize) || 
+    if (typeof combinedVideoConfig.playerSize === 'undefined' ||
+        !Array.isArray(combinedVideoConfig.playerSize) ||
         !Array.isArray(combinedVideoConfig.playerSize[0])) {
       logError('dxtech: video playerSize must be in format [[w,h]]');
       return false;
@@ -248,11 +248,11 @@ function createOutstreamRenderer(bidResponse) {
 
 function buildEndpointUrl(publisherId, placementId) {
   let url = ADAPTER_CONFIG.endpoint + '?publisher_id=' + publisherId;
-  
+
   if (placementId) {
     url += '&placement_id=' + placementId;
   }
-  
+
   return url;
 }
 
@@ -268,14 +268,14 @@ function processUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
     const userSyncData = deepAccess(response, 'body.ext.usersync');
     if (userSyncData) {
       let allSyncs = [];
-      
+
       Object.keys(userSyncData).forEach(key => {
         const syncInfo = userSyncData[key];
         if (syncInfo.syncs && syncInfo.syncs.length) {
           allSyncs = allSyncs.concat(syncInfo.syncs);
         }
       });
-      
+
       allSyncs.forEach(syncData => {
         const params = [];
         let finalUrl = syncData.url;
@@ -304,7 +304,7 @@ function processUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
       }
     }
   });
-  
+
   logInfo('dxtech.getUserSyncs result=%o', syncUrls);
   return syncUrls;
 }
@@ -326,10 +326,10 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const contextMediaType = MediaTypeChecker.detectFromRequests(validBidRequests);
-    const requestData = ortbConfig.toORTB({ 
-      bidRequests: validBidRequests, 
-      bidderRequest, 
-      context: { contextMediaType } 
+    const requestData = ortbConfig.toORTB({
+      bidRequests: validBidRequests,
+      bidderRequest,
+      context: { contextMediaType }
     });
 
     let publisherId = validBidRequests[0].params.publisherId;
@@ -339,7 +339,7 @@ export const spec = {
       logMessage('dxtech: E2E test mode activated');
       publisherId = 'e2etest';
     }
-    
+
     const requestUrl = buildEndpointUrl(publisherId, placementId);
 
     return {
@@ -351,7 +351,7 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = ortbConfig.fromORTB({
-      response: serverResponse.body, 
+      response: serverResponse.body,
       request: bidRequest.data
     }).bids;
     return bids;

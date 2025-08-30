@@ -616,7 +616,7 @@ describe('dxtechBidAdapter', function() {
       const opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
     });
-    
+
     it('returns none if sync is not allowed', function () {
       const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
 
