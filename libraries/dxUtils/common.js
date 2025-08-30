@@ -293,31 +293,31 @@ export const UserSyncUtils = {
       }
 
       for (const syncItem of allSyncItems) {
-      const isIframeSync = syncItem.type === 'iframe';
-      let finalUrl = syncItem.url;
+        const isIframeSync = syncItem.type === 'iframe';
+        let finalUrl = syncItem.url;
 
-      if (isIframeSync) {
-        const urlParams = [];
-        if (gdprConsent) {
-          urlParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
-          urlParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+        if (isIframeSync) {
+          const urlParams = [];
+          if (gdprConsent) {
+            urlParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+            urlParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+          }
+          if (uspConsent) {
+            urlParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+          }
+          if (urlParams.length) {
+            finalUrl = `${syncItem.url}?${urlParams.join('&')}`;
+          }
         }
-        if (uspConsent) {
-          urlParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
-        }
-        if (urlParams.length) {
-          finalUrl = `${syncItem.url}?${urlParams.join('&')}`;
-        }
-      }
 
-      const syncType = isIframeSync ? 'iframe' : 'image';
-      const shouldInclude = (isIframeSync && canIframe) || (!isIframeSync && canPixel);
+        const syncType = isIframeSync ? 'iframe' : 'image';
+        const shouldInclude = (isIframeSync && canIframe) || (!isIframeSync && canPixel);
 
-      if (shouldInclude) {
-        syncResults.push({
-          type: syncType,
-          url: finalUrl
-        });
+        if (shouldInclude) {
+          syncResults.push({
+            type: syncType,
+            url: finalUrl
+          });
         }
       }
     }
