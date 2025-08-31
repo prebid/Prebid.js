@@ -14,6 +14,7 @@ import { clearAllCookies } from '../../helpers/cookies.js';
 import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, PREBID, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import { decryptData } from '../../../libraries/intentIqUtils/cryptionUtils.js';
+import { isCHSupported } from '../../../libraries/intentIqUtils/chUtils.js';
 
 const partner = 10;
 const pai = '11';
@@ -56,15 +57,15 @@ export const testClientHints = {
   wow64: false
 };
 
-function stubCHResolve(value = testClientHints) {
-  if (!navigator.userAgentData) {
-    Object.defineProperty(navigator, 'userAgentData', {
-      value: {},
-      configurable: true,
-    });
-  }
-  return sinon.stub(navigator.userAgentData, 'getHighEntropyValues')
-    .callsFake(() => Promise.resolve(value));
+function stubCHDeferred() {
+  let resolve, reject;
+  const p = new Promise((res, rej) => { resolve = res; reject = rej; });
+  const originalUAD = navigator.userAgentData;
+  const stub = sinon.stub(navigator, 'userAgentData').value({
+    ...originalUAD,
+    getHighEntropyValues: () => p
+  });
+  return { resolve, reject, stub };
 }
 
 function stubCHReject(err = new Error('boom')) {
@@ -79,16 +80,8 @@ function ensureUAData() {
   }
 }
 
-function isChromeEnv() {
-  try {
-    const br = (detectBrowser && detectBrowser()) || '';
-    if (br === 'chrome' || br === 'edge') return true;
-  } catch (_) {}
-  return !!(globalThis.navigator && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues);
-}
-
 async function waitForClientHints() {
-  if (!isChromeEnv()) return;
+  if (!isCHSupported()) return;
 
   const clock = globalThis.__iiqClock;
 
@@ -139,7 +132,9 @@ const mockGAM = () => {
 };
 
 describe('IntentIQ tests', function () {
+  let sandbox;
   let logErrorStub;
+  let clock;
   const testLSValue = {
     'date': Date.now(),
     'cttl': 2000,
@@ -161,13 +156,13 @@ describe('IntentIQ tests', function () {
     'mde': true,
     'tc': 4
   }
-  let clock;
 
   beforeEach(function () {
     localStorage.clear();
     const expiredDate = new Date(0).toUTCString();
     storage.setCookie(FIRST_PARTY_KEY, '', expiredDate, 'Lax');
     storage.setCookie(FIRST_PARTY_KEY + '_' + partner, '', expiredDate, 'Lax');
+    sandbox = sinon.createSandbox();
     logErrorStub = sinon.stub(utils, 'logError');
     clock = sinon.useFakeTimers({ now: Date.now() });
     globalThis.__iiqClock = clock;
@@ -177,7 +172,7 @@ describe('IntentIQ tests', function () {
     await waitForClientHints(); // wait all timers & promises from CH
     try { clock?.restore(); } catch (_) {}
     delete globalThis.__iiqClock;
-    sinon.restore();
+    sandbox.restore();
     logErrorStub.restore?.();
     clearAllCookies();
     localStorage.clear();
@@ -700,7 +695,6 @@ describe('IntentIQ tests', function () {
     })
   });
 
-  // =====================================================
   describe('IntentIQ consent management within getId', function () {
     let uspDataHandlerStub;
     let gppDataHandlerStub;
@@ -907,95 +901,141 @@ describe('IntentIQ tests', function () {
     expect(url).to.not.include('&uh=');
   });
 
+  it('should sends uh from LS immediately and later updates LS with fresh CH', async () => {
+    localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
+    const callBackSpy = sinon.spy();
+    const { resolve, stub } = stubCHDeferred(); // Defer CH-API resolution
+
+    const cfg = { params: { ...defaultConfigParams.params, chTimeout: 300 } };
+    const submoduleCallback = intentIqIdSubmodule.getId(cfg).callback;
+    submoduleCallback(callBackSpy);
+
+    // First network call must use CH from LS immediately
+    const firstReq = server.requests[0];
+    expect(firstReq).to.exist;
+    expect(firstReq.url).to.include('&uh=OLD_CH_VALUE');
+    expect(server.requests.length).to.equal(1); // only one request sent
+
+    // deliver fresh CH from the browser
+    resolve(testClientHints);
+    await waitForClientHints();
+
+    // LS must be updated; no extra network calls
+    const expectedFresh = handleClientHints(testClientHints);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedFresh);
+    expect(server.requests.length).to.equal(1);
+
+    stub.restore();
+  });
+
+  it('should use cached uh immediately and clears LS on CH error (API supported)', async () => {
+    const callBackSpy = sinon.spy();
+    localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
+    const chStub = stubCHReject(new Error('boom')); // CH API rejects
+    const cfg = { params: { ...defaultConfigParams.params, chTimeout: 200 } };
+    const submoduleCallback = intentIqIdSubmodule.getId(cfg).callback;
+    submoduleCallback(callBackSpy);
+
+    // first request with uh from LS
+    const req = server.requests[0];
+    expect(req).to.exist;
+    expect(req.url).to.include('&uh=OLD_CH_VALUE');
+    expect(server.requests.length).to.equal(1);
+
+    await waitForClientHints();
+
+    const saved = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    expect(saved === '' || saved === null).to.be.true;
+    expect(server.requests.length).to.equal(1);
+
+    chStub.restore();
+  });
+
   it('should clear CLIENT_HINTS from LS and NOT send uh when CH are not supported', async function () {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    // reset ch from browser
-    if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
-      sinon.stub(navigator.userAgentData, 'getHighEntropyValues')
-        .callsFake(() => Promise.reject(new Error('unsupported')));
-    }
-
+    const uadStub = sinon.stub(navigator, 'userAgentData').value(undefined); // no CH-API
     const cbSpy = sinon.spy();
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 0 } };
+
     intentIqIdSubmodule.getId(cfg).callback(cbSpy);
     await waitForClientHints();
 
     const req = server.requests[0];
     const saved = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+
     expect(req).to.exist;
     expect(req.url).to.not.include('&uh=');
-    expect(saved).to.equal(null);
+    expect(saved === '' || saved === null).to.be.true;
+
+    uadStub.restore();
   });
 
-  it('should send fresh CH from browser and updates LS', async () => {
+  it('blacklist: should use uh from LS immediately and updates LS when CH resolves', async () => {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const chStub = stubCHResolve(testClientHints);
-    const cfg = { params: { ...defaultConfigParams.params, chTimeout: 300 } };
+    const { resolve, stub } = stubCHDeferred(); // getHighEntropyValues returns pending promise
+    const blk = detectBrowser();
+    const cfg = { params: { ...defaultConfigParams.params, browserBlackList: blk, chTimeout: 50 } };
 
-    const idResp = intentIqIdSubmodule.getId(cfg);
-    const cb = sinon.spy();
-    idResp.callback(cb);
+    intentIqIdSubmodule.getId(cfg);
 
+    const firstReq = server.requests[0];
+    expect(firstReq).to.exist;
+    expect(firstReq.url).to.include('at=20');
+    expect(firstReq.url).to.include('&uh=OLD_CH_VALUE');
+    expect(server.requests.length).to.equal(1);
+
+    // Now deliver fresh CH from browser and wait for background handlers
+    resolve(testClientHints);
     await waitForClientHints();
 
+    // LS updated, network not re-fired
+    const expectedFresh = handleClientHints(testClientHints);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedFresh);
+    expect(server.requests.length).to.equal(1);
+
+    stub.restore();
+  });
+
+  it('blacklist: should send sync with uh when CH supported and ready', async () => {
+    localStorage.removeItem(CLIENT_HINTS_KEY);
     const expectedCH = handleClientHints(testClientHints);
-    const req = server.requests[0];
 
-    expect(req).to.exist;
-    expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedCH);
+    let uadStub = sinon.stub(navigator, 'userAgentData').value({
+      getHighEntropyValues: async () => testClientHints
+    });
 
-    chStub.restore();
-  });
-
-  it('should clear LS and does not send uh on CH error (API supported)', async () => {
-    localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const chStub = stubCHReject(new Error('boom')); // getHighEntropyValues => reject
-
-    const cfg = { params: { ...defaultConfigParams.params, chTimeout: 200 } };
-    const idResp = intentIqIdSubmodule.getId(cfg);
-    idResp.callback(sinon.spy());
-
-    await waitForClientHints();
-
-    const req = server.requests[0];
-    expect(req).to.exist;
-    expect(req.url).to.not.include('&uh=');
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(null);
-    chStub.restore();
-  });
-
-  it('should sends sync without uh when CH unsupported when browser is in blacklist', async () => {
-    localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    Object.defineProperty(navigator, 'userAgentData', { value: {}, configurable: true }); // chSupported === false
+    const blk = detectBrowser();
     const cfg = {
       params: {
         ...defaultConfigParams.params,
-        browserBlackList: 'Chrome',
-        chTimeout: 200
+        browserBlackList: blk,
+        chTimeout: 300
       }
     };
+
     intentIqIdSubmodule.getId(cfg);
     await waitForClientHints();
 
     const req = server.requests[0];
     expect(req).to.exist;
     expect(req.url).to.include('at=20');
-    expect(req.url).to.not.include('&uh=');
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(null);
+    expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedCH);
+
+    uadStub.restore();
   });
 
   it('blacklist: sends sync with uh when CH supported and ready', async () => {
     const expectedCH = handleClientHints(testClientHints);
-
     Object.defineProperty(navigator, 'userAgentData', {
       value: { getHighEntropyValues: async () => testClientHints },
       configurable: true
     });
+    const blk = detectBrowser();
     const cfg = {
       params: {
         ...defaultConfigParams.params,
-        browserBlackList: 'Chrome',
+        browserBlackList: blk,
         chTimeout: 300
       }
     };
