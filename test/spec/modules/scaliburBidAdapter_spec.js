@@ -384,7 +384,6 @@ describe('Scalibur Adapter', function () {
       storageStub.getDataFromLocalStorage.returns('invalid-json-data');
 
       const result = getAndSetFirstPartyData();
-      console.log(result); // eslint-disable-line no-console
       // Should generate new data when existing data is corrupted
       expect(result.pcid).to.be.a('string');
       expect(result.pcidDate).to.be.a('number');
