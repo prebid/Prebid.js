@@ -2,6 +2,7 @@ import {buildUrl, deepAccess, isArray} from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -127,11 +128,19 @@ export const spec = {
       pathname: ENDPOINT_PATH,
     });
 
-    return {
+    // Get chunk size from adapter configuration
+    const adapterSettings = config.getConfig(bidderRequest.bidderCode);
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+
+    // Split bid requests into chunks
+    const bidChunks = chunk(bidRequests, chunkSize);
+
+    // Return array of request objects, one for each chunk
+    return bidChunks.map(bidChunk => ({
       method: 'POST',
       url: adPartnerRequestUrl,
-      data: bidRequests
-    };
+      data: bidChunk
+    }));
   },
 
   interpretResponse: function (serverResponse, bidRequest) {

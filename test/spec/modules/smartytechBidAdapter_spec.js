@@ -265,27 +265,33 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
     mockReferer = mockRefererData();
   });
   it('has return data', () => {
-    const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request).not.null;
+    const requests = spec.buildRequests(mockBidRequest, mockReferer);
+    expect(requests).to.be.an('array');
+    expect(requests.length).to.be.greaterThan(0);
   });
   it('correct request URL', () => {
-    const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`)
+    const requests = spec.buildRequests(mockBidRequest, mockReferer);
+    requests.forEach(request => {
+      expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
+    });
   });
   it('correct request method', () => {
-    const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request.method).to.be.equal(`POST`)
+    const requests = spec.buildRequests(mockBidRequest, mockReferer);
+    requests.forEach(request => {
+      expect(request.method).to.be.equal('POST');
+    });
   });
   it('correct request data', () => {
-    const response = spec.buildRequests(mockBidRequest, mockReferer);
-    const data = response.data;
-    data.forEach((request, index) => {
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+    // Flatten all data from all chunks for testing
+    const allData = responses.flatMap(response => response.data);
+    allData.forEach((request, index) => {
       expect(request.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
       expect(request.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
       expect(request.bidId).to.be.equal(mockBidRequest[index].bidId);
       expect(request.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
       expect(request.referer).to.be.equal(mockReferer.refererInfo.page);
-    })
+    });
   });
 });
 
@@ -298,11 +304,11 @@ describe('SmartyTechDSPAdapter: buildRequests banner custom size', () => {
   });
 
   it('correct request data', () => {
-    const response = spec.buildRequests(mockBidRequest, mockReferer);
-    const data = response.data;
-    data.forEach((request, index) => {
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+    const allData = responses.flatMap(response => response.data);
+    allData.forEach((request, index) => {
       expect(request.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
-    })
+    });
   });
 });
 
@@ -315,11 +321,11 @@ describe('SmartyTechDSPAdapter: buildRequests video custom size', () => {
   });
 
   it('correct request data', () => {
-    const response = spec.buildRequests(mockBidRequest, mockReferer);
-    const data = response.data;
-    data.forEach((request, index) => {
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+    const allData = responses.flatMap(response => response.data);
+    allData.forEach((request, index) => {
       expect(request.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
-    })
+    });
   });
 });
 
@@ -331,9 +337,10 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
   beforeEach(() => {
     const brData = mockBidRequestListData('banner', 2, []);
     mockReferer = mockRefererData();
-    request = spec.buildRequests(brData, mockReferer);
+    const requests = spec.buildRequests(brData, mockReferer);
+    request = requests[0]; // Use first request for testing
     mockBidRequest = {
-      data: brData
+      data: request.data
     }
     mockResponse = mockResponseData(request);
   });
@@ -377,9 +384,10 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
   beforeEach(() => {
     const brData = mockBidRequestListData('video', 2, []);
     mockReferer = mockRefererData();
-    request = spec.buildRequests(brData, mockReferer);
+    const requests = spec.buildRequests(brData, mockReferer);
+    request = requests[0]; // Use first request for testing
     mockBidRequest = {
-      data: brData
+      data: request.data
     }
     mockResponse = mockResponseData(request);
   });
@@ -413,10 +421,10 @@ describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
   });
 
   it('should include userIds when available', () => {
-    const response = spec.buildRequests(mockBidRequest, mockReferer);
-    const data = response.data;
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request, index) => {
+    allData.forEach((request, index) => {
       expect(request).to.have.property('userIds');
       expect(request.userIds).to.deep.equal(mockBidRequest[index].userIdAsEids);
     });
@@ -424,10 +432,10 @@ describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
 
   it('should not include userIds when not available', () => {
     const bidRequestWithoutUserIds = mockBidRequestListData('banner', 2, []);
-    const response = spec.buildRequests(bidRequestWithoutUserIds, mockReferer);
-    const data = response.data;
+    const responses = spec.buildRequests(bidRequestWithoutUserIds, mockReferer);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.not.have.property('userIds');
     });
   });
@@ -437,10 +445,10 @@ describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
       const {userIdAsEids, ...requestWithoutUserIds} = req;
       return requestWithoutUserIds;
     });
-    const response = spec.buildRequests(bidRequestWithUndefinedUserIds, mockReferer);
-    const data = response.data;
+    const responses = spec.buildRequests(bidRequestWithUndefinedUserIds, mockReferer);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.not.have.property('userIds');
     });
   });
@@ -450,10 +458,10 @@ describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
       ...req,
       userIdAsEids: []
     }));
-    const response = spec.buildRequests(bidRequestWithEmptyUserIds, mockReferer);
-    const data = response.data;
+    const responses = spec.buildRequests(bidRequestWithEmptyUserIds, mockReferer);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.not.have.property('userIds');
     });
   });
@@ -468,10 +476,10 @@ describe('SmartyTechDSPAdapter: buildRequests with consent data', () => {
   });
 
   it('should include GDPR consent when available', () => {
-    const response = spec.buildRequests(mockBidRequest, mockBidderRequest);
-    const data = response.data;
+    const responses = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.have.property('gdprConsent');
       expect(request.gdprConsent.gdprApplies).to.be.true;
       expect(request.gdprConsent.consentString).to.equal('COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA');
@@ -480,20 +488,20 @@ describe('SmartyTechDSPAdapter: buildRequests with consent data', () => {
   });
 
   it('should include USP consent when available', () => {
-    const response = spec.buildRequests(mockBidRequest, mockBidderRequest);
-    const data = response.data;
+    const responses = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.have.property('uspConsent');
       expect(request.uspConsent).to.equal('1YNN');
     });
   });
 
   it('should include GPP consent when available', () => {
-    const response = spec.buildRequests(mockBidRequest, mockBidderRequest);
-    const data = response.data;
+    const responses = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.have.property('gppConsent');
       expect(request.gppConsent.gppString).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
       expect(request.gppConsent.applicableSections).to.deep.equal([2, 6]);
@@ -502,13 +510,67 @@ describe('SmartyTechDSPAdapter: buildRequests with consent data', () => {
 
   it('should not include consent data when not available', () => {
     const mockReferer = mockRefererData();
-    const response = spec.buildRequests(mockBidRequest, mockReferer);
-    const data = response.data;
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+    const allData = responses.flatMap(response => response.data);
 
-    data.forEach((request) => {
+    allData.forEach((request) => {
       expect(request).to.not.have.property('gdprConsent');
       expect(request).to.not.have.property('uspConsent');
       expect(request).to.not.have.property('gppConsent');
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests chunking functionality', () => {
+  let mockBidRequest;
+  let mockReferer;
+
+  beforeEach(() => {
+    mockReferer = mockRefererData();
+  });
+
+  it('should split requests into chunks with default size of 10', () => {
+    mockBidRequest = mockBidRequestListData('banner', 25, []);
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+
+    expect(responses).to.be.an('array');
+    expect(responses.length).to.equal(3); // 25 requests split into chunks of 10: [10, 10, 5]
+
+    // Verify total request count remains the same
+    const totalRequests = responses.reduce((sum, response) => sum + response.data.length, 0);
+    expect(totalRequests).to.equal(25);
+  });
+
+  it('should handle single request correctly', () => {
+    mockBidRequest = mockBidRequestListData('banner', 1, []);
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+
+    expect(responses).to.be.an('array');
+    expect(responses.length).to.equal(1);
+    expect(responses[0].data.length).to.equal(1);
+  });
+
+  it('should maintain request properties in all chunks', () => {
+    mockBidRequest = mockBidRequestListData('banner', 15, []);
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+
+    responses.forEach(response => {
+      expect(response.method).to.equal('POST');
+      expect(response.url).to.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
+      expect(response.data).to.be.an('array');
+      expect(response.data.length).to.be.greaterThan(0);
+    });
+  });
+
+  it('should preserve bid request data integrity across chunks', () => {
+    mockBidRequest = mockBidRequestListData('banner', 15, []);
+    const responses = spec.buildRequests(mockBidRequest, mockReferer);
+    const allData = responses.flatMap(response => response.data);
+
+    allData.forEach((request, index) => {
+      expect(request.adUnitCode).to.equal(mockBidRequest[index].adUnitCode);
+      expect(request.bidId).to.equal(mockBidRequest[index].bidId);
+      expect(request.endpointId).to.equal(mockBidRequest[index].params.endpointId);
     });
   });
 });
