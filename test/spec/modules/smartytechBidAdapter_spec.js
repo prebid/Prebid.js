@@ -182,6 +182,47 @@ function mockRefererData() {
   }
 }
 
+function mockBidderRequestWithConsents() {
+  return {
+    refererInfo: {
+      page: 'https://some-test.page'
+    },
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: 'COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA',
+      addtlConsent: '1~1.35.41.101'
+    },
+    uspConsent: '1YNN',
+    gppConsent: {
+      gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+      applicableSections: [2, 6]
+    }
+  }
+}
+
+function mockBidRequestWithUserIds(mediaType, size, customSizes) {
+  const requests = mockBidRequestListData(mediaType, size, customSizes);
+  return requests.map(request => ({
+    ...request,
+    userIdAsEids: [
+      {
+        source: 'unifiedid.com',
+        uids: [{
+          id: 'test-unified-id',
+          atype: 1
+        }]
+      },
+      {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'test-pubcid',
+          atype: 1
+        }]
+      }
+    ]
+  }));
+}
+
 function mockResponseData(requestData) {
   const data = {}
   requestData.data.forEach((request, index) => {
@@ -236,7 +277,8 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
     expect(request.method).to.be.equal(`POST`)
   });
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    const response = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = response.data;
     data.forEach((request, index) => {
       expect(request.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
       expect(request.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
@@ -256,7 +298,8 @@ describe('SmartyTechDSPAdapter: buildRequests banner custom size', () => {
   });
 
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    const response = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = response.data;
     data.forEach((request, index) => {
       expect(request.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
     })
@@ -272,7 +315,8 @@ describe('SmartyTechDSPAdapter: buildRequests video custom size', () => {
   });
 
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    const response = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = response.data;
     data.forEach((request, index) => {
       expect(request.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
     })
@@ -356,6 +400,115 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
       expect(responseItem.height).to.be.equal(mockResponse.body[keys[index]].height);
       expect(responseItem.mediaType).to.be.equal(mockResponse.body[keys[index]].mediaType);
       expect(responseItem.vastXml).to.be.equal(mockResponse.body[keys[index]].ad);
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
+  let mockBidRequest;
+  let mockReferer;
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestWithUserIds('banner', 2, []);
+    mockReferer = mockRefererData();
+  });
+
+  it('should include userIds when available', () => {
+    const response = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = response.data;
+
+    data.forEach((request, index) => {
+      expect(request).to.have.property('userIds');
+      expect(request.userIds).to.deep.equal(mockBidRequest[index].userIdAsEids);
+    });
+  });
+
+  it('should not include userIds when not available', () => {
+    const bidRequestWithoutUserIds = mockBidRequestListData('banner', 2, []);
+    const response = spec.buildRequests(bidRequestWithoutUserIds, mockReferer);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.not.have.property('userIds');
+    });
+  });
+
+  it('should not include userIds when userIdAsEids is undefined', () => {
+    const bidRequestWithUndefinedUserIds = mockBidRequestListData('banner', 2, []).map(req => {
+      const {userIdAsEids, ...requestWithoutUserIds} = req;
+      return requestWithoutUserIds;
+    });
+    const response = spec.buildRequests(bidRequestWithUndefinedUserIds, mockReferer);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.not.have.property('userIds');
+    });
+  });
+
+  it('should not include userIds when userIdAsEids is empty array', () => {
+    const bidRequestWithEmptyUserIds = mockBidRequestListData('banner', 2, []).map(req => ({
+      ...req,
+      userIdAsEids: []
+    }));
+    const response = spec.buildRequests(bidRequestWithEmptyUserIds, mockReferer);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.not.have.property('userIds');
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests with consent data', () => {
+  let mockBidRequest;
+  let mockBidderRequest;
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestListData('banner', 2, []);
+    mockBidderRequest = mockBidderRequestWithConsents();
+  });
+
+  it('should include GDPR consent when available', () => {
+    const response = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.have.property('gdprConsent');
+      expect(request.gdprConsent.gdprApplies).to.be.true;
+      expect(request.gdprConsent.consentString).to.equal('COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA');
+      expect(request.gdprConsent.addtlConsent).to.equal('1~1.35.41.101');
+    });
+  });
+
+  it('should include USP consent when available', () => {
+    const response = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.have.property('uspConsent');
+      expect(request.uspConsent).to.equal('1YNN');
+    });
+  });
+
+  it('should include GPP consent when available', () => {
+    const response = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.have.property('gppConsent');
+      expect(request.gppConsent.gppString).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(request.gppConsent.applicableSections).to.deep.equal([2, 6]);
+    });
+  });
+
+  it('should not include consent data when not available', () => {
+    const mockReferer = mockRefererData();
+    const response = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = response.data;
+
+    data.forEach((request) => {
+      expect(request).to.not.have.property('gdprConsent');
+      expect(request).to.not.have.property('uspConsent');
+      expect(request).to.not.have.property('gppConsent');
     });
   });
 });

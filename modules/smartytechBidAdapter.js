@@ -1,6 +1,7 @@
-import {buildUrl, deepAccess} from '../src/utils.js'
+import {buildUrl, deepAccess, isArray} from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -78,6 +79,43 @@ export const spec = {
         if (sizes) {
           oneRequest.banner.sizes = sizes;
         }
+      }
+
+      // Add user IDs if available
+      const userIds = deepAccess(validBidRequest, 'userIdAsEids');
+      if (userIds && isArray(userIds) && userIds.length > 0) {
+        oneRequest.userIds = userIds;
+      }
+
+      // Add GDPR consent if available
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        oneRequest.gdprConsent = {
+          gdprApplies: bidderRequest.gdprConsent.gdprApplies,
+          consentString: bidderRequest.gdprConsent.consentString || ''
+        };
+
+        if (bidderRequest.gdprConsent.addtlConsent) {
+          oneRequest.gdprConsent.addtlConsent = bidderRequest.gdprConsent.addtlConsent;
+        }
+      }
+
+      // Add CCPA/USP consent if available
+      if (bidderRequest && bidderRequest.uspConsent) {
+        oneRequest.uspConsent = bidderRequest.uspConsent;
+      }
+
+      // Add GPP consent if available
+      if (bidderRequest && bidderRequest.gppConsent) {
+        oneRequest.gppConsent = {
+          gppString: bidderRequest.gppConsent.gppString,
+          applicableSections: bidderRequest.gppConsent.applicableSections
+        };
+      }
+
+      // Add COPPA flag if configured
+      const coppa = config.getConfig('coppa');
+      if (coppa) {
+        oneRequest.coppa = coppa;
       }
 
       return oneRequest
