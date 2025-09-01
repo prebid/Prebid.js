@@ -7,12 +7,12 @@
 
 # Description
 
-The Scalibur Bid Adapter connects publishers to Scalibur's programmatic advertising platform. It supports both banner and video ad formats through OpenRTB 2.x protocol and provides full compliance with privacy regulations including GDPR, CCPA, and GPP.
+The Scalibur Bid Adapter connects publishers to Scalibur's programmatic advertising platform. It supports both banner and video ad formats through OpenRTB 2.x protocol and provides full compliance with privacy regulations.
 
 **Key Features:**
 - Banner and Video ad support
 - OpenRTB 2.x compliant
-- Privacy regulation compliance (GDPR, CCPA, GPP)
+- Privacy regulation compliance
 - Floor pricing support
 - User sync capabilities
 - Supply chain transparency
@@ -81,12 +81,6 @@ var adUnits = [
 | `placementId` | required | Placement identifier provided by Scalibur | `'test-placement-123'` | `string` |
 
 # Additional Information
-## Privacy Compliance
-The adapter supports:
-- **GDPR**: Processes consent strings and applies GDPR flag
-- **CCPA**: Handles US Privacy strings
-- **GPP**: Supports Global Privacy Platform strings and applicable sections
-- **COPPA**: Respects COPPA compliance settings
 
 ## User Syncs
 The adapter supports both iframe and image-based user syncs:

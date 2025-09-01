@@ -7,8 +7,8 @@ import {sizesToSizeTuples} from "../src/utils.js";
 const BIDDER_CODE = 'scalibur';
 const ENDPOINT_SERVER = new URLSearchParams(window.location.search).get('sclServer') || 'srv';
 const ENDPOINT_URL = `https://${ENDPOINT_SERVER}.scalibur.io/adserver/ortb?type=prebid`;
-const SYNC_IFRAME_URL = 'https://dev101.scalibur.io/adserver/sync';
-const SYNC_PIXEL_URL = 'https://dev101.scalibur.io/adserver/sync';
+const SYNC_IFRAME_URL = `https://${ENDPOINT_SERVER}.scalibur.io/adserver/sync`;
+const SYNC_PIXEL_URL = `https://${ENDPOINT_SERVER}.scalibur.io/adserver/sync`;
 const DEFAULT_CURRENCY = 'USD';
 const BIDDER_VERSION = '1.0.0';
 const IFRAME_TYPE_Q_PARAM = 'iframe';
@@ -142,8 +142,8 @@ export const spec = {
     };
 
     // Supply Chain
-    if (validBidRequests[0]?.schain) {
-      payload.source.schain = validBidRequests[0].schain;
+    if (validBidRequests[0]?.ortb2?.source?.ext?.schain) {
+      payload.source.schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     }
 
     return {
@@ -175,12 +175,9 @@ export const spec = {
             netRevenue: true,
             ttl: bid.exp || 300,
           };
-
-          if (bid.nurl) {
-            bidRes.nurl = bid.nurl;
-          }
           if (imp && imp.banner) {
             bidRes.ad = bid.adm;
+            bidRes.mediaType = BANNER;
           } else if (imp && imp.video) {
             bidRes.vastXml = bid.vastXml;
             bidRes.vastUrl = bid.vastUrl;
