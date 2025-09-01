@@ -72,7 +72,7 @@
     "deep-equal": "^2.0.3",
     "eslint": "^9.31.0",
     "eslint-plugin-chai-friendly": "^1.1.0",
-    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsdoc": "^50.6.6",
     "execa": "^1.0.0",
     "faker": "^5.5.3",
