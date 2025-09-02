@@ -14,6 +14,7 @@ import { getBoundingBox, percentInView } from '../libraries/percentInView/percen
 import {isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'valuad';
+const GVL_ID = 1478;
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
@@ -220,7 +221,7 @@ function onBidWon(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1478,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
