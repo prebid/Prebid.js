@@ -74,14 +74,15 @@ export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) 
 }
 
 export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
-  const observer = new ReportingObserver((reports) => {
-    sendMessage(MESSAGE_EVENT, {
-      event: "browserIntervention",
-      intervention: reports[0]
-    });
-  }, { buffered: true, types: ['intervention'] });
-
-  observer.observe();
+  if (window.ReportingObserver) {
+    const observer = new ReportingObserver((reports) => {
+      sendMessage(MESSAGE_EVENT, {
+        event: "browserIntervention",
+        intervention: reports[0]
+      });
+    }, { buffered: true, types: ['intervention'] });
+    observer.observe();
+  }
   const {head, body} = win.document;
   const resize = () => {
     // force redraw - for some reason this is needed to get the right dimensions
