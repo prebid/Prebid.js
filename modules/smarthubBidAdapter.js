@@ -7,13 +7,13 @@ import {
   isBidRequestValid,
   getUserSyncs as baseSync
 } from '../libraries/teqblazeUtils/bidderUtils.js';
-// import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'smarthub';
 const SYNC_URLS = {
   '1': 'https://us.shb-sync.com',
   '4': 'https://us4.shb-sync.com'
 };
+
 const ALIASES = {
   'attekmi': {area: '1', pid: '300'},
   'markapp': {area: '4', pid: '360'},
@@ -26,35 +26,37 @@ const ALIASES = {
   'addigi': {area: '1', pid: '425'},
   'jambojar': {area: '1', pid: '426'},
 };
+
 const BASE_URLS = {
-  'attekmi': 'https://prebid.attekmi.com/pbjs',
-  'smarthub': 'https://prebid.attekmi.com/pbjs',
-  'markapp': 'https://markapp-prebid.attekmi.com/pbjs',
-  'jdpmedia': 'https://jdpmedia-prebid.attekmi.com/pbjs',
-  'tredio': 'https://tredio-prebid.attekmi.com/pbjs',
-  'felixads': 'https://felixads-prebid.attekmi.com/pbjs',
-  'vimayx': 'https://vimayx-prebid.attekmi.com/pbjs',
-  'artechnology': 'https://artechnology-prebid.attekmi.com/pbjs',
-  'adinify': 'https://adinify-prebid.attekmi.com/pbjs',
-  'addigi': 'https://addigi-prebid.attekmi.com/pbjs',
-  'jambojar': 'https://jambojar-prebid.attekmi.com/pbjs',
-  'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.com/pbjs',
+  'attekmi': 'https://prebid.attekmi.co/pbjs',
+  'smarthub': 'https://prebid.attekmi.co/pbjs',
+  'markapp': 'https://markapp-prebid.attekmi.co/pbjs',
+  'jdpmedia': 'https://jdpmedia-prebid.attekmi.co/pbjs',
+  'tredio': 'https://tredio-prebid.attekmi.co/pbjs',
+  'felixads': 'https://felixads-prebid.attekmi.co/pbjs',
+  'vimayx': 'https://vimayx-prebid.attekmi.co/pbjs',
+  'artechnology': 'https://artechnology-prebid.attekmi.co/pbjs',
+  'adinify': 'https://adinify-prebid.attekmi.co/pbjs',
+  'addigi': 'https://addigi-prebid.attekmi.co/pbjs',
+  'jambojar': 'https://jambojar-prebid.attekmi.co/pbjs',
+  'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.co/pbjs',
 };
+
 const adapterState = {};
 
-const _getPartnerUrl = (partnerName) => {
-  const aliases = Object.keys(ALIASES);
-  if (aliases.includes(partnerName)) {
-    return BASE_URLS[partnerName];
+const _getPartnerUrl = (partner) => {
+  const region = ALIASES[partner]?.region;
+  const partnerRegion = region ? `${partner}-${String(region).toLocaleLowerCase()}` : partner;
+
+  const urls = Object.keys(BASE_URLS);
+  if (urls.includes(partnerRegion)) {
+    return BASE_URLS[partnerRegion];
   }
 
-  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
+  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerRegion}`;
 }
 
-const _getPartnerName = (bid) => {
-  const partner = String(bid.params?.partnerName || bid.bidder).toLowerCase();
-  return bid.params?.region ? `${partner}-${bid.params.region}` : partner;
-}
+const _getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();
 
 const getPlacementReqData = buildPlacementProcessingFunction({
   addPlacementType() {},
@@ -74,6 +76,10 @@ const getPlacementReqData = buildPlacementProcessingFunction({
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const bidsByPartner = validBidRequests.reduce((bidsByPartner, bid) => {
     const partner = _getPartnerName(bid);
+    if (bid.params?.region) {
+      const region = String(bid.params.region).toLocaleLowerCase();
+      ALIASES[partner].region = region;
+    }
     Object.assign(adapterState, ALIASES[partner]);
     (bidsByPartner[partner] = bidsByPartner[partner] || []).push(bid);
     return bidsByPartner;
