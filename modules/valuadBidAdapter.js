@@ -220,6 +220,7 @@ function onBidWon(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1478,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
