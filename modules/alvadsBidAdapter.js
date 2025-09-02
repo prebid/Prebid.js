@@ -18,6 +18,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       const imps = [];
+
       // Banner
       if (bid.mediaTypes?.banner) {
         const sizes = utils.parseSizesInput(bid.mediaTypes.banner.sizes || bid.sizes)
