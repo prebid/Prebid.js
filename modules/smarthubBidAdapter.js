@@ -27,17 +27,18 @@ const ALIASES = {
   'jambojar': {area: '1', pid: '426'},
 };
 const BASE_URLS = {
-  attekmi: 'https://prebid.attekmi.com/pbjs',
-  smarthub: 'https://prebid.attekmi.com/pbjs',
-  markapp: 'https://markapp-prebid.attekmi.com/pbjs',
-  jdpmedia: 'https://jdpmedia-prebid.attekmi.com/pbjs',
-  tredio: 'https://tredio-prebid.attekmi.com/pbjs',
-  felixads: 'https://felixads-prebid.attekmi.com/pbjs',
-  vimayx: 'https://vimayx-prebid.attekmi.com/pbjs',
-  artechnology: 'https://artechnology-prebid.attekmi.com/pbjs',
-  adinify: 'https://adinify-prebid.attekmi.com/pbjs',
-  addigi: 'https://addigi-prebid.attekmi.com/pbjs',
-  jambojar: 'https://jambojar-prebid.attekmi.com/pbjs',
+  'attekmi': 'https://prebid.attekmi.com/pbjs',
+  'smarthub': 'https://prebid.attekmi.com/pbjs',
+  'markapp': 'https://markapp-prebid.attekmi.com/pbjs',
+  'jdpmedia': 'https://jdpmedia-prebid.attekmi.com/pbjs',
+  'tredio': 'https://tredio-prebid.attekmi.com/pbjs',
+  'felixads': 'https://felixads-prebid.attekmi.com/pbjs',
+  'vimayx': 'https://vimayx-prebid.attekmi.com/pbjs',
+  'artechnology': 'https://artechnology-prebid.attekmi.com/pbjs',
+  'adinify': 'https://adinify-prebid.attekmi.com/pbjs',
+  'addigi': 'https://addigi-prebid.attekmi.com/pbjs',
+  'jambojar': 'https://jambojar-prebid.attekmi.com/pbjs',
+  'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.com/pbjs',
 };
 const adapterState = {};
 
@@ -50,7 +51,10 @@ const _getPartnerUrl = (partnerName) => {
   return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
 }
 
-const _getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();
+const _getPartnerName = (bid) => {
+  const partner = String(bid.params?.partnerName || bid.bidder).toLowerCase();
+  return bid.params?.region ? `${partner}-${bid.params.region}` : partner;
+}
 
 const getPlacementReqData = buildPlacementProcessingFunction({
   addPlacementType() {},
