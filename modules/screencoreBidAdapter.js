@@ -17,23 +17,27 @@ const REGION_SUBDOMAIN_SUFFIX = {
   APAC: 'taqapac',
 };
 
-function getRegionSubdomainSuffix(bid) {
+/**
+ * Get subdomain URL suffix by region
+ * @return {string}
+ */
+function getRegionSubdomainSuffix() {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const region = timezone.split('/')[0];
 
     switch (region) {
-      case 'Europe':
-      case 'Africa':
-      case 'Atlantic':
-      case 'Arctic':
-        return REGION_SUBDOMAIN_SUFFIX['EU'];
       case 'Asia':
       case 'Australia':
       case 'Antarctica':
       case 'Pacific':
       case 'Indian':
         return REGION_SUBDOMAIN_SUFFIX['APAC'];
+      case 'Europe':
+      case 'Africa':
+      case 'Atlantic':
+      case 'Arctic':
+        return REGION_SUBDOMAIN_SUFFIX['EU'];
       case 'America':
         return REGION_SUBDOMAIN_SUFFIX['US'];
       default:
