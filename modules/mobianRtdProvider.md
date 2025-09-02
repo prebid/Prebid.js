@@ -62,7 +62,7 @@ Prebid.outcomes.net endpoint key: mobianRisk
 
 Targetable Key: mobian_risk
 
-Possible values: "none", "low", "medium" or "high"
+Possible values: "low", "medium" or "high"
 
 Description: This category assesses whether content contains any potential risks or concerns to advertisers and returns a determination of Low Risk, Medium Risk, or High Risk based on the inclusion of sensitive or high-risk topics. Content that might be categorized as unsafe may include violence, hate speech, misinformation, or sensitive topics that most advertisers would like to avoid. Content that is explicit or overly graphic in nature will be more likely to fall into the High Risk tier compared to content that describes similar subjects in a more informative or educational manner.
 
