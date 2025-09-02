@@ -161,5 +161,8 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
+  },
+  "peerDependencies": {
+    "schema-utils": "^2.7.1"
   }
 }
