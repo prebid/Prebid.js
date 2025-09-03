@@ -20,7 +20,6 @@ const ALIASES = {
   'jdpmedia': {area: '1', pid: '382'},
   'tredio': {area: '4', pid: '337'},
   'felixads': {area: '1', pid: '406'},
-  'vimayx': {area: '1', pid: '399'},
   'artechnology': {area: '1', pid: '420'},
   'adinify': {area: '1', pid: '424'},
   'addigi': {area: '1', pid: '425'},
