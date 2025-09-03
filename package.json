@@ -118,7 +118,7 @@
     "node-html-parser": "^6.1.5",
     "opn": "^5.4.0",
     "plugin-error": "^2.0.1",
-    "puppeteer": "^24.10.0",
+    "puppeteer": "^24.18.0",
     "resolve-from": "^5.0.0",
     "sinon": "^20.0.0",
     "source-map-loader": "^5.0.0",

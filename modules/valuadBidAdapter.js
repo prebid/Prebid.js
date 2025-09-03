@@ -14,6 +14,7 @@ import { getBoundingBox, percentInView } from '../libraries/percentInView/percen
 import {isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'valuad';
+const GVL_ID = 1478;
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
@@ -22,7 +23,7 @@ function _isViewabilityMeasurable(element) {
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
+  return (element && topWin.document.visibilityState === 'visible' && percentInView(element, { w, h })) || 0;
 }
 
 // Enhanced ORTBConverter with additional data
@@ -108,8 +109,8 @@ const converter = ortbConverter({
     const element = document.getElementById(bid.adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.divId);
     const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), size) : 0;
 
-    const rect = getBoundingBox(element, size);
-    const position = `${Math.round(rect.left + window.pageXOffset)}x${Math.round(rect.top + window.pageYOffset)}`;
+    const rect = element && getBoundingBox(element, size);
+    const position = rect ? `${Math.round(rect.left + window.pageXOffset)}x${Math.round(rect.top + window.pageYOffset)}` : '0x0';
 
     deepSetValue(imp, 'ext.data.viewability', viewabilityAmount);
     deepSetValue(imp, 'ext.data.position', position);
@@ -220,6 +221,7 @@ function onBidWon(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
