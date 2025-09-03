@@ -367,6 +367,15 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('ext').to.have.property('pmZoneId');
       });
 
+      it('should add pbcode in ext with adUnitCode value', () => {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const { imp } = request?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext');
+        expect(imp[0].ext).to.have.property('pbcode');
+        expect(imp[0].ext.pbcode).to.equal(validBidRequests[0].adUnitCode);
+      });
+
       it('should add bidfloor if kadfloor is present in parameters', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -1554,6 +1563,59 @@ describe('PubMatic adapter', () => {
     const request = spec.buildRequests([bidRequestWithKadPageUrl], bidderRequest);
     expect(request.data.site).to.exist;
     expect(request.data.site.page).to.equal('https://example.com/page');
+  });
+
+  describe('Impression optimization', () => {
+    it('should add pbcode to impression ext with adUnitCode value', () => {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const { imp } = request?.data;
+
+      expect(imp).to.be.an('array');
+      expect(imp[0]).to.have.property('ext');
+      expect(imp[0].ext).to.have.property('pbcode');
+      expect(imp[0].ext.pbcode).to.equal(validBidRequests[0].adUnitCode);
+    });
+
+    it('should consolidate impressions with same adUnitCode and media type', () => {
+      // Create two banner bids with the same adUnitCode
+      const bid1 = utils.deepClone(validBidRequests[0]);
+      const bid2 = utils.deepClone(validBidRequests[0]);
+
+      bid1.bidId = 'bid-id-1';
+      bid2.bidId = 'bid-id-2';
+
+      // Set the same adUnitCode and adSlot to ensure they're treated as the same unit
+      const sharedAdUnitCode = 'shared-ad-unit';
+      bid1.adUnitCode = sharedAdUnitCode;
+      bid2.adUnitCode = sharedAdUnitCode;
+      bid1.params.adSlot = 'same_ad_slot';
+      bid2.params.adSlot = 'same_ad_slot';
+
+      bid1.mediaTypes = { banner: { sizes: [[300, 250]] } };
+      bid2.mediaTypes = { banner: { sizes: [[300, 250]] } };
+
+      bid1.params.pmzoneid = 'zone1';
+      bid2.params.pmzoneid = 'zone2';
+
+      const bidRequests = [bid1, bid2];
+      const combinedBidderRequest = utils.deepClone(bidderRequest);
+      combinedBidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, combinedBidderRequest);
+      const { imp } = request?.data;
+
+      // Should be consolidated to a single impression
+      expect(imp).to.be.an('array');
+      expect(imp).to.have.lengthOf(1);
+
+      expect(imp[0].ext).to.have.property('pbcode');
+      expect(imp[0].ext.pbcode).to.equal(sharedAdUnitCode);
+
+      if (imp[0].ext.pmZoneId) {
+        expect(typeof imp[0].ext.pmZoneId).to.equal('string');
+        expect(imp[0].ext.pmZoneId).to.equal('zone2');
+      }
+    });
   });
 
   it('should set site.publisher.id from pubId', () => {
