@@ -88,9 +88,9 @@ export const spec = {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
 
       // Add bidfloor to keyValues
-      const bidfloor = getBidFloor(currentBidRequest, config);
-      keyValues._fw_bidfloor = (bidfloor > 0) ? bidfloor : 0;
-      keyValues._fw_bidfloorcur = (bidfloor > 0) ? getFloorCurrency(config) : '';
+      const { floor, currency } = getBidFloor(currentBidRequest, config);
+      keyValues._fw_bidfloor = floor;
+      keyValues._fw_bidfloorcur = currency;
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -467,7 +467,7 @@ function getSdkUrl(bidrequest) {
  * @returns {string} The SDK version to use, defaults to '7.10.0' if version parsing fails
  */
 export function getSDKVersion(bidRequest) {
-  const DEFAULT = '7.10.0';
+  const DEFAULT = '7.11.0';
 
   try {
     const paramVersion = getSdkVersionFromBidRequest(bidRequest);
@@ -523,25 +523,37 @@ function compareVersions(versionA, versionB) {
   return 0;
 };
 
-function getBidFloor(bid, config) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
+export function getBidFloor(bid, config) {
+  logInfo('PREBID -: getBidFloor called with:', bid);
+  let floor = deepAccess(bid, 'params.bidfloor', 0); // fallback bid params
+  let currency = deepAccess(bid, 'params.bidfloorcur', 'USD'); // fallback bid params
 
-  try {
-    const bidFloor = bid.getFloor({
-      currency: getFloorCurrency(config),
-      mediaType: typeof bid.mediaTypes['banner'] === 'object' ? 'banner' : 'video',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (e) {
-    return -1;
-  }
-}
+  if (isFn(bid.getFloor)) {
+    logInfo('PREBID - : getFloor() present and use it to retrieve floor and currency.');
+    try {
+      const floorInfo = bid.getFloor({
+        currency: config.getConfig('floors.data.currency') || 'USD',
+        mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
+        size: '*',
+      }) || {};
 
-function getFloorCurrency(config) {
-  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+      // Use getFloor's results if valid
+      if (typeof floorInfo.floor === 'number') {
+        floor = floorInfo.floor;
+      }
+
+      if (floorInfo.currency) {
+        currency = floorInfo.currency;
+      }
+      logInfo('PREBID - : getFloor() returned floor:', floor, 'currency:', currency);
+    } catch (e) {
+      // fallback to static bid.params.bidfloor
+      floor = deepAccess(bid, 'params.bidfloor', 0);
+      currency = deepAccess(bid, 'params.bidfloorcur', 'USD');
+      logInfo('PREBID - : getFloor() exception, fallback to static bid.params.bidfloor:', floor, 'currency:', currency);
+    }
+  }
+  return { floor, currency };
 }
 
 function isValidUrl(str) {

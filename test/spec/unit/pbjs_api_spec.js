@@ -2229,7 +2229,7 @@ describe('Unit: Prebid Module', function () {
             }
           })
         });
-        it('should be copied to ortb2Imp.ext.tid, if not specified', async () => {
+        it('should NOT be copied to ortb2Imp.ext.tid, if not specified', async () => {
           await runAuction({
             adUnits: [
               adUnit
@@ -2237,11 +2237,11 @@ describe('Unit: Prebid Module', function () {
           });
           const tid = auctionArgs.adUnits[0].transactionId;
           expect(tid).to.exist;
-          expect(auctionArgs.adUnits[0].ortb2Imp.ext.tid).to.eql(tid);
+          expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
         });
       });
 
-      it('should always set ortb2.ext.tid same as transactionId in adUnits', async function () {
+      it('should NOT set ortb2.ext.tid same as transactionId in adUnits', async function () {
         await runAuction({
           adUnits: [
             {
@@ -2257,11 +2257,9 @@ describe('Unit: Prebid Module', function () {
         });
 
         expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
-        expect(auctionArgs.adUnits[0]).to.have.property('ortb2Imp');
-        expect(auctionArgs.adUnits[0].transactionId).to.equal(auctionArgs.adUnits[0].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
-        expect(auctionArgs.adUnits[1]).to.have.property('ortb2Imp');
-        expect(auctionArgs.adUnits[1].transactionId).to.equal(auctionArgs.adUnits[1].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
       });
 
       it('should notify targeting of the latest auction for each adUnit', async function () {
