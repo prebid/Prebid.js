@@ -1088,6 +1088,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "appStockSSP",
+      "aliasOf": null,
+      "gvlid": 1223,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "appier",
       "aliasOf": null,
       "gvlid": 728,
@@ -1285,6 +1292,13 @@
     {
       "componentType": "bidder",
       "componentName": "cordless",
+      "aliasOf": "aso",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adklip",
       "aliasOf": "aso",
       "gvlid": null,
       "disclosureURL": null
@@ -1902,6 +1916,13 @@
       "componentType": "bidder",
       "componentName": "digitalmatter",
       "aliasOf": "digitalMatter",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "digitalcaramel",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -2684,6 +2705,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "stellorMediaRtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "smootai",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3163,6 +3198,13 @@
       "componentName": "glomexbidder",
       "aliasOf": "nexx360",
       "gvlid": 967,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "revnew",
+      "aliasOf": "nexx360",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3758,6 +3800,13 @@
       "componentName": "openwebxchange",
       "aliasOf": "rise",
       "gvlid": 280,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "risemediatech",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5079,6 +5128,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "scope3",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "semantiq",
       "gvlid": 783,
       "disclosureURL": null
@@ -5124,6 +5179,13 @@
       "componentType": "userId",
       "componentName": "admixerId",
       "gvlid": 511,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "adplusId",
+      "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
     },
@@ -5516,14 +5578,14 @@
       "componentType": "userId",
       "componentName": "utiqId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/utiqDeviceStorageDisclosure.json",
       "aliasOf": null
     },
     {
       "componentType": "userId",
       "componentName": "utiqMtpId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/utiqDeviceStorageDisclosure.json",
       "aliasOf": null
     },
     {
@@ -5638,6 +5700,11 @@
     {
       "componentType": "analytics",
       "componentName": "datablocks",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "datawrkzanalytics",
       "gvlid": null
     },
     {

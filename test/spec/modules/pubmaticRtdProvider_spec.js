@@ -88,24 +88,24 @@ describe('Pubmatic RTD Provider', () => {
       expect(pubmaticSubmodule.init(config)).to.be.false;
     });
 
-    it('should return false if publisherId is not a string', () => {
+    it('should accept numeric publisherId by converting to string', () => {
       const config = {
         params: {
           publisherId: 123,
           profileId: 'test-profile-id'
         }
       };
-      expect(pubmaticSubmodule.init(config)).to.be.false;
+      expect(pubmaticSubmodule.init(config)).to.be.true;
     });
 
-    it('should return false if profileId is not a string', () => {
+    it('should accept numeric profileId by converting to string', () => {
       const config = {
         params: {
           publisherId: 'test-publisher-id',
           profileId: 345
         }
       };
-      expect(pubmaticSubmodule.init(config)).to.be.false;
+      expect(pubmaticSubmodule.init(config)).to.be.true;
     });
 
     it('should initialize successfully with valid config', () => {
@@ -739,19 +739,11 @@ describe('Pubmatic RTD Provider', () => {
       setProfileConfigs(originalProfileConfigs);
 
       // Verify that for each ad unit code, only pm_ym_flrs is set to 0
-      expect(result).to.deep.equal({
-        'ad-unit-1': { 'pm_ym_flrs': 0 },
-        'ad-unit-2': { 'pm_ym_flrs': 0 }
-      });
-
-      // Verify log message was not called since hasRtdFloorAppliedBid is false
-      expect(logInfoStub.calledWith(sinon.match('Setting targeting via getTargetingData'))).to.be.false;
+      expect(result['ad-unit-1']).to.have.property('pm_ym_flrs', 0);
+      expect(result['ad-unit-2']).to.have.property('pm_ym_flrs', 0);
     });
 
-    it('should set all targeting keys when RTD floor is applied with a floored bid', function () {
-      // Based on the actual behavior observed in the test results, this test case is for a floored bid situation
-      // Update our expectations to match the actual behavior
-
+    it('should set pm_ym_flrs to 1 when RTD floor is applied to a bid', function () {
       // Create profileConfigs with pmTargetingKeys.enabled set to true
       const profileConfigsMock = {
         plugins: {
@@ -768,7 +760,7 @@ describe('Pubmatic RTD Provider', () => {
       // Set profileConfigs to our mock
       setProfileConfigs(profileConfigsMock);
 
-      // Create ad unit codes to test
+      // Create multiple ad unit codes to test
       const adUnitCodes = ['ad-unit-1', 'ad-unit-2'];
       const config = {};
       const userConsent = {};
@@ -779,32 +771,23 @@ describe('Pubmatic RTD Provider', () => {
           {
             code: 'ad-unit-1',
             bids: [
-              {
-                bidder: 'bidderA',
-                floorData: {
-                  floorProvider: 'PM',
-                  floorValue: 2.5,
-                  skipped: false
-                }
-              }
+              { bidder: 'bidderA', floorData: { floorProvider: 'PM', skipped: false } },
+              { bidder: 'bidderB', floorData: { floorProvider: 'PM', skipped: false } }
             ]
           },
           {
             code: 'ad-unit-2',
-            bids: []
+            bids: [
+              { bidder: 'bidderC', floorData: { floorProvider: 'PM', skipped: false } },
+              { bidder: 'bidderD', floorData: { floorProvider: 'PM', skipped: false } }
+            ]
           }
         ],
         bidsReceived: [
-          {
-            adUnitCode: 'ad-unit-1',
-            bidder: 'bidderA',
-            cpm: 3.5,
-            floorData: {
-              floorProvider: 'PM',
-              floorValue: 2.5,
-              skipped: false
-            }
-          }
+          { adUnitCode: 'ad-unit-1', bidder: 'bidderA', floorData: { floorProvider: 'PM', skipped: false } },
+          { adUnitCode: 'ad-unit-1', bidder: 'bidderB', floorData: { floorProvider: 'PM', skipped: false } },
+          { adUnitCode: 'ad-unit-2', bidder: 'bidderC', floorData: { floorProvider: 'PM', skipped: false } },
+          { adUnitCode: 'ad-unit-2', bidder: 'bidderD', floorData: { floorProvider: 'PM', skipped: false } }
         ]
       };
 
@@ -813,28 +796,13 @@ describe('Pubmatic RTD Provider', () => {
       // Restore the original value
       setProfileConfigs(originalProfileConfigs);
 
-      // Verify that all targeting keys are set for both ad units
-      // Based on the failing test, we're getting FLOORED status (2) instead of WON (1)
-      // and a floor value of 2 instead of 3.5
-      expect(result).to.deep.equal({
-        'ad-unit-1': {
-          'pm_ym_flrs': 1,
-          'pm_ym_flrv': '2.00',     // floorValue * FLOORED multiplier as string with 2 decimal places
-          'pm_ym_bid_s': 2     // FLOORED status
-        },
-        'ad-unit-2': {
-          'pm_ym_flrs': 1,
-          'pm_ym_flrv': '0.00',     // No bid value as string with 2 decimal places
-          'pm_ym_bid_s': 0     // NOBID status
-        }
-      });
-
-      // Verify log message is called when hasRtdFloorAppliedBid is true
-      // expect(logInfoStub.calledWith(sinon.match('Setting targeting via getTargetingData'))).to.be.true;
+      // Verify that for each ad unit code, pm_ym_flrs is set to 1
+      expect(result['ad-unit-1']).to.have.property('pm_ym_flrs', 1);
+      expect(result['ad-unit-2']).to.have.property('pm_ym_flrs', 1);
     });
 
-    it('should handle bid with RTD floor applied correctly', function () {
-      // Create profileConfigs with pmTargetingKeys enabled
+    it('should set different targeting keys for winning bids (status 1) and floored bids (status 2)', function () {
+      // Create profileConfigs with pmTargetingKeys.enabled set to true
       const profileConfigsMock = {
         plugins: {
           dynamicFloors: {
@@ -845,139 +813,26 @@ describe('Pubmatic RTD Provider', () => {
         }
       };
 
-      // Store the original value to restore it later
-      const originalProfileConfigs = getProfileConfigs();
-      // Set profileConfigs to our mock
-      setProfileConfigs(profileConfigsMock);
-
-      // Create ad unit codes to test
-      const adUnitCodes = ['ad-unit-1'];
-      const config = {};
-      const userConsent = {};
-
-      // Create a mock auction with a bid
-      const auction = {
-        adUnits: [{
-          code: 'ad-unit-1',
-          bids: [{
-            bidder: 'bidderA',
-            floorData: {
-              floorProvider: 'PM',
-              skipped: false
-            }
-          }]
-        }],
-        bidsReceived: [{
-          adUnitCode: 'ad-unit-1',
-          bidder: 'bidderA',
-          cpm: 5.0,
-          floorData: {
-            floorProvider: 'PM',
-            floorValue: 3.0,
-            skipped: false
-          }
-        }]
-      };
-
-      const result = getTargetingData(adUnitCodes, config, userConsent, auction);
-
-      // Restore the original value
-      setProfileConfigs(originalProfileConfigs);
-
-      // Verify that targeting keys are set when RTD floor is applied
-      expect(result['ad-unit-1']['pm_ym_flrs']).to.equal(1);  // RTD floor was applied
-
-      // The function identifies bid status based on its internal logic
-      // We know it sets a bid status (either WON, FLOORED, or NOBID)
-      expect(result['ad-unit-1']['pm_ym_bid_s']).to.be.a('number');
-
-      // It also sets a floor value based on the bid status
-      expect(result['ad-unit-1']['pm_ym_flrv']).to.be.a('string');
-
-      // We can also verify that when a bid exists, the exact bid status is FLOORED (2)
-      // This matches the actual behavior of the function
-      expect(result['ad-unit-1']['pm_ym_bid_s']).to.equal(2);
-    });
-
-    // Test for multiplier extraction logic in fetchData
-    it('should correctly extract only existing multiplier keys from floors.json', function () {
-      // Reset sandbox for a clean test
-      sandbox.restore();
-      sandbox = sinon.createSandbox();
-
-      // Stub logInfo instead of console.info
-      sandbox.stub(utils, 'logInfo');
-
-      // Mock fetch with specific multiplier data where 'nobid' is intentionally missing
-      const fetchStub = sandbox.stub(global, 'fetch').returns(Promise.resolve({
-        ok: true,
-        status: 200,
-        json: function() {
-          return Promise.resolve({
-            multiplier: {
-              win: 1.5,      // present key
-              floored: 1.8   // present key
-              // nobid is deliberately missing to test selective extraction
-            }
-          });
-        },
-        headers: {
-          get: function() { return null; }
-        }
-      }));
-
-      // Call fetchData with FLOORS type
-      return fetchData('test-publisher', 'test-profile', 'FLOORS').then(() => {
-        // Verify the log message was generated
-        sinon.assert.called(utils.logInfo);
-
-        // Find the call with multiplier information
-        const logCalls = utils.logInfo.getCalls();
-        const multiplierLogCall = logCalls.find(call =>
-          call.args.some(arg =>
-            typeof arg === 'string' && arg.includes('multiplier')
-          )
-        );
-
-        // Verify we found the log message
-        expect(multiplierLogCall).to.exist;
-
-        if (multiplierLogCall) {
-          // For debugging: log the actual arguments
-
-          // Find the argument that contains our multiplier info
-          const logArg = multiplierLogCall.args.find(arg =>
-            typeof arg === 'string' && (arg.includes('WIN') || arg.includes('multiplier'))
-          );
-
-          // Verify the message contains the expected multiplier values
-          expect(logArg).to.include('WIN');
-          expect(logArg).to.include('1.5');
-          expect(logArg).to.include('FLOORED');
-          expect(logArg).to.include('1.8');
-
-          // Verify the log doesn't include NOBID (since it wasn't in the source)
-          expect(logArg).to.not.include('NOBID');
-        }
-      }).finally(() => {
-        sandbox.restore();
-      });
-    });
-
-    describe('should handle the floor rejected bid scenario correctly', function () {
-      // Create profileConfigs with pmTargetingKeys enabled
-      const profileConfigsMock = {
-        plugins: {
-          dynamicFloors: {
-            pmTargetingKeys: {
-              enabled: true,
-              multiplier: {
-                floored: 0.8 // Explicit floored multiplier
+      const mockPbjs = {
+        getHighestCpmBids: (adUnitCode) => {
+          // For div2, return a winning bid
+          if (adUnitCode === 'div2') {
+            return [{
+              adUnitCode: 'div2',
+              cpm: 5.5,
+              floorData: {
+                floorValue: 5.0,
+                floorProvider: 'PM'
               }
-            }
+            }];
           }
+          // For all other ad units, return empty array (no winning bids)
+          return [];
         }
       };
+
+      // Stub getGlobal to return our mock object
+      const getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns(mockPbjs);
 
       // Store the original value to restore it later
       const originalProfileConfigs = getProfileConfigs();
@@ -985,39 +840,39 @@ describe('Pubmatic RTD Provider', () => {
       setProfileConfigs(profileConfigsMock);
 
       // Create ad unit codes to test
-      const adUnitCodes = ['ad-unit-1'];
+      const adUnitCodes = ['div2', 'div3'];
       const config = {};
       const userConsent = {};
 
-      // Create a rejected bid with floor price
-      const rejectedBid = {
-        adUnitCode: 'ad-unit-1',
-        bidder: 'bidderA',
-        cpm: 2.0,
-        statusMessage: 'Bid rejected due to price floor',
-        floorData: {
-          floorProvider: 'PM',
-          floorValue: 2.5,
-          skipped: false
-        }
-      };
-
-      // Create a mock auction with a rejected bid
+      // Create a mock auction object with bids that have RTD floors applied
       const auction = {
-        adUnits: [{
-          code: 'ad-unit-1',
-          bids: [{
-            bidder: 'bidderA',
-            floorData: {
-              floorProvider: 'PM',
-              skipped: false
-            }
-          }]
-        }],
-        bidsReceived: [],  // No received bids
-        bidsRejected: {
-          bidderA: [rejectedBid]
-        }
+        adUnits: [
+          { code: "div2", bids: [{ floorData: { floorProvider: "PM", skipped: false } }] },
+          { code: "div3", bids: [{ floorData: { floorProvider: "PM", skipped: false } }] }
+        ],
+        adUnitCodes: ["div2", "div3"],
+        bidsReceived: [[
+          {
+            "bidderCode": "appnexus",
+            "auctionId": "a262767c-5499-4e98-b694-af36dbcb50f6",
+            "mediaType": "banner",
+            "source": "client",
+            "cpm": 5.5,
+            "adUnitCode": "div2",
+            "adapterCode": "appnexus",
+            "originalCpm": 5.5,
+            "floorData": {
+              "floorValue": 5,
+              "floorRule": "banner|*|*|div2|*|*|*|*|*",
+              "floorRuleValue": 5,
+              "floorCurrency": "USD",
+
+            },
+            "bidder": "appnexus",
+          }
+        ]],
+        bidsRejected: [
+          { adUnitCode: "div3", bidder: "pubmatic", cpm: 20, floorData: { floorValue: 40 }, rejectionReason: "Bid does not meet price floor" }]
       };
 
       const result = getTargetingData(adUnitCodes, config, userConsent, auction);
@@ -1025,13 +880,16 @@ describe('Pubmatic RTD Provider', () => {
       // Restore the original value
       setProfileConfigs(originalProfileConfigs);
 
-      // Verify correct values for floor rejected bid scenario
-      // Floor value (2.5) * FLOORED multiplier (0.8) = 2.0
-      expect(result['ad-unit-1']).to.deep.equal({
-        'pm_ym_flrs': 1,                                    // RTD floor was applied
-        'pm_ym_bid_s': 2,                                   // FLOORED status
-        'pm_ym_flrv': (rejectedBid.floorData.floorValue * 0.8).toFixed(2)  // floor value * FLOORED multiplier as string with 2 decimal places
-      });
+      // Check the test results
+
+      expect(result['div2']).to.have.property('pm_ym_flrs', 1);
+      expect(result['div2']).to.have.property('pm_ym_flrv', '5.50');
+      expect(result['div2']).to.have.property('pm_ym_bid_s', 1);
+
+      expect(result['div3']).to.have.property('pm_ym_flrs', 1);
+      expect(result['div3']).to.have.property('pm_ym_flrv', '32.00');
+      expect(result['div3']).to.have.property('pm_ym_bid_s', 2);
+      getGlobalStub.restore();
     });
 
     describe('should handle the no bid scenario correctly', function () {
@@ -1171,7 +1029,7 @@ describe('Pubmatic RTD Provider', () => {
             {
               "code": "Div2",
               "sizes": [[300, 250]],
-              "mediaTypes": {"banner": { "sizes": [[300, 250]] }},
+              "mediaTypes": { "banner": { "sizes": [[300, 250]] } },
               "bids": [
                 {
                   "bidder": "pubmatic",
@@ -1186,7 +1044,7 @@ describe('Pubmatic RTD Provider', () => {
               ]
             }
           ],
-          "adUnitCodes": [ "Div2"],
+          "adUnitCodes": ["Div2"],
           "bidderRequests": [
             {
               "bidderCode": "pubmatic",
@@ -1201,7 +1059,7 @@ describe('Pubmatic RTD Provider', () => {
                   "mediaTypes": {
                     "banner": { "sizes": [[300, 250]] }
                   },
-                  "getFloor": () => { return { floor: 0.05, currency: 'USD' }; }
+                  "getFloor": () => { return { floor: 5, currency: 'USD' }; }
                 }
               ]
             }
@@ -1233,6 +1091,7 @@ describe('Pubmatic RTD Provider', () => {
         // Since finding floor values from bidder requests depends on implementation details
         // we'll just verify the type rather than specific value
         expect(result['Div2']['pm_ym_flrv']).to.be.a('string');
+        expect(result['Div2']['pm_ym_flrv']).to.equal("6.00");
       });
 
       it('should handle no bid scenario correctly for multi-format ad unit with different floors', function () {
@@ -1378,187 +1237,6 @@ describe('Pubmatic RTD Provider', () => {
 
         // Clean up
         getFloorSpy.restore();
-      });
-    });
-
-    describe('should handle the winning bid scenario correctly', function () {
-      it('should handle winning bid scenario correctly', function () {
-        // Create profileConfigs with pmTargetingKeys enabled
-        const profileConfigsMock = {
-          plugins: {
-            dynamicFloors: {
-              pmTargetingKeys: {
-                enabled: true,
-                multiplier: {
-                  nobid: 1.2  // Explicit nobid multiplier
-                }
-              }
-            }
-          }
-        };
-
-        // Store the original value to restore it later
-        const originalProfileConfigs = getProfileConfigs();
-        // Set profileConfigs to our mock
-        setProfileConfigs(profileConfigsMock);
-
-        // Create ad unit codes to test
-        const adUnitCodes = ['Div1'];
-        const config = {};
-        const userConsent = {};
-
-        const highestWinningBidResponse = [{
-          "bidderCode": "pubmatic",
-          "statusMessage": "Bid available",
-          "cpm": 15,
-          "currency": "USD",
-          "bidder": "pubmatic",
-          "adUnitCode": "Div1",
-        }
-        ]
-
-        // Create a mock auction with no bids but with RTD floor applied
-        // For this test, we'll observe what the function actually does rather than
-        // try to match specific multiplier values
-        const auction = {
-          "auctionId": "faf0b7d0-3a12-4774-826a-3d56033d9a74",
-          "timestamp": 1749410430351,
-          "auctionEnd": 1749410432392,
-          "auctionStatus": "completed",
-          "adUnits": [
-            {
-              "code": "Div1",
-              "sizes": [
-                [
-                  160,
-                  600
-                ]
-              ],
-              "mediaTypes": {
-                "banner": {
-                  "sizes": [
-                    [
-                      160,
-                      600
-                    ]
-                  ]
-                }
-              },
-              "bids": [
-                {
-                  "bidder": "pubmatic",
-                  "params": {
-                    "publisherId": "  164392  ",
-                    "adSlot": "       /43743431/DMDemo@320x250   ",
-                    "pmzoneid": "zone1",
-                    "yob": "  1982  ",
-                    "kadpageurl": "www.yahoo.com?secure=1&pubmatic_bannerbid=15",
-                    "gender": "   M   ",
-                    "dctr": "   key1=v1,v11|   key2=v2,v22    |    key3=v3  |  key4=v4     "
-                  },
-                  "auctionId": "faf0b7d0-3a12-4774-826a-3d56033d9a74",
-                  "floorData": {
-                    "noFloorSignaled": false,
-                    "skipped": false,
-                    "skipRate": 0,
-                    "floorMin": 0.05,
-                    "modelVersion": "RTD model version 1.0",
-                    "modelWeight": 100,
-                    "location": "setConfig",
-                    "floorProvider": "PM"
-                  }
-                }
-              ],
-              "adUnitId": "b94e39c9-ac0e-43db-b660-603700dc97dd",
-              "transactionId": "36da4d88-9a7b-433f-adc1-878af8a8f0f1",
-              "ortb2Imp": {
-                "ext": {
-                  "tid": "36da4d88-9a7b-433f-adc1-878af8a8f0f1",
-                  "data": {
-                    "adserver": {
-                      "name": "gam",
-                      "adslot": "/43743431/DMDemo"
-                    },
-                    "pbadslot": "/43743431/DMDemo"
-                  },
-                  "gpid": "/43743431/DMDemo"
-                }
-              }
-            }
-
-          ],
-          "adUnitCodes": [
-            "Div1"
-          ],
-          "bidderRequests": [
-            {
-              "bidderCode": "pubmatic",
-              "auctionId": "faf0b7d0-3a12-4774-826a-3d56033d9a74",
-              "bidderRequestId": "222b556be27f4c",
-              "bids": [
-                {
-                  "bidder": "pubmatic",
-                  "floorData": {
-                    "noFloorSignaled": false,
-                    "skipped": false,
-                    "skipRate": 0,
-                    "floorMin": 0.05,
-                    "modelVersion": "RTD model version 1.0",
-                    "modelWeight": 100,
-                    "location": "setConfig",
-                    "floorProvider": "PM"
-                  },
-                  "mediaTypes": {
-                    "banner": {
-                      "sizes": [
-                        [
-                          160,
-                          600
-                        ]
-                      ]
-                    }
-                  },
-                  "adUnitCode": "Div1",
-                  "transactionId": "36da4d88-9a7b-433f-adc1-878af8a8f0f1",
-                  "adUnitId": "b94e39c9-ac0e-43db-b660-603700dc97dd",
-                  "sizes": [
-                    [
-                      160,
-                      600
-                    ]
-                  ],
-                  "bidId": "30fce22fe473c28",
-                  "bidderRequestId": "222b556be27f4c",
-                  "src": "client",
-                  getFloor: () => {}
-                },
-              ],
-              "start": 1749410430354
-            }
-          ],
-          "bidsReceived": [],
-          "bidsRejected": [],
-          "winningBids": [],
-          "timeout": 3000,
-          "seatNonBids": []
-        };
-
-        sandbox.stub(prebidGlobal, 'getGlobal').returns({
-          getHighestCpmBids: () => [highestWinningBidResponse]
-        });
-
-        const result = getTargetingData(adUnitCodes, config, userConsent, auction);
-
-        // Restore the original value
-        setProfileConfigs(originalProfileConfigs);
-
-        // Verify correct values for no bid scenario
-        expect(result['Div1']['pm_ym_flrs']).to.equal(1);    // RTD floor was applied
-        expect(result['Div1']['pm_ym_bid_s']).to.equal(1);    // NOBID status
-
-        // Since finding floor values from bidder requests depends on implementation details
-        // we'll just verify the type rather than specific value
-        expect(result['Div1']['pm_ym_flrv']).to.be.a('string');
       });
     });
   });

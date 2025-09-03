@@ -160,6 +160,8 @@ declare module './config' {
   }
 }
 
+export const beforeInitAuction = hook('sync', (auction) => {})
+
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}: AuctionOptions) {
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
@@ -314,6 +316,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     const call = {
       bidRequests,
       run: () => {
+        beforeInitAuction(this);
         startAuctionTimer();
 
         _auctionStatus = AUCTION_IN_PROGRESS;
