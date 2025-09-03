@@ -34,7 +34,6 @@ const BASE_URLS = {
   'jdpmedia': 'https://jdpmedia-prebid.attekmi.co/pbjs',
   'tredio': 'https://tredio-prebid.attekmi.co/pbjs',
   'felixads': 'https://felixads-prebid.attekmi.co/pbjs',
-  'vimayx': 'https://vimayx-prebid.attekmi.co/pbjs',
   'artechnology': 'https://artechnology-prebid.attekmi.co/pbjs',
   'adinify': 'https://adinify-prebid.attekmi.co/pbjs',
   'addigi': 'https://addigi-prebid.attekmi.co/pbjs',
