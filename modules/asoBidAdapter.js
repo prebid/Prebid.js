@@ -19,7 +19,8 @@ export const spec = {
     {code: 'bcmint'},
     {code: 'bidgency'},
     {code: 'kuantyx'},
-    {code: 'cordless'}
+    {code: 'cordless'},
+    {code: 'adklip'}
   ],
 
   isBidRequestValid: bid => {

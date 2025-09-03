@@ -4,7 +4,7 @@ import adapterManager, {
   coppaDataHandler,
   _partitionBidders,
   PARTITIONS,
-  getS2SBidderSet, filterBidsForAdUnit, dep
+  getS2SBidderSet, filterBidsForAdUnit, dep, partitionBidders
 } from 'src/adapterManager.js';
 import {
   getAdUnits,
@@ -2084,7 +2084,7 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
-    describe('source.tid', () => {
+    describe('transaction IDs', () => {
       beforeEach(() => {
         sinon.stub(dep, 'redact').returns({
           ortb2: (o) => o,
@@ -2095,9 +2095,79 @@ describe('adapterManager tests', function () {
         dep.redact.restore();
       });
 
-      it('should be populated with auctionId', () => {
-        const reqs = adapterManager.makeBidRequests(adUnits, 0, 'mockAuctionId', 1000, [], {global: {}});
-        expect(reqs[0].ortb2.source.tid).to.equal('mockAuctionId');
+      function makeRequests(ortb2Fragments = {}) {
+        return adapterManager.makeBidRequests(adUnits, 0, 'mockAuctionId', 1000, [], ortb2Fragments);
+      }
+
+      it('should NOT populate source.tid with auctionId', () => {
+        const reqs = makeRequests();
+        expect(reqs[0].ortb2.source.tid).to.not.equal('mockAuctionId');
+      });
+      it('should override source.tid if specified in FPD', () => {
+        const reqs = makeRequests({
+          global: {
+            source: {
+              tid: 'tid'
+            }
+          },
+          rubicon: {
+            source: {
+              tid: 'tid'
+            }
+          }
+        });
+        reqs.forEach(req => {
+          expect(req.ortb2.source.tid).to.exist;
+          expect(req.ortb2.source.tid).to.not.eql('tid');
+        });
+        expect(reqs[0].ortb2.source.tid).to.not.eql(reqs[1].ortb2.source.tid);
+      });
+      it('should generate ortb2Imp.ext.tid', () => {
+        const reqs = makeRequests();
+        const tids = new Set(reqs.flatMap(br => br.bids).map(b => b.ortb2Imp?.ext?.tid));
+        expect(tids.size).to.eql(3);
+      });
+      it('should override ortb2Imp.ext.tid if specified in FPD', () => {
+        adUnits[0].ortb2Imp = adUnits[1].ortb2Imp = {
+          ext: {
+            tid: 'tid'
+          }
+        };
+        const reqs = makeRequests();
+        expect(reqs[0].bids[0].ortb2Imp.ext.tid).to.not.eql('tid');
+      });
+      it('should use matching ext.tid if transactionId match', () => {
+        adUnits[1].transactionId = adUnits[0].transactionId;
+        const reqs = makeRequests();
+        reqs.forEach(br => {
+          expect(new Set(br.bids.map(b => b.ortb2Imp.ext.tid)).size).to.eql(1);
+        })
+      });
+      describe('when the same bidder is routed to both client and server', () => {
+        function route(next) {
+          next.bail({
+            [PARTITIONS.CLIENT]: ['rubicon'],
+            [PARTITIONS.SERVER]: ['rubicon']
+          })
+        }
+        before(() => {
+          partitionBidders.before(route, 99)
+        });
+        after(() => {
+          partitionBidders.getHooks({hook: route}).remove();
+        });
+        beforeEach(() => {
+          config.setConfig({
+            s2sConfig: {
+              enabled: true,
+              bidders: ['rubicon']
+            }
+          })
+        })
+        it('should use the same source.tid', () => {
+          const reqs = makeRequests();
+          expect(reqs[0].ortb2.source.tid).to.eql(reqs[1].ortb2.source.tid);
+        })
       })
     });
 

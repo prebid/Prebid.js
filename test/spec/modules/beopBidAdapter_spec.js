@@ -236,8 +236,17 @@ describe('BeOp Bid Adapter tests', () => {
     it('should call triggerPixel utils function when timed out is filled', function () {
       spec.onTimeout({});
       spec.onTimeout();
+      spec.onTimeout(null);
+      spec.onTimeout([]);
       expect(triggerPixelStub.getCall(0)).to.be.null;
-      spec.onTimeout({params: {accountId: '5a8af500c9e77c00017e4cad'}, timeout: 2000});
+      spec.onTimeout([{
+        bidder: 'beop',
+        bidId: 'abc123',
+        params: { accountId: '5a8af500c9e77c00017e4cad' },
+        adUnitCode: 'div-1',
+        timeout: 2000,
+        auctionId: 'some-auction-id'
+      }]);
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
@@ -245,6 +254,36 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0).args[0]).to.include('pid=5a8af500c9e77c00017e4cad');
     });
 
+    it('should call triggerPixel for each entry in the timeout array', function () {
+      const timeoutData = [
+        {
+          bidder: 'beop',
+          bidId: 'abc123',
+          params: { accountId: '5a8af500c9e77c00017e4cad' },
+          adUnitCode: 'div-1',
+          timeout: 3000,
+          auctionId: 'auction-1'
+        },
+        {
+          bidder: 'beop',
+          bidId: 'def456',
+          params: { accountId: '5a8af500c9e77c00017e4cad' },
+          adUnitCode: 'div-2',
+          timeout: 3000,
+          auctionId: 'auction-2'
+        }
+      ];
+
+      spec.onTimeout(timeoutData);
+
+      expect(triggerPixelStub.callCount).to.equal(2);
+      const firstCall = triggerPixelStub.getCall(0).args[0];
+      const secondCall = triggerPixelStub.getCall(1).args[0];
+
+      expect(firstCall).to.include('se_ac=timeout');
+      expect(firstCall).to.include('bid=abc123');
+      expect(secondCall).to.include('bid=def456');
+    });
     it('should call triggerPixel utils function on bid won', function () {
       spec.onBidWon({});
       spec.onBidWon();
