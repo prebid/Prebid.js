@@ -1,13 +1,15 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {generateUUID, isPlainObject, isArray, isStr,
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import {
+  generateUUID, isPlainObject, isArray, isStr,
   isFn,
   logInfo,
   logWarn,
-  logError, deepClone} from '../src/utils.js'
-import {Renderer} from '../src/Renderer.js'
-import {OUTSTREAM} from '../src/video.js'
-import {config} from '../src/config.js'
+  logError, deepClone
+} from '../src/utils.js'
+import { Renderer } from '../src/Renderer.js'
+import { OUTSTREAM } from '../src/video.js'
+import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js'
 
 const BIDDER_CODE = 'mediaConsortium'
@@ -45,19 +47,19 @@ export const spec = {
     const {
       auctionId,
       bids,
-      gdprConsent: {gdprApplies = false, consentString} = {},
-      ortb2: {device, site}
+      gdprConsent: { gdprApplies = false, consentString } = {},
+      ortb2: { device, site }
     } = bidderRequest
 
     const currentTimestamp = Date.now()
     const optimizations = getOptimizationsFromLocalStorage()
 
     const impressions = bids.reduce((acc, bidRequest) => {
-      const {bidId, adUnitCode, mediaTypes} = bidRequest
+      const { bidId, adUnitCode, mediaTypes } = bidRequest
       const optimization = optimizations[adUnitCode]
 
       if (optimization) {
-        const {expiresAt, isEnabled} = optimization
+        const { expiresAt, isEnabled } = optimization
 
         if (expiresAt >= currentTimestamp && !isEnabled) {
           return acc
@@ -76,7 +78,7 @@ export const spec = {
         }
       }
 
-      return acc.concat({id: bidId, adUnitCode, mediaTypes: finalizedMediatypes})
+      return acc.concat({ id: bidId, adUnitCode, mediaTypes: finalizedMediatypes })
     }, [])
 
     if (!impressions.length) {
@@ -113,7 +115,7 @@ export const spec = {
 
     const syncData = {
       gdpr: gdprApplies,
-      ad_unit_codes: impressions.map(({adUnitCode}) => adUnitCode).join(',')
+      ad_unit_codes: impressions.map(({ adUnitCode }) => adUnitCode).join(',')
     }
 
     if (consentString) {
@@ -137,17 +139,17 @@ export const spec = {
   interpretResponse(serverResponse, params) {
     if (!isValidResponse(serverResponse)) return []
 
-    const {body: {bids, optimizations}} = serverResponse
+    const { body: { bids, optimizations } } = serverResponse
 
     if (optimizations && isArray(optimizations)) {
       const currentTimestamp = Date.now()
 
       const optimizationsToStore = optimizations.reduce((acc, optimization) => {
-        const {adUnitCode, isEnabled, ttl} = optimization
+        const { adUnitCode, isEnabled, ttl } = optimization
 
         return {
           ...acc,
-          [adUnitCode]: {isEnabled, expiresAt: currentTimestamp + ttl}
+          [adUnitCode]: { isEnabled, expiresAt: currentTimestamp + ttl }
         }
       }, getOptimizationsFromLocalStorage())
 
@@ -158,13 +160,13 @@ export const spec = {
       const {
         id: bidId,
         impressionId,
-        price: {cpm, currency},
+        price: { cpm, currency },
         dealId,
         ad: {
           creative: {
             id: creativeId,
             mediaType,
-            size: {width, height},
+            size: { width, height },
             markup,
             rendering = {}
           }
@@ -188,8 +190,8 @@ export const spec = {
       }
 
       if (mediaType === VIDEO) {
-        const { data: { impressions: impressionRequests }, internal: {bidRequests} } = params
-        const impressionRequest = impressionRequests.find(({id}) => id === impressionId)
+        const { data: { impressions: impressionRequests }, internal: { bidRequests } } = params
+        const impressionRequest = impressionRequests.find(({ id }) => id === impressionId)
         const bidRequest = bidRequests[impressionId]
 
         formattedBid.vastXml = markup
@@ -214,14 +216,14 @@ export const spec = {
 
     const [sync] = serverResponses
 
-    return sync.body?.bidders?.reduce((acc, {type, url}) => {
+    return sync.body?.bidders?.reduce((acc, { type, url }) => {
       const syncType = SYNC_TYPES[type]
 
       if (!syncType || !url) {
         return acc
       }
 
-      return acc.concat({type: syncType, url})
+      return acc.concat({ type: syncType, url })
     }, [])
   }
 }
@@ -248,8 +250,8 @@ function getFpIdFromLocalStorage() {
 
 function isValidResponse(response) {
   return isPlainObject(response) &&
-      isPlainObject(response.body) &&
-      isArray(response.body.bids)
+    isPlainObject(response.body) &&
+    isArray(response.body.bids)
 }
 
 function makeOutstreamRenderer(bidId, adUnitCode, localPlayerConfiguration = {}, remotePlayerConfiguration = {}) {
