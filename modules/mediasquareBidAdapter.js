@@ -70,7 +70,7 @@ export const spec = {
           });
         }
         const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
-        if (tmpFloor !== {}) { code.floor['*'] = tmpFloor; }
+        if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
       }
       if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
       codes.push(code);
