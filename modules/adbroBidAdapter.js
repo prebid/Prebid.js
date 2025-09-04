@@ -7,31 +7,6 @@ const BIDDER_CODE = 'adbro';
 const GVLID = 1316;
 const ENDPOINT_URL = 'https://jp.bidbro.me/pbjs';
 
-const updateBannerImp = (bannerObj, adSlot) => {
-  const slot = adSlot.split(':');
-  let splits = slot[0]?.split('@');
-  splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
-  const primarySize = bannerObj.format[0];
-  if (splits.length !== 2 || (parseInt(splits[0]) == 0 && parseInt(splits[1]) == 0)) {
-    bannerObj.w = primarySize.w;
-    bannerObj.h = primarySize.h;
-  } else {
-    bannerObj.w = parseInt(splits[0]);
-    bannerObj.h = parseInt(splits[1]);
-  }
-
-  bannerObj.format = bannerObj.format.filter(
-    (item) => !(item.w === bannerObj.w && item.h === bannerObj.h)
-  );
-  if (!bannerObj.format?.length) delete bannerObj.format;
-  bannerObj.pos ??= 0;
-}
-
-const setImpTagId = (imp, adSlot, hashedKey) => {
-  const splits = adSlot.split(':')[0].split('@');
-  imp.tagid = hashedKey || splits[0];
-}
-
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -46,8 +21,7 @@ const converter = ortbConverter({
 
     imp.displaymanager ||= 'Prebid.js';
     imp.displaymanagerver ||= '$prebid.version$';
-    setImpTagId(imp, adSlot.trim(), hashedKey);
-    updateBannerImp(imp.banner, adSlot);
+    imp.tagid ||= 'prebid_' + imp.ext.gpid;
 
     return imp;
   },
