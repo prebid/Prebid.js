@@ -116,7 +116,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     dapRetryTokenize = 0;
     var jsonData = null;
     if (rtdConfig && isPlainObject(rtdConfig.params)) {
-      if (rtdConfig.params.segtax === 710) {
+      if (Number(rtdConfig.params.segtax) === 710) {
         const encMembership = dapUtils.dapGetEncryptedMembershipFromLocalStorage();
         if (encMembership) {
           jsonData = dapUtils.dapGetEncryptedRtdObj(encMembership, rtdConfig.params.segtax)
@@ -193,7 +193,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         const ortb2 = bidConfig.ortb2Fragments.global;
         logMessage('token is: ', token);
         if (token !== null) { // If token is not null then check the membership in storage and add the RTD object
-          if (config.segtax === 710) { // Follow the encrypted membership path
+          if (Number(config.segtax) === 710) { // Follow the encrypted membership path
             dapUtils.dapRefreshEncryptedMembership(ortb2, config, token, onDone) // Get the encrypted membership from server
             refreshMembership = false;
           } else {
@@ -250,7 +250,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
             dapUtils.dapLog('Successfully stored DAP 100 Device ID: ' + deviceId100);
           }
           if (refreshMembership) {
-            if (config.segtax === 710) {
+            if (Number(config.segtax) === 710) {
               dapUtils.dapRefreshEncryptedMembership(ortb2, config, token, onDone);
             } else {
               dapUtils.dapRefreshMembership(ortb2, config, token, onDone);
@@ -451,7 +451,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
     checkAndAddRealtimeData: function(ortb2, data, segtax) {
       if (data.rtd) {
-        if (segtax === 710 && dapUtils.checkIfSegmentsAlreadyExist(ortb2, data.rtd, 710)) {
+        if (Number(segtax) === 710 && dapUtils.checkIfSegmentsAlreadyExist(ortb2, data.rtd, 710)) {
           logMessage('DEBUG(handleInit): rtb Object already added');
         } else {
           addRealTimeData(ortb2, data.rtd);
@@ -465,7 +465,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       if (ortb2.user && ortb2.user.data && ortb2.user.data.length > 0) {
         for (let i = 0; i < ortb2.user.data.length; i++) {
           const element = ortb2.user.data[i]
-          if (element.ext && element.ext.segtax === segtax) {
+          if (Number(element?.ext?.segtax) === Number(segtax)) {
             segmentsExist = true
             logMessage('DEBUG(checkIfSegmentsAlreadyExist): rtb Object already added: ', ortb2.user.data);
             break;
@@ -526,7 +526,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         onError = function(xhr, status, error, onDone) {};
       }
 
-      if (config == null || typeof (config) === typeof (undefined)) {
+      if (config === null || config === undefined) {
         onError(null, 'Invalid config object', 'ClientError', onDone);
         return [ config, true ];
       }
