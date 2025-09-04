@@ -298,7 +298,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return value && value !== '' && INVALID_ID !== value ? {'intentIqId': value} : undefined;
+    return value && INVALID_ID !== value ? {'intentIqId': value} : undefined;
   },
 
   /**
