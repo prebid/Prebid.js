@@ -213,6 +213,14 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
   });
 }
 
+function appendUserIdsAsEidsToRequestPayload(payloadRef, userIds) {
+  let key;
+  userIds.forEach((userIdObj) => {
+    key = `uid.${userIdObj.source}`;
+    payloadRef[key] = userIdObj.uids[0].id;
+  })
+}
+
 export function getVidazooSessionId(storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
@@ -221,7 +229,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const {
     params,
     bidId,
-    userId,
     adUnitCode,
     schain,
     mediaTypes,
@@ -294,7 +301,16 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     ...uniqueRequestData
   };
 
-  appendUserIdsToRequestPayload(data, userId);
+  // backward compatible userId generators
+  if (bid.userIdAsEids?.length > 0) {
+    appendUserIdsAsEidsToRequestPayload(data, bid.userIdAsEids);
+  }
+  if (bid.user?.ext?.eids?.length > 0) {
+    appendUserIdsAsEidsToRequestPayload(data, bid.user.ext.eids);
+  }
+  if (bid.userId) {
+    appendUserIdsToRequestPayload(data, bid.userId);
+  }
 
   const sua = bidderRequest?.ortb2?.device?.sua;
 
@@ -351,6 +367,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   _each(ext, (value, key) => {
     data['ext.' + key] = value;
   });
+
+  if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2
+  if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
 
   return data;
 }
@@ -468,6 +487,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     });
   }
 
+  // validBidRequests - an array of bids validated via the isBidRequestValid function.
+  // bidderRequest    - an object with data common to all bid requests.
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');

@@ -3,13 +3,98 @@ import { spec, cpmAdjustment, addViewabilityToImp, shouldAddDealTargeting } from
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('PubMatic adapter', () => {
-  let firstBid, videoBid, firstResponse, response, videoResponse;
+  let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
+  const PUBMATIC_ALIAS_BIDDER = 'pubmaticAlias';
   const request = {};
   firstBid = {
     adUnitCode: 'Div1',
     bidder: 'pubmatic',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90], [160, 600]],
+        pos: 1
+      }
+    },
+    params: {
+      publisherId: '5670',
+      adSlot: '/15671365/DMDemo@300x250:0',
+      kadfloor: '1.2',
+      pmzoneid: 'aabc, ddef',
+      // kadpageurl: 'www.publisher.com',
+      yob: '1986',
+      gender: 'M',
+      lat: '12.3',
+      lon: '23.7',
+      wiid: '1234567890',
+      profId: '100',
+      verId: '200',
+      currency: 'AUD',
+      dctr: 'key1:val1,val2|key2:val1',
+      deals: ['deal-1', 'deal-2']
+    },
+    placementCode: '/19968336/header-bid-tag-1',
+    sizes: [
+      [300, 250],
+      [300, 600],
+      ['fluid']
+    ],
+    bidId: '3736271c3c4b27',
+    requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+    bidderRequestId: '1c56ad30b9b8ca8',
+    ortb2: {
+      device: {
+        w: 1200,
+        h: 1800,
+        sua: {},
+        language: 'en',
+        js: 1,
+        connectiontype: 6
+      },
+      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      source: {},
+      user: {
+        ext: {
+          data: {
+            im_segments: ['segment1', 'segment2']
+          }
+        }
+      }
+    },
+    ortb2Imp: {
+      ext: {
+        tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+        gpid: '/1111/homepage-leftnav',
+        data: {
+          pbadslot: '/1111/homepage-leftnav',
+          adserver: {
+            name: 'gam',
+            adslot: '/1111/homepage-leftnav'
+          },
+          customData: {
+            id: 'id-1'
+          }
+        }
+      }
+    },
+    rtd: {
+      jwplayer: {
+        targeting: {
+          content: {
+            id: 'jwplayer-content-id'
+          },
+          segments: [
+            'jwplayer-segment-1', 'jwplayer-segment-2'
+          ]
+        }
+      }
+    }
+  }
+  firstAliasBid = {
+    adUnitCode: 'Div1',
+    bidder: PUBMATIC_ALIAS_BIDDER,
     mediaTypes: {
       banner: {
         sizes: [[728, 90], [160, 600]],
@@ -150,11 +235,44 @@ describe('PubMatic adapter', () => {
     }
   }
   const validBidRequests = [firstBid];
+  const validAliasBidRequests = [firstAliasBid];
   const bidderRequest = {
     bids: [firstBid],
     auctionId: 'ee3074fe-97ce-4681-9235-d7622aede74c',
     auctionStart: 1725514077194,
     bidderCode: 'pubmatic',
+    bidderRequestId: '1c56ad30b9b8ca8',
+    refererInfo: {
+      page: 'https://ebay.com',
+      ref: ''
+    },
+    ortb2: {
+      device: {
+        w: 1200,
+        h: 1800,
+        sua: {},
+        language: 'en',
+        js: 1,
+        connectiontype: 6
+      },
+      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      source: {},
+      user: {
+        ext: {
+          data: {
+            im_segments: ['segment1', 'segment2']
+          }
+        }
+      }
+    },
+    timeout: 2000,
+
+  };
+  const bidderAliasRequest = {
+    bids: [firstAliasBid],
+    auctionId: 'ee3074fe-97ce-4681-9235-d7622aede74c',
+    auctionStart: 1725514077194,
+    bidderCode: PUBMATIC_ALIAS_BIDDER,
     bidderRequestId: '1c56ad30b9b8ca8',
     refererInfo: {
       page: 'https://ebay.com',
@@ -290,6 +408,13 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('id').equal('3736271c3c4b27');
       });
 
+      it('should have build request with alias bidder', () => {
+        getGlobal().aliasBidder('pubmatic', PUBMATIC_ALIAS_BIDDER);
+        const request = spec.buildRequests(validAliasBidRequests, bidderAliasRequest);
+        expect(request.data).to.have.property('ext').to.have.property('wrapper').to.have.property('biddercode');
+        expect(request.data.ext.wrapper.biddercode).to.equal(PUBMATIC_ALIAS_BIDDER);
+      });
+
       it('should add pmp if deals are present in parameters', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -365,6 +490,15 @@ describe('PubMatic adapter', () => {
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('ext');
         expect(imp[0]).to.have.property('ext').to.have.property('pmZoneId');
+      });
+
+      it('should add pbcode in ext with adUnitCode value', () => {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const { imp } = request?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext');
+        expect(imp[0].ext).to.have.property('pbcode');
+        expect(imp[0].ext.pbcode).to.equal(validBidRequests[0].adUnitCode);
       });
 
       it('should add bidfloor if kadfloor is present in parameters', () => {
@@ -806,6 +940,8 @@ describe('PubMatic adapter', () => {
           expect(request.data).to.have.property('ext').to.have.property('wrapper').to.have.property('wiid');
           expect(request.data).to.have.property('ext').to.have.property('wrapper').to.have.property('wv');
           expect(request.data).to.have.property('ext').to.have.property('wrapper').to.have.property('wp');
+          expect(request.data).to.have.property('ext').to.have.property('wrapper').to.have.property('biddercode');
+          expect(request.data.ext.wrapper.biddercode).to.equal('pubmatic');
         });
 
         it('should have url with post method', () => {
@@ -1554,6 +1690,59 @@ describe('PubMatic adapter', () => {
     const request = spec.buildRequests([bidRequestWithKadPageUrl], bidderRequest);
     expect(request.data.site).to.exist;
     expect(request.data.site.page).to.equal('https://example.com/page');
+  });
+
+  describe('Impression optimization', () => {
+    it('should add pbcode to impression ext with adUnitCode value', () => {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const { imp } = request?.data;
+
+      expect(imp).to.be.an('array');
+      expect(imp[0]).to.have.property('ext');
+      expect(imp[0].ext).to.have.property('pbcode');
+      expect(imp[0].ext.pbcode).to.equal(validBidRequests[0].adUnitCode);
+    });
+
+    it('should consolidate impressions with same adUnitCode and media type', () => {
+      // Create two banner bids with the same adUnitCode
+      const bid1 = utils.deepClone(validBidRequests[0]);
+      const bid2 = utils.deepClone(validBidRequests[0]);
+
+      bid1.bidId = 'bid-id-1';
+      bid2.bidId = 'bid-id-2';
+
+      // Set the same adUnitCode and adSlot to ensure they're treated as the same unit
+      const sharedAdUnitCode = 'shared-ad-unit';
+      bid1.adUnitCode = sharedAdUnitCode;
+      bid2.adUnitCode = sharedAdUnitCode;
+      bid1.params.adSlot = 'same_ad_slot';
+      bid2.params.adSlot = 'same_ad_slot';
+
+      bid1.mediaTypes = { banner: { sizes: [[300, 250]] } };
+      bid2.mediaTypes = { banner: { sizes: [[300, 250]] } };
+
+      bid1.params.pmzoneid = 'zone1';
+      bid2.params.pmzoneid = 'zone2';
+
+      const bidRequests = [bid1, bid2];
+      const combinedBidderRequest = utils.deepClone(bidderRequest);
+      combinedBidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, combinedBidderRequest);
+      const { imp } = request?.data;
+
+      // Should be consolidated to a single impression
+      expect(imp).to.be.an('array');
+      expect(imp).to.have.lengthOf(1);
+
+      expect(imp[0].ext).to.have.property('pbcode');
+      expect(imp[0].ext.pbcode).to.equal(sharedAdUnitCode);
+
+      if (imp[0].ext.pmZoneId) {
+        expect(typeof imp[0].ext.pmZoneId).to.equal('string');
+        expect(imp[0].ext.pmZoneId).to.equal('zone2');
+      }
+    });
   });
 
   it('should set site.publisher.id from pubId', () => {
