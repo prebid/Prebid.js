@@ -1967,7 +1967,7 @@ export function deduplicateImpExtFields(r) {
         }
         if (imp.banner.format !== undefined) {
           for (let i = 0; i < imp.banner.format.length; i++) {
-            if (imp.banner.format[i].ext !== undefined && imp.banner.format[i].ext[key] !== undefined && imp.banner.format[i].ext[key] === impExt[key]) {
+            if (imp.banner.format.[i]?.ext?.[key] === impExt[key]) {
               delete r.imp[index].banner.format[i].ext[key];
             }
           }
