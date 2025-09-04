@@ -2709,7 +2709,7 @@ describe('IndexexchangeAdapter', function () {
         const bannerImpression = extractPayload(request[0]).imp[0];
         const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
+        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
         expect(bannerImpression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
 
         expect(bannerImpression.banner.format).to.be.length(2);
@@ -2726,7 +2726,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should have video request', () => {
-        const videoImpression = extractPayload(request[1]).imp[0];
+        const videoImpression = extractPayload(request[0]).imp[1];
 
         expect(videoImpression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
         expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
@@ -2832,7 +2832,7 @@ describe('IndexexchangeAdapter', function () {
         const bannerImpression = extractPayload(request[0]).imp[0];
         const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
+        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
         expect(bannerImpression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
 
         expect(bannerImpression.banner.format).to.be.length(2);
@@ -2849,7 +2849,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should have native request', () => {
-        const nativeImpression = extractPayload(request[1]).imp[0];
+        const nativeImpression = extractPayload(request[0]).imp[1];
 
         expect(request[0].data.hasOwnProperty('v')).to.equal(false);
         expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
@@ -3408,8 +3408,8 @@ describe('IndexexchangeAdapter', function () {
     describe('only video bidder params set', function () {
       it('should generate video impression', function () {
         const request = spec.buildRequests(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID, {});
-        const videoImp = extractPayload(request[1]).imp[0];
-        expect(extractPayload(request[1]).imp).to.have.lengthOf(1);
+        const videoImp = extractPayload(request[0]).imp[0];
+        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
         expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
         expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
         expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
@@ -3428,8 +3428,8 @@ describe('IndexexchangeAdapter', function () {
 
         expect(impressions).to.have.lengthOf(2);
 
-        impressions.map((impression, impIndex) => {
-          const bid = bids[impIndex];
+        impressions.map((impression, index) => {
+          const bid = bids[index];
 
           expect(impression.id).to.equal(bid.bidId);
           expect(impression.banner.format).to.be.length(bid.mediaTypes.banner.sizes.length);
@@ -3440,15 +3440,15 @@ describe('IndexexchangeAdapter', function () {
 
             expect(w).to.equal(size[0]);
             expect(h).to.equal(size[1]);
-            expect(ext.siteID).to.equal(bids[impIndex].params.siteId)
+            expect(ext.siteID).to.be.undefined;
           });
         });
       });
 
       it('should return valid banner and video requests', function () {
-        const videoImpression = extractPayload(request[1]).imp[0];
+        const videoImpression = extractPayload(request[0]).imp[1];
 
-        expect(extractPayload(request[1]).imp).to.have.lengthOf(1);
+        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
         expect(videoImpression.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
         expect(videoImpression.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][0]);
         expect(videoImpression.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][1]);
@@ -3473,14 +3473,15 @@ describe('IndexexchangeAdapter', function () {
       it('should use siteId override', function () {
         const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
         const request = spec.buildRequests(validBids, {});
-        const bannerImps = request[0].data.imp[0];
-        const videoImps = request[1].data.imp[0];
-        const nativeImps = request[2].data.imp[0];
-        expect(videoImps.ext.siteID).to.equal('1111');
-        bannerImps.banner.format.map(({ ext }) => {
-          expect(ext.siteID).to.equal('2222');
+        const bannerImps = request[0].data.imp[0].banner;
+        const videoImps = request[0].data.imp[0].video;
+        const nativeImps = request[0].data.imp[0].native;
+        expect(request[0].data.imp[0].ext.siteID).to.equal('2222');
+        expect(videoImps.ext.siteID).to.be.undefined;
+        bannerImps.format.map(({ ext }) => {
+          expect(ext.siteID).to.be.undefined;
         });
-        expect(nativeImps.ext.siteID).to.equal('3333');
+        expect(nativeImps.ext.siteID).to.be.undefined;
       });
 
       it('should use default siteId if overrides are not provided', function () {
@@ -3489,14 +3490,15 @@ describe('IndexexchangeAdapter', function () {
         delete validBids[0].params.video;
         delete validBids[0].params.native;
         const request = spec.buildRequests(validBids, {});
-        const bannerImps = request[0].data.imp[0];
-        const videoImps = request[1].data.imp[0];
-        const nativeImps = request[2].data.imp[0];
-        expect(videoImps.ext.siteID).to.equal('456');
-        bannerImps.banner.format.map(({ ext }) => {
-          expect(ext.siteID).to.equal('456');
+        const bannerImps = request[0].data.imp[0].banner;
+        const videoImps = request[0].data.imp[0].video;
+        const nativeImps = request[0].data.imp[0].native;
+        expect(request[0].data.imp[0].ext.siteID).to.equal('456');
+        expect(videoImps.ext.siteID).to.be.undefined;
+        bannerImps.format.map(({ ext }) => {
+          expect(ext.siteID).to.be.undefined;
         });
-        expect(nativeImps.ext.siteID).to.equal('456');
+        expect(nativeImps.ext.siteID).to.be.undefined;
       });
     });
   });
