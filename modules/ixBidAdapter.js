@@ -84,10 +84,7 @@ export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   // Update with list of CFTs to be requested from Exchange
-  REQUESTED_FEATURE_TOGGLES: [
-    'pbjs_enable_multiformat',
-    'pbjs_allow_all_eids'
-  ],
+  REQUESTED_FEATURE_TOGGLES: [],
 
   featureToggles: {},
   isFeatureEnabled: function (ft) {
