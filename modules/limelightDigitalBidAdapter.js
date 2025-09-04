@@ -44,7 +44,10 @@ export const spec = {
     { code: 'streamvision' },
     { code: 'stellorMediaRtb' },
     { code: 'smootai' },
-    { code: 'anzuExchange' }
+    { code: 'anzuExchange' },
+    { code: 'adnimation' },
+    { code: 'rtbdemand' },
+    { code: 'altstar' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
