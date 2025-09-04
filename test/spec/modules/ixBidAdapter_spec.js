@@ -1041,7 +1041,9 @@ describe('IndexexchangeAdapter', function () {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
   };
 
-  const extractPayload = function (bidRequest) { return bidRequest.data }
+  const extractPayload = function (bidRequest) {
+    return bidRequest.data
+  }
 
   const generateEid = function (numEid) {
     const eids = [];
@@ -2849,7 +2851,7 @@ describe('IndexexchangeAdapter', function () {
       it('should have native request', () => {
         const nativeImpression = extractPayload(request[1]).imp[0];
 
-        expect(request[1].data.hasOwnProperty('v')).to.equal(false);
+        expect(request[0].data.hasOwnProperty('v')).to.equal(false);
         expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
         expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
       });
@@ -3426,8 +3428,8 @@ describe('IndexexchangeAdapter', function () {
 
         expect(impressions).to.have.lengthOf(2);
 
-        impressions.map((impression, index) => {
-          const bid = bids[index];
+        impressions.map((impression, impIndex) => {
+          const bid = bids[impIndex];
 
           expect(impression.id).to.equal(bid.bidId);
           expect(impression.banner.format).to.be.length(bid.mediaTypes.banner.sizes.length);
@@ -3438,7 +3440,7 @@ describe('IndexexchangeAdapter', function () {
 
             expect(w).to.equal(size[0]);
             expect(h).to.equal(size[1]);
-            expect(ext.siteID).to.equal(bid.params.siteId);
+            expect(ext.siteID).to.equal(bids[impIndex].params.siteId)
           });
         });
       });
