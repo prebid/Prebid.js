@@ -935,7 +935,7 @@ function _isNonEmptyArray(test) {
  * @returns
  */
 function _getEndpointURL(bid) {
-  if (!isEmptyStr(bid?.params?.endpoint_url) && bid?.params?.endpoint_url !== UNDEFINED) {
+  if (bid?.params?.endpoint_url) {
     return bid.params.endpoint_url;
   }
 
