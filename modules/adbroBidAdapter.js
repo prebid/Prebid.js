@@ -1,3 +1,4 @@
+import { triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { isBidRequestValid } from '../libraries/teqblazeUtils/bidderUtils.js';
@@ -51,6 +52,9 @@ export const spec = {
     }));
     const result = converter.fromORTB({request: request.data, response: response.body}).bids;
     return result;
+  },
+  onBidWon: function(bid) {
+    if (bid.burl) triggerPixel(bid.burl);
   },
 };
 
