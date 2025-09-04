@@ -1,8 +1,7 @@
-import { triggerPixel } from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { isBidRequestValid } from '../libraries/teqblazeUtils/bidderUtils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'adbro';
 const GVLID = 1316;
@@ -16,9 +15,7 @@ const converter = ortbConverter({
     currency: 'USD',
   },
   imp(buildImp, bidRequest, context) {
-    const { adSlot = '', hashedKey } = bidRequest.params;
     const imp = buildImp(bidRequest, context);
-    if (!imp.hasOwnProperty('banner')) return null;
 
     imp.displaymanager ||= 'Prebid.js';
     imp.displaymanagerver ||= '$prebid.version$';
@@ -32,8 +29,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
-  isBidRequestValid: isBidRequestValid(),
-  onError: console.error,
+  isBidRequestValid: (bid) => {
+    const { mediaTypes } = bid;
+    return mediaTypes && mediaTypes[BANNER] && mediaTypes[BANNER].sizes;
+  },
   buildRequests(bidRequests, bidderRequest) {
     const placementId = bidRequests[0].params.placementId;
     const data = converter.toORTB({bidRequests, bidderRequest});
