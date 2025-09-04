@@ -706,52 +706,52 @@ describe('Media Consortium Bid Adapter', function () {
     })
 
     it('should handle CSS selector formatting correctly', function () {
-       const serverResponse = {
-         body: {
-           id: 'requestId',
-           bids: [{
-             id: 'bid-123',
-             impressionId: '2f0d9715f60be8',
-             price: {
-               cpm: 1,
-               currency: 'JPY'
-             },
-             ad: {
-               creative: {
-                 id: 'CREATIVE_ID',
-                 mediaType: 'video',
-                 size: {width: 320, height: 250},
-                 markup: '<VAST>...</VAST>'
-               }
-             },
-             ttl: 3600
-           }]
-         }
-       }
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>'
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
 
-       const params = {
-         data: {
-           impressions: [{
-             id: '2f0d9715f60be8',
-             adUnitCode: 'video-unit-with-special-chars'
-           }]
-         },
-         internal: {
-           bidRequests: {
-             '2f0d9715f60be8': {
-               ...VIDEO_BID,
-               adUnitCode: 'video-unit-with-special-chars',
-               params: {}
-             }
-           }
-         }
-       }
+      const params = {
+        data: {
+          impressions: [{
+            id: '2f0d9715f60be8',
+            adUnitCode: 'video-unit-with-special-chars'
+          }]
+        },
+        internal: {
+          bidRequests: {
+            '2f0d9715f60be8': {
+              ...VIDEO_BID,
+              adUnitCode: 'video-unit-with-special-chars',
+              params: {}
+            }
+          }
+        }
+      }
 
-       const formattedResponse = spec.interpretResponse(serverResponse, params)
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
 
-       expect(formattedResponse).to.have.length(1)
-       expect(formattedResponse[0].renderer.config).to.have.property('selector')
-       expect(formattedResponse[0].renderer.config.selector).to.include('video-unit-with-special-chars')
-     })
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0].renderer.config).to.have.property('selector')
+      expect(formattedResponse[0].renderer.config.selector).to.include('video-unit-with-special-chars')
+    })
   })
 });
