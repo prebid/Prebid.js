@@ -4,6 +4,7 @@ import {
   inIframe,
   insertElement,
   logError,
+  logInfo,
   logWarn,
   replaceMacros,
   triggerPixel
@@ -352,6 +353,9 @@ export function renderAdDirect(doc, adId, options) {
   const messageHandler = creativeMessageHandler({resizeFn});
   function renderFn(adData) {
     if (adData.ad) {
+      registerReportingObserver((report) => {
+        emitBrowserIntervention({bid, adId, intervention: report});
+      }, ['intervention'], doc);
       doc.write(adData.ad);
       doc.close();
       emitAdRenderSucceeded({doc, bid, id: bid.adId});
@@ -401,6 +405,20 @@ export function insertLocatorFrame() {
       const frame = createInvisibleIframe();
       frame.name = PB_LOCATOR;
       document.body.appendChild(frame);
+    }
+  }
+}
+
+export function registerReportingObserver(callback: (report: Report) => void, types: string[] = ['crash', 'deprecation', 'intervention'], document) {
+  if ('ReportingObserver' in document?.defaultView) {
+    try {
+      const observer = new document.defaultView.ReportingObserver((reports) => {
+        callback(reports[0]);
+      }, { buffered: true, types });
+      observer.observe();
+      logInfo('ReportingObserver registered for types: ', types);
+    } catch (e) {
+      logWarn('Error registering ReportingObserver', e);
     }
   }
 }
