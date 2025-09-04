@@ -129,7 +129,6 @@ export const spec = {
         });
       });
     }
-
     return bidResponses;
   },
 
