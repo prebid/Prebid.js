@@ -25,8 +25,8 @@ const ALIASES = [
 
 const AUCTION_URLS = {
   adverxo: 'js.pbsadverxo.com',
-  adport: 'diclotrans.com',
-  bidsmind: 'egrevirda.com'
+  adport: 'ayuetina.com',
+  bidsmind: 'arcantila.com'
 };
 
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
