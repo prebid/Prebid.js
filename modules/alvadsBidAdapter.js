@@ -132,7 +132,6 @@ export const spec = {
     return bidResponses;
   },
 
-
   onTimeout: (timeoutData) => {
     utils.logWarn('Timeout  bids ALVA:', timeoutData);
   },
