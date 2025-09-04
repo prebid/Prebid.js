@@ -43,7 +43,8 @@ export const spec = {
     { code: 'orangeclickmedia', gvlid: 1148 },
     { code: 'streamvision' },
     { code: 'stellorMediaRtb' },
-    { code: 'smootai' }
+    { code: 'smootai' },
+    { code: 'anzuExchange' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
