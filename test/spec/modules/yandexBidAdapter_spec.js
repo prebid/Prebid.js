@@ -1,11 +1,29 @@
 import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
+import * as ajax from 'src/ajax.js';
+import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('Yandex adapter', function () {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+
+    config.setConfig({
+      yandex: {
+        sampling: 1.0,
+      },
+    });
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       const bid = getBidRequest();
@@ -882,7 +900,39 @@ describe('Yandex adapter', function () {
       expect(utils.triggerPixel.callCount).to.equal(1)
       expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1')
     })
-  })
+  });
+
+  describe('onTimeout callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      expect(spec.onTimeout({ forTest: true })).to.not.throw;
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('on onBidderError callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      spec.onBidderError({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('on onBidBillable callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      spec.onBidBillable({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('on onAdRenderSucceeded callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      spec.onAdRenderSucceeded({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
 });
 
 function getBidConfig() {
