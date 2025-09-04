@@ -2001,7 +2001,7 @@ export function deduplicateImpExtFields(r) {
 export function removeSiteIDs(r) {
   r.imp.forEach((imp, index) => {
     const impExt = imp.ext;
-    if (impExt === undefined) {
+    if (impExt === undefined || impExt === null) {
       return r;
     }
     if (getFormatCount(imp) < 2) {
