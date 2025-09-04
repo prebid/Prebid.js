@@ -378,7 +378,7 @@ export const spec = {
 
 function _checkMediaType(bid, newBid) {
   // Check Various ADM Aspects to Determine Media Type
-  if (bid.ext && bid.ext['bidtype'] !== undefined) {
+  if (bid.ext && bid.ext.bidtype !== undefined && bid.ext.bidtype !== null) {
     // this is the most explicity check
     newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {

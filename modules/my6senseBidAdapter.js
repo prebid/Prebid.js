@@ -112,8 +112,8 @@ function buildGdprServerProperty(bidderRequest) {
 
     gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === true ? true : gdprObj.gdpr;
     gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === false ? false : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === 1 ? true : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === 0 ? false : gdprObj.gdpr;
+    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? true : gdprObj.gdpr;
+    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 0 ? false : gdprObj.gdpr;
   }
 
   return gdprObj;

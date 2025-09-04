@@ -448,7 +448,7 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
   // If mtype = video is passed and vastURl is not set, set vastxml
-  if (rawBid.mtype === MEDIA_TYPES.Video && ((rawBid.ext && !rawBid.ext.vasturl) || !rawBid.ext)) {
+  if (Number(rawBid.mtype) === MEDIA_TYPES.Video && ((rawBid.ext && !rawBid.ext.vasturl) || !rawBid.ext)) {
     bid.vastXml = rawBid.adm;
   } else if (rawBid.ext && rawBid.ext.vasturl) {
     bid.vastUrl = rawBid.ext.vasturl;
@@ -465,7 +465,7 @@ function parseBid(rawBid, currency, bidRequest) {
   }
 
   // in the event of a video
-  if ((rawBid.ext && rawBid.ext.vasturl) || rawBid.mtype === MEDIA_TYPES.Video) {
+  if ((rawBid.ext && rawBid.ext.vasturl) || Number(rawBid.mtype) === MEDIA_TYPES.Video) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
@@ -1020,7 +1020,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.ext.externalID = externalID;
 
         // enable fledge auction
-        if (auctionEnvironment === 1) {
+        if (Number(auctionEnvironment) === 1) {
           _bannerImpression.ext.ae = 1;
           _bannerImpression.ext.paapi = paapi;
         }
@@ -1865,7 +1865,7 @@ export const spec = {
     if (serverResponses.length > 0) {
       publisherSyncsPerBidderOverride = deepAccess(serverResponses[0], 'body.ext.publishersyncsperbidderoverride');
     }
-    if (publisherSyncsPerBidderOverride !== undefined && publisherSyncsPerBidderOverride === 0) {
+    if (publisherSyncsPerBidderOverride === 0) {
       return [];
     }
     if (syncOptions.iframeEnabled) {

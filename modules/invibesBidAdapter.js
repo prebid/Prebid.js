@@ -99,7 +99,7 @@ function isBidRequestValid(bid) {
 
 function getUserSync(syncOptions) {
   if (syncOptions.iframeEnabled) {
-    if (!(_disableUserSyncs === null || _disableUserSyncs === undefined ? CONSTANTS.DISABLE_USER_SYNC : _disableUserSyncs)) {
+    if (!(_disableUserSyncs ?? CONSTANTS.DISABLE_USER_SYNC)) {
       const syncUrl = buildSyncUrl();
       return {
         type: 'iframe',

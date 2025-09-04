@@ -66,7 +66,7 @@ export const spec = {
         if (Array.isArray(adunitValue.sizes)) {
           adunitValue.sizes.forEach(value => {
             const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor !== {}) { code.floor[value.join('x')] = tmpFloor; }
+            if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor[value.join('x')] = tmpFloor; }
           });
         }
         const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
