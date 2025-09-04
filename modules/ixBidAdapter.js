@@ -1633,7 +1633,7 @@ export const spec = {
       }
     }
 
-    if (!isExchangeIdConfigured() && bid.params.siteId === undefined) {
+    if (!isExchangeIdConfigured() && (bid.params.siteId === undefined || bid.params.siteId === null)) {
       logError('IX Bid Adapter: Invalid configuration - either siteId or exchangeId must be configured.');
       return false;
     }
