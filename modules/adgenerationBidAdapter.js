@@ -131,8 +131,7 @@ export const spec = {
     const adResult = body?.results[0];
     const targetImp = bidRequests?.data?.ortb?.imp[0];
     const requestId = targetImp?.id;
-        
-    
+
     const bidResponse = {
       requestId: requestId,
       cpm: adResult.cpm || 0,

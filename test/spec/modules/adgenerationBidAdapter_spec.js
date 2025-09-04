@@ -1193,7 +1193,7 @@ describe('AdgenerationAdapter', function () {
       };
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const sr = {body: serverResponse.normal.upperBillboard};
-        const br = {  bidderRequest: res, ...bidRequests.upperBillboard };
+        const br = { bidderRequest: res, ...bidRequests.upperBillboard };
 
         const result = spec.interpretResponse(sr, br)[0];
         expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
@@ -1335,7 +1335,7 @@ describe('AdgenerationAdapter', function () {
             }]
           }
         };
-        
+
         const result = spec.interpretResponse(serverResponse, bidRequest)[0];
         expect(result.currency).to.equal('USD');
         expect(result.cpm).to.equal(100);
@@ -1373,7 +1373,7 @@ describe('AdgenerationAdapter', function () {
             }]
           }
         };
-        
+
         const result = spec.interpretResponse(serverResponse, requestWithoutCurrency)[0];
         expect(result.currency).to.equal('JPY');
       });
@@ -1412,7 +1412,7 @@ describe('AdgenerationAdapter', function () {
             }]
           }
         };
-        
+
         const result = spec.interpretResponse(serverResponse, bidRequestWithJPY)[0];
         expect(result.currency).to.equal('JPY');
       });
