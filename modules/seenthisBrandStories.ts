@@ -1,9 +1,9 @@
 import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingClientRect.js";
 import { getWinDimensions } from "../src/utils.js";
 
-const DEFAULT_MARGINS = "16px";
+export const DEFAULT_MARGINS = "16px";
 
-const EVENTS = [
+export const EVENTS = [
   "@seenthis_storylines/ready",
   "@seenthis_enabled",
   "@seenthis_disabled",
@@ -20,7 +20,7 @@ const containerElements: Record<string, HTMLDivElement> = {};
 const isInitialized: Record<string, boolean> = {};
 let classNames: Record<string, string> = {};
 
-function calculateMargins(element: HTMLElement) {
+export function calculateMargins(element: HTMLElement) {
   const boundingClientRect = getBoundingClientRect(element);
   const wrapperLeftMargin = window.getComputedStyle(element).marginLeft;
   const marginLeft = boundingClientRect.left - parseInt(wrapperLeftMargin, 10);
@@ -35,7 +35,7 @@ function calculateMargins(element: HTMLElement) {
   element.style.setProperty("--storylines-margins", `${marginLeft * 2}px`);
 }
 
-function getFrameByEvent(event: MessageEvent) {
+export function getFrameByEvent(event: MessageEvent) {
   return Array.from(document.getElementsByTagName("iframe")).filter(
     (iframe) => {
       return iframe.contentWindow === event.source;
@@ -43,7 +43,7 @@ function getFrameByEvent(event: MessageEvent) {
   )[0];
 }
 
-function addStyleToSingleChildAncestors(
+export function addStyleToSingleChildAncestors(
   element: HTMLElement,
   { key, value }: { key: string; value: string }
 ) {
@@ -59,7 +59,7 @@ function addStyleToSingleChildAncestors(
   addStyleToSingleChildAncestors(element.parentElement, { key, value });
 }
 
-function findAdWrapper(target: HTMLDivElement) {
+export function findAdWrapper(target: HTMLDivElement) {
   if (
     window?.frameElement &&
     /^google_ads_iframe_/.test((window?.frameElement as HTMLIFrameElement).name)
@@ -70,14 +70,14 @@ function findAdWrapper(target: HTMLDivElement) {
   }
 }
 
-function applyFullWidth(target: HTMLDivElement) {
+export function applyFullWidth(target: HTMLDivElement) {
   const adWrapper = findAdWrapper(target);
   if (adWrapper) {
     addStyleToSingleChildAncestors(adWrapper, { key: "width", value: "100%" });
   }
 }
 
-function applyAutoHeight(target: HTMLDivElement) {
+export function applyAutoHeight(target: HTMLDivElement) {
   const adWrapper = findAdWrapper(target);
   if (adWrapper) {
     addStyleToSingleChildAncestors(adWrapper, { key: "height", value: "auto" });

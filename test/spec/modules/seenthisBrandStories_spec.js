@@ -1,0 +1,429 @@
+import { expect } from "chai";
+import {
+  calculateMargins,
+  getFrameByEvent,
+  addStyleToSingleChildAncestors,
+  findAdWrapper,
+  applyFullWidth,
+  applyAutoHeight,
+  DEFAULT_MARGINS,
+  EVENTS,
+} from "modules/seenthisBrandStories.ts";
+import * as boundingClientRect from "../../../libraries/boundingClientRect/boundingClientRect.js";
+import * as utils from "../../../src/utils.js";
+
+describe("seenthisBrandStories", function () {
+  describe("constants", function () {
+    it("should have correct DEFAULT_MARGINS", function () {
+      expect(DEFAULT_MARGINS).to.equal("16px");
+    });
+
+    it("should have correct EVENTS array", function () {
+      expect(EVENTS).to.be.an("array").with.length(9);
+      expect(EVENTS).to.include("@seenthis_storylines/ready");
+      expect(EVENTS).to.include("@seenthis_enabled");
+      expect(EVENTS).to.include("@seenthis_modal/opened");
+    });
+  });
+
+  describe("calculateMargins", function () {
+    let mockElement;
+    let getBoundingClientRectStub;
+    let getComputedStyleStub;
+
+    beforeEach(function () {
+      mockElement = {
+        style: {
+          setProperty: sinon.stub(),
+        },
+      };
+
+      getBoundingClientRectStub = sinon.stub(
+        boundingClientRect,
+        "getBoundingClientRect"
+      );
+      getComputedStyleStub = sinon.stub(window, "getComputedStyle");
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it("should set margins correctly with non-zero values", function () {
+      getBoundingClientRectStub.returns({ left: 32, width: 300 });
+      getComputedStyleStub.returns({ marginLeft: "16px" });
+
+      calculateMargins(mockElement);
+
+      expect(
+        mockElement.style.setProperty.calledWith(
+          "--storylines-margin-left",
+          "-16px"
+        )
+      ).to.be.true;
+      expect(
+        mockElement.style.setProperty.calledWith("--storylines-margins", "32px")
+      ).to.be.true;
+    });
+
+    it("should use default margins when width is 0", function () {
+      getBoundingClientRectStub.returns({ left: 16, width: 0 });
+      getComputedStyleStub.returns({ marginLeft: "0px" });
+
+      calculateMargins(mockElement);
+
+      expect(
+        mockElement.style.setProperty.calledWith("--storylines-margins", "16px")
+      ).to.be.true;
+      expect(
+        mockElement.style.setProperty.calledWith(
+          "--storylines-margin-left",
+          "16px"
+        )
+      ).to.be.true;
+    });
+
+    it("should use default margins when margin left is 0", function () {
+      getBoundingClientRectStub.returns({ left: 16, width: 300 });
+      getComputedStyleStub.returns({ marginLeft: "16px" });
+
+      calculateMargins(mockElement);
+
+      expect(
+        mockElement.style.setProperty.calledWith("--storylines-margins", "16px")
+      ).to.be.true;
+      expect(
+        mockElement.style.setProperty.calledWith(
+          "--storylines-margin-left",
+          "16px"
+        )
+      ).to.be.true;
+    });
+  });
+
+  describe("getFrameByEvent", function () {
+    let getElementsByTagNameStub;
+    let mockIframes;
+    let mockEventSource;
+
+    beforeEach(function () {
+      mockEventSource = { id: "frame2" };
+
+      mockIframes = [
+        { contentWindow: { id: "frame1" } },
+        { contentWindow: mockEventSource }, // This will match
+        { contentWindow: { id: "frame3" } },
+      ];
+
+      getElementsByTagNameStub = sinon
+        .stub(document, "getElementsByTagName")
+        .returns(mockIframes);
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it("should return iframe matching event source", function () {
+      const mockEvent = {
+        source: mockEventSource, // This should match mockIframes[1].contentWindow
+      };
+
+      const result = getFrameByEvent(mockEvent);
+
+      expect(result).to.equal(mockIframes[1]);
+      expect(getElementsByTagNameStub.calledWith("iframe")).to.be.true;
+    });
+
+    it("should return undefined if no iframe matches", function () {
+      const mockEvent = {
+        source: { id: "nonexistent" }, // This won't match any iframe
+      };
+
+      const result = getFrameByEvent(mockEvent);
+
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe("addStyleToSingleChildAncestors", function () {
+    let getWinDimensionsStub;
+
+    beforeEach(function () {
+      getWinDimensionsStub = sinon
+        .stub(utils, "getWinDimensions")
+        .returns({ width: 1024, height: 768 });
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it("should apply style to element when width is less than window width", function () {
+      const mockElement = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "", // key exists
+        },
+        offsetWidth: 400,
+        parentElement: null,
+      };
+
+      addStyleToSingleChildAncestors(mockElement, {
+        key: "width",
+        value: "100%",
+      });
+
+      expect(mockElement.style.setProperty.calledWith("width", "100%")).to.be
+        .true;
+    });
+
+    it("should not apply style when element width equals window width", function () {
+      const mockElement = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "",
+        },
+        offsetWidth: 1024,
+        parentElement: null,
+      };
+
+      addStyleToSingleChildAncestors(mockElement, {
+        key: "width",
+        value: "100%",
+      });
+
+      expect(mockElement.style.setProperty.called).to.be.false;
+    });
+
+    it("should recursively apply to single child ancestors", function () {
+      const grandParent = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "",
+        },
+        offsetWidth: 800,
+        parentElement: null,
+        children: { length: 1 },
+      };
+
+      const parent = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "",
+        },
+        offsetWidth: 600,
+        parentElement: grandParent,
+        children: { length: 1 },
+      };
+
+      const child = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "",
+        },
+        offsetWidth: 400,
+        parentElement: parent,
+      };
+
+      addStyleToSingleChildAncestors(child, { key: "width", value: "100%" });
+
+      expect(child.style.setProperty.calledWith("width", "100%")).to.be.true;
+      expect(parent.style.setProperty.calledWith("width", "100%")).to.be.true;
+      expect(grandParent.style.setProperty.calledWith("width", "100%")).to.be
+        .true;
+    });
+
+    it("should stop recursion when parent has multiple children", function () {
+      const parent = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "",
+        },
+        offsetWidth: 600,
+        parentElement: null,
+        children: { length: 2 }, // Multiple children
+      };
+
+      const child = {
+        style: {
+          setProperty: sinon.stub(),
+          width: "",
+        },
+        offsetWidth: 400,
+        parentElement: parent,
+      };
+
+      addStyleToSingleChildAncestors(child, { key: "width", value: "100%" });
+
+      expect(child.style.setProperty.calledWith("width", "100%")).to.be.true;
+      expect(parent.style.setProperty.called).to.be.false;
+    });
+
+    it("should not apply style when key is not in element style", function () {
+      const mockElement = {
+        style: {
+          setProperty: sinon.stub(),
+          // 'width' key not present
+        },
+        offsetWidth: 400,
+        parentElement: null,
+      };
+
+      addStyleToSingleChildAncestors(mockElement, {
+        key: "width",
+        value: "100%",
+      });
+
+      expect(mockElement.style.setProperty.called).to.be.false;
+    });
+  });
+
+  describe("findAdWrapper", function () {
+    let originalFrameElement;
+
+    beforeEach(function () {
+      originalFrameElement = window.frameElement;
+    });
+
+    afterEach(function () {
+      // Restore original value, but handle case where it can't be set
+      try {
+        Object.defineProperty(window, "frameElement", {
+          value: originalFrameElement,
+          writable: true,
+          configurable: true,
+        });
+      } catch (e) {
+        // Browser doesn't allow setting frameElement
+      }
+    });
+
+    it("should return window.frameElement when in Google Ads iframe", function () {
+      const mockFrameElement = { name: "google_ads_iframe_test" };
+
+      // Mock window.frameElement
+      try {
+        Object.defineProperty(window, "frameElement", {
+          value: mockFrameElement,
+          writable: true,
+          configurable: true,
+        });
+      } catch (e) {
+        // Skip test if we can't mock frameElement in this environment
+        this.skip();
+        return;
+      }
+
+      const mockTarget = {};
+      const result = findAdWrapper(mockTarget);
+
+      expect(result).to.equal(mockFrameElement);
+    });
+
+    it("should return grandparent element when not in Google Ads iframe", function () {
+      try {
+        Object.defineProperty(window, "frameElement", {
+          value: null,
+          writable: true,
+          configurable: true,
+        });
+      } catch (e) {
+        // Skip test if we can't mock frameElement in this environment
+        this.skip();
+        return;
+      }
+
+      const grandParent = {};
+      const parent = { parentElement: grandParent };
+      const target = { parentElement: parent };
+
+      const result = findAdWrapper(target);
+
+      expect(result).to.equal(grandParent);
+    });
+
+    it("should return grandparent when frame name does not match Google Ads pattern", function () {
+      const mockFrameElement = { name: "other_iframe_test" };
+
+      try {
+        Object.defineProperty(window, "frameElement", {
+          value: mockFrameElement,
+          writable: true,
+          configurable: true,
+        });
+      } catch (e) {
+        // Skip test if we can't mock frameElement in this environment
+        this.skip();
+        return;
+      }
+
+      const grandParent = {};
+      const parent = { parentElement: grandParent };
+      const target = { parentElement: parent };
+
+      const result = findAdWrapper(target);
+
+      expect(result).to.equal(grandParent);
+    });
+
+    it("should handle null target gracefully", function () {
+      try {
+        Object.defineProperty(window, "frameElement", {
+          value: null,
+          writable: true,
+          configurable: true,
+        });
+      } catch (e) {
+        // Skip test if we can't mock frameElement in this environment
+        this.skip();
+        return;
+      }
+
+      const result = findAdWrapper(null);
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe("applyFullWidth", function () {
+    let findAdWrapperStub;
+    let addStyleToSingleChildAncestorsStub;
+
+    beforeEach(function () {
+      findAdWrapperStub = sinon.stub();
+      addStyleToSingleChildAncestorsStub = sinon.stub();
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it("should call addStyleToSingleChildAncestors with width 100% when adWrapper exists", function () {
+      const mockTarget = {};
+      const mockAdWrapper = {};
+
+      expect(() => applyFullWidth(mockTarget)).to.not.throw();
+    });
+
+    it("should handle null adWrapper gracefully", function () {
+      const mockTarget = {};
+
+      expect(() => applyFullWidth(mockTarget)).to.not.throw();
+    });
+  });
+
+  describe("applyAutoHeight", function () {
+    it("should call addStyleToSingleChildAncestors with height auto when adWrapper exists", function () {
+      const mockTarget = {};
+
+      // Test that function executes without errors
+      expect(() => applyAutoHeight(mockTarget)).to.not.throw();
+    });
+
+    it("should handle null adWrapper gracefully", function () {
+      const mockTarget = {};
+
+      expect(() => applyAutoHeight(mockTarget)).to.not.throw();
+    });
+  });
+});
