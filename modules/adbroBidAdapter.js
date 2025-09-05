@@ -29,10 +29,15 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
+
   isBidRequestValid: (bid) => {
-    const { mediaTypes } = bid;
-    return mediaTypes && mediaTypes[BANNER] && mediaTypes[BANNER].sizes;
+    const { params, mediaTypes } = bid;
+    return Boolean(
+      params && params.placementId &&
+      mediaTypes && mediaTypes[BANNER] && mediaTypes[BANNER].sizes
+    );
   },
+
   buildRequests(bidRequests, bidderRequest) {
     const placementId = bidRequests[0].params.placementId;
     const data = converter.toORTB({bidRequests, bidderRequest});
@@ -43,6 +48,7 @@ export const spec = {
       data
     }];
   },
+
   interpretResponse(response, request) {
     response.body.seatbid.forEach(sb => sb.bid.forEach(bid => {
       bid.crid = 'test-prebidjs-adbro.com';
@@ -52,6 +58,7 @@ export const spec = {
     const result = converter.fromORTB({request: request.data, response: response.body}).bids;
     return result;
   },
+
   onBidWon: function(bid) {
     if (bid.burl) triggerPixel(bid.burl);
   },
