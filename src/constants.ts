@@ -51,6 +51,7 @@ export const EVENTS = {
   BEFORE_PBS_HTTP: 'beforePBSHttp',
   BROWSI_INIT: 'browsiInit',
   BROWSI_DATA: 'browsiData',
+  BROWSER_INTERVENTION: 'browserIntervention'
 } as const;
 
 export const AD_RENDER_FAILED_REASON = {
@@ -195,7 +196,8 @@ export const MESSAGES = {
   REQUEST: 'Prebid Request',
   RESPONSE: 'Prebid Response',
   NATIVE: 'Prebid Native',
-  EVENT: 'Prebid Event'
+  EVENT: 'Prebid Event',
+  INTERVENTION: 'Prebid Intervention'
 };
 
 export const PB_LOCATOR = '__pb_locator__';
