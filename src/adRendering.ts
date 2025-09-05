@@ -23,8 +23,6 @@ import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 import type {Bid} from "./bidfactory.ts";
-// eslint-disable-next-line prebid/validate-imports
-import {registerReportingObserver} from '../creative/reporting.js'
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -354,9 +352,6 @@ export function renderAdDirect(doc, adId, options) {
   const messageHandler = creativeMessageHandler({resizeFn});
   function renderFn(adData) {
     if (adData.ad) {
-      registerReportingObserver((report) => {
-        emitBrowserIntervention({bid, adId, intervention: report});
-      }, ['intervention'], doc);
       doc.write(adData.ad);
       doc.close();
       emitAdRenderSucceeded({doc, bid, id: bid.adId});
