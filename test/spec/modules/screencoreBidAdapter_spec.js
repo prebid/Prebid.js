@@ -203,7 +203,7 @@ function getTopWindowQueryParams() {
   }
 }
 
-describe('Screencore bid adapter', function () {
+describe('screencore bid adapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
@@ -268,7 +268,7 @@ describe('Screencore bid adapter', function () {
     let sandbox;
     before(function () {
       getGlobal().bidderSettings = {
-        Screencore: {
+        screencore: {
           storageAllowed: true,
         },
       };
@@ -619,7 +619,7 @@ describe('Screencore bid adapter', function () {
   describe('unique deal id', function () {
     before(function () {
       getGlobal().bidderSettings = {
-        Screencore: {
+        screencore: {
           storageAllowed: true,
         },
       };
@@ -654,7 +654,7 @@ describe('Screencore bid adapter', function () {
   describe('storage utils', function () {
     before(function () {
       getGlobal().bidderSettings = {
-        Screencore: {
+        screencore: {
           storageAllowed: true,
         },
       };
