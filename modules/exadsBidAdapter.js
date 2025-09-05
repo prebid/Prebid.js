@@ -233,7 +233,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
               native.impressionTrackers = [];
 
               responseADM.native.eventtrackers.forEach(tracker => {
-                if (tracker.method == 1) {
+                if (Number(tracker.method) === 1) {
                   native.impressionTrackers.push(tracker.url);
                 }
               });
@@ -266,11 +266,11 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           nurl: bidData.nurl.replace(/^http:\/\//i, 'https://')
         };
 
-        if (mediaType == 'native') {
+        if (mediaType === 'native') {
           bidResponse.native = native;
         }
 
-        if (mediaType == 'video') {
+        if (mediaType === 'video') {
           bidResponse.vastXml = bidData.adm;
           bidResponse.width = bidData.w;
           bidResponse.height = bidData.h;

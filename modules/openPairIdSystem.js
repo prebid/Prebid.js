@@ -69,7 +69,7 @@ export const openPairIdSubmodule = {
     const publisherIdsString = publisherIdFromLocalStorage(DEFAULT_PUBLISHER_ID_KEY) || publisherIdFromCookie(DEFAULT_PUBLISHER_ID_KEY);
     let ids = []
 
-    if (publisherIdsString && typeof publisherIdsString == 'string') {
+    if (publisherIdsString && typeof publisherIdsString === 'string') {
       try {
         ids = ids.concat(JSON.parse(atob(publisherIdsString)));
       } catch (error) {
@@ -110,7 +110,7 @@ export const openPairIdSubmodule = {
       }
     }
 
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       logInfo('Open Pair ID: no ids found')
       return undefined;
     }

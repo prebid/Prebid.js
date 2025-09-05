@@ -343,7 +343,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     let jsTrackers = nativeAd.javascript_trackers;
 
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined || jsTrackers === null) {
       jsTrackers = jsTrackerDisarmed;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];

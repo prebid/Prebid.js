@@ -223,7 +223,7 @@ export const ftrackIdSubmodule = {
       usPrivacyOptOutSale = usp[2];
       // usPrivacyLSPA = usp[3];
     }
-    if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
+    if (usPrivacyVersion === '1' && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
   },

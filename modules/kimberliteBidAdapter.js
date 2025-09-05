@@ -47,7 +47,7 @@ const converter = ortbConverter({
 
     bid.adm = expandAuctionMacros(bid.adm, bid.price, context.ortbResponse.cur);
 
-    if (bid.nurl && bid.nurl != '') {
+    if (bid.nurl) {
       bid.nurl = expandAuctionMacros(bid.nurl, bid.price, context.ortbResponse.cur);
     }
 

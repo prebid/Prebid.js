@@ -40,7 +40,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
     const floor = getBidFloor(request, request.sizes || []);
-    const dpr = typeof window != 'undefined' ? window.devicePixelRatio : 1;
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
     const wp = getWalletPresence();
     const wpfs = getWalletProviderFlags();
     const winDimensions = getWinDimensions();
@@ -62,7 +62,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       provider_version: PROVIDER_VERSION,
       provider_name: PROVIDER_NAME,
       location:
-        bidderRequest.refererInfo?.page || typeof window != 'undefined'
+        bidderRequest.refererInfo?.page || typeof window !== 'undefined'
           ? window.location.href
           : '',
       sdk_version: PREBID_VERSION,

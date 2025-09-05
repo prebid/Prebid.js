@@ -75,7 +75,7 @@ export const spec = {
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
         version: 4,
-        coppa: config.getConfig('coppa') == true ? 1 : 0,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined,
         test,
         testDk,
