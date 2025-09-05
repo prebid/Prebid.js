@@ -277,7 +277,7 @@ export function getExtNextMilImp(bid) {
     },
   };
 
-  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots
+  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots;
   if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
 
   return nextMilImp;
