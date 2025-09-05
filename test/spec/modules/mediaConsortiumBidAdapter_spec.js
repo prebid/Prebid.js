@@ -27,6 +27,25 @@ const VIDEO_BID = {
   }
 }
 
+const VIDEO_BID_WITH_CONFIG = {
+  adUnitCode: 'video',
+  bidId: '2f0d9715f60be8',
+  mediaTypes: {
+    video: {
+      playerSize: [
+        [300, 250]
+      ],
+      context: 'outstream'
+    }
+  },
+  params: {
+    video: {
+      maxWidth: 640,
+      isReplayable: true
+    }
+  }
+}
+
 const VIDEO_BID_WITH_MISSING_CONTEXT = {
   adUnitCode: 'video',
   bidId: '2f0d9715f60be8',
@@ -151,6 +170,11 @@ describe('Media Consortium Bid Adapter', function () {
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
+      expect(auctionRequest.internal).to.deep.equal({
+        bidRequests: {
+          [BANNER_BID.bidId]: BANNER_BID
+        }
+      })
     })
 
     it('should build a video request', function () {
@@ -195,6 +219,11 @@ describe('Media Consortium Bid Adapter', function () {
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
+      expect(auctionRequest.internal).to.deep.equal({
+        bidRequests: {
+          [VIDEO_BID.bidId]: VIDEO_BID
+        }
+      })
     })
 
     it('should build a request with multiple mediatypes', function () {
@@ -239,6 +268,11 @@ describe('Media Consortium Bid Adapter', function () {
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
+      expect(auctionRequest.internal).to.deep.equal({
+        bidRequests: {
+          [MULTI_MEDIATYPES_BID.bidId]: MULTI_MEDIATYPES_BID
+        }
+      })
     })
 
     it('should not build a request if optimizations are there for the adunit code', function () {
@@ -310,11 +344,12 @@ describe('Media Consortium Bid Adapter', function () {
       expect(spec.interpretResponse({body: 'INVALID_BODY'}, {})).to.deep.equal([]);
     })
 
-    it('should return a formatted bid', function () {
+    it('should return a formatted banner bid', function () {
       const serverResponse = {
         body: {
           id: 'requestId',
           bids: [{
+            id: 'bid-123',
             impressionId: '2f0d9715f60be8',
             price: {
               cpm: 1,
@@ -376,6 +411,146 @@ describe('Media Consortium Bid Adapter', function () {
       expect(storedOptimizations['test_ad_unit_code_2'].isEnabled).to.equal(true)
       expect(storedOptimizations['test_ad_unit_code_2'].expiresAt).to.be.a('number')
     })
+
+    it('should return a formatted video bid with renderer', function () {
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            dealId: 'TEST_DEAL_ID',
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>',
+                rendering: {
+                  video: {
+                    player: {
+                      maxWidth: 800,
+                      isReplayable: false
+                    }
+                  }
+                }
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
+
+      const params = {
+        data: {
+          impressions: [{
+            id: '2f0d9715f60be8',
+            adUnitCode: 'video'
+          }]
+        },
+        internal: {
+          bidRequests: {
+            '2f0d9715f60be8': VIDEO_BID_WITH_CONFIG
+          }
+        }
+      }
+
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
+
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0]).to.have.property('renderer')
+      expect(formattedResponse[0].renderer).to.have.property('id', 'bid-123')
+      expect(formattedResponse[0].renderer).to.have.property('url', 'https://cdn.hubvisor.io/big/player.js')
+      expect(formattedResponse[0].renderer).to.have.property('config')
+      expect(formattedResponse[0].renderer.config).to.have.property('selector', '#video')
+      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 640) // local config takes precedence
+      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', true) // local config takes precedence
+    })
+
+    it('should handle video bid with missing impression request', function () {
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>'
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
+
+      const params = {
+        data: {
+          impressions: []
+        },
+        internal: {
+          bidRequests: {}
+        }
+      }
+
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
+
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0]).to.not.have.property('renderer')
+    })
+
+    it('should handle video bid with missing bid request', function () {
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>'
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
+
+      const params = {
+        data: {
+          impressions: [{
+            id: '2f0d9715f60be8',
+            adUnitCode: 'video'
+          }]
+        },
+        internal: {
+          bidRequests: {}
+        }
+      }
+
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
+
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0]).to.not.have.property('renderer')
+    })
   });
 
   describe('getUserSyncs', function () {
@@ -409,4 +584,174 @@ describe('Media Consortium Bid Adapter', function () {
       expect(spec.getUserSyncs(null, serverResponses)).to.deep.equal(formattedUserSyncs);
     })
   });
+
+  describe('renderer integration', function () {
+    it('should create renderer with correct configuration when video bid is processed', function () {
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>',
+                rendering: {
+                  video: {
+                    player: {
+                      maxWidth: 800,
+                      isReplayable: false
+                    }
+                  }
+                }
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
+
+      const params = {
+        data: {
+          impressions: [{
+            id: '2f0d9715f60be8',
+            adUnitCode: 'video'
+          }]
+        },
+        internal: {
+          bidRequests: {
+            '2f0d9715f60be8': VIDEO_BID_WITH_CONFIG
+          }
+        }
+      }
+
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
+
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0]).to.have.property('renderer')
+      expect(formattedResponse[0].renderer).to.have.property('id', 'bid-123')
+      expect(formattedResponse[0].renderer).to.have.property('url', 'https://cdn.hubvisor.io/big/player.js')
+      expect(formattedResponse[0].renderer).to.have.property('config')
+      expect(formattedResponse[0].renderer.config).to.have.property('selector', '#video')
+      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 640) // local config takes precedence
+      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', true) // local config takes precedence
+    })
+
+    it('should merge local and remote configurations correctly', function () {
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>',
+                rendering: {
+                  video: {
+                    player: {
+                      maxWidth: 800,
+                      isReplayable: false
+                    }
+                  }
+                }
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
+
+      const params = {
+        data: {
+          impressions: [{
+            id: '2f0d9715f60be8',
+            adUnitCode: 'video'
+          }]
+        },
+        internal: {
+          bidRequests: {
+            '2f0d9715f60be8': {
+              ...VIDEO_BID_WITH_CONFIG,
+              params: {
+                video: {
+                  maxWidth: 640,
+                  isReplayable: true
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
+
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 640) // local config takes precedence
+      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', true) // local config takes precedence
+    })
+
+    it('should handle CSS selector formatting correctly', function () {
+      const serverResponse = {
+        body: {
+          id: 'requestId',
+          bids: [{
+            id: 'bid-123',
+            impressionId: '2f0d9715f60be8',
+            price: {
+              cpm: 1,
+              currency: 'JPY'
+            },
+            ad: {
+              creative: {
+                id: 'CREATIVE_ID',
+                mediaType: 'video',
+                size: {width: 320, height: 250},
+                markup: '<VAST>...</VAST>'
+              }
+            },
+            ttl: 3600
+          }]
+        }
+      }
+
+      const params = {
+        data: {
+          impressions: [{
+            id: '2f0d9715f60be8',
+            adUnitCode: 'video-unit-with-special-chars'
+          }]
+        },
+        internal: {
+          bidRequests: {
+            '2f0d9715f60be8': {
+              ...VIDEO_BID,
+              adUnitCode: 'video-unit-with-special-chars',
+              params: {}
+            }
+          }
+        }
+      }
+
+      const formattedResponse = spec.interpretResponse(serverResponse, params)
+
+      expect(formattedResponse).to.have.length(1)
+      expect(formattedResponse[0].renderer.config).to.have.property('selector')
+      expect(formattedResponse[0].renderer.config.selector).to.include('video-unit-with-special-chars')
+    })
+  })
 });
