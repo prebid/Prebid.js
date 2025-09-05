@@ -4,7 +4,6 @@ import {
   inIframe,
   insertElement,
   logError,
-  logInfo,
   logWarn,
   replaceMacros,
   triggerPixel
@@ -24,6 +23,8 @@ import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 import type {Bid} from "./bidfactory.ts";
+// eslint-disable-next-line prebid/validate-imports
+import {registerReportingObserver} from '../creative/reporting.js'
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -405,20 +406,6 @@ export function insertLocatorFrame() {
       const frame = createInvisibleIframe();
       frame.name = PB_LOCATOR;
       document.body.appendChild(frame);
-    }
-  }
-}
-
-export function registerReportingObserver(callback: (report: Report) => void, types: string[] = ['crash', 'deprecation', 'intervention'], document) {
-  if ('ReportingObserver' in document?.defaultView) {
-    try {
-      const observer = new document.defaultView.ReportingObserver((reports) => {
-        callback(reports[0]);
-      }, { buffered: true, types });
-      observer.observe();
-      logInfo('ReportingObserver registered for types: ', types);
-    } catch (e) {
-      logWarn('Error registering ReportingObserver', e);
     }
   }
 }
