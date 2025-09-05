@@ -82,20 +82,34 @@ export const PBS_PROCESSORS = {
   },
   [RESPONSE]: {
     serverSideStats: {
-      // updates bidderRequest and bidRequests with serverErrors from ext.errors and serverResponseTimeMs from ext.responsetimemillis
+      // updates bidderRequest and bidRequests with fields from response.ext
+      // - bidder-scoped for 'errors' and 'responsetimemillis'
+      // - copy-as-is for all other fields
       fn(response, ortbResponse, context) {
-        Object.entries({
-          errors: 'serverErrors',
-          responsetimemillis: 'serverResponseTimeMs'
-        }).forEach(([serverName, clientName]) => {
-          const value = deepAccess(ortbResponse, `ext.${serverName}.${context.bidderRequest.bidderCode}`);
-          if (value) {
-            context.bidderRequest[clientName] = value;
-            context.bidRequests.forEach(bid => {
-              bid[clientName] = value;
-            });
+        const bidder = context?.bidderRequest?.bidderCode;
+        const ext = ortbResponse && ortbResponse.ext;
+        if (!ext) return;
+        Object.keys(ext).forEach((field) => {
+          if (field === 'errors' || field === 'responsetimemillis') {
+            if (!bidder) return;
+            const value = deepAccess(ortbResponse, `ext.${field}.${bidder}`);
+            if (value !== undefined) {
+              const clientName = field === 'errors' ? 'serverErrors' : 'serverResponseTimeMs';
+              context.bidderRequest[clientName] = value;
+              context.bidRequests.forEach(bid => {
+                bid[clientName] = value;
+              });
+            }
+          } else {
+            const value = deepAccess(ortbResponse, `ext.${field}`);
+            if (value !== undefined) {
+              context.bidderRequest[field] = value;
+              context.bidRequests.forEach(bid => {
+                bid[field] = value;
+              });
+            }
           }
-        })
+        });
       }
     },
   }
