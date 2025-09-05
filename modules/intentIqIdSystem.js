@@ -10,6 +10,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
+import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js'
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {readData, storeData, defineStorageType, removeDataByKey, tryParse} from '../libraries/intentIqUtils/storageUtils.js';
@@ -21,7 +22,7 @@ import {
   EMPTY,
   GVLID,
   VERSION, INVALID_ID, SCREEN_PARAMS, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
-  HOURS_24
+  HOURS_24, CH_KEYS
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
 import {iiqPixelServerAddress, iiqServerAddress} from '../libraries/intentIqUtils/intentIqConfig.js';
@@ -336,6 +337,7 @@ export const intentIqIdSubmodule = {
     sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData) : '';
     sourceMetaDataExternal = isNumber(configParams.sourceMetaDataExternal) ? configParams.sourceMetaDataExternal : undefined;
     const additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
+    const chTimeout = Number(configParams?.chTimeout) >= 0 ? Number(configParams.chTimeout) : 10;
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
@@ -385,25 +387,43 @@ export const intentIqIdSubmodule = {
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
+    const chSupported = isCHSupported();
+    let chPromise = null;
 
-    // Get client hints and save to storage
-    if (navigator?.userAgentData?.getHighEntropyValues) {
-      navigator.userAgentData
-        .getHighEntropyValues([
-          'brands',
-          'mobile',
-          'bitness',
-          'wow64',
-          'architecture',
-          'model',
-          'platform',
-          'platformVersion',
-          'fullVersionList'
-        ])
-        .then(ch => {
-          clientHints = handleClientHints(ch);
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData)
+    function fetchAndHandleCH() {
+      return navigator.userAgentData.getHighEntropyValues(CH_KEYS)
+        .then(raw => {
+          const nextCH = handleClientHints(raw) || '';
+          const prevCH = clientHints || '';
+          if (nextCH !== prevCH) {
+            clientHints = nextCH;
+            storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData);
+          }
+          return nextCH;
+        })
+        .catch(err => {
+          logError('CH fetch failed', err);
+          if (clientHints !== '') {
+            clientHints = '';
+            removeDataByKey(CLIENT_HINTS_KEY, allowedStorage)
+          }
+          return '';
         });
+    }
+
+    if (chSupported) {
+      chPromise = fetchAndHandleCH();
+      chPromise.catch(err => {
+        logError('fetchAndHandleCH failed', err);
+      });
+    } else {
+      clientHints = '';
+      removeDataByKey(CLIENT_HINTS_KEY, allowedStorage)
+    }
+
+    function waitOnCH(timeoutMs) {
+      const timeout = new Promise(resolve => setTimeout(() => resolve(''), timeoutMs));
+      return Promise.race([chPromise, timeout]);
     }
 
     const savedData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage))
@@ -452,13 +472,27 @@ export const intentIqIdSubmodule = {
       firePartnerCallback()
     }
 
+    function buildAndSendPixel(ch) {
+      const url = createPixelUrl(firstPartyData, ch, configParams, partnerData, cmpData);
+      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser);
+    }
+
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
-      const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData)
-      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser)
-      return
+
+      if (chSupported) {
+        if (clientHints) {
+          buildAndSendPixel(clientHints)
+        } else {
+          waitOnCH(chTimeout)
+            .then(ch => buildAndSendPixel(ch || ''));
+        }
+      } else {
+        buildAndSendPixel('');
+      }
+      return;
     }
 
     if (!shouldCallServer) {
@@ -478,7 +512,6 @@ export const intentIqIdSubmodule = {
     url = appendCMPData(url, cmpData);
     url += '&japs=' + encodeURIComponent(configParams.siloEnabled === true);
     url = appendCounters(url);
-    url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
@@ -619,7 +652,26 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
 
-      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+      const sendAjax = uh => {
+        if (uh) url += '&uh=' + encodeURIComponent(uh);
+        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
+      }
+
+      if (chSupported) {
+        if (clientHints) {
+          // CH found in LS: send immediately; background fetch will refresh/clear later
+          sendAjax(clientHints);
+        } else {
+          // No CH in LS: wait up to chTimeout, then send
+          waitOnCH(chTimeout).then(ch => {
+            // Send with received CH or without it
+            sendAjax(ch || '');
+          })
+        }
+      } else {
+        // CH not supported: send without uh
+        sendAjax('');
+      }
     };
     const respObj = {callback: resp};
 

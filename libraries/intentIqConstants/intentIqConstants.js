@@ -9,7 +9,7 @@ export const BLACK_LIST = 'L';
 export const CLIENT_HINTS_KEY = '_iiq_ch';
 export const EMPTY = 'EMPTY';
 export const GVLID = '1323';
-export const VERSION = 0.3;
+export const VERSION = 0.31;
 export const PREBID = 'pbjs';
 export const HOURS_24 = 86400000;
 
@@ -36,3 +36,8 @@ export const MAX_REQUEST_LENGTH = {
   firefox: 65536,
   ie: 2048
 };
+
+export const CH_KEYS = [
+  'brands', 'mobile', 'platform', 'bitness', 'wow64', 'architecture',
+  'model', 'platformVersion', 'fullVersionList'
+];
