@@ -91,7 +91,7 @@ export const spec = {
       data.coppa = true;
     }
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,

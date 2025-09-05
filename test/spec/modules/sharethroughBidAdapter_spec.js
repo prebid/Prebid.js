@@ -444,7 +444,7 @@ describe('sharethrough adapter spec', function () {
             },
           ];
 
-          builtRequests.map((builtRequest, rIndex) => {
+          builtRequests.forEach((builtRequest, rIndex) => {
             expect(builtRequest.method).to.equal('POST');
             expect(builtRequest.url).not.to.be.undefined;
             expect(builtRequest.options).to.be.undefined;
