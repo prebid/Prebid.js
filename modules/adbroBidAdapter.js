@@ -39,14 +39,18 @@ export const spec = {
   },
 
   buildRequests(bidRequests, bidderRequest) {
-    const placementId = bidRequests[0].params.placementId;
-    const data = converter.toORTB({bidRequests, bidderRequest});
-    data.device.js = 1;
-    return [{
-      method: 'POST',
-      url: ENDPOINT_URL + '?placementId=' + placementId,
-      data
-    }];
+    const requests = [];
+    bidRequests.forEach(bidRequest => {
+      const placementId = bidRequest.params.placementId;
+      const data = converter.toORTB({bidRequests: [bidRequest], bidderRequest: bidderRequest});
+      data.device.js = 1;
+      requests.push({
+        method: 'POST',
+        url: ENDPOINT_URL + '?placementId=' + placementId,
+        data
+      });
+    });
+    return requests;
   },
 
   interpretResponse(response, request) {
