@@ -15,7 +15,7 @@ import { config } from 'src/config.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { version } from 'package.json';
 import * as utils from 'src/utils.js';
-import { useFakeTimers } from 'sinon';
+import sinon, { useFakeTimers } from 'sinon';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'netId', 'tdid', 'pubProvidedId', 'intentIqId', 'liveIntentId'];
 
@@ -700,8 +700,14 @@ describe('screencore bid adapter', function () {
 
   describe('createDomain test', function () {
     it('should return correct domain', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'America/New_York' })
+      });
+
       const responses = createDomain();
-      expect(responses).to.be.equal('https://taqeu.screencore.io');
+      expect(responses).to.be.equal('https://taqus.screencore.io');
+
+      stub.restore();
     });
   });
 });
