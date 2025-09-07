@@ -19,15 +19,24 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: gulp build --modules=modules.json
+        run: |
+          gulp build \
+          gulp bundle --tag prebid-full --modules=modules-full.json \
+          gulp bundle --tag prebid-no-user-sync --modules=modules-no-user-sync.json
 
       - name: Upload to S3 Bucket
         run: |
-          aws s3 cp build/dist/prebid.js s3://${{ vars.AWS_S3_BUCKET }} \
+          aws s3 cp build/dist/prebid.prebid-full.js s3://${{ vars.AWS_S3_BUCKET }}/prebid.js \
             --region ${{ vars.AWS_S3_REGION }} \
             --content-type "text/javascript; charset=UTF-8" \
             --cache-control "public, max-age=1800, stale-while-revalidate=3600" \
             --content-disposition 'attachment; filename="f.txt"'
+          
+          aws s3 cp build/dist/prebid.prebid-no-user-sync.js s3://${{ vars.AWS_S3_BUCKET }}/prebid-no-user-sync.js \
+                      --region ${{ vars.AWS_S3_REGION }} \
+                      --content-type "text/javascript; charset=UTF-8" \
+                      --cache-control "public, max-age=1800, stale-while-revalidate=3600" \
+                      --content-disposition 'attachment; filename="f.txt"'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
