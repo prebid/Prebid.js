@@ -30,7 +30,12 @@ jobs:
 
       - name: Purge Cloudflare Cache
         run: |
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ vars.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+          response=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ vars.CLOUDFLARE_ZONE_ID }}/purge_cache" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"files":["https://tag.adpulse.com.br/prebid.js"]}'
+            --data '{"files":["https://tag.adpulse.com.br/prebid.js"]}')
+          echo "$response"
+          if ! echo "$response" | grep -q '"success":true'; then
+            echo "Cloudflare cache purge failed"
+            exit 1
+          fi
