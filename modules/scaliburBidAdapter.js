@@ -43,6 +43,7 @@ export const spec = {
           ext: {
             placementId: bid.params.placementId,
             adUnitCode: bid.adUnitCode,
+            ...bid.params,
           },
         };
 
