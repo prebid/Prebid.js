@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -20,8 +24,8 @@ jobs:
 
       - name: Build project
         run: |
-          gulp build \
-          gulp bundle --tag prebid-full --modules=modules-full.json \
+          gulp build
+          gulp bundle --tag prebid-full --modules=modules-full.json
           gulp bundle --tag prebid-no-user-sync --modules=modules-no-user-sync.json
 
       - name: Upload to S3 Bucket
