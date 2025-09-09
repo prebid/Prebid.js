@@ -166,7 +166,7 @@ describe('PubMatic adapter', () => {
         }
       }
     }
-  }
+  };
   videoBid = {
     'seat': 'seat-id',
     'ext': {
