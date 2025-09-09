@@ -163,6 +163,6 @@
     "fsevents": "^2.3.2"
   },
   "peerDependencies": {
-    "schema-utils": "^2.7.1"
+    "schema-utils": "^4.3.2"
   }
 }
