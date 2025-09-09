@@ -56,7 +56,7 @@ export const spec = {
     const source = fpa !== null && fpa !== undefined ? { ext: { fpa } } : undefined
     const walletID = alkimiConfig && alkimiConfig.walletID
     const userParams = alkimiConfig && alkimiConfig.userParams
-    const user = (walletID !== null && walletID !== undefined || userParams !== null && userParams !== undefined || id !== null && id !== undefined) ? { id, ext: { walletID, userParams } } : undefined
+    const user = ((walletID !== null && walletID !== undefined) || (userParams !== null && userParams !== undefined) || (id !== null && id !== undefined)) ? { id, ext: { walletID, userParams } } : undefined
 
     const payload = {
       requestId: generateUUID(),
