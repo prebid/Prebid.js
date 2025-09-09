@@ -73,7 +73,7 @@
     "eslint": "^9.34.0",
     "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsdoc": "^50.6.6",
+    "eslint-plugin-jsdoc": "^50.8.0",
     "execa": "^1.0.0",
     "faker": "^5.5.3",
     "fancy-log": "^2.0.0",
