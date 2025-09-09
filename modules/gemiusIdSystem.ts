@@ -100,6 +100,7 @@ export const gemiusIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
         (function waitForPrimaryScript(tryCount = 1, nextWaitTime = WAIT_FOR_PRIMARY_SCRIPT_INITIAL_WAIT_MS) {
           if (typeof win['gemius_cmd'] !== 'undefined') {
             retrieveId(win as PrimaryScriptWindow, callback);
+            return;
           }
 
           if (tryCount < WAIT_FOR_PRIMARY_SCRIPT_MAX_TRIES) {
