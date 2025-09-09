@@ -3,8 +3,8 @@ import { spec } from '../../../modules/smarthubBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'smarthub'
-const bidderAlias = 'markapp'
+const bidder = 'smarthub';
+const bidderAlias = 'markapp';
 
 describe('SmartHubBidAdapter', function () {
   const bids = [
@@ -22,6 +22,23 @@ describe('SmartHubBidAdapter', function () {
         token: 'testBanner',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 10,
+        pos: 1,
+      }
+    },
+    {
+      bidId: getUniqueIdentifierStr(),
+      bidder: 'Jambojar',
+      mediaTypes: {
+        [BANNER]: {
+          sizes: [[400, 350]]
+        }
+      },
+      params: {
+        seat: 'testSeat',
+        token: 'testBanner',
+        region: 'Apac',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
+        minBidfloor: 9,
         pos: 1,
       }
     },
@@ -125,7 +142,7 @@ describe('SmartHubBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let [serverRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
+    let [serverRequest, regionRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -139,11 +156,15 @@ describe('SmartHubBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(`https://prebid.attekmi.com/pbjs?partnerName=testname`);
+      expect(serverRequest.url).to.equal(`https://prebid.attekmi.co/pbjs?partnerName=testname`);
+    });
+
+    it('Returns valid URL if region added', function () {
+      expect(regionRequest.url).to.equal(`https://jambojar-apac-prebid.attekmi.co/pbjs`);
     });
 
     it('Returns valid URL if alias', function () {
-      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.com/pbjs`);
+      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.co/pbjs`);
     });
 
     it('Returns general data valid', function () {
