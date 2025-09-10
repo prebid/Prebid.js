@@ -267,7 +267,7 @@ function handlerAuctionInit(event) {
       ban_szs: bannerSizes.join(','),
       bdrs: sortedBidderNames.join(','),
       pgtyp: deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.pagetype', null),
-      plcmt: deepAccess(adUnits[0], 'ortb2Imp.ext.data.placement', null),
+      plcmt: deepAccess(adUnits[0], 'ortb2Imp.ext.data.adg_rtd.placement', null), // adg_rtd.placement is set by AdagioRtdProvider.
       t_n: adgRtdSession.testName || null,
       t_v: adgRtdSession.testVersion || null,
       s_id: adgRtdSession.id || null,
@@ -289,6 +289,11 @@ function handlerAuctionInit(event) {
         // for backward compatibility: if we didn't find organizationId & site but we have a bid from adagio we might still find it in params
         qp.org_id = qp.org_id || adagioAdUnitBids[0].params.organizationId;
         qp.site = qp.site || adagioAdUnitBids[0].params.site;
+
+        // `qp.plcmt` uses the value set by the AdagioRtdProvider. If not present, we fallback on the value set at the adUnit.params level.
+        if (!qp.plcmt) {
+          qp.plcmt = deepAccess(adagioAdUnitBids[0], 'params.placement', null);
+        }
       }
     }
 
