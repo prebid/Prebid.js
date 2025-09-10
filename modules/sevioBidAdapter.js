@@ -354,9 +354,15 @@ export const spec = {
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
       };
 
+      const wrapperOn =
+        typeof window !== "undefined" && window.sevio_wrapper === true;
+
+      const url = wrapperOn
+        ? `${ENDPOINT_URL}?wrapper=true`
+        : ENDPOINT_URL;
       return {
         method: ACTION_METHOD,
-        url: ENDPOINT_URL,
+        url,
         data: payload,
         bidRequest: bidRequests[0],
       };
