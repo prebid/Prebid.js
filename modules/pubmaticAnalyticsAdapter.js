@@ -93,7 +93,9 @@ function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
   return ajax(url, null, body, { method });
 };
 
-function copyRequiredBidDetails(bid) {
+function copyRequiredBidDetails(bid, bidRequest) {
+  // First check if bid has mediaTypes/sizes, otherwise fallback to bidRequest
+  const adUnitInfo = bid?.mediaTypes && bid?.sizes ? bid : (bidRequest || bid);
   return pick(bid, [
     'bidder',
     'bidderCode',
@@ -106,8 +108,8 @@ function copyRequiredBidDetails(bid) {
     'adUnit', () => pick(bid, [
       'adUnitCode',
       'transactionId',
-      'sizes as dimensions',
-      'mediaTypes'
+      'sizes as dimensions', () => adUnitInfo.sizes,
+      'mediaTypes', () => adUnitInfo.mediaTypes
     ])
   ]);
 }
@@ -424,7 +426,12 @@ const eventHandlers = {
       if (bid.params) {
         args.params = bid.params;
       }
-      bid = copyRequiredBidDetails(args);
+      // Save the original bid's adUnit properties to pass to the new bid
+      const originalBidRequest = {
+        mediaTypes: bid.adUnit?.mediaTypes,
+        sizes: bid.adUnit?.dimensions
+      };
+      bid = copyRequiredBidDetails(args, originalBidRequest);
       cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);
     } else if (args.originalRequestId) {
       bid.bidId = args.requestId;
