@@ -169,8 +169,8 @@ export const spec = {
           let bidRes = {
             requestId: bid.impid,
             cpm: bid.cpm,
-            width: bid.w,
-            height: bid.h,
+            width: bid.width,
+            height: bid.height,
             creativeId: bid.crid || '',
             currency: response.cur || DEFAULT_CURRENCY,
             netRevenue: true,
