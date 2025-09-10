@@ -21,6 +21,7 @@ describe('ssp_genieeBidAdapter', function () {
     bidderRequestId: 'bidderRequestId12345',
     auctionId: 'auctionId12345',
   };
+  let sandbox;
 
   function getGeparamsDefinedBid(bid, params) {
     const newBid = { ...bid };
@@ -72,10 +73,15 @@ describe('ssp_genieeBidAdapter', function () {
   }
 
   beforeEach(function () {
+    sandbox = sinon.createSandbox();
     document.documentElement.innerHTML = '';
     const adTagParent = document.createElement('div');
     adTagParent.id = AD_UNIT_CODE;
     document.body.appendChild(adTagParent);
+  });
+
+  afterEach(function () {
+    sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -133,21 +139,17 @@ describe('ssp_genieeBidAdapter', function () {
       });
 
       it('should set the title query to the encoded page title', function () {
-        const originalTitle = document.title;
         const testTitle = "Test Page Title with 'special' & \"chars\"";
-        document.title = testTitle;
+        sandbox.stub(document, 'title').value(testTitle);
         const request = spec.buildRequests([BANNER_BID]);
         const expectedEncodedTitle = encodeURIComponent(testTitle).replace(/'/g, '%27');
         expect(request[0].data.title).to.deep.equal(expectedEncodedTitle);
-        document.title = originalTitle;
       });
 
       it('should not set the title query when the page title is empty', function () {
-        const originalTitle = document.title;
-        document.title = '';
+        sandbox.stub(document, 'title').value('');
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('title');
-        document.title = originalTitle;
       });
 
       it('should sets the values for loc and referer queries when bidderRequest.refererInfo.referer has a value', function () {
