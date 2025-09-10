@@ -19,48 +19,21 @@ import sinon, { useFakeTimers } from 'sinon';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'netId', 'tdid', 'pubProvidedId', 'intentIqId', 'liveIntentId'];
 
-const ORTB2_DEVICE = {
-  sua: {
-    'source': 2,
-    'platform': {
-      'brand': 'Android',
-      'version': ['8', '0', '0'],
-    },
-    'browsers': [
-      { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
-      { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
-      { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] },
-    ],
-    'mobile': 1,
-    'model': 'SM-G955U',
-    'bitness': '64',
-    'architecture': '',
-  },
-  w: 980,
-  h: 1720,
-  dnt: 0,
-  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
-  language: 'en',
-  devicetype: 1,
-  make: 'Apple',
-  model: 'iPhone 12 Pro Max',
-  os: 'iOS',
-  osv: '17.4',
-  ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
-};
+const SUB_DOMAIN = 'exchange';
 
 const BID = {
   'bidId': '2d52001cabd527',
   'adUnitCode': 'div-gpt-ad-12345-0',
   'params': {
+    'subDomain': SUB_DOMAIN,
     'cId': '59db6b3b4ffaa70004f45cdc',
     'pId': '59ac17c192832d0011283fe3',
     'bidFloor': 0.1,
     'ext': {
       'param1': 'loremipsum',
-      'param2': 'dolorsitamet',
+      'param2': 'dolorsitamet'
     },
-    'placementId': 'testBanner',
+    'placementId': 'testBanner'
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
   'sizes': [[300, 250], [300, 600]],
@@ -74,9 +47,9 @@ const BID = {
   'ortb2Imp': {
     'ext': {
       'gpid': '0123456789',
-      'tid': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
-    },
-  },
+      'tid': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf'
+    }
+  }
 };
 
 const VIDEO_BID = {
@@ -89,11 +62,11 @@ const VIDEO_BID = {
   'bidderWinsCount': 1,
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
   'params': {
-    'subDomain': '',
+    'subDomain': SUB_DOMAIN,
     'cId': '635509f7ff6642d368cb9837',
     'pId': '59ac17c192832d0011283fe3',
     'bidFloor': 0.1,
-    'placementId': 'testBanner',
+    'placementId': 'testBanner'
   },
   'sizes': [[545, 307]],
   'mediaTypes': {
@@ -102,7 +75,7 @@ const VIDEO_BID = {
       'context': 'instream',
       'mimes': [
         'video/mp4',
-        'application/javascript',
+        'application/javascript'
       ],
       'protocols': [2, 3, 5, 6],
       'maxduration': 60,
@@ -110,41 +83,71 @@ const VIDEO_BID = {
       'startdelay': 0,
       'linearity': 1,
       'api': [2],
-      'placement': 1,
-    },
+      'placement': 1
+    }
   },
   'ortb2Imp': {
     'ext': {
-      'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+      'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
+    }
+  }
+}
+
+const ORTB2_DEVICE = {
+  sua: {
+    'source': 2,
+    'platform': {
+      'brand': 'Android',
+      'version': ['8', '0', '0']
     },
+    'browsers': [
+      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+    ],
+    'mobile': 1,
+    'model': 'SM-G955U',
+    'bitness': '64',
+    'architecture': ''
   },
+  w: 980,
+  h: 1720,
+  dnt: 0,
+  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+  language: 'en',
+  devicetype: 1,
+  make: 'Apple',
+  model: 'iPhone 12 Pro Max',
+  os: 'iOS',
+  osv: '17.4',
+  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
 };
 
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string',
-    'gdprApplies': true,
+    'gdprApplies': true
   },
   'gppString': 'gpp_string',
   'gppSid': [7],
   'uspConsent': 'consent_string',
   'refererInfo': {
     'page': 'https://www.greatsite.com',
-    'ref': 'https://www.somereferrer.com',
+    'ref': 'https://www.somereferrer.com'
   },
   'ortb2': {
     'site': {
       'content': {
-        'language': 'en',
-      },
+        'language': 'en'
+      }
     },
     'regs': {
       'gpp': 'gpp_string',
       'gpp_sid': [7],
-      'coppa': 0,
+      'coppa': 0
     },
     'device': ORTB2_DEVICE,
-  },
+  }
 };
 
 const SERVER_RESPONSE = {
@@ -160,13 +163,13 @@ const SERVER_RESPONSE = {
       'advertiserDomains': ['securepubads.g.doubleclick.net'],
       'cookies': [{
         'src': 'https://sync.com',
-        'type': 'iframe',
+        'type': 'iframe'
       }, {
         'src': 'https://sync.com',
-        'type': 'img',
-      }],
-    }],
-  },
+        'type': 'img'
+      }]
+    }]
+  }
 };
 
 const VIDEO_SERVER_RESPONSE = {
@@ -181,17 +184,24 @@ const VIDEO_SERVER_RESPONSE = {
       'mediaType': 'video',
       'creativeId': '12610997325162499419',
       'price': 2,
-      'cookies': [],
-    }],
-  },
+      'cookies': []
+    }]
+  }
+};
+
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {"content": {"language": "en"}
+  }
 };
 
 const REQUEST = {
   data: {
     width: 300,
     height: 250,
-    bidId: '2d52001cabd527',
-  },
+    bidId: '2d52001cabd527'
+  }
 };
 
 function getTopWindowQueryParams() {
@@ -314,17 +324,17 @@ describe('screencore bid adapter', function () {
             'source': 2,
             'platform': {
               'brand': 'Android',
-              'version': ['8', '0', '0'],
+              'version': ['8', '0', '0']
             },
             'browsers': [
               { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
               { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
-              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] },
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
             ],
             'mobile': 1,
             'model': 'SM-G955U',
             'bitness': '64',
-            'architecture': '',
+            'architecture': ''
           },
           device: ORTB2_DEVICE,
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
@@ -337,14 +347,14 @@ describe('screencore bid adapter', function () {
               maxduration: 60,
               mimes: [
                 'video/mp4',
-                'application/javascript',
+                'application/javascript'
               ],
               minduration: 0,
               placement: 1,
               playerSize: [[545, 307]],
               protocols: [2, 3, 5, 6],
-              startdelay: 0,
-            },
+              startdelay: 0
+            }
           },
           gpid: '',
           cat: [],
@@ -352,23 +362,25 @@ describe('screencore bid adapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
-          placementId: 'testBanner',
+          ortb2Imp: VIDEO_BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
+          placementId: "testBanner",
           userData: [],
-          coppa: 0,
-        },
+          coppa: 0
+        }
       });
     });
 
     it('should build banner request for each size', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       config.setConfig({
-        bidderTimeout: 3000,
+        bidderTimeout: 3000
       });
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
         method: 'POST',
-        url: `${createDomain()}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
+        url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
         data: {
           gdprConsent: 'consent_string',
           gdpr: 1,
@@ -386,17 +398,17 @@ describe('screencore bid adapter', function () {
             'source': 2,
             'platform': {
               'brand': 'Android',
-              'version': ['8', '0', '0'],
+              'version': ['8', '0', '0']
             },
             'browsers': [
               { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
               { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
-              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] },
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
             ],
             'mobile': 1,
             'model': 'SM-G955U',
             'bitness': '64',
-            'architecture': '',
+            'architecture': ''
           },
           device: ORTB2_DEVICE,
           url: 'https%3A%2F%2Fwww.greatsite.com',
@@ -421,10 +433,12 @@ describe('screencore bid adapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
-          placementId: 'testBanner',
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
+          placementId: "testBanner",
           userData: [],
-          coppa: 0,
-        },
+          coppa: 0
+        }
       });
     });
 
@@ -594,6 +608,70 @@ describe('screencore bid adapter', function () {
         expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
       });
     });
+    // testing bid.userIdAsEids handling
+    it("should include user ids from bid.userIdAsEids (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+    })
+    it("should include user ids from bid.userIdAsEids (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        },
+        {
+          "source": "rwdcntrl.net",
+          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
+    })
+    // testing user.ext.eid handling
+    it("should include user ids from user.ext.eid (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+    })
+    it("should include user ids from user.ext.eid (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            },
+            {
+              "source": "adserver.org",
+              "uids": [{"id": "fakeid495ff1"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
+    })
   });
 
   describe('alternate param names extractors', function () {
@@ -701,7 +779,7 @@ describe('screencore bid adapter', function () {
   describe('createDomain test', function () {
     it('should return correct domain', function () {
       const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
-        resolvedOptions: () => ({ timeZone: 'America/New_York' })
+        resolvedOptions: () => ({ timeZone: 'America/New_York' }),
       });
 
       const responses = createDomain();
