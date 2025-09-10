@@ -271,10 +271,28 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const data = buildOpenRTBRequest(validBidRequests, bidderRequest);
     const jsonData = encodeURIComponent(JSON.stringify(data));
+    const baseUrl = getEndpoint(data.ext.network);
+    const fullUrl = `${baseUrl}?data=${jsonData}`;
+
+    // Switch to POST if URL exceeds 8k characters
+    if (fullUrl.length > 8192) {
+      return {
+        method: 'POST',
+        url: baseUrl,
+        data: `data=${jsonData}`,
+        options: {
+          withCredentials: true,
+          crossOrigin: true,
+          customHeaders: {
+            'Content-Type': 'text/plain'
+          }
+        },
+      };
+    }
 
     return {
       method: 'GET',
-      url: `${getEndpoint(data.ext.network)}?data=${jsonData}`,
+      url: fullUrl,
       options: {
         withCredentials: true,
         crossOrigin: true,

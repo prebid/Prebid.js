@@ -178,6 +178,94 @@ describe('dasBidAdapter', function () {
       expect(payload.imp[0].tagid).to.equal('slot1');
       expect(payload.imp[0].banner.format[0]).to.deep.equal({ w: 300, h: 250 });
     });
+
+    it('should use GET method when URL is under 8192 characters', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.method).to.equal('GET');
+      expect(request.url).to.include('?data=');
+      expect(request.data).to.be.undefined;
+    });
+
+    it('should switch to POST method when URL exceeds 8192 characters', function () {
+      // Create a large bid request that will result in URL > 8k characters
+      const largeBidRequests = [];
+      for (let i = 0; i < 50; i++) {
+        largeBidRequests.push({
+          bidId: `bid${i}`.repeat(20), // Make bid IDs longer
+          params: {
+            site: `site${i}`.repeat(50),
+            area: `area${i}`.repeat(50),
+            slot: `slot${i}`.repeat(50),
+            network: 'network1',
+            pageContext: {
+              du: `https://very-long-url-example-${i}.com`.repeat(10),
+              dr: `https://very-long-referrer-url-${i}.com`.repeat(10),
+              dv: `version-${i}`.repeat(20),
+              keyWords: Array(20).fill(`keyword${i}`),
+              capping: `cap${i}`.repeat(20),
+              keyValues: {
+                [`key${i}`]: `value${i}`.repeat(50)
+              }
+            },
+            customParams: {
+              [`param${i}`]: `value${i}`.repeat(50)
+            }
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90], [970, 250]]
+            }
+          }
+        });
+      }
+
+      const request = spec.buildRequests(largeBidRequests, bidderRequest);
+
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://csr.onet.pl/network1/bid');
+      expect(request.data).to.be.a('string');
+      expect(request.data).to.include('data=');
+      expect(request.options.customHeaders['Content-Type']).to.equal('text/plain');
+    });
+
+    it('should create valid POST data format', function () {
+      // Create a request that will trigger POST
+      const largeBidRequests = Array(50).fill(0).map((_, i) => ({
+        bidId: `bid${i}`.repeat(20),
+        params: {
+          site: `site${i}`.repeat(50),
+          area: `area${i}`.repeat(50),
+          slot: `slot${i}`.repeat(50),
+          network: 'network1',
+          pageContext: {
+            du: `https://very-long-url-example-${i}.com`.repeat(10),
+            dr: `https://very-long-referrer-url-${i}.com`.repeat(10),
+            keyWords: Array(10).fill(`keyword${i}`)
+          }
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }));
+
+      const request = spec.buildRequests(largeBidRequests, bidderRequest);
+
+      expect(request.method).to.equal('POST');
+
+      // Parse the POST data
+      const postData = request.data;
+      expect(postData).to.include('data=');
+
+      const urlParams = new URLSearchParams(postData);
+      expect(urlParams.has('data')).to.be.true;
+
+      const payload = JSON.parse(decodeURIComponent(urlParams.get('data')));
+      expect(payload.id).to.equal('reqId123');
+      expect(payload.imp).to.be.an('array').with.length(50);
+      expect(payload.ext.network).to.equal('network1');
+    });
   });
 
   describe('interpretResponse', function () {
