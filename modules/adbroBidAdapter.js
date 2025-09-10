@@ -19,7 +19,7 @@ const converter = ortbConverter({
 
     imp.displaymanager ||= 'Prebid.js';
     imp.displaymanagerver ||= '$prebid.version$';
-    imp.tagid ||= 'prebid_' + imp.ext.gpid;
+    imp.tagid ||= imp.ext.gpid || bid.adUnitCode;
 
     return imp;
   },
