@@ -168,7 +168,7 @@ export const spec = {
           const imp = request.data.imp.find((i) => i.id === bid.impid);
           let bidRes = {
             requestId: bid.impid,
-            cpm: bid.price,
+            cpm: bid.cpm,
             width: bid.w,
             height: bid.h,
             creativeId: bid.crid || '',
