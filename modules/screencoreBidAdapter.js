@@ -9,8 +9,8 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'screencore';
-const BIDDER_VERSION = '1.0.0';
 const GVLID = 1473;
+const BIDDER_VERSION = '1.0.0';
 const REGION_SUBDOMAIN_SUFFIX = {
   EU: 'taqeu',
   US: 'taqus',
