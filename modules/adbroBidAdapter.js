@@ -71,7 +71,7 @@ export const spec = {
     return result;
   },
 
-  onBidWon: function(bid) {
+  onBidBillable: function(bid) {
     if (bid.burl) triggerPixel(bid.burl);
   },
 };
