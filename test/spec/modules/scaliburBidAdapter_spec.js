@@ -202,9 +202,9 @@ describe('Scalibur Adapter', function () {
               bid: [
                 {
                   impid: '1',
-                  price: 2.5,
-                  w: 300,
-                  h: 250,
+                  cpm: 2.5,
+                  width: 300,
+                  height: 250,
                   crid: 'creative-23456',
                   adm: '<div>Sample Ad Markup</div>',
                   cur: 'USD',
