@@ -1,5 +1,7 @@
 [
   "onetagBidAdapter",
+  "rubiconBidAdapter",
+  "seedtagBidAdapter",
   "userId",
   "sharedIdSystem",
   "criteoIdSystem",

@@ -1,3 +1,5 @@
 [
-  "onetagBidAdapter"
+  "onetagBidAdapter",
+  "rubiconBidAdapter",
+  "seedtagBidAdapter"
 ]
