@@ -10,7 +10,7 @@ import {
   mergeDeep,
   parseUrl,
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {type BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
@@ -23,18 +23,55 @@ import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Device} Device
  */
+const ENV = {
+  BIDDER_CODE: 'conversant',
+  SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO, NATIVE],
+  ENDPOINT: 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25',
+  NET_REVENUE: true,
+  DEFAULT_CURRENCY: 'USD',
+  GVLID: 24
+} as const;
 
-const GVLID = 24;
+/**
+ * Conversant/Epsilon bid adapter parameters
+ */
+type ConversantBidParams = {
+  /** Required. Site ID from Epsilon */
+  site_id: string;
+  /** Optional. Identifies specific ad placement */
+  tag_id?: string;
+  /** Optional. Minimum bid floor in USD */
+  bidfloor?: number;
+  /**
+   * Optional. If impression requires secure HTTPS URL creative assets and markup. 0 for non-secure, 1 for secure.
+   * Default is non-secure
+   */
+  secure?: boolean;
+  /** Optional. Override the destination URL the request is sent to */
+  white_label_url?: string;
+  /** Optional. Ad position on the page (1-7, where 1 is above the fold) */
+  position?: number;
+  /** Optional. Array of supported video MIME types (e.g., ['video/mp4', 'video/webm']) */
+  mimes?: string[];
+  /** Optional. Maximum video duration in seconds */
+  maxduration?: number;
+  /** Optional. Array of supported video protocols (1-10) */
+  protocols?: number[];
+  /** Optional. Array of supported video API frameworks (1-6) */
+  api?: number[];
+}
 
-const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [ENV.BIDDER_CODE]: ConversantBidParams;
+  }
+}
 
 function setSiteId(bidRequest, request) {
   if (bidRequest.params.site_id) {
     if (request.site) {
       request.site.id = bidRequest.params.site_id;
-    }
-    if (request.app) {
+    } else if (request.app) {
       request.app.id = bidRequest.params.site_id;
     }
   }
@@ -48,7 +85,7 @@ const converter = ortbConverter({
   request: function (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     request.at = 1;
-    request.cur = ['USD'];
+    request.cur = [ENV.DEFAULT_CURRENCY];
     if (context.bidRequests) {
       const bidRequest = context.bidRequests[0];
       setSiteId(bidRequest, request);
@@ -75,15 +112,13 @@ const converter = ortbConverter({
     if (!context.mediaType && context.bidRequest.mediaTypes) {
       const [type] = Object.keys(context.bidRequest.mediaTypes);
       if (Object.values(ORTB_MTYPES).includes(type)) {
-        context.mediaType = type;
+        context.mediaType = type as any;
       }
     }
-    const bidResponse = buildBidResponse(bid, context);
-    return bidResponse;
+    return buildBidResponse(bid, context);
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
-    const response = buildResponse(bidResponses, ortbResponse, context);
-    return response;
+    return buildResponse(bidResponses, ortbResponse, context);
   },
   overrides: {
     imp: {
@@ -110,9 +145,9 @@ const converter = ortbConverter({
   }
 });
 
-export const spec = {
-  code: BIDDER_CODE,
-  gvlid: GVLID,
+export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
+  code: ENV.BIDDER_CODE,
+  gvlid: ENV.GVLID,
   aliases: ['cnvr', 'epsilon'], // short code
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -124,12 +159,12 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     if (!bid || !bid.params) {
-      logWarn(BIDDER_CODE + ': Missing bid parameters');
+      logWarn(ENV.BIDDER_CODE + ': Missing bid parameters');
       return false;
     }
 
     if (!isStr(bid.params.site_id)) {
-      logWarn(BIDDER_CODE + ': site_id must be specified as a string');
+      logWarn(ENV.BIDDER_CODE + ': site_id must be specified as a string');
       return false;
     }
 
@@ -137,9 +172,9 @@ export const spec = {
       const mimes = bid.params.mimes || deepAccess(bid, 'mediaTypes.video.mimes');
       if (!mimes) {
         // Give a warning but let it pass
-        logWarn(BIDDER_CODE + ': mimes should be specified for videos');
+        logWarn(ENV.BIDDER_CODE + ': mimes should be specified for videos');
       } else if (!isArray(mimes) || !mimes.every(s => isStr(s))) {
-        logWarn(BIDDER_CODE + ': mimes must be an array of strings');
+        logWarn(ENV.BIDDER_CODE + ': mimes must be an array of strings');
         return false;
       }
     }
@@ -149,12 +184,11 @@ export const spec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     const payload = converter.toORTB({bidderRequest, bidRequests});
-    const result = {
+    return {
       method: 'POST',
       url: makeBidUrl(bidRequests[0]),
       data: payload,
     };
-    return result;
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -164,15 +198,19 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const ortbBids = converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
-    return ortbBids;
+    return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
   },
 
   /**
    * Register User Sync.
    */
-  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
-    const params = {};
+  getUserSyncs: function (
+    syncOptions,
+    responses,
+    gdprConsent,
+    uspConsent
+  ) {
+    const params: Record<string, any> = {};
     const syncs = [];
 
     // Attaching GDPR Consent Params in UserSync url
@@ -186,26 +224,32 @@ export const spec = {
       params.us_privacy = encodeURIComponent(uspConsent);
     }
 
-    if (responses && responses.ext) {
-      const pixels = [{urls: responses.ext.fsyncs, type: 'iframe'}, {urls: responses.ext.psyncs, type: 'image'}]
-        .filter((entry) => {
-          return entry.urls &&
-            ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
-            (entry.type === 'image' && syncOptions.pixelEnabled));
-        })
-        .map((entry) => {
-          return entry.urls.map((endpoint) => {
-            const urlInfo = parseUrl(endpoint);
-            mergeDeep(urlInfo.search, params);
-            if (Object.keys(urlInfo.search).length === 0) {
-              delete urlInfo.search; // empty search object causes buildUrl to add a trailing ? to the url
-            }
-            return {type: entry.type, url: buildUrl(urlInfo)};
-          })
+    if (responses && Array.isArray(responses)) {
+      responses.forEach(response => {
+        if (response?.body?.ext) {
+          const ext = response.body.ext;
+          const pixels = [{urls: ext.fsyncs, type: 'iframe'}, {urls: ext.psyncs, type: 'image'}]
+            .filter((entry) => {
+              return entry.urls && Array.isArray(entry.urls) &&
+                entry.urls.length > 0 &&
+                ((entry.type === 'iframe' && syncOptions.iframeEnabled) ||
+                (entry.type === 'image' && syncOptions.pixelEnabled));
+            })
+            .map((entry) => {
+              return entry.urls.map((endpoint) => {
+                const urlInfo = parseUrl(endpoint);
+                mergeDeep(urlInfo.search, params);
+                if (Object.keys(urlInfo.search).length === 0) {
+                  delete urlInfo.search;
+                }
+                return {type: entry.type, url: buildUrl(urlInfo)};
+              })
+                .reduce((x, y) => x.concat(y), []);
+            })
             .reduce((x, y) => x.concat(y), []);
-        })
-        .reduce((x, y) => x.concat(y), []);
-      syncs.push(...pixels);
+          syncs.push(...pixels);
+        }
+      });
     }
     return syncs;
   }
@@ -244,13 +288,13 @@ function getBidFloor(bid) {
   let floor = getBidIdParameter('bidfloor', bid.params);
 
   if (!floor && isFn(bid.getFloor)) {
-    const floorObj = bid.getFloor({
-      currency: 'USD',
+    const floorObj: { floor: any, currency: string } = bid.getFloor({
+      currency: ENV.DEFAULT_CURRENCY,
       mediaType: '*',
       size: '*'
     });
 
-    if (isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === 'USD') {
+    if (isPlainObject(floorObj) && !isNaN(floorObj.floor) && floorObj.currency === ENV.DEFAULT_CURRENCY) {
       floor = floorObj.floor;
     }
   }
@@ -259,7 +303,7 @@ function getBidFloor(bid) {
 }
 
 function makeBidUrl(bid) {
-  let bidurl = URL;
+  let bidurl = ENV.ENDPOINT;
   if (bid.params.white_label_url) {
     bidurl = bid.params.white_label_url;
   }
