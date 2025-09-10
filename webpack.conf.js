@@ -54,6 +54,11 @@ module.exports = {
       helpers.getPrecompiledPath(),
       'node_modules'
     ],
+    alias: {
+      // alias package.json instead of including it as part of precompilation output;
+      // a simple copy does not work as it contains relative paths (e.g. sideEffects)
+      'package.json': path.resolve(__dirname, 'package.json')
+    }
   },
   module: {
     rules: [
@@ -145,10 +150,13 @@ module.exports = {
       minChunks: 1,
       minSize: 0,
       cacheGroups: (() => {
-        const libRoot = path.resolve(__dirname, 'libraries');
+        function directoriesIn(relPath) {
+          const root = path.resolve(__dirname, relPath);
+          return fs.readdirSync(root).filter(f => fs.lstatSync(path.resolve(root, f)).isDirectory())
+        }
+
         const libraries = Object.fromEntries(
-          fs.readdirSync(libRoot)
-            .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
+          directoriesIn('libraries')
             .map(lib => {
               const dir = helpers.getPrecompiledPath(path.join('libraries', lib))
               const def = {
@@ -160,11 +168,22 @@ module.exports = {
               return [lib, def];
             })
         );
+        const renderers = Object.fromEntries(
+          directoriesIn('creative/renderers')
+            .map(renderer => {
+              const file = helpers.getCreativeRendererPath(renderer);
+              const name = `creative-renderer-${renderer}`;
+              return [name, {
+                name,
+                test: (module) => module.resource === file
+              }]
+            })
+        )
         const core = helpers.getPrecompiledPath('./src');
         const nodeMods = path.resolve(__dirname, 'node_modules')
         const precompiled = helpers.getPrecompiledPath();
 
-        return Object.assign(libraries, {
+        return Object.assign(libraries, renderers,{
           core: {
             name: 'chunk-core',
             test: (module) => {

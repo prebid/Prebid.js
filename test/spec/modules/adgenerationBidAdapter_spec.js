@@ -2,13 +2,13 @@ import {expect} from 'chai';
 import {spec} from 'modules/adgenerationBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {NATIVE} from 'src/mediaTypes.js';
-import prebid from '../../../package.json';
+import prebid from 'package.json';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
-  const ADGENE_PREBID_VERSION = '1.6.4';
+  const ADGENE_PREBID_VERSION = '1.6.5';
   const ENDPOINT_STG = 'https://api-test.scaleout.jp/adgen/prebid';
   const ENDPOINT_RELEASE = 'https://d.socdm.com/adgen/prebid';
 
@@ -116,23 +116,6 @@ describe('AdgenerationAdapter', function () {
         bidderRequestId: '14a9f773e30243',
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
         transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
-      },
-      { // bannerWithHyperId
-        bidder: 'adg',
-        params: {
-          id: '58278', // banner
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[320, 100]],
-        bidId: '2f6ac468a9c15e',
-        bidderRequestId: '14a9f773e30243',
-        auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
-        transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a',
-        userId: {
-          novatiq: {
-            snowflake: {'id': 'novatiqId', syncResponse: 1}
-          }
-        }
       },
       { // bannerWithAdgextCriteoId
         bidder: 'adg',
@@ -296,32 +279,8 @@ describe('AdgenerationAdapter', function () {
       expect(request.data.sdkname).to.equal('prebidjs');
       expect(request.data.adapterver).to.equal(ADGENE_PREBID_VERSION);
       expect(request.data.ortb.imp[0].id).to.equal('2f6ac468a9c15e');
-      expect(request.data.ortb.imp[0].ext.novatiqSyncResponse).to.equal(undefined);
       expect(request.data.ortb.imp[0].ext.params.id).to.equal('58278');
       expect(request.data.ortb.imp[0].ext.mediaTypes).to.deep.equal(expectedMediaTypes);
-    });
-
-    it('should attache params to the bannerWithHyperId request', function () {
-      const hyperIdParams = {
-        user: {
-          ext: {
-            eids: [
-              {
-                source: 'novatiq.com',
-                uids: [
-                  {
-                    'id': 'xxxxxx'
-                  }
-                ]
-              },
-            ]
-          }
-        }
-      }
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: hyperIdParams})[2];
-
-      expect(request.data.ortb.imp[0].ext.novatiqSyncResponse).to.equal(1);
-      expect(request.data.ortb.user).to.deep.equal(hyperIdParams.user);
     });
 
     it('should attache params to the bannerWithAdgextCriteoId request', function () {
@@ -395,7 +354,7 @@ describe('AdgenerationAdapter', function () {
           }
         },
       }
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: idparams})[4];
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: idparams})[3];
       expect(request.data.ortb.user).to.deep.equal(idparams.user);
 
       // gpid
@@ -668,8 +627,7 @@ describe('AdgenerationAdapter', function () {
                         'sendId': false
                       }
                     }
-                  },
-                  'novatiqSyncResponse': 2
+                  }
                 },
                 'id': '2f6ac468a9c15e',
                 'native': {
@@ -791,7 +749,7 @@ describe('AdgenerationAdapter', function () {
         method: 'POST',
         url: 'https://api-test.scaleout.jp/adgen/prebid?id=15410&posall=SSPLOC&sdktype=0',
         data: {
-          'currency': 'JPY',
+          'currency': 'USD',
           'pbver': prebid.version,
           'sdkname': 'prebidjs',
           'adapterver': ADGENE_PREBID_VERSION,
@@ -833,8 +791,7 @@ describe('AdgenerationAdapter', function () {
                         ]
                       ]
                     }
-                  },
-                  'novatiqSyncResponse': 2
+                  }
                 },
                 'id': '2f6ac468a9c15e',
                 'banner': {
@@ -1235,7 +1192,10 @@ describe('AdgenerationAdapter', function () {
         }
       };
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, { ...bidRequests.upperBillboard, bidderRequest: res })[0];
+        const sr = {body: serverResponse.normal.upperBillboard};
+        const br = { bidderRequest: res, ...bidRequests.upperBillboard };
+
+        const result = spec.interpretResponse(sr, br)[0];
         expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
         expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
         expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
@@ -1339,6 +1299,123 @@ describe('AdgenerationAdapter', function () {
       // no adomain
       expect(result).to.not.have.any.keys('meta');
       expect(result).to.not.have.any.keys('advertiserDomains');
+    });
+
+    describe('currency handling', function () {
+      const bidRequest = {
+        method: 'POST',
+        url: 'https://d.socdm.com/adgen/prebid',
+        data: {
+          currency: 'USD',
+          pbver: prebid.version,
+          sdkname: 'prebidjs',
+          adapterver: ADGENE_PREBID_VERSION,
+          ortb: {
+            imp: [{
+              id: 'test-imp-id',
+              ext: {
+                params: { id: '58278' },
+                mediaTypes: { banner: { sizes: [[300, 250]] } }
+              }
+            }]
+          }
+        }
+      };
+
+      it('uses currency from data when available', function () {
+        const serverResponse = {
+          body: {
+            results: [{
+              cpm: 100,
+              w: 300,
+              h: 250,
+              creativeid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              ad: '<div>Test Ad</div>'
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(serverResponse, bidRequest)[0];
+        expect(result.currency).to.equal('USD');
+        expect(result.cpm).to.equal(100);
+      });
+
+      it('defaults to JPY when no currency information available', function () {
+        const requestWithoutCurrency = {
+          method: 'POST',
+          url: 'https://d.socdm.com/adgen/prebid',
+          data: {
+            pbver: prebid.version,
+            sdkname: 'prebidjs',
+            adapterver: ADGENE_PREBID_VERSION,
+            ortb: {
+              imp: [{
+                id: 'test-imp-id',
+                ext: {
+                  params: { id: '58278' },
+                  mediaTypes: { banner: { sizes: [[300, 250]] } }
+                }
+              }]
+            }
+          }
+        };
+
+        const serverResponse = {
+          body: {
+            results: [{
+              cpm: 300,
+              w: 300,
+              h: 250,
+              creativeid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              ad: '<div>Test Ad</div>'
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(serverResponse, requestWithoutCurrency)[0];
+        expect(result.currency).to.equal('JPY');
+      });
+
+      it('handles currency correctly with getCurrencyType function logic', function () {
+        // Test the current implementation which uses bidRequests?.data?.currency || 'JPY'
+        const bidRequestWithJPY = {
+          method: 'POST',
+          url: 'https://d.socdm.com/adgen/prebid',
+          data: {
+            currency: 'JPY',
+            pbver: prebid.version,
+            sdkname: 'prebidjs',
+            adapterver: ADGENE_PREBID_VERSION,
+            ortb: {
+              imp: [{
+                id: 'test-imp-id',
+                ext: {
+                  params: { id: '58278' },
+                  mediaTypes: { banner: { sizes: [[300, 250]] } }
+                }
+              }]
+            }
+          }
+        };
+
+        const serverResponse = {
+          body: {
+            results: [{
+              cpm: 150,
+              w: 300,
+              h: 250,
+              creativeid: 'test-creative-id',
+              dealid: 'test-deal-id',
+              ad: '<div>Test Ad</div>'
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(serverResponse, bidRequestWithJPY)[0];
+        expect(result.currency).to.equal('JPY');
+      });
     });
   });
 });
