@@ -222,9 +222,7 @@ pbjs.setConfig({
             }
         }, {
             name: 'sharedId',
-            params: {
-                  syncTime: 60 // in seconds, default is 24 hours
-               },
+            params: {},
              storage: {
                 type: 'html5',
                 name: 'sharedid',
