@@ -105,7 +105,7 @@ function buildUserIds(customParams) {
 
 function getNpaFromPubConsent(pubConsent) {
   const params = new URLSearchParams(pubConsent);
-  return params.get('npa') == '1';
+  return params.get('npa') === '1';
 }
 
 function buildOpenRTBRequest(bidRequests, bidderRequest) {
@@ -113,7 +113,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     bidRequests[0].params,
     bidderRequest,
   );
-  const imp = bidRequests.map((bid, index) => {
+  const imp = bidRequests.map((bid) => {
     const sizes = getAdUnitSizes(bid);
     const imp = {
       id: bid.bidId,
@@ -270,11 +270,29 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const data = buildOpenRTBRequest(validBidRequests, bidderRequest);
-    const jsonData = encodeURIComponent(JSON.stringify(data));
+    const jsonData = JSON.stringify(data);
+    const baseUrl = getEndpoint(data.ext.network);
+    const fullUrl = `${baseUrl}?data=${encodeURIComponent(jsonData)}`;
+
+    // Switch to POST if URL exceeds 8k characters
+    if (fullUrl.length > 8192) {
+      return {
+        method: 'POST',
+        url: baseUrl,
+        data: jsonData,
+        options: {
+          withCredentials: true,
+          crossOrigin: true,
+          customHeaders: {
+            'Content-Type': 'text/plain'
+          }
+        },
+      };
+    }
 
     return {
       method: 'GET',
-      url: `${getEndpoint(data.ext.network)}?data=${jsonData}`,
+      url: fullUrl,
       options: {
         withCredentials: true,
         crossOrigin: true,
