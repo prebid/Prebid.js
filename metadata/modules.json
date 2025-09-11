@@ -2719,6 +2719,34 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "anzuExchange",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adnimation",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "rtbdemand",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "altstar",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3203,6 +3231,13 @@
     {
       "componentType": "bidder",
       "componentName": "revnew",
+      "aliasOf": "nexx360",
+      "gvlid": 1468,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubxai",
       "aliasOf": "nexx360",
       "gvlid": null,
       "disclosureURL": null
@@ -4450,7 +4485,7 @@
       "componentType": "bidder",
       "componentName": "valuad",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1478,
       "disclosureURL": null
     },
     {
@@ -5050,6 +5085,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "oftmedia",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "oneKey",
       "gvlid": null,
       "disclosureURL": null
@@ -5291,6 +5332,13 @@
       "componentType": "userId",
       "componentName": "ftrack",
       "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "gemiusId",
+      "gvlid": 328,
       "disclosureURL": null,
       "aliasOf": null
     },

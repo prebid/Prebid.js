@@ -425,6 +425,34 @@ describe('User ID', function () {
         ]);
       });
 
+      it('should not alter values returned by adapters', () => {
+        let eid = {
+          source: 'someid.org',
+          uids: [{id: 'id-1'}]
+        };
+        const config = new Map([
+          ['someId', function () {
+            return eid;
+          }]
+        ]);
+        const userid = {
+          someId: 'id-1',
+          pubProvidedId: [{
+            source: 'someid.org',
+            uids: [{id: 'id-2'}]
+          }],
+        }
+        createEidsArray(userid, config);
+        const allEids = createEidsArray(userid, config);
+        expect(allEids).to.eql([
+          {
+            source: 'someid.org',
+            uids: [{id: 'id-1'}, {id: 'id-2'}]
+          }
+        ])
+        expect(eid.uids).to.eql([{'id': 'id-1'}])
+      });
+
       it('should filter out entire EID if none of the uids are strings', () => {
         const eids = createEidsArray({
           mockId2v3: [null],
