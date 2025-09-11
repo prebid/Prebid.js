@@ -66,7 +66,7 @@ export function setTimestamp() {
 
 export function initAnalytics() {
   const global = getGlobal();
-  if (global.installedModules.includes('browsiAnalyticsAdapter')) {
+  if (global.installedModules?.includes('browsiAnalyticsAdapter')) {
     global.enableAnalytics({
       provider: 'browsi',
       options: {}
