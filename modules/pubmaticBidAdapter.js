@@ -110,7 +110,7 @@ const converter = ortbConverter({
     }
     reqLevelParams(request);
     updateUserSiteDevice(request, context?.bidRequests);
-    addExtenstionParams(request);
+    addExtenstionParams(request, bidderRequest)
     const marketPlaceEnabled = bidderRequest?.bidderCode
       ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (marketPlaceEnabled) updateRequestExt(request, bidderRequest);
@@ -510,7 +510,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   }
 }
 
-const addExtenstionParams = (req) => {
+const addExtenstionParams = (req, bidderRequest) => {
   const { profId, verId, wiid, transactionId } = conf;
   req.ext = {
     epoch: new Date().getTime(), // Sending epoch timestamp in request.ext object
@@ -520,7 +520,8 @@ const addExtenstionParams = (req) => {
       wiid: wiid,
       wv: '$$REPO_AND_VERSION$$',
       transactionId,
-      wp: 'pbjs'
+      wp: 'pbjs',
+      biddercode: bidderRequest?.bidderCode
     },
     cpmAdjustment: cpmAdjustment
   }
