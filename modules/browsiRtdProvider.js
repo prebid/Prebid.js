@@ -65,10 +65,13 @@ export function setTimestamp() {
 }
 
 export function initAnalytics() {
-  getGlobal().enableAnalytics({
-    provider: 'browsi',
-    options: {}
-  })
+  const global = getGlobal();
+  if (global.installedModules.includes('browsiAnalyticsAdapter')) {
+    global.enableAnalytics({
+      provider: 'browsi',
+      options: {}
+    });
+  }
 }
 
 export function sendPageviewEvent(eventType) {
