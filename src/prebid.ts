@@ -886,7 +886,6 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         tids[au.code] = tid;
       }
       au.transactionId = tid;
-      deepSetValue(au, 'ortb2Imp.ext.tid', tid);
     });
     const auction = auctionManager.createAuction({
       adUnits,

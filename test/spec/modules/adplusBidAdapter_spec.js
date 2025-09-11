@@ -1,13 +1,8 @@
-import { expect } from 'chai';
-import { spec, BIDDER_CODE, ADPLUS_ENDPOINT, } from 'modules/adplusBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import { getGlobal } from 'src/prebidGlobal.js';
-import { adplusIdSystemSubmodule } from '../../../modules/adplusIdSystem.js';
-import { init, setSubmoduleRegistry } from 'modules/userId/index.js';
-import { server } from 'test/mocks/xhr.js';
+import {expect} from 'chai';
+import {ADPLUS_ENDPOINT, BIDDER_CODE, spec,} from 'modules/adplusBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
-const TEST_UID = "test-uid-value";
+const TEST_UID = 'test-uid-value';
 
 describe('AplusBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -107,7 +102,7 @@ describe('AplusBidAdapter', function () {
           adplusId: TEST_UID
         },
         userIdAsEids: [{
-          source: "ad-plus.com.tr",
+          source: 'ad-plus.com.tr',
           uids: [
             {
               atype: 1,
@@ -145,7 +140,7 @@ describe('AplusBidAdapter', function () {
       expect(request[0].data.sdkVersion).to.equal('1');
       expect(request[0].data.adplusUid).to.equal(TEST_UID);
       expect(request[0].data.eids).to.deep.equal([{
-        source: "ad-plus.com.tr",
+        source: 'ad-plus.com.tr',
         uids: [
           {
             atype: 1,
@@ -237,55 +232,6 @@ describe('AplusBidAdapter', function () {
       expect(result[0].ttl).to.equal(300);
       expect(result[0].meta.advertiserDomains).to.deep.equal(['advertiser.com']);
       expect(result[0].meta.secondaryCatIds).to.deep.equal(['IAB-111']);
-    });
-  });
-
-  describe('pbjs "get id" methods', () => {
-    beforeEach(() => {
-      init(config);
-      setSubmoduleRegistry([adplusIdSystemSubmodule]);
-    });
-
-    describe('pbjs.getUserIds()', () => {
-      it('should return the IDs in the correct schema from our id server', async () => {
-        config.setConfig({
-          userSync: {
-            userIds: [{
-              name: 'adplusId',
-            }]
-          }
-        });
-
-        const userIdPromise = getGlobal().getUserIdsAsync();
-
-        // Wait briefly to let the fetch request get registered
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        const request = server.requests[0];
-        expect(request).to.exist;
-
-        request.respond(
-          200,
-          { 'Content-Type': 'application/json' },
-          JSON.stringify({ uid: TEST_UID })
-        );
-
-        await userIdPromise;
-
-        expect(getGlobal().getUserIds()).to.deep.equal({
-          adplusId: TEST_UID
-        });
-        const eids = getGlobal().getUserIdsAsEids();
-        expect(eids[0]).to.deep.equal({
-          source: "ad-plus.com.tr",
-          uids: [
-            {
-              atype: 1,
-              id: TEST_UID
-            }
-          ]
-        });
-      });
     });
   });
 });

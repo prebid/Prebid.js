@@ -23,21 +23,20 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
-const NM_VERSION = '4.4.0';
+const NM_VERSION = '4.4.2';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
-const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const TEST_ENDPOINT = 'https://dev.pbsa.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
-const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
+const REPORT_ENDPOINT = 'https://hb-analytics.nextmillmedia.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TMAX = 1500;
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
-  context: undefined,
   delivery: undefined,
   linearity: undefined,
   maxduration: undefined,
@@ -273,12 +272,12 @@ export function getExtNextMilImp(bid) {
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
-      refresh_count: window?.nmmRefreshCounts?.[bid.adUnitCode] || 0,
-      scrollTop: window?.pageYOffset || getWinDimensions()?.document?.documentElement?.scrollTop,
+      refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
+      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
     },
   };
 
-  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots
+  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots;
   if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
 
   return nextMilImp;
@@ -528,7 +527,7 @@ function getSua() {
   if (!(brands && platform)) return undefined;
 
   return {
-    brands,
+    browsers: brands,
     mobile: Number(!!mobile),
     platform: (platform && {brand: platform}) || undefined,
   };

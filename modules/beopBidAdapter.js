@@ -114,19 +114,21 @@ export const spec = {
     return [];
   },
   onTimeout: function(timeoutData) {
-    if (timeoutData === null || typeof timeoutData === 'undefined' || Object.keys(timeoutData).length === 0) {
+    if (!Array.isArray(timeoutData) || timeoutData.length === 0) {
       return;
     }
 
-    const trackingParams = buildTrackingParams(timeoutData, 'timeout', timeoutData.timeout);
+    timeoutData.forEach((timeout) => {
+      const trackingParams = buildTrackingParams(timeout, 'timeout', timeout.timeout);
 
-    logWarn(BIDDER_CODE + ': timed out request');
-    triggerPixel(buildUrl({
-      protocol: 'https',
-      hostname: 't.collectiveaudience.co',
-      pathname: '/bid',
-      search: trackingParams
-    }));
+      logWarn(BIDDER_CODE + ': timed out request for adUnitCode ' + timeout.adUnitCode);
+      triggerPixel(buildUrl({
+        protocol: 'https',
+        hostname: 't.collectiveaudience.co',
+        pathname: '/bid',
+        search: trackingParams
+      }));
+    });
   },
   onBidWon: function(bid) {
     if (bid === null || typeof bid === 'undefined' || Object.keys(bid).length === 0) {
@@ -174,7 +176,7 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  const params = Array.isArray(data.params) ? data.params[0] : data.params;
+  const params = Array.isArray(data.params) ? data.params[0] : data.params || {};
   const pageUrl = getPageUrl(null, window);
   return {
     pid: params.accountId ?? (data.ad?.match(/account: “([a-f\d]{24})“/)?.[1] ?? ''),

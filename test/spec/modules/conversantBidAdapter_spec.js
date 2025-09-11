@@ -704,45 +704,45 @@ describe('Conversant adapter tests', function() {
     });
 
     it('empty params', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined))
         .to.deep.equal([]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {ext: {}}, undefined, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: {ext: {}}}], undefined, undefined))
         .to.deep.equal([]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, undefined, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], undefined, undefined))
         .to.deep.equal([{ type: 'iframe', url: syncurl_iframe }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, cnvrResponse, undefined, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], undefined, undefined))
         .to.deep.equal([{ type: 'image', url: syncurl_image }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, cnvrResponse, undefined, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [{body: cnvrResponse}], undefined, undefined))
         .to.deep.equal([{type: 'iframe', url: syncurl_iframe}, {type: 'image', url: syncurl_image}]);
     });
 
     it('URL building', function() {
-      expect(spec.getUserSyncs({pixelEnabled: true}, {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}, undefined, undefined))
+      expect(spec.getUserSyncs({pixelEnabled: true}, [{body: {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}}], undefined, undefined))
         .to.deep.equal([{type: 'image', url: `${syncurl_image}?sid=1234`}]);
-      expect(spec.getUserSyncs({pixelEnabled: true}, {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}, undefined, '1NYN'))
+      expect(spec.getUserSyncs({pixelEnabled: true}, [{body: {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}}], undefined, '1NYN'))
         .to.deep.equal([{type: 'image', url: `${syncurl_image}?sid=1234&us_privacy=1NYN`}]);
     });
 
     it('GDPR', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, {gdprApplies: true, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: 'consentstring'}, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=1&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, {gdprApplies: false, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], {gdprApplies: false, consentString: 'consentstring'}, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=0&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, {gdprApplies: true, consentString: undefined}, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: undefined}, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=1&gdpr_consent=` }]);
 
-      expect(spec.getUserSyncs({ pixelEnabled: true }, cnvrResponse, {gdprApplies: true, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: 'consentstring'}, undefined))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=1&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, cnvrResponse, {gdprApplies: false, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], {gdprApplies: false, consentString: 'consentstring'}, undefined))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=0&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, cnvrResponse, {gdprApplies: true, consentString: undefined}, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: undefined}, undefined))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=1&gdpr_consent=` }]);
     });
 
     it('US_Privacy', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, undefined, '1NYN'))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], undefined, '1NYN'))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?us_privacy=1NYN` }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, cnvrResponse, undefined, '1NYN'))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], undefined, '1NYN'))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?us_privacy=1NYN` }]);
     });
   });
