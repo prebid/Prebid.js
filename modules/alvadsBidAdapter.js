@@ -1,22 +1,30 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'alvads';
 const ENDPOINT_BANNER = 'https://helios-ads-qa-core.ssidevops.com/decision/openrtb';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: (bid) => {
     return Boolean(
       bid.params &&
       bid.params.publisherId &&
-      (bid.mediaTypes?.banner ? bid.params.tagid : true)
+      (bid.mediaTypes?.[BANNER] ? bid.params.tagid : true)
     );
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
+      const floorInfo = (typeof bid.getFloor === 'function')
+        ? bid.getFloor({
+          currency: 'USD',
+          mediaType: bid.mediaTypes?.banner ? BANNER : VIDEO,
+          size: '*'
+        })
+        : { floor: 0, currency: 'USD' };
+
       const imps = [];
       // Banner
       if (bid.mediaTypes?.banner) {
@@ -31,7 +39,8 @@ export const spec = {
             id: bid.bidId,
             banner: { w: size.w, h: size.h },
             tagid: bid.params.tagid,
-            bidfloor: bid.params.bidfloor || 0,
+            bidfloor: floorInfo.floor,
+            bidfloorcur: floorInfo.currency,
             ext: { userId: bid.params.userId }
           });
         });
@@ -44,7 +53,8 @@ export const spec = {
           id: bid.bidId,
           video: { w: wh[0], h: wh[1] },
           tagid: bid.params.tagid,
-          bidfloor: bid.params.bidfloor || 0,
+          bidfloor: floorInfo.floor,
+          bidfloorcur: floorInfo.currency,
           ext: { userId: bid.params.userId }
         });
       }
@@ -54,14 +64,12 @@ export const spec = {
         id: 'REQ-OPENRTB-' + Date.now(),
         site: {
           page: bidderRequest.refererInfo.page,
-          ref: document.referrer || bidderRequest.refererInfo.page,
+          ref: bidderRequest.refererInfo.ref,
           publisher: { id: bid.params.publisherId }
         },
         imp: imps,
         device: {
-          ua: navigator.userAgent,
-          ip: bid.params.ip || '0.0.0.0',
-          geo: bid.params.geo || {}
+          ua: navigator.userAgent
         },
         user: {
           id: bid.params.userId || utils.generateUUID(),
@@ -72,7 +80,7 @@ export const spec = {
           gpp_sid: [],
           ext: {
             gdpr: bidderRequest.gdprConsent ? 1 : 0,
-            us_privacy: bidderRequest.uspConsent || '1YNN'
+            ...(bidderRequest.uspConsent && { us_privacy: bidderRequest.uspConsent })
           }
         },
         ext: {
@@ -108,13 +116,14 @@ export const spec = {
             creativeId: bid.crid || bid.id,
             currency: body.cur || 'USD',
             netRevenue: true,
-            ttl: 300
+            ttl: 300,
+            meta: { advertiserDomains: bid.adomain || [] }
           };
 
           if (isVideo) {
             bidResponses.push({
               ...common,
-              mediaType: 'video',
+              mediaType: VIDEO,
               vastXml: bid.adm,
               vastUrl: bid.ext && bid.ext.vast_url ? bid.ext.vast_url : undefined,
               meta: { advertiserDomains: bid.adomain || [] }
@@ -122,7 +131,7 @@ export const spec = {
           } else {
             bidResponses.push({
               ...common,
-              mediaType: 'banner',
+              mediaType: BANNER,
               ad: bid.adm
             });
           }

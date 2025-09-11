@@ -12,6 +12,18 @@ The **Alva Bid Adapter** allows publishers to connect their banner and video inv
 - **Supported Media Types:** `banner`, `video`
 - **Protocols:** OpenRTB 2.5 via POST for both banner and video
 - **Dynamic Endpoints:** The adapter can use a default endpoint or a custom endpoint provided in the bid params.
+- **Price Floors:** Supported via `bid.getFloor()`. If configured, the adapter will send `bidfloor` and `bidfloorcur` per impression.
+
+---
+# Parameters
+
+| Parameter   | Required         | Description |
+|------------ |---------------- |------------ |
+| publisherId | Yes             | Publisher ID assigned by Alva |
+| tagid       | Banner only      | Required for banner impressions |
+| bidfloor    | No              | Optional; adapter supports floors module via `bid.getFloor()` |
+| userId      | No              | Optional; used for user identification |
+| endpoint    | No              | Optional; overrides default endpoint |
 
 ---
 
