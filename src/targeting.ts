@@ -278,7 +278,6 @@ export function newTargeting(auctionManager) {
         if (Object.keys(flatTargeting[code]).length === 1 && flatTargeting[code][TARGETING_KEYS.VERSION] != null) {
           delete flatTargeting[code][TARGETING_KEYS.VERSION];
         }
-
       });
 
       return flatTargeting;
