@@ -424,6 +424,15 @@ const eventHandlers = {
       if (bid.params) {
         args.params = bid.params;
       }
+      if (bid.adUnit) {
+        // Specifically check for mediaTypes and dimensions
+        if (!args.mediaTypes && bid.adUnit.mediaTypes) {
+          args.mediaTypes = bid.adUnit.mediaTypes;
+        }
+        if (!args.sizes && bid.adUnit.dimensions) {
+          args.sizes = bid.adUnit.dimensions;
+        }
+      }
       bid = copyRequiredBidDetails(args);
       cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);
     } else if (args.originalRequestId) {
