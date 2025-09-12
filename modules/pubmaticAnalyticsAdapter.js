@@ -427,9 +427,8 @@ const eventHandlers = {
       if (bid.adUnit) {
         // Specifically check for mediaTypes and dimensions
         if (!args.mediaTypes && bid.adUnit.mediaTypes) {
-          args.mediaTypes = bid.adUnit.mediaTypes; 
+          args.mediaTypes = bid.adUnit.mediaTypes;
         }
-
         if (!args.sizes && bid.adUnit.dimensions) {
           args.sizes = bid.adUnit.dimensions;
         }
