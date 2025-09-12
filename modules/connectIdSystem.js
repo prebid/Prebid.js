@@ -241,7 +241,7 @@ export const connectIdSubmodule = {
     }
 
     INPUT_PARAM_KEYS.forEach(key => {
-      if (typeof params[key] != 'undefined') {
+      if (typeof params[key] !== 'undefined') {
         data[key] = params[key];
       }
     });

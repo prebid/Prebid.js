@@ -129,7 +129,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
     openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
 
     Object.keys(bid.mediaTypes).forEach(function(mediaType) {
-      if (mediaType == 'banner') {
+      if (mediaType === 'banner') {
         imp.banner = deepClone(DEFAULT['OpenRTBBidRequestImpBanner']);
         imp.banner.w = 0;
         imp.banner.h = 0;

@@ -99,7 +99,7 @@ function isBidRequestValid(bid) {
 
 function getUserSync(syncOptions) {
   if (syncOptions.iframeEnabled) {
-    if (!(_disableUserSyncs == null || _disableUserSyncs == undefined ? CONSTANTS.DISABLE_USER_SYNC : _disableUserSyncs)) {
+    if (!(_disableUserSyncs ?? CONSTANTS.DISABLE_USER_SYNC)) {
       const syncUrl = buildSyncUrl();
       return {
         type: 'iframe',
@@ -118,7 +118,7 @@ function buildRequest(bidRequests, bidderRequest) {
   window.invibes = window.invibes || {};
   window.invibes.placementIds = window.invibes.placementIds || [];
 
-  if (isInfiniteScrollPage == false) {
+  if (isInfiniteScrollPage === false) {
     updateInfiniteScrollFlag();
   }
 
@@ -281,14 +281,14 @@ function handleResponse(responseObj, bidRequests) {
     if (responseObj.AdPlacements != null) {
       for (let j = 0; j < responseObj.AdPlacements.length; j++) {
         const bidModel = responseObj.AdPlacements[j].BidModel;
-        if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
+        if (bidModel != null && bidModel.PlacementId === usedPlacementId) {
           requestPlacement = responseObj.AdPlacements[j];
           break;
         }
       }
     } else {
       const bidModel = responseObj.BidModel;
-      if (bidModel != null && bidModel.PlacementId == usedPlacementId) {
+      if (bidModel != null && bidModel.PlacementId === usedPlacementId) {
         requestPlacement = responseObj;
       }
     }
@@ -633,7 +633,7 @@ function readGdprConsent(gdprConsent, usConsent) {
     return 2;
   } else if (usConsent && usConsent.length > 2) {
     invibes.UspModuleInstalled = true;
-    if (usConsent[2] == 'N') {
+    if (usConsent[2] === 'N') {
       setAllPurposesAndLegitimateInterests(true);
       return 2;
     }

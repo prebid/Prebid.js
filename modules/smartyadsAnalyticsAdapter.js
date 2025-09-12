@@ -89,7 +89,7 @@ const bidHandler = (eventType, bid) => {
   for (const bidObj of bids) {
     let bidToSend;
 
-    if (bidObj.bidderCode != BIDDER_CODE) {
+    if (bidObj.bidderCode !== BIDDER_CODE) {
       if (eventType === BID_WON) {
         bidToSend = {
           cpm: bidObj.cpm,

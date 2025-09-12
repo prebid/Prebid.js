@@ -87,7 +87,7 @@ export const spec = {
 
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = (typeof seatbid != 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+    const bidResponses = (typeof seatbid !== 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
       result[bid.impid] = bid;
       return result;
     }, []) : [];
@@ -213,7 +213,7 @@ function parseNative(bid, nativeParams) {
 
   nativeParamKeys.forEach(nativeParam => {
     assets.forEach(asset => {
-      if (asset.id == id) {
+      if (asset.id === id) {
         switch (nativeParam) {
           case 'title':
             result.title = asset.title.text;

@@ -72,7 +72,7 @@ function _createImpressionObject(bid) {
       addSize(bid.mediaTypes[BANNER].sizes[i]);
     }
   }
-  if (sizesCount == 0) {
+  if (sizesCount === 0) {
     logWarn(LOG_WARN_PREFIX + 'Error: missing sizes: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
   } else {
     // Use the first preferred size
@@ -140,7 +140,7 @@ export const spec = {
         if (win.vx.cs_loaded) {
           dsloaded = 1;
         }
-        if (win != win.parent) {
+        if (win !== win.parent) {
           win = win.parent;
         } else {
           break;
@@ -163,7 +163,7 @@ export const spec = {
         h: screen.height,
         w: screen.width,
         language: (navigator.language && navigator.language.replace(/-.*/, '')) || 'en',
-        dnt: (navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1' || navigator.doNotTrack == 'yes') ? 1 : 0
+        dnt: (navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes') ? 1 : 0
       },
       imp: [],
       user: {},
@@ -180,7 +180,7 @@ export const spec = {
       }
     });
 
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
 
