@@ -95,7 +95,6 @@ function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
 
 function copyRequiredBidDetails(bid, bidRequest) {
   // First check if bid has mediaTypes/sizes, otherwise fallback to bidRequest
-  const adUnitInfo = bid?.mediaTypes && bid?.sizes ? bid : (bidRequest || bid);
   return pick(bid, [
     'bidder',
     'bidderCode',
@@ -108,8 +107,8 @@ function copyRequiredBidDetails(bid, bidRequest) {
     'adUnit', () => pick(bid, [
       'adUnitCode',
       'transactionId',
-      'sizes as dimensions', () => adUnitInfo.sizes,
-      'mediaTypes', () => adUnitInfo.mediaTypes
+      'sizes as dimensions',
+      'mediaTypes'
     ])
   ]);
 }
@@ -426,12 +425,18 @@ const eventHandlers = {
       if (bid.params) {
         args.params = bid.params;
       }
-      // Save the original bid's adUnit properties to pass to the new bid
-      const originalBidRequest = {
-        mediaTypes: bid.adUnit?.mediaTypes,
-        sizes: bid.adUnit?.dimensions
-      };
-      bid = copyRequiredBidDetails(args, originalBidRequest);
+      if (bid.adUnit) {
+        // Specifically check for mediaTypes and dimensions
+        if (!args.mediaTypes && bid.adUnit.mediaTypes) {
+          args.mediaTypes = bid.adUnit.mediaTypes; 
+        }
+        
+        if (!args.sizes && bid.adUnit.dimensions) {
+          args.sizes = bid.adUnit.dimensions;
+        }
+      }
+      
+      bid = copyRequiredBidDetails(args);
       cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);
     } else if (args.originalRequestId) {
       bid.bidId = args.requestId;
