@@ -291,6 +291,7 @@ function rejectOnAuctionTimeout({auctionId}) {
   bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
     if (bid.auctionId === auctionId) {
       reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
+      return false;
     } else {
       return true;
     }
