@@ -220,7 +220,7 @@ export const spec = {
   },
 };
 
-// Also, export storage for easier testing
+// Also, export storage for easier testing.
 export { storage };
 
 export function getFirstPartyData() {
