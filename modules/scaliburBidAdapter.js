@@ -234,8 +234,7 @@ export function getFirstPartyData() {
     } catch (e) {}
   }
 
-  const {pcid, pcidDate} = fdata;
-  return {pcid, pcidDate};
+  return fdata || {};
 }
 
 registerBidder(spec);
