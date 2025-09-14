@@ -14,7 +14,6 @@ const BIDDER_VERSION = '1.0.0';
 const IFRAME_TYPE_Q_PARAM = 'iframe';
 const IMAGE_TYPE_Q_PARAM = 'img';
 const GVLID = 1471;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
