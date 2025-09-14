@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {sizesToSizeTuples} from "../src/utils.js";
 
 const BIDDER_CODE = 'scalibur';
@@ -13,6 +14,8 @@ const BIDDER_VERSION = '1.0.0';
 const IFRAME_TYPE_Q_PARAM = 'iframe';
 const IMAGE_TYPE_Q_PARAM = 'img';
 const GVLID = 1471;
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const STORAGE_KEY = `${BIDDER_CODE}_fp_data`;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,6 +34,7 @@ export const spec = {
     const ortb2Regs = ortb2.regs || {};
     const ortb2SourceExt = ortb2.source?.ext || {};
     const eids = ortb2User?.ext?.eids || [];
+    const fpd = getFirstPartyData();
 
     const payload = {
       id: bidderRequest.auctionId,
@@ -135,6 +139,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         bidderVersion: BIDDER_VERSION,
         isDebug: config.getConfig('debug'),
+        ...fpd
       }
     };
 
@@ -214,5 +219,23 @@ export const spec = {
     return syncs;
   },
 };
+
+// Also, export storage for easier testing
+export { storage };
+
+export function getFirstPartyData() {
+  if (!storage.hasLocalStorage()) return;
+
+  let rawData = storage.getDataFromLocalStorage(STORAGE_KEY);
+  let fdata = null;
+  if (rawData) {
+    try {
+      fdata = JSON.parse(rawData);
+    } catch (e) {}
+  }
+
+  const {pcid, pcidDate} = fdata;
+  return {pcid, pcidDate};
+}
 
 registerBidder(spec);

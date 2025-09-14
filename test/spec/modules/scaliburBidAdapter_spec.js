@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec} from 'modules/scaliburBidAdapter.js';
+import {expect} from 'chai';
+import {spec, getFirstPartyData, storage} from 'modules/scaliburBidAdapter.js';
 
 describe('Scalibur Adapter', function () {
   const BID = {
@@ -62,7 +62,7 @@ describe('Scalibur Adapter', function () {
         ref: 'https://example-referrer.com',
       },
       user: {
-        data: [{ name: 'segments', segment: ['sports', 'entertainment'] }],
+        data: [{name: 'segments', segment: ['sports', 'entertainment']}],
       },
       regs: {
         ext: {
@@ -118,7 +118,7 @@ describe('Scalibur Adapter', function () {
     });
 
     it('should return false for missing placementId', function () {
-      const invalidBid = { ...BID, params: {} };
+      const invalidBid = {...BID, params: {}};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -136,8 +136,8 @@ describe('Scalibur Adapter', function () {
       expect(imp.ext.placementId).to.equal('test-scl-placement');
       expect(imp.ext.gpid).to.equal('/1234/5678/homepage');
       expect(imp.banner.format).to.deep.equal([
-        { w: 300, h: 250 },
-        { w: 728, h: 90 },
+        {w: 300, h: 250},
+        {w: 728, h: 90},
       ]);
 
       const video = imp.video;
@@ -165,8 +165,8 @@ describe('Scalibur Adapter', function () {
       expect(imp.ext.placementId).to.equal('test-scl-placement');
       expect(imp.ext.gpid).to.equal('/1234/5678/homepage');
       expect(imp.banner.format).to.deep.equal([
-        { w: 300, h: 250 },
-        { w: 728, h: 90 },
+        {w: 300, h: 250},
+        {w: 728, h: 90},
       ]);
 
       const video = imp.video;
@@ -230,7 +230,7 @@ describe('Scalibur Adapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return iframe and pixel sync URLs with correct params', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncOptions = {iframeEnabled: true, pixelEnabled: true};
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
@@ -245,6 +245,96 @@ describe('Scalibur Adapter', function () {
       expect(syncs[0].url).to.include('gdpr_consent=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
       expect(syncs[0].url).to.include('us_privacy=1---');
       expect(syncs[1].type).to.equal('image');
+    });
+  });
+
+  describe('getScaliburFirstPartyData', function () {
+    let sandbox;
+    let storageStub;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      storageStub = {
+        hasLocalStorage: sandbox.stub(),
+        getDataFromLocalStorage: sandbox.stub()
+      };
+
+      // Replace storage methods
+      sandbox.stub(storage, 'hasLocalStorage').callsFake(storageStub.hasLocalStorage);
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(storageStub.getDataFromLocalStorage);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should return undefined when localStorage is not available', function () {
+      storageStub.hasLocalStorage.returns(false);
+
+      const result = getFirstPartyData();
+
+      expect(result).to.be.undefined;
+      expect(storageStub.getDataFromLocalStorage.called).to.be.false;
+    });
+
+    it('should return existing first party data when available', function () {
+      const existingData = {
+        pcid: 'existing-uuid-1234-5678-abcd-ef1234567890',
+        pcidDate: 1640995200000
+      };
+
+      storageStub.hasLocalStorage.returns(true);
+      storageStub.getDataFromLocalStorage.returns(JSON.stringify(existingData));
+
+      const result = getFirstPartyData();
+
+      // Should use existing data
+      expect(result.pcid).to.equal(existingData.pcid);
+      expect(result.pcidDate).to.equal(existingData.pcidDate);
+    });
+  });
+
+  describe('buildRequests with first party data', function () {
+    let sandbox;
+    let storageStub;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      storageStub = {
+        hasLocalStorage: sandbox.stub(),
+        getDataFromLocalStorage: sandbox.stub(),
+      };
+
+      sandbox.stub(storage, 'hasLocalStorage').callsFake(storageStub.hasLocalStorage);
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(storageStub.getDataFromLocalStorage);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should include first party data in buildRequests when available', function () {
+      const testData = {
+        pcid: 'test-uuid-1234-5678-abcd-ef1234567890',
+        pcidDate: 1640995200000
+      };
+
+      storageStub.hasLocalStorage.returns(true);
+      storageStub.getDataFromLocalStorage.returns(JSON.stringify(testData));
+
+      const request = spec.buildRequests([DEFAULTS_BID], DEFAULTS_BIDDER_REQUEST);
+
+      expect(request.data.ext.pcid).to.equal(testData.pcid);
+      expect(request.data.ext.pcidDate).to.equal(testData.pcidDate);
+    });
+
+    it('should not include first party data when localStorage is unavailable', function () {
+      storageStub.hasLocalStorage.returns(false);
+
+      const request = spec.buildRequests([DEFAULTS_BID], DEFAULTS_BIDDER_REQUEST);
+
+      expect(request.data.ext.pcid).to.be.undefined;
+      expect(request.data.ext.pcidDate).to.be.undefined;
     });
   });
 });
