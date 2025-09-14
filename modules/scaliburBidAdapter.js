@@ -33,7 +33,6 @@ export const spec = {
     const ortb2Regs = ortb2.regs || {};
     const ortb2SourceExt = ortb2.source?.ext || {};
     const eids = ortb2User?.ext?.eids || [];
-    const fpd = getAndSetFirstPartyData();
 
     const payload = {
       id: bidderRequest.auctionId,
@@ -138,7 +137,6 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         bidderVersion: BIDDER_VERSION,
         isDebug: config.getConfig('debug'),
-        ...fpd
       }
     };
 
@@ -218,51 +216,5 @@ export const spec = {
     return syncs;
   },
 };
-
-export function getFirstPartyUUID() {
-  let uuid = '';
-  for (let i = 0; i < 32; i++) {
-    const randomValue = Math.floor(Math.random() * 16);
-    uuid += randomValue.toString(16);
-  }
-  // Insert hyphens to match the UUID format 8-4-4-4-12
-  return (
-    uuid.slice(0, 8) +
-    '-' +
-    uuid.slice(8, 12) +
-    '-' +
-    uuid.slice(12, 16) +
-    '-' +
-    uuid.slice(16, 20) +
-    '-' +
-    uuid.slice(20, 32)
-  );
-}
-
-// Also export storage for easier testing
-export { storage };
-
-export function getAndSetFirstPartyData() {
-  if (!storage.hasLocalStorage()) return;
-
-  let rawData = storage.getDataFromLocalStorage('_iiq_fdata');
-  let fdata = null;
-  if (rawData) {
-    try {
-      fdata = JSON.parse(rawData);
-    } catch (e) {}
-  }
-
-  if (!fdata) {
-    fdata = {
-      pcid: getFirstPartyUUID(),
-      pcidDate: Date.now(),
-    };
-    storage.setDataInLocalStorage('_iiq_fdata', JSON.stringify(fdata));
-  }
-
-  const {pcid, pcidDate} = fdata;
-  return {pcid, pcidDate};
-}
 
 registerBidder(spec);
