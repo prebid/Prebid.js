@@ -8,6 +8,7 @@ import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { findUtiqService } from "../libraries/utiqUtils/utiqUtils.ts";
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -152,4 +153,5 @@ export const utiqIdSubmodule = {
   }
 };
 
+findUtiqService(storage, window.pbjs.refreshUserIds, LOG_PREFIX, MODULE_NAME);
 submodule('userId', utiqIdSubmodule);
