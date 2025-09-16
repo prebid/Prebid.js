@@ -361,12 +361,15 @@ describe('ValuadAdapter', function () {
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
-    it('should not throw error if response body is missing', function () {
-      const responseNoBody = { body: null };
-      const fn = () => spec.interpretResponse(responseNoBody, requestToServer);
-      expect(fn).to.not.throw();
-      const result = spec.interpretResponse(responseNoBody, requestToServer);
-      expect(result).to.be.an('array').with.lengthOf(0);
+    it('should return empty array when response is null or undefined', function () {
+      expect(spec.interpretResponse(null, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse(undefined, requestToServer)).to.deep.equal([]);
+    });
+
+    it('should return empty array when response body is missing or invalid', function () {
+      expect(spec.interpretResponse({}, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: null }, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: undefined }, requestToServer)).to.deep.equal([]);
     });
   });
 
