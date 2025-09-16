@@ -31,4 +31,31 @@ registerBidder({
         // likewise, you may need to adjust the bid response objects
         return bids;
     },
+    getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
+      const { gppString = '', applicableSections = [] } = gppConsent;
+      const queryParams = [];
+
+      if (gdprConsent) {
+        if (gdprConsent.gdprApplies) {
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+        }
+        if (gdprConsent.consentString) {
+          queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        queryParams.push(`us_privacy=${uspConsent}`);
+      }
+      queryParams.push(`gpp=${gppString}`);
+      if (Array.isArray(applicableSections)) {
+        for (const applicableSection of applicableSections) {
+          queryParams.push(`gpp_sid=${applicableSection}`);
+        }
+      }
+
+      return [{
+        type: 'image',
+        url: `https://o.clickiocdn.com/redirect?${queryParams.join('&')}`
+      }];
+    }
 })
