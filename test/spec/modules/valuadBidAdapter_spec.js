@@ -238,9 +238,9 @@ describe('ValuadAdapter', function () {
       expect(payload.regs.gdpr).to.equal(1);
       expect(payload.regs.coppa).to.equal(0);
       expect(payload.regs.us_privacy).to.equal(bidderRequest.uspConsent);
-      expect(payload.regs.ext.gdpr_conset).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(payload.regs.ext.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
       expect(payload.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
-      expect(payload.regs.ext.gppSid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
+      expect(payload.regs.ext.gpp_sid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
       expect(payload.regs.ext.dsa).to.deep.equal(bidderRequest.ortb2.regs.ext.dsa);
 
       expect(payload.ext.params).to.deep.equal(validBidRequests[0].params);
@@ -361,10 +361,12 @@ describe('ValuadAdapter', function () {
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
-    it('should throw error if response body is missing', function () {
+    it('should not throw error if response body is missing', function () {
       const responseNoBody = { body: null };
       const fn = () => spec.interpretResponse(responseNoBody, requestToServer);
-      expect(fn).to.throw();
+      expect(fn).to.not.throw();
+      const result = spec.interpretResponse(responseNoBody, requestToServer);
+      expect(result).to.be.an('array').with.lengthOf(0);
     });
   });
 
