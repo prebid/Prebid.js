@@ -4,6 +4,7 @@ import { logError, isStr, mergeDeep, isPlainObject, isEmpty } from '../src/utils
 import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js';
 import { FloorProvider } from '../libraries/pubmaticUtils/plugins/floorProvider.js';
 import { UnifiedPricingRule } from '../libraries/pubmaticUtils/plugins/unifiedPricingRule.js';
+import { DynamicTimeout } from '../libraries/pubmaticUtils/plugins/dynamicTimeout.js';
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -96,6 +97,7 @@ export const configJsonManager = ConfigJsonManager();
 // Register plugins
 pluginManager.register('dynamicFloors', FloorProvider);
 pluginManager.register('unifiedPricingRule', UnifiedPricingRule);
+pluginManager.register('dynamicTimeout', DynamicTimeout);
 
 /**
  * Initialize the Pubmatic RTD Module.
