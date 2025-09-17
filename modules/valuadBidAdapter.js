@@ -46,9 +46,9 @@ const converter = ortbConverter({
       coppa: coppa,
       us_privacy: uspConsent,
       ext: {
-        gdpr_conset: gdpr.consentString || '',
+        gdpr_consent: gdpr.consentString || '',
         gpp: gpp || '',
-        gppSid: gppSid || [],
+        gpp_sid: gppSid || [],
         dsa: dsa,
       }
     });
