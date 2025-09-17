@@ -191,6 +191,11 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
 }
 
 function interpretResponse(response, request) {
+  // Handle null or missing response body
+  if (!response || !response.body) {
+    return [];
+  }
+
   // Restore original call, remove logging and safe navigation
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
