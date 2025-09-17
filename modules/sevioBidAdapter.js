@@ -4,15 +4,47 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
 
+const PREBID_VERSION = '$prebid.version$';
+const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
-const ENDPOINT_URL = "https://req.adx.ws/prebid";
+const ENDPOINT_URL = "https://work.targetblankdev.com/prebid";
 const ACTION_METHOD = "POST";
 
 const detectAdType = (bid) =>
   (
     ["native", "banner"].find((t) => bid.mediaTypes?.[t]) || "unknown"
   ).toUpperCase();
+
+const getReferrerInfo = (bidderRequest) => {
+  return bidderRequest?.refererInfo?.page ?? '';
+}
+
+const getPageTitle = () => {
+  try {
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+const getConnectionDownLink = (userNav) => {
+  return userNav && userNav.connection && userNav.connection.downlink >= 0 ? userNav.connection.downlink.toString() : '';
+}
+
+const getNetworkQuality = (userNav) => {
+  const connection = userNav.connection || userNav.mozConnection || userNav.webkitConnection;
+
+  return connection?.effectiveType ?? '';
+}
+
+const getDomComplexity = (document) => {
+  return document?.querySelectorAll('*')?.length ?? -1;
+}
 
 const parseNativeAd = function (bid) {
   try {
@@ -120,6 +152,42 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const userSyncEnabled = config.getConfig("userSync.syncEnabled");
+    // (!) that avoids top-level side effects (the thing that can stop registerBidder from running)
+    const computeTTFB = (w = (typeof window !== 'undefined' ? window : undefined)) => {
+      try {
+        const wt = (() => { try { return w?.top ?? w; } catch { return w; } })();
+        const p = wt?.performance || wt?.webkitPerformance || wt?.msPerformance || wt?.mozPerformance;
+        if (!p) return '';
+
+        if (typeof p.getEntriesByType === 'function') {
+          const nav = p.getEntriesByType('navigation')?.[0];
+          if (nav?.responseStart > 0 && nav?.requestStart > 0) {
+            return String(Math.round(nav.responseStart - nav.requestStart));
+          }
+        }
+
+        const t = p.timing;
+        if (t?.responseStart > 0 && t?.requestStart > 0) {
+          return String(t.responseStart - t.requestStart);
+        }
+
+        return '';
+      } catch {
+        return '';
+      }
+    };
+
+    // simple caching
+    const getTTFBOnce = (() => {
+      let cached = false;
+      let done = false;
+      return () => {
+        if (done) return cached;
+        done = true;
+        cached = computeTTFB();
+        return cached;
+      };
+    })();
 
     if (bidRequests.length === 0) {
       return [];
@@ -135,6 +203,7 @@ export const spec = {
       const width = size[0];
       const height = size[1];
       const originalAssets = bidRequest.mediaTypes?.native?.ortb?.assets || [];
+
       // convert icon to img type 1
       const processedAssets = originalAssets.map(asset => {
         if (asset.icon) {
@@ -181,6 +250,29 @@ export const spec = {
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
+        referer: getReferrerInfo(bidderRequest),
+        pageReferer: document.referrer,
+        pageTitle: getPageTitle().slice(0, 300),
+        networkBandwidth: getConnectionDownLink(window.navigator),
+        networkQuality: getNetworkQuality(window.navigator),
+        domComplexity: getDomComplexity(document),
+        device: bidderRequest?.ortb2?.device || {},
+        deviceWidth: screen.width,
+        deviceHeight: screen.height,
+        devicePixelRatio: window.top.devicePixelRatio,
+        screenOrientation: screen.orientation?.type,
+        historyLength: (() => { try { return window.top.history.length; } catch { return undefined; } })(),
+        deviceMemory: (() => { try { return window.top.navigator.deviceMemory; } catch { return undefined; } })(),
+        hardwareConcurrency: (() => { try { return window.top.navigator.hardwareConcurrency; } catch { return undefined; } })(),
+        timeout: bidderRequest?.timeout,
+        viewportHeight: utils.getWinDimensions().visualViewport.height,
+        viewportWidth: utils.getWinDimensions().visualViewport.width,
+        timeToFirstByte: getTTFBOnce(),
+        ext: {
+          ...bidderRequest.ortb2.ext,
+          adapter_version: ADAPTER_VERSION,
+          prebid_version: PREBID_VERSION
+        }
       };
 
       return {
