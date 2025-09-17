@@ -38,7 +38,7 @@ export const spec = {
       version: '$prebid.version$'
     };
 
-    for (let {params, bidId, sizes, mediaTypes} of bidRequests) {
+    for (let {params, bidId, sizes, mediaTypes, ...bid} of bidRequests) {
       for (const mediaType in mediaTypes) {
         switch (mediaType) {
           case VIDEO: {
@@ -57,11 +57,16 @@ export const spec = {
               imp: []
             }
 
+            const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+            const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+
             const imp = {
               ext: {
                 prebid: {
                   storedrequest: { id: placementId }
-                }
+                },
+                gpid,
+                tid,
               },
               video: getDefinedParams(video, VIDEO_PARAMS)
             }
@@ -113,6 +118,18 @@ export const spec = {
               payload.source = {
                 ext: { schain: schain }
               };
+            }
+
+            const {ortb2} = bid;
+
+            if (ortb2?.source?.tid) {
+              if (!payload.source) {
+                payload.source = {
+                  tid: ortb2.source.tid
+                };
+              } else {
+                payload.source.tid = ortb2.source.tid;
+              }
             }
 
             requests.push(formatRequest({ payload, url: VIDEO_ENDPOINT_URL, bidId }));

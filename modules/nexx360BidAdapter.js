@@ -20,7 +20,7 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '6.1';
+const BIDDER_VERSION = '6.3';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -39,6 +39,8 @@ const ALIASES = [
   { code: 'scoremedia', gvlid: 965 },
   { code: 'movingup', gvlid: 1416 },
   { code: 'glomexbidder', gvlid: 967 },
+  { code: 'revnew', gvlid: 1468 },
+  { code: 'pubxai', gvlid: 1485 },
 ];
 
 export const STORAGE = getStorageManager({

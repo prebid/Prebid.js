@@ -1088,6 +1088,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "appStockSSP",
+      "aliasOf": null,
+      "gvlid": 1223,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "appier",
       "aliasOf": null,
       "gvlid": 728,
@@ -2712,6 +2719,34 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "anzuExchange",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adnimation",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "rtbdemand",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "altstar",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3191,6 +3226,20 @@
       "componentName": "glomexbidder",
       "aliasOf": "nexx360",
       "gvlid": 967,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "revnew",
+      "aliasOf": "nexx360",
+      "gvlid": 1468,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubxai",
+      "aliasOf": "nexx360",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4436,7 +4485,7 @@
       "componentType": "bidder",
       "componentName": "valuad",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1478,
       "disclosureURL": null
     },
     {
@@ -5036,6 +5085,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "oftmedia",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "oneKey",
       "gvlid": null,
       "disclosureURL": null
@@ -5109,6 +5164,12 @@
     {
       "componentType": "rtd",
       "componentName": "RelevadRTDModule",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "scope3",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -5271,6 +5332,13 @@
       "componentType": "userId",
       "componentName": "ftrack",
       "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "gemiusId",
+      "gvlid": 328,
       "disclosureURL": null,
       "aliasOf": null
     },
@@ -5680,6 +5748,11 @@
     {
       "componentType": "analytics",
       "componentName": "datablocks",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "datawrkzanalytics",
       "gvlid": null
     },
     {
