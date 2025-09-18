@@ -30,7 +30,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: (bid) => {
+  isBidRequestValid(bid) {
     const { params, mediaTypes } = bid;
     return Boolean(
       params && params.placementId &&
@@ -62,7 +62,10 @@ export const spec = {
   },
 
   interpretResponse(response, request) {
-    response.body.seatbid.forEach(sb => sb.bid.forEach(bid => {
+    if (!response.hasOwnProperty('body') || !response.body.hasOwnProperty('seatbid')) {
+      return [];
+    }
+    response.body.seatbid.filter(sb => sb.hasOwnProperty('bid')).forEach(sb => sb.bid.forEach(bid => {
       bid.crid = 'pbjs-1234';
       bid.adomain = ['adbro.com'];
       bid.price = 0.1;
@@ -71,7 +74,7 @@ export const spec = {
     return result;
   },
 
-  onBidBillable: function(bid) {
+  onBidBillable(bid) {
     if (bid.burl) triggerPixel(bid.burl);
   },
 };
