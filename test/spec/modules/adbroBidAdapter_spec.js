@@ -109,7 +109,7 @@ describe('adbroBidAdapter', function () {
         lurl: 'https://jp.bidbro.me/notice?type=Loss&track=QURCUk8&price=${AUCTION_PRICE}',
         adm: '<script type="application/javascript">console.log("ADBRO")</script>',
         adomain: ['adbro.com'],
-        crid: 'test-prebidjs-adbro.com',
+        crid: 'pbjs-1234',
         w: 300,
         h: 250,
       };

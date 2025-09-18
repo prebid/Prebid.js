@@ -63,7 +63,7 @@ export const spec = {
 
   interpretResponse(response, request) {
     response.body.seatbid.forEach(sb => sb.bid.forEach(bid => {
-      bid.crid = 'test-prebidjs-adbro.com';
+      bid.crid = 'pbjs-1234';
       bid.adomain = ['adbro.com'];
       bid.price = 0.1;
     }));
