@@ -46,9 +46,9 @@ const converter = ortbConverter({
       coppa: coppa,
       us_privacy: uspConsent,
       ext: {
-        gdpr_conset: gdpr.consentString || '',
+        gdpr_consent: gdpr.consentString || '',
         gpp: gpp || '',
-        gppSid: gppSid || [],
+        gpp_sid: gppSid || [],
         dsa: dsa,
       }
     });
@@ -191,6 +191,11 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
 }
 
 function interpretResponse(response, request) {
+  // Handle null or missing response body
+  if (!response || !response.body) {
+    return [];
+  }
+
   // Restore original call, remove logging and safe navigation
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
