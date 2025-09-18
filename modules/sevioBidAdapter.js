@@ -8,7 +8,7 @@ const PREBID_VERSION = '$prebid.version$';
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
-const ENDPOINT_URL = "https://work.targetblankdev.com/prebid";
+const ENDPOINT_URL = "https://req.adx.ws/prebid";
 const ACTION_METHOD = "POST";
 
 const detectAdType = (bid) =>
