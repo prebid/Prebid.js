@@ -12,7 +12,7 @@ const utils = {
   },
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
-    browser.switchFrame(iframe);
+    await browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
     await browser.url(url);
@@ -27,7 +27,7 @@ const utils = {
       }
     }
   },
-  setupTest({url, waitFor, expectGAMCreative = null, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3}, name, fn) {
+  setupTest({url, waitFor, expectGAMCreative = null, nestedIframe = true, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3}, name, fn) {
     describe(name, function () {
       this.retries(retries);
       before(() => utils.loadAndWaitForElement(url, waitFor, pause, timeout, retries));
@@ -36,6 +36,9 @@ const utils = {
         expectGAMCreative = expectGAMCreative === true ? waitFor : expectGAMCreative;
         it(`should render GAM creative`, async () => {
           await utils.switchFrame(expectGAMCreative);
+          if (nestedIframe) {
+            await utils.switchFrame('iframe[srcdoc]');
+          }
           const creative = [
             'a > img', // banner
             'div[class="card"]' // native
