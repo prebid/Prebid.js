@@ -6,31 +6,22 @@ import * as utils from '../../../src/utils.js';
 const bidder = 'adbro';
 
 describe('adbroBidAdapter', function () {
-  const validBid = {
-    bidId: utils.getUniqueIdentifierStr(),
-    bidder: bidder,
-    adUnitCode: 'ad-1234-0',
-    mediaTypes: {
-      [BANNER]: {
-        sizes: [[300, 250]]
-      }
-    },
-    params: {
-      placementId: 'testBanner'
-    },
-  }; const bids = [validBid];
-
-  const invalidBid = {
-    bidId: utils.getUniqueIdentifierStr(),
-    bidder: bidder,
-    mediaTypes: {
-      [BANNER]: {
-        sizes: [[300, 250]]
-      }
-    },
-    params: {
+  const makeBid = (params, bannerSizes) => {
+    return {
+      bidId: utils.getUniqueIdentifierStr(),
+      bidder: bidder,
+      adUnitCode: 'ad-1234-0',
+      mediaTypes: {
+        [BANNER]: {
+          sizes: bannerSizes,
+        },
+      },
+      params: params,
     }
-  }
+  };
+
+  const validBid = makeBid({placementId: '1234'}, [[300, 250]]);
+  const invalidBid = makeBid({}, [[300, 250]]);
 
   const bidderRequest = {
     refererInfo: {
@@ -48,16 +39,24 @@ describe('adbroBidAdapter', function () {
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and key parameters present', function () {
-      expect(spec.isBidRequestValid(bids[0])).to.be.true;
+    it('Should return true if valid params are presented', function () {
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
-    it('Should return false if at least one of parameters is not present', function () {
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    it('Should return false if placementId is not presented', function () {
+      expect(spec.isBidRequestValid(makeBid({}, [[300, 250]]))).to.be.false;
+    });
+    it('Should return false if banner sizes are not presented', function () {
+      expect(spec.isBidRequestValid(makeBid({placementId: '1234'}, []))).to.be.false;
+    });
+    it('Should return true if placementId is an integer', function () {
+      expect(spec.isBidRequestValid(makeBid({placementId: '1234'}, [[300, 250]]))).to.be.true;
+      expect(spec.isBidRequestValid(makeBid({placementId: '1234'}, [[300, 250]]))).to.be.true;
+      expect(spec.isBidRequestValid(makeBid({placementId: 'abc'}, [[300, 250]]))).to.be.false;
     });
   });
 
   describe('buildRequests', function () {
-    let serverRequests = spec.buildRequests(bids, bidderRequest);
+    let serverRequests = spec.buildRequests([validBid], bidderRequest);
 
     it('Creates a valid ServerRequest object', function () {
       expect(serverRequests).to.be.an('array').that.is.not.empty;
@@ -66,19 +65,19 @@ describe('adbroBidAdapter', function () {
       expect(serverRequest.method).to.exist;
       expect(serverRequest.method).to.equal('POST');
       expect(serverRequest.url).to.exist;
-      expect(serverRequest.url).to.equal('https://jp.bidbro.me/pbjs?placementId=testBanner');
+      expect(serverRequest.url).to.equal('https://jp.bidbro.me/pbjs?placementId=1234');
       expect(serverRequest.data).to.exist;
     });
 
     it('Returns general data valid', function () {
       const data = serverRequests[0].data;
       expect(data).to.be.an('object');
-      expect(data.id).to.be.a('string');
-      expect(data.imp).to.have.lengthOf(1);
-      expect(data.device).to.be.an('object');
-      expect(data.device.js).to.be.equal(1);
-      expect(data.test).to.be.equal(0);
-      expect(data.tmax).to.be.a('number').equal(500);
+      expect(data).to.have.property('id').that.is.not.empty;
+      expect(data).to.have.property('test', 0);
+      expect(data).to.have.property('tmax', 500);
+      expect(data).to.have.property('imp').that.is.an('array').with.lengthOf(1);
+      expect(data).to.have.property('device').that.is.an('object');
+      expect(data.device).to.have.property('js', 1);
     });
 
     it('Returns valid imps', function () {
@@ -113,11 +112,11 @@ describe('adbroBidAdapter', function () {
         w: 300,
         h: 250,
       };
-      const bidRequest = spec.buildRequests(bids, bidderRequest)[0];
+      const bidRequest = spec.buildRequests([validBid], bidderRequest)[0];
       const bidResponse = {body: {
         id: bidRequest.data.id,
         bidid: utils.getUniqueIdentifierStr(),
-        seatbid: [{seat: '501', bid: [responseBid]}],
+        seatbid: [{bid: [responseBid]}],
       }};
       const responses = spec.interpretResponse(bidResponse, bidRequest);
       expect(responses).to.be.an('array').that.is.not.empty;
@@ -139,17 +138,29 @@ describe('adbroBidAdapter', function () {
     });
 
     it('Should return an empty array if invalid banner response is passed', function () {
-      const bidRequest = spec.buildRequests(bids, bidderRequest)[0];
+      const bidRequest = spec.buildRequests([validBid], bidderRequest)[0];
       const bidResponse = {body: {
         id: bidRequest.data.id,
         bidid: utils.getUniqueIdentifierStr(),
-        seatbid: [{seat: '501', bid: [{
-          id: utils.getUniqueIdentifierStr(),
-          impid: invalidBid.bidId,
-          price: 0.4,
-          w: 300,
-          h: 250,
-        }]}],
+        seatbid: [{
+          bid: [{
+            id: utils.getUniqueIdentifierStr(),
+            impid: invalidBid.bidId,
+            price: 0.4,
+            w: 300,
+            h: 250,
+          }],
+        }],
+      }};
+      const responses = spec.interpretResponse(bidResponse, bidRequest);
+      expect(responses).to.be.an('array').that.is.empty;
+    });
+
+    it('Should return an empty array if no seat bids are passed', function () {
+      const bidRequest = spec.buildRequests([validBid], bidderRequest)[0];
+      const bidResponse = {body: {
+        id: bidRequest.data.id,
+        bidid: utils.getUniqueIdentifierStr(),
       }};
       const responses = spec.interpretResponse(bidResponse, bidRequest);
       expect(responses).to.be.an('array').that.is.empty;

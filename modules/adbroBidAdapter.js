@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { triggerPixel } from '../src/utils.js';
+import { isArray, isInteger, triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'adbro';
 const GVLID = 1316;
@@ -23,6 +23,13 @@ const converter = ortbConverter({
 
     return imp;
   },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+
+    request.device.js = 1;
+
+    return request;
+  },
 });
 
 export const spec = {
@@ -33,8 +40,9 @@ export const spec = {
   isBidRequestValid(bid) {
     const { params, mediaTypes } = bid;
     return Boolean(
-      params && params.placementId &&
-      mediaTypes && mediaTypes[BANNER] && mediaTypes[BANNER].sizes
+      params && params.placementId && isInteger(Number(params.placementId)) &&
+      mediaTypes && mediaTypes[BANNER] && mediaTypes[BANNER].sizes &&
+      isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0
     );
   },
 
@@ -51,7 +59,6 @@ export const spec = {
         bidRequests: placements[id],
         bidderRequest: bidderRequest,
       });
-      data.device.js = 1;
       result.push({
         method: 'POST',
         url: ENDPOINT_URL + '?placementId=' + id,
@@ -65,12 +72,10 @@ export const spec = {
     if (!response.hasOwnProperty('body') || !response.body.hasOwnProperty('seatbid')) {
       return [];
     }
-    response.body.seatbid.filter(sb => sb.hasOwnProperty('bid')).forEach(sb => sb.bid.forEach(bid => {
-      bid.crid = 'pbjs-1234';
-      bid.adomain = ['adbro.com'];
-      bid.price = 0.1;
-    }));
-    const result = converter.fromORTB({request: request.data, response: response.body}).bids;
+    const result = converter.fromORTB({
+      request: request.data,
+      response: response.body,
+    }).bids;
     return result;
   },
 
