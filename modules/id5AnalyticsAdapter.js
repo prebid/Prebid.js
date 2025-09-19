@@ -112,14 +112,6 @@ const ENABLE_FUNCTION = (config) => {
       // Init the module only if we got lucky
       logInfo('id5Analytics: Selected by sampling. Starting up!');
 
-      // Replay all events until now
-      if (!config.disablePastEventsProcessing) {
-        events.getEvents().forEach((event) => {
-          if (event && _this.eventsToTrack.indexOf(event.eventType) >= 0) {
-            _this.track(event);
-          }
-        });
-      }
       // allow for replacing cleanup rules - remove existing ones and apply from server
       if (configFromServer.replaceCleanupRules) {
         cleanupRules = {};
@@ -141,6 +133,15 @@ const ENABLE_FUNCTION = (config) => {
             } else {
               cleanupRules[key].push(...newRules[key]);
             }
+          }
+        });
+      }
+
+      // Replay all events until now
+      if (!config.disablePastEventsProcessing) {
+        events.getEvents().forEach((event) => {
+          if (event && _this.eventsToTrack.indexOf(event.eventType) >= 0) {
+            _this.track(event);
           }
         });
       }
