@@ -238,9 +238,9 @@ describe('ValuadAdapter', function () {
       expect(payload.regs.gdpr).to.equal(1);
       expect(payload.regs.coppa).to.equal(0);
       expect(payload.regs.us_privacy).to.equal(bidderRequest.uspConsent);
-      expect(payload.regs.ext.gdpr_conset).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(payload.regs.ext.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
       expect(payload.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
-      expect(payload.regs.ext.gppSid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
+      expect(payload.regs.ext.gpp_sid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
       expect(payload.regs.ext.dsa).to.deep.equal(bidderRequest.ortb2.regs.ext.dsa);
 
       expect(payload.ext.params).to.deep.equal(validBidRequests[0].params);
@@ -361,10 +361,15 @@ describe('ValuadAdapter', function () {
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
-    it('should throw error if response body is missing', function () {
-      const responseNoBody = { body: null };
-      const fn = () => spec.interpretResponse(responseNoBody, requestToServer);
-      expect(fn).to.throw();
+    it('should return empty array when response is null or undefined', function () {
+      expect(spec.interpretResponse(null, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse(undefined, requestToServer)).to.deep.equal([]);
+    });
+
+    it('should return empty array when response body is missing or invalid', function () {
+      expect(spec.interpretResponse({}, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: null }, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: undefined }, requestToServer)).to.deep.equal([]);
     });
   });
 

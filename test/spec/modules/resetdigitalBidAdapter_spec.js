@@ -155,4 +155,67 @@ describe('resetdigitalBidAdapter', function () {
       expect(typeof sync[0].url === 'string')
     })
   })
+
+  describe('schain support', function () {
+    it('should include schain in the payload if present in bidderRequest', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'example.com',
+          sid: '00001',
+          hp: 1,
+          rid: 'req-1',
+          name: 'seller',
+          domain: 'example.com'
+        }]
+      };
+
+      const bidRequest = {
+        bidId: 'schain-test-id',
+        params: {
+          pubId: 'schain-pub'
+        }
+      };
+
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            ext: {
+              schain
+            }
+          }
+        },
+        refererInfo: {}
+      };
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.schain).to.deep.equal(schain);
+    });
+
+    it('should not include schain if not present in bidderRequest', function () {
+      const bidRequest = {
+        bidId: 'no-schain-id',
+        params: {
+          pubId: 'no-schain-pub'
+        }
+      };
+
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            ext: {}
+          }
+        },
+        refererInfo: {}
+      };
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload).to.not.have.property('schain');
+    });
+  });
 })

@@ -74,7 +74,7 @@ Prebid.outcomes.net endpoint key: mobianContentCategories
 
 Targetable Key: mobian_categories
 
-Possible values: "adult_content", "arms", "crime", "death_injury", "debated_issue", "hate_speech", "drugs_alcohol", "obscenity", "piracy", "spam", "terrorism"
+Possible values: "adult", "arms", "crime", "death_injury", "debated_issue", "piracy", "hate_speech", "obscenity", "drugs", "spam", "terrorism" 
 
 Description: Brand Safety Categories contain categorical results for brand safety when relevant (e.g. Low Risk Adult Content). Note there can be Medium and High Risk content that is not associated to a specific brand safety category.
 

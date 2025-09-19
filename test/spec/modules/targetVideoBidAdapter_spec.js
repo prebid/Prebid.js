@@ -99,6 +99,22 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.source.ext.schain).to.deep.equal(globalSchain);
   });
 
+  it('Test the VIDEO request gpid and tid', function () {
+    const gpid = '/123/test-gpid';
+    const tid = '123-test-tid';
+
+    const videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].ortb2Imp = { ext: { gpid, tid } };
+    videoRequestCloned[0].ortb2 = { source: { tid } };
+
+    const request = spec.buildRequests(videoRequestCloned, defaultBidderRequest);
+    const payload = JSON.parse(request[0].data);
+
+    expect(payload.imp[0].ext.gpid).to.exist.and.equal(gpid);
+    expect(payload.imp[0].ext.tid).to.exist.and.equal(tid);
+    expect(payload.source.tid).to.exist.and.equal(tid);
+  });
+
   it('Test the VIDEO request eids and user data sending', function() {
     const userData = [
       {
