@@ -1,4 +1,4 @@
-import {canAccessWindowTop, getWindowTop, getWindowSelf} from '../utils.js';
+import {canAccessWindowTop, internal as utilsInternals} from '../utils.js';
 
 const CHECK_INTERVAL_MS = 20;
 
@@ -19,7 +19,7 @@ export function cachedGetter(getter) {
 }
 
 function fetchWinDimensions() {
-  const top = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
+  const top = canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
 
   return {
     screen: {
