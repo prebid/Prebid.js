@@ -6,6 +6,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
@@ -204,12 +205,13 @@ export const spec = {
     const botTest = new BotClientTests();
     const win = getWindowTop();
     const windowDimensions = getWinDimensions();
+    const extraDims = getExtraWinDimensions();
     return {
       'wiw': windowDimensions.innerWidth,
       'wih': windowDimensions.innerHeight,
-      'saw': windowDimensions.screen.availWidth,
-      'sah': windowDimensions.screen.availHeight,
-      'scd': screen ? screen.colorDepth : null,
+      'saw': extraDims.screen.availWidth,
+      'sah': extraDims.screen.availHeight,
+      'scd': extraDims.screen.colorDepth,
       'sw': windowDimensions.screen.width,
       'sh': windowDimensions.screen.height,
       'whl': win.history.length,
