@@ -375,7 +375,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: [
-    { code: 'duration', gvlid: 674 }
+    { code: 'duration'}
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
