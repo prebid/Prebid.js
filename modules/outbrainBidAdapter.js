@@ -414,7 +414,7 @@ function isValidVideoRequest(bid) {
     return false;
   }
 
-  if (videoAdUnit.context == '') {
+  if (videoAdUnit.context === '') {
     return false;
   }
 
