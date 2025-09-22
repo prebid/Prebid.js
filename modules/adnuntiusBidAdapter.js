@@ -1,8 +1,17 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, isArray, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {
+  convertObjectToArray,
+  deepAccess,
+  deepClone,
+  getUnixTimestampFromNow,
+  getWinDimensions,
+  isArray,
+  isEmpty,
+  isStr
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';

@@ -17,4 +17,3 @@ describe('extraWinDimensions', () => {
     sinon.assert.called(resetSpy);
   })
 });
-
