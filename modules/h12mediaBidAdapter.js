@@ -1,5 +1,7 @@
-import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
+import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -35,8 +37,8 @@ export const spec = {
         x: framePos[0],
         y: framePos[1],
       } : {
-        x: adUnitElement && adUnitElement.getBoundingClientRect().x,
-        y: adUnitElement && adUnitElement.getBoundingClientRect().y,
+        x: adUnitElement && getBoundingClientRect(adUnitElement).x,
+        y: adUnitElement && getBoundingClientRect(adUnitElement).y,
       };
 
       const bidrequest = {
@@ -93,7 +95,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, bidRequests) {
-    let bidResponses = [];
+    const bidResponses = [];
     try {
       const serverBody = serverResponse.body;
       if (serverBody) {
@@ -208,8 +210,7 @@ function isVisible(element) {
 
 function getClientDimensions() {
   try {
-    const t = window.top.innerWidth || window.top.document.documentElement.clientWidth || window.top.document.body.clientWidth;
-    const e = window.top.innerHeight || window.top.document.documentElement.clientHeight || window.top.document.body.clientHeight;
+    const { width: t, height: e } = getViewportSize();
     return [Math.round(t), Math.round(e)];
   } catch (i) {
     return [0, 0];
@@ -218,8 +219,10 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const D = window.top.document;
-    return [D.body.offsetWidth, Math.max(D.body.scrollHeight, D.documentElement.scrollHeight, D.body.offsetHeight, D.documentElement.offsetHeight, D.body.clientHeight, D.documentElement.clientHeight)]
+    const {document: {documentElement, body}} = getWinDimensions();
+    const width = body.clientWidth;
+    const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
+    return [width, height];
   } catch (t) {
     return [-1, -1]
   }
@@ -242,8 +245,8 @@ function getFramePos() {
       if (m > 1) {
         t = t.parent
       }
-      frmLeft = frmLeft + t.frameElement.getBoundingClientRect().left;
-      frmTop = frmTop + t.frameElement.getBoundingClientRect().top;
+      frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
+      frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
     } catch (o) { /* keep looping */
     }
   } while ((m < 100) && (t.parent !== t.self))

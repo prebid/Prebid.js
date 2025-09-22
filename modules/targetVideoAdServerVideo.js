@@ -28,14 +28,14 @@ export function buildVideoUrl(options) {
     mute: '[vpmute]',
     page_url: '[page_url]',
     cachebuster: '[timestamp]',
-    consent: '[consent]',
+    gdpr_consent: '[consent]',
   }
 
   const adUnit = options.adUnit;
   const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
   const allTargetingData = getAllTargetingData(options);
   const custParams = options.params.cust_params;
-  let iu = options.params.iu;
+  const iu = options.params.iu;
 
   if (isURL.test(iu)) {
     const urlComponents = parseUrl(iu, {noDecodeWholeURL: true});
@@ -84,7 +84,7 @@ function getAllTargetingData(options) {
   let allTargetingData = {};
   const adUnit = options && options.adUnit;
   if (adUnit) {
-    let allTargeting = targeting.getAllTargeting(adUnit.code);
+    const allTargeting = targeting.getAllTargeting(adUnit.code);
     allTargetingData = allTargeting ? allTargeting[adUnit.code] : {};
   }
 

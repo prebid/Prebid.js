@@ -12,7 +12,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const region = validBidRequests[0].params?.region;
 
   if (region === 'eu') {
-    request.url = AD_URL.replace('#{REGION}#', 'eu');
+    request.url = AD_URL.replace('#{REGION}#', 'eu-x');
   } else {
     request.url = AD_URL.replace('#{REGION}#', 'us-east-x');
   }

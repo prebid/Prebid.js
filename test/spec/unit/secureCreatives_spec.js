@@ -15,6 +15,8 @@ import {expect} from 'chai';
 
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
+import {PUC_MIN_VERSION} from 'src/creativeRenderers.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
   let sandbox;
@@ -31,7 +33,7 @@ describe('secureCreatives', () => {
   });
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
@@ -100,7 +102,7 @@ describe('secureCreatives', () => {
         renderer: null
       }, obj);
       auction.getBidsReceived = function() {
-        let bidsReceived = getBidResponses();
+        const bidsReceived = getBidResponses();
         bidsReceived.push(adResponse);
         return bidsReceived;
       }
@@ -108,7 +110,7 @@ describe('secureCreatives', () => {
     }
 
     function resetAuction() {
-      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
+      getGlobal().setConfig({ enableSendAllBids: false });
       auction.getBidRequests = getBidRequests;
       auction.getBidsReceived = getBidResponses;
       auction.getAdUnits = getAdUnits;
@@ -209,11 +211,8 @@ describe('secureCreatives', () => {
           return receive(ev);
         }).then(() => {
           sinon.assert.calledWith(spyLogWarn, warning);
-          sinon.assert.calledOnce(spyAddWinningBid);
-          sinon.assert.calledWith(spyAddWinningBid, adResponse);
           sinon.assert.calledOnce(adResponse.renderer.render);
           sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
         });
       });
@@ -301,7 +300,10 @@ describe('secureCreatives', () => {
           data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
         });
         return receive(ev).then(() => {
-          sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => JSON.parse(ob).renderer === 'mock-renderer'));
+          sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
+            const {renderer, rendererVersion} = JSON.parse(ob);
+            return renderer === 'mock-renderer' && rendererVersion === PUC_MIN_VERSION;
+          }));
         });
       });
 
@@ -389,7 +391,7 @@ describe('secureCreatives', () => {
       });
 
       it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
-        let adId = 3;
+        const adId = 3;
         pushBidResponseToAuction({ adId });
 
         const data = {
@@ -410,9 +412,71 @@ describe('secureCreatives', () => {
           sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
           return receive(ev);
         }).then(() => {
-          stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
+          expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
         });
       });
+
+      it('should fire BID_WON when no asset is requested', () => {
+        pushBidResponseToAuction({});
+        const data = {
+          adId: bidId,
+          message: 'Prebid Native',
+        };
+
+        const ev = makeEvent({
+          data: JSON.stringify(data),
+        });
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        });
+      })
+
+      describe('resizing', () => {
+        let container, slot;
+        before(() => {
+          const [gtag, atag] = [window.googletag, window.apntag];
+          delete window.googletag;
+          delete window.apntag;
+          after(() => {
+            window.googletag = gtag;
+            window.apntag = atag;
+          })
+        })
+        beforeEach(() => {
+          pushBidResponseToAuction({
+            adUnitCode: 'mock-au'
+          });
+          container = document.createElement('div');
+          container.id = 'mock-au';
+          slot = document.createElement('iframe');
+          container.appendChild(slot);
+          document.body.appendChild(container)
+        });
+        afterEach(() => {
+          if (container) {
+            document.body.removeChild(container);
+          }
+        })
+        it('should handle resize request', () => {
+          const ev = makeEvent({
+            data: JSON.stringify({
+              adId: bidId,
+              message: 'Prebid Native',
+              action: 'resizeNativeHeight',
+              width: 123,
+              height: 321
+            }),
+            source: {
+              postMessage: sinon.stub()
+            },
+            origin: 'any origin'
+          });
+          return receive(ev).then(() => {
+            expect(slot.style.width).to.eql('123px');
+            expect(slot.style.height).to.eql('321px');
+          });
+        })
+      })
     });
 
     describe('Prebid Event', () => {
@@ -478,7 +542,7 @@ describe('secureCreatives', () => {
       window.googletag = origGpt;
     });
     function mockSlot(elementId, pathId) {
-      let targeting = {};
+      const targeting = {};
       return {
         getSlotElementId: sinon.stub().callsFake(() => elementId),
         getAdUnitPath: sinon.stub().callsFake(() => pathId),
@@ -516,5 +580,55 @@ describe('secureCreatives', () => {
       sinon.assert.called(slots[1].getSlotElementId);
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
+
+    it('should find correct apn tag based on adUnitCode', () => {
+      window.apntag = {
+        getTag: sinon.stub()
+      };
+      const apnTag = {
+        targetId: 'apnAdUnitId',
+      }
+      window.apntag.getTag.withArgs('apnAdUnit').returns(apnTag);
+
+      resizeRemoteCreative({
+        adUnitCode: 'apnAdUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(window.apntag.getTag, 'apnAdUnit');
+      sinon.assert.calledWith(document.getElementById, 'apnAdUnitId');
+    });
+
+    it('should find elements for ad units that are not GPT slots', () => {
+      resizeRemoteCreative({
+        adUnitCode: 'adUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
+    });
+
+    it('should find elements for ad units that are not apn tags', () => {
+      window.apntag = {
+        getTag: sinon.stub().returns(null)
+      };
+      resizeRemoteCreative({
+        adUnitCode: 'adUnit',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.calledWith(window.apntag.getTag, 'adUnit');
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
+    });
+
+    it('should not resize interstitials', () => {
+      resizeRemoteCreative({
+        instl: true,
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.notCalled(document.getElementById);
+    })
   })
 });

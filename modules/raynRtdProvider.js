@@ -13,7 +13,6 @@ import { deepAccess, deepSetValue, logError, logMessage, mergeDeep } from '../sr
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'rayn';
-const RAYN_TCF_ID = 1220;
 const RAYN_PERSONA_TAXONOMY_ID = 103015;
 const LOG_PREFIX = 'RaynJS: ';
 export const SEGMENTS_RESOLVER = 'rayn.io';
@@ -50,7 +49,7 @@ function init(moduleConfig, userConsent) {
 /**
  * Create and return ORTB2 object with segtax and segments
  * @param {number} segtax
- * @param {Array} segmentIds
+ * @param {Array} segment
  * @param {number} maxTier
  * @return {Array}
  */
@@ -106,7 +105,7 @@ export function generatePersonaOrtbDataObject(segtax, personaIds) {
 
 /**
  * Generates checksum
- * @param {string} url
+ * @param {string} stringValue
  * @returns {string}
  */
 export function generateChecksum(stringValue) {
@@ -225,7 +224,6 @@ export const raynSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: alterBidRequests,
-  gvlid: RAYN_TCF_ID,
 };
 
 submodule(MODULE_NAME, raynSubmodule);

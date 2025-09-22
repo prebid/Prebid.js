@@ -27,7 +27,7 @@ describe('RelaidoAdapter', function () {
     mockGpt.disable();
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     bidRequest = {
       bidder: 'relaido',
       params: {
@@ -323,15 +323,6 @@ describe('RelaidoAdapter', function () {
       expect(keys[keys.length - 1]).to.equal('ref');
     });
 
-    it('should get imuid', function () {
-      bidRequest.userId = {}
-      bidRequest.userId.imuid = 'i.tjHcK_7fTcqnbrS_YA2vaw';
-      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(bidRequests.data);
-      expect(data.bids).to.have.lengthOf(1);
-      expect(data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
-    });
-
     it('should get userIdAsEids', function () {
       const userIdAsEids = [
         {
@@ -365,7 +356,7 @@ describe('RelaidoAdapter', function () {
     it('should get canonicalUrl (ogUrl:true)', function () {
       bidRequest.params.ogUrl = true;
       bidderRequest.refererInfo.canonicalUrl = null;
-      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(window.top.document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -379,7 +370,7 @@ describe('RelaidoAdapter', function () {
     it('should not get canonicalUrl (ogUrl:false)', function () {
       bidRequest.params.ogUrl = false;
       bidderRequest.refererInfo.canonicalUrl = null;
-      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(window.top.document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -392,7 +383,7 @@ describe('RelaidoAdapter', function () {
 
     it('should not get canonicalUrl (ogUrl:nothing)', function () {
       bidderRequest.refererInfo.canonicalUrl = null;
-      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(window.top.document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -492,7 +483,7 @@ describe('RelaidoAdapter', function () {
 
   describe('spec.getUserSyncs', function () {
     it('should choose iframe sync urls', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: serverResponse.body.syncUrl + '?uu=hogehoge'
@@ -500,7 +491,7 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should choose iframe sync urls if serverResponse are empty', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: true}, []);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: true}, []);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: 'https://api.relaido.jp/tr/v1/prebid/sync.html?uu=hogehoge'
@@ -509,7 +500,7 @@ describe('RelaidoAdapter', function () {
 
     it('should choose iframe sync urls if syncUrl are undefined', function () {
       serverResponse.body.syncUrl = undefined;
-      let userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: 'https://api.relaido.jp/tr/v1/prebid/sync.html?uu=hogehoge'
@@ -517,14 +508,14 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should return empty if iframeEnabled are false', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: false}, [serverResponse]);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: false}, [serverResponse]);
       expect(userSyncs).to.have.lengthOf(0);
     });
   });
 
   describe('spec.onBidWon', function () {
     it('Should create nurl pixel if bid nurl', function () {
-      let bid = {
+      const bid = {
         bidder: bidRequest.bidder,
         creativeId: serverResponse.body.ads[0].creativeId,
         cpm: serverResponse.body.ads[0].price,

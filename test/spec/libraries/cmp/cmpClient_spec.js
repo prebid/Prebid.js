@@ -5,10 +5,14 @@ describe('cmpClient', () => {
     let listeners = [];
     const win = {
       addEventListener: sinon.stub().callsFake((evt, listener) => {
-        evt === 'message' && listeners.push(listener)
+        if (evt === 'message') {
+          listeners.push(listener);
+        }
       }),
       removeEventListener: sinon.stub().callsFake((evt, listener) => {
-        evt === 'message' && (listeners = listeners.filter((l) => l !== listener));
+        if (evt === 'message') {
+          listeners = listeners.filter((l) => l !== listener);
+        }
       }),
       postMessage: sinon.stub().callsFake((msg) => {
         listeners.forEach(ln => ln({data: msg}))
@@ -112,7 +116,8 @@ describe('cmpClient', () => {
           })
 
           it('rejects when CMP api throws', (done) => {
-            mockApiFn.reset();
+            mockApiFn.resetBehavior();
+            mockApiFn.resetHistory();
             const e = new Error();
             mockApiFn.throws(e);
             mkClient()({}).catch(val => {
@@ -255,7 +260,8 @@ describe('cmpClient', () => {
 
           beforeEach(() => {
             callId = null;
-            messenger.reset();
+            messenger.resetHistory();
+            messenger.resetBehavior();
             messenger.callsFake((msg) => {
               if (msg.mockApiCall) callId = msg.mockApiCall.callId;
             });

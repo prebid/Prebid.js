@@ -19,9 +19,9 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const LOG_PREFIX = '[hadronIdSystem]';
-const HADRONID_LOCAL_NAME = 'auHadronId';
-const MODULE_NAME = 'hadronId';
+export const MODULE_NAME = 'hadronId';
+const LOG_PREFIX = `[${MODULE_NAME}System]`;
+export const LS_TAM_KEY = 'auHadronId';
 const AU_GVLID = 561;
 const DEFAULT_HADRON_URL_ENDPOINT = 'https://id.hadron.ad.gt/api/v1/pbhid';
 
@@ -68,11 +68,9 @@ export const hadronIdSubmodule = {
    * @returns {Object}
    */
   decode(value) {
-    const hadronId = storage.getDataFromLocalStorage(HADRONID_LOCAL_NAME);
-    if (isStr(hadronId)) {
-      return {hadronId: hadronId};
+    return {
+      hadronId: isStr(value) ? value : value.hasOwnProperty('id') ? value.id[MODULE_NAME] : value[MODULE_NAME]
     }
-    return (value && typeof value['hadronId'] === 'string') ? {'hadronId': value['hadronId']} : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -81,14 +79,19 @@ export const hadronIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
+    logInfo(LOG_PREFIX, `getId is called`, config);
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
-    const partnerId = config.params.partnerId | 0;
-    let hadronId = storage.getDataFromLocalStorage(HADRONID_LOCAL_NAME);
-    if (isStr(hadronId)) {
-      return {id: {hadronId}};
+    let hadronId = '';
+    // at this point hadronId was not found by prebid, let check if it is in the webpage by other ways
+    hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
+    if (isStr(hadronId) && hadronId.length > 0) {
+      logInfo(LOG_PREFIX, `${LS_TAM_KEY} found in localStorage = ${hadronId}`)
+      // return {callback: function(cb) { cb(hadronId) }};
+      return {id: hadronId}
     }
+    const partnerId = config.params.partnerId | 0;
     const resp = function (callback) {
       let responseObj = {};
       const callbacks = {
@@ -98,11 +101,13 @@ export const hadronIdSubmodule = {
               responseObj = JSON.parse(response);
             } catch (error) {
               logError(error);
+              callback();
             }
             logInfo(LOG_PREFIX, `Response from backend is ${response}`, responseObj);
-            hadronId = responseObj['hadronId'];
-            storage.setDataInLocalStorage(HADRONID_LOCAL_NAME, hadronId);
-            responseObj = {id: {hadronId}};
+            if (isPlainObject(responseObj) && responseObj.hasOwnProperty(MODULE_NAME)) {
+              hadronId = responseObj[MODULE_NAME];
+            }
+            responseObj = hadronId; // {id: {hadronId: hadronId}};
           }
           callback(responseObj);
         },
@@ -137,7 +142,7 @@ export const hadronIdSubmodule = {
         url += `${gppConsent.applicableSections ? '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections) : ''}`;
       }
 
-      logInfo(LOG_PREFIX, `hadronId not found in storage, calling home (${url})`);
+      logInfo(LOG_PREFIX, `${MODULE_NAME} not found, calling home (${url})`);
 
       ajax(url, callbacks, undefined, {method: 'GET'});
     };

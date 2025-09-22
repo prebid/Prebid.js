@@ -3,12 +3,12 @@ import {expect} from 'chai/index.js';
 
 describe('getAdUnitSizes', function () {
   it('returns an empty response when adUnits is undefined', function () {
-    let sizes = getAdUnitSizes();
+    const sizes = getAdUnitSizes();
     expect(sizes).to.be.undefined;
   });
 
   it('returns an empty array when invalid data is present in adUnit object', function () {
-    let sizes = getAdUnitSizes({sizes: 300});
+    const sizes = getAdUnitSizes({sizes: 300});
     expect(sizes).to.deep.equal([]);
   });
 

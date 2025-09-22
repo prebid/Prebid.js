@@ -13,7 +13,7 @@ Module that connects to STN's demand sources.
 
 The STN adapter requires setup and approval from the STN. Please reach out to hb@stnvideo.com to create an STN account.
 
-The adapter supports Video(instream) & Banner.
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video

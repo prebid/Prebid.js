@@ -280,13 +280,17 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     bidder: 'greenbids',
                     isTimeout: false,
                     hasBid: true,
-                    params: {}
+                    params: {},
+                    cpm: 0.1,
+                    currency: 'USD',
                   },
                   {
                     bidder: 'greenbidsx',
                     isTimeout: false,
                     hasBid: true,
-                    params: {'placement ID': 12784}
+                    params: { 'placement ID': 12784 },
+                    cpm: 0.08,
+                    currency: 'USD',
                   }
                 ]
               },
@@ -434,6 +438,9 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
 
   describe('isSampled when analytic isforced', function () {
     before(() => {
+      if (utils.getParameterByName.restore) {
+        utils.getParameterByName.restore();
+      }
       sinon.stub(utils, 'getParameterByName').callsFake(par => par === 'greenbids_force_sampling' ? true : undefined);
     });
     it('should return determinist true when sampling flag activated', function () {

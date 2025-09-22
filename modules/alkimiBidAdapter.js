@@ -21,11 +21,11 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let bids = [];
-    let bidIds = [];
+    const bids = [];
+    const bidIds = [];
     let eids;
     validBidRequests.forEach(bidRequest => {
-      let formatTypes = getFormatType(bidRequest)
+      const formatTypes = getFormatType(bidRequest)
 
       if (bidRequest.userIdAsEids) {
         eids = eids || bidRequest.userIdAsEids
@@ -41,7 +41,8 @@ export const spec = {
         impMediaTypes: formatTypes,
         adUnitCode: bidRequest.adUnitCode,
         video: deepAccess(bidRequest, 'mediaTypes.video'),
-        banner: deepAccess(bidRequest, 'mediaTypes.banner')
+        banner: deepAccess(bidRequest, 'mediaTypes.banner'),
+        ext: bidRequest.ortb2Imp?.ext
       })
       bidIds.push(bidRequest.bidId)
     })
@@ -57,13 +58,13 @@ export const spec = {
     const userParams = alkimiConfig && alkimiConfig.userParams
     const user = (walletID != undefined || userParams != undefined || id != undefined) ? { id, ext: { walletID, userParams } } : undefined
 
-    let payload = {
+    const payload = {
       requestId: generateUUID(),
       signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
-      schain: validBidRequests[0].schain,
+      schain: validBidRequests[0]?.ortb2?.source?.ext?.schain,
       cpp: config.getConfig('coppa') ? 1 : 0,
       device: {
         dnt: getDNT() ? 1 : 0,
@@ -81,6 +82,7 @@ export const spec = {
         },
         at: ortb2?.at,
         bcat: ortb2?.bcat,
+        badv: ortb2?.badv,
         wseat: ortb2?.wseat
       }
     }
@@ -126,9 +128,9 @@ export const spec = {
       return [];
     }
 
-    let bids = [];
+    const bids = [];
     prebidResponse.forEach(bidResponse => {
-      let bid = deepClone(bidResponse);
+      const bid = deepClone(bidResponse);
       bid.cpm = parseFloat(bidResponse.cpm);
 
       // banner or video
@@ -198,7 +200,7 @@ function getBidFloor(bidRequest, formatTypes) {
 }
 
 const getFormatType = bidRequest => {
-  let formats = []
+  const formats = []
   if (deepAccess(bidRequest, 'mediaTypes.banner')) formats.push('Banner')
   if (deepAccess(bidRequest, 'mediaTypes.video')) formats.push('Video')
   return formats

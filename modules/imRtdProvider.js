@@ -109,6 +109,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     const segments = getSegments(data.im_segments, moduleConfig);
     const ortb2 = bidConfig.ortb2Fragments?.global || {};
     deepSetValue(ortb2, 'user.ext.data.im_segments', segments);
+    deepSetValue(ortb2, 'user.ext.data.im_uid', data.im_uid);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
       window.googletag = window.googletag || {cmd: []};
@@ -145,6 +146,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
     onDone();
     return;
   }
+  const uid = storage.getDataFromLocalStorage(imUidLocalName);
   const sids = storage.getDataFromLocalStorage(imRtdLocalName);
   const parsedSids = sids ? sids.split(',') : [];
   const mt = storage.getDataFromLocalStorage(`${imRtdLocalName}_mt`);
@@ -163,7 +165,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
   }
 
   if (sids !== null) {
-    setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedSids});
+    setRealTimeData(reqBidsConfigObj, moduleConfig, {im_uid: uid, im_segments: parsedSids});
     onDone();
     alreadyDone = true;
   }
@@ -210,7 +212,7 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
         }
 
         if (parsedResponse.segments) {
-          setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedResponse.segments});
+          setRealTimeData(reqBidsConfigObj, moduleConfig, {im_uid: parsedResponse.uid, im_segments: parsedResponse.segments});
           storage.setDataInLocalStorage(imRtdLocalName, parsedResponse.segments);
           storage.setDataInLocalStorage(`${imRtdLocalName}_mt`, new Date(timestamp()).toUTCString());
         }

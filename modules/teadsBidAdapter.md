@@ -1,8 +1,8 @@
 # Overview
 
-**Module Name**: Teads Bidder Adapter  
-**Module Type**: Bidder Adapter  
-**Maintainer**: innov-ssp@teads.tv 
+**Module Name**: Teads Bidder Adapter
+**Module Type**: Bidder Adapter
+**Maintainer**: innov-ssp@teads.tv
 
 # Description
 
@@ -17,7 +17,7 @@ Use `teads` as bidder.
       sizes: [[300, 250]],
       bids: [{
           bidder: 'teads',
-          params: { 
+          params: {
               placementId: 12345,
               pageId: 1234
           }
@@ -27,7 +27,7 @@ Use `teads` as bidder.
       sizes: [[600, 800]],
       bids: [{
           bidder: 'teads',
-          params: { 
+          params: {
               placementId: 12345,
               pageId: 1234
           }

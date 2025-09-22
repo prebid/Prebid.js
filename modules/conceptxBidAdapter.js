@@ -5,10 +5,12 @@ import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'conceptx';
 const ENDPOINT_URL = 'https://conceptx.cncpt-central.com/openrtb';
 // const LOG_PREFIX = 'ConceptX: ';
+const GVLID = 1340;
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
+  gvlid: GVLID,
   isBidRequestValid: function (bid) {
     return !!(bid.bidId && bid.params.site && bid.params.adunit);
   },
@@ -55,6 +57,9 @@ export const spec = {
       return bidResponses
     }
     const firstSeat = firstBid.ads[0]
+    if (!firstSeat) {
+      return bidResponses
+    }
     const bidResponse = {
       requestId: firstSeat.requestId,
       cpm: firstSeat.cpm,

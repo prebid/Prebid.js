@@ -2,17 +2,24 @@
 import {assert, expect} from 'chai';
 import {getStorageManager} from 'src/storageManager.js';
 import {spec} from 'modules/seedingAllianceBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('SeedingAlliance adapter', function () {
   let serverResponse, bidRequest, bidResponses;
-  let bid = {
+  const bid = {
     'bidder': 'seedingAlliance',
     'params': {
       'adUnitId': '1hq8'
     }
   };
+
+  const validBidRequests = [{
+    bidId: 'bidId',
+    params: {},
+    mediaType: {
+      native: {}
+    }
+  }];
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
@@ -27,84 +34,33 @@ describe('SeedingAlliance adapter', function () {
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {}
-      }];
-
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.ok(request.data);
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,cur,imp,regs'.split(',');
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {}
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
-      let data = Object.keys(request);
+      const keys = 'site,cur,imp,regs'.split(',');
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      const data = Object.keys(request);
 
-      assert.deepEqual(keys, data);
+      assert.includeDeepMembers(data, keys);
     });
 
     it('Verify the site url', function () {
-      let siteUrl = 'https://www.yourdomain.tld/your-directory/';
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {
-          url: siteUrl
-        }
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      const siteUrl = 'https://www.yourdomain.tld/your-directory/';
+      validBidRequests[0].params.url = siteUrl;
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
       assert.equal(request.site.page, siteUrl);
-    });
-
-    it('Verify native asset ids', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {},
-        nativeParams: {
-          body: {
-            required: true,
-            len: 350
-          },
-          image: {
-            required: true
-          },
-          title: {
-            required: true
-          },
-          sponsoredBy: {
-            required: true
-          },
-          cta: {
-            required: true
-          },
-          icon: {
-            required: true
-          }
-        }
-      }];
-
-      let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
-
-      assert.equal(assets[0].id, 1);
-      assert.equal(assets[1].id, 3);
-      assert.equal(assets[2].id, 0);
-      assert.equal(assets[3].id, 2);
-      assert.equal(assets[4].id, 4);
-      assert.equal(assets[5].id, 5);
     });
   });
 
   describe('check user ID functionality', function () {
-    let storage = getStorageManager({ bidderCode: 'seedingAlliance' });
-    let localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    let getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    const storage = getStorageManager({ bidderCode: 'seedingAlliance' });
+    const localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+    const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     const bidRequests = [{
       bidId: 'bidId',
       params: {}
@@ -126,9 +82,14 @@ describe('SeedingAlliance adapter', function () {
       });
     });
 
+    after(function () {
+      localStorageIsEnabledStub.restore();
+      getDataFromLocalStorageStub.restore();
+    });
+
     it('should return an empty array if local storage is not enabled', function () {
       localStorageIsEnabledStub.returns(false);
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -139,7 +100,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an empty array if local storage is enabled but storageAllowed is false', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -151,7 +112,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return a non empty array if local storage is enabled and storageAllowed is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
@@ -163,14 +124,14 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an array containing the nativendoUserEid', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
       };
       localStorageIsEnabledStub.returns(true);
 
-      let nativendoUserEid = { source: 'nativendo.de', uids: [{ id: '123', atype: 1 }] };
+      const nativendoUserEid = { source: 'nativendo.de', uids: [{ id: '123', atype: 1 }] };
       storage.setDataInLocalStorage('nativendo_id', '123');
 
       request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
@@ -183,23 +144,24 @@ describe('SeedingAlliance adapter', function () {
     const goodNativeResponse = {
       body: {
         cur: 'EUR',
-        id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
+        id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
-              adm: {
-            	native: {
-            		assets: [
-            			{id: 0, title: {text: 'this is a title'}}
-            		],
-            		imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
-            		link: {
-            			clicktrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
-            			url: 'https://domain.for/ad/'
-            		}
-            	}
-              },
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: JSON.stringify({
+                native: {
+                  assets: [
+                    {id: 0, title: {text: 'this is a title'}},
+                    {id: 1, img: {url: 'https://domain.for/img.jpg'}},
+                  ],
+                  imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
+                  link: {
+                    clicktrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
+                    url: 'https://domain.for/ad/'
+                  }
+                }
+              }),
               impid: 1,
               price: 0.55
             }]
@@ -211,11 +173,11 @@ describe('SeedingAlliance adapter', function () {
     const goodBannerResponse = {
       body: {
         cur: 'EUR',
-        id: 'b4516b80-886e-4ec0-82ae-9209e6d625fb',
+        id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: '<iframe src="https://domain.tld/cds/delivery?wp=0.90"></iframe>',
               impid: 1,
               price: 0.90,
@@ -229,18 +191,18 @@ describe('SeedingAlliance adapter', function () {
 
     const badResponse = { body: {
       cur: 'EUR',
-      id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
+      id: 'bidid1',
       seatbid: []
     }};
 
     const bidNativeRequest = {
       data: {},
-      bidRequests: [{bidId: 'bidId1', nativeParams: {title: {required: true, len: 800}}}]
+      bidRequests: [{bidId: '1', nativeParams: {title: {required: true, len: 800}, image: {required: true, sizes: [300, 250]}}}]
     };
 
     const bidBannerRequest = {
       data: {},
-      bidRequests: [{bidId: 'bidId1', sizes: [300, 250]}]
+      bidRequests: [{bidId: '1', sizes: [300, 250]}]
     };
 
     it('should return null if body is missing or empty', function () {
