@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
-const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid`;
+const ENDPOINT = `https://hb.justbidit2.xyz:8843/prebid`;
 const BIDDER_CODE = 'waardex';
 
 const isBidRequestValid = bid => {

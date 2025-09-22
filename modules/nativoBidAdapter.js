@@ -529,7 +529,7 @@ export class RequestData {
   }
 
   getRequestDataQueryString() {
-    if (this.bidRequestDataSources.length == 0) return
+    if (this.bidRequestDataSources.length === 0) return
 
     const queryParams = this.bidRequestDataSources
       .map((dataSource) => dataSource.getRequestQueryString())
@@ -791,7 +791,7 @@ function appendFilterData(filter, filterData) {
 export function getPageUrlFromBidRequest(bidRequest) {
   let paramPageUrl = deepAccess(bidRequest, 'params.url')
 
-  if (paramPageUrl == undefined) return
+  if (paramPageUrl === undefined) return
 
   if (hasProtocol(paramPageUrl)) return paramPageUrl
 
@@ -804,7 +804,7 @@ export function getPageUrlFromBidRequest(bidRequest) {
 }
 
 export function hasProtocol(url) {
-  const protocolRegexp = /^http[s]?\:/
+  const protocolRegexp = /^http[s]?:/
   return protocolRegexp.test(url)
 }
 

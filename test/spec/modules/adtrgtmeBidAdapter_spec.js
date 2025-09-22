@@ -29,7 +29,7 @@ const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
   };
   bR.sizes = [[300, 250]];
 
-  if (typeof zid == 'string') {
+  if (typeof zid === 'string') {
     bR.params.zid = zid;
   }
   return bR;
@@ -75,7 +75,9 @@ const createAdm = (type) => {
       ADM = `<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
       <img src="${DEFAULT_BANNER_URL}" />`;
       break;
-    default: '<span>Ad is here</span>'; break;
+    default:
+      ADM = '<span>Ad is here</span>';
+      break;
   };
   return ADM;
 };

@@ -309,6 +309,8 @@ describe('Adnuntius analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
+    clock.runAll();
+    clock.restore();
   });
 
   describe('when handling events', function () {

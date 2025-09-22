@@ -10,13 +10,11 @@ import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLin
  */
 
 const BIDDER_CODE = 'greenbids';
-const GVL_ID = 1232;
 const ENDPOINT_URL = 'https://hb.greenbids.ai';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.

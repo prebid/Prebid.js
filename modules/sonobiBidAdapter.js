@@ -68,7 +68,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(bid => {
       let slotIdentifier = _validateSlot(bid);
-      if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
+      if (/^\/?\d+\/.+\/?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
           [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(bid)}`

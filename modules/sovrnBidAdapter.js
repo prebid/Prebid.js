@@ -235,12 +235,12 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            mediaType: sovrnBid.mtype == 2 ? VIDEO : BANNER,
+            mediaType: Number(sovrnBid.mtype) === 2 ? VIDEO : BANNER,
             ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (sovrnBid.mtype == 2) {
+          if (Number(sovrnBid.mtype) === 2) {
             bid.vastXml = decodeURIComponent(sovrnBid.adm)
           } else {
             bid.ad = sovrnBid.nurl ? decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`) : decodeURIComponent(sovrnBid.adm)

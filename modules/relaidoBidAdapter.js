@@ -138,7 +138,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const body = serverResponse.body;
-  if (!body || body.status != 'ok') {
+  if (!body || body.status !== 'ok') {
     return [];
   }
 
@@ -204,7 +204,7 @@ function onBidWon(bid) {
     ad_id: deepAccess(bid, 'adId'),
     ad_unit_code: deepAccess(bid, 'adUnitCode'),
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
   const burl = `https://${bidDomain}/tr/v1/prebid/win.gif?${query}`;
   triggerPixel(burl);
@@ -219,7 +219,7 @@ function onTimeout(data) {
     ad_unit_code: deepAccess(data, '0.adUnitCode'),
     version: ADAPTER_VERSION,
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
   const timeoutUrl = `https://${bidDomain}/tr/v1/prebid/timeout.gif?${query}`;
   triggerPixel(timeoutUrl);
@@ -330,10 +330,10 @@ function getValidSizes(sizes) {
   const result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
-      if (isArray(sizes[i]) && sizes[i].length == 2) {
+      if (isArray(sizes[i]) && sizes[i].length === 2) {
         const width = sizes[i][0];
         const height = sizes[i][1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
@@ -342,7 +342,7 @@ function getValidSizes(sizes) {
       } else if (isNumber(sizes[i])) {
         const width = sizes[0];
         const height = sizes[1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
