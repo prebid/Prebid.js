@@ -20,6 +20,7 @@ registerBidder({
         return [{
             method: 'POST',
             url: 'https://platform.clickio.com/api/AdUnit/',
+//            url: 'https://o.clickiocdn.com/bids/',
             data
         }]
     },
@@ -53,7 +54,12 @@ registerBidder({
         }
       }
 
-      return [{
+      return [
+      {
+        type: 'iframe',
+        url: `https://onetag-sys.com/usync/?pubId=7685cd60ce8d4f0&${queryParams.join('&')}`
+      },
+      {
         type: 'image',
         url: `https://o.clickiocdn.com/redirect?${queryParams.join('&')}`
       }];
