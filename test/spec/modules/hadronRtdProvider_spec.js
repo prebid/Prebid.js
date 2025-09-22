@@ -512,7 +512,7 @@ describe('hadronRtdProvider', function () {
       const rtdConfig = {
         params: {
           handleRtd: function (bidConfig, rtd, rtdConfig, pbConfig) {
-            if (rtd.ortb2.user.data[0].segment[0].id == '1776') {
+            if (String(rtd.ortb2.user.data[0].segment[0].id) === '1776') {
               pbConfig.setConfig({ortb2: rtd.ortb2});
             } else {
               pbConfig.setConfig({ortb2: {}});
@@ -580,11 +580,11 @@ describe('hadronRtdProvider', function () {
               var adUnit = adUnits[i];
               for (var j = 0; j < adUnit.bids.length; j++) {
                 var bid = adUnit.bids[j];
-                if (bid.bidder == 'adBuzz') {
+                if (bid.bidder === 'adBuzz') {
                   for (var k = 0; k < rtd.adBuzz.length; k++) {
                     bid.adBuzzData.segments.adBuzz.push(rtd.adBuzz[k]);
                   }
-                } else if (bid.bidder == 'trueBid') {
+                } else if (bid.bidder === 'trueBid') {
                   for (var m = 0; m < rtd.trueBid.length; m++) {
                     bid.trueBidSegments.push(rtd.trueBid[m]);
                   }
