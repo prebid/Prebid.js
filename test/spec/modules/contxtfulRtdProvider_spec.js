@@ -835,7 +835,7 @@ describe('contxtfulRtdProvider', function () {
         InitDivStubPositions(config, false, true, false);
         const fakeElem = fakeGetElementById(100, 100, 30, 30);
         sandbox.stub(window.top.document, 'getElementById').returns(function (id) {
-          if (id == 'code1' || id == 'code2') {
+          if (id === 'code1' || id === 'code2') {
             return undefined;
           } else {
             return fakeElem;

@@ -144,7 +144,7 @@ export const lowEntropyData = (wurflData, lowEntropyCaps) => {
   const data = {};
   lowEntropyCaps.forEach((cap, _) => {
     let value = wurflData[cap];
-    if (cap == 'complete_device_name') {
+    if (cap === 'complete_device_name') {
       value = value.replace(/Apple (iP(hone|ad|od)).*/, 'Apple iP$2');
     }
     data[cap] = value;
