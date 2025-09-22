@@ -24,15 +24,10 @@ function fetchWinDimensions() {
   return {
     screen: {
       width: top.screen?.width,
-      height: top.screen?.height,
-      availWidth: top.screen?.availWidth,
-      availHeight: top.screen?.availHeight,
-      colorDepth: top.screen?.colorDepth,
+      height: top.screen?.height
     },
     innerHeight: top.innerHeight,
     innerWidth: top.innerWidth,
-    outerWidth: top.outerWidth,
-    outerHeight: top.outerHeight,
     visualViewport: {
       height: top.visualViewport?.height,
       width: top.visualViewport?.width,
