@@ -42,7 +42,7 @@ function sendEvent (event, eventType) {
     var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
     env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
     if (!env) ret = 'https://carbon-nv.servenobids.com';
-    else if (env == 'dev') ret = 'https://localhost:8383';
+    else if (env === 'dev') ret = 'https://localhost:8383';
     return ret;
   }
   if (!nobidAnalytics.initOptions || !nobidAnalytics.initOptions.siteId || !event) return;

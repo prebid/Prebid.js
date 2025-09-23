@@ -278,7 +278,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
   deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
-  if (data.user == undefined) {
+  if (data.user === undefined || data.user === null) {
     data.user = {
       buyeruid: 0,
       ext: {}
@@ -287,7 +287,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
   }
-  if (data.regs?.ext == undefined) {
+  if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
     }
@@ -320,7 +320,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
 
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
-  data.tmax = (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout);
+  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
