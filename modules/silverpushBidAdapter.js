@@ -45,7 +45,7 @@ export const spec = {
     ajax(endpoint, null, undefined, {method: 'GET'});
   },
   getOS: function(ua) {
-    if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+    if (ua.indexOf('Windows') !== -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') !== -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') !== -1) { return 'Linux'; } else { return 'Unknown'; }
   }
 };
 
@@ -142,7 +142,7 @@ function isBidRequestValid(bidRequest) {
 
 function isPublisherIdValid(bidRequest) {
   const pubId = utils.deepAccess(bidRequest, 'params.publisherId');
-  return (pubId != null && utils.isStr(pubId) && pubId != '');
+  return (pubId !== undefined && utils.isStr(pubId) && pubId !== '');
 }
 
 function isValidBannerRequest(bidRequest) {
@@ -222,7 +222,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
 }
 
 function buildVideoVastResponse(bidResponse) {
-  if (bidResponse.mediaType == VIDEO && bidResponse.vastXml) {
+  if (bidResponse.mediaType === VIDEO && bidResponse.vastXml) {
     bidResponse.vastUrl = bidResponse.vastXml;
   }
 
