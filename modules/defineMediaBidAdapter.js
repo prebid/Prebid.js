@@ -47,6 +47,8 @@ export const spec = {
       const isDevMode = Boolean(params?.devMode);
       const endpointUrl = isDevMode ? ENDPOINT_URL_DEV : ENDPOINT_URL_PROD;
 
+      // use supplierDomainName purely as schain 'asi' identifier for our supply path;
+      // no sellers.json is expected on the publisher side
       deepSetValue(ortbRequest, 'source.schain.complete', 1);
       deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
 
