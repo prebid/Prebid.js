@@ -5,6 +5,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
+import { getExtraWinDimensions } from '../libraries/extraWinDimensions/extraWinDimensions.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -202,8 +203,13 @@ export const spec = {
         site: ortb2?.site,
         tmax: timeout,
         user: ortb2?.user,
-        device: ortb2?.device,
+        device: ortb2?.device ? { ...ortb2.device, ...(ortb2.device.ext ? { ext: { ...ortb2.device.ext } } : {}) } : undefined,
       };
+
+      const { webdriver } = getExtraWinDimensions();
+      if (webdriver === true) {
+        deepSetValue(data, 'device.ext.webdriver', true);
+      }
 
       if (!data?.site?.content?.language) {
         const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
