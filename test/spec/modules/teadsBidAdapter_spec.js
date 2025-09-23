@@ -368,12 +368,15 @@ describe('teadsBidAdapter', () => {
     it('should add screenOrientation info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const screenOrientation = window.top.screen.orientation?.type
+      const { width, height } = window.top.screen || {};
 
-      if (screenOrientation) {
+      if (typeof width === 'number' && typeof height === 'number') {
+        const screenOrientation = height >= width ? 'portrait-primary' : 'landscape-primary';
         expect(payload.screenOrientation).to.exist;
         expect(payload.screenOrientation).to.deep.equal(screenOrientation);
-      } else expect(payload.screenOrientation).to.not.exist;
+      } else {
+        expect(payload.screenOrientation).to.not.exist;
+      }
     });
 
     it('should add historyLength info to payload', function () {

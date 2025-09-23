@@ -25,6 +25,15 @@ const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
+function getScreenOrientationFromDimensions(screenData) {
+  const width = screenData?.width;
+  const height = screenData?.height;
+
+  if (typeof width === 'number' && typeof height === 'number') {
+    return height >= width ? 'portrait-primary' : 'landscape-primary';
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
@@ -59,6 +68,8 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const topWindow = window.top;
 
+    const screenOrientation = getScreenOrientationFromDimensions(topWindow?.screen || screen);
+
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
@@ -73,7 +84,7 @@ export const spec = {
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
-      screenOrientation: screen.orientation?.type,
+      screenOrientation: screenOrientation,
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,
