@@ -227,6 +227,43 @@ describe('DynamicTimeout Plugin', () => {
 
       expect(reqBidsConfigObj.timeout).to.equal(950); // 800 + 150
     });
+
+    it('should use skipRate 0 when explicitly set to 0', async () => {
+      // Set a config with skipRate explicitly set to 0
+      const configWithZeroSkipRate = {
+        enabled: true,
+        config: {
+          skipRate: 0,
+          bidderTimeout: 1000
+        }
+      };
+      dynamicTimeout.setDynamicTimeoutConfig(configWithZeroSkipRate);
+
+      const reqBidsConfigObj = { timeout: 800 };
+      await dynamicTimeout.processBidRequest(reqBidsConfigObj);
+
+      // Verify shouldThrottle was called with skipRate=0, not the default value
+      expect(shouldThrottleStub.calledOnce).to.be.true;
+      expect(shouldThrottleStub.firstCall.args[0]).to.equal(0);
+    });
+
+    it('should use default skipRate when skipRate is not present in config', async () => {
+      // Set a config without skipRate
+      const configWithoutSkipRate = {
+        enabled: true,
+        config: {
+          bidderTimeout: 1000
+        }
+      };
+      dynamicTimeout.setDynamicTimeoutConfig(configWithoutSkipRate);
+
+      const reqBidsConfigObj = { timeout: 800 };
+      await dynamicTimeout.processBidRequest(reqBidsConfigObj);
+
+      // Verify shouldThrottle was called with the default skipRate
+      expect(shouldThrottleStub.calledOnce).to.be.true;
+      expect(shouldThrottleStub.firstCall.args[0]).to.equal(dynamicTimeout.CONSTANTS.DEFAULT_SKIP_RATE);
+    });
   });
 
   describe('getBidderTimeout', () => {

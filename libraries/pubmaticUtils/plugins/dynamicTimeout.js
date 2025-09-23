@@ -13,6 +13,7 @@ export const CONSTANTS = Object.freeze({
   NUM_AD_UNITS: 'numAdUnits',
   DEVICE_TYPE: 'deviceType',
   CONNECTION_SPEED: 'connectionSpeed',
+  DEFAULT_SKIP_RATE: 50
 });
 
 export const RULES_PERCENTAGE = {
@@ -70,8 +71,9 @@ export function processBidRequest(reqBidsConfigObj) {
   const timeoutConfig = getDynamicTimeoutConfig();
 
   // Check if request should be throttled based on skipRate
-  if (shouldThrottle(timeoutConfig?.config?.skipRate)) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is skipped (skipRate: ${timeoutConfig?.config?.skipRate}%)`);
+  const skipRate = (timeoutConfig?.config?.skipRate !== undefined && timeoutConfig?.config?.skipRate !== null) ? timeoutConfig?.config?.skipRate : CONSTANTS.DEFAULT_SKIP_RATE;
+  if (shouldThrottle(skipRate)) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Dynamic timeout is skipped (skipRate: ${skipRate}%)`);
     return reqBidsConfigObj;
   }
 
