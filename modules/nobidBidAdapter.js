@@ -255,7 +255,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     var divid = bid.adUnitCode;
     divids.push(divid);
     var sizes = bid.sizes;
-    siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
+    siteId = (typeof bid.params['siteId'] !== 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
 
     let adType = 'banner';
@@ -289,7 +289,7 @@ function nobidBuildRequests(bids, bidderRequest) {
 function nobidInterpretResponse(response, bidRequest) {
   var findBid = function(divid, bids) {
     for (var i = 0; i < bids.length; i++) {
-      if (bids[i].adUnitCode == divid) {
+      if (bids[i].adUnitCode === divid) {
         return bids[i];
       }
     }
@@ -375,7 +375,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: [
-    { code: 'duration', gvlid: 674 }
+    { code: 'duration'}
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -402,9 +402,9 @@ export const spec = {
       var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
       env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
       if (!env) ret = 'https://ads.servenobid.com/';
-      else if (env == 'beta') ret = 'https://beta.servenobid.com/';
-      else if (env == 'dev') ret = '//localhost:8282/';
-      else if (env == 'qa') ret = 'https://qa-ads.nobid.com/';
+      else if (env === 'beta') ret = 'https://beta.servenobid.com/';
+      else if (env === 'dev') ret = '//localhost:8282/';
+      else if (env === 'qa') ret = 'https://qa-ads.nobid.com/';
       return ret;
     }
     var buildEndpoint = function() {

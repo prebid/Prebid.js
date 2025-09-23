@@ -10,7 +10,6 @@ const TIME_TO_LIVE = 360;
 
 export const spec = {
   code: BIDDER_CODE,
-
   isBidRequestValid: sspValidRequest,
   buildRequests: sspBuildRequests(DEFAULT_ENDPOINT),
   interpretResponse: sspInterpretResponse(TIME_TO_LIVE, ADOMAIN),

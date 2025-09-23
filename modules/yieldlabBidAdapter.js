@@ -174,7 +174,7 @@ export const spec = {
       }
 
       const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
-        return bidRequest.params.adslotId == bidResponse.id;
+        return String(bidRequest.params.adslotId) === String(bidResponse.id);
       });
 
       if (matchedBid) {

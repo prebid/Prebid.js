@@ -110,7 +110,7 @@ function _getBanner(bidRequest) {
 function _getNative(mediaTypeNative) {
   if (mediaTypeNative === undefined) return undefined;
   const assets = _getNativeAssets(mediaTypeNative);
-  if (assets === undefined || assets.length == 0) return undefined;
+  if (assets === undefined || assets.length === 0) return undefined;
   return {
     request: {
       native: {

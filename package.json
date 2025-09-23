@@ -133,7 +133,7 @@
     "videojs-playlist": "^5.2.0",
     "webdriver": "^9.19.2",
     "webdriverio": "^9.18.4",
-    "webpack": "^5.70.0",
+    "webpack": "^5.101.3",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-manifest-plugin": "^5.0.1",
     "webpack-stream": "^7.0.0",

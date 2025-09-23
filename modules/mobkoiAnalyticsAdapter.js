@@ -872,7 +872,7 @@ class BidContext {
     if (!(eventInstance instanceof Event)) {
       throw new Error('bugEvent must be an instance of DebugEvent');
     }
-    if (eventInstance.impid != this.impid) {
+    if (eventInstance.impid !== this.impid) {
       // Ignore the event if the impression ID is not matched.
       return;
     }

@@ -29,7 +29,7 @@ export const spec = {
       };
 
       if (typeof bid.getFloor === 'function') {
-        const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
+        const mediaType = (Object.keys(bid.mediaTypes).length === 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
@@ -160,7 +160,7 @@ function kubientGetConsentGiven(gdprConsent) {
 function kubientGetSyncInclude(config) {
   try {
     const kubientSync = {};
-    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
+    if (config.getConfig('userSync').filterSettings !== null && config.getConfig('userSync').filterSettings !== undefined) {
       const filterSettings = config.getConfig('userSync').filterSettings
       if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
         kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';

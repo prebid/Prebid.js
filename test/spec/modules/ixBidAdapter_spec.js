@@ -4714,7 +4714,7 @@ describe('IndexexchangeAdapter', function () {
       let validBids;
       beforeEach(() => {
         ftStub = sinon.stub(FEATURE_TOGGLES, 'isFeatureEnabled').callsFake((ftName) => {
-          if (ftName == 'pbjs_enable_multiformat') {
+          if (ftName === 'pbjs_enable_multiformat') {
             return true;
           }
           return false;

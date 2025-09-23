@@ -209,7 +209,7 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     // skip banner-only requests
     const bidRequestType = bidType(bidRequest);
-    if (bidRequestType.includes(BANNER) && bidRequestType.length == 1) return;
+    if (bidRequestType.includes(BANNER) && bidRequestType.length === 1) return;
 
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
@@ -1318,7 +1318,7 @@ function partitionArray(array, size) {
  * @param {*} imp
  */
 function setBidFloors(bidRequest, imp) {
-  if (imp.bidfloorcur != 'USD') {
+  if (imp.bidfloorcur !== 'USD') {
     delete imp.bidfloor;
     delete imp.bidfloorcur;
   }

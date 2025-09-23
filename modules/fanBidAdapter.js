@@ -296,7 +296,7 @@ export const spec = {
 
     if (bid.meta.libertas.pxl && bid.meta.libertas.pxl.length > 0) {
       for (var i = 0; i < bid.meta.libertas.pxl.length; i++) {
-        if (bid.meta.libertas.pxl[i].type == 0) {
+        if (Number(bid.meta.libertas.pxl[i].type) === 0) {
           triggerPixel(bid.meta.libertas.pxl[i].url);
         }
       }

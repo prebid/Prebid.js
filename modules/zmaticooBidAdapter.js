@@ -149,7 +149,7 @@ export const spec = {
       payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: bidderRequest.gdprConsent.gdprApplies == true ? 1 : 0});
+      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0});
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       payload.user.ext = Object.assign(payload.user.ext, {consent: bidderRequest.gdprConsent.consentString});

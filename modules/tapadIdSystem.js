@@ -28,7 +28,7 @@ export const tapadIdSubmodule = {
     }
     const configParams = config.params || {};
 
-    if (configParams.companyId == null || isNaN(Number(configParams.companyId))) {
+    if (configParams.companyId === null || configParams.companyId === undefined || isNaN(Number(configParams.companyId))) {
       logMessage('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
     }
 
