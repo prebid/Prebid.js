@@ -10,7 +10,7 @@ const ENDPOINT_URL = 'https://jp.bidbro.me/pbjs';
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 30,
+    ttl: 300,
     mediaType: BANNER,
     currency: 'USD',
   },

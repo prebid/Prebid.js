@@ -130,7 +130,7 @@ describe('adbroBidAdapter', function () {
       expect(response).to.have.property('height', responseBid.h);
       expect(response).to.have.property('netRevenue', true);
       expect(response).to.have.property('currency', 'USD');
-      expect(response).to.have.property('ttl', 30);
+      expect(response).to.have.property('ttl', 300);
       expect(response).to.have.property('creativeId', responseBid.crid);
       expect(response).to.have.property('ad').that.contains(responseBid.adm);
       expect(response.meta).to.be.an('object').that.has.any.key('advertiserDomains');
