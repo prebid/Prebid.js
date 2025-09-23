@@ -579,13 +579,7 @@ export class BotClientTests {
   constructor() {
     this.tests = {
       headless_chrome: function() {
-        if (self.navigator) {
-          if (self.navigator.webdriver) {
-            return true;
-          }
-        }
-
-        return false;
+        return getExtraWinDimensions().webdriver === true;
       },
 
       selenium: function () {

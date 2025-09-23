@@ -15,7 +15,7 @@ dimInternals.resetters.push(extraDims.reset);
 
 function fetchExtraDimensions() {
   const win = canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
-  return {
+  const extraDimensions = {
     outerWidth: win.outerWidth,
     outerHeight: win.outerHeight,
     screen: {
@@ -24,4 +24,10 @@ function fetchExtraDimensions() {
       colorDepth: win.screen?.colorDepth,
     }
   };
+
+  if (win.navigator?.webdriver) {
+    extraDimensions.webdriver = true;
+  }
+
+  return extraDimensions;
 }

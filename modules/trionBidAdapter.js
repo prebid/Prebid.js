@@ -2,6 +2,7 @@ import {getBidIdParameter, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
@@ -117,7 +118,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
   var url = getPublisherUrl();
   var bidSizes = getBidSizesFromBidRequest(bid);
   var sizes = parseSizesInput(bidSizes).join(',');
-  var isAutomated = (navigator && navigator.webdriver) ? '1' : '0';
+  var isAutomated = getExtraWinDimensions().webdriver === true ? '1' : '0';
   var isHidden = (document.hidden) ? '1' : '0';
   var visibilityState = encodeURIComponent(document.visibilityState);
 
