@@ -39,10 +39,14 @@ export const spec = {
 
   isBidRequestValid(bid) {
     const { params, mediaTypes } = bid;
+    let placementId = params?.placementId;
+    let bannerSizes = mediaTypes?.[BANNER]?.sizes ?? null;
+
+    if (placementId) placementId = Number(placementId);
+
     return Boolean(
-      params && params.placementId && isInteger(Number(params.placementId)) &&
-      mediaTypes && mediaTypes[BANNER] && mediaTypes[BANNER].sizes &&
-      isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0
+      placementId && isInteger(placementId) &&
+      bannerSizes && isArray(bannerSizes) && bannerSizes.length > 0
     );
   },
 
