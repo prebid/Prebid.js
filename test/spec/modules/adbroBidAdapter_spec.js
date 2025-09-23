@@ -43,9 +43,11 @@ describe('adbroBidAdapter', function () {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
     it('Should return false if placementId is not presented', function () {
+      expect(spec.isBidRequestValid(makeBid(null, [[300, 250]]))).to.be.false;
       expect(spec.isBidRequestValid(makeBid({}, [[300, 250]]))).to.be.false;
     });
     it('Should return false if banner sizes are not presented', function () {
+      expect(spec.isBidRequestValid(makeBid({placementId: '1234'}))).to.be.false;
       expect(spec.isBidRequestValid(makeBid({placementId: '1234'}, []))).to.be.false;
     });
     it('Should return true if placementId is an integer', function () {
