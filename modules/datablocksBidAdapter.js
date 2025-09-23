@@ -6,6 +6,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
@@ -204,12 +205,13 @@ export const spec = {
     const botTest = new BotClientTests();
     const win = getWindowTop();
     const windowDimensions = getWinDimensions();
+    const extraDims = getExtraWinDimensions();
     return {
       'wiw': windowDimensions.innerWidth,
       'wih': windowDimensions.innerHeight,
-      'saw': windowDimensions.screen.availWidth,
-      'sah': windowDimensions.screen.availHeight,
-      'scd': screen ? screen.colorDepth : null,
+      'saw': extraDims.screen.availWidth,
+      'sah': extraDims.screen.availHeight,
+      'scd': extraDims.screen.colorDepth,
       'sw': windowDimensions.screen.width,
       'sh': windowDimensions.screen.height,
       'whl': win.history.length,
@@ -231,7 +233,7 @@ export const spec = {
       // ADD GPT EVENT LISTENERS
       const scope = this;
       if (isGptPubadsDefined()) {
-        if (typeof window['googletag'].pubads().addEventListener == 'function') {
+        if (typeof window['googletag'].pubads().addEventListener === 'function') {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
             scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
@@ -313,7 +315,7 @@ export const spec = {
         id: bidRequest.bidId,
         tagid: bidRequest.params.tagid || bidRequest.adUnitCode,
         placement_id: bidRequest.params.placement_id || 0,
-        secure: window.location.protocol == 'https:',
+        secure: window.location.protocol === 'https:',
         ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
       }

@@ -155,7 +155,7 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
  */
 function filterByScore(dict, minscore) {
   if (dict && !isEmpty(dict)) {
-    minscore = minscore && typeof minscore == 'number' ? minscore : 30;
+    minscore = minscore && typeof minscore === 'number' ? minscore : 30;
     try {
       const filteredCategories = Object.keys(Object.fromEntries(Object.entries(dict).filter(([k, v]) => v > minscore)));
       return isEmpty(filteredCategories) ? null : filteredCategories;
@@ -176,7 +176,7 @@ function filterByScore(dict, minscore) {
 function getFiltered(data, minscore) {
   const relevadData = {'segments': []};
 
-  minscore = minscore && typeof minscore == 'number' ? minscore : 30;
+  minscore = minscore && typeof minscore === 'number' ? minscore : 30;
 
   const cats = filterByScore(data.cats, minscore);
   const pcats = filterByScore(data.pcats, minscore) || cats;
@@ -249,7 +249,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
       const bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? moduleConfig.params.bidders.findIndex(function (i) {
         return i.bidder === bid.bidder;
       }) : false);
-      const indexFound = !!(typeof bidderIndex == 'number' && bidderIndex >= 0);
+      const indexFound = !!(typeof bidderIndex === 'number' && bidderIndex >= 0);
       try {
         if (
           !biddersParamsExist ||
@@ -264,7 +264,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
             wb = true;
             for (const [key, value] of entries(wl[bid.bidder])) {
               const params = bid?.params || {};
-              wb = wb && (key in params) && params[key] == value;
+              wb = wb && (key in params) && params[key] === value;
             }
           }
           if (wb && !isEmpty(relevadList)) {

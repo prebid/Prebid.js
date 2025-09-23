@@ -520,7 +520,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
         expect(limitedBids.length).to.equal(1);
       });
@@ -533,7 +533,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
         expect(limitedBids.length).to.equal(2);
       });
@@ -546,7 +546,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
         expect(limitedBids.length).to.equal(2);
       });
@@ -1004,7 +1004,7 @@ describe('targeting tests', function () {
       // we should only get the targeting data for the one requested adunit
       expect(Object.keys(targeting).length).to.equal(1);
 
-      const sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+      const sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
 

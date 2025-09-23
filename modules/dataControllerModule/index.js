@@ -36,7 +36,7 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
     return true;
   }
   const bidderEIDs = eidSourcesMap.get(bidderCode);
-  if (bidderEIDs == undefined) {
+  if (bidderEIDs === undefined) {
     return false;
   }
   let containsEIDs = false;
@@ -57,7 +57,7 @@ function containsConfiguredSDA(segementMap, bidderCode) {
 
 function hasValue(bidderSegement) {
   let containsSDA = false;
-  if (bidderSegement == undefined) {
+  if (bidderSegement === undefined) {
     return false;
   }
   _dataControllerConfig.filterEIDwhenSDA.some(segment => {

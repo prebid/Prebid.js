@@ -103,7 +103,8 @@ export const spec = {
     {code: 'spinx', gvlid: 1308},
     {code: 'oppamedia'},
     {code: 'pixelpluses', gvlid: 1209},
-    {code: 'urekamedia'}
+    {code: 'urekamedia'},
+    {code: 'smartyexchange'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
