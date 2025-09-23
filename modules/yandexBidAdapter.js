@@ -5,7 +5,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
-import { getExtraWinDimensions } from '../libraries/extraWinDimensions/extraWinDimensions.js';
+import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -206,8 +206,8 @@ export const spec = {
         device: ortb2?.device ? { ...ortb2.device, ...(ortb2.device.ext ? { ext: { ...ortb2.device.ext } } : {}) } : undefined,
       };
 
-      const { webdriver } = getExtraWinDimensions();
-      if (webdriver === true) {
+      // Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
+      if (isWebdriverEnabled()) {
         deepSetValue(data, 'device.ext.webdriver', true);
       }
 

@@ -25,9 +25,5 @@ function fetchExtraDimensions() {
     }
   };
 
-  if (win.navigator?.webdriver) {
-    extraDimensions.webdriver = true;
-  }
-
   return extraDimensions;
 }

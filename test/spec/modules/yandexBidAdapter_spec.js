@@ -6,7 +6,7 @@ import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import * as extraWinDimensions from '../../../libraries/extraWinDimensions/extraWinDimensions.js';
+import * as webdriver from '../../../libraries/webdriver/webdriver.js';
 
 describe('Yandex adapter', function () {
   let sandbox;
@@ -270,7 +270,7 @@ describe('Yandex adapter', function () {
     });
 
     it('should include webdriver flag when available', function () {
-      sandbox.stub(extraWinDimensions, 'getExtraWinDimensions').returns({ webdriver: true });
+      sandbox.stub(webdriver, 'isWebdriverEnabled').returns(true);
 
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
 
