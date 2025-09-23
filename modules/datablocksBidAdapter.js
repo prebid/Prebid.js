@@ -7,6 +7,7 @@ import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
@@ -217,7 +218,7 @@ export const spec = {
       'whl': win.history.length,
       'wxo': win.pageXOffset,
       'wyo': win.pageYOffset,
-      'wpr': win.devicePixelRatio,
+      'wpr': getDevicePixelRatio(),
       'is_bot': botTest.doTests(),
       'is_hid': win.document.hidden,
       'vs': win.document.visibilityState
