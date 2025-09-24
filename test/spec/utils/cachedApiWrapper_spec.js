@@ -3,10 +3,12 @@ import {CachedApiWrapper} from '../../../src/utils/cachedApiWrapper.js';
 describe('cachedApiWrapper', () => {
   let target, child, wrapper;
   beforeEach(() => {
-    target = {};
     child = {};
+    target = {
+      child
+    };
     wrapper = new CachedApiWrapper(() => target, ['prop1'], {
-      child: new CachedApiWrapper(() => child, ['prop2'])
+      child: new CachedApiWrapper((parent) => parent.child, ['prop2'])
     });
   });
 

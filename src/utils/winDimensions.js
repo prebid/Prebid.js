@@ -1,6 +1,19 @@
-import {canAccessWindowTop, internal as utilsInternals} from '../utils.js';
+import {canAccessWindowTop, getWindowTop, internal as utilsInternals} from '../utils.js';
+import {CachedApiWrapper} from './cachedApiWrapper.js';
 
 const CHECK_INTERVAL_MS = 20;
+
+//const getWindow = canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf()
+/*
+const winDimensions = new CachedApiWrapper(
+  getWindow,
+  ['innerHeight', 'innerWidth'],
+  {
+    screen: new CachedApiWrapper(() => getWindow().screen, ['width', 'height']),
+    visualViewport: new CachedApiWrapper(() => getWindow())
+  }
+)
+ */
 
 export function cachedGetter(getter) {
   let value, lastCheckTimestamp;
