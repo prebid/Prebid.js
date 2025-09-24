@@ -5,8 +5,8 @@ describe('cachedApiWrapper', () => {
   beforeEach(() => {
     target = {};
     child = {};
-    wrapper = new CachedApiWrapper(target, ['prop1'], {
-      child: new CachedApiWrapper(child, ['prop2'])
+    wrapper = new CachedApiWrapper(() => target, ['prop1'], {
+      child: new CachedApiWrapper(() => child, ['prop2'])
     });
   });
 

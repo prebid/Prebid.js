@@ -1,4 +1,4 @@
-export function CachedApiWrapper(target, props, obj) {
+export function CachedApiWrapper(getTarget, props, obj) {
   const wrapper = obj ?? {};
   let data = {};
   const children = [];
@@ -14,7 +14,7 @@ export function CachedApiWrapper(target, props, obj) {
       props.map(prop => [prop, {
         get() {
           if (!data.hasOwnProperty(prop)) {
-            data[prop] = target?.[prop];
+            data[prop] = getTarget()?.[prop];
           }
           return data[prop];
         }
