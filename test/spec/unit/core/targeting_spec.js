@@ -552,18 +552,27 @@ describe('targeting tests', function () {
       });
 
       it('Sends all bids when enableSendAllBids is true with bid limits varying by adUnitCode', function () {
-        const bids = [
+        let bids, bidLimit, limitedBids;
+
+        bids = [
           { ...bid1, bidderCode: 'rubicon', adUnitCode: 'adunit1' },
           { ...bid2, bidderCode: 'appnexus', adUnitCode: 'adunit1' },
           { ...bid3, bidderCode: 'dgads', adUnitCode: 'adunit1' },
         ];
-
-        const bidLimit = {
+        bidLimit = {
           'adunit1': 2,
-        }
-        const limitedBids = getHighestCpmBidsFromBidPool(bids, getHighestCpm, bidLimit);
+        };
+
+        limitedBids = getHighestCpmBidsFromBidPool(bids, getHighestCpm, bidLimit);
 
         expect(limitedBids.length).to.equal(2);
+
+        bidLimit = {
+          'adunit2': 50,
+        };
+        limitedBids = getHighestCpmBidsFromBidPool(bids, getHighestCpm, bidLimit);
+
+        expect(limitedBids.length).to.equal(3);
       });
     });
 
