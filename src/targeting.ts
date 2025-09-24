@@ -75,8 +75,8 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit) {
         bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
-        const limit = typeof adUnitBidLimit === 'object' ? (adUnitBidLimit[bucketKey] || 0) : adUnitBidLimit;
-        bids.push(...bucketBids.slice(0, limit || buckets[bucketKey].length));
+        const limit = typeof adUnitBidLimit === 'object' ? (adUnitBidLimit[bucketKey] || buckets[bucketKey].length) : adUnitBidLimit;
+        bids.push(...bucketBids.slice(0, limit));
       } else {
         bucketBids = bucketBids.sort(winSorter)
         bids.push(...bucketBids);
