@@ -1,15 +1,24 @@
 import {CachedApiWrapper} from '../../../src/utils/cachedApiWrapper.js';
 
 describe('cachedApiWrapper', () => {
-  let target, child, wrapper;
+  let target, child, grandchild, wrapper;
   beforeEach(() => {
-    child = {};
+    grandchild = {};
+    child = {
+      grandchild
+    };
     target = {
       child
     };
-    wrapper = new CachedApiWrapper(() => target, ['prop1'], {
-      child: new CachedApiWrapper((parent) => parent.child, ['prop2'])
-    });
+    wrapper = new CachedApiWrapper(() => target, {
+      prop1: true,
+      child: {
+        prop2: true,
+        grandchild: {
+          prop3: true
+        }
+      }
+    })
   });
 
   it('should delegate to target', () => {
@@ -32,10 +41,10 @@ describe('cachedApiWrapper', () => {
   });
 
   it('should unwrap wrappers in obj', () => {
-    child.prop2 = 'value';
-    expect(wrapper.obj.child.prop2).to.eql('value');
-    child.prop2 = 'newValue';
-    expect(wrapper.obj.child.prop2).to.eql('value');
+    grandchild.prop3 = 'value';
+    expect(wrapper.obj.child.grandchild.prop3).to.eql('value');
+    grandchild.prop3 = 'value';
+    expect(wrapper.obj.child.grandchild.prop3).to.eql('value');
   });
 
   it('should reset childrens cache', () => {

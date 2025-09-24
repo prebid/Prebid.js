@@ -1,19 +1,37 @@
-import {canAccessWindowTop, getWindowTop, internal as utilsInternals} from '../utils.js';
+import {canAccessWindowTop, internal as utilsInternals} from '../utils.js';
 import {CachedApiWrapper} from './cachedApiWrapper.js';
 
 const CHECK_INTERVAL_MS = 20;
 
-//const getWindow = canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf()
-/*
 const winDimensions = new CachedApiWrapper(
-  getWindow,
-  ['innerHeight', 'innerWidth'],
+  () => canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf(),
   {
-    screen: new CachedApiWrapper(() => getWindow().screen, ['width', 'height']),
-    visualViewport: new CachedApiWrapper(() => getWindow())
+    innerHeight: true,
+    innerWidth: true,
+    screen: {
+      width: true,
+      height: true,
+    },
+    visualViewport: {
+      width: true,
+      height: true
+    },
+    document: {
+      documentElement: {
+        clientWidth: true,
+        clientHeight: true,
+        scrollTop: true,
+        scrollLeft: true
+      },
+      body: {
+        scrollTop: true,
+        scrollLeft: true,
+        clientWidth: true,
+        clientHeight: true
+      }
+    }
   }
-)
- */
+);
 
 export function cachedGetter(getter) {
   let value, lastCheckTimestamp;
@@ -28,47 +46,25 @@ export function cachedGetter(getter) {
     reset: function () {
       value = getter();
     }
-  }
-}
-
-function fetchWinDimensions() {
-  const top = canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
-
-  return {
-    screen: {
-      width: top.screen?.width,
-      height: top.screen?.height
-    },
-    innerHeight: top.innerHeight,
-    innerWidth: top.innerWidth,
-    visualViewport: {
-      height: top.visualViewport?.height,
-      width: top.visualViewport?.width,
-    },
-    document: {
-      documentElement: {
-        clientWidth: top.document?.documentElement?.clientWidth,
-        clientHeight: top.document?.documentElement?.clientHeight,
-        scrollTop: top.document?.documentElement?.scrollTop,
-        scrollLeft: top.document?.documentElement?.scrollLeft,
-      },
-      body: {
-        scrollTop: document.body?.scrollTop,
-        scrollLeft: document.body?.scrollLeft,
-        clientWidth: document.body?.clientWidth,
-        clientHeight: document.body?.clientHeight,
-      },
-    }
   };
 }
+
 export const internal = {
-  fetchWinDimensions,
+  reset: winDimensions.reset,
   resetters: []
 };
 
-const winDimensions = cachedGetter(() => internal.fetchWinDimensions());
+export const getWinDimensions = (() => {
+  let lastCheckTimestamp;
+  return function () {
+    if (!lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
+      internal.reset();
+      lastCheckTimestamp = Date.now();
+    }
+    return winDimensions.obj;
+  }
+})();
 
-export const getWinDimensions = winDimensions.get;
 internal.resetters.push(winDimensions.reset);
 
 export function resetWinDimensions() {
