@@ -8,9 +8,14 @@ const winDimensions = new CachedApiWrapper(
   {
     innerHeight: true,
     innerWidth: true,
+    outerWidth: true,
+    outerHeight: true,
     screen: {
       width: true,
       height: true,
+      availWidth: true,
+      availHeight: true,
+      colorDepth: true,
     },
     visualViewport: {
       width: true,
@@ -33,25 +38,8 @@ const winDimensions = new CachedApiWrapper(
   }
 );
 
-export function cachedGetter(getter) {
-  let value, lastCheckTimestamp;
-  return {
-    get: function () {
-      if (!value || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-        value = getter();
-        lastCheckTimestamp = Date.now();
-      }
-      return value;
-    },
-    reset: function () {
-      value = getter();
-    }
-  };
-}
-
 export const internal = {
   reset: winDimensions.reset,
-  resetters: []
 };
 
 export const getWinDimensions = (() => {
@@ -65,8 +53,6 @@ export const getWinDimensions = (() => {
   }
 })();
 
-internal.resetters.push(winDimensions.reset);
-
 export function resetWinDimensions() {
-  internal.resetters.forEach(fn => fn());
+  internal.reset();
 }
