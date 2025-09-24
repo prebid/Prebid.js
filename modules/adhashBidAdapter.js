@@ -298,7 +298,7 @@ export const spec = {
         advertiserDomains: responseBody.advertiserDomains ? [responseBody.advertiserDomains] : []
       }
     };
-    if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
+    if (typeof request === 'object' && typeof request.bidRequest === 'object' && typeof request.bidRequest.mediaTypes === 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
       response = Object.assign({
         ad:
         `<div id="${oneTimeId}"></div>

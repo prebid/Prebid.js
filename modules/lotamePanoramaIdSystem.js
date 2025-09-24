@@ -283,7 +283,7 @@ export const lotamePanoramaIdSubmodule = {
     const storedUserId = getProfileId();
 
     const getRequestHost = function() {
-      if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+      if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
         return ID_HOST_COOKIELESS;
       }
       return ID_HOST;
