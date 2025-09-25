@@ -60,6 +60,7 @@ const VIDEO_PARAMS_DEFAULT = {
 };
 
 const VIDEO_PARAMS = Object.keys(VIDEO_PARAMS_DEFAULT);
+
 export const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
   'site.keywords',
