@@ -15,15 +15,6 @@ export const HOURS_24 = 86400000;
 
 export const INVALID_ID = 'INVALID_ID';
 
-export const SCREEN_PARAMS = {
-  0: 'windowInnerHeight',
-  1: 'windowInnerWidth',
-  2: 'devicePixelRatio',
-  3: 'windowScreenHeight',
-  4: 'windowScreenWidth',
-  5: 'language'
-};
-
 export const SYNC_REFRESH_MILL = 3600000;
 export const META_DATA_CONSTANT = 256;
 

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {logError, isPlainObject, isStr, isNumber, getWinDimensions} from '../src/utils.js';
+import {logError, isPlainObject, isStr, isNumber} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
@@ -21,7 +21,7 @@ import {
   CLIENT_HINTS_KEY,
   EMPTY,
   GVLID,
-  VERSION, INVALID_ID, SCREEN_PARAMS, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
+  VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
   HOURS_24, CH_KEYS
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
@@ -73,33 +73,8 @@ function generateGUID() {
   return guid;
 }
 
-function collectDeviceInfo() {
-  const windowDimensions = getWinDimensions();
-  return {
-    windowInnerHeight: windowDimensions.innerHeight,
-    windowInnerWidth: windowDimensions.innerWidth,
-    devicePixelRatio: windowDimensions.devicePixelRatio,
-    windowScreenHeight: windowDimensions.screen.height,
-    windowScreenWidth: windowDimensions.screen.width,
-    language: navigator.language
-  }
-}
-
 function addUniquenessToUrl(url) {
   url += '&tsrnd=' + Math.floor(Math.random() * 1000) + '_' + new Date().getTime();
-  return url;
-}
-
-function appendDeviceInfoToUrl(url, deviceInfo) {
-  const screenParamsString = Object.entries(SCREEN_PARAMS)
-    .map(([index, param]) => {
-      const value = (deviceInfo)[param];
-      return `${index}:${value}`;
-    })
-    .join(',');
-
-  url += `&cz=${encodeURIComponent(screenParamsString)}`;
-  url += `&dw=${deviceInfo.windowScreenWidth}&dh=${deviceInfo.windowScreenHeight}&dpr=${deviceInfo.devicePixelRatio}&lan=${deviceInfo.language}`;
   return url;
 }
 
@@ -169,7 +144,6 @@ function addMetaData(url, data) {
 }
 
 export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
-  const deviceInfo = collectDeviceInfo();
   const browser = detectBrowser();
 
   let url = iiqPixelServerAddress(configParams, cmpData.gdprString);
@@ -179,7 +153,6 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   url = appendPartnersFirstParty(url, configParams);
   url = addUniquenessToUrl(url);
   url += partnerData?.clientType ? '&idtype=' + partnerData.clientType : '';
-  if (deviceInfo) url = appendDeviceInfoToUrl(url, deviceInfo);
   url += VERSION ? '&jsver=' + VERSION : '';
   if (clientHints) url += '&uh=' + encodeURIComponent(clientHints);
   url = appendVrrefAndFui(url, configParams.domainName);
