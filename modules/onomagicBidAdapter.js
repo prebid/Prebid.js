@@ -105,7 +105,7 @@ function isBidRequestValid(bid) {
 }
 
 function interpretResponse(serverResponse) {
-  if (!serverResponse.body || typeof serverResponse.body != 'object') {
+  if (!serverResponse.body || typeof serverResponse.body !== 'object') {
     logWarn('Onomagic server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
   }
