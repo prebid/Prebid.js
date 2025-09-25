@@ -1,21 +1,18 @@
-# Floxis Bid Adapter
+# Overview
 
-## Overview
-The Floxis Bid Adapter enables integration with the Floxis programmatic advertising platform via Prebid.js. It supports banner, video, and native formats, and is designed for multi-partner, multi-region use.
+```
+Module Name: Floxis Bidder Adapter
+Module Type: Floxis Bidder Adapter
+Maintainer: admin@floxis.tech
+```
+# Description
+
+The Floxis Bid Adapter enables integration with the Floxis programmatic advertising platform via Prebid.js. It supports banner, video (instream and outstream), and native formats, and is designed for multi-partner, multi-region use.
 
 **Key Features:**
 - Banner, Video and Native ad support
 - OpenRTB 2.x compliant
 - Privacy regulation compliance
-
-## Endpoint
-```
-https://<partner>-<region>.floxis.tech/pbjs
-```
-- `partner`: string, required (default: 'floxis')
-- `region`: string, required (default: 'us')
-
-
 
 ## Required Params
 - `partner` (string): Partner name
