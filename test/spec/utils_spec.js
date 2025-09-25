@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
+import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
 
@@ -1444,8 +1445,8 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should invoke resetWinDimensions once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(internal, 'resetWinDimensions');
+  it('should invoke fetchWinDimensions once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'fetchWinDimensions');
     getWinDimensions();
     clock.tick(1);
     getWinDimensions();

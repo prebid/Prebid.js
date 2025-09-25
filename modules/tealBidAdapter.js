@@ -134,7 +134,7 @@ export const spec = {
   onBidderError: function({ error, bidderRequest }) {
     if (error.responseText && error.status) {
       const id = error.responseText.match(/found for id: (.*)/);
-      if (Array.isArray(id) && id.length > 1 && error.status == 400) {
+      if (Array.isArray(id) && id.length > 1 && error.status === 400) {
         logError(`Placement: ${id[1]} not found on ${BIDDER_CODE} server. Please contact your account manager or email prebid@teal.works`, error);
         return;
       }

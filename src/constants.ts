@@ -51,6 +51,7 @@ export const EVENTS = {
   BEFORE_PBS_HTTP: 'beforePBSHttp',
   BROWSI_INIT: 'browsiInit',
   BROWSI_DATA: 'browsiData',
+  BROWSER_INTERVENTION: 'browserIntervention'
 } as const;
 
 export const AD_RENDER_FAILED_REASON = {
@@ -88,7 +89,8 @@ export const TARGETING_KEYS = {
   ADOMAIN: 'hb_adomain',
   ACAT: 'hb_acat',
   CRID: 'hb_crid',
-  DSP: 'hb_dsp'
+  DSP: 'hb_dsp',
+  VERSION: 'hb_ver'
 } as const;
 
 export const DEFAULT_TARGETING_KEYS = {
@@ -99,7 +101,8 @@ export const DEFAULT_TARGETING_KEYS = {
   DEAL: 'hb_deal',
   FORMAT: 'hb_format',
   UUID: 'hb_uuid',
-  CACHE_HOST: 'hb_cache_host'
+  CACHE_HOST: 'hb_cache_host',
+  VERSION: 'hb_ver'
 };
 
 export const NATIVE_KEYS = {
@@ -195,7 +198,8 @@ export const MESSAGES = {
   REQUEST: 'Prebid Request',
   RESPONSE: 'Prebid Response',
   NATIVE: 'Prebid Native',
-  EVENT: 'Prebid Event'
+  EVENT: 'Prebid Event',
+  INTERVENTION: 'Prebid Intervention'
 };
 
 export const PB_LOCATOR = '__pb_locator__';
