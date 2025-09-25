@@ -18,16 +18,14 @@ var adUnits = [
     mediaTypes: {
       banner: {
         sizes: [
-          [300, 300],
-          [300, 250],
-          [320, 100]
+          [1, 1],
         ]
       }
     },
     bids: [{
       bidder: 'uniquest_widget',
       params: {
-        wid: 'WNhFoaQn', // device is smartphone only
+        wid: 'skDT3WYk',
       }
     }]
   }

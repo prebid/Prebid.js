@@ -39,9 +39,7 @@ describe('UniquestWidgetAdapter', function () {
         },
         adUnitCode: 'adunit-code',
         sizes: [
-          [300, 300],
-          [300, 250],
-          [320, 100],
+          [1, 1],
         ],
         bidId: '359d7a594535852',
         bidderRequestId: '247f62f777e5e4',
@@ -54,7 +52,7 @@ describe('UniquestWidgetAdapter', function () {
       const requests = spec.buildRequests(bids, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('bid=359d7a594535852&wid=wid_0001&widths=300%2C300%2C320&heights=300%2C250%2C100&timeout=1500&')
+      expect(requests[0].data).to.equal('bid=359d7a594535852&wid=wid_0001&widths=1&heights=1&timeout=1500&')
     })
   })
 
@@ -64,8 +62,8 @@ describe('UniquestWidgetAdapter', function () {
         request_id: '347f62f777e5e4',
         cpm: 12.3,
         currency: 'JPY',
-        width: 300,
-        height: 250,
+        width: 1,
+        height: 1,
         bid_id: 'bid_0001',
         deal_id: '',
         net_revenue: false,
@@ -80,8 +78,8 @@ describe('UniquestWidgetAdapter', function () {
         requestId: '347f62f777e5e4',
         cpm: 12.3,
         currency: 'JPY',
-        width: 300,
-        height: 250,
+        width: 1,
+        height: 1,
         ad: '<div class="uniquest-widget"></div>',
         creativeId: 'bid_0001',
         netRevenue: false,
