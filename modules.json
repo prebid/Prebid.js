@@ -37,6 +37,7 @@
     "mediafuseBidAdapter",
     "medianetBidAdapter",
     "mobkoiBidAdapter",
+    "newspassidBidAdapter",
     "onetagBidAdapter",
     "openxBidAdapter",
     "pairIdSystem",
