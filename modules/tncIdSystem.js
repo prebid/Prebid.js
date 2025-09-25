@@ -50,8 +50,8 @@ const loadRemoteScript = function(url) {
 
 function TNCObject(ns) {
   let tnc = window[ns];
-  tnc = typeof tnc !== 'undefined' && tnc !== null && typeof tnc.ready == 'function' ? tnc : {
-    ready: function(f) { this.ready.q = this.ready.q || []; return typeof f == 'function' ? (this.ready.q.push(f), this) : new Promise(resolve => this.ready.q.push(resolve)); },
+  tnc = typeof tnc !== 'undefined' && tnc !== null && typeof tnc.ready === 'function' ? tnc : {
+    ready: function(f) { this.ready.q = this.ready.q || []; return typeof f === 'function' ? (this.ready.q.push(f), this) : new Promise(resolve => this.ready.q.push(resolve)); },
   };
   window[ns] = tnc;
   return tnc;

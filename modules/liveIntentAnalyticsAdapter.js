@@ -115,7 +115,7 @@ function ignoreUndefined(data) {
 liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
-  const userIdModuleConfig = prebidConfig.getConfig('userSync.userIds').filter(m => m.name == 'liveIntentId')?.at(0)?.params
+  const userIdModuleConfig = prebidConfig.getConfig('userSync.userIds').filter(m => m.name === 'liveIntentId')?.at(0)?.params
   partnerIdFromUserIdConfig = userIdModuleConfig?.liCollectConfig?.appId || userIdModuleConfig?.distributorId;
   sendAuctionInitEvents = config?.options.sendAuctionInitEvents;
   liAnalytics.originEnableAnalytics(config); // call the base class function
