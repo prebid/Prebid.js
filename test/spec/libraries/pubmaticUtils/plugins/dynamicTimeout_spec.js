@@ -310,6 +310,160 @@ describe('DynamicTimeout Plugin', () => {
     });
   });
 
+  describe('getFinalTimeout', () => {
+    let logInfoStub;
+
+    beforeEach(() => {
+      logInfoStub = sandbox.stub(utils, 'logInfo');
+      // Set up a default config for getFinalTimeout tests
+      dynamicTimeout.setDynamicTimeoutConfig({
+        enabled: true,
+        config: {
+          thresholdTimeout: 500
+        }
+      });
+    });
+
+    it('should return calculated timeout when above threshold', () => {
+      const bidderTimeout = 1000;
+      const additionalTimeout = 200;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(1200); // 1000 + 200
+    });
+
+    it('should return threshold timeout when calculated timeout is below threshold', () => {
+      const bidderTimeout = 300;
+      const additionalTimeout = 100;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // threshold timeout
+    });
+
+    it('should handle negative additional timeout gracefully', () => {
+      const bidderTimeout = 1000;
+      const additionalTimeout = -600; // Results in 400ms, below threshold
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // threshold timeout
+      expect(logInfoStub.calledOnce).to.be.true;
+      expect(logInfoStub.firstCall.args[0]).to.include('Calculated timeout (400ms) below threshold');
+    });
+
+    it('should handle negative bidder timeout gracefully', () => {
+      const bidderTimeout = -200;
+      const additionalTimeout = 100;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // threshold timeout (since -200 + 100 = -100 < 500)
+      expect(logInfoStub.calledOnce).to.be.true;
+      expect(logInfoStub.firstCall.args[0]).to.include('Warning: Negative timeout calculated (-100ms)');
+    });
+
+    it('should handle both negative values gracefully', () => {
+      const bidderTimeout = -300;
+      const additionalTimeout = -200;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // threshold timeout (since -300 + -200 = -500 < 500)
+      expect(logInfoStub.calledOnce).to.be.true;
+      expect(logInfoStub.firstCall.args[0]).to.include('Warning: Negative timeout calculated (-500ms)');
+    });
+
+    it('should use default threshold when not configured', () => {
+      // Remove threshold from config
+      dynamicTimeout.setDynamicTimeoutConfig({
+        enabled: true,
+        config: {}
+      });
+
+      const bidderTimeout = 200;
+      const additionalTimeout = 100;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // default threshold (500ms)
+    });
+
+    it('should handle zero values', () => {
+      const bidderTimeout = 0;
+      const additionalTimeout = 0;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // threshold timeout
+    });
+
+    it('should handle large timeout values', () => {
+      const bidderTimeout = 5000;
+      const additionalTimeout = 2000;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(7000); // 5000 + 2000
+    });
+
+    it('should handle custom threshold timeout', () => {
+      // Set custom threshold
+      dynamicTimeout.setDynamicTimeoutConfig({
+        enabled: true,
+        config: {
+          thresholdTimeout: 1000
+        }
+      });
+
+      const bidderTimeout = 800;
+      const additionalTimeout = 100;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(1000); // custom threshold (since 800 + 100 = 900 < 1000)
+    });
+
+    it('should handle exactly threshold value', () => {
+      const bidderTimeout = 400;
+      const additionalTimeout = 100;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // exactly at threshold, should return calculated value
+    });
+
+    it('should handle no config gracefully', () => {
+      dynamicTimeout.setDynamicTimeoutConfig(null);
+
+      const bidderTimeout = 300;
+      const additionalTimeout = 100;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // default threshold (500ms)
+    });
+
+    it('should handle floating point values', () => {
+      const bidderTimeout = 1000.5;
+      const additionalTimeout = 200.7;
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(1201.2); // 1000.5 + 200.7
+    });
+
+    it('should handle very large negative additional timeout', () => {
+      const bidderTimeout = 1000;
+      const additionalTimeout = -2000; // Results in -1000ms, well below threshold
+
+      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
+
+      expect(result).to.equal(500); // threshold timeout
+    });
+  });
+
   describe('getRules', () => {
     it('should return data rules if available', () => {
       dynamicTimeout.setDynamicTimeoutConfig(configWithData);
@@ -344,6 +498,11 @@ describe('DynamicTimeout Plugin', () => {
   });
 
   describe('createDynamicRules', () => {
+    let logInfoStub;
+
+    beforeEach(() => {
+      logInfoStub = sandbox.stub(utils, 'logInfo');
+    });
     it('should convert percentage rules to millisecond values', () => {
       const percentageRules = {
         includesVideo: {
@@ -394,6 +553,13 @@ describe('DynamicTimeout Plugin', () => {
       expect(dynamicTimeout.createDynamicRules({}, 0)).to.deep.equal({});
       expect(dynamicTimeout.createDynamicRules('invalid', 1000)).to.deep.equal({});
       expect(dynamicTimeout.createDynamicRules({}, -10)).to.deep.equal({});
+
+      // Verify logging for invalid inputs
+      expect(logInfoStub.callCount).to.equal(4);
+      expect(logInfoStub.getCall(0).args[0]).to.include('Invalid percentage rules provided');
+      expect(logInfoStub.getCall(1).args[0]).to.include('Invalid bidderTimeout (0ms)');
+      expect(logInfoStub.getCall(2).args[0]).to.include('Invalid percentage rules provided');
+      expect(logInfoStub.getCall(3).args[0]).to.include('Invalid bidderTimeout (-10ms)');
     });
 
     it('should skip non-object rule categories', () => {
@@ -410,6 +576,126 @@ describe('DynamicTimeout Plugin', () => {
       expect(result).to.deep.equal({
         includesVideo: {
           'true': 200
+        }
+      });
+      expect(logInfoStub.calledOnce).to.be.true;
+      expect(logInfoStub.firstCall.args[0]).to.include('Skipping invalid rule category: numAdUnits');
+    });
+
+    it('should handle negative bidderTimeout gracefully', () => {
+      const percentageRules = {
+        includesVideo: {
+          'true': 20,
+          'false': 5
+        }
+      };
+
+      const result = dynamicTimeout.createDynamicRules(percentageRules, -500);
+      expect(result).to.deep.equal({});
+      expect(logInfoStub.calledOnce).to.be.true;
+      expect(logInfoStub.firstCall.args[0]).to.include('Invalid bidderTimeout (-500ms)');
+    });
+
+    it('should handle zero percentage values', () => {
+      const percentageRules = {
+        includesVideo: {
+          'true': 0,
+          'false': 5
+        }
+      };
+
+      const bidderTimeout = 1000;
+      const result = dynamicTimeout.createDynamicRules(percentageRules, bidderTimeout);
+
+      expect(result).to.deep.equal({
+        includesVideo: {
+          'false': 50
+        }
+      });
+    });
+
+    it('should handle negative percentage values', () => {
+      const percentageRules = {
+        includesVideo: {
+          'true': -20,
+          'false': 5
+        }
+      };
+
+      const bidderTimeout = 1000;
+      const result = dynamicTimeout.createDynamicRules(percentageRules, bidderTimeout);
+
+      expect(result).to.deep.equal({
+        includesVideo: {
+          'true': -200,
+          'false': 50
+        }
+      });
+      expect(logInfoStub.calledOnce).to.be.true;
+      expect(logInfoStub.firstCall.args[0]).to.include('Warning: Negative timeout calculated for includesVideo.true: -200ms');
+    });
+
+    it('should handle very large percentage values', () => {
+      const percentageRules = {
+        includesVideo: {
+          'true': 500,  // 500% of bidderTimeout
+          'false': 5
+        }
+      };
+
+      const bidderTimeout = 1000;
+      const result = dynamicTimeout.createDynamicRules(percentageRules, bidderTimeout);
+
+      expect(result).to.deep.equal({
+        includesVideo: {
+          'true': 5000,  // 500% of 1000
+          'false': 50
+        }
+      });
+    });
+
+    it('should handle decimal percentage values', () => {
+      const percentageRules = {
+        includesVideo: {
+          'true': 2.5,
+          'false': 7.8
+        }
+      };
+
+      const bidderTimeout = 1000;
+      const result = dynamicTimeout.createDynamicRules(percentageRules, bidderTimeout);
+
+      expect(result).to.deep.equal({
+        includesVideo: {
+          'true': 25,   // Math.floor(1000 * 2.5 / 100)
+          'false': 78   // Math.floor(1000 * 7.8 / 100)
+        }
+      });
+    });
+
+    it('should handle empty percentage rules object', () => {
+      const percentageRules = {};
+      const bidderTimeout = 1000;
+      const result = dynamicTimeout.createDynamicRules(percentageRules, bidderTimeout);
+
+      expect(result).to.deep.equal({});
+    });
+
+    it('should handle categories with empty rule objects', () => {
+      const percentageRules = {
+        includesVideo: {},
+        numAdUnits: {
+          '1-5': 10
+        }
+      };
+
+      const bidderTimeout = 1000;
+      const result = dynamicTimeout.createDynamicRules(percentageRules, bidderTimeout);
+
+      expect(result).to.deep.equal({
+        includesVideo: {},
+        numAdUnits: {
+          '1-5': 100
         }
       });
     });

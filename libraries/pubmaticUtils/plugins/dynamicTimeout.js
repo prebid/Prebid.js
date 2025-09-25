@@ -87,8 +87,7 @@ export function processBidRequest(reqBidsConfigObj) {
   const rules = getRules(bidderTimeout);
   const additionalTimeout = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
 
-  // Update the timeout in the request object
-  reqBidsConfigObj.timeout = bidderTimeout + additionalTimeout;
+  reqBidsConfigObj.timeout = getFinalTimeout(bidderTimeout, additionalTimeout);
 
   logInfo(`${CONSTANTS.LOG_PRE_FIX} Timeout adjusted from ${bidderTimeout}ms to ${reqBidsConfigObj.timeout}ms (added ${additionalTimeout}ms)`);
   return reqBidsConfigObj;
@@ -114,6 +113,25 @@ export const DynamicTimeout = {
 };
 
 // Helper Functions
+
+export const getFinalTimeout = (bidderTimeout, additionalTimeout) => {
+  // Calculate the final timeout by adding bidder timeout and additional timeout
+  const calculatedTimeout = bidderTimeout + additionalTimeout;
+  const thresholdTimeout = getDynamicTimeoutConfig()?.config?.thresholdTimeout || 500;
+
+  // Handle cases where the calculated timeout might be negative or below threshold
+  if (calculatedTimeout < thresholdTimeout) {
+    // Log warning for negative or very low timeouts
+    if (calculatedTimeout < 0) {
+      logInfo(`${CONSTANTS.LOG_PRE_FIX} Warning: Negative timeout calculated (${calculatedTimeout}ms), using threshold (${thresholdTimeout}ms)`);
+    } else if (calculatedTimeout < thresholdTimeout) {
+      logInfo(`${CONSTANTS.LOG_PRE_FIX} Calculated timeout (${calculatedTimeout}ms) below threshold, using threshold (${thresholdTimeout}ms)`);
+    }
+    return thresholdTimeout;
+  }
+
+  return calculatedTimeout;
+}
 
 export const getBidderTimeout = (reqBidsConfigObj) => {
   return getDynamicTimeoutConfig()?.config?.bidderTimeout
@@ -148,8 +166,15 @@ export const getRules = (bidderTimeout) => {
  * @return {Object} - Rules with calculated millisecond values
  */
 export const createDynamicRules = (percentageRules, bidderTimeout) => {
-  // Return if required parameters are missing or invalid
-  if (!percentageRules || typeof percentageRules !== 'object' || !bidderTimeout || bidderTimeout <= 0) {
+  // Return empty object if required parameters are missing or invalid
+  if (!percentageRules || typeof percentageRules !== 'object') {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Invalid percentage rules provided to createDynamicRules`);
+    return {};
+  }
+
+  // Handle negative or zero bidderTimeout gracefully
+  if (!bidderTimeout || typeof bidderTimeout !== 'number' || bidderTimeout <= 0) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Invalid bidderTimeout (${bidderTimeout}ms) provided to createDynamicRules`);
     return {};
   }
 
@@ -157,6 +182,7 @@ export const createDynamicRules = (percentageRules, bidderTimeout) => {
   return Object.entries(percentageRules).reduce((dynamicRules, [category, rules]) => {
     // Skip if rules is not an object
     if (!rules || typeof rules !== 'object') {
+      logInfo(`${CONSTANTS.LOG_PRE_FIX} Skipping invalid rule category: ${category}`);
       return dynamicRules;
     }
 
@@ -165,9 +191,15 @@ export const createDynamicRules = (percentageRules, bidderTimeout) => {
 
     // Convert each percentage value to milliseconds
     Object.entries(rules).forEach(([key, percentValue]) => {
-      // Ensure percentage value is a number and within reasonable range
-      if (typeof percentValue === 'number' && percentValue >= 0) {
-        dynamicRules[category][key] = Math.floor(bidderTimeout * (percentValue / 100));
+      // Ensure percentage value is a number and not zero
+      if (typeof percentValue === 'number' && percentValue !== 0) {
+        const calculatedTimeout = Math.floor(bidderTimeout * (percentValue / 100));
+        dynamicRules[category][key] = calculatedTimeout;
+
+        // Log warning for negative calculated timeouts
+        if (calculatedTimeout < 0) {
+          logInfo(`${CONSTANTS.LOG_PRE_FIX} Warning: Negative timeout calculated for ${category}.${key}: ${calculatedTimeout}ms`);
+        }
       }
     });
 
