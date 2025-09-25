@@ -41,7 +41,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
     const floor = getBidFloor(request, request.sizes || []);
-    const dpr = getDevicePixelRatio() ?? (typeof window !== 'undefined' ? window.devicePixelRatio : 1);
+    const dpr = getDevicePixelRatio() || 1;
     const wp = getWalletPresence();
     const wpfs = getWalletProviderFlags();
     const winDimensions = getWinDimensions();
