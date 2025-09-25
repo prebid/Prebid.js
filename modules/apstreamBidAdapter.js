@@ -336,9 +336,9 @@ function injectPixels(ad, pixels, scripts) {
 
 function getScreenParams() {
   const winDimensions = getWinDimensions();
-  const width = winDimensions.screen?.width ?? window.screen?.width;
-  const height = winDimensions.screen?.height ?? window.screen?.height;
-  const devicePixelRatio = getDevicePixelRatio() ?? window.devicePixelRatio;
+  const width = winDimensions.screen?.width;
+  const height = winDimensions.screen?.height
+  const devicePixelRatio = getDevicePixelRatio();
   return `${width}x${height}@${devicePixelRatio}`;
 }
 
