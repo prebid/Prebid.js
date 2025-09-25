@@ -3,6 +3,9 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config as pbjsConfig } from '../src/config.js';
+import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -48,6 +51,10 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo 
 
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://yandex.ru/ads/prebid';
+const EVENT_TRACKER_URL = 'https://yandex.ru/ads/trace';
+// We send data in 1% of cases
+const DEFAULT_SAMPLING_RATE = 0.1;
+const EVENT_LOG_RANDOM_NUMBER = Math.random();
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
 /**
@@ -62,7 +69,7 @@ const ORTB_MTYPES = {
 };
 
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.6.0';
+const ADAPTER_VERSION = '2.7.0';
 
 const TRACKER_METHODS = {
   img: 1,
@@ -196,8 +203,13 @@ export const spec = {
         site: ortb2?.site,
         tmax: timeout,
         user: ortb2?.user,
-        device: ortb2?.device,
+        device: ortb2?.device ? { ...ortb2.device, ...(ortb2.device.ext ? { ext: { ...ortb2.device.ext } } : {}) } : undefined,
       };
+
+      // Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
+      if (isWebdriverEnabled()) {
+        deepSetValue(data, 'device.ext.webdriver', true);
+      }
 
       if (!data?.site?.content?.language) {
         const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
@@ -242,7 +254,31 @@ export const spec = {
     }
 
     triggerPixel(nurl);
-  }
+  },
+
+  /**
+   * Register bidder specific code, which will execute if bidder timed out after an auction
+   *
+   * @param {Array} timeoutData timeout specific data
+   */
+  onTimeout: function(timeoutData) {
+    eventLog('PREBID_TIMEOUT_EVENT', timeoutData);
+  },
+  onBidderError: function({ error, bidderRequest }) {
+    eventLog('PREBID_BIDDER_ERROR_EVENT', {
+      error: {
+        message: error?.reason?.message,
+        stack: error?.reason?.stack,
+      },
+      bidderRequest,
+    });
+  },
+  onBidBillable: function (bid) {
+    eventLog('PREBID_BID_BILLABLE_EVENT', bid);
+  },
+  onAdRenderSucceeded: function (bid) {
+    eventLog('PREBID_AD_RENDER_SUCCEEDED_EVENT', bid);
+  },
 }
 
 /**
@@ -562,6 +598,25 @@ function addRTT(url, rtt) {
   url = urlObj.toString();
 
   return url;
+}
+
+function eventLog(name, resp) {
+  const bidderConfig = pbjsConfig.getConfig();
+
+  const samplingRate = bidderConfig?.yandex?.sampling ?? DEFAULT_SAMPLING_RATE;
+
+  if (samplingRate > EVENT_LOG_RANDOM_NUMBER) {
+    resp.adapterVersion = ADAPTER_VERSION;
+    resp.prebidVersion = '$prebid.version$';
+
+    const data = {
+      name: name,
+      unixtime: Math.floor(Date.now() / 1000),
+      data: resp,
+    };
+
+    ajax(EVENT_TRACKER_URL, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
+  }
 }
 
 registerBidder(spec);

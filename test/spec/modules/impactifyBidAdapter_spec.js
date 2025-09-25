@@ -198,12 +198,12 @@ describe('ImpactifyAdapter', function () {
 
     it('should return false when format is not equals to screen or display', () => {
       const bid = utils.deepClone(validBids[0]);
-      if (bid.params.format != 'screen' && bid.params.format != 'display') {
+      if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       }
 
       const bid2 = utils.deepClone(validBids[1]);
-      if (bid2.params.format != 'screen' && bid2.params.format != 'display') {
+      if (bid2.params.format !== 'screen' && bid2.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid2)).to.equal(false);
       }
     });

@@ -130,7 +130,7 @@ function newBid(serverBid) {
     }
   };
 
-  if (serverBid.type == 'video') {
+  if (serverBid.type === 'video') {
     Object.assign(bid, {
       vastXml: serverBid.seatbid[0].bid[0].vastXml,
       vastUrl: serverBid.seatbid[0].bid[0].vastUrl,

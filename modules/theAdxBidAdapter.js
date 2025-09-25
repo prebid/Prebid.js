@@ -278,7 +278,7 @@ export const spec = {
           mediaType: mediaType,
           native: native,
         };
-        if (mediaType == VIDEO && videoXml) {
+        if (mediaType === VIDEO && videoXml) {
           response.vastUrl = videoXml;
           response.videoCacheKey = bid.ext.rid;
         }
@@ -505,7 +505,7 @@ const generateImpBody = (bidRequest, bidderRequest) => {
 }
 const getRegionEndPoint = (bidRequest) => {
   if (bidRequest && bidRequest.params && bidRequest.params.region) {
-    if (bidRequest.params.region.toLowerCase() == 'tr') {
+    if (bidRequest.params.region.toLowerCase() === 'tr') {
       return ENDPOINT_TR_URL;
     }
   }
