@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-requestMediaKeySystemAccess
+ * @id prebid/navigator-requestmediakeysystemaccess
  * @name Access to navigator.requestMediaKeySystemAccess
  * @kind problem
  * @problem.severity warning

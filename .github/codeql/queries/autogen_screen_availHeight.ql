@@ -1,5 +1,5 @@
 /**
- * @id prebid/screen-availHeight
+ * @id prebid/screen-availheight
  * @name Access to screen.availHeight
  * @kind problem
  * @problem.severity warning

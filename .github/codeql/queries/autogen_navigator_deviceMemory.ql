@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-deviceMemory
+ * @id prebid/navigator-devicememory
  * @name Access to navigator.deviceMemory
  * @kind problem
  * @problem.severity warning

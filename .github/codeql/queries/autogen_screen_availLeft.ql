@@ -1,5 +1,5 @@
 /**
- * @id prebid/screen-availLeft
+ * @id prebid/screen-availleft
  * @name Access to screen.availLeft
  * @kind problem
  * @problem.severity warning

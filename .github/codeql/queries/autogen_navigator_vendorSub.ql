@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-vendorSub
+ * @id prebid/navigator-vendorsub
  * @name Access to navigator.vendorSub
  * @kind problem
  * @problem.severity warning

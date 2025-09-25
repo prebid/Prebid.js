@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-appCodeName
+ * @id prebid/navigator-appcodename
  * @name Access to navigator.appCodeName
  * @kind problem
  * @problem.severity warning

@@ -1,5 +1,5 @@
 /**
- * @id prebid/devicemotionevent_accelerationincludinggravity
+ * @id prebid/devicemotionevent-accelerationincludinggravity
  * @name Potential access to DeviceMotionEvent.accelerationIncludingGravity
  * @kind problem
  * @problem.severity warning

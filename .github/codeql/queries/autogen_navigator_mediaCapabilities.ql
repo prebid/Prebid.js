@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-mediaCapabilities
+ * @id prebid/navigator-mediacapabilities
  * @name Access to navigator.mediaCapabilities
  * @kind problem
  * @problem.severity warning

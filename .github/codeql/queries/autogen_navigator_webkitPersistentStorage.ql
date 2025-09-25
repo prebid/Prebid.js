@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-webkitPersistentStorage
+ * @id prebid/navigator-webkitpersistentstorage
  * @name Access to navigator.webkitPersistentStorage
  * @kind problem
  * @problem.severity warning

@@ -1,5 +1,5 @@
 /**
- * @id prebid/Notification-permission
+ * @id prebid/notification-permission
  * @name Access to Notification.permission
  * @kind problem
  * @problem.severity warning

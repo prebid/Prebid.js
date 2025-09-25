@@ -1,5 +1,5 @@
 /**
- * @id prebid/devicemotionevent_acceleration
+ * @id prebid/devicemotionevent-acceleration
  * @name Potential access to DeviceMotionEvent.acceleration
  * @kind problem
  * @problem.severity warning

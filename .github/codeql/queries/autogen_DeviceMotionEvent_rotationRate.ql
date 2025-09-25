@@ -1,5 +1,5 @@
 /**
- * @id prebid/devicemotionevent_rotationrate
+ * @id prebid/devicemotionevent-rotationrate
  * @name Potential access to DeviceMotionEvent.rotationRate
  * @kind problem
  * @problem.severity warning

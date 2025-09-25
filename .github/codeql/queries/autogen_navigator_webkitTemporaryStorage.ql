@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-webkitTemporaryStorage
+ * @id prebid/navigator-webkittemporarystorage
  * @name Access to navigator.webkitTemporaryStorage
  * @kind problem
  * @problem.severity warning

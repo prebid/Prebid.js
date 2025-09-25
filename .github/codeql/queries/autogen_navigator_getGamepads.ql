@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-getGamepads
+ * @id prebid/navigator-getgamepads
  * @name Access to navigator.getGamepads
  * @kind problem
  * @problem.severity warning

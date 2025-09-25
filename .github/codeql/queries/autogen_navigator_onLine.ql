@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-onLine
+ * @id prebid/navigator-online
  * @name Access to navigator.onLine
  * @kind problem
  * @problem.severity warning

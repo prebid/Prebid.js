@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-hardwareConcurrency
+ * @id prebid/navigator-hardwareconcurrency
  * @name Access to navigator.hardwareConcurrency
  * @kind problem
  * @problem.severity warning

@@ -1,5 +1,5 @@
 /**
- * @id prebid/navigator-getBattery
+ * @id prebid/navigator-getbattery
  * @name Access to navigator.getBattery
  * @kind problem
  * @problem.severity warning

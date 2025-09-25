@@ -1,5 +1,5 @@
 /**
- * @id prebid/screen-pixelDepth
+ * @id prebid/screen-pixeldepth
  * @name Access to screen.pixelDepth
  * @kind problem
  * @problem.severity warning

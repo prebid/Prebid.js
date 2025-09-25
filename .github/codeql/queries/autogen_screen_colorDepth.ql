@@ -1,5 +1,5 @@
 /**
- * @id prebid/screen-colorDepth
+ * @id prebid/screen-colordepth
  * @name Access to screen.colorDepth
  * @kind problem
  * @problem.severity warning
