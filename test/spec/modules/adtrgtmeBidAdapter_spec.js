@@ -29,7 +29,7 @@ const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
   };
   bR.sizes = [[300, 250]];
 
-  if (typeof zid == 'string') {
+  if (typeof zid === 'string') {
     bR.params.zid = zid;
   }
   return bR;

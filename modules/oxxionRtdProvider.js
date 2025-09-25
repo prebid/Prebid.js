@@ -22,14 +22,14 @@ export const oxxionSubmodule = {
 
 function init(config, userConsent) {
   if (!config.params || !config.params.domain) { return false }
-  if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') { return true }
+  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') { return true }
   return false;
 }
 
 function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
   const moduleStarted = new Date();
   logInfo(LOG_PREFIX + 'started with ', config);
-  if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') {
+  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') {
     let filteredBids;
     const requests = getRequestsList(reqBidsConfigObj);
     const gdpr = userConsent && userConsent.gdpr ? userConsent.gdpr.consentString : null;
@@ -51,10 +51,10 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
           withCredentials: true
         });
       }
-      if (typeof callback == 'function') { callback(); }
+      if (typeof callback === 'function') { callback(); }
       const timeToRun = new Date() - moduleStarted;
       logInfo(LOG_PREFIX + ' time to run: ' + timeToRun);
-      if (getRandomNumber(50) == 1) {
+      if (getRandomNumber(50) === 1) {
         ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {method: 'POST', withCredentials: true});
       }
     }).catch(error => logError(LOG_PREFIX, 'bidInterestError', error));
@@ -81,7 +81,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
   const filteredBids = [];
   // Separate bidsRateInterests in two groups against threshold & samplingRate
   const { interestingBidsRates, uninterestingBidsRates, sampledBidsRates } = bidsRateInterests.reduce((acc, interestingBid) => {
-    const isBidRateUpper = typeof threshold == 'number' ? interestingBid.rate === true || interestingBid.rate > threshold : interestingBid.suggestion;
+    const isBidRateUpper = typeof threshold === 'number' ? interestingBid.rate === true || interestingBid.rate > threshold : interestingBid.suggestion;
     const isBidInteresting = isBidRateUpper || sampling;
     const key = isBidInteresting ? 'interestingBidsRates' : 'uninterestingBidsRates';
     acc[key].push(interestingBid);
@@ -100,7 +100,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
     adUnits[adUnitIndex].bids = bids.filter((bid, bidIndex) => {
       if (!params.bidders || params.bidders.includes(bid.bidder)) {
         const index = interestingBidsRates.findIndex(({ id }) => id === bid._id);
-        if (index == -1) {
+        if (index === -1) {
           const tmpBid = bid;
           tmpBid['code'] = adUnits[adUnitIndex].code;
           tmpBid['mediaTypes'] = adUnits[adUnitIndex].mediaTypes;
@@ -111,7 +111,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
           filteredBids.push(tmpBid);
           adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'filtered';
         } else {
-          if (sampledBidsRates.findIndex(({ id }) => id === bid._id) == -1) {
+          if (sampledBidsRates.findIndex(({ id }) => id === bid._id) === -1) {
             adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'cleared';
           } else {
             adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'sampled';

@@ -77,7 +77,7 @@ export const spec = {
       }
 
       payload.uids = serializeUids(bidRequest);
-      if (payload.uids == '') {
+      if (payload.uids === '') {
         delete payload.uids;
       }
 
@@ -107,7 +107,7 @@ export const spec = {
             payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key];
           });
       }
-      if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }
+      if (Object.keys(payload.pfilter).length === 0) { delete payload.pfilter }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -156,7 +156,7 @@ function stvObjectToQueryString(obj, prefix) {
       const v = obj[p];
       str.push((v !== null && typeof v === 'object')
         ? stvObjectToQueryString(v, k)
-        : (k == 'schain' || k == 'uids' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
+        : (k === 'schain' || k === 'uids' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
     }
   }
   return str.join('&');
