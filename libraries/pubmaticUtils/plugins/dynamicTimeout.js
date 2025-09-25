@@ -13,7 +13,8 @@ export const CONSTANTS = Object.freeze({
   NUM_AD_UNITS: 'numAdUnits',
   DEVICE_TYPE: 'deviceType',
   CONNECTION_SPEED: 'connectionSpeed',
-  DEFAULT_SKIP_RATE: 50
+  DEFAULT_SKIP_RATE: 50,
+  DEFAULT_THRESHOLD_TIMEOUT: 500
 });
 
 export const RULES_PERCENTAGE = {
@@ -116,8 +117,8 @@ export const DynamicTimeout = {
 
 export const getFinalTimeout = (bidderTimeout, additionalTimeout) => {
   // Calculate the final timeout by adding bidder timeout and additional timeout
-  const calculatedTimeout = bidderTimeout + additionalTimeout;
-  const thresholdTimeout = getDynamicTimeoutConfig()?.config?.thresholdTimeout || 500;
+  const calculatedTimeout = parseInt(bidderTimeout) + parseInt(additionalTimeout);
+  const thresholdTimeout = getDynamicTimeoutConfig()?.config?.thresholdTimeout || CONSTANTS.DEFAULT_THRESHOLD_TIMEOUT;
 
   // Handle cases where the calculated timeout might be negative or below threshold
   if (calculatedTimeout < thresholdTimeout) {
