@@ -4,7 +4,7 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "greenbids",
+      "componentName": "dxtech",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null

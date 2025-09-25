@@ -479,6 +479,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "smartyexchange",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -1403,6 +1410,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "bidfuse",
+      "aliasOf": null,
+      "gvlid": 1466,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "bidglass",
       "aliasOf": null,
       "gvlid": null,
@@ -2019,6 +2033,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "dxtech",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "e_volution",
       "aliasOf": null,
       "gvlid": 957,
@@ -2273,7 +2294,7 @@
       "componentType": "bidder",
       "componentName": "greenbids",
       "aliasOf": null,
-      "gvlid": 1232,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3239,7 +3260,7 @@
       "componentType": "bidder",
       "componentName": "pubxai",
       "aliasOf": "nexx360",
-      "gvlid": null,
+      "gvlid": 1485,
       "disclosureURL": null
     },
     {
@@ -3253,7 +3274,7 @@
       "componentType": "bidder",
       "componentName": "duration",
       "aliasOf": "nobid",
-      "gvlid": 674,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4078,13 +4099,6 @@
     {
       "componentType": "bidder",
       "componentName": "felixads",
-      "aliasOf": "smarthub",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "vimayx",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
