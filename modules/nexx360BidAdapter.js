@@ -40,7 +40,7 @@ const ALIASES = [
   { code: 'movingup', gvlid: 1416 },
   { code: 'glomexbidder', gvlid: 967 },
   { code: 'revnew', gvlid: 1468 },
-  { code: 'pubxai'},
+  { code: 'pubxai', gvlid: 1485 },
 ];
 
 export const STORAGE = getStorageManager({

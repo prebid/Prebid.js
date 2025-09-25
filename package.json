@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.10.0-pre",
+  "version": "10.11.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -53,10 +53,10 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.16.5",
+    "@babel/eslint-parser": "^7.28.4",
     "@babel/plugin-transform-runtime": "^7.27.4",
     "@babel/register": "^7.28.3",
-    "@eslint/compat": "^1.3.1",
+    "@eslint/compat": "^1.3.2",
     "@types/google-publisher-tag": "^1.20250811.0",
     "@wdio/browserstack-service": "^9.19.1",
     "@wdio/cli": "^9.19.1",
@@ -163,6 +163,6 @@
     "fsevents": "^2.3.2"
   },
   "peerDependencies": {
-    "schema-utils": "^2.7.1"
+    "schema-utils": "^4.3.2"
   }
 }
