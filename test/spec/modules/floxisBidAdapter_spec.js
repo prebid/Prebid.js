@@ -96,4 +96,47 @@ describe('floxisBidAdapter', function () {
       expect(bids[0].cpm).to.equal(1.23);
     }
   });
+
+  it('should set bidfloor and bidfloorcur from Floors Module', function () {
+    const floorValue = 2.5;
+    const floorCurrency = 'USD';
+    const bidWithFloor = {
+      bidId: '10',
+      adUnitCode: 'adunit-10',
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      params: { partner: 'floxis', placementId: 999 },
+      getFloor: function({currency, mediaType, size}) {
+        return { floor: floorValue, currency: floorCurrency };
+      }
+    };
+    const requests = spec.buildRequests([bidWithFloor], {});
+    expect(requests).to.have.lengthOf(1);
+    const imp = requests[0].data.imp[0];
+    expect(imp.bidfloor).to.equal(floorValue);
+    expect(imp.bidfloorcur).to.equal(floorCurrency);
+  });
+
+  it('should set ORTB blocking params in request and imp', function () {
+    const bidWithBlocking = {
+      bidId: '20',
+      adUnitCode: 'adunit-20',
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      params: {
+        partner: 'floxis',
+        placementId: 555,
+        bcat: ['IAB1-1', 'IAB1-2'],
+        badv: ['example.com', 'test.com'],
+        bapp: ['com.example.app'],
+        battr: [1, 2, 3]
+      }
+    };
+    const requests = spec.buildRequests([bidWithBlocking], {});
+    expect(requests).to.have.lengthOf(1);
+    const req = requests[0].data;
+    expect(req.bcat).to.deep.equal(['IAB1-1', 'IAB1-2']);
+    expect(req.badv).to.deep.equal(['example.com', 'test.com']);
+    expect(req.bapp).to.deep.equal(['com.example.app']);
+    const imp = req.imp[0];
+    expect(imp.banner.battr).to.deep.equal([1, 2, 3]);
+  });
 });

@@ -31,6 +31,28 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
     imp(buildImp, bidRequest, context) {
       let imp = buildImp(bidRequest, context);
       imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
+      // Floors Module support
+      let floorInfo;
+      if (typeof bidRequest.getFloor === 'function') {
+        try {
+          floorInfo = bidRequest.getFloor({
+            currency: DEFAULT_CURRENCY,
+            mediaType: '*',
+            size: '*'
+          });
+        } catch (e) { }
+      }
+      const floor = floorInfo && typeof floorInfo.floor === 'number' ? floorInfo.floor : bidRequest.params?.bidFloor;
+      const floorCur = floorInfo && typeof floorInfo.currency === 'string' ? floorInfo.currency : DEFAULT_CURRENCY;
+      if (typeof floor === 'number' && !isNaN(floor)) {
+        imp.bidfloor = floor;
+        imp.bidfloorcur = floorCur;
+      }
+      // ORTB blocking params (imp-level)
+      if (Array.isArray(bidRequest.params?.battr)) {
+        imp.banner = imp.banner || {};
+        imp.banner.battr = bidRequest.params.battr;
+      }
       return imp;
     },
     request(buildRequest, imps, bidderRequest, context) {
@@ -42,11 +64,22 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
       req.site = req.site || {};
       req.site.ext = req.site.ext || {};
       req.site.ext.placementId = validBidRequests[0]?.params?.placementId;
+      // ORTB blocking params (request-level)
+      const firstParams = validBidRequests[0]?.params || {};
+      if (Array.isArray(firstParams.bcat)) {
+        req.bcat = firstParams.bcat;
+      }
+      if (Array.isArray(firstParams.badv)) {
+        req.badv = firstParams.badv;
+      }
+      if (Array.isArray(firstParams.bapp)) {
+        req.bapp = firstParams.bapp;
+      }
       return req;
     }
   });
 
-  const ortbRequest = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+  const ortbRequest = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
   return [{
     method: 'POST',
     url: getFloxisUrl(partner, region),
@@ -67,7 +100,7 @@ function getUserSyncs() {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const params = bid.params || {};
     if (typeof params.partner !== 'string' || !params.partner.length || !Number.isInteger(params.placementId)) {
       return false;
@@ -96,7 +129,7 @@ export const spec = {
     if (!request.converter) {
       throw new Error('Missing converter instance on request object');
     }
-    return request.converter.fromORTB({request: request.data, response: response.body}).bids;
+    return request.converter.fromORTB({ request: request.data, response: response.body }).bids;
   },
   getUserSyncs,
   onBidWon: function (bid) {

@@ -15,9 +15,65 @@ https://<partner>-<region>.floxis.tech/pbjs
 - `partner`: string, required (default: 'floxis')
 - `region`: string, required (default: 'us')
 
+
+
 ## Required Params
 - `partner` (string): Partner name
 - `placementId` (integer): Placement identifier
+
+## OpenRTB Blocking Params Support
+FloxisBidAdapter supports OpenRTB blocking parameters. You can pass the following optional params in your ad unit config:
+- `bcat` (array): Blocked categories
+- `badv` (array): Blocked advertiser domains
+- `bapp` (array): Blocked app bundle IDs
+- `battr` (array): Blocked creative attributes
+
+These will be included in the OpenRTB request and imp objects as appropriate.
+
+**Example:**
+```javascript
+pbjs.addAdUnits([
+  {
+    code: 'adunit-20',
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    bids: [{
+      bidder: 'floxis',
+      params: {
+        partner: 'floxis',
+        placementId: 555,
+        bcat: ['IAB1-1', 'IAB1-2'],
+        badv: ['example.com', 'test.com'],
+        bapp: ['com.example.app'],
+        battr: [1, 2, 3]
+      }
+    }]
+  }
+]);
+```
+
+## Floors Module Support
+FloxisBidAdapter supports Prebid.js Floors Module. If a bid request provides a floor value via the Floors Module (`getFloor` function), it will be sent in the OpenRTB request as `imp.bidfloor` and `imp.bidfloorcur`. If not, you can also set a static floor using `params.bidFloor`.
+
+**Example with Floors Module:**
+```javascript
+pbjs.addAdUnits([
+  {
+    code: 'adunit-1',
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+    bids: [{
+      bidder: 'floxis',
+      params: {
+        partner: 'floxis',
+        placementId: 1,
+        bidFloor: 2.5 // optional static floor
+      },
+      getFloor: function({currency, mediaType, size}) {
+        return { floor: 2.5, currency: 'USD' };
+      }
+    }]
+  }
+]);
+```
 
 ## Privacy
 Privacy fields (GDPR, USP, GPP, COPPA) are handled by Prebid.js core and automatically included in the OpenRTB request.
