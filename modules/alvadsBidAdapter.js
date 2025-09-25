@@ -79,8 +79,7 @@ export const spec = {
           gpp: '',
           gpp_sid: [],
           ext: {
-            gdpr: bidderRequest.gdprConsent ? 1 : 0,
-            ...(bidderRequest.uspConsent && { us_privacy: bidderRequest.uspConsent })
+            gdpr: Number(bidderRequest.gdprConsent?.gdprApplies)
           }
         },
         ext: {
@@ -93,8 +92,7 @@ export const spec = {
         method: 'POST',
         url: endpoint,
         data: JSON.stringify(payload),
-        options: { withCredentials: false },
-        bid: bid
+        options: { withCredentials: false }
       };
     });
   },
