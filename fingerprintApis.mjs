@@ -50,9 +50,9 @@ select api, ${message(weight, api)}`
 function globalProp(prop) {
   return function (weight, api) {
     return [
-      `${prop}_${api}`.toLowerCase(),
+      `${prop}_${api}`,
       QUERY_FILE_TPL({
-        id: `${prop}-${api}`,
+        id: `${prop}-${api}`.toLowerCase(),
         name: `Access to ${prop}.${api}`,
         description: `Finds uses of ${prop}.${api}`,
         query: `import prebid
@@ -101,9 +101,9 @@ select api, ${message(weight, api)}`
 
 function simplePropertyMatch(weight, target, prop) {
   return [
-    `${target}-${prop}`,
+    `${target}_${prop}`,
     QUERY_FILE_TPL({
-      id: `${target}_${prop}`.toLowerCase(),
+      id: `${target}-${prop}`.toLowerCase(),
       name: `Potential access to ${target}.${prop}`,
       description: `Finds uses of ${prop}`,
       query: `import prebid
