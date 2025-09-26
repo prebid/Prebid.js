@@ -15,7 +15,7 @@ describe('floxisBidAdapter', function () {
   const validVideoBid = {
     bidId: '2',
     adUnitCode: 'adunit-2',
-    mediaTypes: { video: { playerSize: [[640, 480]] } },
+    mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'], protocols: [2, 3] } },
     params: { partner: 'floxis', placementId: 456 },
     ortb2Imp: { secure: 1 }
   };
@@ -138,5 +138,55 @@ describe('floxisBidAdapter', function () {
     expect(req.bapp).to.deep.equal(['com.example.app']);
     const imp = req.imp[0];
     expect(imp.banner.battr).to.deep.equal([1, 2, 3]);
+  });
+
+  it('should invalidate video bid with missing mimes', function () {
+    const bid = {
+      bidId: 'v1',
+      adUnitCode: 'adunit-v1',
+      mediaTypes: { video: { playerSize: [[640, 480]], protocols: [2, 3] } },
+      params: { partner: 'floxis', placementId: 123 }
+    };
+    expect(spec.isBidRequestValid(bid)).to.be.false;
+  });
+
+  it('should invalidate video bid with missing protocols', function () {
+    const bid = {
+      bidId: 'v2',
+      adUnitCode: 'adunit-v2',
+      mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'] } },
+      params: { partner: 'floxis', placementId: 123 }
+    };
+    expect(spec.isBidRequestValid(bid)).to.be.false;
+  });
+
+  it('should validate correct video bid with mimes and protocols', function () {
+    const bid = {
+      bidId: 'v3',
+      adUnitCode: 'adunit-v3',
+      mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'], protocols: [2, 3] } },
+      params: { partner: 'floxis', placementId: 123 }
+    };
+    expect(spec.isBidRequestValid(bid)).to.be.true;
+  });
+
+  it('should invalidate native bid with no assets', function () {
+    const bid = {
+      bidId: 'n1',
+      adUnitCode: 'adunit-n1',
+      mediaTypes: { native: {} },
+      params: { partner: 'floxis', placementId: 123 }
+    };
+    expect(spec.isBidRequestValid(bid)).to.be.false;
+  });
+
+  it('should validate native bid with assets', function () {
+    const bid = {
+      bidId: 'n2',
+      adUnitCode: 'adunit-n2',
+      mediaTypes: { native: { image: { required: true, sizes: [150, 50] }, title: { required: true, len: 80 } } },
+      params: { partner: 'floxis', placementId: 123 }
+    };
+    expect(spec.isBidRequestValid(bid)).to.be.true;
   });
 });
