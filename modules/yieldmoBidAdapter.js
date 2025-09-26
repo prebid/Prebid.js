@@ -17,6 +17,7 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -110,8 +111,9 @@ export const spec = {
       }
 
       if (canAccessTopWindow()) {
+        const devicePixelRatio = getDevicePixelRatio();
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
-        serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
+        serverRequest.scrd = devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
         serverRequest.w = getWinDimensions().innerWidth;
         serverRequest.h = getWinDimensions().innerHeight;

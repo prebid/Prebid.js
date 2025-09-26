@@ -4,6 +4,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from '../libraries/pageInfosUtils/pageInfosUtils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -51,8 +52,6 @@ export const spec = {
       reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
       if (gpid) { reqObj.gpid = gpid; }
     });
-    const topWindow = window.top;
-
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
@@ -64,7 +63,7 @@ export const spec = {
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
-      devicePixelRatio: topWindow.devicePixelRatio,
+      devicePixelRatio: getDevicePixelRatio(),
       screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
