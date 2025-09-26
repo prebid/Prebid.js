@@ -148,7 +148,7 @@ export const getBidderTimeout = (reqBidsConfigObj) => {
 export const getRules = (bidderTimeout) => {
   const timeoutConfig = getDynamicTimeoutConfig();
 
-  // In milliseconds - If config rules are available then return it
+  // In milliseconds - If timeout rules provided by publishers are available then return it
   if (timeoutConfig?.config?.timeoutRules && Object.keys(timeoutConfig.config.timeoutRules).length > 0) {
     return timeoutConfig.config.timeoutRules;
   }
@@ -156,7 +156,7 @@ export const getRules = (bidderTimeout) => {
   if (timeoutConfig?.data && Object.keys(timeoutConfig.data).length > 0) {
     return timeoutConfig.data;
   }
-  // In Percentage - If no rules are available then create rules from percentages
+  // In Percentage - If no rules are available then create rules from the default defined - values are in percentages
   return createDynamicRules(RULES_PERCENTAGE, bidderTimeout);
 }
 
