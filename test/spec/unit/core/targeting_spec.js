@@ -583,6 +583,26 @@ describe('targeting tests', function () {
 
         expect(limitedBids.length).to.equal(2);
       });
+
+      it('Sends all bids when enableSendAllBids is true with bid limits varying by adUnitCode', function () {
+        let getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+          {
+            code: 'adunit1',
+            bidLimit: 2
+          },
+        ]));
+
+        const bids = [
+          { ...bid1, bidderCode: 'rubicon', adUnitCode: 'adunit1' },
+          { ...bid2, bidderCode: 'appnexus', adUnitCode: 'adunit1' },
+          { ...bid3, bidderCode: 'dgads', adUnitCode: 'adunit1' },
+        ];
+
+        const limitedBids = getHighestCpmBidsFromBidPool(bids, getHighestCpm, 0);
+
+        expect(limitedBids.length).to.equal(2);
+        getAdUnitsStub.restore();
+      });
     });
 
     describe('targetingControls.allowZeroCpmBids', function () {
