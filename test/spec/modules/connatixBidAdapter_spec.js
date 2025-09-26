@@ -653,7 +653,7 @@ describe('connatixBidAdapter', function () {
   describe('interpretResponse', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
-    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
+    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId, Lurl: 'test-lurl'};
 
     let serverResponse;
     this.beforeEach(function () {
@@ -693,6 +693,7 @@ describe('connatixBidAdapter', function () {
       expect(bidResponse.currency).to.equal('USD');
       expect(bidResponse.mediaType).to.equal(BANNER);
       expect(bidResponse.netRevenue).to.be.true;
+      expect(bidResponse.lurl).to.equal('test-lurl');
     });
 
     it('Should return n bid responses for n bids', function() {
