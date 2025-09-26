@@ -219,6 +219,7 @@ export const spec = {
         }
         return bidObject;
       }
+      return null;
     }).filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {

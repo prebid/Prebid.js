@@ -51,7 +51,7 @@ export const spec = {
 
       if (ALLOWED_CURRENCIES.indexOf(currency) === -1) {
         logError('Currency is not supported - ' + currency);
-        return;
+        return undefined;
       }
 
       const payload = {

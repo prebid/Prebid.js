@@ -106,7 +106,7 @@ export const spec = {
       reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
     }
 
-    validBidRequests.map(bidReq => {
+    validBidRequests.forEach(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
         coordinates: getBannerCoords(bidReq.adUnitCode),

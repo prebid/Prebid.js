@@ -151,7 +151,6 @@ module.exports = [
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
       'no-void': 'off',
-      'array-callback-return': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',

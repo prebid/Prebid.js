@@ -550,6 +550,7 @@ const validateAllowedCategories = (acat) => {
           return true;
         } else {
           logWarn(LOG_WARN_PREFIX + 'acat: Each category should be a string, ignoring category: ' + item);
+          return false;
         }
       })
       .map(item => item.trim())
