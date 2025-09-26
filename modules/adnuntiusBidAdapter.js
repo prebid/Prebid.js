@@ -14,7 +14,6 @@ import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
@@ -303,12 +302,11 @@ export const spec = {
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
-    const extraDims = getExtraWinDimensions();
-    if (extraDims.screen.availHeight) {
-      queryParamsAndValues.push('screen=' + extraDims.screen.availWidth + 'x' + extraDims.screen.availHeight);
-    }
 
-    const { innerWidth, innerHeight } = getWinDimensions();
+    const { innerWidth, innerHeight, screen } = getWinDimensions();
+    if (screen.availHeight) {
+      queryParamsAndValues.push('screen=' + screen.availWidth + 'x' + screen.availHeight);
+    }
 
     if (innerWidth) {
       queryParamsAndValues.push('viewport=' + innerWidth + 'x' + innerHeight);

@@ -1,14 +1,13 @@
 'use strict';
 
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import { Renderer } from '../src/Renderer.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { toOrtbNativeRequest } from '../src/native.js';
-import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {Renderer} from '../src/Renderer.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {deepAccess, deepClone, getWinDimensions, logError} from '../src/utils.js';
+import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import {toOrtbNativeRequest} from '../src/native.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -279,7 +278,6 @@ function getDocumentVisibility(window) {
  */
 function getPageInfo(bidderRequest) {
   const winDimensions = getWinDimensions();
-  const extraDims = getExtraWinDimensions();
   const topmostFrame = getFrameNesting();
   return {
     location: deepAccess(bidderRequest, 'refererInfo.page', null),
@@ -288,12 +286,12 @@ function getPageInfo(bidderRequest) {
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
     wWidth: winDimensions.innerWidth,
     wHeight: winDimensions.innerHeight,
-    oWidth: extraDims.outerWidth,
-    oHeight: extraDims.outerHeight,
+    oWidth: winDimensions.outerWidth,
+    oHeight: winDimensions.outerHeight,
     sWidth: winDimensions.screen.width,
     sHeight: winDimensions.screen.height,
-    aWidth: extraDims.screen.availWidth,
-    aHeight: extraDims.screen.availHeight,
+    aWidth: winDimensions.screen.availWidth,
+    aHeight: winDimensions.screen.availHeight,
     sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
     sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
     xOffset: topmostFrame.pageXOffset,
