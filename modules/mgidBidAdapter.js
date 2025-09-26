@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   _each,
   deepAccess,
@@ -252,7 +253,7 @@ export const spec = {
     }
     request.device.js = 1;
     if (!isInteger(deepAccess(request.device, 'dnt'))) {
-      request.device.dnt = (navigator?.doNotTrack === 'yes' || navigator?.doNotTrack === '1' || navigator?.msDoNotTrack === '1') ? 1 : 0;
+      request.device.dnt = getDNT() ? 1 : 0;
     }
     if (!isInteger(deepAccess(request.device, 'h'))) {
       request.device.h = screen.height;

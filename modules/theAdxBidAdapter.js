@@ -1,4 +1,5 @@
-import { logInfo, isEmpty, deepAccess, parseUrl, getDNT, parseSizesInput, _map } from '../src/utils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
+import { logInfo, isEmpty, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
 import {
   BANNER,
   NATIVE,

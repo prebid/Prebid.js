@@ -22,7 +22,7 @@ describe('Mgid bid adapter', function () {
   });
   const screenHeight = screen.height;
   const screenWidth = screen.width;
-  const dnt = (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0;
+  const dnt = utils.getDNT() ? 1 : 0;
   const language = navigator.language ? 'language' : 'userLanguage';
   let lang = navigator[language].split('-')[0];
   if (lang.length !== 2 && lang.length !== 3) {

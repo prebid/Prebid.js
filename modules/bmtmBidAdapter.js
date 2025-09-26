@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -180,8 +181,7 @@ function buildDevice() {
     h: window.top.screen.height,
     js: 1,
     language: navigator.language,
-    dnt: navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' ||
-      navigator.msDoNotTrack === '1' ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
   }
 }
 

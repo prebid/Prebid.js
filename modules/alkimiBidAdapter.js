@@ -1,5 +1,6 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone, getDNT, generateUUID, replaceAuctionPrice} from '../src/utils.js';
+import {deepAccess, deepClone, generateUUID, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {VIDEO, BANNER} from '../src/mediaTypes.js';

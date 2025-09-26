@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   deepAccess,
   deepSetValue,
@@ -373,16 +374,6 @@ function createNewVideoBid(response, bidRequest) {
   }
 
   return result;
-}
-
-/**
- * Detects whether dnt is true
- * @returns true if user enabled dnt
- */
-function getDNT() {
-  return (
-    window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
-  );
 }
 
 /**

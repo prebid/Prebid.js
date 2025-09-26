@@ -1,8 +1,8 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   logError,
   deepAccess,
   isArray,
-  getDNT,
   generateUUID,
   isEmpty,
   _each,
