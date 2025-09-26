@@ -340,9 +340,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid,
     bidWonTimeout: config.options.bidWonTimeout
   };
-  const initOptions = config.options;
   logInfo('ATS Analytics - adapter enabled! ');
-  atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
+  atsAnalyticsAdapter.originEnableAnalytics(config);
 };
 
 atsAnalyticsAdapter.callHandler = function (evtype, args) {
