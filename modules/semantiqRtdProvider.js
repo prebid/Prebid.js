@@ -25,13 +25,13 @@ export const storage = getStorageManager({
 });
 
 /**
- * Gets SemantIQ keywords from local storage.
+ * Gets SemantIQ keywords from session storage.
  * @param {string} pageUrl
  * @returns {Object.<string, string | string[]>}
  */
 const getStorageKeywords = (pageUrl) => {
   try {
-    const storageValue = JSON.parse(storage.getDataFromLocalStorage(STORAGE_KEY));
+    const storageValue = JSON.parse(storage.getDataFromSessionStorage(STORAGE_KEY));
 
     if (storageValue?.url === pageUrl) {
       return storageValue.keywords;
@@ -39,7 +39,7 @@ const getStorageKeywords = (pageUrl) => {
 
     return null;
   } catch (error) {
-    logError('Unable to get SemantiQ keywords from local storage', error);
+    logError('Unable to get SemantiQ keywords from session storage', error);
 
     return null;
   }
@@ -97,7 +97,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
           throw new Error('Failed to parse the response');
         }
 
-        storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
+        storage.setDataInSessionStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
         resolve(data);
       } catch (error) {
         reject(error);
