@@ -187,7 +187,13 @@ export interface TargetingControlsConfig {
    * Set to false to prevent custom targeting values from being set for non-winning bids
    */
   allBidsCustomTargeting?: boolean
+  /**
+   * The value to set for 'hb_ver'. Set to false to disable.
+   */
+  version?: false | string;
 }
+
+const DEFAULT_HB_VER = '1.17.2';
 
 declare module './config' {
   interface Config {
@@ -263,10 +269,14 @@ export function newTargeting(auctionManager) {
         flatTargeting = filterTargetingKeys(flatTargeting, auctionKeysThreshold);
       }
 
-      // make sure at least there is a entry per adUnit code in the targetingSet so receivers of SET_TARGETING call's can know what ad units are being invoked
       adUnitCodes.forEach(code => {
+        // make sure at least there is a entry per adUnit code in the targetingSet so receivers of SET_TARGETING call's can know what ad units are being invoked
         if (!flatTargeting[code]) {
           flatTargeting[code] = {};
+        }
+        // do not send just "hb_ver"
+        if (Object.keys(flatTargeting[code]).length === 1 && flatTargeting[code][TARGETING_KEYS.VERSION] != null) {
+          delete flatTargeting[code][TARGETING_KEYS.VERSION];
         }
       });
 
@@ -459,10 +469,10 @@ export function newTargeting(auctionManager) {
 
   function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes) {
     const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') === true;
-
     const targeting = getWinningBidTargeting(bidsSorted, adUnitCodes)
       .concat(getBidderTargeting(bidsSorted))
-      .concat(getAdUnitTargeting(adUnitCodes));
+      .concat(getAdUnitTargeting(adUnitCodes))
+      .concat(getVersionTargeting(adUnitCodes));
 
     if (useAllBidsCustomTargeting) {
       targeting.push(...getCustomBidTargeting(bidsSorted, customKeysByUnit))
@@ -718,6 +728,12 @@ export function newTargeting(auctionManager) {
       }
       return targeting;
     }, []);
+  }
+
+  function getVersionTargeting(adUnitCodes) {
+    let version = config.getConfig('targetingControls.version');
+    if (version === false) return [];
+    return adUnitCodes.map(au => ({[au]: [{[TARGETING_KEYS.VERSION]: [version ?? DEFAULT_HB_VER]}]}));
   }
 
   function getAdUnitTargeting(adUnitCodes) {
