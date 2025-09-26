@@ -61,3 +61,16 @@ internal.resetters.push(winDimensions.reset);
 export function resetWinDimensions() {
   internal.resetters.forEach(fn => fn());
 }
+
+export function getScreenOrientation(win) {
+  const fallbackWin = win ?? (canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf());
+  const screenData = fallbackWin?.screen ?? utilsInternals.getWindowSelf()?.screen ?? window?.screen;
+  const width = Number(screenData?.width);
+  const height = Number(screenData?.height);
+
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return;
+  }
+
+  return height >= width ? 'portrait' : 'landscape';
+}
