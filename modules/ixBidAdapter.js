@@ -39,8 +39,6 @@ const BIDDER_CODE = 'ix';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
-const BANNER_ENDPOINT_VERSION = 7.2;
-const VIDEO_ENDPOINT_VERSION = 8.1;
 const CENT_TO_DOLLAR_FACTOR = 100;
 const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
@@ -84,10 +82,7 @@ export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   // Update with list of CFTs to be requested from Exchange
-  REQUESTED_FEATURE_TOGGLES: [
-    'pbjs_enable_multiformat',
-    'pbjs_allow_all_eids'
-  ],
+  REQUESTED_FEATURE_TOGGLES: [],
 
   featureToggles: {},
   isFeatureEnabled: function (ft) {
@@ -1755,19 +1750,8 @@ export const spec = {
       allImps.push(nativeImps);
     }
 
-    if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_multiformat')) {
-      reqs.push(...buildRequest(validBidRequests, bidderRequest, combineImps(allImps)));
-    } else {
-      if (Object.keys(bannerImps).length > 0) {
-        reqs.push(...buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
-      }
-      if (Object.keys(videoImps).length > 0) {
-        reqs.push(...buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
-      }
-      if (Object.keys(nativeImps).length > 0) {
-        reqs.push(...buildRequest(validBidRequests, bidderRequest, nativeImps));
-      }
-    }
+    reqs.push(...buildRequest(validBidRequests, bidderRequest, combineImps(allImps)));
+
     return reqs;
   },
 
