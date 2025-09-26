@@ -9,6 +9,7 @@ import {
   setOrtb2Parameters,
   setEids,
   spec,
+  ALLOWED_ORTB2_PARAMETERS,
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
@@ -709,7 +710,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {postBody, ortb2} = data;
-        setOrtb2Parameters(postBody, ortb2);
+        setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2);
         expect(postBody).to.deep.equal(expected);
       });
     };
