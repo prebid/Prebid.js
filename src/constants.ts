@@ -89,7 +89,8 @@ export const TARGETING_KEYS = {
   ADOMAIN: 'hb_adomain',
   ACAT: 'hb_acat',
   CRID: 'hb_crid',
-  DSP: 'hb_dsp'
+  DSP: 'hb_dsp',
+  VERSION: 'hb_ver'
 } as const;
 
 export const DEFAULT_TARGETING_KEYS = {
@@ -100,7 +101,8 @@ export const DEFAULT_TARGETING_KEYS = {
   DEAL: 'hb_deal',
   FORMAT: 'hb_format',
   UUID: 'hb_uuid',
-  CACHE_HOST: 'hb_cache_host'
+  CACHE_HOST: 'hb_cache_host',
+  VERSION: 'hb_ver'
 };
 
 export const NATIVE_KEYS = {

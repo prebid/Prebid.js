@@ -8,7 +8,7 @@ import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
-export {getWinDimensions, resetWinDimensions} from './utils/winDimensions.js';
+export {getWinDimensions, resetWinDimensions, getScreenOrientation} from './utils/winDimensions.js';
 
 const consoleExists = Boolean(window.console);
 const consoleLogExists = Boolean(consoleExists && window.console.log);
