@@ -197,21 +197,6 @@ describe('FPD enrichment', () => {
         });
       });
 
-      describe('ext.webdriver', () => {
-        it('when navigator.webdriver is available', () => {
-          win.navigator.webdriver = true;
-          return fpd().then(ortb2 => {
-            expect(ortb2.device.ext?.webdriver).to.eql(true);
-          });
-        });
-
-        it('when navigator.webdriver is not present', () => {
-          return fpd().then(ortb2 => {
-            expect(ortb2.device.ext?.webdriver).to.not.exist;
-          });
-        });
-      });
-
       it('sets ua', () => {
         win.navigator.userAgent = 'mock-ua';
         return fpd().then(ortb2 => {
