@@ -6,6 +6,7 @@ import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import * as webdriver from '../../../libraries/webdriver/webdriver.js';
 
 const adUnitCode = 'adUnit-123';
 let sandbox;
