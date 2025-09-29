@@ -280,60 +280,7 @@ describe("seenthisBrandStories", function () {
   });
 
   describe("findAdWrapper", function () {
-    let originalFrameElement;
-
-    beforeEach(function () {
-      originalFrameElement = window.frameElement;
-    });
-
-    afterEach(function () {
-      // Restore original value, but handle case where it can't be set
-      try {
-        Object.defineProperty(window, "frameElement", {
-          value: originalFrameElement,
-          writable: true,
-          configurable: true,
-        });
-      } catch (e) {
-        // Browser doesn't allow setting frameElement
-      }
-    });
-
-    it("should return window.frameElement when in Google Ads iframe", function () {
-      const mockFrameElement = { name: "google_ads_iframe_test" };
-
-      // Mock window.frameElement
-      try {
-        Object.defineProperty(window, "frameElement", {
-          value: mockFrameElement,
-          writable: true,
-          configurable: true,
-        });
-      } catch (e) {
-        // Skip test if we can't mock frameElement in this environment
-        this.skip();
-        return;
-      }
-
-      const mockTarget = {};
-      const result = findAdWrapper(mockTarget);
-
-      expect(result).to.equal(mockFrameElement);
-    });
-
-    it("should return grandparent element when not in Google Ads iframe", function () {
-      try {
-        Object.defineProperty(window, "frameElement", {
-          value: null,
-          writable: true,
-          configurable: true,
-        });
-      } catch (e) {
-        // Skip test if we can't mock frameElement in this environment
-        this.skip();
-        return;
-      }
-
+    it("should return grandparent element", function () {
       const grandParent = {};
       const parent = { parentElement: grandParent };
       const target = { parentElement: parent };
@@ -341,47 +288,6 @@ describe("seenthisBrandStories", function () {
       const result = findAdWrapper(target);
 
       expect(result).to.equal(grandParent);
-    });
-
-    it("should return grandparent when frame name does not match Google Ads pattern", function () {
-      const mockFrameElement = { name: "other_iframe_test" };
-
-      try {
-        Object.defineProperty(window, "frameElement", {
-          value: mockFrameElement,
-          writable: true,
-          configurable: true,
-        });
-      } catch (e) {
-        // Skip test if we can't mock frameElement in this environment
-        this.skip();
-        return;
-      }
-
-      const grandParent = {};
-      const parent = { parentElement: grandParent };
-      const target = { parentElement: parent };
-
-      const result = findAdWrapper(target);
-
-      expect(result).to.equal(grandParent);
-    });
-
-    it("should handle null target gracefully", function () {
-      try {
-        Object.defineProperty(window, "frameElement", {
-          value: null,
-          writable: true,
-          configurable: true,
-        });
-      } catch (e) {
-        // Skip test if we can't mock frameElement in this environment
-        this.skip();
-        return;
-      }
-
-      const result = findAdWrapper(null);
-      expect(result).to.be.undefined;
     });
   });
 
@@ -400,7 +306,6 @@ describe("seenthisBrandStories", function () {
 
     it("should call addStyleToSingleChildAncestors with width 100% when adWrapper exists", function () {
       const mockTarget = {};
-      const mockAdWrapper = {};
 
       expect(() => applyFullWidth(mockTarget)).to.not.throw();
     });

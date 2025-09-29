@@ -60,14 +60,7 @@ export function addStyleToSingleChildAncestors(
 }
 
 export function findAdWrapper(target: HTMLDivElement) {
-  if (
-    window?.frameElement &&
-    /^google_ads_iframe_/.test((window?.frameElement as HTMLIFrameElement).name)
-  ) {
-    return window.frameElement as HTMLIFrameElement;
-  } else {
-    return target?.parentElement?.parentElement;
-  }
+  return target?.parentElement?.parentElement;
 }
 
 export function applyFullWidth(target: HTMLDivElement) {
