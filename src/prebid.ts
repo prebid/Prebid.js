@@ -146,11 +146,11 @@ export function syncOrtb2(adUnit, mediaType) {
     const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`);
     const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`);
 
-    if (mediaTypesFieldValue == undefined && ortbFieldValue == undefined) {
+    if (mediaTypesFieldValue === undefined && ortbFieldValue === undefined) {
       // omitting the params if it's not defined on either of sides
-    } else if (mediaTypesFieldValue == undefined) {
+    } else if (mediaTypesFieldValue === undefined) {
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
-    } else if (ortbFieldValue == undefined) {
+    } else if (ortbFieldValue === undefined) {
       deepSetValue(adUnit, `ortb2Imp.${mediaType}.${key}`, mediaTypesFieldValue);
     } else {
       logWarn(`adUnit ${adUnit.code}: specifies conflicting ortb2Imp.${mediaType}.${key} and mediaTypes.${mediaType}.${key}, the latter will be ignored`, adUnit);

@@ -198,7 +198,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    if (typeof serverResponse?.body == 'undefined') {
+    if (typeof serverResponse?.body === 'undefined') {
       return [];
     }
 

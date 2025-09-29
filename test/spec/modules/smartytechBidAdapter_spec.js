@@ -146,7 +146,7 @@ function mockBidRequestListData(mediaType, size, customSizes) {
       endpointId: id
     }
 
-    if (mediaType == 'video') {
+    if (mediaType === 'video') {
       mediaTypes = {
         video: {
           playerSize: mockRandomSizeArray(1),
