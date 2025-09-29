@@ -303,10 +303,7 @@ export const spec = {
       queryParamsAndValues.push('gdpr=' + flag);
     }
 
-    const { innerWidth, innerHeight, screen } = getWinDimensions();
-    if (screen.availHeight) {
-      queryParamsAndValues.push('screen=' + screen.availWidth + 'x' + screen.availHeight);
-    }
+    const { innerWidth, innerHeight } = getWinDimensions();
 
     if (innerWidth) {
       queryParamsAndValues.push('viewport=' + innerWidth + 'x' + innerHeight);
