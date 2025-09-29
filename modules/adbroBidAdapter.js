@@ -5,7 +5,7 @@ import { isArray, isInteger, triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'adbro';
 const GVLID = 1316;
-const ENDPOINT_URL = 'https://jp.bidbro.me/pbjs';
+const ENDPOINT_URL = 'https://prebid.adbro.me/pbjs';
 
 const converter = ortbConverter({
   context: {

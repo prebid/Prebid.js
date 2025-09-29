@@ -67,7 +67,7 @@ describe('adbroBidAdapter', function () {
       expect(serverRequest.method).to.exist;
       expect(serverRequest.method).to.equal('POST');
       expect(serverRequest.url).to.exist;
-      expect(serverRequest.url).to.equal('https://jp.bidbro.me/pbjs?placementId=1234');
+      expect(serverRequest.url).to.equal('https://prebid.adbro.me/pbjs?placementId=1234');
       expect(serverRequest.data).to.exist;
     });
 
@@ -105,9 +105,9 @@ describe('adbroBidAdapter', function () {
         id: utils.getUniqueIdentifierStr(),
         impid: validBid.bidId,
         price: 0.1,
-        burl: 'https://jp.bidbro.me/notice?type=Bill&track=QURCUk8&price=${AUCTION_PRICE}&f=',
-        nurl: 'https://jp.bidbro.me/notice?type=Win&track=QURCUk8&price=${AUCTION_PRICE}',
-        lurl: 'https://jp.bidbro.me/notice?type=Loss&track=QURCUk8&price=${AUCTION_PRICE}',
+        burl: 'https://prebid.adbro.me/notice?type=Bill&track=QURCUk8&price=${AUCTION_PRICE}&f=',
+        nurl: 'https://prebid.adbro.me/notice?type=Win&track=QURCUk8&price=${AUCTION_PRICE}',
+        lurl: 'https://prebid.adbro.me/notice?type=Loss&track=QURCUk8&price=${AUCTION_PRICE}',
         adm: '<script type="application/javascript">console.log("ADBRO")</script>',
         adomain: ['adbro.com'],
         crid: 'pbjs-1234',
