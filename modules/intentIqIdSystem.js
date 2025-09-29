@@ -192,7 +192,8 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
  * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
  * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
-export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
+export function setGamReporting(gamObjectReference, gamParameterName, userGroup, isBlacklisted = false) {
+  if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     gamObjectReference.cmd.push(() => {
       gamObjectReference
@@ -323,7 +324,12 @@ export const intentIqIdSubmodule = {
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
-    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group);
+    const currentBrowserLowerCase = detectBrowser();
+    const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
+    const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
+    let newUser = false;
+
+    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group, isBlacklisted);
 
     if (groupChanged) groupChanged(firstPartyData?.group || NOT_YET_DEFINED);
 
@@ -331,10 +337,6 @@ export const intentIqIdSubmodule = {
       firePartnerCallback();
     }, configParams.timeoutInMillis || 500
     );
-
-    const currentBrowserLowerCase = detectBrowser();
-    const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
-    let newUser = false;
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
@@ -451,7 +453,7 @@ export const intentIqIdSubmodule = {
     }
 
     // Check if current browser is in blacklist
-    if (browserBlackList?.includes(currentBrowserLowerCase)) {
+    if (isBlacklisted) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
 
