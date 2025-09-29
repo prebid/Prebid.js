@@ -8,14 +8,9 @@ const winDimensions = new CachedApiWrapper(
   {
     innerHeight: true,
     innerWidth: true,
-    outerWidth: true,
-    outerHeight: true,
     screen: {
       width: true,
       height: true,
-      availWidth: true,
-      availHeight: true,
-      colorDepth: true,
     },
     visualViewport: {
       width: true,
