@@ -6,6 +6,7 @@ import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import * as webdriver from '../../../libraries/webdriver/webdriver.js';
 
 describe('Yandex adapter', function () {
   let sandbox;
@@ -266,6 +267,14 @@ describe('Yandex adapter', function () {
       const requests = spec.buildRequests([getBidRequest()], bidderRequest);
 
       expect(requests[0].data.site).to.deep.equal(expected.site);
+    });
+
+    it('should include webdriver flag when available', function () {
+      sandbox.stub(webdriver, 'isWebdriverEnabled').returns(true);
+
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+
+      expect(requests[0].data.device.ext.webdriver).to.be.true;
     });
 
     describe('banner', () => {
