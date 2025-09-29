@@ -7,6 +7,7 @@ import {
   deepSetValue,
   isStr,
   isArray,
+  getWinDimensions
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -22,7 +23,7 @@ export const spec = {
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: (bid) =>
-    !!(bid && bid.params && bid.params.zone && bid.bidder == BIDDER_CODE),
+    !!(bid && bid.params && bid.params.zone && bid.bidder === BIDDER_CODE),
 
   buildRequests: (bidRequests, bidderRequest) => {
     const currencyObj = config.getConfig('currency');
@@ -42,9 +43,9 @@ export const spec = {
         ua: navigator.userAgent,
         js: 1,
         dnt:
-          navigator.doNotTrack == 'yes' ||
-          navigator.doNotTrack == '1' ||
-          navigator.msDoNotTrack == '1'
+          navigator.doNotTrack === 'yes' ||
+          navigator.doNotTrack === '1' ||
+          navigator.msDoNotTrack === '1'
             ? 1
             : 0,
         h: screen.height,
@@ -219,8 +220,9 @@ function impression(slot, currency) {
     imp.video = deepAccess(slot, 'mediaTypes.video');
   }
   imp.ext = slot.params || {};
-  imp.ext.ww = window.innerWidth || '';
-  imp.ext.wh = window.innerHeight || '';
+  const { innerWidth, innerHeight } = getWinDimensions();
+  imp.ext.ww = innerWidth || '';
+  imp.ext.wh = innerHeight || '';
   return imp;
 }
 
