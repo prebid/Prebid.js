@@ -50,6 +50,8 @@ declare module './events' {
      * the time it was received.
      */
     [EVENTS.EXPIRED_RENDER]: [Bid];
+
+    [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
   }
 }
 
@@ -127,6 +129,24 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
 
+/**
+ * Data for the BROWSER_INTERVENTION event.
+ */
+type BrowserInterventionData = {
+  bid: Bid;
+  adId: string;
+  intervention: any;
+}
+/**
+ * Emit the BROWSER_INTERVENTION event.
+ * This event is fired when the browser blocks an ad from rendering, typically due to ad blocking software or browser security features.
+ */
+export function emitBrowserIntervention(data: BrowserInterventionData) {
+  const { bid, intervention } = data;
+  adapterManager.callOnInterventionBidder(bid.adapterCode || bid.bidder, bid, intervention);
+  events.emit(EVENTS.BROWSER_INTERVENTION, data);
+}
+
 export function handleCreativeEvent(data, bidResponse) {
   switch (data.event) {
     case EVENTS.AD_RENDER_FAILED:
@@ -142,6 +162,13 @@ export function handleCreativeEvent(data, bidResponse) {
         doc: null,
         bid: bidResponse,
         id: bidResponse.adId
+      });
+      break;
+    case EVENTS.BROWSER_INTERVENTION:
+      emitBrowserIntervention({
+        bid: bidResponse,
+        adId: bidResponse.adId,
+        intervention: data.intervention
       });
       break;
     default:
@@ -323,25 +350,20 @@ export function renderAdDirect(doc, adId, options) {
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
+
   function renderFn(adData) {
-    if (adData.ad) {
-      doc.write(adData.ad);
-      doc.close();
-      emitAdRenderSucceeded({doc, bid, id: bid.adId});
-    } else {
-      getCreativeRenderer(bid)
-        .then(render => render(adData, {
-          sendMessage: (type, data) => messageHandler(type, data, bid),
-          mkFrame: createIframe,
-        }, doc.defaultView))
-        .then(
-          () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
-          (e) => {
-            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
-            e?.stack && logError(e);
-          }
-        );
-    }
+    getCreativeRenderer(bid)
+      .then(render => render(adData, {
+        sendMessage: (type, data) => messageHandler(type, data, bid),
+        mkFrame: createIframe,
+      }, doc.defaultView))
+      .then(
+        () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
+        (e) => {
+          fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
+          e?.stack && logError(e);
+        }
+      );
     // TODO: this is almost certainly the wrong way to do this
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
     insertElement(creativeComment, doc, 'html');

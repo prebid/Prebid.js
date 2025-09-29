@@ -28,15 +28,15 @@ export const spec = {
   pageID: Math.floor(Math.random() * 10e6),
 
   getMediaType: function (bidRequest) {
-    if (bidRequest == null) return BANNER;
+    if (!bidRequest) return BANNER;
     return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
   },
 
   getPlayerSize: function (bidRequest) {
     var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-    if (playerSize == null) return [640, 440];
+    if (!playerSize) return [640, 440];
     if (playerSize[0] != null) playerSize = playerSize[0];
-    if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
+    if (!playerSize || playerSize[0] == null || playerSize[1] == null) return [640, 440];
     return playerSize;
   },
 
@@ -51,13 +51,13 @@ export const spec = {
       var bidRequest = validBidRequests[i];
       const referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
       const e = utils.getBidIdParameter('endpoint', bidRequest.params);
-      const ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
+      const ENDPOINT = e === 'dev' ? ENDPOINT_DEV : e === 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
       const url = new URL(ENDPOINT);
       const body = {};
       const mediaType = spec.getMediaType(bidRequest);
       const playerSize = spec.getPlayerSize(bidRequest);
       url.searchParams.set('media', mediaType);
-      if (mediaType == VIDEO) {
+      if (mediaType === VIDEO) {
         url.searchParams.set('fv', 0);
         if (playerSize) {
           url.searchParams.set('w', playerSize?.[0]);
@@ -109,9 +109,9 @@ export const spec = {
       if (adUnitCode) {
         body.adUnitCode = adUnitCode;
       }
-      if (mediaType == VIDEO) {
+      if (mediaType === VIDEO) {
         body.video = utils.deepAccess(bidRequest, 'mediaTypes.video');
-      } else if (mediaType == BANNER) {
+      } else if (mediaType === BANNER) {
         body.banner = utils.deepAccess(bidRequest, 'mediaTypes.banner');
       }
 
@@ -171,11 +171,11 @@ export const spec = {
         bidResponse.dealId = rawBid.dealId;
       }
 
-      if (mediaType == BANNER && rawBid.code) {
+      if (mediaType === BANNER && rawBid.code) {
         bidResponse.ad = rawBid.code + (rawBid.px_cr ? "\n<img width=0 height=0 src='" + rawBid.px_cr + "' />" : '');
-      } else if (mediaType == VIDEO && rawBid.creativemacros && rawBid.creativemacros.HTML5VID_VASTSTRING) {
+      } else if (mediaType === VIDEO && rawBid.creativemacros && rawBid.creativemacros.HTML5VID_VASTSTRING) {
         var playerSize = spec.getPlayerSize(bidRequest);
-        if (playerSize != null) {
+        if (playerSize !== null && playerSize !== undefined) {
           bidResponse.width = playerSize[0];
           bidResponse.height = playerSize[1];
         }
@@ -193,12 +193,12 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
-    if (serverResponses.length == 0 || !serverResponses[0].body) return syncs;
+    if (serverResponses.length === 0 || !serverResponses[0].body) return syncs;
     var usersyncs = serverResponses[0].body[0].syncs;
     if (!usersyncs || usersyncs.length < 0) return syncs;
     for (var i = 0; i < usersyncs.length; i++) {
       var us = usersyncs[i];
-      if ((us.type === 'image' && syncOptions.pixelEnabled) || (us.type == 'iframe' && syncOptions.iframeEnabled)) {
+      if ((us.type === 'image' && syncOptions.pixelEnabled) || (us.type === 'iframe' && syncOptions.iframeEnabled)) {
         syncs.push(us);
       }
     }

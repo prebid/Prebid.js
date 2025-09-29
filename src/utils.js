@@ -8,6 +8,7 @@ import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
+export {getWinDimensions, resetWinDimensions, getScreenOrientation} from './utils/winDimensions.js';
 
 const consoleExists = Boolean(window.console);
 const consoleLogExists = Boolean(consoleExists && window.console.log);
@@ -16,7 +17,6 @@ const consoleWarnExists = Boolean(consoleExists && window.console.warn);
 const consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
-let windowDimensions;
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -27,54 +27,6 @@ function emitEvent(...args) {
   if (eventEmitter != null) {
     eventEmitter(...args);
   }
-}
-
-export const getWinDimensions = (function() {
-  let lastCheckTimestamp;
-  const CHECK_INTERVAL_MS = 20;
-  return () => {
-    if (!windowDimensions || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.resetWinDimensions();
-      lastCheckTimestamp = Date.now();
-    }
-    return windowDimensions;
-  }
-})();
-
-export function resetWinDimensions() {
-  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-
-  windowDimensions = {
-    screen: {
-      width: top.screen?.width,
-      height: top.screen?.height,
-      availWidth: top.screen?.availWidth,
-      availHeight: top.screen?.availHeight,
-      colorDepth: top.screen?.colorDepth,
-    },
-    innerHeight: top.innerHeight,
-    innerWidth: top.innerWidth,
-    outerWidth: top.outerWidth,
-    outerHeight: top.outerHeight,
-    visualViewport: {
-      height: top.visualViewport?.height,
-      width: top.visualViewport?.width,
-    },
-    document: {
-      documentElement: {
-        clientWidth: top.document?.documentElement?.clientWidth,
-        clientHeight: top.document?.documentElement?.clientHeight,
-        scrollTop: top.document?.documentElement?.scrollTop,
-        scrollLeft: top.document?.documentElement?.scrollLeft,
-      },
-      body: {
-        scrollTop: document.body?.scrollTop,
-        scrollLeft: document.body?.scrollLeft,
-        clientWidth: document.body?.clientWidth,
-        clientHeight: document.body?.clientHeight,
-      },
-    }
-  };
 }
 
 // this allows stubbing of utility functions that are used internally by other utility functions
@@ -96,7 +48,6 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
-  resetWinDimensions
 };
 
 const prebidInternal = {};
