@@ -151,7 +151,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: payload,
+      data: payload
     };
   },
 
