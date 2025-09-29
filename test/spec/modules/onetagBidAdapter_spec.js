@@ -491,7 +491,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
@@ -502,10 +502,6 @@ describe('onetag', function () {
       expect(data.sWidth).to.be.a('number');
       expect(data.wWidth).to.be.a('number');
       expect(data.wHeight).to.be.a('number');
-      expect(data.oHeight).to.be.a('number');
-      expect(data.oWidth).to.be.a('number');
-      expect(data.aWidth).to.be.a('number');
-      expect(data.aHeight).to.be.a('number');
       expect(data.sLeft).to.be.a('number');
       expect(data.sTop).to.be.a('number');
       expect(data.hLength).to.be.a('number');
