@@ -123,42 +123,42 @@ describe('AdoceanAdapter', function () {
   describe('buildRequests', function () {
     const bidRequests = [
       {
-        'bidder': 'adocean',
-        'params': {
-          'masterId': 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
-          'slaveId': 'adoceanmyaozpniqismex',
-          'emiter': 'myao.adocean.pl'
+        bidder: 'adocean',
+        params: {
+          masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
+          slaveId: 'adoceanmyaozpniqismex',
+          emiter: 'myao.adocean.pl'
         },
-        'adUnitCode': 'adunit-code',
-        'mediaTypes': {
-          'banner': {
-            'sizes': [[300, 250], [300, 600]]
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
           }
         },
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
       },
       {
-        'bidder': 'adocean',
-        'params': {
-          'masterId': 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
-          'slaveId': 'adoceanmyaozpniqismex',
-          'emiter': 'myao.adocean.pl'
+        bidder: 'adocean',
+        params: {
+          masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
+          slaveId: 'adoceanmyaozpniqismex',
+          emiter: 'myao.adocean.pl'
         },
-        'adUnitCode': 'adunit-code',
-        'mediaTypes': {
-          'banner': {
-            'sizes': [[300, 200], [600, 250]]
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 200], [600, 250]]
           }
         },
-        'bidId': '30b31c1838de1f',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        bidId: '30b31c1838de1f',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
       }
     ];
     const schainExample = {
-      'schain': {
+      schain: {
         ver: '1.0',
         complete: 1,
         nodes: [
@@ -218,8 +218,17 @@ describe('AdoceanAdapter', function () {
       const differentSlavesBids = deepClone(bidRequests);
       differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
       requests = spec.buildRequests(differentSlavesBids, bidderRequest);
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.include('slaves=zpniqismex,wafpdwlrks');
+      expect(requests.length).to.equal(2);
+      let firstSlaveInExactlyOneUrl = false;
+      if (requests[0].url.includes('slaves=zpniqismex') ^ requests[1].url.includes('slaves=zpniqismex')) {
+        firstSlaveInExactlyOneUrl = true;
+      }
+      let secondSlaveInExactlyOneUrl = false;
+      if (requests[0].url.includes('slaves=wafpdwlrks') ^ requests[1].url.includes('slaves=wafpdwlrks')) {
+        secondSlaveInExactlyOneUrl = true;
+      }
+      expect(firstSlaveInExactlyOneUrl, 'First slave is present in exactly one url').to.be.true;
+      expect(secondSlaveInExactlyOneUrl, 'Second slave is present in exactly one url').to.be.true;
     });
 
     it('should attach schain parameter if available', function() {
@@ -230,6 +239,74 @@ describe('AdoceanAdapter', function () {
       requests = spec.buildRequests(bidsWithSchain, bidderRequest);
       expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001%21%2C2,1,BidRequest1,,,0')),
         `One of urls does not contain valid schain param: ${requests.map(e => e.url).join('\n')}`).to.be.true;
+    });
+
+    const videoInstreamBidRequests = [
+      {
+        bidder: 'adocean',
+        params: {
+          masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
+          slaveId: 'adoceanmyaozpniqismex',
+          emiter: 'myao.adocean.pl'
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          video: {
+            playerSize: [200, 200],
+            context: 'instream',
+            minduration: 10,
+            maxduration: 60,
+          }
+        },
+        bidId: '30b31c1838de1g',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a476',
+      }
+    ];
+    it('should build correct video instream request', function () {
+      const request = spec.buildRequests(videoInstreamBidRequests, bidderRequest)[0];
+      expect(request).to.exist;
+      expect(request.url).to.include('id=' + videoInstreamBidRequests[0].params.masterId);
+      expect(request.url).to.include('slaves=zpniqismex');
+      expect(request.url).to.include('spots=1');
+      expect(request.url).to.include('dur=60');
+      expect(request.url).to.include('maxdur=60');
+      expect(request.url).to.include('mindur=10');
+    });
+
+    const videoAdpodBidRequests = [
+      {
+        bidder: 'adocean',
+        params: {
+          masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
+          slaveId: 'adoceanmyaozpniqismex',
+          emiter: 'myao.adocean.pl'
+        },
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          video: {
+            playerSize: [200, 200],
+            context: 'adpod',
+            adPodDurationSec: 300,
+            durationRangeSec: [15, 30],
+            requireExactDuration: false
+          }
+        },
+        bidId: '30b31c1838de1h',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a476',
+      }
+    ];
+
+    it('should build correct video adpod request', function () {
+      const request = spec.buildRequests(videoAdpodBidRequests, bidderRequest)[0];
+      expect(request).to.exist;
+      expect(request.url).to.include('id=' + videoAdpodBidRequests[0].params.masterId);
+      expect(request.url).to.include('slaves=zpniqismex');
+      expect(request.url).to.include('spots=20'); // 300 / 15 = 20
+      expect(request.url).to.include('dur=300');
+      expect(request.url).to.include('maxdur=30');
+      expect(request.url).to.not.include('mindur=');
     });
   });
 

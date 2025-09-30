@@ -18,64 +18,57 @@ function buildEndpointUrl(emiter, payloadMap) {
   return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
-function buildRequest(masterBidRequests, masterId, gdprConsent) {
-  let emiter;
+function buildRequest(bid, gdprConsent) {
+  const emiter = bid.params.emiter;
+  const masterId = bid.params.masterId;
+  const slaveId = bid.params.slaveId;
   const payload = {
     id: masterId,
-    slaves: []
+    slaves: ""
   };
   if (gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
-  const anyKey = Object.keys(masterBidRequests)[0];
-  if (masterBidRequests[anyKey].schain) {
-    payload.schain = serializeSupplyChain(masterBidRequests[anyKey].schain);
+  if (bid.schain) {
+    payload.schain = serializeSupplyChain(bid.schain);
   }
 
-  const anyBid = masterBidRequests[anyKey];
-  if (anyBid && anyBid.userId && anyBid.userId.gemiusId) {
-    payload.aouserid = anyBid.userId.gemiusId;
+  if (bid.userId && bid.userId.gemiusId) {
+    payload.aouserid = bid.userId.gemiusId;
   }
 
   const bidIdMap = {};
   const uniquePartLength = 10;
-  _each(masterBidRequests, function(bid, slaveId) {
-    if (!emiter) {
-      emiter = bid.params.emiter;
-    }
 
-    const rawSlaveId = bid.params.slaveId.replace('adocean', '');
-    payload.slaves.push(rawSlaveId.slice(-uniquePartLength));
+  const rawSlaveId = bid.params.slaveId.replace('adocean', '');
+  payload.slaves = rawSlaveId.slice(-uniquePartLength);
 
-    bidIdMap[slaveId] = bid.bidId;
+  bidIdMap[slaveId] = bid.bidId;
 
-    if (bid.mediaTypes.video) {
-      if (bid.mediaTypes.video.context === 'instream') {
-        if (bid.mediaTypes.video.maxduration) {
-          payload.dur = bid.mediaTypes.video.maxduration;
-          payload.maxdur = bid.mediaTypes.video.maxduration;
-        }
-        if (bid.mediaTypes.video.minduration) {
-          payload.mindur = bid.mediaTypes.video.minduration;
-        }
-        payload.spots = 1;
+  if (bid.mediaTypes.video) {
+    if (bid.mediaTypes.video.context === 'instream') {
+      if (bid.mediaTypes.video.maxduration) {
+        payload.dur = bid.mediaTypes.video.maxduration;
+        payload.maxdur = bid.mediaTypes.video.maxduration;
       }
-      if (bid.mediaTypes.video.context === 'adpod') {
-        const durationRangeSec = bid.mediaTypes.video.durationRangeSec;
-        if (!bid.mediaTypes.video.adPodDurationSec || !isArray(durationRangeSec) || durationRangeSec.length === 0) {
-          return;
-        }
-        const spots = getAdPodSpots(bid.mediaTypes.video.adPodDurationSec, bid.mediaTypes.video.durationRangeSec);
-        const maxDuration = Math.max(...durationRangeSec);
-        payload.dur = bid.mediaTypes.video.adPodDurationSec;
-        payload.maxdur = maxDuration;
-        payload.spots = spots;
+      if (bid.mediaTypes.video.minduration) {
+        payload.mindur = bid.mediaTypes.video.minduration;
       }
+      payload.spots = 1;
     }
-  });
-
-  payload.slaves = payload.slaves.join(',');
+    if (bid.mediaTypes.video.context === 'adpod') {
+      const durationRangeSec = bid.mediaTypes.video.durationRangeSec;
+      if (!bid.mediaTypes.video.adPodDurationSec || !isArray(durationRangeSec) || durationRangeSec.length === 0) {
+        return;
+      }
+      const spots = getAdPodSpots(bid.mediaTypes.video.adPodDurationSec, bid.mediaTypes.video.durationRangeSec);
+      const maxDuration = Math.max(...durationRangeSec);
+      payload.dur = bid.mediaTypes.video.adPodDurationSec;
+      payload.maxdur = maxDuration;
+      payload.spots = spots;
+    }
+  }
 
   return {
     method: 'GET',
@@ -113,20 +106,6 @@ function serializeSupplyChain(schain) {
   });
 
   return header + serializedNodes.join('!');
-}
-
-function assignToMaster(bidRequest, bidRequestsByMaster) {
-  const masterId = bidRequest.params.masterId;
-  const slaveId = bidRequest.params.slaveId;
-  const masterBidRequests = bidRequestsByMaster[masterId] = bidRequestsByMaster[masterId] || [{}];
-  let i = 0;
-  while (masterBidRequests[i] && masterBidRequests[i][slaveId]) {
-    i++;
-  }
-  if (!masterBidRequests[i]) {
-    masterBidRequests[i] = {};
-  }
-  masterBidRequests[i][slaveId] = bidRequest;
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
@@ -187,17 +166,10 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const bidRequestsByMaster = {};
     let requests = [];
 
     _each(validBidRequests, function(bidRequest) {
-      assignToMaster(bidRequest, bidRequestsByMaster);
-    });
-
-    _each(bidRequestsByMaster, function(masterRequests, masterId) {
-      _each(masterRequests, function(instanceRequests) {
-        requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
-      });
+      requests.push(buildRequest(bidRequest, bidderRequest.gdprConsent));
     });
 
     return requests;
