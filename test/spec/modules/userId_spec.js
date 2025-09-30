@@ -2480,15 +2480,28 @@ describe('User ID', function () {
   });
 
   describe('handles config with ESP configuration in user sync object', function() {
+    let ess, origEss;
+    before(() => {
+      mockGpt.reset();
+    })
+    beforeEach(() => {
+      ess = {
+        push: sinon.stub()
+      }
+      window.googletag.secureSignalProviders = ess;
+    });
+
+    afterEach(() => {
+      mockGpt.reset();
+    })
+
     describe('Call registerSignalSources to register signal sources with gtag', function () {
       it('pbjs.registerSignalSources should be defined', () => {
         expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
       });
 
-      it('does not add duplicate secureSignalProviders', function () {
+      it('passes encrypted signal sources to GPT', function () {
         const clock = sinon.useFakeTimers();
-        mockGpt.reset();
-        window.googletag.secureSignalProviders = [];
         init(config);
         config.setConfig({
           userSync: {
@@ -2499,11 +2512,10 @@ describe('User ID', function () {
           }
         });
         getGlobal().registerSignalSources();
-        clock.tick(0);
-        getGlobal().registerSignalSources();
-        clock.tick(0);
-        expect(window.googletag.secureSignalProviders.length).to.equal(1);
-        clock.restore();
+        clock.tick(1);
+        sinon.assert.calledWith(window.googletag.secureSignalProviders.push, sinon.match({
+          id: 'pubcid.org'
+        }))
       });
     })
 
