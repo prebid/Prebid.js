@@ -108,7 +108,7 @@ export const spec = {
         logError(`${vf} :no customData[0].targeting`, adUnitCode);
         return false;
       }
-      if (typeof bid.params.customData[0]['targeting'] != 'object') {
+      if (typeof bid.params.customData[0]['targeting'] !== 'object') {
         logError(`${vf} : customData[0].targeting is not an Object`, adUnitCode);
         return false;
       }
@@ -189,7 +189,7 @@ export const spec = {
         }
         if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO)) {
           logInfo('openrtb 2.5 compliant video');
-          if (typeof ozoneBidRequest.mediaTypes[VIDEO] == 'object') {
+          if (typeof ozoneBidRequest.mediaTypes[VIDEO] === 'object') {
             const childConfig = deepAccess(ozoneBidRequest, 'params.video', {});
             obj.video = this.unpackVideoConfigIntoIABformat(ozoneBidRequest.mediaTypes[VIDEO], childConfig);
             obj.video = this.addVideoDefaults(obj.video, ozoneBidRequest.mediaTypes[VIDEO], childConfig);
@@ -453,7 +453,7 @@ export const spec = {
     let labels;
     let enhancedAdserverTargeting = config.getConfig('ozone.enhancedAdserverTargeting');
     logInfo('enhancedAdserverTargeting', enhancedAdserverTargeting);
-    if (typeof enhancedAdserverTargeting == 'undefined') {
+    if (typeof enhancedAdserverTargeting === 'undefined') {
       enhancedAdserverTargeting = true;
     }
     logInfo('enhancedAdserverTargeting', enhancedAdserverTargeting);
@@ -819,17 +819,17 @@ export const spec = {
       return node;
     };
     const isEmpty = v =>
-        v == null ||
+      v == null ||
         (Array.isArray(v) ? v.length === 0
-            : isPlainObj(v) ? Object.keys(v).length === 0 : false);
+          : isPlainObj(v) ? Object.keys(v).length === 0 : false);
     function prune(node, inExt, depth) {
       if (node == null) return undefined;
       if (typeof node !== 'object') return inExt ? node : undefined;
       if (inExt) return deepClone(node);
       if (Array.isArray(node)) {
         const kept = node
-        .map(el => prune(el, false, depth))
-        .filter(el => el !== undefined && !isEmpty(el));
+          .map(el => prune(el, false, depth))
+          .filter(el => el !== undefined && !isEmpty(el));
         return kept.length ? kept : undefined;
       }
       const out = {};
