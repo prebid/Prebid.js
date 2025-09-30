@@ -5,13 +5,15 @@
  * real-time contextual signals for programmatic advertising optimization.
  */
 
+import { auctionManager } from '../src/auctionManager.js';
 import { submodule } from '../src/hook.js';
-import { logMessage, logError, logWarn, deepClone, isEmpty, getBidderCodes } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { logMessage, logError, logWarn, deepClone, isEmpty, getBidderCodes, mergeDeep } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import type { RtdProviderSpec } from './rtdModule/spec.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
+import type { ORTBFragments } from '../src/types/common.d.ts';
 
 declare module './rtdModule/spec' {
   interface ProviderConfig {
@@ -180,7 +182,7 @@ function getCachedData(cacheKey: string): AEESignals | null {
   const cached = responseCache.get(cacheKey);
   if (cached) {
     const now = Date.now();
-    if (now - cached.timestamp < (moduleConfig.cacheTtl || DEFAULT_CACHE_TTL)) {
+    if (now - cached.timestamp < moduleConfig.cacheTtl) {
       logMessage('Scope3 RTD: Using cached data for key', cacheKey);
       return cached.data;
     } else {
@@ -205,9 +207,8 @@ function setCachedData(cacheKey: string, data: AEESignals): void {
 
   // Clean up old cache entries
   const now = Date.now();
-  const ttl = moduleConfig.cacheTtl || DEFAULT_CACHE_TTL;
   responseCache.forEach((entry, key) => {
-    if (now - entry.timestamp > ttl) {
+    if (now - entry.timestamp > moduleConfig.cacheTtl) {
       responseCache.delete(key);
     }
   });
@@ -391,7 +392,7 @@ export const scope3SubModule: RtdProviderSpec<'scope3'> = {
       const payload = preparePayload(ortb2Data, reqBidsConfigObj);
 
       // Make API request
-      ajax(
+      ajaxBuilder(moduleConfig.timeout)(
         moduleConfig.endpoint!,
         {
           success: (response: string) => {
@@ -429,7 +430,54 @@ export const scope3SubModule: RtdProviderSpec<'scope3'> = {
       logError('Scope3 RTD: Error in getBidRequestData', e);
       callback();
     }
-  }
+  },
+
+  getTargetingData(adUnits, config, consent, auction) {
+    const targetingData = {};
+
+    const ortb: ORTBFragments = auctionManager.index
+      .getAuction(auction)
+      .getFPD().global;
+    const cacheKey = generateCacheKey(ortb);
+    const cachedData = getCachedData(cacheKey);
+
+    if (!cachedData) {
+      return targetingData;
+    }
+
+    const mappedCachedData = {};
+    if (cachedData.include) {
+      mappedCachedData[moduleConfig.includeKey] = cachedData.include;
+    }
+    if (cachedData.exclude) {
+      mappedCachedData[moduleConfig.excludeKey] = cachedData.exclude;
+    }
+    if (cachedData.macro) {
+      mappedCachedData[moduleConfig.macroKey] = cachedData.macro;
+    }
+
+    // Merge the targeting data into the ad units
+    adUnits.forEach((adUnit) => {
+      targetingData[adUnit] = targetingData[adUnit] || {};
+      mergeDeep(targetingData[adUnit], mappedCachedData);
+    });
+
+    // If the key contains no data, remove it
+    Object.keys(targetingData).forEach((adUnit) => {
+      Object.keys(targetingData[adUnit]).forEach((key) => {
+        if (!targetingData[adUnit][key] || !targetingData[adUnit][key].length) {
+          delete targetingData[adUnit][key];
+        }
+      });
+
+      // If the ad unit contains no data, remove it
+      if (!Object.keys(targetingData[adUnit]).length) {
+        delete targetingData[adUnit];
+      }
+    });
+
+    return targetingData;
+  },
 };
 
 // Register the submodule
