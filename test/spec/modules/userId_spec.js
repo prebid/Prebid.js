@@ -2480,15 +2480,13 @@ describe('User ID', function () {
   });
 
   describe('handles config with ESP configuration in user sync object', function() {
-    let ess, origEss;
     before(() => {
       mockGpt.reset();
     })
     beforeEach(() => {
-      ess = {
+      window.googletag.secureSignalProviders = {
         push: sinon.stub()
-      }
-      window.googletag.secureSignalProviders = ess;
+      };
     });
 
     afterEach(() => {
