@@ -264,7 +264,7 @@ const converter = ortbConverter({
 
     if (FEATURES.NATIVE) {
       // what else besides trk.js?
-    
+
       // TODO handle native trk.js dom_id replacement if needed...just need to for impbus to add trk.js in the bid
       // old code for reference:
       // if (rtbBid.viewability?.config.includes('dom_id=%native_dom_id%')) {
