@@ -64,7 +64,7 @@ describe('EmpowerAdapter', function() {
     };
     bannerServerRequest = {
       method: 'POST',
-      url: 'http://localhost:8076/prebid',
+      url: 'https://bid.virgul.com/prebid',
       data: JSON.stringify({
         id: '678e3fbad375ce',
         imp: [
