@@ -53,11 +53,9 @@ import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://yandex.ru/ads/prebid';
 const EVENT_TRACKER_URL = 'https://yandex.ru/ads/trace';
-
 // We send data in 1% of cases
 const DEFAULT_SAMPLING_RATE = 0.01;
 const EVENT_LOG_RANDOM_NUMBER = Math.random();
-
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
 /**
