@@ -9,22 +9,50 @@ Maintainer: prebid@gemius.com
 AdOcean Bidder Adapter for Prebid.js.
 Banner and video formats are supported.
 
-# Test Parameters
+# Test Parameters Banner
 ```js
     var adUnits = [
-            {
-                code: 'test-div',
-                sizes: [[300, 250]],
-                bids: [
-                    {
-                        bidder: "adocean",
-                        params: {
-                            slaveId: 'TODO',
-                            masterId: 'TODO',
-                            emiter: 'myao.adocean.pl'
-                        }
+        {
+            code: 'test-div',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]]
+                }
+            },
+            bids: [
+                {
+                    bidder: "adocean",
+                    params: {
+                        slaveId: 'TODO',
+                        masterId: 'TODO',
+                        emiter: 'myao.adocean.pl'
                     }
-                ]
-            }
-       ];
+                }
+            ]
+        }
+    ];
+```
+# Test Parameters Video
+```js
+    var adUnits = [
+        {
+            code: 'test-div',
+            mediaTypes: {
+                video: {
+                    context: 'instream',
+                    playerSize: [300, 250]
+                }
+            },
+            bids: [
+                {
+                    bidder: "adocean",
+                    params: {
+                        slaveId: 'TODO',
+                        masterId: 'TODO',
+                        emiter: 'myao.adocean.pl'
+                    }
+                }
+            ]
+        }
+    ];
 ```
