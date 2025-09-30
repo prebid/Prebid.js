@@ -2499,7 +2499,7 @@ describe('User ID', function () {
       });
 
       it('passes encrypted signal sources to GPT', function () {
-        const clock = sinon.useFakeTimers();
+        const clock = sandbox.useFakeTimers();
         init(config);
         config.setConfig({
           userSync: {
