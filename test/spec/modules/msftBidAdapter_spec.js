@@ -6,12 +6,11 @@ import {
 } from 'modules/msftBidAdapter.js';
 import {
   deepClone
-} from '../../../src/utils';
+} from '../../../src/utils.js';
 
 const ENDPOINT_URL_NORMAL = 'https://ib.adnxs.com/openrtb2/prebidjs';
 
 describe('msftBidAdapter', function () {
-
   let baseBidRequests = {
     bidder: 'msft',
     adUnitCode: 'adunit-code',
@@ -87,7 +86,7 @@ describe('msftBidAdapter', function () {
     it('should build a basic banner request', function () {
       let testBidRequest = deepClone(baseBidRequests);
       testBidRequest.params = Object.assign({}, testBidRequest.params, {
-        banner_frameworks: [1,2,7],
+        banner_frameworks: [1, 2, 7],
         allow_smaller_sizes: false,
         use_pmt_rule: true,
         keywords: 'sports,music=rock',
@@ -127,7 +126,7 @@ describe('msftBidAdapter', function () {
         w: 300,
         h: 600
       }]);
-      expect(data.imp[0].banner.api).to.deep.equal([1,2,7]);
+      expect(data.imp[0].banner.api).to.deep.equal([1, 2, 7]);
       expect(data.imp[0].ext.appnexus.placement_id).to.equal('12345');
       expect(data.imp[0].ext.appnexus.allow_smaller_sizes).to.equal(false);
       expect(data.imp[0].ext.appnexus.use_pmt_rule).to.equal(true);
