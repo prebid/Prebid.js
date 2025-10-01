@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, edited, reopened]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   assign_reviewers:
     runs-on: ubuntu-latest
