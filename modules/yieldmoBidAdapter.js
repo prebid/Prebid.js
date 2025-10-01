@@ -132,7 +132,7 @@ export const spec = {
         }
         const tdid = getId(request, 'tdid');
         if (tdid) {
-          serverRequest.tdid = tdid;
+          serverRequest.tdid = (typeof tdid === 'object' && tdid !== null) ? tdid.id : tdid;
         }
         const criteoId = getId(request, 'criteoId');
         if (criteoId) {
