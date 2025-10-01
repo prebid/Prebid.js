@@ -214,21 +214,15 @@ describe('AdoceanAdapter', function () {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.include('slaves=zpniqismex');
       expect(requests[1].url).to.include('slaves=zpniqismex');
+      expect(requests[0].url).to.include('aosize=300x250%2C300x600');
+      expect(requests[1].url).to.include('aosize=300x200%2C600x250');
 
       const differentSlavesBids = deepClone(bidRequests);
       differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
       requests = spec.buildRequests(differentSlavesBids, bidderRequest);
       expect(requests.length).to.equal(2);
-      let firstSlaveInExactlyOneUrl = false;
-      if (requests[0].url.includes('slaves=zpniqismex') ^ requests[1].url.includes('slaves=zpniqismex')) {
-        firstSlaveInExactlyOneUrl = true;
-      }
-      let secondSlaveInExactlyOneUrl = false;
-      if (requests[0].url.includes('slaves=wafpdwlrks') ^ requests[1].url.includes('slaves=wafpdwlrks')) {
-        secondSlaveInExactlyOneUrl = true;
-      }
-      expect(firstSlaveInExactlyOneUrl, 'First slave is present in exactly one url').to.be.true;
-      expect(secondSlaveInExactlyOneUrl, 'Second slave is present in exactly one url').to.be.true;
+      expect(requests[0].url).to.include('slaves=zpniqismex');
+      expect(requests[1].url).to.include('slaves=wafpdwlrks');
     });
 
     it('should attach schain parameter if available', function() {

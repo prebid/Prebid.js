@@ -1,4 +1,4 @@
-import { _each, isStr, isArray } from '../src/utils.js';
+import { _each, isStr, isArray, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -68,6 +68,8 @@ function buildRequest(bid, gdprConsent) {
       payload.maxdur = maxDuration;
       payload.spots = spots;
     }
+  } else if (bid.mediaTypes.banner) {
+    payload.aosize = parseSizesInput(bid.mediaTypes.banner.sizes).join(',');
   }
 
   return {
