@@ -219,7 +219,8 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   bidderRequestId: Identifier;
   adUnits: (SRC extends typeof S2S.SRC ? PBSAdUnit : AdUnit)[]
   src: SRC;
-  metrics: Metrics
+  metrics: Metrics,
+  tids: { [bidderCode: BidderCode]: string };
 }
 
 export type AliasBidderOptions = {
@@ -243,7 +244,7 @@ export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & 
   gvlid?: number | ((config: AnalyticsConfig<P>) => number);
 }
 
-function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
+function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, tids}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
     const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
     if (bidderCode == null && bids.length === 0 && (adUnit as PBSAdUnit).s2sBid != null) {
@@ -251,9 +252,12 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidde
     }
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
+        if (!tids.hasOwnProperty(adUnit.transactionId)) {
+          tids[adUnit.transactionId] = generateUUID();
+        }
         bid = Object.assign({}, bid,
-          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp)},
-          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES)
+          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp, {ext: {tid: tids[adUnit.transactionId]}})},
+          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES),
         );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
@@ -489,13 +493,30 @@ const adapterManager = {
     const ortb2 = ortb2Fragments.global || {};
     const bidderOrtb2 = ortb2Fragments.bidder || {};
 
+    const sourceTids: any = {};
+    const extTids: any = {};
+
+    function tidFor(tids, bidderCode, makeTid) {
+      const tid = tids.hasOwnProperty(bidderCode) ? tids[bidderCode] : makeTid();
+      if (bidderCode != null) {
+        tids[bidderCode] = tid;
+      }
+      return tid;
+    }
+
     function addOrtb2<T extends BidderRequest<any>>(bidderRequest: Partial<T>, s2sActivityParams?): T {
       const redact = dep.redact(
         s2sActivityParams != null
           ? s2sActivityParams
           : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
       );
-      const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+      const tid = tidFor(sourceTids, bidderRequest.bidderCode, generateUUID);
+      const fpd = Object.freeze(redact.ortb2(mergeDeep(
+        {},
+        ortb2,
+        bidderOrtb2[bidderRequest.bidderCode],
+        {source: {tid}}
+      )));
       bidderRequest.ortb2 = fpd;
       bidderRequest.bids = bidderRequest.bids.map((bid) => {
         bid.ortb2 = fpd;
@@ -513,6 +534,7 @@ const adapterManager = {
         const uniquePbsTid = generateUUID();
 
         (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
+          const tids = tidFor(extTids, bidderCode, () => ({}));
           const bidderRequestId = generateUUID();
           const metrics = auctionMetrics.fork();
           const bidderRequest = addOrtb2({
@@ -520,7 +542,15 @@ const adapterManager = {
             auctionId,
             bidderRequestId,
             uniquePbsTid,
-            bids: getBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics }),
+            bids: getBids({
+              bidderCode,
+              auctionId,
+              bidderRequestId,
+              'adUnits': deepClone(adUnitsS2SCopy),
+              src: S2S.SRC,
+              metrics,
+              tids
+            }),
             auctionStart: auctionStart,
             timeout: s2sConfig.timeout,
             src: S2S.SRC,
@@ -552,13 +582,22 @@ const adapterManager = {
     // client adapters
     const adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
     clientBidders.forEach(bidderCode => {
+      const tids = tidFor(extTids, bidderCode, () => ({}));
       const bidderRequestId = generateUUID();
       const metrics = auctionMetrics.fork();
       const bidderRequest = addOrtb2({
         bidderCode,
         auctionId,
         bidderRequestId,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy), src: 'client', metrics}),
+        bids: getBids({
+          bidderCode,
+          auctionId,
+          bidderRequestId,
+          'adUnits': deepClone(adUnitsClientCopy),
+          src: 'client',
+          metrics,
+          tids
+        }),
         auctionStart: auctionStart,
         timeout: cbTimeout,
         refererInfo,
@@ -745,7 +784,7 @@ const adapterManager = {
           const supportedMediaTypes = getSupportedMediaTypes(bidderCode);
           // Have kept old code to support backward compatibilitiy.
           // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
-          if (bidAdapter.constructor.prototype != Object.prototype) {
+          if (bidAdapter.constructor.prototype !== Object.prototype) {
             newAdapter = new bidAdapter.constructor();
             newAdapter.setBidderCode(alias);
           } else {
@@ -866,6 +905,10 @@ const adapterManager = {
   },
   callAdRenderSucceededBidder(bidder, bid) {
     tryCallBidderMethod(bidder, 'onAdRenderSucceeded', bid);
+  },
+  callOnInterventionBidder(bidder, bid, intervention) {
+    const param = { bid, intervention }
+    tryCallBidderMethod(bidder, 'onIntervention', param);
   },
   /**
    * Ask every adapter to delete PII.

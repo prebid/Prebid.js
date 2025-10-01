@@ -90,7 +90,7 @@ function checkConfigHasErrorsAndReport(submoduleConfig) {
 
   const READABLE_MODULE_NAME = 'Yandex ID module';
 
-  if (submoduleConfig.storage == null) {
+  if (submoduleConfig.storage === null || submoduleConfig.storage === undefined) {
     logError(`Misconfigured ${READABLE_MODULE_NAME}. "storage" is required.`);
     return true;
   }

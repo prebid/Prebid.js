@@ -167,7 +167,7 @@ function getUrlInfo(refererInfo) {
   if (!canonicalLink) {
     const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }

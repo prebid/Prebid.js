@@ -88,9 +88,9 @@ export const spec = {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
 
       // Add bidfloor to keyValues
-      const bidfloor = getBidFloor(currentBidRequest, config);
-      keyValues._fw_bidfloor = (bidfloor > 0) ? bidfloor : 0;
-      keyValues._fw_bidfloorcur = (bidfloor > 0) ? getFloorCurrency(config) : '';
+      const { floor, currency } = getBidFloor(currentBidRequest, config);
+      keyValues._fw_bidfloor = floor;
+      keyValues._fw_bidfloorcur = currency;
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -128,7 +128,14 @@ export const spec = {
       }
 
       // Add schain object
-      const schain = currentBidRequest.schain;
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
+      if (!schain) {
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+      }
+      if (!schain) {
+        schain = currentBidRequest.schain;
+      }
+
       if (schain) {
         try {
           keyValues.schain = JSON.stringify(schain);
@@ -179,7 +186,7 @@ export const spec = {
         let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
         const videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
 
-        if (currentBidRequest.params.format == 'inbanner') {
+        if (currentBidRequest.params.format === 'inbanner') {
           videoContext = 'In-Banner';
           videoPlacement = 2;
         }
@@ -273,7 +280,7 @@ export const spec = {
       playerSize = getBiggerSize(bidrequest.sizes);
     }
 
-    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
+    if (typeof serverResponse === 'object' && typeof serverResponse.body === 'string') {
       serverResponse = serverResponse.body;
     }
 
@@ -383,8 +390,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted == 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton == 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
 
   let playerParams = null;
   try {
@@ -454,7 +461,7 @@ export function formatAdHTML(bidrequest, size) {
 }
 
 function getSdkUrl(bidrequest) {
-  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() == 'stg';
+  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
   return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
@@ -467,7 +474,7 @@ function getSdkUrl(bidrequest) {
  * @returns {string} The SDK version to use, defaults to '7.10.0' if version parsing fails
  */
 export function getSDKVersion(bidRequest) {
-  const DEFAULT = '7.10.0';
+  const DEFAULT = '7.11.0';
 
   try {
     const paramVersion = getSdkVersionFromBidRequest(bidRequest);
@@ -523,25 +530,37 @@ function compareVersions(versionA, versionB) {
   return 0;
 };
 
-function getBidFloor(bid, config) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
+export function getBidFloor(bid, config) {
+  logInfo('PREBID -: getBidFloor called with:', bid);
+  let floor = deepAccess(bid, 'params.bidfloor', 0); // fallback bid params
+  let currency = deepAccess(bid, 'params.bidfloorcur', 'USD'); // fallback bid params
 
-  try {
-    const bidFloor = bid.getFloor({
-      currency: getFloorCurrency(config),
-      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (e) {
-    return -1;
-  }
-}
+  if (isFn(bid.getFloor)) {
+    logInfo('PREBID - : getFloor() present and use it to retrieve floor and currency.');
+    try {
+      const floorInfo = bid.getFloor({
+        currency: config.getConfig('floors.data.currency') || 'USD',
+        mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
+        size: '*',
+      }) || {};
 
-function getFloorCurrency(config) {
-  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+      // Use getFloor's results if valid
+      if (typeof floorInfo.floor === 'number') {
+        floor = floorInfo.floor;
+      }
+
+      if (floorInfo.currency) {
+        currency = floorInfo.currency;
+      }
+      logInfo('PREBID - : getFloor() returned floor:', floor, 'currency:', currency);
+    } catch (e) {
+      // fallback to static bid.params.bidfloor
+      floor = deepAccess(bid, 'params.bidfloor', 0);
+      currency = deepAccess(bid, 'params.bidfloorcur', 'USD');
+      logInfo('PREBID - : getFloor() exception, fallback to static bid.params.bidfloor:', floor, 'currency:', currency);
+    }
+  }
+  return { floor, currency };
 }
 
 function isValidUrl(str) {
@@ -662,13 +681,13 @@ function getValueFromKeyInImpressionNode(xmlNode, key) {
     let tempValue = '';
     queries.forEach(item => {
       const split = item.split('=');
-      if (split[0] == key) {
+      if (split[0] === key) {
         tempValue = split[1];
       }
-      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+      if (split[0] === 'reqType' && split[1] === 'AdsDisplayStarted') {
         isAdsDisplayStartedPresent = true;
       }
-      if (split[0] == 'rootViewKey') {
+      if (split[0] === 'rootViewKey') {
         isRootViewKeyPresent = true;
       }
     });

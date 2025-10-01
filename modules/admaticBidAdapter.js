@@ -334,7 +334,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  if (sizes === undefined) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
@@ -406,7 +406,7 @@ function _validateId(id) {
 }
 
 function _validateString(str) {
-  return (typeof str == 'string');
+  return (typeof str === 'string');
 }
 
 registerBidder(spec);
