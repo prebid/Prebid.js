@@ -752,6 +752,263 @@ describe('msftBidAdapter', function () {
       "headers": {}
     };
 
+    const videoOutstreamBidderRequest = {
+      "bidderCode": "msft",
+      "auctionId": null,
+      "bidderRequestId": "3348a473-ad23-4672-bd82-cb0625b1ccd5",
+      "bids": [{
+        "bidder": "msft",
+        "params": {
+          "placement_id": 33911093,
+          "video": {
+            "skippable": true
+          }
+        },
+        "ortb2Imp": {
+          "video": {
+            "mimes": [
+              "video/mp4"
+            ],
+            "protocols": [
+              2,
+              3,
+              5,
+              6,
+              7,
+              8
+            ],
+            "w": 640,
+            "h": 480,
+            "plcmt": 4
+          },
+          "ext": {
+            "data": {
+              "adserver": {
+                "name": "gam",
+                "adslot": "/19968336/prebid_outstream_adunit_1"
+              }
+            },
+            "gpid": "/19968336/prebid_outstream_adunit_1"
+          }
+        },
+        "mediaTypes": {
+          "video": {
+            "playerSize": [
+              [
+                640,
+                480
+              ]
+            ],
+            "context": "outstream",
+            "mimes": [
+              "video/mp4"
+            ],
+            "protocols": [
+              2,
+              3,
+              5,
+              6,
+              7,
+              8
+            ],
+            "plcmt": 4,
+            "w": 640,
+            "h": 480
+          }
+        },
+        "adUnitCode": "video1",
+        "transactionId": null,
+        "adUnitId": "202e3ff9-e9fc-4b91-84d8-c808e7f8f1b2",
+        "sizes": [
+          [
+            640,
+            480
+          ]
+        ],
+        "bidId": "29ffa2b1-821d-4542-b948-8533c1832a68",
+        "bidderRequestId": "3348a473-ad23-4672-bd82-cb0625b1ccd5",
+        "auctionId": null,
+        "src": "client",
+        "auctionsCount": 1,
+        "bidRequestsCount": 1,
+        "bidderRequestsCount": 1,
+        "bidderWinsCount": 0,
+        "deferBilling": false,
+        "ortb2": {
+          "site": {
+            "domain": "test.localhost:9999",
+            "publisher": {
+              "domain": "test.localhost:9999"
+            },
+            "page": "http://test.localhost:9999/integrationExamples/gpt/old/outstream.html?pbjs_debug=true"
+          },
+          "device": {
+            "w": 2560,
+            "h": 1440,
+            "dnt": 0,
+            "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+            "language": "en",
+            "ext": {
+              "vpw": 2560,
+              "vph": 815
+            },
+            "sua": {
+              "source": 1,
+              "platform": {
+                "brand": "macOS"
+              },
+              "browsers": [{
+                "brand": "Google Chrome",
+                "version": [
+                  "141"
+                ]
+              },
+              {
+                "brand": "Not?A_Brand",
+                "version": [
+                  "8"
+                ]
+              },
+              {
+                "brand": "Chromium",
+                "version": [
+                  "141"
+                ]
+              }
+              ],
+              "mobile": 0
+            }
+          },
+          "source": {}
+        }
+      }],
+      "auctionStart": 1759325217458,
+      "timeout": 3000,
+      "refererInfo": {
+        "reachedTop": true,
+        "isAmp": false,
+        "numIframes": 0,
+        "stack": [],
+        "topmostLocation": "http://test.localhost:9999/integrationExamples/gpt/old/outstream.html?pbjs_debug=true",
+        "location": "http://test.localhost:9999/integrationExamples/gpt/old/outstream.html?pbjs_debug=true",
+        "canonicalUrl": null,
+        "page": "http://test.localhost:9999/integrationExamples/gpt/old/outstream.html?pbjs_debug=true",
+        "domain": "test.localhost:9999",
+        "ref": null,
+        "legacy": {
+          "reachedTop": true,
+          "isAmp": false,
+          "numIframes": 0,
+          "stack": [],
+          "referer": "http://test.localhost:9999/integrationExamples/gpt/old/outstream.html?pbjs_debug=true",
+          "canonicalUrl": null
+        }
+      },
+      "ortb2": {
+        "site": {
+          "domain": "test.localhost:9999",
+          "publisher": {
+            "domain": "test.localhost:9999"
+          },
+          "page": "http://test.localhost:9999/integrationExamples/gpt/old/outstream.html?pbjs_debug=true"
+        },
+        "device": {
+          "w": 2560,
+          "h": 1440,
+          "dnt": 0,
+          "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+          "language": "en",
+          "ext": {
+            "vpw": 2560,
+            "vph": 815
+          },
+          "sua": {
+            "source": 1,
+            "platform": {
+              "brand": "macOS"
+            },
+            "browsers": [{
+              "brand": "Google Chrome",
+              "version": [
+                "141"
+              ]
+            },
+            {
+              "brand": "Not?A_Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "141"
+              ]
+            }
+            ],
+            "mobile": 0
+          }
+        },
+        "source": {}
+      },
+      "start": 1759325217463
+    }
+
+    const videoOutstreamBidResponse = {
+      "body": {
+        "id": "cb624440-f8bd-4da1-8256-d8a243651bef",
+        "seatbid": [{
+          "bid": [{
+            "id": "3757141233787776626",
+            "impid": "29ffa2b1-821d-4542-b948-8533c1832a68",
+            "price": 25.00001,
+            "adid": "546521568",
+            "adm": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"><Ad id=\"546521568\"><Wrapper><AdSystem version=\"4.0\">adnxs</AdSystem><VASTAdTagURI><![CDATA[https://nym2-ib.adnxs.com/ab?an_audit=0&referrer=http%3A%2F%2Ftest.localhost%3A9999%2FintegrationExamples%2Fgpt%2Fold%2Foutstream.html%3Fpbjs_debug%3Dtrue&e=wqT_3QKjDqAjBwAAAwDWAAUBCK_Y9MYGEJPj5qzflrr8fBgAKjYJR6zFpwAAOUARRw0JBBkABQEI4D8hERsAKREJADEFGsAA4D8wteKVEDjFPUDFPUgCUOCDzYQCWIKjsQFgAGjIgtUBeMm7BYABAYoBA1VTRJIBAQbwSZgBAaABAagBAbABALgBA8ABA8gBAtABANgBAOABAPABAIoCQHVmKCdhJywgMTA4OTY0MTksIDApO3VmKCdpJywgMTA1OTI0MjAsERU0cicsIDU0NjUyMTU2OCwBFvCQkgK9BCEyMmNxTndpcHI3a2RFT0NEellRQ0dBQWdncU94QVRBQU9BQkFCRWpGUFZDMTRwVVFXQUJnX19fX193OW9BSEFXZUFDQUFSYUlBUUNRQVFHWUFRR2dBUUdvQVFHd0FRQzVBWEJaaGMwQUFEbEF3UUZ3V1lYTkFBQTVRTWtCQUFBQUFBQUE4RF9aQVFBQQUPdFBBXzRBR2t3WVlGOVFFQUFNaEJtQUlBb0FJQnRRSQUjAHYNCPBVd0FJQnlBSUIwQUlXMkFJQTRBSUE2QUlBLUFJQWdBTUJtQU1CdWdNSlRsbE5Nam8wT1RReDRBT3JTb0FFZ05tS0Q0Z0V3LUNLRDVBRUFKZ0VBY0VFQUEFYxRBQUFESkIBBw0BGDJBUUE4UVENDihBQUFJZ0Z6U2FwQhETFFBBX3NRVQEaCQEITUVGCQkUQUFPVURKLigAADAuKAAETmsVKMg4RF9nQmFITG1BSHdCWVB1M1F6NEJhT0ltUVdDQmdOVlUwU0lCZ0NRQmdHWUJnQ2hCZ0EJYyxEbEFxQVlFc2dZa0MRkAxBQUFFHQwARx0MAEkdDKB1QVlVLUFlNDB3ajRCNkxWQ1BnSDdkd0ktQWVvN0FqNEJfUDhDSUVJQQFRBcxQQ0lDQUNRQ0FBLpoCmQEhR2hHSHlnOkECLElLanNRRWdCQ2dBTRFtWERsQU9nbE9XVTB5T2pRNU5ERkFxMHBKAVUBAQw4RDlSAQgJAQRCWgkIAQEEQmgBBgkBBEJwCQgBAQRCeAEGCQEQQjRBSWs1sPCqOEQ4LtgCAOAC1MY96gJVaHR0cDovL3Rlc3QubG9jYWxob3N0Ojk5OTkvaW50ZWdyYXRpb25FeGFtcGxlcy9ncHQvb2xkL291dHN0cmVhbS5odG1sP3BianNfZGVidWc9dHJ1ZfICEgoGQURWX0lEEggxMDg5NjQxOfICEgoGQ1BHX0lEEggyNjcwMzYxOfICCgoFQ1BfSUQSATDyAg0KCEFEVl9GUkVREgEwBRA8UkVNX1VTRVISATDyAgwKCAEgFENPREUSAAUPAVERDxALCgdDUBUOFBEKBUlPXwFtcfAA8gEiBElPFSI4EwoPQ1VTVE9NX01PREVMASwUAPICGgoWMhYAHExFQUZfTkFNBXIIHgoaNh0ACEFTVAE-EElGSUVEAT4cDQoIU1BMSVQBTfCQATCAAwCIAwGQAwCYAxSgAwGqAwJIAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQSL29wZW5ydGIyL3ByZWJpZGpzmAQAogQOMTAwLjE0LjE2My4yNTCoBACyBBAIABAAGIAFIOADMAA4BEIAuAQAwAQAyAQA0gQONzg3NyNOWU0yOjQ5NDHaBAIIAeAEAPAE4KFdIIgFAZgFAKAF_xEBuAGqBSRjYjYyNDQ0MC1mOGJkLTRkYTEtODI1Ni1kOGEyNDM2NTFiZWbABQDJBQAAAQIU8D_SBQkJAQoBASzYBQHgBQHwBQH6BQQBlyiQBgGYBgC4BgDBBgEfMAAA8D_QBqIo2gYWChAJERkBcBAAGADgBgTyBgIIAIAHAYgHAKAHQMgHybsF0gcPFWIBJhAgANoHBgFf8J0YAOAHAOoHAggA8AeQ9aYDighhCl0AAAGZn_SXmHz46LX1mbGTFPjBc4ofoClrarilv48ccB0T3Vm-FTukoSSDehJCIeSY21q6N-oSr0ocUA3idwnaOplNcuHDF9VJLxBvM58E-tcQVhuo1F41W8_LM1AQAZUIAACAP5gIAcAIANIIDgiBgoSIkKDAgAEQABgA2ggECAAgAOAIAOgIAA..&s=925c3254312f297878dfbc0bea2c02b59b1eaf10&pp=${AUCTION_PRICE}]]></VASTAdTagURI><Impression><![CDATA[https://nym2-ib.adnxs.com/nop]]></Impression><Creatives><Creative adID=\"546521568\"><Linear></Linear></Creative></Creatives></Wrapper></Ad></VAST>",
+            "adomain": [
+              "example.com"
+            ],
+            "iurl": "https://nym2-ib.adnxs.com/cr?id=546521568",
+            "cid": "7877",
+            "crid": "546521568",
+            "h": 1,
+            "w": 1,
+            "ext": {
+              "appnexus": {
+                "brand_id": 1,
+                "auction_id": 9005203323134521000,
+                "bidder_id": 2,
+                "bid_ad_type": 1,
+                "creative_info": {
+                  "video": {
+                    "duration": 30,
+                    "mimes": [
+                      "video/mp4",
+                      "video/webm"
+                    ]
+                  }
+                },
+                "buyer_line_item_id": 0,
+                "seller_line_item_id": 0,
+                "curator_line_item_id": 0,
+                "advertiser_id": 10896419,
+                "renderer_id": 2,
+                "renderer_url": "https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js",
+                "renderer_config": "{}",
+                "no_ad_url": "https://nym2-ib.adnxs.com/it?an_audit=0&referrer=http%3A%2F%2Ftest.localhost%3A9999%2FintegrationExamples%2Fgpt%2Fold%2Foutstream.html%3Fpbjs_debug%3Dtrue&e=wqT_3QKJDHwJBgAAAwDWAAUBCK_Y9MYGEJPj5qzflrr8fBgAKjYJAA0BABENCAQAGQkJCOA_IQkJCAAAKREJADEJCfSoAeA_MLXilRA4xT1AxT1IAFAAWIKjsQFgAGjIgtUBeACAAQGKAQCSAQNVU0SYAQGgAQGoAQGwAQC4AQPAAQDIAQLQAQDYAQDgAQDwAQCKAkB1ZignYScsIDEwODk2NDE5LCAwKTt1ZignaScsIDEwNTkyNDIwLCAwKTt1ZigncicsIDU0NjUyMTU2OCwgMCk7kgK9BCEyMmNxTndpcHI3a2RFT0NEellRQ0dBQWdncU94QVRBQU9BQkFCRWpGUFZDMTRwVVFXQUJnX19fX193OW9BSEFXZUFDQUFSYUlBUUNRQVFHWUFRR2dBUUdvQVFHd0FRQzVBWEJaaGMwQUFEbEF3UUZ3V1lYTkFBQTVRTWtCQUFBQUFBQUE4RF9aQVFBQUFBQUFBUEFfNEFHa3dZWUY5UUVBQU1oQm1BSUFvQUlCdFFJQUFBQUF2UUlBQUFBQXdBSUJ5QUlCMEFJVzJBSUE0QUlBNkFJQS1BSUFnQU1CbUFNQnVnTUpUbGxOTWpvME9UUXg0QU9yU29BRWdObUtENGdFdy1DS0Q1QUVBSmdFQWNFRUFBQUFBAYgIQURKFaEkQUFBMkFRQThRUQELCQEcSWdGelNhcEIRExRQQV9zUVUJHAEBCE1FRgEHAQEMT1VESi4oAAAwLigABE5rFSjIOERfZ0JhSExtQUh3QllQdTNRejRCYU9JbVFXQ0JnTlZVMFNJQmdDUUJnR1lCZ0NoQmdBAV80QUFEbEFxQVlFc2dZa0MRkAxBQUFFHQwARx0MAEkdDKB1QVlVLUFlNDB3ajRCNkxWQ1BnSDdkd0ktQWVvN0FqNEJfUDhDSUVJQQFRaEFBQU9VQ0lDQUNRQ0FBLpoCmQEhR2hHSHlnaTZBAixJS2pzUUVnQkNnQU0RbVhEbEFPZ2xPV1UweU9qUTVOREZBcTBwSgFVAQEMOEQ5UgEICQEEQloJCAEBBEJoAQYJAQRCcAkIAQEEQngBBgkBEEI0QUlrNbD0NAE4RDgu2AIA4ALUxj3qAlVodHRwOi8vdGVzdC5sb2NhbGhvc3Q6OTk5OS9pbnRlZ3JhdGlvbkV4YW1wbGVzL2dwdC9vbGQvb3V0c3RyZWFtLmh0bWw_cGJqc19kZWJ1Zz10cnVlgAMAiAMBkAMAmAMUoAMBqgMCSADAA-CoAcgDANgDAOADAOgDAPgDA4AEAJIEEi9vcGVucnRiMi9wcmViaWRqc5gEAKIEDjEwMC4xNC4xNjMuMjUwqAQAsgQQCAAQABiABSDgAzAAOARCALgEAMAEAMgEANIEDjc4NzcjTllNMjo0OTQx2gQCCADgBADwBOCDzYQCiAUBmAUAoAX___________8BqgUkY2I2MjQ0NDAtZjhiZC00ZGExLTgyNTYtZDhhMjQzNjUxYmVmwAUAyQWJpBDwP9IFCZXdaNgFAeAFAfAFAfoFBAgAEACQBgGYBgC4BgDBBg0vJL_QBqIo2gYWChAJERkBcBAAGADgBgTyBgIIAIAHAYgHAKAHQMgHybsF0gcPFWIBJhAgANoHBgFf8IEYAOAHAOoHAggA8AeQ9aYDighhCl0AAAGZn_SXmHz46LX1mbGTFPjBc4ofoClrarilv48ccB0T3Vm-FTukoSSDehJCIeSY21q6N-oSr0ocUA3idwnaOplNcuHDF9VJLxBvM58E-tcQVhuo1F41W8_LM1AQAZUIAACAP5gIAcAIANIIDYcw2ggECAAgAOAIAOgIAA..&s=ce270f0cb1dee88fbb6b6bb8d59b1d9ca7e38e90"
+              }
+            }
+          }],
+          "seat": "7877"
+        }],
+        "bidid": "1510787988993274243",
+        "cur": "USD",
+        "ext": {
+          "tmaxrequest": 150
+        }
+      },
+      "headers": {}
+    }
+
     const nativeBidderRequest = {
       "bidderCode": "msft",
       "auctionId": null,
@@ -1063,17 +1320,17 @@ describe('msftBidAdapter', function () {
       });
 
       it('should interpret a video outstream response', function () {
-        // const request = spec.buildRequests(videoOutstreamBidderRequest.bids, videoOutstreamBidderRequest)[0];
-        // const bids = spec.interpretResponse(videoOutstreamBidResponse, request);
-        // expect(bids).to.have.lengthOf(1);
-        // const bid = bids[0];
-        // expect(bid.mediaType).to.equal(VIDEO);
-        // expect(bid.cpm).to.equal(8);
-        // expect(bid.vastXml).to.equal(videoOutstreamBidResponse.body.seatbid[0].bid[0].adm);
-        // expect(bid.playerWidth).to.equal(300);
-        // expect(bid.playerHeight).to.equal(250);
-        // expect(bid.meta.advertiser_id).to.equal(6621028);
-        // expect(typeof bid.renderer.render).to.equal('function');
+        const request = spec.buildRequests(videoOutstreamBidderRequest.bids, videoOutstreamBidderRequest)[0];
+        const bids = spec.interpretResponse(videoOutstreamBidResponse, request);
+        expect(bids).to.have.lengthOf(1);
+        const bid = bids[0];
+        expect(bid.mediaType).to.equal(VIDEO);
+        expect(bid.cpm).to.equal(25.00001);
+        expect(bid.vastXml).to.equal(videoOutstreamBidResponse.body.seatbid[0].bid[0].adm);
+        expect(bid.playerWidth).to.equal(640);
+        expect(bid.playerHeight).to.equal(480);
+        expect(bid.meta.advertiser_id).to.equal(10896419);
+        expect(typeof bid.renderer.render).to.equal('function');
       });
     }
 

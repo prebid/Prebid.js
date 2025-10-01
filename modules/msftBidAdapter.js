@@ -33,8 +33,9 @@ import {
 } from "../src/utils.js";
 
 const BIDDER_CODE = "msft";
-const DEBUG_PARAMS = ['debug', 'dongle', 'member_id', 'debug_timeout'];
+const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
 const DEBUG_QUERY_PARAM_MAP = {
+  'apn_debug_enabled': 'enabled',
   'apn_debug_dongle': 'dongle',
   'apn_debug_member_id': 'member_id',
   'apn_debug_timeout': 'debug_timeout'
@@ -423,15 +424,15 @@ function formatRequest(payload, bidderRequest) {
       if (isStr(qval) && qval !== '') {
         debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
         // keep 'enabled' for old setups still using the cookie, switch to 'debug' when passing to query params
-        debugObj.enabled = true;
       }
     });
+    if (Object.keys(debugObj).length > 0 && !debugObj.hasOwnProperty('enabled')) debugObj.enabled = true;
   }
 
   if (debugObj?.enabled) {
     endpointUrl += '?' + Object.keys(debugObj)
       .filter(param => DEBUG_PARAMS.includes(param))
-      .map(param => (param === 'enabled') ? `debug=true` : `${param}=${debugObj[param]}`)
+      .map(param => (param === 'enabled') ? `debug=${debugObj[param]}` : `${param}=${debugObj[param]}`)
       .join('&');
   }
 
