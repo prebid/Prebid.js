@@ -106,9 +106,6 @@ export const spec = {
       method: METHOD,
       url: ENDPOINT_URL,
       data,
-      options: {
-        contentType: 'application/json'
-      }
     }]
   },
   interpretResponse: function(serverResponse, request) {
