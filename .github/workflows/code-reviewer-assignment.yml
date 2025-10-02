@@ -2,7 +2,7 @@ name: Rule Based Reviewer Assignment
 
 on:
   pull_request_target:
-    types: [opened]
+    types: [opened, synchronize]
 
 permissions:
   pull-requests: write
