@@ -156,11 +156,16 @@ export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], customSlotMatch
 export function getAdUnitBidLimitMap(adUnitCodes: AdUnitCode[], bidLimit: number): ByAdUnit<number> | number {
   if (!config.getConfig('enableSendAllBids')) return 0;
   const bidLimitConfigValue = config.getConfig('sendBidsControl.bidLimit');
-  return adUnitCodes.reduce((acc, code) => {
-    const adUnit = auctionManager.getAdUnits().find(au => au.code === code);
-    acc[code] = adUnit?.bidLimit || bidLimit || bidLimitConfigValue;
-    return acc;
-  }, {});
+  const adUnitCodesSet = new Set(adUnitCodes);
+
+  const result: ByAdUnit<number> = {};
+  for (const au of auctionManager.getAdUnits()) {
+    if (adUnitCodesSet.has(au.code)) {
+      result[au.code] = au?.bidLimit || bidLimit || bidLimitConfigValue;
+    }
+  }
+
+  return result;
 }
 
 export type TargetingMap<V> = Partial<DefaultTargeting> & {

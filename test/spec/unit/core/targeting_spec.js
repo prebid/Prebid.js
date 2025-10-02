@@ -547,6 +547,12 @@ describe('targeting tests', function () {
       });
 
       it('selects the top n number of bids when enableSendAllBids is true and and bitLimit is set', function () {
+        let getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+          {
+            code: '/123456/header-bid-tag-0',
+          },
+        ]));
+
         config.setConfig({
           sendBidsControl: {
             bidLimit: 1
@@ -556,6 +562,7 @@ describe('targeting tests', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
+        getAdUnitsStub.restore();
         expect(limitedBids.length).to.equal(1);
       });
 
