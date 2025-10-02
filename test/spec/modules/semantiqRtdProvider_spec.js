@@ -5,18 +5,18 @@ import * as utils from '../../../src/utils.js';
 
 describe('semantiqRtdProvider', () => {
   let clock;
-  let getDataFromLocalStorageStub;
+  let getDataFromSessionStorage;
   let getWindowLocationStub;
 
   beforeEach(() => {
     clock = sinon.useFakeTimers();
-    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns(null);
+    getDataFromSessionStorage = sinon.stub(storage, 'getDataFromSessionStorage').returns(null);
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns(new URL('https://example.com/article'));
   });
 
   afterEach(() => {
     clock.restore();
-    getDataFromLocalStorageStub.restore();
+    getDataFromSessionStorage.restore();
     getWindowLocationStub.restore();
   });
 
@@ -181,7 +181,7 @@ describe('semantiqRtdProvider', () => {
     });
 
     it('gets keywords from the cache if the data is present in the storage', async () => {
-      getDataFromLocalStorageStub.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { sentiment: 'negative', ctx_segment: ['C001', 'C002'] } }));
+      getDataFromSessionStorage.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { sentiment: 'negative', ctx_segment: ['C001', 'C002'] } }));
 
       const reqBidsConfigObj = {
         adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
@@ -210,7 +210,7 @@ describe('semantiqRtdProvider', () => {
     });
 
     it('requests keywords from the server if the URL of the page is different from the cached one', async () => {
-      getDataFromLocalStorageStub.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { cached: 'true' } }));
+      getDataFromSessionStorage.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { cached: 'true' } }));
       getWindowLocationStub.returns(new URL('https://example.com/another-article'));
 
       const reqBidsConfigObj = {

@@ -128,7 +128,14 @@ export const spec = {
       }
 
       // Add schain object
-      const schain = currentBidRequest.schain;
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
+      if (!schain) {
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+      }
+      if (!schain) {
+        schain = currentBidRequest.schain;
+      }
+
       if (schain) {
         try {
           keyValues.schain = JSON.stringify(schain);

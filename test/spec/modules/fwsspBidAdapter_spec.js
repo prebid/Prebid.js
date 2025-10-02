@@ -234,6 +234,80 @@ describe('fwsspBidAdapter', () => {
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid[]=8'
       }]);
     });
+
+    it('should use schain from ortb2, prioritizing source.schain', () => {
+      const bidRequests = getBidRequests();
+      const bidderRequest2 = { ...bidderRequest }
+      const schain1 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'test1.com',
+          sid: '0',
+          hp: 1,
+          rid: 'bidrequestid1',
+          domain: 'test1.com'
+        }]
+      };
+      const schain2 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'test2.com',
+          sid: '0',
+          hp: 2,
+          rid: 'bidrequestid2',
+          domain: 'test2.com'
+        }]
+      };
+
+      bidderRequest2.ortb2 = {
+        source: {
+          schain: schain1,
+          ext: {
+            schain: schain2
+          }
+        }
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest2);
+      const request = requests[0];
+
+      // schain check
+      const expectedEncodedSchainString = encodeURIComponent(JSON.stringify(schain1));
+      expect(request.data).to.include(expectedEncodedSchainString);
+    });
+
+    it('should use schain from ortb2.source.ext, if source.schain is not available', () => {
+      const bidRequests = getBidRequests();
+      const bidderRequest2 = { ...bidderRequest }
+      const schain2 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'test2.com',
+          sid: '0',
+          hp: 2,
+          rid: 'bidrequestid2',
+          domain: 'test2.com'
+        }]
+      };
+
+      bidderRequest2.ortb2 = {
+        source: {
+          ext: {
+            schain: schain2
+          }
+        }
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest2);
+      const request = requests[0];
+
+      // schain check
+      const expectedEncodedSchainString = encodeURIComponent(JSON.stringify(schain2));
+      expect(request.data).to.include(expectedEncodedSchainString);
+    });
   });
 
   describe('buildRequestsForVideo', () => {

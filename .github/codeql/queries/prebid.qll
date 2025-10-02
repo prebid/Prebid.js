@@ -34,3 +34,8 @@ SourceNode windowPropertyRead(string prop) {
   result = globalVarRef(prop) or
   result = anyWindow().getAPropertyRead(prop)
 }
+
+SourceNode instantiationOf(string ctr) {
+   result = windowPropertyRead(ctr).getAnInstantiation()
+}
+

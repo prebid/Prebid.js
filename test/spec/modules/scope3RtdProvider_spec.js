@@ -1,3 +1,4 @@
+import {auctionManager} from 'src/auctionManager.js';
 import { scope3SubModule } from 'modules/scope3RtdProvider.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
@@ -242,10 +243,6 @@ describe('Scope3 RTD Module', function() {
       scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, filteredConfig);
 
       expect(server.requests.length).to.be.at.least(1);
-      if (server.requests.length === 0) {
-        // Skip test if no request was made
-        return;
-      }
 
       const responseData = {
         aee_signals: {
@@ -313,10 +310,6 @@ describe('Scope3 RTD Module', function() {
       scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(server.requests.length).to.be.at.least(1);
-      if (server.requests.length === 0) {
-        // Skip test if no request was made
-        return;
-      }
 
       const responseData = {
         aee_signals: {
@@ -357,10 +350,6 @@ describe('Scope3 RTD Module', function() {
       scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, cacheConfig);
 
       expect(server.requests.length).to.be.at.least(1);
-      if (server.requests.length === 0) {
-        // Skip test if no request was made
-        return;
-      }
 
       const responseData = {
         aee_signals: {
@@ -495,6 +484,117 @@ describe('Scope3 RTD Module', function() {
 
       // Module should be properly initialized with defaults
       expect(result).to.be.true;
+    });
+  });
+
+  describe('getTargetingData', function() {
+    let config;
+    let reqBidsConfigObj;
+    let callback;
+
+    beforeEach(function() {
+      config = {
+        params: {
+          orgId: 'test-org-123',
+          endpoint: 'https://prebid.scope3.com/prebid',
+          timeout: 1000,
+          publisherTargeting: true,
+          advertiserTargeting: true,
+          cacheEnabled: true,  // Need cache enabled for getTargetingData
+          includeKey: "axei",
+          excludeKey: "axex",
+          macroKey: "axem",
+        }
+      };
+
+      reqBidsConfigObj = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              page: 'https://example1.com',
+              domain: 'example1.com',
+              ext: {
+                data: {}
+              }
+            },
+            device: {
+              ua: 'test-user-agent-1'
+            }
+          },
+          bidder: {}
+        },
+        adUnits: [{
+          code: 'test-ad-unit-nocache',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          bids: [
+            { bidder: 'bidderA' },
+            { bidder: 'bidderB' }
+          ],
+          ortb2Imp: {
+            ext: {}
+          }
+        }]
+      };
+
+      callback = sinon.spy();
+
+      // Initialize the module first
+      scope3SubModule.init(config);
+    });
+
+    afterEach(function() {
+      // Clean up after each test if needed
+    });
+
+    it('should get targeting items back', function() {
+      scope3SubModule.getBidRequestData(reqBidsConfigObj, callback, config);
+
+      expect(server.requests.length).to.be.at.least(1);
+
+      const responseData = {
+        aee_signals: {
+          include: ['x82s'],
+          exclude: ['c4x9'],
+          macro: 'ctx9h3v8s5',
+          bidders: {
+            'bidderA': {
+              segments: ['seg1', 'seg2'],
+              deals: ['DEAL123']
+            },
+            'bidderB': {
+              segments: ['seg3'],
+              deals: []
+            }
+          }
+        }
+      };
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify(responseData)
+      );
+
+      const getAuctionStub = sinon.stub(auctionManager.index, 'getAuction').returns({
+        adUnits: reqBidsConfigObj.adUnits,
+        getFPD: () => { return reqBidsConfigObj.ortb2Fragments }
+      });
+
+      const targetingData = scope3SubModule.getTargetingData([ reqBidsConfigObj.adUnits[0].code ], config, {}, { adUnits: reqBidsConfigObj.adUnits })
+      expect(targetingData['test-ad-unit-nocache']).to.be.an('object')
+      expect(targetingData['test-ad-unit-nocache']['axei']).to.be.an('array')
+      expect(targetingData['test-ad-unit-nocache']['axei'].length).to.equal(1)
+      expect(targetingData['test-ad-unit-nocache']['axei']).to.contain('x82s')
+      expect(targetingData['test-ad-unit-nocache']['axex']).to.be.an('array')
+      expect(targetingData['test-ad-unit-nocache']['axex'].length).to.equal(1)
+      expect(targetingData['test-ad-unit-nocache']['axex']).to.contain('c4x9')
+      expect(targetingData['test-ad-unit-nocache']['axem']).to.equal('ctx9h3v8s5')
+
+      getAuctionStub.restore();
     });
   });
 });

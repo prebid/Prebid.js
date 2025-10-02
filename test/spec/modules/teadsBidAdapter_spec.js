@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { spec, storage } from 'modules/teadsBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { getScreenOrientation } from 'src/utils.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -368,12 +369,14 @@ describe('teadsBidAdapter', () => {
     it('should add screenOrientation info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const screenOrientation = window.top.screen.orientation?.type
+      const orientation = getScreenOrientation(window.top);
 
-      if (screenOrientation) {
+      if (orientation) {
         expect(payload.screenOrientation).to.exist;
-        expect(payload.screenOrientation).to.deep.equal(screenOrientation);
-      } else expect(payload.screenOrientation).to.not.exist;
+        expect(payload.screenOrientation).to.deep.equal(orientation);
+      } else {
+        expect(payload.screenOrientation).to.not.exist;
+      }
     });
 
     it('should add historyLength info to payload', function () {

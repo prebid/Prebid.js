@@ -571,7 +571,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
 
         if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url, window.location.origin);
+            const url = new URL(request.url);
             if (!url.searchParams.has('gzip')) {
               url.searchParams.set('gzip', '1');
             }

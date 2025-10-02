@@ -1,4 +1,4 @@
-import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
+import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
@@ -73,7 +73,7 @@ export const spec = {
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
-      screenOrientation: screen.orientation?.type,
+      screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,

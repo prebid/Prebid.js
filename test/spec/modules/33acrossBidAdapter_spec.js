@@ -20,18 +20,16 @@ function validateBuiltServerRequest(builtReq, expectedReq) {
 }
 
 describe('33acrossBidAdapter:', function () {
-  const BIDDER_CODE = '33across';
-  const SITE_ID = 'sample33xGUID123456789';
+  const ZONE_ID = 'sample33xGUID123456789';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 
-  function TtxRequestBuilder(siteId = SITE_ID) {
+  function TtxRequestBuilder(additionalAttributes = {
+    site: { id: ZONE_ID }
+  }) {
     const ttxRequest = {
       imp: [{
         id: 'b1'
       }],
-      site: {
-        id: siteId
-      },
       device: {
         w: 1024,
         h: 728,
@@ -67,7 +65,8 @@ describe('33acrossBidAdapter:', function () {
           }]
         }
       },
-      test: 0
+      test: 0,
+      ...additionalAttributes
     };
 
     this.addImp = (id = 'b2') => {
@@ -208,7 +207,13 @@ describe('33acrossBidAdapter:', function () {
     };
 
     this.withSite = site => {
-      Object.assign(ttxRequest, { site });
+      utils.mergeDeep(ttxRequest, { site });
+
+      return this;
+    };
+
+    this.withApp = app => {
+      utils.mergeDeep(ttxRequest, { app });
 
       return this;
     };
@@ -290,7 +295,7 @@ describe('33acrossBidAdapter:', function () {
   function ServerRequestBuilder() {
     const serverRequest = {
       'method': 'POST',
-      'url': `${END_POINT}?guid=${SITE_ID}`,
+      'url': `${END_POINT}?guid=${ZONE_ID}`,
       'data': null,
       'options': {
         'contentType': 'text/plain',
@@ -323,7 +328,7 @@ describe('33acrossBidAdapter:', function () {
         bidder: '33across',
         bidderRequestId: 'b1a',
         params: {
-          siteId: SITE_ID,
+          zoneId: ZONE_ID,
           productId: 'siab'
         },
         adUnitCode: 'div-id',
@@ -354,7 +359,7 @@ describe('33acrossBidAdapter:', function () {
         bidder: '33across',
         bidderRequestId: 'b1b',
         params: {
-          siteId: SITE_ID,
+          zoneId: ZONE_ID,
           productId: 'siab'
         },
         adUnitCode: 'div-id',
@@ -519,7 +524,7 @@ describe('33acrossBidAdapter:', function () {
           const bid = {
             bidder: bidderName,
             params: {
-              siteId: 'sample33xGUID123456789'
+              zoneId: 'sample33xGUID123456789'
             }
           };
 
@@ -531,12 +536,24 @@ describe('33acrossBidAdapter:', function () {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos
         const validGUIDs = [
-          `${SITE_ID}`,
-          `${SITE_ID} `,
-          ` ${SITE_ID}`,
-          ` ${SITE_ID} `
+          `${ZONE_ID}`,
+          `${ZONE_ID} `,
+          ` ${ZONE_ID}`,
+          ` ${ZONE_ID} `
         ];
 
+        validGUIDs.forEach((zoneId) => {
+          const bid = {
+            bidder: '33across',
+            params: {
+              zoneId
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.true;
+        });
+
+        // GUID specified via the DEPRECATED siteID parameter
         validGUIDs.forEach((siteId) => {
           const bid = {
             bidder: '33across',
@@ -554,6 +571,17 @@ describe('33acrossBidAdapter:', function () {
           undefined,
           'siab'
         ];
+
+        invalidGUIDs.forEach((zoneId) => {
+          const bid = {
+            bidder: '33across',
+            params: {
+              zoneId
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.false;
+        });
 
         invalidGUIDs.forEach((siteId) => {
           const bid = {
@@ -574,7 +602,7 @@ describe('33acrossBidAdapter:', function () {
           const bid = {
             bidder: '33across',
             params: {
-              siteId: 'cxBE0qjUir6iopaKkGJozW'
+              zoneId: 'cxBE0qjUir6iopaKkGJozW'
             }
           };
 
@@ -592,7 +620,7 @@ describe('33acrossBidAdapter:', function () {
               }
             },
             params: {
-              siteId: 'cxBE0qjUir6iopaKkGJozW'
+              zoneId: 'cxBE0qjUir6iopaKkGJozW'
             }
           };
 
@@ -618,7 +646,7 @@ describe('33acrossBidAdapter:', function () {
                 }
               },
               params: {
-                siteId: 'cxBE0qjUir6iopaKkGJozW'
+                zoneId: 'cxBE0qjUir6iopaKkGJozW'
               }
             };
 
@@ -642,7 +670,7 @@ describe('33acrossBidAdapter:', function () {
             }
           },
           params: {
-            siteId: `${SITE_ID}`
+            zoneId: `${ZONE_ID}`
           }
         };
       });
@@ -652,7 +680,7 @@ describe('33acrossBidAdapter:', function () {
           const bid = {
             bidder: '33across',
             params: {
-              siteId: `${SITE_ID}`
+              zoneId: `${ZONE_ID}`
             }
           };
 
@@ -790,6 +818,58 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('buildRequests()', function() {
+    context('when the zone ID is for a site request', function() {
+      it('sets it in the site attribute', function() {
+        const serverRequest = this.buildServerRequest(
+          new TtxRequestBuilder()
+            .withBanner()
+            .withProduct()
+            .withSite({
+              id: ZONE_ID
+            })
+            .build()
+        );
+
+        const bidRequests = this.buildBannerBidRequests(); // Bids have the default zone ID configured
+        const bidderRequest = this.buildBidderRequest(bidRequests);
+
+        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(buildRequest, serverRequest);
+      })
+    });
+
+    context('when the zone ID is for an app request', function() {
+      it('sets it in the app attribute', function() {
+        const serverRequest = this.buildServerRequest(
+          new TtxRequestBuilder({
+            app: {
+              id: ZONE_ID
+            }
+          })
+            .withBanner()
+            .withProduct()
+            .withApp({
+              foo: 'bar'
+            })
+            .build()
+        );
+
+        const bidRequests = this.buildBannerBidRequests(); // Bids have the default zone ID configured
+        const bidderRequest = this.buildBidderRequest(bidRequests, {
+          ortb2: {
+            app: {
+              foo: 'bar'
+            }
+          }
+        });
+
+        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(buildRequest, serverRequest);
+      });
+    });
+
     context('when element is fully in view', function() {
       it('returns 100', function() {
         const serverRequest = this.buildServerRequest(
@@ -1906,7 +1986,7 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when SRA mode is enabled', function() {
-      it('builds a single request with multiple imps corresponding to each group {siteId, productId}', function() {
+      it('builds a single request with multiple imps corresponding to each group {zoneId, productId}', function() {
         this.sandbox.stub(config, 'getConfig')
           .withArgs('ttxSettings')
           .returns({
@@ -1919,7 +1999,7 @@ describe('33acrossBidAdapter:', function () {
             bidId: 'b3',
             adUnitCode: 'div-id',
             params: {
-              siteId: 'sample33xGUID123456780',
+              zoneId: 'sample33xGUID123456780',
               productId: 'siab'
             }
           })
@@ -1927,7 +2007,7 @@ describe('33acrossBidAdapter:', function () {
             bidId: 'b4',
             adUnitCode: 'div-id',
             params: {
-              siteId: 'sample33xGUID123456780',
+              zoneId: 'sample33xGUID123456780',
               productId: 'inview'
             }
           })
@@ -1942,7 +2022,7 @@ describe('33acrossBidAdapter:', function () {
           .withVideo()
           .build();
 
-        const req2 = new TtxRequestBuilder('sample33xGUID123456780')
+        const req2 = new TtxRequestBuilder({ site: { id: 'sample33xGUID123456780' } })
           .withProduct('siab')
           .withBanner()
           .withVideo()
@@ -1950,7 +2030,7 @@ describe('33acrossBidAdapter:', function () {
 
         req2.imp[0].id = 'b3';
 
-        const req3 = new TtxRequestBuilder('sample33xGUID123456780')
+        const req3 = new TtxRequestBuilder({ site: { id: 'sample33xGUID123456780' } })
           .withProduct('inview')
           .withBanner()
           .withVideo()
@@ -1981,7 +2061,7 @@ describe('33acrossBidAdapter:', function () {
             bidId: 'b3',
             adUnitCode: 'div-id',
             params: {
-              siteId: 'sample33xGUID123456780',
+              zoneId: 'sample33xGUID123456780',
               productId: 'siab'
             }
           })
@@ -2003,7 +2083,7 @@ describe('33acrossBidAdapter:', function () {
 
         req2.imp[0].id = 'b2';
 
-        const req3 = new TtxRequestBuilder('sample33xGUID123456780')
+        const req3 = new TtxRequestBuilder({ site: { id: 'sample33xGUID123456780' } })
           .withProduct('siab')
           .withBanner()
           .withVideo()
@@ -2035,7 +2115,7 @@ describe('33acrossBidAdapter:', function () {
         .withBanner()
         .withProduct()
         .withSite({
-          id: SITE_ID,
+          id: ZONE_ID,
           page: 'https://test-url.com'
         })
         .build();
@@ -2300,7 +2380,7 @@ describe('33acrossBidAdapter:', function () {
           bidder: '33across',
           bidderRequestId: 'b1a',
           params: {
-            siteId: 'id1',
+            zoneId: 'id1',
             productId: 'foo'
           },
           adUnitCode: 'div-id',
@@ -2319,7 +2399,7 @@ describe('33acrossBidAdapter:', function () {
           bidder: '33across',
           bidderRequestId: 'b2a',
           params: {
-            siteId: 'id2',
+            zoneId: 'id2',
             productId: 'foo'
           },
           adUnitCode: 'div-id',

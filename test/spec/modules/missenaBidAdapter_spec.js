@@ -265,7 +265,7 @@ describe('Missena Adapter', function () {
     });
 
     it('should send the prebid version', function () {
-      expect(payload.version).to.equal('$prebid.version$');
+      expect(payload.version).to.equal('prebid.js@$prebid.version$');
     });
 
     it('should send cookie deprecation', function () {

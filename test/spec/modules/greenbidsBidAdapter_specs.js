@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/greenbidsBidAdapter.js';
+import { getScreenOrientation } from 'src/utils.js';
 const ENDPOINT = 'https://d.greenbids.ai/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';
 
@@ -248,36 +249,15 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should add screenOrientation info to payload', function () {
-      const originalScreenOrientation = window.top.screen.orientation;
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const orientation = getScreenOrientation(window.top);
 
-      const mockScreenOrientation = (type) => {
-        Object.defineProperty(window.top.screen, 'orientation', {
-          value: { type },
-          configurable: true,
-        });
-      };
-
-      try {
-        const mockType = 'landscape-primary';
-        mockScreenOrientation(mockType);
-
-        const requestWithOrientation = spec.buildRequests(bidRequests, bidderRequestDefault);
-        const payloadWithOrientation = JSON.parse(requestWithOrientation.data);
-
-        expect(payloadWithOrientation.screenOrientation).to.exist;
-        expect(payloadWithOrientation.screenOrientation).to.deep.equal(mockType);
-
-        mockScreenOrientation(undefined);
-
-        const requestWithoutOrientation = spec.buildRequests(bidRequests, bidderRequestDefault);
-        const payloadWithoutOrientation = JSON.parse(requestWithoutOrientation.data);
-
-        expect(payloadWithoutOrientation.screenOrientation).to.not.exist;
-      } finally {
-        Object.defineProperty(window.top.screen, 'orientation', {
-          value: originalScreenOrientation,
-          configurable: true,
-        });
+      if (orientation) {
+        expect(payload.screenOrientation).to.exist;
+        expect(payload.screenOrientation).to.deep.equal(orientation);
+      } else {
+        expect(payload.screenOrientation).to.not.exist;
       }
     });
 

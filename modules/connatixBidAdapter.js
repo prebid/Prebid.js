@@ -313,6 +313,7 @@ export const spec = {
       creativeId: bidResponse.CreativeId,
       ad: bidResponse.Ad,
       vastXml: bidResponse.VastXml,
+      lurl: bidResponse.Lurl,
       referrer: referrer,
     }));
   },

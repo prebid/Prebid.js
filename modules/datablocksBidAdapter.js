@@ -7,6 +7,7 @@ import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getExtraWinDimensions} from '../libraries/extraWinDimensions/extraWinDimensions.js';
+import {isWebdriverEnabled} from '../libraries/webdriver/webdriver.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
@@ -579,13 +580,8 @@ export class BotClientTests {
   constructor() {
     this.tests = {
       headless_chrome: function() {
-        if (self.navigator) {
-          if (self.navigator.webdriver) {
-            return true;
-          }
-        }
-
-        return false;
+        // Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
+        return isWebdriverEnabled();
       },
 
       selenium: function () {

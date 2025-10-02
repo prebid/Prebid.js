@@ -65,7 +65,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.params = bidRequest.params;
 
   payload.userEids = bidRequest.userIdAsEids || [];
-  payload.version = '$prebid.version$';
+  payload.version = 'prebid.js@$prebid.version$';
 
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
