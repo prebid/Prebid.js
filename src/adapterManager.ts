@@ -92,7 +92,7 @@ config.getConfig('s2sConfig', config => {
   }
 });
 
-const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
+export const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
 function getConfigName(s2sConfig) {
   // According to our docs, "module" bid (stored impressions)
@@ -508,7 +508,11 @@ const adapterManager = {
         au.mediaTypes = {};
       }
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+        bid,
+        ortb2: ortb2Fragments.global,
+        adUnit: au
+      })))
       incrementRequestsCounter(au.code);
     });
 
