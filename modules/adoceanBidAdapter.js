@@ -1,10 +1,9 @@
 import { _each, isStr, isArray, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adocean';
 const URL_SAFE_FIELDS = {
-  schain: true,
   slaves: true
 };
 
@@ -29,9 +28,6 @@ function buildRequest(bid, gdprConsent) {
   if (gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-  }
-  if (bid.schain) {
-    payload.schain = serializeSupplyChain(bid.schain);
   }
 
   if (bid.userId && bid.userId.gemiusId) {
@@ -62,7 +58,7 @@ function buildRequest(bid, gdprConsent) {
       if (!bid.mediaTypes.video.adPodDurationSec || !isArray(durationRangeSec) || durationRangeSec.length === 0) {
         return;
       }
-      const spots = getAdPodSpots(bid.mediaTypes.video.adPodDurationSec, bid.mediaTypes.video.durationRangeSec);
+      const spots = calculateAdPodSpotsNumber(bid.mediaTypes.video.adPodDurationSec, bid.mediaTypes.video.durationRangeSec);
       const maxDuration = Math.max(...durationRangeSec);
       payload.dur = bid.mediaTypes.video.adPodDurationSec;
       payload.maxdur = maxDuration;
@@ -80,34 +76,10 @@ function buildRequest(bid, gdprConsent) {
   };
 }
 
-function getAdPodSpots(adPodDurationSec, durationRangeSec) {
+function calculateAdPodSpotsNumber(adPodDurationSec, durationRangeSec) {
   const minAllowedDuration = Math.min(...durationRangeSec);
   const numberOfSpots = Math.floor(adPodDurationSec / minAllowedDuration);
   return numberOfSpots;
-}
-
-const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
-function serializeSupplyChain(schain) {
-  const header = `${schain.ver},${schain.complete}!`;
-
-  const serializedNodes = [];
-  _each(schain.nodes, function(node) {
-    const serializedNode = SCHAIN_FIELDS
-      .map(fieldName => {
-        if (fieldName === 'ext') {
-          // do not serialize ext data, just mark if it was available
-          return ('ext' in node ? '1' : '0');
-        }
-        if (fieldName in node) {
-          return encodeURIComponent(node[fieldName]).replace(/!/g, '%21');
-        }
-        return '';
-      })
-      .join(',');
-    serializedNodes.push(serializedNode);
-  });
-
-  return header + serializedNodes.join('!');
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
