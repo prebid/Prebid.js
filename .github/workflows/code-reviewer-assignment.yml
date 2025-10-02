@@ -1,8 +1,8 @@
 name: Rule Based Reviewer Assignment
 
 on:
-  pull_request:
-    types: [opened, edited, reopened]
+  pull_request_target:
+    types: [opened]
 
 permissions:
   pull-requests: write
@@ -13,9 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v3
+      - name: Checkout base repo
+        uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 2
 
       - name: Get PR Author and Files Changed
@@ -24,10 +25,11 @@ jobs:
           # Get PR author
           echo "author=${{ github.event.pull_request.user.login }}" >> $GITHUB_ENV
 
-          FILES_CHANGED=$(git diff --name-only HEAD^1 HEAD)
+          FILES_CHANGED=$(GH_TOKEN="${{ secrets.PAT_CODE_REVIEWER_AUTOMATION }}" gh api \
+            repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
+            --jq '.[].filename')
 
-          CORE_FILES_CHANGED=""
-
+          CORE_FILES_CHANGED="false"
           for FILE in $FILES_CHANGED; do
             echo "$FILE"
             if [[ ! "$FILE" =~ ^modules/[^/]+$ && ! "$FILE" =~ ^test/ && ! "$FILE" =~ ^integrationExamples/ ]]; then
@@ -37,11 +39,7 @@ jobs:
             fi
           done
 
-          if [ "$CORE_FILES_CHANGED" = "true" ]; then
-            echo "core_change=true" >> $GITHUB_ENV
-          else
-            echo "core_change=false" >> $GITHUB_ENV
-          fi
+          echo "core_change=$CORE_FILES_CHANGED" >> $GITHUB_ENV
 
       - name: Assign Reviewers Based on Rules
         run: |
@@ -125,13 +123,15 @@ jobs:
 
           # Assign reviewers using gh api
           for R in "${REVIEWERS[@]}"; do
-            echo "Assigning reviewer: $R"
-            gh api \
-              --method POST \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers \
-              -f reviewers[]="$R"
+            if [[ -n "$R" ]]; then
+              echo "Assigning reviewer: $R"
+              gh api \
+                --method POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers \
+                -f reviewers[]="$R"
+            fi
           done
 
         env:
