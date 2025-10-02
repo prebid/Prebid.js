@@ -72,8 +72,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
       let bucketBids = [];
       const bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode')
       Object.keys(bidsByBidder).forEach(key => { bucketBids.push(bidsByBidder[key].reduce(winReducer)) });
-      const adUnit = auctionManager.getAdUnits().find(au => au.code === bucketKey);
-      const bidLimit = adUnit?.bidLimit || adUnitBidLimit;
+      const bidLimit = typeof adUnitBidLimit === 'object' ? adUnitBidLimit[bucketKey] : adUnitBidLimit;
       if (bidLimit) {
         bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
         bids.push(...bucketBids.slice(0, bidLimit));
@@ -142,6 +141,25 @@ export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], customSlotMatch
     Object.keys(auToSlots).filter(isFn(customMatch) ? customMatch : isAdUnitCodeMatchingSlot(slot)).forEach(au => auToSlots[au].push(slot));
     return auToSlots;
   }, Object.fromEntries(adUnitCodes.map(au => [au, []])));
+}
+/* *
+  * Returns a map of adUnitCodes to their bid limits. If sendAllBids is disabled, all adUnits will have a bid limit of 0.
+  * If sendAllBids is enabled, the bid limit for each adUnit will be determined by the following precedence:
+  * 1. The bidLimit property of the adUnit object
+  * 2. The bidLimit parameter passed to this function
+  * 3. The global sendBidsControl.bidLimit config property
+  *
+  * @param adUnitCodes
+  * @param bidLimit
+  */
+export function getAdUnitBidLimitMap(adUnitCodes: AdUnitCode[], bidLimit: number): ByAdUnit<number> | number {
+  if (!config.getConfig('enableSendAllBids')) return 0;
+  const bidLimitConfigValue = config.getConfig('sendBidsControl.bidLimit');
+  return adUnitCodes.reduce((acc, code) => {
+    const adUnit = auctionManager.getAdUnits().find(au => au.code === code);
+    acc[code] = adUnit?.bidLimit || bidLimit || bidLimitConfigValue;
+    return acc;
+  }, {});
 }
 
 export type TargetingMap<V> = Partial<DefaultTargeting> & {
@@ -239,9 +257,7 @@ export function newTargeting(auctionManager) {
     getAllTargeting(adUnitCode?: AdUnitCode | AdUnitCode[], bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestCpm): ByAdUnit<TargetingValues> {
       bidsReceived ||= getBidsReceived(winReducer, winSorter);
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-      const sendAllBids = config.getConfig('enableSendAllBids');
-      const bidLimitConfigValue = config.getConfig('sendBidsControl.bidLimit');
-      const adUnitBidLimit = (sendAllBids && (bidLimit || bidLimitConfigValue)) || 0;
+      const adUnitBidLimit = getAdUnitBidLimitMap(adUnitCodes, bidLimit);
       const { customKeysByUnit, filteredBids } = getfilteredBidsAndCustomKeys(adUnitCodes, bidsReceived);
       const bidsSorted = getHighestCpmBidsFromBidPool(filteredBids, winReducer, adUnitBidLimit, undefined, winSorter);
       let targeting = getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes);
