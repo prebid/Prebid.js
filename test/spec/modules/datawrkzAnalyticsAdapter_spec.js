@@ -25,7 +25,13 @@ describe("DatawrkzAnalyticsAdapter", function () {
     sandbox = sinon.createSandbox();
     fetchStub = sandbox.stub(window, "fetch");
 
-    adapterManager.enableAnalytics({ provider: "datawrkzanalytics" });
+    adapterManager.enableAnalytics({
+      provider: "datawrkzanalytics",
+      options: {
+        publisherId: "testPublisher",
+        apiKey: "testApiKey"
+      }
+    });
   });
 
   afterEach(function () {
@@ -126,6 +132,8 @@ describe("DatawrkzAnalyticsAdapter", function () {
     expect(options.headers["Content-Type"]).to.equal("application/json");
 
     const body = JSON.parse(options.body);
+    expect(body.publisherId).to.equal("testPublisher");
+    expect(body.apiKey).to.equal("testApiKey");
     expect(body.auctionId).to.equal(auctionId);
     expect(body.adunits[0].code).to.equal(adUnitCode);
     expect(body.adunits[0].bids[0].bidder).to.equal(bidder);
@@ -148,6 +156,8 @@ describe("DatawrkzAnalyticsAdapter", function () {
     const payload = JSON.parse(options.body);
 
     expect(payload.eventType).to.equal(AD_RENDER_SUCCEEDED);
+    expect(payload.publisherId).to.equal("testPublisher");
+    expect(payload.apiKey).to.equal("testApiKey");
     expect(payload.bidderCode).to.equal("appnexus");
     expect(payload.successDoc).to.be.a("string");
     expect(payload.failureReason).to.be.null;
@@ -170,6 +180,8 @@ describe("DatawrkzAnalyticsAdapter", function () {
     const payload = JSON.parse(options.body);
 
     expect(payload.eventType).to.equal(AD_RENDER_FAILED);
+    expect(payload.publisherId).to.equal("testPublisher");
+    expect(payload.apiKey).to.equal("testApiKey");
     expect(payload.bidderCode).to.equal("appnexus");
     expect(payload.successDoc).to.be.null;
     expect(payload.failureReason).to.equal("network");
