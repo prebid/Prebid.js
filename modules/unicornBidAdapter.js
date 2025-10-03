@@ -139,7 +139,7 @@ const interpretResponse = (serverResponse, request) => {
           currency: res.cur
         }
 
-        if (b.adomain != undefined || b.adomain != null) {
+        if (b.adomain) {
           bid.meta = { advertiserDomains: b.adomain };
         }
 

@@ -249,6 +249,19 @@ describe('YieldmoAdapter', function () {
         expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userId.tdid);
       });
 
+      it('should use tdid.id when userId.tdid is an object', function () {
+        const tdidObj = {
+          id: '0bf1dcc1-fa25-4aff-a9ff-26c4819dcb17',
+          ext: {
+            rtiPartner: 'TDID',
+            provider: 'www.yahoo.com'
+          }
+        };
+        const bidWithObjectTdid = mockBannerBid({ crumbs: undefined, userId: { tdid: tdidObj } });
+        const data = buildAndGetData([bidWithObjectTdid]);
+        expect(data.tdid).to.equal(tdidObj.id);
+      });
+
       it('should add CRITEO RTUS id as parameter of request', function () {
         const criteoId = 'aff4';
         const criteoIdBid = mockBannerBid({crumbs: undefined, userId: { criteoId }});
