@@ -67,7 +67,8 @@ export const spec = {
         url: ENDPOINT_URL,
         data: payload
       };
-    });
+    }).filter((request) => request !== undefined);
+;
   },
 
   /**
