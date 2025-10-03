@@ -107,7 +107,7 @@
     "karma-script-launcher": "^1.0.0",
     "karma-sinon": "^1.0.5",
     "karma-sourcemap-loader": "^0.4.0",
-    "karma-spec-reporter": "^0.0.32",
+    "karma-spec-reporter": "^0.0.36",
     "karma-webpack": "^5.0.0",
     "lodash": "^4.17.21",
     "merge-stream": "^2.0.0",
