@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -118,7 +119,7 @@ function getPayload (bid, bidderRequest) {
       complianceData: {
         child: '-1',
         us_privacy: uspConsent,
-        dnt: window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false,
+        dnt: getDNT(),
         iabConsent: {},
         mediation: {
           gdprConsent: mediation.gdprConsent,

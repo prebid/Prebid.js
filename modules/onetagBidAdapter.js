@@ -1,13 +1,13 @@
 'use strict';
 
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {Renderer} from '../src/Renderer.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone, getWinDimensions, logError} from '../src/utils.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
-import {toOrtbNativeRequest} from '../src/native.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { toOrtbNativeRequest } from '../src/native.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -298,7 +298,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.4'
+      adapter: '1.1.5'
     }
   };
 }
