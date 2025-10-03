@@ -1,3 +1,4 @@
+import {deepSetValue, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
@@ -8,19 +9,25 @@ const converter = ortbConverter({
         // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them 
         netRevenue: true,    // or false if your adapter should set bidResponse.netRevenue = false
         ttl: 30              // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)  
+    },
+    imp(buildImp, bidRequest, context) {
+       const imp = buildImp(bidRequest, context);
+       deepSetValue(imp, 'ext.params', bidRequest.params);
+       return imp;
     }
+/*    request(buildRequest, imps, bidderRequest, context) {
+      let request = buildRequest(imps, bidderRequest, context);
+      return request;
+    },*/
 });
 
 registerBidder({
     code: BIDDER_CODE,
-    // ... rest of your spec goes here ...    
     buildRequests(bidRequests, bidderRequest) {
         const data = converter.toORTB({bidRequests, bidderRequest})
-        // you may need to adjust `data` to suit your needs - see "customization" below
         return [{
             method: 'POST',
-            url: 'https://platform.clickio.com/api/AdUnit/',
-//            url: 'https://o.clickiocdn.com/bids/',
+            url: 'https://o.clickiocdn.com/bids',
             data
         }]
     },
@@ -58,10 +65,7 @@ registerBidder({
       {
         type: 'iframe',
         url: `https://onetag-sys.com/usync/?pubId=7685cd60ce8d4f0&${queryParams.join('&')}`
-      },
-      {
-        type: 'image',
-        url: `https://o.clickiocdn.com/redirect?${queryParams.join('&')}`
-      }];
+      }
+      ];
     }
 })
