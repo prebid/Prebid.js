@@ -1,65 +1,55 @@
 import {canAccessWindowTop, internal as utilsInternals} from '../utils.js';
+import {CachedApiWrapper} from './cachedApiWrapper.js';
 
 const CHECK_INTERVAL_MS = 20;
 
-export function cachedGetter(getter) {
-  let value, lastCheckTimestamp;
-  return {
-    get: function () {
-      if (!value || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-        value = getter();
-        lastCheckTimestamp = Date.now();
-      }
-      return value;
-    },
-    reset: function () {
-      value = getter();
-    }
-  }
-}
-
-function fetchWinDimensions() {
-  const top = canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
-
-  return {
+const winDimensions = new CachedApiWrapper(
+  () => canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf(),
+  {
+    innerHeight: true,
+    innerWidth: true,
     screen: {
-      width: top.screen?.width,
-      height: top.screen?.height
+      width: true,
+      height: true,
     },
-    innerHeight: top.innerHeight,
-    innerWidth: top.innerWidth,
     visualViewport: {
-      height: top.visualViewport?.height,
-      width: top.visualViewport?.width,
+      width: true,
+      height: true
     },
     document: {
       documentElement: {
-        clientWidth: top.document?.documentElement?.clientWidth,
-        clientHeight: top.document?.documentElement?.clientHeight,
-        scrollTop: top.document?.documentElement?.scrollTop,
-        scrollLeft: top.document?.documentElement?.scrollLeft,
+        clientWidth: true,
+        clientHeight: true,
+        scrollTop: true,
+        scrollLeft: true
       },
       body: {
-        scrollTop: document.body?.scrollTop,
-        scrollLeft: document.body?.scrollLeft,
-        clientWidth: document.body?.clientWidth,
-        clientHeight: document.body?.clientHeight,
-      },
+        scrollTop: true,
+        scrollLeft: true,
+        clientWidth: true,
+        clientHeight: true
+      }
     }
-  };
-}
+  }
+);
+
 export const internal = {
-  fetchWinDimensions,
-  resetters: []
+  reset: winDimensions.reset,
 };
 
-const winDimensions = cachedGetter(() => internal.fetchWinDimensions());
-
-export const getWinDimensions = winDimensions.get;
-internal.resetters.push(winDimensions.reset);
+export const getWinDimensions = (() => {
+  let lastCheckTimestamp;
+  return function () {
+    if (!lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
+      internal.reset();
+      lastCheckTimestamp = Date.now();
+    }
+    return winDimensions.obj;
+  }
+})();
 
 export function resetWinDimensions() {
-  internal.resetters.forEach(fn => fn());
+  internal.reset();
 }
 
 export function getScreenOrientation(win) {
