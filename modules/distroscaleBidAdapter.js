@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -163,7 +164,7 @@ export const spec = {
         h: screen.height,
         w: screen.width,
         language: (navigator.language && navigator.language.replace(/-.*/, '')) || 'en',
-        dnt: (navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes') ? 1 : 0
+        dnt: getDNT() ? 1 : 0
       },
       imp: [],
       user: {},
