@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   _each,
   contains,
@@ -5,7 +6,6 @@ import {
   deepAccess,
   deepSetValue,
   getDefinedParams,
-  getDNT,
   isArray,
   isArrayOfNums,
   isEmpty,
