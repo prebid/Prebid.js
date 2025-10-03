@@ -1,3 +1,17 @@
+---
+layout: bidder
+title: Clickio
+description: Clickio Bidder Adapter
+biddercode: clickio
+media_types: banner
+gdpr_supported: true
+usp_supported: true
+gpp_supported: true
+schain_supported: true
+coppa_supported: true
+userId: all
+---
+
 # Overview
 
 ```
