@@ -104,7 +104,8 @@ export const spec = {
     {code: 'oppamedia'},
     {code: 'pixelpluses', gvlid: 1209},
     {code: 'urekamedia'},
-    {code: 'smartyexchange'}
+    {code: 'smartyexchange'},
+    {code: 'infinety'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
