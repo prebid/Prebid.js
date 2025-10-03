@@ -11,7 +11,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'zmaticoo';
-const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
+const ENDPOINT_URL = 'https://rtbbid.zmaticoo.com/prebid/bid';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
