@@ -1,6 +1,7 @@
 import {deepSetValue, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'clickio';
 
@@ -23,6 +24,7 @@ const converter = ortbConverter({
 
 registerBidder({
     code: BIDDER_CODE,
+    supportedMediaTypes: [BANNER],
     buildRequests(bidRequests, bidderRequest) {
         const data = converter.toORTB({bidRequests, bidderRequest})
         return [{
