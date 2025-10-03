@@ -92,6 +92,7 @@ export function filterArrayData(arr, child, path, parent) {
     }
 
     logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
+    return false;
   }).filter((index, i) => {
     let requiredCheck = true;
     const mapping = deepAccess(ORTB_MAP, path);
@@ -99,6 +100,7 @@ export function filterArrayData(arr, child, path, parent) {
     if (mapping && mapping.required) requiredCheck = getRequiredData(index, mapping.required, parent, i);
 
     if (requiredCheck) return true;
+    return false;
   }).reduce((result, value, i) => {
     let typeBool = false;
     const mapping = deepAccess(ORTB_MAP, path);
@@ -151,6 +153,7 @@ export function validateFpd(fpd, path = '', parent = '') {
     if (!mapping || !mapping.invalid) return key;
 
     logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`);
+    return false;
   }).filter(key => {
     const mapping = deepAccess(ORTB_MAP, path + key);
     // let typeBool = false;
@@ -159,6 +162,7 @@ export function validateFpd(fpd, path = '', parent = '') {
     if (typeBool || !mapping) return key;
 
     logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
+    return false;
   }).reduce((result, key) => {
     const mapping = deepAccess(ORTB_MAP, path + key);
     let modified = {};

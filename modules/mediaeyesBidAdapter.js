@@ -19,7 +19,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     const requests = [];
 
-    bidRequests.map(bidRequest => {
+    bidRequests.forEach(bidRequest => {
       const {itemId} = bidRequest.params;
       const requestData = {
         id: generateUUID(),

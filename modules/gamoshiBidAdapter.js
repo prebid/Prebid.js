@@ -155,7 +155,7 @@ export const spec = {
         let type = bidRequest.mediaTypes['banner'] ? BANNER : VIDEO;
         if (!supplyPartnerId && type != null) {
           logError('Gamoshi: supplyPartnerId is required');
-          return;
+          return null;
         }
         bidRequest.mediaTypes.mediaType = type;
         const bidderCode = bidderRequest.bidderCode || 'gamoshi';
@@ -168,7 +168,7 @@ export const spec = {
         });
         if (!ortbRequest || !ortbRequest.imp || ortbRequest.imp.length === 0) {
           logWarn('Gamoshi: Failed to build valid ORTB request');
-          return;
+          return null;
         }
         return {
           method: 'POST',
@@ -178,6 +178,7 @@ export const spec = {
         };
       } catch (error) {
         logError('Gamoshi: Error building request:', error);
+        return null;
       }
     }).filter(Boolean);
   },
