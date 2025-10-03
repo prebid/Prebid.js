@@ -6,6 +6,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BIDDER_CODE = 'ogury';
 const GVLID = 31;
@@ -25,7 +26,7 @@ export const ortbConverterProps = {
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
-    deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
+    deepSetValue(req, 'device.pxratio', getDevicePixelRatio());
     deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
