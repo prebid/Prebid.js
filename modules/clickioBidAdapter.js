@@ -40,8 +40,8 @@ export const spec = {
     const queryParams = [];
 
     if (gdprConsent) {
-      if (gdprConsent.gdprApplies) {
-        queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+      if (gdprConsent.gdprApplies !== undefined) {
+        queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
       }
       if (gdprConsent.consentString) {
         queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
