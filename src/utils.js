@@ -4,14 +4,14 @@ import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
 import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
-import { getDNT as getNavigatorDNT } from '../libraries/navigatorData/dnt.js';
+import { getDNT as delegateGetDNT } from './utils/dnt.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
 export {getWinDimensions, resetWinDimensions, getScreenOrientation} from './utils/winDimensions.js';
 export function getDNT(win) {
-  return getNavigatorDNT(win);
+  return delegateGetDNT(win);
 }
 
 const consoleExists = Boolean(window.console);
