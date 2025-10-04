@@ -4,6 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
@@ -850,7 +851,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         let doNotTrackStub;
 
         beforeEach(function () {
-          doNotTrackStub = sinon.stub(utils, 'getDNT');
+          doNotTrackStub = sinon.stub(dnt, 'getDNT');
         });
         afterEach(function() {
           doNotTrackStub.restore();

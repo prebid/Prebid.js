@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
+import * as navigatorDnt from 'libraries/navigatorData/dnt.js';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
 import {parseDomain} from '../../../src/refererDetection.js';
@@ -342,7 +343,7 @@ describe('Adkernel adapter', function () {
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    const dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
+    const dntmock = sandbox.stub(navigatorDnt, 'getDNT').callsFake(() => dnt);
     bidderRequest.bids = bidRequests;
     const pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
