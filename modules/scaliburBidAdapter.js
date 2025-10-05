@@ -32,6 +32,7 @@ export const spec = {
     const ortb2Site = ortb2.site || {};
     const ortb2User = ortb2.user || {};
     const ortb2Regs = ortb2.regs || {};
+    const ortb2Device = ortb2.device || {};
     const ortb2SourceExt = ortb2.source?.ext || {};
     const eids = ortb2User?.ext?.eids || [];
     const fpd = getFirstPartyData();
@@ -111,10 +112,10 @@ export const spec = {
         content: ortb2Site.content || {},
       },
       device: {
-        ua: navigator.userAgent,
-        language: navigator.language,
-        sua: navigator.userAgentData || {},
-        dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+        ua: ortb2Device.ua,
+        language: ortb2Device.language,
+        sua: ortb2Device.sua || {},
+        dnt: ortb2Device.dnt ?? 0,
       },
       user: {
         eids,
