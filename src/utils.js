@@ -9,8 +9,6 @@ export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
 export {getWinDimensions, resetWinDimensions, getScreenOrientation} from './utils/winDimensions.js';
-export { getDNT } from '../libraries/navigatorData/dnt.js';
-
 const consoleExists = Boolean(window.console);
 const consoleLogExists = Boolean(consoleExists && window.console.log);
 const consoleInfoExists = Boolean(consoleExists && window.console.info);

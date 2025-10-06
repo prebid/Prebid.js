@@ -6,6 +6,7 @@ import { BANNER } from 'src/mediaTypes.js';
 import { deepClone, generateUUID } from 'src/utils.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import * as BoundingClientRect from 'libraries/boundingClientRect/boundingClientRect.js';
@@ -121,7 +122,7 @@ describe('ValuadAdapter', function () {
     });
 
     sandbox.stub(utils, 'canAccessWindowTop').returns(true);
-    sandbox.stub(utils, 'getDNT').returns(false);
+    sandbox.stub(dnt, 'getDNT').returns(false);
     sandbox.stub(utils, 'generateUUID').returns('test-uuid');
 
     sandbox.stub(refererDetection, 'parseDomain').returns('test.com');
