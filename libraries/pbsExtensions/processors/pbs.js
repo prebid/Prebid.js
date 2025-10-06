@@ -1,5 +1,5 @@
 import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
-import {deepAccess, isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
+import {isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
 import {extPrebidMediaType} from './mediaType.js';
 import {setRequestExtPrebidAliases} from './aliases.js';
 import {setImpBidParams} from './params.js';
