@@ -86,28 +86,30 @@ export const PBS_PROCESSORS = {
       // - bidder-scoped for 'errors' and 'responsetimemillis'
       // - copy-as-is for all other fields
       fn(response, ortbResponse, context) {
-        const bidder = context?.bidderRequest?.bidderCode;
-        const ext = ortbResponse && ortbResponse.ext;
+        const bidder = context.bidderRequest?.bidderCode;
+        const ext = ortbResponse?.ext;
         if (!ext) return;
-        Object.keys(ext).forEach((field) => {
-          if (field === 'errors' || field === 'responsetimemillis') {
+
+        const FIELD_MAP = {
+          errors: 'serverErrors',
+          responsetimemillis: 'serverResponseTimeMs'
+        };
+
+        Object.entries(ext).forEach(([field, extValue]) => {
+          if (FIELD_MAP[field]) {
+            // Skip mapped fields if no bidder
             if (!bidder) return;
-            const value = deepAccess(ortbResponse, `ext.${field}.${bidder}`);
+            const value = extValue?.[bidder];
             if (value !== undefined) {
-              const clientName = field === 'errors' ? 'serverErrors' : 'serverResponseTimeMs';
+              const clientName = FIELD_MAP[field];
               context.bidderRequest[clientName] = value;
-              context.bidRequests.forEach(bid => {
+              context.bidRequests?.forEach(bid => {
                 bid[clientName] = value;
               });
             }
-          } else {
-            const value = deepAccess(ortbResponse, `ext.${field}`);
-            if (value !== undefined) {
-              context.bidderRequest[field] = value;
-              context.bidRequests.forEach(bid => {
-                bid[field] = value;
-              });
-            }
+          } else if (extValue !== undefined) {
+            context.bidderRequest.pbsExt = context.bidderRequest.pbsExt || {};
+            context.bidderRequest.pbsExt[field] = extValue;
           }
         });
       }
