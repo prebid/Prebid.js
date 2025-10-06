@@ -74,7 +74,7 @@ const storage = getStorageManager({
  * params.position -> mediaTypes.banner.pos -> imp.banner.pos DONE
  * params.traffic_source_code -> params.traffic_source_code -> imp.ext.appnexus.traffic_source_code DONE
  * params.supply_type -> ortb.site/app -> site/app DONE
- * params.pub_click -> params.pub_click -> imp.ext.appnexus.pubclick DONE
+ * params.pub_click -> params.pubclick -> imp.ext.appnexus.pubclick DONE
  * params.ext_inv_code -> params.ext_inv_code -> imp.ext.appnexus.ext_inv_code DONE
  * params.external_imp_id -> params.ext_imp_id -> imp.id (overrides default imp.id) DONE
  *
