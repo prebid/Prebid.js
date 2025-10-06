@@ -16,15 +16,15 @@ Banner and video formats are supported.
             code: 'test-div',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]]
+                    sizes: [[300, 200]]
                 }
             },
             bids: [
                 {
                     bidder: "adocean",
                     params: {
-                        slaveId: 'TODO',
-                        masterId: 'TODO',
+                        slaveId: 'adoceanmyaotcpiltmmnj',
+                        masterId: 'ek1AWtSWh3BOa_x2P1vlMQ_uXXJpJcbhsHAY5PFQjWD.D7',
                         emiter: 'myao.adocean.pl'
                     }
                 }
@@ -40,15 +40,15 @@ Banner and video formats are supported.
             mediaTypes: {
                 video: {
                     context: 'instream',
-                    playerSize: [300, 250]
+                    playerSize: [300, 200]
                 }
             },
             bids: [
                 {
                     bidder: "adocean",
                     params: {
-                        slaveId: 'TODO',
-                        masterId: 'TODO',
+                        slaveId: 'adoceanmyaonenfcoqfnd',
+                        masterId: '2k6gA7RWl08Zn0bi42RV8LNCANpKb6LqhvKzbmK3pzP.U7',
                         emiter: 'myao.adocean.pl'
                     }
                 }
