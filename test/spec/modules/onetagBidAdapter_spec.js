@@ -491,7 +491,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
@@ -502,10 +502,6 @@ describe('onetag', function () {
       expect(data.sWidth).to.be.a('number');
       expect(data.wWidth).to.be.a('number');
       expect(data.wHeight).to.be.a('number');
-      expect(data.oHeight).to.be.a('number');
-      expect(data.oWidth).to.be.a('number');
-      expect(data.aWidth).to.be.a('number');
-      expect(data.aHeight).to.be.a('number');
       expect(data.sLeft).to.be.a('number');
       expect(data.sTop).to.be.a('number');
       expect(data.hLength).to.be.a('number');
@@ -586,7 +582,7 @@ describe('onetag', function () {
               }
               if (size !== null) {
                 const keys = Object.keys(size);
-                if (keys.length == 0) {
+                if (keys.length === 0) {
                   return true;
                 }
                 expect(size).to.have.keys('width', 'height');
@@ -1135,12 +1131,8 @@ function getBannerVideoRequest() {
       masked: 0,
       wWidth: 860,
       wHeight: 949,
-      oWidth: 1853,
-      oHeight: 1053,
       sWidth: 1920,
       sHeight: 1080,
-      aWidth: 1920,
-      aHeight: 1053,
       sLeft: 1987,
       sTop: 27,
       xOffset: 0,
