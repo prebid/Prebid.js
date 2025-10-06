@@ -181,9 +181,7 @@ export const spec = {
       const adUnitElement = document.getElementById(bidRequest.params.pubcontainerid || bidRequest.adUnitCode);
       const windowContext = getContext(adUnitElement);
       const isIframe = inIframe();
-      const framePosition = getFramePosition();
-
-      const coords = isIframe ? framePosition : {
+      const coords = isIframe ? getFramePosition() : {
         x: adUnitElement && getBoundingClientRect(adUnitElement).x,
         y: adUnitElement && getBoundingClientRect(adUnitElement).y,
       };
