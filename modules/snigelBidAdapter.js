@@ -1,7 +1,8 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
+import {deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
@@ -130,7 +131,7 @@ function getTestFlag() {
 
 function getLanguage() {
   return navigator && navigator.language
-    ? navigator.language.indexOf('-') != -1
+    ? navigator.language.indexOf('-') !== -1
       ? navigator.language.split('-')[0]
       : navigator.language
     : undefined;

@@ -1,9 +1,9 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   cleanObj,
   deepAccess,
   deepClone,
   deepSetValue,
-  getDNT,
   inIframe,
   isArray,
   isEmpty,
@@ -105,12 +105,12 @@ function getDeviceType() {
  * @returns {number}
  */
 function getOS() {
-  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
-  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
-  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
-  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
-  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
-  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
+  if (navigator.userAgent.indexOf('Android') !== -1) return 'Android';
+  if (navigator.userAgent.indexOf('like Mac') !== -1) return 'iOS';
+  if (navigator.userAgent.indexOf('Win') !== -1) return 'Windows';
+  if (navigator.userAgent.indexOf('Mac') !== -1) return 'Macintosh';
+  if (navigator.userAgent.indexOf('Linux') !== -1) return 'Linux';
+  if (navigator.appVersion.indexOf('X11') !== -1) return 'Unix';
   return 'Others';
 }
 

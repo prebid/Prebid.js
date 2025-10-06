@@ -143,10 +143,6 @@ const ENRICHMENTS = {
         },
       };
 
-      if (win.navigator?.webdriver) {
-        deepSetValue(device, 'ext.webdriver', true);
-      }
-
       return device;
     })
   },

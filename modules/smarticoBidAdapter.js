@@ -28,7 +28,7 @@ export const spec = {
       bid = validBidRequests[i]
       if (bid.sizes) {
         sizes = bid.sizes
-      } else if (typeof (BANNER) != 'undefined' && bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
+      } else if (typeof (BANNER) !== 'undefined' && bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
         sizes = bid.mediaTypes[BANNER].sizes
       } else if (frameWidth && frameHeight) {
         sizes = [[frameWidth, frameHeight]]

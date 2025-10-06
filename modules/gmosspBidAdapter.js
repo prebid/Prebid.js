@@ -1,12 +1,12 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue, getBidIdParameter,
-  getDNT,
   getWindowTop,
   isEmpty,
   logError
@@ -167,7 +167,7 @@ function getUrlInfo(refererInfo) {
   if (!canonicalLink) {
     const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }
