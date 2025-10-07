@@ -77,7 +77,7 @@
     "execa": "^1.0.0",
     "faker": "^5.5.3",
     "fancy-log": "^2.0.0",
-    "fs-extra": "^11.3.1",
+    "fs-extra": "^11.3.2",
     "globals": "^16.3.0",
     "gulp": "^5.0.1",
     "gulp-clean": "^0.4.0",
