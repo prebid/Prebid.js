@@ -3463,7 +3463,7 @@ describe('IndexexchangeAdapter', function () {
         expect(bImp.id).to.equal(bids[0].bidId);
         expect(bImp.banner.format).to.have.length(bids[0].mediaTypes.banner.sizes.length);
         expect(bImp.banner.topframe).to.be.oneOf([0, 1]);
-        bImp.banner.format.foreach(({ w, h, ext }, i) => {
+        bImp.banner.format.forEach(({ w, h, ext }, i) => {
           const [sw, sh] = bids[0].mediaTypes.banner.sizes[i];
           expect(w).to.equal(sw);
           expect(h).to.equal(sh);
