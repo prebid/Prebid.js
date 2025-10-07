@@ -21,7 +21,7 @@ describe('msftBidAdapter', function () {
     adUnitCode: 'adunit-code',
     bidId: '2c5f3044f546f1',
     params: {
-      placement_id: '12345'
+      placement_id: 12345
     }
   };
 
@@ -87,7 +87,7 @@ describe('msftBidAdapter', function () {
       const bid = {
         bidder: 'msft',
         params: {
-          placement_id: '12345'
+          placement_id: 12345
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -97,7 +97,7 @@ describe('msftBidAdapter', function () {
       const bid = {
         bidder: 'msft',
         params: {
-          member: '123',
+          member: 123,
           inv_code: 'abc'
         }
       };
@@ -108,7 +108,7 @@ describe('msftBidAdapter', function () {
       const bid = {
         bidder: 'msft',
         params: {
-          member: '123'
+          member: 123
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -163,7 +163,7 @@ describe('msftBidAdapter', function () {
         h: 600
       }]);
       expect(data.imp[0].banner.api).to.deep.equal([1, 2, 6]);
-      expect(data.imp[0].ext.appnexus.placement_id).to.equal('12345');
+      expect(data.imp[0].ext.appnexus.placement_id).to.equal(12345);
       expect(data.imp[0].ext.appnexus.allow_smaller_sizes).to.equal(false);
       expect(data.imp[0].ext.appnexus.use_pmt_rule).to.equal(true);
       expect(data.imp[0].ext.appnexus.keywords).to.equal('sports,music=rock');
@@ -713,6 +713,7 @@ describe('msftBidAdapter', function () {
               "example.com"
             ],
             "iurl": "https://nym2-ib.adnxs.com/cr?id=484626808",
+            "nurl": "https://nym2-ib.adnxs.com/something?",
             "cid": "13859",
             "crid": "484626808",
             "h": 1,
@@ -968,6 +969,7 @@ describe('msftBidAdapter', function () {
               "example.com"
             ],
             "iurl": "https://nym2-ib.adnxs.com/cr?id=546521568",
+            "nurl": "https://nym2-ib.adnxs.com/something",
             "cid": "7877",
             "crid": "546521568",
             "h": 1,
@@ -1313,7 +1315,7 @@ describe('msftBidAdapter', function () {
         const bid = bids[0];
         expect(bid.mediaType).to.equal(VIDEO);
         expect(bid.cpm).to.equal(10);
-        expect(bid.vastXml).to.equal(videoInstreamBidResponse.body.seatbid[0].bid[0].adm);
+        expect(bid.vastUrl).to.equal(`${videoInstreamBidResponse.body.seatbid[0].bid[0].nurl}&redir=${encodeURIComponent(videoInstreamBidResponse.body.seatbid[0].bid[0].ext.appnexus.asset_url)}`);
         expect(bid.playerWidth).to.equal(640);
         expect(bid.playerHeight).to.equal(360);
         expect(bid.meta.advertiser_id).to.equal(6621028);
