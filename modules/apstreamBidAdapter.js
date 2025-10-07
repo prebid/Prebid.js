@@ -1,4 +1,5 @@
-import { generateUUID, deepAccess, createTrackPixelHtml, getDNT } from '../src/utils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
+import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
