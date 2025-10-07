@@ -1,6 +1,6 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   generateUUID,
-  getDNT,
   _each,
   getWinDimensions,
 } from '../src/utils.js';
