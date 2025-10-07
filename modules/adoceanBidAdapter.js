@@ -7,18 +7,18 @@ const URL_SAFE_FIELDS = {
   slaves: true
 };
 
-function buildEndpointUrl(emiter, payloadMap) {
+function buildEndpointUrl(emitter, payloadMap) {
   const payload = [];
   _each(payloadMap, function(v, k) {
     payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
-  return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
+  return 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
 function buildRequest(bid, gdprConsent) {
-  const emiter = bid.params.emiter;
+  const emitter = bid.params.emitter;
   const masterId = bid.params.masterId;
   const slaveId = bid.params.slaveId;
   const payload = {
@@ -70,7 +70,7 @@ function buildRequest(bid, gdprConsent) {
 
   return {
     method: 'GET',
-    url: buildEndpointUrl(emiter, payload),
+    url: buildEndpointUrl(emitter, payload),
     data: '',
     bidIdMap: bidIdMap
   };
@@ -120,7 +120,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
-    const requiredParams = ['slaveId', 'masterId', 'emiter'];
+    const requiredParams = ['slaveId', 'masterId', 'emitter'];
     if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
       return false;
     }

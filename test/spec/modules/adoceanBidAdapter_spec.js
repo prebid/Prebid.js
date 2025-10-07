@@ -18,7 +18,7 @@ describe('AdoceanAdapter', function () {
       params: {
         masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
         slaveId: 'adoceanmyaozpniqismex',
-        emiter: 'myao.adocean.pl'
+        emitter: 'myao.adocean.pl'
       },
       adUnitCode: 'adunit-code',
       mediaTypes: {
@@ -45,7 +45,7 @@ describe('AdoceanAdapter', function () {
       params: {
         masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
         slaveId: 'adoceanmyaozpniqismex',
-        emiter: 'myao.adocean.pl'
+        emitter: 'myao.adocean.pl'
       },
       adUnitCode: 'adunit-code',
       mediaTypes: {
@@ -68,7 +68,7 @@ describe('AdoceanAdapter', function () {
       params: {
         masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
         slaveId: 'adoceanmyaozpniqismex',
-        emiter: 'myao.adocean.pl'
+        emitter: 'myao.adocean.pl'
       },
       adUnitCode: 'adunit-code',
       mediaTypes: {
@@ -100,7 +100,7 @@ describe('AdoceanAdapter', function () {
       params: {
         masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
         slaveId: 'adoceanmyaozpniqismex',
-        emiter: 'myao.adocean.pl'
+        emitter: 'myao.adocean.pl'
       },
       adUnitCode: 'adunit-code',
       mediaTypes: {
@@ -126,7 +126,7 @@ describe('AdoceanAdapter', function () {
         params: {
           masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
           slaveId: 'adoceanmyaozpniqismex',
-          emiter: 'myao.adocean.pl'
+          emitter: 'myao.adocean.pl'
         },
         adUnitCode: 'adunit-code',
         mediaTypes: {
@@ -143,7 +143,7 @@ describe('AdoceanAdapter', function () {
         params: {
           masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
           slaveId: 'adoceanmyaozpniqismex',
-          emiter: 'myao.adocean.pl'
+          emitter: 'myao.adocean.pl'
         },
         adUnitCode: 'adunit-code',
         mediaTypes: {
@@ -181,7 +181,7 @@ describe('AdoceanAdapter', function () {
     it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/_[0-9]*/ad.json`));
+      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emitter}/_[0-9]*/ad.json`));
     });
 
     it('should attach id to url', function () {
@@ -216,7 +216,7 @@ describe('AdoceanAdapter', function () {
         params: {
           masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
           slaveId: 'adoceanmyaozpniqismex',
-          emiter: 'myao.adocean.pl'
+          emitter: 'myao.adocean.pl'
         },
         adUnitCode: 'adunit-code',
         mediaTypes: {
@@ -250,7 +250,7 @@ describe('AdoceanAdapter', function () {
         params: {
           masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
           slaveId: 'adoceanmyaozpniqismex',
-          emiter: 'myao.adocean.pl'
+          emitter: 'myao.adocean.pl'
         },
         adUnitCode: 'adunit-code',
         mediaTypes: {
@@ -306,7 +306,7 @@ describe('AdoceanAdapter', function () {
       params: {
         masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
         slaveId: 'adoceanmyaozpniqismex',
-        emiter: 'myao.adocean.pl'
+        emitter: 'myao.adocean.pl'
       },
       adUnitCode: 'adunit-code',
       mediaTypes: {
@@ -395,7 +395,7 @@ describe('AdoceanAdapter', function () {
       params: {
         masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
         slaveId: 'adoceanmyaolifgmvmpfj',
-        emiter: 'myao.adocean.pl'
+        emitter: 'myao.adocean.pl'
       },
       adUnitCode: 'adunit-code',
       bidIdMap: {

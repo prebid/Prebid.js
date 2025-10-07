@@ -25,7 +25,7 @@ Banner and video formats are supported.
                     params: {
                         slaveId: 'adoceanmyaotcpiltmmnj',
                         masterId: 'ek1AWtSWh3BOa_x2P1vlMQ_uXXJpJcbhsHAY5PFQjWD.D7',
-                        emiter: 'myao.adocean.pl'
+                        emitter: 'myao.adocean.pl'
                     }
                 }
             ]
@@ -49,7 +49,7 @@ Banner and video formats are supported.
                     params: {
                         slaveId: 'adoceanmyaonenfcoqfnd',
                         masterId: '2k6gA7RWl08Zn0bi42RV8LNCANpKb6LqhvKzbmK3pzP.U7',
-                        emiter: 'myao.adocean.pl'
+                        emitter: 'myao.adocean.pl'
                     }
                 }
             ]
