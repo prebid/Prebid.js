@@ -1,15 +1,15 @@
 /**
  * Define Media Bid Adapter for Prebid.js
- * 
+ *
  * This adapter connects publishers to Define Media's programmatic advertising platform
  * via OpenRTB 2.5 protocol. It supports banner ad formats and includes proper
  * supply chain transparency through sellers.json compliance.
- * 
+ *
  * @module defineMediaBidAdapter
  * @version 1.0.0
  */
 
-import {logInfo, logError, logWarn, deepSetValue } from "../src/utils.js";
+import {logInfo, logError, logWarn } from "../src/utils.js";
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
@@ -47,15 +47,15 @@ export const spec = {
 
   /**
    * Determines if a bid request is valid for this adapter
-   * 
+   *
    * Required parameters:
    * - supplierDomainName: Domain name for supply chain transparency
    * - mediaTypes.banner: Must include banner media type configuration
-   * 
+   *
    * Optional parameters:
    * - devMode: Boolean flag to use development endpoint
    * - ttl: Custom time-to-live for the bid response (only honored when devMode is true)
-   * 
+   *
    * @param {Object} bid - The bid request object from Prebid.js
    * @returns {boolean} True if the bid request is valid
    */
@@ -70,14 +70,14 @@ export const spec = {
     const hasSupplierDomainName = Boolean(bid?.params?.supplierDomainName);
     const hasValidMediaType = Boolean(bid?.mediaTypes && bid.mediaTypes.banner);
     const isDevMode = Boolean(bid?.params?.devMode);
-    
-    logInfo(`[${BIDDER_CODE}] isBidRequestValid called with:`, { 
+
+    logInfo(`[${BIDDER_CODE}] isBidRequestValid called with:`, {
       bidId: bid.bidId,
-      hasSupplierDomainName, 
+      hasSupplierDomainName,
       hasValidMediaType,
       isDevMode
     });
-    
+
     const isValid = hasSupplierDomainName && hasValidMediaType;
     logInfo(`[${BIDDER_CODE}] isBidRequestValid returned:`, isValid);
     return isValid;
@@ -85,13 +85,13 @@ export const spec = {
 
   /**
    * Builds OpenRTB bid requests from validated Prebid.js bid requests
-   * 
+   *
    * This method:
    * 1. Creates individual OpenRTB requests for each valid bid
    * 2. Sets up dynamic TTL based on bid parameters (only in devMode)
    * 3. Configures supply chain transparency (schain)
    * 4. Selects appropriate endpoint based on devMode flag
-   * 
+   *
    * @param {Array} validBidRequests - Array of valid bid request objects
    * @param {Object} bidderRequest - Bidder-level request data from Prebid.js
    * @returns {Array} Array of bid request objects to send to the server
@@ -100,14 +100,14 @@ export const spec = {
     return validBidRequests?.map(function(req) {
       // DeepCopy the request to avoid modifying the original object
       const oneBidRequest = [JSON.parse(JSON.stringify(req))];
-      
+
       // Get parameters and check devMode first
       const params = oneBidRequest[0].params;
       const isDevMode = Boolean(params?.devMode);
-      
+
       // Custom TTL is only allowed in development mode for security and consistency
       const ttl = isDevMode && params?.ttl ? params.ttl : DEFAULT_TTL;
-      
+
       // Create converter with TTL (custom only in devMode, otherwise default)
       const dynamicConverter = ortbConverter({
         context: {
@@ -115,7 +115,7 @@ export const spec = {
           ttl: ttl
         }
       });
-      
+
       // Convert Prebid.js request to OpenRTB format
       const ortbRequest = dynamicConverter.toORTB({
         bidderRequest: bidderRequest,
@@ -146,7 +146,7 @@ export const spec = {
       }
 
       logInfo(`[${BIDDER_CODE}] Mapped ORTB Request from`, oneBidRequest, ' to ', ortbRequest, ' with bidderRequest ', bidderRequest);
-      
+
       return {
         method: METHOD,
         url: endpointUrl,
@@ -158,13 +158,13 @@ export const spec = {
 
   /**
    * Processes bid responses from the Define Media server
-   * 
+   *
    * This method:
    * 1. Validates the server response structure
    * 2. Uses the appropriate ORTB converter (request-specific or default)
    * 3. Converts OpenRTB response back to Prebid.js bid format
    * 4. Handles errors gracefully and returns empty array on failure
-   * 
+   *
    * @param {Object} serverResponse - Response from the bid server
    * @param {Object} request - Original request object containing converter
    * @returns {Array} Array of bid objects for Prebid.js
@@ -193,7 +193,7 @@ export const spec = {
   /**
    * Handles bid request timeouts
    * Currently logs timeout events for monitoring and debugging
-   * 
+   *
    * @param {Array|Object} timeoutData - Timeout data from Prebid.js
    */
   onTimeout: (timeoutData) => {
@@ -202,11 +202,11 @@ export const spec = {
 
   /**
    * Handles successful bid wins
-   * 
+   *
    * This method:
    * 1. Fires win notification URL (burl) if present in bid
    * 2. Logs win event for analytics and debugging
-   * 
+   *
    * @param {Object} bid - The winning bid object
    */
   onBidWon: (bid) => {
@@ -219,19 +219,19 @@ export const spec = {
 
   /**
    * Handles bidder errors with comprehensive error categorization
-   * 
+   *
    * This method:
    * 1. Categorizes errors by type (timeout, network, client/server errors)
    * 2. Collects relevant context for debugging
    * 3. Logs structured error information for monitoring
-   * 
+   *
    * Error categories:
    * - timeout: Request exceeded time limit
    * - network: Network connectivity issues
    * - client_error: 4xx HTTP status codes
    * - server_error: 5xx HTTP status codes
    * - unknown: Uncategorized errors
-   * 
+   *
    * @param {Object} params - Error parameters
    * @param {Object} params.error - Error object
    * @param {Object} params.bidderRequest - Original bidder request
@@ -268,7 +268,7 @@ export const spec = {
   /**
    * Handles successful ad rendering events
    * Currently logs render success for analytics and debugging
-   * 
+   *
    * @param {Object} bid - The successfully rendered bid object
    */
   onAdRenderSucceeded: (bid) => {
