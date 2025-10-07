@@ -10,8 +10,8 @@ import {interpretResponse} from '../libraries/uniquestUtils/uniquestUtils.js';
  * @typedef {import('../src/auction').BidderRequest} BidderRequest
  */
 
-const BIDDER_CODE = 'uniquest';
-const ENDPOINT = 'https://adpb.ust-ad.com/hb/prebid';
+const BIDDER_CODE = 'uniquest_widget';
+const ENDPOINT = 'https://adpb.ust-ad.com/hb/prebid/widgets';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,7 +24,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.sid);
+    return !!(bid.params && bid.params.wid);
   },
 
   /**
@@ -42,13 +42,13 @@ export const spec = {
       const request = validBidRequests[i];
 
       const bid = request.bidId;
-      const sid = getBidIdParameter('sid', request.params);
+      const wid = getBidIdParameter('wid', request.params);
       const widths = request.sizes.map(size => size[0]).join(',');
       const heights = request.sizes.map(size => size[1]).join(',');
       const timeout = bidderRequest.timeout
 
       queryString = tryAppendQueryString(queryString, 'bid', bid);
-      queryString = tryAppendQueryString(queryString, 'sid', sid);
+      queryString = tryAppendQueryString(queryString, 'wid', wid);
       queryString = tryAppendQueryString(queryString, 'widths', widths);
       queryString = tryAppendQueryString(queryString, 'heights', heights);
       queryString = tryAppendQueryString(queryString, 'timeout', timeout);
