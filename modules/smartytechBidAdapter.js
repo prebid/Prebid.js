@@ -1,13 +1,50 @@
-import {buildUrl, deepAccess, isArray} from '../src/utils.js'
+import {buildUrl, deepAccess, isArray, generateUUID} from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {findRootDomain} from '../src/fpd/rootDomain.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
 export const ENDPOINT_DOMAIN = 'server.smartytech.io';
 export const ENDPOINT_PATH = '/hb/v2/bidder';
+
+// Alias User ID constants
+const AUID_COOKIE_NAME = '_smartytech_auid';
+const AUID_COOKIE_EXPIRATION_DAYS = 1825; // 5 years
+
+// Storage manager for cookies
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+
+/**
+ * Get or generate Alias User ID (auId)
+ * - Checks if auId exists in cookie
+ * - If not, generates new UUID and stores it in cookie on root domain
+ * @returns {string|null} The alias user ID or null if cookies are not enabled
+ */
+export function getAliasUserId() {
+  if (!storage.cookiesAreEnabled()) {
+    return null;
+  }
+
+  let auId = storage.getCookie(AUID_COOKIE_NAME);
+
+  if (auId && auId.length > 0) {
+    return auId;
+  }
+
+  auId = generateUUID();
+
+  const expirationDate = new Date();
+  expirationDate.setTime(expirationDate.getTime() + (AUID_COOKIE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000));
+  const expires = expirationDate.toUTCString();
+
+  storage.setCookie(AUID_COOKIE_NAME, auId, expires, 'Lax', findRootDomain());
+
+  return auId;
+}
 
 export const spec = {
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -56,6 +93,8 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const referer = bidderRequest?.refererInfo?.page || window.location.href;
 
+    const auId = getAliasUserId();
+
     const bidRequests = validBidRequests.map((validBidRequest) => {
       const video = deepAccess(validBidRequest, 'mediaTypes.video', false);
       const banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
@@ -67,6 +106,10 @@ export const spec = {
         referer: referer,
         bidId: validBidRequest.bidId
       };
+
+      if (auId) {
+        oneRequest.auId = auId;
+      }
 
       if (video) {
         oneRequest.video = video;
