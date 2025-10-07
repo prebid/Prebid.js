@@ -6,7 +6,7 @@ import { ajax } from '../src/ajax.js';
 
 const { AUCTION_END, BID_WON } = EVENTS;
 const ANALYTICS_CODE = 'adplus';
-const SERVER_URL = 'https://ssp-dev.ad-plus.com.tr/server/analytics/bids';
+const SERVER_URL = 'https://ssp.ad-plus.com.tr/server/analytics/bids';
 const SEND_DELAY_MS = 200;
 const MAX_RETRIES = 3;
 

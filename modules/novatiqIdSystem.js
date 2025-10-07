@@ -49,7 +49,7 @@ export const novatiqIdSubmodule = {
       responseObj.novatiq.ext.syncResponse = novatiqId.syncResponse;
     }
 
-    if (typeof config != 'undefined' && typeof config.params !== 'undefined' && typeof config.params.removeAdditionalInfo !== 'undefined' && config.params.removeAdditionalInfo === true) {
+    if (typeof config !== 'undefined' && typeof config.params !== 'undefined' && typeof config.params.removeAdditionalInfo !== 'undefined' && config.params.removeAdditionalInfo === true) {
       delete responseObj.novatiq.snowflake.syncResponse;
     }
 
@@ -82,7 +82,7 @@ export const novatiqIdSubmodule = {
     const novatiqId = syncUrl.novatiqId;
 
     // for testing
-    const sharedStatus = (sharedId != undefined && sharedId != false) ? 'Found' : 'Not Found';
+    const sharedStatus = (sharedId !== null && sharedId !== undefined && sharedId !== false) ? 'Found' : 'Not Found';
 
     if (useCallbacks) {
       const res = this.sendAsyncSyncRequest(novatiqId, url); ;
@@ -165,7 +165,7 @@ export const novatiqIdSubmodule = {
     }
 
     // append on the shared ID if we have one
-    if (sharedId != null) {
+    if (sharedId !== null && sharedId !== undefined) {
       url = url + '&sharedId=' + sharedId;
     }
 
@@ -183,17 +183,17 @@ export const novatiqIdSubmodule = {
       useSspHost: true
     }
 
-    if (typeof configParams.urlParams != 'undefined') {
-      if (configParams.urlParams.novatiqId != undefined) {
+    if (typeof configParams.urlParams !== 'undefined') {
+      if (configParams.urlParams.novatiqId !== undefined) {
         urlParams.novatiqId = configParams.urlParams.novatiqId;
       }
-      if (configParams.urlParams.useStandardUuid != undefined) {
+      if (configParams.urlParams.useStandardUuid !== undefined) {
         urlParams.useStandardUuid = configParams.urlParams.useStandardUuid;
       }
-      if (configParams.urlParams.useSspId != undefined) {
+      if (configParams.urlParams.useSspId !== undefined) {
         urlParams.useSspId = configParams.urlParams.useSspId;
       }
-      if (configParams.urlParams.useSspHost != undefined) {
+      if (configParams.urlParams.useSspHost !== undefined) {
         urlParams.useSspHost = configParams.urlParams.useSspHost;
       }
     }
@@ -202,17 +202,17 @@ export const novatiqIdSubmodule = {
   },
 
   useCallbacks(configParams) {
-    return typeof configParams.useCallbacks != 'undefined' && configParams.useCallbacks === true;
+    return typeof configParams.useCallbacks !== 'undefined' && configParams.useCallbacks === true;
   },
 
   useSharedId(configParams) {
-    return typeof configParams.useSharedId != 'undefined' && configParams.useSharedId === true;
+    return typeof configParams.useSharedId !== 'undefined' && configParams.useSharedId === true;
   },
 
   getCookieOrStorageID(configParams) {
     let cookieOrStorageID = '_pubcid';
 
-    if (typeof configParams.sharedIdName != 'undefined' && configParams.sharedIdName != null && configParams.sharedIdName != '') {
+    if (typeof configParams.sharedIdName !== 'undefined' && configParams.sharedIdName !== null && configParams.sharedIdName !== '') {
       cookieOrStorageID = configParams.sharedIdName;
       logInfo('NOVATIQ sharedID name redefined: ' + cookieOrStorageID);
     }
@@ -234,7 +234,7 @@ export const novatiqIdSubmodule = {
       }
 
       // if nothing check the local cookies
-      if (sharedId == null) {
+      if (sharedId === null || sharedId === undefined) {
         sharedId = storage.getCookie(cookieOrStorageID);
         logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId);
       }
@@ -246,7 +246,7 @@ export const novatiqIdSubmodule = {
   },
 
   getSrcId(configParams, urlParams) {
-    if (urlParams.useSspId == false) {
+    if (urlParams.useSspId === false) {
       logInfo('NOVATIQ Configured to NOT use sspid');
       return '';
     }

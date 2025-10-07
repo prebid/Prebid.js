@@ -65,7 +65,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.params = bidRequest.params;
 
   payload.userEids = bidRequest.userIdAsEids || [];
-  payload.version = '$prebid.version$';
+  payload.version = 'prebid.js@$prebid.version$';
 
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
@@ -106,7 +106,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid == 'object' && !!bid.params.apiKey;
+    return typeof bid === 'object' && !!bid.params.apiKey;
   },
 
   /**
@@ -123,7 +123,7 @@ export const spec = {
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
-      (!capping?.referer || capping?.referer == referer)
+      (!capping?.referer || capping?.referer === referer)
     ) {
       logInfo('Missena - Capped');
       return [];

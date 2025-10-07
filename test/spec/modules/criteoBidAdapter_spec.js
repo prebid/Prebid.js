@@ -335,7 +335,7 @@ describe('The Criteo bidding adapter', function () {
       const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
 
       setCookieStub.callsFake((name, value, expires, _, domain) => {
-        if (domain != '.com') {
+        if (domain !== '.com') {
           cookies[name] = value;
         }
       });
