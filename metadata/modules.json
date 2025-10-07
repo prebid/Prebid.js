@@ -976,6 +976,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "alvads",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "ampliffy",
       "aliasOf": "ampliffy",
       "gvlid": null,
@@ -3944,6 +3951,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "screencore",
+      "aliasOf": null,
+      "gvlid": 1473,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "seedingAlliance",
       "aliasOf": null,
       "gvlid": 371,
@@ -4127,6 +4141,13 @@
     {
       "componentType": "bidder",
       "componentName": "jambojar",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "anzu",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
