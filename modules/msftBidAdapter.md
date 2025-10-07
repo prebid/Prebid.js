@@ -71,26 +71,6 @@ If you are migrating from the AppNexus bid adapter, the following table shows ho
 }
 ```
 
-With corresponding ortb2 configuration:
-```javascript
-pbjs.setConfig({
-  ortb2: {
-    publisher: {
-      id: "456"
-    }
-  }
-});
-```
-
-And bidfloor module for reserve price:
-```javascript
-pbjs.setConfig({
-  floors: {
-    default: 0.50
-  }
-});
-```
-
 ## Native 
 
 If you are migrating from the AppNexus bid adapter, the setup for Native adUnits now require the use of the Prebid.js ORTB Native setup.  The Microsoft Bid Adapter no longer offers support to the legacy Prebid.js Native adUnit setup.  Requests using that approach will not work and need to be converted to the equivalent values in the adUnit.  This change is made to better align with Prebid.js and many other Bid Adapters that support Native in an ORTB context.
