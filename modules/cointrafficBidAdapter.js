@@ -68,7 +68,6 @@ export const spec = {
         data: payload
       };
     }).filter((request) => request !== undefined);
-;
   },
 
   /**
