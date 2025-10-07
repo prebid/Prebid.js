@@ -109,7 +109,7 @@ const storage = getStorageManager({
  * advertiser_id -> imp.ext.appnexus.advertiser_id -> bidResponse.advertiserId DONE
  * renderer_config -> imp.ext.appnexus.renderer_config -> bidResponse.rendererConfig DONE
  * renderer_id -> imp.ext.appnexus.renderer_id -> bidResponse.rendererId DONE
- * asset_url -> imp.ext.appnexus.asset_url -> bidResponse.assetUrl TODO?
+ * asset_url -> imp.ext.appnexus.asset_url -> bidResponse.assetUrl DONE
  *
  */
 
@@ -153,8 +153,7 @@ const converter = ortbConverter({
     }
 
     if (bidderParams) {
-      // TOD add type check here
-      if (bidderParams.placement_id) {
+      if (typeof bidderParams.placement_id === 'number') {
         extANData.placement_id = bidderParams.placement_id;
       } else if (isNotEmptyString(bidderParams.inv_code)) {
         deepSetValue(imp, 'tagid', bidderParams.inv_code);
@@ -186,6 +185,19 @@ const converter = ortbConverter({
 
       if (isNotEmptyString(bidderParams.ext_imp_id)) {
         imp.id = bidderParams.ext_imp_id;
+      }
+    }
+
+    // for force creative we expect the following format:
+    // page.html?ast_override_div=divId:creativeId,divId2:creativeId2
+    const overrides = getParameterByName('ast_override_div');
+    if (isNotEmptyString(overrides)) {
+      const adUnitOverride = decodeURIComponent(overrides).split(',').find((pair) => pair.startsWith(`${bidRequest.adUnitCode}:`));
+      if (adUnitOverride) {
+        const forceCreativeId = adUnitOverride.split(':')[1];
+        if (forceCreativeId) {
+          extANData.force_creative_id = parseInt(forceCreativeId, 10);
+        }
       }
     }
 
@@ -263,19 +275,26 @@ const converter = ortbConverter({
       });
     }
 
-    if (FEATURES.NATIVE) {
-      // what else besides trk.js?
-
-      // TODO handle native trk.js dom_id replacement if needed...just need to for impbus to add trk.js in the bid
-      // old code for reference:
-      // if (rtbBid.viewability?.config.includes('dom_id=%native_dom_id%')) {
-      //   const prebidParams = 'pbjs_adid=' + adId + ';pbjs_auc=' + bidRequest.adUnitCode;
-      //   viewScript = rtbBid.viewability.config.replace('dom_id=%native_dom_id%', prebidParams);
-      // }
+    // replace the placeholder token for trk.js if it's present in eventtrackers
+    if (FEATURES.NATIVE && mediaType === NATIVE) {
+      try {
+        const nativeAdm = bid.adm ? JSON.parse(bid.adm) : {};
+        if (nativeAdm?.eventtrackers && isArray(nativeAdm.eventtrackers)) {
+          nativeAdm.eventtrackers.forEach(trackCfg => {
+            if (trackCfg.url.includes('dom_id=%native_dom_id%')) {
+              const prebidParams = 'pbjs_adid=' + bidResponse.adId + ';pbjs_auc=' + bidRequest.adUnitCode;
+              trackCfg.url = trackCfg.url.replace('dom_id=%native_dom_id%', prebidParams);
+            }
+          });
+        }
+      } catch (e) {
+        logError('MSFT Native adm parse error', e);
+      }
     }
 
     // setup outstream renderer if needed
     if (FEATURES.VIDEO && mediaType === VIDEO) {
+      // handle outstream bids
       if (extANData?.renderer_url && extANData?.renderer_id) {
         const adUnitCode = bidRequest?.adUnitCode;
         if (isNotEmptyString(adUnitCode)) {
@@ -285,7 +304,6 @@ const converter = ortbConverter({
           if (!rendererOptions) {
             rendererOptions = deepAccess(bidRequest, 'renderer.options');
           }
-          // TODO check if renderer_config is object or string in real response - FINALIZE ON REALITY
 
           // populate imbpus config options in the bidReponse.adResponse.ad object for our outstream renderer to use later
           // renderer_config should be treated as the old rtb.rendererOptions that came from the bidresponse.adResponse
@@ -293,7 +311,7 @@ const converter = ortbConverter({
             bidResponse.adResponse = {
               ad: {
                 notify_url: bid.nurl || '',
-                renderer_config: extANData.renderer_config || '', // TODO CHECK IF JSON
+                renderer_config: extANData.renderer_config || '',
               },
               auction_id: extANData.auction_id,
               content: bidResponse.vastXml,
@@ -306,6 +324,13 @@ const converter = ortbConverter({
             renderer_id: extANData.renderer_id,
           }, rendererOptions);
         }
+      } else {
+        // handle instream bids
+        // if nurl and asset_url was set, we need to populate vastUrl field
+        if (bid.nurl && extANData?.asset_url) {
+          bidResponse.vastUrl = bid.nurl + '&redir=' + encodeURIComponent(extANData.asset_url);
+        }
+        // if not populated, the VAST in the adm will go to the vastXml field by the ortb converter
       }
     }
 
