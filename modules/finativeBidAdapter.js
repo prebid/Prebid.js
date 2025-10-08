@@ -181,6 +181,7 @@ export const spec = {
             }
           };
         }
+        return undefined;
       })
       .filter(Boolean);
   }
