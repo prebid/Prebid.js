@@ -220,16 +220,6 @@ const converter = ortbConverter({
       });
     }
 
-    // populate tid if not already set and if available...
-    // QUESTION TO REVIEWERS, if tid is not already set in the generated request at this point,
-    // ... does that mean we aren't meant to have it and this is pointless?
-    if (!deepAccess(request, 'source.tid') && bidderRequest) {
-      const tid = deepAccess(bidderRequest, 'ortb2.source.tid');
-      if (tid) {
-        deepSetValue(request, 'source.tid', tid);
-      }
-    }
-
     const extANData = {
       prebid: true,
       hb_source: 1,
