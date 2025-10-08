@@ -280,7 +280,7 @@ describe('NativeryAdapter', function () {
 const assertTrackEvent = (ajaxStub, event, data) => {
   expect(ajaxStub.calledOnce).to.be.true;
 
-  const [url, callback , body, options] = ajaxStub.firstCall.args;
+  const [url, callback, body, options] = ajaxStub.firstCall.args;
 
   expect(url).to.equal('https://hb.nativery.com/openrtb2/track-event');
   expect(callback).to.be.undefined;
