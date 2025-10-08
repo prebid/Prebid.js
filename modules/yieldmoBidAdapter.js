@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   deepAccess,
   deepSetValue,
@@ -111,7 +112,6 @@ export const spec = {
 
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
-        serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
         serverRequest.w = getWinDimensions().innerWidth;
         serverRequest.h = getWinDimensions().innerHeight;
@@ -373,16 +373,6 @@ function createNewVideoBid(response, bidRequest) {
   }
 
   return result;
-}
-
-/**
- * Detects whether dnt is true
- * @returns true if user enabled dnt
- */
-function getDNT() {
-  return (
-    window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
-  );
 }
 
 /**
