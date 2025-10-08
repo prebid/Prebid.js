@@ -1381,10 +1381,6 @@ describe('ID5 ID System', function () {
       id5System.id5IdSubmodule._reset()
     });
 
-    function verifyTagging(tagName, tagValue) {
-      verifyMultipleTagging({[tagName]: tagValue})
-    }
-
     function verifyMultipleTagging(tagsObj) {
       expect(window.googletag.cmd.length).to.be.at.least(1);
       window.googletag.cmd.forEach(cmd => cmd());
@@ -1410,69 +1406,27 @@ describe('ID5 ID System', function () {
       expect(window.googletag.cmd).to.have.lengthOf(0)
     })
 
-    it('should set GAM targeting for id tag when universal_uid starts with ID5*', function () {
+    it('should not set GAM targeting if not returned from the server', function () {
+      let config = utils.deepClone(getId5FetchConfig());
+      config.params.gamTargetingPrefix = "id5";
+      id5System.id5IdSubmodule.decode(storedObject, getId5FetchConfig());
+      expect(window.googletag.cmd).to.have.lengthOf(0)
+    })
+
+    it('should set GAM targeting when tags returned if fetch response', function () {
       // Setup
       let config = utils.deepClone(getId5FetchConfig());
       config.params.gamTargetingPrefix = "id5";
-      let testObj = {...storedObject, universal_uid: 'ID5*test123'};
-      id5System.id5IdSubmodule.decode(testObj, config);
-
-      verifyTagging('id', 'y');
-    })
-
-    it('should set GAM targeting for ab tag with control value', function () {
-      // Setup
-      let testObj = {...storedObject, ab_testing: {result: 'control'}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('ab', 'c');
-    })
-
-    it('should set GAM targeting for ab tag with normal value', function () {
-      // Setup
-      let testObj = {...storedObject, ab_testing: {result: 'normal'}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('ab', 'n');
-    })
-
-    it('should set GAM targeting for enrich tag with enriched=true', function () {
-      // Setup
-      let testObj = {...storedObject, enrichment: {enriched: true}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('enrich', 'y');
-    })
-
-    it('should set GAM targeting for enrich tag with enrichment_selected=true', function () {
-      // Setup
-      let testObj = {...storedObject, enrichment: {enrichment_selected: true}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('enrich', 's');
-    })
-
-    it('should set GAM targeting for enrich tag with enrichment_selected=false', function () {
-      // Setup
-      let testObj = {...storedObject, enrichment: {enrichment_selected: false}};
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      verifyTagging('enrich', 'c');
-    })
-
-    it('should set GAM targeting for multiple tags when all conditions are met', function () {
-      // Setup
       let testObj = {
         ...storedObject,
-        universal_uid: 'ID5*test123',
-        ab_testing: {result: 'normal'},
-        enrichment: {enriched: true}
+        "tags": {
+          "id": "y",
+          "ab": "n",
+          "enrich": "y"
+        }
       };
+      id5System.id5IdSubmodule.decode(testObj, config);
 
-      // Call decode once with the combined test object
-      id5System.id5IdSubmodule.decode(testObj, targetingEnabledConfig);
-
-      // Verify all tags were set correctly
       verifyMultipleTagging({
         'id': 'y',
         'ab': 'n',
