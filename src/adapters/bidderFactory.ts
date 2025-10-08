@@ -95,7 +95,10 @@ import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../conse
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
-const TIDS = ['auctionId', 'transactionId'];
+const TIDS = {
+  auctionId: (request) => request.ortb2?.source?.tid,
+  transactionId: (request) => request.ortb2Imp?.ext?.tid
+}
 
 export interface AdapterRequest {
   url: string;
@@ -125,6 +128,13 @@ export type BidderError<B extends BidderCode> = {
 export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
   code: BIDDER;
   supportedMediaTypes?: readonly MediaType[];
+
+  /**
+   * General Vendorlist ID.
+   * Required, if you want to handle bid requests under the GDPR legislation with the TCF (Transparency and Consent Framework).
+   * @see https://iabeurope.eu/tcf-for-vendors/
+   */
+  gvlid?: number;
   aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
   isBidRequestValid(request: BidRequest<BIDDER>): boolean;
   buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
@@ -187,15 +197,10 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
 }
 
 export const guardTids: any = memoize(({bidderCode}) => {
-  if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
-    return {
-      bidRequest: (br) => br,
-      bidderRequest: (br) => br
-    };
-  }
+  const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
-    if (TIDS.includes(prop)) {
-      return null;
+    if (TIDS.hasOwnProperty(prop)) {
+      return tidsAllowed ? TIDS[prop](target) : null;
     }
     return Reflect.get(target, prop, receiver);
   }
@@ -346,7 +351,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.meta = bidResponse.meta || Object.assign({}, bidResponse[bidRequest.bidder]);
             bid.deferBilling = bidRequest.deferBilling;
             bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
-            const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, TIDS));
+            const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
@@ -566,7 +571,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
 
         if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url, window.location.origin);
+            const url = new URL(request.url);
             if (!url.searchParams.has('gzip')) {
               url.searchParams.set('gzip', '1');
             }

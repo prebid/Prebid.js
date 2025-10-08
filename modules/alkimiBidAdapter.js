@@ -1,5 +1,6 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone, getDNT, generateUUID, replaceAuctionPrice} from '../src/utils.js';
+import {deepAccess, deepClone, generateUUID, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {VIDEO, BANNER} from '../src/mediaTypes.js';
@@ -53,10 +54,10 @@ export const spec = {
     const id = getUserId()
     const alkimiConfig = config.getConfig('alkimi')
     const fpa = ortb2?.source?.ext?.fpa
-    const source = fpa != undefined ? { ext: { fpa } } : undefined
+    const source = fpa !== null && fpa !== undefined ? { ext: { fpa } } : undefined
     const walletID = alkimiConfig && alkimiConfig.walletID
     const userParams = alkimiConfig && alkimiConfig.userParams
-    const user = (walletID != undefined || userParams != undefined || id != undefined) ? { id, ext: { walletID, userParams } } : undefined
+    const user = ((walletID !== null && walletID !== undefined) || (userParams !== null && userParams !== undefined) || (id !== null && id !== undefined)) ? { id, ext: { walletID, userParams } } : undefined
 
     const payload = {
       requestId: generateUUID(),
@@ -148,7 +149,7 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    if (BANNER == bid.mediaType && bid.winUrl) {
+    if (BANNER === bid.mediaType && bid.winUrl) {
       const winUrl = replaceAuctionPrice(bid.winUrl, bid.cpm);
       ajax(winUrl, null);
       return true;

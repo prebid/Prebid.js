@@ -1,7 +1,8 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, deepAccess, getDefinedParams, getDNT, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, deepAccess, getDefinedParams, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import { getDNT } from '../../libraries/dnt/index.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {PbPromise} from '../utils/promise.js';
@@ -142,10 +143,6 @@ const ENRICHMENTS = {
           vph,
         },
       };
-
-      if (win.navigator?.webdriver) {
-        deepSetValue(device, 'ext.webdriver', true);
-      }
 
       return device;
     })

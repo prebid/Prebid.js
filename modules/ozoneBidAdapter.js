@@ -22,7 +22,7 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const KEY_PREFIX = 'oz';
-const OZONEVERSION = '4.0.0';
+const OZONEVERSION = '4.0.2';
 export const spec = {
   gvlid: 524,
   version: OZONEVERSION,
@@ -108,7 +108,7 @@ export const spec = {
         logError(`${vf} :no customData[0].targeting`, adUnitCode);
         return false;
       }
-      if (typeof bid.params.customData[0]['targeting'] != 'object') {
+      if (typeof bid.params.customData[0]['targeting'] !== 'object') {
         logError(`${vf} : customData[0].targeting is not an Object`, adUnitCode);
         return false;
       }
@@ -129,6 +129,7 @@ export const spec = {
     return placementId.toString().match(/^[0-9]{10}$/);
   },
   buildRequests(validBidRequests, bidderRequest) {
+    logInfo('**TESTING CONFIG', config.getConfig());
     this.propertyBag.buildRequestsStart = new Date().getTime();
     const bidderKey = BIDDER_CODE;
     const prefix = KEY_PREFIX;
@@ -147,17 +148,18 @@ export const spec = {
     logInfo('cookie sync bag', this.cookieSyncBag);
     let singleRequest = config.getConfig('ozone.singleRequest');
     singleRequest = singleRequest !== false;
-    const ozoneRequest = {};
-    const fpd = deepAccess(bidderRequest, 'ortb2', null);
+    const ozoneRequest = {site: {}, regs: {}, user: {}};
+    const fpd = deepAccess(bidderRequest, 'ortb2', {});
+    const fpdPruned = this.pruneToExtPaths(fpd, {maxTestDepth: 2});
     logInfo('got ortb2 fpd: ', fpd);
-    if (fpd && deepAccess(fpd, 'user')) {
-      logInfo('added FPD user object');
-      ozoneRequest.user = fpd.user;
-    }
+    logInfo('got ortb2 fpdPruned: ', fpdPruned);
+    logInfo('going to assign the pruned (ext only) FPD ortb2 object to ozoneRequest, wholesale');
+    mergeDeep(ozoneRequest, fpdPruned);
+    toOrtb25(ozoneRequest);
     const getParams = this.getGetParametersAsObject();
     const wlOztestmodeKey = 'oztestmode';
     const isTestMode = getParams[wlOztestmodeKey] || null;
-    ozoneRequest.device = bidderRequest?.ortb2?.device || {};
+    mergeDeep(ozoneRequest, {device: bidderRequest?.ortb2?.device || {}});
     const placementIdOverrideFromGetParam = this.getPlacementIdOverrideFromGetParam();
     let schain = null;
     var auctionId = deepAccess(validBidRequests, '0.ortb2.source.tid');
@@ -166,6 +168,9 @@ export const spec = {
     }
     const tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
+      let prunedImp = this.pruneToExtPaths(ozoneBidRequest.ortb2Imp, {maxTestDepth: 2});
+      logInfo('merging into bid[] from pruned ozoneBidRequest.ortb2Imp (this includes adunits ortb2imp and gpid & tid from gptPreAuction if included', prunedImp);
+      mergeDeep(obj, prunedImp);
       const placementId = placementIdOverrideFromGetParam || this.getPlacementId(ozoneBidRequest);
       obj.id = ozoneBidRequest.bidId;
       obj.tagid = placementId;
@@ -184,7 +189,7 @@ export const spec = {
         }
         if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO)) {
           logInfo('openrtb 2.5 compliant video');
-          if (typeof ozoneBidRequest.mediaTypes[VIDEO] == 'object') {
+          if (typeof ozoneBidRequest.mediaTypes[VIDEO] === 'object') {
             const childConfig = deepAccess(ozoneBidRequest, 'params.video', {});
             obj.video = this.unpackVideoConfigIntoIABformat(ozoneBidRequest.mediaTypes[VIDEO], childConfig);
             obj.video = this.addVideoDefaults(obj.video, ozoneBidRequest.mediaTypes[VIDEO], childConfig);
@@ -229,8 +234,8 @@ export const spec = {
         };
       }
       obj.placementId = placementId;
-      deepSetValue(obj, 'ext.prebid', {'storedrequest': {'id': placementId}});
-      obj.ext[bidderKey] = {};
+      mergeDeep(obj, {ext: {prebid: {'storedrequest': {'id': placementId}}}});
+      obj.ext[bidderKey] = obj.ext[bidderKey] || {};
       obj.ext[bidderKey].adUnitCode = ozoneBidRequest.adUnitCode;
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {
         obj.ext[bidderKey].customData = ozoneBidRequest.params.customData;
@@ -265,14 +270,6 @@ export const spec = {
       }
       if (!schain && deepAccess(ozoneBidRequest, 'ortb2.source.ext.schain')) {
         schain = ozoneBidRequest.ortb2.source.ext.schain;
-      }
-      const gpid = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.gpid');
-      if (gpid) {
-        deepSetValue(obj, 'ext.gpid', gpid);
-      }
-      const transactionId = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.tid');
-      if (transactionId) {
-        obj.ext.tid = transactionId;
       }
       if (auctionId) {
         obj.ext.auctionId = auctionId;
@@ -313,17 +310,17 @@ export const spec = {
       extObj[bidderKey].origin = endpointOverride.auctionUrl || endpointOverride.origin;
     }
     const userExtEids = deepAccess(validBidRequests, '0.userIdAsEids', []);
-    ozoneRequest.site = {
+    mergeDeep(ozoneRequest.site, {
       'publisher': {'id': htmlParams.publisherId},
       'page': getRefererInfo().page,
       'id': htmlParams.siteId
-    };
+    });
     ozoneRequest.test = config.getConfig('debug') ? 1 : 0;
     if (bidderRequest && bidderRequest.gdprConsent) {
       logInfo('ADDING GDPR');
       const apiVersion = deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1);
-      ozoneRequest.regs = {ext: {gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0, apiVersion: apiVersion}};
-      if (deepAccess(ozoneRequest, 'regs.ext.gdpr')) {
+      mergeDeep(ozoneRequest.regs, {ext: {gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0, apiVersion: apiVersion}});
+      if (bidderRequest.gdprConsent.gdprApplies) {
         deepSetValue(ozoneRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       } else {
         logWarn('**** Strange CMP info: bidderRequest.gdprConsent exists BUT bidderRequest.gdprConsent.gdprApplies is false. See bidderRequest logged above. ****');
@@ -338,8 +335,8 @@ export const spec = {
       logInfo('WILL NOT ADD USP consent info; no bidderRequest.uspConsent.');
     }
     if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(ozoneRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(ozoneRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+      deepSetValue(ozoneRequest, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(ozoneRequest, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
     }
     if (schain) {
       logInfo('schain found');
@@ -356,12 +353,12 @@ export const spec = {
       const arrRet = [];
       for (let i = 0; i < tosendtags.length; i += batchRequestsVal) {
         ozoneRequest.id = generateUUID();
-        deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
+        mergeDeep(ozoneRequest, {user: {ext: {eids: userExtEids}}});
         if (auctionId) {
           deepSetValue(ozoneRequest, 'source.tid', auctionId);
         }
         ozoneRequest.imp = tosendtags.slice(i, i + batchRequestsVal);
-        ozoneRequest.ext = extObj;
+        mergeDeep(ozoneRequest, {ext: extObj});
         toOrtb25(ozoneRequest);
         if (ozoneRequest.imp.length > 0) {
           arrRet.push({
@@ -372,16 +369,17 @@ export const spec = {
           });
         }
       }
-      logInfo('batch request going to return : ', arrRet);
+      this.propertyBag.buildRequestsEnd = new Date().getTime();
+      logInfo(`buildRequests batch request going to return at time ${this.propertyBag.buildRequestsEnd} (took ${this.propertyBag.buildRequestsEnd - this.propertyBag.buildRequestsStart}ms):`, arrRet);
       return arrRet;
     }
     if (singleRequest) {
       logInfo('single request starting');
       ozoneRequest.id = generateUUID();
       ozoneRequest.imp = tosendtags;
-      ozoneRequest.ext = extObj;
+      mergeDeep(ozoneRequest, {ext: extObj});
       toOrtb25(ozoneRequest);
-      deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
+      mergeDeep(ozoneRequest, {user: {ext: {eids: userExtEids}}});
       if (auctionId) {
         deepSetValue(ozoneRequest, 'source.tid', auctionId);
       }
@@ -400,8 +398,8 @@ export const spec = {
       const ozoneRequestSingle = Object.assign({}, ozoneRequest);
       ozoneRequestSingle.id = generateUUID();
       ozoneRequestSingle.imp = [imp];
-      ozoneRequestSingle.ext = extObj;
-      deepSetValue(ozoneRequestSingle, 'user.ext.eids', userExtEids);
+      mergeDeep(ozoneRequestSingle, {ext: extObj});
+      mergeDeep(ozoneRequestSingle, {user: {ext: {eids: userExtEids}}});
       if (auctionId) {
         deepSetValue(ozoneRequestSingle, 'source.tid', auctionId);
       }
@@ -455,7 +453,7 @@ export const spec = {
     let labels;
     let enhancedAdserverTargeting = config.getConfig('ozone.enhancedAdserverTargeting');
     logInfo('enhancedAdserverTargeting', enhancedAdserverTargeting);
-    if (typeof enhancedAdserverTargeting == 'undefined') {
+    if (typeof enhancedAdserverTargeting === 'undefined') {
       enhancedAdserverTargeting = true;
     }
     logInfo('enhancedAdserverTargeting', enhancedAdserverTargeting);
@@ -533,7 +531,7 @@ export const spec = {
             if (seat.match(/^ozappnexus/)) {
               adserverTargeting[prefix + '_' + seat + '_sid'] = String(allBidsForThisBidid[seat].cid);
             }
-            labels = deepAccess(allBidsForThisBidid[seat], 'ext.prebid.labels', null);
+            labels = deepAccess(allBidsForThisBidid[seat], 'ext.prebid.labels', null) || deepAccess(allBidsForThisBidid[seat], 'ext.bidder.prebid.label', null);
             if (labels) {
               adserverTargeting[prefix + '_' + seat + '_labels'] = labels.join(',');
             }
@@ -554,7 +552,7 @@ export const spec = {
         adserverTargeting[prefix + '_cache_id'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_id', 'no-id');
         adserverTargeting[prefix + '_uuid'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_uuid', 'no-id');
         if (enhancedAdserverTargeting) {
-          labels = deepAccess(winningBid, 'ext.prebid.labels', null);
+          labels = deepAccess(winningBid, 'ext.prebid.labels', null) || deepAccess(winningBid, 'ext.bidder.prebid.label', null);
           if (labels) {
             adserverTargeting[prefix + '_labels'] = labels.join(',');
           }
@@ -674,12 +672,8 @@ export const spec = {
   },
   findAllUserIdsFromEids(bidRequest) {
     const ret = {};
-    if (!bidRequest.hasOwnProperty('userIdAsEids')) {
-      logInfo('findAllUserIdsFromEids - no bidRequest.userIdAsEids object was found on the bid!');
-      this.tryGetPubCidFromOldLocation(ret, bidRequest);
-      return ret;
-    }
-    for (const obj of bidRequest.userIdAsEids) {
+    let userIdAsEids = bidRequest.userIdAsEids || [];
+    for (const obj of userIdAsEids) {
       ret[obj.source] = deepAccess(obj, 'uids.0.id');
     }
     this.tryGetPubCidFromOldLocation(ret, bidRequest);
@@ -812,6 +806,43 @@ export const spec = {
       logObj.floorData = bid.floorData;
     }
     return logObj;
+  },
+  pruneToExtPaths: function (input, { testKey = 'ext', maxTestDepth = Infinity } = {}) {
+    const isPlainObj = v => v && typeof v === 'object' && !Array.isArray(v);
+    const deepClone = node => {
+      if (Array.isArray(node)) return node.map(deepClone);
+      if (isPlainObj(node)) {
+        const out = {};
+        for (const [k, v] of Object.entries(node)) out[k] = deepClone(v);
+        return out;
+      }
+      return node;
+    };
+    const isEmpty = v =>
+      v == null ||
+        (Array.isArray(v) ? v.length === 0
+          : isPlainObj(v) ? Object.keys(v).length === 0 : false);
+    function prune(node, inExt, depth) {
+      if (node == null) return undefined;
+      if (typeof node !== 'object') return inExt ? node : undefined;
+      if (inExt) return deepClone(node);
+      if (Array.isArray(node)) {
+        const kept = node
+          .map(el => prune(el, false, depth))
+          .filter(el => el !== undefined && !isEmpty(el));
+        return kept.length ? kept : undefined;
+      }
+      const out = {};
+      for (const [k, v] of Object.entries(node)) {
+        const kDepth = depth + 1;
+        const enterExt = (k === testKey) && (kDepth <= maxTestDepth);
+        const child = prune(v, enterExt, kDepth);
+        if (child !== undefined && !isEmpty(child)) out[k] = child;
+      }
+      return Object.keys(out).length ? out : undefined;
+    }
+    const result = prune(input, false, 0);
+    return result ?? (Array.isArray(input) ? [] : {});
   }
 };
 export function injectAdIdsIntoAllBidResponses(seatbid) {

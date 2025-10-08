@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
 
@@ -59,7 +59,7 @@ jobs:
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 8
-          max_attempts: 3
+          max_attempts: 1
           command: ${{ inputs.cmd }}
 
       - name: Save working directory

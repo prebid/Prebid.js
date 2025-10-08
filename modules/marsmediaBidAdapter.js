@@ -1,5 +1,6 @@
 'use strict';
-import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
+import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -36,7 +37,7 @@ function MarsmediaAdapter() {
       // TODO: this should probably use parseUrl
       var el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol == 'https:') ? 1 : 0;
+      isSecure = (el.protocol === 'https:') ? 1 : 0;
     }
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
