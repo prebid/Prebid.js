@@ -1,9 +1,8 @@
 import { expect } from 'chai';
 import {
-  spec, STORAGE, getLocalStorage,
+  spec, STORAGE, getAdgridLocalStorage,
 } from 'modules/adgridBidAdapter.js';
 import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
 const sandbox = sinon.createSandbox();
 
 describe('adgrid bid adapter tests', () => {
@@ -74,8 +73,8 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false);
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
-      expect(output).to.be.eql(false);
+      const output = getAdgridLocalStorage();
+      expect(output).to.be.eql(null);
     });
     after(() => {
       sandbox.restore()
@@ -89,7 +88,7 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
+      const output = getAdgridLocalStorage();
       expect(typeof output.adgridId).to.be.eql('string');
     });
     after(() => {
@@ -104,8 +103,8 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
-      expect(output).to.be.eql(false);
+      const output = getAdgridLocalStorage();
+      expect(output).to.be.eql(null);
     });
     after(() => {
       sandbox.restore()
@@ -119,7 +118,7 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
+      const output = getAdgridLocalStorage();
       expect(output.adgridId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
@@ -299,6 +298,8 @@ describe('adgrid bid adapter tests', () => {
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
             bidderVersion: '2.0',
+            requestCounter: 0,
+            sessionId: requestContent.ext.sessionId,
           },
           cur: [
             'USD',

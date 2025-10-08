@@ -95,12 +95,12 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
-      expect(output).to.be.eql(false);
+      expect(output).to.be.eql(null);
     });
     after(() => {
       sandbox.restore()
     });
-  })
+  });
 
   describe('getNexx360LocalStorage enabled but nothing', () => {
     before(() => {
@@ -115,7 +115,7 @@ describe('Nexx360 bid adapter tests', () => {
     after(() => {
       sandbox.restore()
     });
-  })
+  });
 
   describe('getNexx360LocalStorage enabled but wrong payload', () => {
     before(() => {
@@ -125,7 +125,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
-      expect(output).to.be.eql(false);
+      expect(output).to.be.eql(null);
     });
     after(() => {
       sandbox.restore()
@@ -155,7 +155,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the amxId', () => {
       const output = getAmxId(STORAGE, 'nexx360');
-      expect(output).to.be.eql(false);
+      expect(output).to.be.eql(null);
     });
     after(() => {
       sandbox.restore()
@@ -335,8 +335,10 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '6.3',
-            localStorage: { amxId: 'abcdef'}
+            bidderVersion: '7.0',
+            localStorage: { amxId: 'abcdef'},
+            sessionId: requestContent.ext.sessionId,
+            requestCounter: 0,
           },
           cur: [
             'USD',

@@ -1,28 +1,40 @@
-import { deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
+import { deepSetValue, generateUUID, logError } from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {AdapterRequest, AdapterResponse, BidderSpec, registerBidder, ServerResponse} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
-import { createResponse, enrichImp, enrichRequest, getAmxId, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { createResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
- */
+import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
+import { ORTBImp, ORTBRequest, ORTBResponse } from '../src/prebid.public.js';
+import { BidResponse } from '../src/bidfactory.js';
 
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '6.3';
+const BIDDER_VERSION = '7.0';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
+
+type Nexx360BidParams = {
+  tagId?: string;
+  placement?: string;
+  videoTagId?: string;
+  nativeTagId?: string;
+  adUnitPath?: string;
+  adUnitName?: string;
+  divId?: string;
+  allBids?: boolean;
+  customId?: string;
+}
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: Nexx360BidParams;
+  }
+}
 
 const ALIASES = [
   { code: 'revenuemaker' },
@@ -41,35 +53,19 @@ const ALIASES = [
   { code: 'glomexbidder', gvlid: 967 },
   { code: 'revnew', gvlid: 1468 },
   { code: 'pubxai', gvlid: 1485 },
+  { code: 'ybidder', gvlid: 1253 },
 ];
 
 export const STORAGE = getStorageManager({
   bidderCode: BIDDER_CODE,
 });
 
-/**
- * Get the NexxId
- * @param
- * @return {object | false } false if localstorageNotEnabled
- */
-
-export function getNexx360LocalStorage() {
-  if (!STORAGE.localStorageIsEnabled()) {
-    logInfo(`localstorage not enabled for Nexx360`);
-    return false;
-  }
-  const output = STORAGE.getDataFromLocalStorage(NEXXID_KEY);
-  if (output === null) {
-    const nexx360Storage = { nexx360Id: generateUUID() };
-    STORAGE.setDataInLocalStorage(NEXXID_KEY, JSON.stringify(nexx360Storage));
-    return nexx360Storage;
-  }
-  try {
-    return JSON.parse(output)
-  } catch (e) {
-    return false;
-  }
-}
+export const getNexx360LocalStorage = getLocalStorageFunctionGenerator<{ nexx360Id: string }>(
+  STORAGE,
+  BIDDER_CODE,
+  NEXXID_KEY,
+  'nexx360Id'
+);
 
 const converter = ortbConverter({
   context: {
@@ -77,10 +73,10 @@ const converter = ortbConverter({
     ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest, context) {
-    let imp = buildImp(bidRequest, context);
+    let imp:ORTBImp = buildImp(bidRequest, context);
     imp = enrichImp(imp, bidRequest);
     const divId = bidRequest.params.divId || bidRequest.adUnitCode;
-    const slotEl = document.getElementById(divId);
+    const slotEl:HTMLElement | null = typeof divId === 'string' ? document.getElementById(divId) : null;
     if (slotEl) {
       const { width, height } = getBoundingClientRect(slotEl);
       deepSetValue(imp, 'ext.dimensions.slotW', width);
@@ -97,20 +93,14 @@ const converter = ortbConverter({
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    let request = buildRequest(imps, bidderRequest, context);
+    let request:ORTBRequest = buildRequest(imps, bidderRequest, context);
     const amxId = getAmxId(STORAGE, BIDDER_CODE);
-    request = enrichRequest(request, amxId, bidderRequest, PAGE_VIEW_ID, BIDDER_VERSION);
+    request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION);
     return request;
   },
 });
 
-/**
- * Determines whether or not the given bid request is valid.
- *
- * @param {BidRequest} bid The bid params to validate.
- * @return boolean True if this is a valid bid, and false otherwise.
- */
-function isBidRequestValid(bid) {
+const isBidRequestValid = (bid:BidRequest<typeof BIDDER_CODE>): boolean => {
   if (bid.params.adUnitName && (typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '')) {
     logError('bid.params.adUnitName needs to be a string');
     return false;
@@ -134,43 +124,33 @@ function isBidRequestValid(bid) {
   return true;
 };
 
-/**
- * Make a server request from the list of BidRequests.
- *
- * @return ServerRequest Info describing the request to the server.
- */
-
-function buildRequests(bidRequests, bidderRequest) {
-  const data = converter.toORTB({bidRequests, bidderRequest})
-  return {
+const buildRequests = (
+  bidRequests: BidRequest<typeof BIDDER_CODE>[],
+  bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
+): AdapterRequest => {
+  const data:ORTBRequest = converter.toORTB({bidRequests, bidderRequest})
+  const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
     data,
   }
+  return adapterRequest;
 }
 
-/**
- * Unpack the response from the server into a list of bids.
- *
- * @param {ServerResponse} serverResponse A successful response from the server.
- * @return {Bid[]} An array of bids which were nested inside the server.
- */
-
-function interpretResponse(serverResponse) {
-  const respBody = serverResponse.body;
-  if (!respBody || !Array.isArray(respBody.seatbid)) {
-    return [];
-  }
+const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
+  if (!serverResponse.body) return [];
+  const respBody = serverResponse.body as ORTBResponse;
+  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
 
   const { bidderSettings } = getGlobal();
   const allowAlternateBidderCodes = bidderSettings && bidderSettings.standard ? bidderSettings.standard.allowAlternateBidderCodes : false;
 
-  const responses = [];
+  const responses: BidResponse[] = [];
   for (let i = 0; i < respBody.seatbid.length; i++) {
     const seatbid = respBody.seatbid[i];
     for (let j = 0; j < seatbid.bid.length; j++) {
       const bid = seatbid.bid[j];
-      const response = createResponse(bid, respBody);
+      const response:BidResponse = createResponse(bid, respBody);
       if (allowAlternateBidderCodes) response.bidderCode = `n360_${bid.ext.ssp}`;
       responses.push(response);
     }
@@ -178,7 +158,7 @@ function interpretResponse(serverResponse) {
   return responses;
 }
 
-export const spec = {
+export const spec:BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ALIASES,
