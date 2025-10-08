@@ -1,9 +1,9 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   cleanObj,
   deepAccess,
   deepClone,
   deepSetValue,
-  getDNT,
   inIframe,
   isArray,
   isEmpty,
