@@ -228,6 +228,7 @@ const targetingTool = (function() {
           segments.push(...userdat.segment.map((segment) => {
             if (isStr(segment)) return segment;
             if (isStr(segment.id)) return segment.id;
+            return undefined;
           }).filter((seg) => !!seg));
         }
       });
