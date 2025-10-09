@@ -63,10 +63,10 @@ describe('AdriverIdSystem', function () {
           expect(id).to.be.deep.equal(response.adrcid ? response.adrcid : undefined);
         });
 
-        let request = server.requests[0];
+        const request = server.requests[0];
         request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ adrcid: response.adrcid }));
 
-        let expectedExpiration = new Date();
+        const expectedExpiration = new Date();
         expectedExpiration.setTime(expectedExpiration.getTime() + 86400 * 1825 * 1000);
         const minimalDate = new Date(0).toString();
 

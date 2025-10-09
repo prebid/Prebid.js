@@ -9,6 +9,7 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'revcontent';
+const GVLID = 203;
 const NATIVE_PARAMS = {
   title: {
     id: 0,
@@ -29,6 +30,7 @@ const STYLE_EXTRA = '<style type="text/css">.undefined-photo { background-size: 
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
     return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');
@@ -47,7 +49,7 @@ export const spec = {
       host = 'trends.revcontent.com';
     }
 
-    let serverRequests = [];
+    const serverRequests = [];
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo.page;
@@ -65,7 +67,7 @@ export const spec = {
 
     const imp = validBidRequests.map((bid, id) => buildImp(bid, id));
 
-    let data = {
+    const data = {
       id: bidderRequest.bidderRequestId,
       imp: imp,
       site: {
@@ -99,21 +101,21 @@ export const spec = {
     return serverRequests;
   },
   interpretResponse: function (serverResponse, serverRequest) {
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if ((!response) || (!response.seatbid)) {
       return [];
     }
 
-    let rtbRequest = JSON.parse(serverRequest.data);
-    let rtbBids = response.seatbid
+    const rtbRequest = JSON.parse(serverRequest.data);
+    const rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
       const bidIndex = +rtbBid.impid - 1;
-      let imp = rtbRequest.imp.filter(imp => imp.id.toString() === rtbBid.impid)[0];
+      const imp = rtbRequest.imp.filter(imp => imp.id.toString() === rtbBid.impid)[0];
 
-      let prBid = {
+      const prBid = {
         requestId: serverRequest.bid[bidIndex].bidId,
         cpm: rtbBid.price,
         creativeId: rtbBid.crid,
@@ -128,8 +130,8 @@ export const spec = {
         prBid.height = rtbBid.h;
         prBid.ad = STYLE_EXTRA + rtbBid.adm;
       } else if ('native' in imp) {
-        let adm = JSON.parse(rtbBid.adm);
-        let ad = {
+        const adm = JSON.parse(rtbBid.adm);
+        const ad = {
           clickUrl: adm.link.url
         };
 
@@ -185,15 +187,15 @@ function getTemplate(size, customTemplate) {
     return customTemplate;
   }
 
-  if (size.width == 300 && size.height == 250) {
+  if (size.width === 300 && size.height === 250) {
     return '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="border: 1px solid #eee;    width: 298px;    height: 248px;    display: block;"><div style="background-image:url({image});width: 300px;height: 165px;background-repeat: none;background-size: cover;border-bottom:5px solid;border-color:#3f92f7"><div style="position: absolute;top: 160px;left:12px"><h1 style="max-height:45px;overflow:hidden;color: #000;font-family: Georgia;font-weight:normal;font-size: 19px; position: relative; width: 290px;margin-bottom:3px">{title}</h1> <div style="border:1px solid #3f92f7;background-color:#3f92f7;color:#fff;text-align:center;width:94%;height:17px;line-height: 20px;font-size:15px;padding:2px">SEE MORE</div></div></div></a>';
   }
 
-  if (size.width == 728 && size.height == 90) {
+  if (size.width === 728 && size.height === 90) {
     return '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 726px;    height: 86px;    display: block;"><div style="border-right:5px solid #3f92f7;background-image:url({image});width: 130px;height: 88px;background-repeat: no-repeat;background-size: cover;"><div style="position: absolute;left:125px;"><h1 style="color: #000;width:80%;font-family: Georgia;font-weight:normal;font-size: 24px; position: relative; width: 100%%;margin-bottom:-5px;margin-left:20px;">{title}</h1> <div style="text-align:center;line-height: 39px;margin-top:-45px;height:40px;border-radius:50%;display:inline-block;border:1px solid #3f92f7;background-color:#3f92f7;width:7%;float:right;color:#fff;margin-right:20px;">&#x3e;</div></div></div></a>';
   }
 
-  if (size.width == 300 && size.height == 600) {
+  if (size.width === 300 && size.height === 600) {
     return '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 296px;    height: 597px;    display: block;"><div style="border-bottom:5px solid #3f92f7;background-image:url({image});width: 298px;height: 230px;background-repeat: no-repeat;background-size: cover;"><div style="position: absolute;top:220px;"><h1 style="color: #000;font-family: Georgia;font-weight:normal;font-size: 45px; position: relative; width: 97%;margin-left:3px;height:270px;max-height:270px;overflow:hidden;">{title}</h1> <div style="text-align:center;line-height: 39px;height:40px;border-radius:50%;display:inline-block;border:1px solid #3f92f7;background-color:#3f92f7;width:15%;font-size:25px;color:#fff;margin-left:38%;margin-top:-15px">&#x3e;</div></div></div></a>';
   }
 
@@ -212,7 +214,7 @@ function buildImp(bid, id) {
     bidfloor = deepAccess(bid, `params.bidfloor`) || 0.1;
   }
 
-  let imp = {
+  const imp = {
     id: id + 1,
     tagid: bid.adUnitCode,
     bidderRequestId: bid.bidderRequestId,
@@ -224,10 +226,10 @@ function buildImp(bid, id) {
     secure: '1'
   };
 
-  let bannerReq = deepAccess(bid, `mediaTypes.banner`);
-  let nativeReq = deepAccess(bid, `mediaTypes.native`);
+  const bannerReq = deepAccess(bid, `mediaTypes.banner`);
+  const nativeReq = deepAccess(bid, `mediaTypes.native`);
   if (bannerReq) {
-    let sizes = getAdUnitSizes(bid);
+    const sizes = getAdUnitSizes(bid);
     imp.banner = {
       w: sizes[0][0],
       h: sizes[0][1],

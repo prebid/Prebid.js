@@ -4,8 +4,6 @@ import {
   logInfo,
   logError,
   getWindowSelf,
-  getWindowTop,
-  canAccessWindowTop,
   getPerformanceNow,
   isEmpty,
   isEmptyStr,
@@ -16,6 +14,7 @@ import { EVENTS } from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const GVLID = 1122;
 const ModuleCode = 'agma';
@@ -28,12 +27,7 @@ const pageViewId = generateUUID();
 // Helper functions
 const getScreen = () => {
   try {
-    const win = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
-    const d = document;
-    const e = d.documentElement;
-    const g = d.getElementsByTagName('body')[0];
-    const x = win.innerWidth || e.clientWidth || g.clientWidth;
-    const y = win.innerHeight || e.clientHeight || g.clientHeight;
+    const {width: x, height: y} = getViewportSize();
     return { x, y };
   } catch (e) {
     return {x: 0, y: 0};

@@ -1,13 +1,15 @@
+import sinon from 'sinon';
+
 import {
   spec,
   utils,
-  DEFAULT_AD_SERVER_BASE_URL
+  DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT
 } from 'modules/mobkoiBidAdapter.js';
+import * as prebidUtils from 'src/utils';
 
 describe('Mobkoi bidding Adapter', function () {
-  const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
+  const testIntegrationEndpoint = 'http://test.integration.endpoint.com/bid';
   const testRequestId = 'test-request-id';
-  const testPublisherId = 'mobkoiPublisherId';
   const testPlacementId = 'mobkoiPlacementId';
   const testBidId = 'test-bid-id';
   const bidderCode = 'mobkoi';
@@ -15,11 +17,12 @@ describe('Mobkoi bidding Adapter', function () {
   const testAdUnitId = 'test-ad-unit-id';
   const testAuctionId = 'test-auction-id';
 
+  let sandbox;
+
   const getOrtb2 = () => ({
     site: {
       publisher: {
-        id: testPublisherId,
-        ext: { adServerBaseUrl: testAdServerBaseUrl }
+        ext: { integrationEndpoint: testIntegrationEndpoint }
       }
     }
   })
@@ -34,8 +37,7 @@ describe('Mobkoi bidding Adapter', function () {
     auctionId: testAuctionId,
     ortb2: getOrtb2(),
     params: {
-      publisherId: testPublisherId,
-      adServerBaseUrl: testAdServerBaseUrl,
+      integrationEndpoint: testIntegrationEndpoint,
       placementId: testPlacementId
     }
   })
@@ -95,6 +97,17 @@ describe('Mobkoi bidding Adapter', function () {
     }
   })
 
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(prebidUtils, 'logInfo');
+    sandbox.stub(prebidUtils, 'logWarn');
+    sandbox.stub(prebidUtils, 'logError');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   describe('isBidRequestValid', function () {
     let bid;
 
@@ -102,34 +115,12 @@ describe('Mobkoi bidding Adapter', function () {
       bid = getBidderRequest().bids[0];
     });
 
-    it('should return true when publisher id only exists in ortb2', function () {
-      delete bid.params.publisherId;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
     it('should return true when placement id exist in ad unit params', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when publisher ID only exists in ad unit params', function () {
-      delete bid.ortb2.site.publisher.id;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return false when publisher id is missing both in ad unit params and ortb2', function () {
-      delete bid.ortb2.site.publisher.id;
-      delete bid.params.publisherId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
     it('should return false when placement id is missing in ad unit params', function () {
       delete bid.params.placementId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when publisher id is empty in ad unit params and ortb2', function () {
-      bid.ortb2.site.publisher.id = '';
-      bid.params.publisherId = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -147,31 +138,29 @@ describe('Mobkoi bidding Adapter', function () {
       const ortbData = request.data;
 
       expect(ortbData.id).to.equal(bidderRequest.bidderRequestId);
-      expect(ortbData.site.publisher.id).to.equal(bidderRequest.ortb2.site.publisher.id);
     });
 
-    it('should obtain publisher ID from ad unit params if the value does not exist in ortb2.', function () {
-      delete bidderRequest.ortb2.site.publisher.id;
+    it('should obtain integrationEndpoint from ad unit params if the value does not exist in ortb2', function () {
+      delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const ortbData = request.data;
 
-      expect(ortbData.site.publisher.id).to.equal(bidderRequest.bids[0].params.publisherId);
+      expect(ortbData.site.publisher.ext.integrationBaseUrl).to.equal(bidderRequest.bids[0].params.integrationEndpoint);
     });
 
-    it('should obtain adServerBaseUrl from ad unit params if the value does not exist in ortb2.', function () {
-      delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
+    it('should use the pro server url when the integration endpoint is not set', function () {
+      delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
+      delete bidderRequest.bids[0].params.integrationEndpoint;
+
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(request.url).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT);
+      expect(request.url).to.include('/bid');
+    });
+
+    it('should set ext.mobkoi.integration_type to "pbjs" in the ORTB request', function () {
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const ortbData = request.data;
-
-      expect(ortbData.site.publisher.ext.adServerBaseUrl).to.equal(bidderRequest.bids[0].params.adServerBaseUrl);
-    });
-
-    it('should use the pro server url when the ad server base url is not set', function () {
-      delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
-      delete bidderRequest.bids[0].params.adServerBaseUrl;
-
-      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal(DEFAULT_AD_SERVER_BASE_URL + '/bid');
+      expect(ortbData).to.have.nested.property('ext.mobkoi.integration_type', 'pbjs');
     });
   });
 
@@ -212,31 +201,17 @@ describe('Mobkoi bidding Adapter', function () {
       bidderRequest = getBidderRequest();
     });
 
-    describe('getAdServerEndpointBaseUrl', function () {
-      it('should return the adServerBaseUrl from the given object', function () {
-        expect(utils.getAdServerEndpointBaseUrl(bidderRequest))
-          .to.equal(testAdServerBaseUrl);
+    describe('getIntegrationEndpoint', function () {
+      it('should return the integrationEndpoint from the given object', function () {
+        expect(utils.getIntegrationEndpoint(bidderRequest))
+          .to.equal(testIntegrationEndpoint);
       });
 
-      it('should return default prod ad server url when adServerBaseUrl is missing in params and ortb2', function () {
-        delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
-        delete bidderRequest.bids[0].params.adServerBaseUrl;
+      it('should return default prod integration endpoint when integrationEndpoint is missing in params and ortb2', function () {
+        delete bidderRequest.ortb2.site.publisher.ext.integrationEndpoint;
+        delete bidderRequest.bids[0].params.integrationEndpoint;
 
-        expect(utils.getAdServerEndpointBaseUrl(bidderRequest)).to.equal(DEFAULT_AD_SERVER_BASE_URL);
-      });
-    })
-
-    describe('getPublisherId', function () {
-      it('should return the publisherId from the given object', function () {
-        expect(utils.getPublisherId(bidderRequest)).to.equal(bidderRequest.ortb2.site.publisher.id);
-      });
-
-      it('should throw error when publisherId is missing', function () {
-        delete bidderRequest.ortb2.site.publisher.id;
-        delete bidderRequest.bids[0].params.publisherId;
-        expect(() => {
-          utils.getPublisherId(bidderRequest);
-        }).to.throw();
+        expect(utils.getIntegrationEndpoint(bidderRequest)).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT);
       });
     })
 
@@ -270,46 +245,104 @@ describe('Mobkoi bidding Adapter', function () {
         }).to.throw();
       });
     })
+  })
 
-    describe('replaceAllMacrosInPlace', function () {
-      let bidderResponse, bidRequest, bidderRequest;
+  describe('getUserSyncs', function () {
+    let syncOptions;
 
-      beforeEach(function () {
-        bidderRequest = getBidderRequest();
-        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-        bidderResponse = getBidderResponse();
-      });
+    beforeEach(function () {
+      syncOptions = {
+        pixelEnabled: true,
+        iframeEnabled: false
+      };
+    });
 
-      it('should replace all macros in adm, nurl, and lurl fields', function () {
-        const bid = bidderResponse.body.seatbid[0].bid[0];
-        bid.nurl = '${BIDDING_API_BASE_URL}/win?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}';
-        bid.lurl = '${BIDDING_API_BASE_URL}/loss?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}';
-        bid.adm = '<div>${AUCTION_PRICE}${AUCTION_CURRENCY}${AUCTION_IMP_ID}${AUCTION_BID_ID}${CAMPAIGN_ID}${CREATIVE_ID}${PUBLISHER_ID}${ORTB_ID}${BIDDING_API_BASE_URL}</div>';
+    it('should return empty array when pixelEnabled is false', function () {
+      syncOptions.pixelEnabled = false;
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: { pixels: [['image', 'test-url']] } } }];
 
-        const BIDDING_API_BASE_URL = testAdServerBaseUrl;
-        const AUCTION_CURRENCY = bidderResponse.body.cur;
-        const AUCTION_BID_ID = bidderRequest.auctionId;
-        const AUCTION_PRICE = bid.price;
-        const AUCTION_IMP_ID = bid.impid;
-        const CREATIVE_ID = bid.crid;
-        const CAMPAIGN_ID = bid.cid;
-        const PUBLISHER_ID = bidderRequest.ortb2.site.publisher.id;
-        const ORTB_ID = bidderResponse.body.id;
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
 
-        const context = {
-          bidRequest,
-          bidderRequest
+    it('should return empty array when no pixels in response', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: {} } }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when pixels is not an array', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{ body: { ext: { pixels: 'not-an-array' } } }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should process image pixels correctly', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent-string' };
+      const testUrl = 'https://example.com/sync?gdpr=test-consent-string&param=value';
+      const serverResponses = [{
+        body: {
+          ext: {
+            pixels: [
+              ['image', testUrl],
+              ['image', 'https://another.com/pixel']
+            ]
+          }
         }
-        utils.replaceAllMacrosInPlace(bid, context);
+      }];
 
-        expect(bid.adm).to.equal(`<div>${AUCTION_PRICE}${AUCTION_CURRENCY}${AUCTION_IMP_ID}${AUCTION_BID_ID}${CAMPAIGN_ID}${CREATIVE_ID}${PUBLISHER_ID}${ORTB_ID}${BIDDING_API_BASE_URL}</div>`);
-        expect(bid.lurl).to.equal(
-          `${BIDDING_API_BASE_URL}/loss?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}`
-        );
-        expect(bid.nurl).to.equal(
-          `${BIDDING_API_BASE_URL}/win?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}`
-        );
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+
+      expect(result).to.have.length(2);
+      expect(result[0]).to.deep.equal({
+        type: 'image',
+        url: 'https://example.com/sync?gdpr=test-consent-string&param=value'
       });
-    })
+      expect(result[1]).to.deep.equal({
+        type: 'image',
+        url: 'https://another.com/pixel'
+      });
+    });
+
+    it('should ignore non-image pixel types', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [{
+        body: {
+          ext: {
+            pixels: [
+              ['iframe', 'https://iframe.com/sync'],
+              ['image', 'https://image.com/pixel'],
+              ['unknown', 'https://unknown.com/pixel']
+            ]
+          }
+        }
+      }];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+
+      expect(result).to.have.length(1);
+      expect(result[0]).to.deep.equal({
+        type: 'image',
+        url: 'https://image.com/pixel'
+      });
+    });
+
+    it('should handle responses without ext field gracefully', function () {
+      const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
+      const serverResponses = [
+        { body: {} },
+        { body: { ext: { pixels: [['image', 'https://valid.com/pixel']] } } }
+      ];
+
+      const result = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+
+      expect(result).to.have.length(1);
+      expect(result[0].url).to.equal('https://valid.com/pixel');
+    });
   })
 })

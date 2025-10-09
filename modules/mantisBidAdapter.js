@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getWinDimensions } from '../src/utils.js';
 
 export const storage = getStorageManager({bidderCode: 'mantis'});
 
@@ -27,7 +28,7 @@ export function onVisible(win, element, doOnVisible, time, pct) {
   var listener;
   var doCheck = function (winWidth, winHeight, rect) {
     var hidden = typeof document.hidden !== 'undefined' && document.hidden;
-    if (rect.width == 0 || rect.height == 0 || hidden) {
+    if (rect.width === 0 || rect.height === 0 || hidden) {
       return whenNotVisible();
     }
     var minHeight = (rect.height * pct);
@@ -74,8 +75,9 @@ export function onVisible(win, element, doOnVisible, time, pct) {
     });
   }
   interval = setInterval(function () {
-    var winHeight = (win.innerHeight || document.documentElement.clientHeight);
-    var winWidth = (win.innerWidth || document.documentElement.clientWidth);
+    const windowDimensions = getWinDimensions();
+    var winHeight = (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight);
+    var winWidth = (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth);
     doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }
@@ -94,7 +96,7 @@ function storeUuid(uuid) {
 
 function onMessage(type, callback) {
   window.addEventListener('message', function (event) {
-    if (event.data.mantis && event.data.type == type) {
+    if (event.data.mantis && event.data.type === type) {
       callback(event.data.data);
     }
   }, false);
@@ -140,7 +142,7 @@ function jsonToQuery(data, chain, form) {
           jsonToQuery(aval, akey, parts);
         }
       }
-    } else if (isObject(val) && val != data) {
+    } else if (isObject(val) && val !== data) {
       jsonToQuery(val, queryKey, parts);
     } else if (isSendable(val)) {
       parts.push(queryKey + '=' + encodeURIComponent(val));
@@ -208,6 +210,7 @@ export const spec = {
         property = bid.params.property;
         return true;
       }
+      return false;
     });
     const query = {
       measurable: true,
@@ -286,7 +289,7 @@ export function iframePostMessage (win, name, callback) {
   var frames = document.getElementsByTagName('iframe');
   for (var i = 0; i < frames.length; i++) {
     var frame = frames[i];
-    if (frame.name == name) {
+    if (frame.name === name) {
       onVisible(win, frame, function (stop) {
         callback();
         stop();

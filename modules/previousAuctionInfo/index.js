@@ -87,11 +87,12 @@ export const onAuctionEndHandler = (auctionDetails) => {
               source: 'pbjs',
               adUnitCode: bid.adUnitCode,
               highestBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.cpm || null,
+              highestBidCurrency: highestBidsByAdUnitCode[bid.adUnitCode]?.currency || null,
               bidderCpm: receivedBidsMap[bid.bidId]?.cpm || null,
               bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || null,
               bidderCurrency: receivedBidsMap[bid.bidId]?.currency || null,
               bidderOriginalCurrency: receivedBidsMap[bid.bidId]?.originalCurrency || null,
-              bidderErrorCode: rejectedBidsMap[bid.bidId]?.rejectionReason || null,
+              rejectionReason: rejectedBidsMap[bid.bidId]?.rejectionReason || null,
               timestamp: auctionDetails.timestamp,
               transactionId: bid.transactionId, // this field gets removed before injecting previous auction info into the bid stream
             }

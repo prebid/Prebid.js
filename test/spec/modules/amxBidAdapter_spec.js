@@ -5,7 +5,9 @@ import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import { getGlobal } from '../../../src/prebidGlobal';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+
+import {getGlobalVarName} from '../../../src/buildOptions.js';
 
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = `<script src='https://assets.a-mo.net/tmode.v1.js'></script>`;
@@ -115,7 +117,7 @@ const sampleBidRequestVideo = {
   ...sampleBidRequestBase,
   bidId: sampleRequestId + '_video',
   sizes: [[300, 150]],
-  schain: schainConfig,
+  ortb2: { source: { ext: { schain: schainConfig } } },
   mediaTypes: {
     [VIDEO]: {
       sizes: [[360, 250]],
@@ -261,7 +263,7 @@ describe('AmxBidAdapter', () => {
         sampleBidderRequest
       );
       expect(prebidVersion).to.equal('$prebid.version$');
-      expect(prebidGlobal).to.equal('$$PREBID_GLOBAL$$');
+      expect(prebidGlobal).to.equal(getGlobalVarName());
     });
 
     it('reads test mode from the first bid request', () => {
@@ -803,7 +805,7 @@ describe('AmxBidAdapter', () => {
       const { c: common, e: events } = JSON.parse(request.requestBody);
       expect(common).to.deep.equal({
         V: '$prebid.version$',
-        vg: '$$PREBID_GLOBAL$$',
+        vg: getGlobalVarName(),
         U: null,
         re: 'https://example.com',
       });

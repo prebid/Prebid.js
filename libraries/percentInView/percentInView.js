@@ -1,3 +1,4 @@
+import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
 
 export function getBoundingBox(element, {w, h} = {}) {
@@ -40,12 +41,17 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-export const percentInView = (element, topWin, {w, h} = {}) => {
+export const percentInView = (element, {w, h} = {}) => {
   const elementBoundingBox = getBoundingBox(element, {w, h});
+
+  const { innerHeight, innerWidth } = getWinDimensions();
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = getIntersectionOfRects([{
-    left: 0, top: 0, right: topWin.innerWidth, bottom: topWin.innerHeight
+    left: 0,
+    top: 0,
+    right: innerWidth,
+    bottom: innerHeight
   }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;
@@ -61,4 +67,26 @@ export const percentInView = (element, topWin, {w, h} = {}) => {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
+}
+
+/**
+ * Checks if viewability can be measured for an element
+ * @param {HTMLElement} element - DOM element to check
+ * @returns {boolean} True if viewability is measurable
+ */
+export function isViewabilityMeasurable(element) {
+  return !inIframe() && element !== null;
+}
+
+/**
+ * Gets the viewability percentage of an element
+ * @param {HTMLElement} element - DOM element to measure
+ * @param {Window} topWin - Top window object
+ * @param {Object} size - Size object with width and height
+ * @returns {number|string} Viewability percentage or 0 if not visible
+ */
+export function getViewability(element, topWin, size) {
+  return topWin.document.visibilityState === 'visible'
+    ? percentInView(element, size)
+    : 0;
 }

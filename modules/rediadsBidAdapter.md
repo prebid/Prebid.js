@@ -29,7 +29,7 @@ Please reach out to support@rediads.com for more information.
                     params: {
                         account_id: '123',
                         slot: '321', // optional
-                        endpoint: 'https://bidding.rediads.com/openrtb2/auction' // optional, only to be used if rediads team provides one
+                        endpoint: 'bidding2' // optional, only to be used if rediads team provides one
                     }
                 }
             ]

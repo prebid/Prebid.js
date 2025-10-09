@@ -74,6 +74,7 @@ export const interpretResponse = function (serverResponse, request) {
           ttl: TIME_TO_LIVE_IN_SECONDS,
           ad: b.adm,
           nurl: b.nurl,
+          cid: b.cid,
           meta: {
             advertiserDomains: b.adomain
           }
@@ -133,6 +134,18 @@ function getPageUrlFromRefererInfo() {
     : window.location.href;
 }
 
+function getPurposeStatus(purposeData, purposeField, purposeNumber) {
+  if (!purposeData) {
+    return false;
+  }
+
+  if (!purposeData[purposeField]) {
+    return false;
+  }
+
+  return purposeData[purposeField][purposeNumber] === true;
+}
+
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout;
@@ -148,13 +161,10 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     const purposeData = vendorData.purpose;
     const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
     const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;
-    purpose2Given = restrictionForPurpose2 === 1 ? (
-      purposeData && purposeData.consents && purposeData.consents[2]
-    ) : (
-      restrictionForPurpose2 === 0
-        ? false : (purposeData && purposeData.legitimateInterests && purposeData.legitimateInterests[2])
+    purpose2Given = restrictionForPurpose2 === 1 ? getPurposeStatus(purposeData, 'consents', 2) : (
+      restrictionForPurpose2 === 0 ? false : getPurposeStatus(purposeData, 'legitimateInterests', 2)
     );
-    purpose3Given = purposeData && purposeData.consents && purposeData.consents[3];
+    purpose3Given = getPurposeStatus(purposeData, 'consents', 3);
   }
   const request = {
     id: bidderRequest.bidderRequestId,
@@ -163,7 +173,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice()
+      devicetype: getDevice(),
+      ua: navigator.userAgent,
+      sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
       page: pageUrl,

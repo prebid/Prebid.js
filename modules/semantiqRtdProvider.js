@@ -1,8 +1,8 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { ajax } from '../src/ajax.js';
+import { ajax, fetch } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { getWindowLocation, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { generateUUID, getWindowLocation, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -10,14 +10,13 @@ import { getWindowLocation, logError, logInfo, logWarn, mergeDeep } from '../src
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'semantiq';
-
 const LOG_PREFIX = '[SemantIQ RTD Module]: ';
 const KEYWORDS_URL = 'https://api.adnz.co/api/ws-semantiq/page-keywords';
+const EVENT_COLLECTOR_URL = 'https://api.adnz.co/api/ws-clickstream-collector/submit';
 const STORAGE_KEY = `adnz_${SUBMODULE_NAME}`;
 const AUDIENZZ_COMPANY_ID = 1;
-const REQUIRED_TENANT_IDS = [AUDIENZZ_COMPANY_ID];
+const FALLBACK_TENANT_IDS = [AUDIENZZ_COMPANY_ID];
 const AUDIENZZ_GLOBAL_VENDOR_ID = 783;
-
 const DEFAULT_TIMEOUT = 1000;
 
 export const storage = getStorageManager({
@@ -26,13 +25,13 @@ export const storage = getStorageManager({
 });
 
 /**
- * Gets SemantIQ keywords from local storage.
+ * Gets SemantIQ keywords from session storage.
  * @param {string} pageUrl
  * @returns {Object.<string, string | string[]>}
  */
 const getStorageKeywords = (pageUrl) => {
   try {
-    const storageValue = JSON.parse(storage.getDataFromLocalStorage(STORAGE_KEY));
+    const storageValue = JSON.parse(storage.getDataFromSessionStorage(STORAGE_KEY));
 
     if (storageValue?.url === pageUrl) {
       return storageValue.keywords;
@@ -40,7 +39,7 @@ const getStorageKeywords = (pageUrl) => {
 
     return null;
   } catch (error) {
-    logError('Unable to get SemantiQ keywords from local storage', error);
+    logError('Unable to get SemantiQ keywords from session storage', error);
 
     return null;
   }
@@ -53,18 +52,15 @@ const getStorageKeywords = (pageUrl) => {
 const getPageUrl = () => getWindowLocation().href;
 
 /**
- * Gets tenant IDs based on the customer company ID
- * @param {number | number[] | undefined} companyId
+ * Gets tenant IDs based on the module params
+ * @param {Object} params
  * @returns {number[]}
  */
-const getTenantIds = (companyId) => {
-  if (!companyId) {
-    return REQUIRED_TENANT_IDS;
-  }
-
+const getTenantIds = (params = {}) => {
+  const { companyId } = params;
   const companyIdArray = Array.isArray(companyId) ? companyId : [companyId];
 
-  return [...REQUIRED_TENANT_IDS, ...companyIdArray];
+  return companyIdArray.filter(Boolean).length ? companyIdArray : FALLBACK_TENANT_IDS;
 };
 
 /**
@@ -80,8 +76,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
     return resolve(storageKeywords);
   }
 
-  const { companyId } = params;
-  const tenantIds = getTenantIds(companyId);
+  const tenantIds = getTenantIds(params);
   const searchParams = new URLSearchParams();
 
   searchParams.append('url', pageUrl);
@@ -102,7 +97,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
           throw new Error('Failed to parse the response');
         }
 
-        storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
+        storage.setDataInSessionStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
         resolve(data);
       } catch (error) {
         reject(error);
@@ -147,12 +142,51 @@ export const getOrtbKeywords = (keywords) => Object.entries(keywords).reduce((ac
 }, []).join(',');
 
 /**
+ * Dispatches a page impression event to the SemantIQ service.
+ *
+ * @param {number} companyId
+ * @returns {Promise<void>}
+ */
+const dispatchPageImpressionEvent = (companyId) => {
+  window.audienzz = window.audienzz || {};
+  window.audienzz.collectorPageImpressionId = window.audienzz.collectorPageImpressionId || generateUUID();
+  const pageImpressionId = window.audienzz.collectorPageImpressionId;
+  const pageUrl = getPageUrl();
+
+  const payload = {
+    company_id: companyId,
+    event_id: generateUUID(),
+    event_timestamp: new Date().toISOString(),
+    event_type: 'pageImpression',
+    page_impression_id: pageImpressionId,
+    source: 'semantiqPrebidModule',
+    url: pageUrl,
+  };
+
+  return fetch(EVENT_COLLECTOR_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    keepalive: true,
+  });
+};
+
+/**
  * Module init
  * @param {Object} config
  * @param {Object} userConsent
  * @return {boolean}
  */
-const init = (config, userConsent) => true;
+const init = (config, userConsent) => {
+  const { params = {} } = config;
+  const [mainCompanyId] = getTenantIds(params);
+
+  dispatchPageImpressionEvent(mainCompanyId);
+
+  return true;
+};
 
 /**
  * Receives real-time data from SemantIQ service.

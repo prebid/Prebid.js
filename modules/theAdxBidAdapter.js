@@ -1,4 +1,5 @@
-import { logInfo, isEmpty, deepAccess, parseUrl, getDNT, parseSizesInput, _map } from '../src/utils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
+import { logInfo, isEmpty, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
 import {
   BANNER,
   NATIVE,
@@ -148,8 +149,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
@@ -161,7 +163,7 @@ export const spec = {
     if (!isEmpty(validBidRequests)) {
       results = validBidRequests.map(
         bidRequest => {
-          let url = `${getRegionEndPoint(bidRequest)}?tagid=${bidRequest.params.tagId}`;
+          const url = `${getRegionEndPoint(bidRequest)}?tagid=${bidRequest.params.tagId}`;
           return {
             method: requestType,
             type: requestType,
@@ -194,28 +196,28 @@ export const spec = {
   interpretResponse: (serverResponse, request) => {
     logInfo('theadx.interpretResponse', 'serverResponse', serverResponse, ' request', request);
 
-    let responses = [];
+    const responses = [];
 
     if (serverResponse.body) {
-      let responseBody = serverResponse.body;
+      const responseBody = serverResponse.body;
 
-      let seatBids = responseBody.seatbid;
+      const seatBids = responseBody.seatbid;
 
       if (!(isEmpty(seatBids) ||
           isEmpty(seatBids[0].bid))) {
-        let seatBid = seatBids[0];
-        let bid = seatBid.bid[0];
+        const seatBid = seatBids[0];
+        const bid = seatBid.bid[0];
 
         // handle any values that may end up undefined
-        let nullify = (value) => typeof value === 'undefined' ? null : parseInt(value);
+        const nullify = (value) => typeof value === 'undefined' ? null : parseInt(value);
 
         let ttl = null;
         if (bid.ext) {
           ttl = nullify(bid.ext.ttl) ? nullify(bid.ext.ttl) : 2000;
         }
 
-        let bidWidth = nullify(bid.w);
-        let bidHeight = nullify(bid.h);
+        const bidWidth = nullify(bid.w);
+        const bidHeight = nullify(bid.h);
 
         let creative = null;
         let videoXml = null;
@@ -263,7 +265,7 @@ export const spec = {
           });
         }
 
-        let response = {
+        const response = {
           requestId: request.bidId,
           cpm: bid.price,
           width: bidWidth | 0,
@@ -277,7 +279,7 @@ export const spec = {
           mediaType: mediaType,
           native: native,
         };
-        if (mediaType == VIDEO && videoXml) {
+        if (mediaType === VIDEO && videoXml) {
           response.vastUrl = videoXml;
           response.videoCacheKey = bid.ext.rid;
         }
@@ -329,12 +331,12 @@ export const spec = {
 
 }
 
-let buildSiteComponent = (bidRequest, bidderRequest) => {
-  let loc = parseUrl(bidderRequest.refererInfo.page || '', {
+const buildSiteComponent = (bidRequest, bidderRequest) => {
+  const loc = parseUrl(bidderRequest.refererInfo.page || '', {
     decodeSearchAsString: true
   });
 
-  let site = {
+  const site = {
     domain: loc.hostname,
     page: loc.href,
     id: bidRequest.params.wid,
@@ -346,7 +348,7 @@ let buildSiteComponent = (bidRequest, bidderRequest) => {
     site.search = loc.search;
   }
   if (document) {
-    let keywords = document.getElementsByTagName('meta')['keywords'];
+    const keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
       site.keywords = keywords.content;
     }
@@ -363,8 +365,8 @@ function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-let buildDeviceComponent = (bidRequest, bidderRequest) => {
-  let device = {
+const buildDeviceComponent = (bidRequest, bidderRequest) => {
+  const device = {
     js: 1,
     language: ('language' in navigator) ? navigator.language : null,
     ua: ('userAgent' in navigator) ? navigator.userAgent : null,
@@ -383,16 +385,16 @@ let buildDeviceComponent = (bidRequest, bidderRequest) => {
   return device;
 };
 
-let determineOptimalRequestId = (bidRequest, bidderRequest) => {
+const determineOptimalRequestId = (bidRequest, bidderRequest) => {
   return bidRequest.bidId;
 }
 
-let extractValidSize = (bidRequest, bidderRequest) => {
+const extractValidSize = (bidRequest, bidderRequest) => {
   let width = null;
   let height = null;
 
   let requestedSizes = [];
-  let mediaTypes = bidRequest.mediaTypes;
+  const mediaTypes = bidRequest.mediaTypes;
   if (mediaTypes && ((mediaTypes.banner && mediaTypes.banner.sizes) || (mediaTypes.video && mediaTypes.video.sizes))) {
     if (mediaTypes.banner) {
       requestedSizes = mediaTypes.banner.sizes;
@@ -404,11 +406,11 @@ let extractValidSize = (bidRequest, bidderRequest) => {
   }
 
   // Ensure the size array is normalized
-  let conformingSize = parseSizesInput(requestedSizes);
+  const conformingSize = parseSizesInput(requestedSizes);
 
   if (!isEmpty(conformingSize) && conformingSize[0] != null) {
     // Currently only the first size is utilized
-    let splitSizes = conformingSize[0].split('x');
+    const splitSizes = conformingSize[0].split('x');
 
     width = parseInt(splitSizes[0]);
     height = parseInt(splitSizes[1]);
@@ -420,8 +422,8 @@ let extractValidSize = (bidRequest, bidderRequest) => {
   };
 };
 
-let generateVideoComponent = (bidRequest, bidderRequest) => {
-  let impSize = extractValidSize(bidRequest);
+const generateVideoComponent = (bidRequest, bidderRequest) => {
+  const impSize = extractValidSize(bidRequest);
 
   return {
     w: impSize.w,
@@ -429,8 +431,8 @@ let generateVideoComponent = (bidRequest, bidderRequest) => {
   }
 }
 
-let generateBannerComponent = (bidRequest, bidderRequest) => {
-  let impSize = extractValidSize(bidRequest);
+const generateBannerComponent = (bidRequest, bidderRequest) => {
+  const impSize = extractValidSize(bidRequest);
 
   return {
     w: impSize.w,
@@ -438,7 +440,7 @@ let generateBannerComponent = (bidRequest, bidderRequest) => {
   }
 }
 
-let generateNativeComponent = (bidRequest, bidderRequest) => {
+const generateNativeComponent = (bidRequest, bidderRequest) => {
   const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVEPROBS[key];
     const asset = {
@@ -463,8 +465,8 @@ let generateNativeComponent = (bidRequest, bidderRequest) => {
   }
 }
 
-let generateImpBody = (bidRequest, bidderRequest) => {
-  let mediaTypes = bidRequest.mediaTypes;
+const generateImpBody = (bidRequest, bidderRequest) => {
+  const mediaTypes = bidRequest.mediaTypes;
 
   let banner = null;
   let video = null;
@@ -502,26 +504,26 @@ let generateImpBody = (bidRequest, bidderRequest) => {
 
   return result;
 }
-let getRegionEndPoint = (bidRequest) => {
+const getRegionEndPoint = (bidRequest) => {
   if (bidRequest && bidRequest.params && bidRequest.params.region) {
-    if (bidRequest.params.region.toLowerCase() == 'tr') {
+    if (bidRequest.params.region.toLowerCase() === 'tr') {
       return ENDPOINT_TR_URL;
     }
   }
   return ENDPOINT_URL;
 };
 
-let generatePayload = (bidRequest, bidderRequest) => {
+const generatePayload = (bidRequest, bidderRequest) => {
   // Generate the expected OpenRTB payload
 
-  let payload = {
+  const payload = {
     id: determineOptimalRequestId(bidRequest, bidderRequest),
     site: buildSiteComponent(bidRequest, bidderRequest),
     device: buildDeviceComponent(bidRequest, bidderRequest),
     imp: [generateImpBody(bidRequest, bidderRequest)],
   };
   // return payload;
-  let eids = getEids(bidRequest);
+  const eids = getEids(bidRequest);
   if (Object.keys(eids).length > 0) {
     payload.ext = eids;
   }
@@ -529,26 +531,26 @@ let generatePayload = (bidRequest, bidderRequest) => {
 };
 
 function getEids(bidRequest) {
-  let eids = {}
+  const eids = {}
 
-  let uId2 = deepAccess(bidRequest, 'userId.uid2.id');
+  const uId2 = deepAccess(bidRequest, 'userId.uid2.id');
   if (uId2) {
     eids['uid2'] = uId2;
   }
 
-  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
   if (id5) {
     eids['id5id'] = id5;
-    let id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    const id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
     if (id5Linktype) {
       eids['id5_linktype'] = id5Linktype;
     }
   }
-  let netId = deepAccess(bidRequest, 'userId.netId');
+  const netId = deepAccess(bidRequest, 'userId.netId');
   if (netId) {
     eids['netid'] = netId;
   }
-  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     eids['sharedid'] = sharedId;
   }
