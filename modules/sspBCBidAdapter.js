@@ -5,6 +5,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -167,6 +168,7 @@ const applyClientHints = ortbRequest => {
   const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
   const viewport = getWinDimensions().visualViewport || false;
+  const devicePixelRatio = getDevicePixelRatio();
   const segments = [];
   const hints = {
     'CH-Ect': connection.effectiveType,
@@ -174,7 +176,7 @@ const applyClientHints = ortbRequest => {
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
     'CH-DeviceMemory': deviceMemory,
-    'CH-Dpr': W.devicePixelRatio,
+    'CH-Dpr': devicePixelRatio,
     'CH-ViewportWidth': viewport.width,
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,

@@ -4,6 +4,7 @@ import { generateUUID, isFn, isPlainObject, getWinDimensions } from '../src/util
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 export const BIDDER_CODE = 'hypelab';
 export const ENDPOINT_URL = 'https://api.hypelab.com';
@@ -40,7 +41,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
     const floor = getBidFloor(request, request.sizes || []);
-    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+    const dpr = getDevicePixelRatio() || 1;
     const wp = getWalletPresence();
     const wpfs = getWalletProviderFlags();
     const winDimensions = getWinDimensions();

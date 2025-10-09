@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
@@ -335,7 +336,11 @@ function injectPixels(ad, pixels, scripts) {
 }
 
 function getScreenParams() {
-  return `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
+  const winDimensions = getWinDimensions();
+  const width = winDimensions.screen?.width;
+  const height = winDimensions.screen?.height
+  const devicePixelRatio = getDevicePixelRatio();
+  return `${width}x${height}@${devicePixelRatio}`;
 }
 
 function getBids(bids) {

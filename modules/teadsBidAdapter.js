@@ -4,6 +4,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
 import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -57,7 +58,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
-    const topWindow = window.top;
+    const devicePixelRatio = getDevicePixelRatio();
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -72,7 +73,7 @@ export const spec = {
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
-      devicePixelRatio: topWindow.devicePixelRatio,
+      devicePixelRatio,
       screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
