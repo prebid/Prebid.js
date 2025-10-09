@@ -45,10 +45,10 @@ export const spec = {
 
         const mediaTypes = deepAccess(srcBid, 'mediaTypes') || {};
         if (mediaTypes.video && !imp.video) {
-          imp.video = {};
+          deepSetValue(data, `imp.${index}.video`, {});
         }
         if (mediaTypes.native && !imp.native) {
-          imp.native = {};
+          deepSetValue(data, `imp.${index}.native`, {});
         }
 
         const mediaType = imp.banner ? 'banner' : (imp.video ? 'video' : (imp.native ? 'native' : '*'));
@@ -105,7 +105,7 @@ export const spec = {
     return [{
       method: METHOD,
       url: ENDPOINT_URL,
-      data,
+      data
     }]
   },
   interpretResponse: function(serverResponse, request) {

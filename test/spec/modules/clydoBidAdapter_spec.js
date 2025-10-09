@@ -42,7 +42,7 @@ describe('clydoBidAdapter', () => {
       expect(req.method).to.equal('POST');
       expect(req.url).to.include('us');
       expect(req.url).to.include('abcdefghij');
-      expect(req.options).to.have.property('contentType', 'application/json');
+      expect(req).to.not.have.property('options');
       expect(req).to.have.property('data');
     });
 
