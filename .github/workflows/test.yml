@@ -59,7 +59,6 @@ jobs:
         run: | 
           wget https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip
           unzip BrowserStackLocal-linux-x64.zip
-          ls
 
       - name: Cache source
         uses: actions/cache/save@v4
@@ -141,7 +140,7 @@ jobs:
 
       - name: Start BrowserstackLocal
         run: |
-          ./BrowserStackLocal --key $BROWSERSTACK_ACCESS_KEY
+          ./BrowserStackLocal --key $BROWSERSTACK_ACCESS_KEY --daemon start
 
       - name: Run tests
         uses: nick-fields/retry@v3

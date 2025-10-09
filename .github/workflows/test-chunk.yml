@@ -57,8 +57,7 @@ jobs:
 
       - name: Start BrowserstackLocal
         run: |
-          ls
-          ./BrowserStackLocal --key $BROWSERSTACK_ACCESS_KEY
+          ./BrowserStackLocal --key $BROWSERSTACK_ACCESS_KEY --daemon start
 
       - name: Run tests
         uses: nick-fields/retry@v3
