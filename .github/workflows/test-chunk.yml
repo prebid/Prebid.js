@@ -58,7 +58,7 @@ jobs:
       - name: Start BrowserstackLocal
         run: |
           ls
-          ./BrowserstackLocal --key {{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          ./BrowserstackLocal --key $BROWSERSTACK_ACCESS_KEY
 
       - name: Run tests
         uses: nick-fields/retry@v3
