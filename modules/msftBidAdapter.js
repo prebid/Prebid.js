@@ -271,9 +271,8 @@ const converter = ortbConverter({
       }
     }
 
-    // setup outstream renderer if needed
     if (FEATURES.VIDEO && mediaType === VIDEO) {
-      // handle outstream bids
+      // handle outstream bids, ie setup the renderer
       if (extANData?.renderer_url && extANData?.renderer_id) {
         const adUnitCode = bidRequest?.adUnitCode;
         if (isNotEmptyString(adUnitCode)) {
@@ -420,7 +419,7 @@ function formatRequest(payload, bidderRequest) {
     endpointUrl = ENDPOINT_URL_SIMPLE;
   }
 
-  // TODO handle debug info here if needed
+  // handle debug info here if needed
   let debugObj = {};
   const debugCookieName = 'apn_prebid_debug';
   const debugCookie = storage.getCookie(debugCookieName) || null;
@@ -460,7 +459,6 @@ function formatRequest(payload, bidderRequest) {
   // temporary setting
   endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'eqt=1';
 
-  // TODO check if we still need/allowed config.getConfig('apn_test')
   if (getParameterByName("apn_test").toUpperCase() === "TRUE") {
     options.customHeaders = {
       "X-Is-Test": 1,
