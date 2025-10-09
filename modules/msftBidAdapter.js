@@ -398,7 +398,8 @@ function checkOptionalParams(bidRequest, fieldName, expectedType) {
   const value = bidRequest?.params?.[fieldName];
   // allow false, but not undefined, null or empty string
   if (value !== undefined || value !== null || value !== '') {
-    if (typeof value === expectedType) {
+    const actualType = typeof value;
+    if (actualType === expectedType) {
       return true;
     } else {
       logWarn(`Removing invalid bid.param ${fieldName} for adUnitCode ${bidRequest.adUnitCode}, expected ${expectedType}`);

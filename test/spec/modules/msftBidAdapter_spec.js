@@ -351,23 +351,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                  "brand": "Chromium",
-                  "version": [
-                    "140"
-                  ]
-                },
-                {
-                  "brand": "Not=A?Brand",
-                  "version": [
-                    "24"
-                  ]
-                },
-                {
-                  "brand": "Google Chrome",
-                  "version": [
-                    "140"
-                  ]
-                }
+                "brand": "Chromium",
+                "version": [
+                  "140"
+                ]
+              },
+              {
+                "brand": "Not=A?Brand",
+                "version": [
+                  "24"
+                ]
+              },
+              {
+                "brand": "Google Chrome",
+                "version": [
+                  "140"
+                ]
+              }
               ],
               "mobile": 0
             }
@@ -422,23 +422,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-                "brand": "Chromium",
-                "version": [
-                  "140"
-                ]
-              },
-              {
-                "brand": "Not=A?Brand",
-                "version": [
-                  "24"
-                ]
-              },
-              {
-                "brand": "Google Chrome",
-                "version": [
-                  "140"
-                ]
-              }
+              "brand": "Chromium",
+              "version": [
+                "140"
+              ]
+            },
+            {
+              "brand": "Not=A?Brand",
+              "version": [
+                "24"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "140"
+              ]
+            }
             ],
             "mobile": 0
           }
@@ -617,23 +617,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                  "brand": "Chromium",
-                  "version": [
-                    "140"
-                  ]
-                },
-                {
-                  "brand": "Not=A?Brand",
-                  "version": [
-                    "24"
-                  ]
-                },
-                {
-                  "brand": "Google Chrome",
-                  "version": [
-                    "140"
-                  ]
-                }
+                "brand": "Chromium",
+                "version": [
+                  "140"
+                ]
+              },
+              {
+                "brand": "Not=A?Brand",
+                "version": [
+                  "24"
+                ]
+              },
+              {
+                "brand": "Google Chrome",
+                "version": [
+                  "140"
+                ]
+              }
               ],
               "mobile": 0
             }
@@ -691,23 +691,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-                "brand": "Chromium",
-                "version": [
-                  "140"
-                ]
-              },
-              {
-                "brand": "Not=A?Brand",
-                "version": [
-                  "24"
-                ]
-              },
-              {
-                "brand": "Google Chrome",
-                "version": [
-                  "140"
-                ]
-              }
+              "brand": "Chromium",
+              "version": [
+                "140"
+              ]
+            },
+            {
+              "brand": "Not=A?Brand",
+              "version": [
+                "24"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "140"
+              ]
+            }
             ],
             "mobile": 0
           }
@@ -877,23 +877,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                  "brand": "Google Chrome",
-                  "version": [
-                    "141"
-                  ]
-                },
-                {
-                  "brand": "Not?A_Brand",
-                  "version": [
-                    "8"
-                  ]
-                },
-                {
-                  "brand": "Chromium",
-                  "version": [
-                    "141"
-                  ]
-                }
+                "brand": "Google Chrome",
+                "version": [
+                  "141"
+                ]
+              },
+              {
+                "brand": "Not?A_Brand",
+                "version": [
+                  "8"
+                ]
+              },
+              {
+                "brand": "Chromium",
+                "version": [
+                  "141"
+                ]
+              }
               ],
               "mobile": 0
             }
@@ -947,23 +947,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-                "brand": "Google Chrome",
-                "version": [
-                  "141"
-                ]
-              },
-              {
-                "brand": "Not?A_Brand",
-                "version": [
-                  "8"
-                ]
-              },
-              {
-                "brand": "Chromium",
-                "version": [
-                  "141"
-                ]
-              }
+              "brand": "Google Chrome",
+              "version": [
+                "141"
+              ]
+            },
+            {
+              "brand": "Not?A_Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "141"
+              ]
+            }
             ],
             "mobile": 0
           }
@@ -1053,34 +1053,6 @@ describe('msftBidAdapter', function () {
           "ortb": {
             "ver": "1.2",
             "assets": [{
-                "id": 1,
-                "required": 1,
-                "img": {
-                  "type": 3,
-                  "w": 989,
-                  "h": 742
-                }
-              },
-              {
-                "id": 2,
-                "required": 1,
-                "title": {
-                  "len": 100
-                }
-              },
-              {
-                "id": 3,
-                "required": 1,
-                "data": {
-                  "type": 1
-                }
-              }
-            ]
-          }
-        },
-        "nativeOrtbRequest": {
-          "ver": "1.2",
-          "assets": [{
               "id": 1,
               "required": 1,
               "img": {
@@ -1103,6 +1075,34 @@ describe('msftBidAdapter', function () {
                 "type": 1
               }
             }
+            ]
+          }
+        },
+        "nativeOrtbRequest": {
+          "ver": "1.2",
+          "assets": [{
+            "id": 1,
+            "required": 1,
+            "img": {
+              "type": 3,
+              "w": 989,
+              "h": 742
+            }
+          },
+          {
+            "id": 2,
+            "required": 1,
+            "title": {
+              "len": 100
+            }
+          },
+          {
+            "id": 3,
+            "required": 1,
+            "data": {
+              "type": 1
+            }
+          }
           ]
         },
         "mediaTypes": {
@@ -1110,28 +1110,28 @@ describe('msftBidAdapter', function () {
             "ortb": {
               "ver": "1.2",
               "assets": [{
-                  "id": 1,
-                  "required": 1,
-                  "img": {
-                    "type": 3,
-                    "w": 989,
-                    "h": 742
-                  }
-                },
-                {
-                  "id": 2,
-                  "required": 1,
-                  "title": {
-                    "len": 100
-                  }
-                },
-                {
-                  "id": 3,
-                  "required": 1,
-                  "data": {
-                    "type": 1
-                  }
+                "id": 1,
+                "required": 1,
+                "img": {
+                  "type": 3,
+                  "w": 989,
+                  "h": 742
                 }
+              },
+              {
+                "id": 2,
+                "required": 1,
+                "title": {
+                  "len": 100
+                }
+              },
+              {
+                "id": 3,
+                "required": 1,
+                "data": {
+                  "type": 1
+                }
+              }
               ]
             }
           }
@@ -1174,23 +1174,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                  "brand": "Chromium",
-                  "version": [
-                    "140"
-                  ]
-                },
-                {
-                  "brand": "Not=A?Brand",
-                  "version": [
-                    "24"
-                  ]
-                },
-                {
-                  "brand": "Google Chrome",
-                  "version": [
-                    "140"
-                  ]
-                }
+                "brand": "Chromium",
+                "version": [
+                  "140"
+                ]
+              },
+              {
+                "brand": "Not=A?Brand",
+                "version": [
+                  "24"
+                ]
+              },
+              {
+                "brand": "Google Chrome",
+                "version": [
+                  "140"
+                ]
+              }
               ],
               "mobile": 0
             }
@@ -1245,23 +1245,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-                "brand": "Chromium",
-                "version": [
-                  "140"
-                ]
-              },
-              {
-                "brand": "Not=A?Brand",
-                "version": [
-                  "24"
-                ]
-              },
-              {
-                "brand": "Google Chrome",
-                "version": [
-                  "140"
-                ]
-              }
+              "brand": "Chromium",
+              "version": [
+                "140"
+              ]
+            },
+            {
+              "brand": "Not=A?Brand",
+              "version": [
+                "24"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "140"
+              ]
+            }
             ],
             "mobile": 0
           }
