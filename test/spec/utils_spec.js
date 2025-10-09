@@ -1445,18 +1445,18 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should invoke fetchWinDimensions once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'fetchWinDimensions');
-    getWinDimensions();
+  it('should clear cache once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'reset');
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledOnce(resetWinDimensionsSpy);
     clock.tick(18);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
 });
