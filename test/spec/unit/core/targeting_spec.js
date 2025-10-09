@@ -16,6 +16,7 @@ import {createBid} from '../../../../src/bidfactory.js';
 import {hook, setupBeforeHookFnOnce} from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 import {getGlobal} from '../../../../src/prebidGlobal.js';
+import { getAdUnitBidLimitMap } from '../../../../src/targeting.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -546,6 +547,12 @@ describe('targeting tests', function () {
       });
 
       it('selects the top n number of bids when enableSendAllBids is true and and bitLimit is set', function () {
+        let getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+          {
+            code: '/123456/header-bid-tag-0',
+          },
+        ]));
+
         config.setConfig({
           sendBidsControl: {
             bidLimit: 1
@@ -555,6 +562,7 @@ describe('targeting tests', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
+        getAdUnitsStub.restore();
         expect(limitedBids.length).to.equal(1);
       });
 
@@ -583,7 +591,48 @@ describe('targeting tests', function () {
 
         expect(limitedBids.length).to.equal(2);
       });
+
+      it('getHighestCpmBidsFromBidPool calculates bids limit properly when bidLimit is a map', function () {
+        const bidLimit = {
+          'adunit1': 2
+        };
+        const bids = [
+          { ...bid1, bidderCode: 'rubicon', adUnitCode: 'adunit1' },
+          { ...bid2, bidderCode: 'appnexus', adUnitCode: 'adunit1' },
+          { ...bid3, bidderCode: 'dgads', adUnitCode: 'adunit1' },
+        ];
+
+        const limitedBids = getHighestCpmBidsFromBidPool(bids, getHighestCpm, bidLimit);
+
+        expect(limitedBids.length).to.equal(2);
+      });
     });
+
+    it('getAdUnitBidLimitMap returns correct map of adUnitCode to bidLimit', function() {
+      enableSendAllBids = true;
+      let getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+        {
+          code: 'adunit1',
+          bidLimit: 2
+        },
+        {
+          code: 'adunit2',
+          bidLimit: 5
+        },
+        {
+          code: 'adunit3'
+        }
+      ]));
+
+      const adUnitBidLimitMap = getAdUnitBidLimitMap(['adunit1', 'adunit2', 'adunit3'], 0);
+
+      expect(adUnitBidLimitMap).to.deep.equal({
+        'adunit1': 2,
+        'adunit2': 5,
+        'adunit3': undefined
+      });
+      getAdUnitsStub.restore();
+    })
 
     describe('targetingControls.allowZeroCpmBids', function () {
       let bid4;
