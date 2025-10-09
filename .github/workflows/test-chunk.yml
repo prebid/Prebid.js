@@ -57,6 +57,7 @@ jobs:
 
       - name: Start BrowserstackLocal
         run: |
+          ls
           ./BrowserstackLocal --key {{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
       - name: Run tests
