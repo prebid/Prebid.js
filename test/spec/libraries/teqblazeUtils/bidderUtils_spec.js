@@ -31,6 +31,11 @@ describe('TeqBlazeBidderUtils', function () {
       params: {
         placementId: 'testBanner'
       },
+      ortb2Imp: {
+        ext: {
+          gpid: "/1111/homepage-leftnav"
+        }
+      },
       userIdAsEids
     },
     {
@@ -138,7 +143,7 @@ describe('TeqBlazeBidderUtils', function () {
     });
 
     it('Returns general data valid', function () {
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
@@ -184,6 +189,7 @@ describe('TeqBlazeBidderUtils', function () {
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
+          expect(placement.gpid).to.be.an('string');
         }
         switch (placement.adFormat) {
           case BANNER:
@@ -218,7 +224,7 @@ describe('TeqBlazeBidderUtils', function () {
         }
       ];
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
@@ -253,7 +259,7 @@ describe('TeqBlazeBidderUtils', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('object');
       expect(data.gdpr).to.have.property('consentString');
@@ -267,7 +273,7 @@ describe('TeqBlazeBidderUtils', function () {
       bidderRequest.uspConsent = '1---';
       delete bidderRequest.gdprConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -286,7 +292,7 @@ describe('TeqBlazeBidderUtils', function () {
         model: 'iPhone 12 Pro Max',
         os: 'iOS',
         osv: '17.4',
-        ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+        ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
       };
       const _bidderRequest = JSON.parse(JSON.stringify(bidderRequest));
       _bidderRequest.ortb2.device = ortb2Device;
@@ -303,8 +309,8 @@ describe('TeqBlazeBidderUtils', function () {
         applicableSections: [8]
       };
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
@@ -318,13 +324,13 @@ describe('TeqBlazeBidderUtils', function () {
       bidderRequest.ortb2.regs.gpp = 'abc123';
       bidderRequest.ortb2.regs.gpp_sid = [8];
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
 
-      bidderRequest.ortb2;
+      expect(bidderRequest).to.have.property('ortb2');
     })
   });
 
@@ -349,9 +355,9 @@ describe('TeqBlazeBidderUtils', function () {
           }
         }]
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(banner.body[0].requestId);
@@ -383,10 +389,10 @@ describe('TeqBlazeBidderUtils', function () {
           }
         }]
       };
-      let videoResponses = spec.interpretResponse(video);
+      const videoResponses = spec.interpretResponse(video);
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = videoResponses[0];
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -420,10 +426,10 @@ describe('TeqBlazeBidderUtils', function () {
           }
         }]
       };
-      let nativeResponses = spec.interpretResponse(native);
+      const nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = nativeResponses[0];
+      const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -454,7 +460,7 @@ describe('TeqBlazeBidderUtils', function () {
         }]
       };
 
-      let serverResponses = spec.interpretResponse(invBanner);
+      const serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid video response is passed', function () {
@@ -470,7 +476,7 @@ describe('TeqBlazeBidderUtils', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invVideo);
+      const serverResponses = spec.interpretResponse(invVideo);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid native response is passed', function () {
@@ -487,7 +493,7 @@ describe('TeqBlazeBidderUtils', function () {
           currency: 'USD',
         }]
       };
-      let serverResponses = spec.interpretResponse(invNative);
+      const serverResponses = spec.interpretResponse(invNative);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -500,13 +506,13 @@ describe('TeqBlazeBidderUtils', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invalid);
+      const serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
 
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with proper sync config , include GDPR', function() {
+  describe('getUserSyncs', function () {
+    it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -518,7 +524,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`)
     });
-    it('Should return array of objects with proper sync config , include CCPA', function() {
+    it('Should return array of objects with proper sync config , include CCPA', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {
         consentString: '1---'
       });
@@ -529,7 +535,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&ccpa_consent=1---&coppa=0`)
     });
-    it('Should return array of objects with proper sync config , include GPP', function() {
+    it('Should return array of objects with proper sync config , include GPP', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {}, {
         gppString: 'abc123',
         applicableSections: [8]

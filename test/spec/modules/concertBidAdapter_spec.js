@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
 import { hook } from 'src/hook.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('ConcertAdapter', function () {
   let bidRequests;
@@ -33,7 +34,7 @@ describe('ConcertAdapter', function () {
       }
     };
 
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       concert: {
         storageAllowed: true
       }
@@ -84,12 +85,12 @@ describe('ConcertAdapter', function () {
       }
     }
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     sandbox.restore();
   });
 

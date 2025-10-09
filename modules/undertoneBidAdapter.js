@@ -33,8 +33,8 @@ function getGdprQueryParams(gdprConsent) {
     return null;
   }
 
-  let gdpr = gdprConsent.gdprApplies ? '1' : '0';
-  let gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
+  const gdpr = gdprConsent.gdprApplies ? '1' : '0';
+  const gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
@@ -62,14 +62,15 @@ export const spec = {
     const windowDimensions = getWinDimensions();
     const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
     const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
-    const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
+    const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
       'uids': validBidRequests[0].userId,
       'pageSize': pageSizeArray
     };
-    if (validBidRequests[0].schain) {
-      commons.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      commons.schain = schain;
     }
     const payload = {
       'x-ut-hb-params': [],
@@ -84,13 +85,13 @@ export const spec = {
       commons.canonicalUrl = canonicalUrl;
     }
     const hostname = parseUrl(referer).hostname;
-    let domain = extractDomainFromHost(hostname);
+    const domain = extractDomainFromHost(hostname);
     const pageUrl = canonicalUrl || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
 
-    let gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
+    const gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
     if (gdprParams) {
       reqUrl += `&${gdprParams}`;
     }
@@ -105,16 +106,16 @@ export const spec = {
       reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
     }
 
-    validBidRequests.map(bidReq => {
+    validBidRequests.forEach(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
         coordinates: getBannerCoords(bidReq.adUnitCode),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
-        placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
+        placementId: bidReq.params.placementId ?? null,
         publisherId: bidReq.params.publisherId,
-        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot', '')),
+        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', ''),
         sizes: bidReq.sizes,
         params: bidReq.params
       };
@@ -176,7 +177,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
-    let gdprParams = getGdprQueryParams(gdprConsent);
+    const gdprParams = getGdprQueryParams(gdprConsent);
     let iframePrivacyParams = '';
     let pixelPrivacyParams = '';
 
@@ -186,7 +187,7 @@ export const spec = {
     }
 
     if (usPrivacy) {
-      if (iframePrivacyParams != '') {
+      if (iframePrivacyParams !== '') {
         iframePrivacyParams += '&'
       } else {
         iframePrivacyParams += '?'

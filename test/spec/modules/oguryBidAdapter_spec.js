@@ -121,34 +121,34 @@ describe('OguryBidAdapter', () => {
 
   describe('isBidRequestValid', () => {
     it('should validate correct bid', () => {
-      let validBid = utils.deepClone(bidRequests[0]);
+      const validBid = utils.deepClone(bidRequests[0]);
 
-      let isValid = spec.isBidRequestValid(validBid);
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.true;
     });
 
     it('should not validate when sizes is not defined', () => {
-      let invalidBid = utils.deepClone(bidRequests[0]);
+      const invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.sizes;
       delete invalidBid.mediaTypes;
 
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
     });
 
     it('should not validate bid when adunit is not defined', () => {
-      let invalidBid = utils.deepClone(bidRequests[0]);
+      const invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.adUnitId;
 
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.to.be.false;
     });
 
     it('should not validate bid when assetKey is not defined', () => {
-      let invalidBid = utils.deepClone(bidRequests[0]);
+      const invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.assetKey;
 
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
     });
 
@@ -713,14 +713,13 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.user).to.deep.equal({
         ext: {
-          ...ortb2.user.ext,
-          uids: bidRequests[0].userId
+          ...ortb2.user.ext
         }
       });
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.0.3'
+        adapterversion: '2.0.4'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -775,15 +774,6 @@ describe('OguryBidAdapter', () => {
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data.site.id).to.be.an('undefined');
-    });
-
-    it('should not set user.ext.uids when userId is not present', () => {
-      const bidderRequest = utils.deepClone(bidderRequestBase);
-      const validBidRequests = bidderRequest.bids;
-      delete validBidRequests[0].userId;
-
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request.data.user.ext.uids).to.be.an('undefined');
     });
 
     it('should handle bidFloor undefined', () => {
@@ -861,7 +851,7 @@ describe('OguryBidAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    let openRtbBidResponse = {
+    const openRtbBidResponse = {
       body: {
         id: 'id_of_bid_response',
         seatbid: [{
@@ -941,10 +931,10 @@ describe('OguryBidAdapter', () => {
 
       const bid = { nurl: 'http://url.co/win' };
 
-      expect(ortbConverterProps.bidResponse(buildBidResponseSpy, utils.deepClone(bid), {})).to.deep.equal({ 
+      expect(ortbConverterProps.bidResponse(buildBidResponseSpy, utils.deepClone(bid), {})).to.deep.equal({
         ...bidResponse,
         currency: 'USD',
-        nurl: bid.nurl 
+        nurl: bid.nurl
       });
 
       sinon.assert.calledWith(buildBidResponseSpy, {}, {});

@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -17,7 +18,7 @@ const DEFAULT_HEIGHT = 0;
 const NET_REVENUE = false;
 let publisherId = 0;
 let zoneId = 0;
-let NATIVE_ASSET_ID_TO_KEY_MAP = {};
+const NATIVE_ASSET_ID_TO_KEY_MAP = {};
 const DATA_TYPES = {
   'NUMBER': 'number',
   'STRING': 'string',
@@ -74,12 +75,12 @@ const NATIVE_ASSETS = {
 };
 
 function _getDomainFromURL(url) {
-  let anchor = document.createElement('a');
+  const anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
 
-let platform = (function getPlatform() {
+const platform = (function getPlatform() {
   var ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
     return 'Android'
@@ -95,7 +96,7 @@ function _generateGUID() {
   var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
-    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   })
   return guid;
 }
@@ -168,7 +169,7 @@ function _createOrtbTemplate(conf) {
       ua: navigator.userAgent,
       os: platform,
       js: 1,
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: _getLanguage(),
@@ -459,8 +460,8 @@ export const spec = {
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
-    let conf = _initConf(refererInfo);
-    let payload = _createOrtbTemplate(conf);
+    const conf = _initConf(refererInfo);
+    const payload = _createOrtbTemplate(conf);
     let bidCurrency = '';
     let bid;
     validBidRequests.forEach(originalBid => {
@@ -483,7 +484,7 @@ export const spec = {
         payload.imp.push(impObj);
       }
     });
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
     publisherId = conf.pubId.trim();
@@ -514,8 +515,9 @@ export const spec = {
       payload.test = 1;
     }
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -542,8 +544,8 @@ export const spec = {
   interpretResponse: function (serverResponses, bidderRequest) {
     const bidResponses = [];
     var respCur = ADTRUE_CURRENCY;
-    let parsedRequest = JSON.parse(bidderRequest.data);
-    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+    const parsedRequest = JSON.parse(bidderRequest.data);
+    const parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       if (serverResponses.body && serverResponses.body.seatbid && isArray(serverResponses.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
@@ -552,7 +554,7 @@ export const spec = {
           seatbidder.bid &&
           isArray(seatbidder.bid) &&
           seatbidder.bid.forEach(bid => {
-            let newBid = {
+            const newBid = {
               requestId: bid.impid,
               cpm: (parseFloat(bid.price) || 0).toFixed(2),
               width: bid.w,
@@ -613,9 +615,9 @@ export const spec = {
       return [];
     }
     return responses.reduce((accum, rsp) => {
-      let cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
+      const cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
       if (cookieSyncs) {
-        let cookieSyncObjects = cookieSyncs.map(cookieSync => {
+        const cookieSyncObjects = cookieSyncs.map(cookieSync => {
           return {
             type: SYNC_TYPES[cookieSync.type],
             url: cookieSync.url +
@@ -629,6 +631,7 @@ export const spec = {
         });
         return accum.concat(cookieSyncObjects);
       }
+      return accum;
     }, []);
   }
 };

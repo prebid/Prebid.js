@@ -24,12 +24,12 @@ describe('LiveIntentExternalId', function() {
   });
 
   afterEach(function() {
-    uspConsentDataStub.restore();
-    gdprConsentDataStub.restore();
-    gppConsentDataStub.restore();
-    coppaConsentDataStub.restore();
-    refererInfoStub.restore();
-    randomStub.restore();
+    uspConsentDataStub?.restore();
+    gdprConsentDataStub?.restore();
+    gppConsentDataStub?.restore();
+    coppaConsentDataStub?.restore();
+    refererInfoStub?.restore();
+    randomStub?.restore();
     window.liQHub = []; // reset
     window.liModuleEnabled = undefined; // reset
     window.liTreatmentRate = undefined; // reset
@@ -405,53 +405,6 @@ describe('LiveIntentExternalId', function() {
     })
   });
 
-  it('should decode a idCookie as fpid if it exists and coppa is false', function() {
-    coppaConsentDataStub.returns(false)
-    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'fpid': 'bar'}, 'fpid': {'id': 'bar'}});
-  });
-
-  it('should not decode a idCookie as fpid if it exists and coppa is true', function() {
-    coppaConsentDataStub.returns(true)
-    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo'}})
-  });
-
-  it('should resolve fpid from cookie', function() {
-    const cookieName = 'testcookie'
-    liveIntentExternalIdSubmodule.getId({ params: {
-      ...defaultConfigParams.params,
-      fpid: { 'strategy': 'cookie', 'name': cookieName },
-      requestedAttributesOverrides: { 'fpid': true } }
-    }).callback(() => {});
-
-    expect(window.liQHub).to.have.length(2)
-    expect(window.liQHub[0]).to.eql({
-      clientDetails: { name: 'prebid', version: '$prebid.version$' },
-      clientRef: {},
-      collectSettings: { timeout: DEFAULT_AJAX_TIMEOUT },
-      consent: {},
-      integration: { distributorId: defaultConfigParams.distributorId, publisherId: PUBLISHER_ID, type: 'custom' },
-      partnerCookies: new Set(),
-      resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
-      idCookieSettings: { type: 'provided', key: 'testcookie', source: 'cookie' },
-      type: 'register_client'
-    })
-
-    const resolveCommand = window.liQHub[1]
-
-    // functions cannot be reasonably compared, remove them
-    delete resolveCommand.onSuccess[0].callback
-    delete resolveCommand.onFailure
-
-    expect(resolveCommand).to.eql({
-      clientRef: {},
-      onSuccess: [{ type: 'callback' }],
-      requestedAttributes: [ 'nonId', 'idCookie' ],
-      type: 'resolve'
-    })
-  });
-
   it('should decode a sharethrough id to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', sharethrough: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sharethrough': 'bar'}, 'sharethrough': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
@@ -470,6 +423,11 @@ describe('LiveIntentExternalId', function() {
   it('should decode a zetassp id to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', zetassp: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'zetassp': 'bar'}, 'zetassp': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a nexxen id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', nexxen: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'nexxen': 'bar'}, 'nexxen': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a vidazoo id to a separate object when present', function() {

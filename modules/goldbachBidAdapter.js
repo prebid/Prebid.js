@@ -221,7 +221,7 @@ export const spec = {
     const syncs = []
     const uid = ensureUid(gdprConsent);
     if (hasPurpose1Consent(gdprConsent)) {
-      let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
+      const type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
       if (type) {
         syncs.push({
           type: type,

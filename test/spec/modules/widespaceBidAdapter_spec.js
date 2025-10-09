@@ -202,7 +202,7 @@ describe('+widespaceAdatperTest', function () {
   describe('+interpretResponse', function () {
     it('-required params available in response', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
-      let requiredKeys = [
+      const requiredKeys = [
         'requestId',
         'cpm',
         'width',

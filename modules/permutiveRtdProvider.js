@@ -46,7 +46,8 @@ let cachedPermutiveModuleConfig = {}
  */
 function readPermutiveModuleConfigFromCache() {
   const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
-  return cachedPermutiveModuleConfig = liftIntoParams(params)
+  cachedPermutiveModuleConfig = liftIntoParams(params)
+  return cachedPermutiveModuleConfig
 }
 
 /**
@@ -164,7 +165,7 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
-  let topicsUserData = []
+  const topicsUserData = []
   for (const [k, value] of Object.entries(topics)) {
     topicsUserData.push({
       name,
@@ -196,10 +197,10 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
   const transformedKeywordGroups = Object.entries(keywordGroups)
     .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
 
-  const keywords = [
-    currentKeywords,
-    ...transformedKeywordGroups,
-  ]
+  const keywords = Array.from(new Set([
+    ...(currentKeywords || '').split(',').map(kv => kv.trim()),
+    ...transformedKeywordGroups
+  ]))
     .filter(Boolean)
     .join(',')
 

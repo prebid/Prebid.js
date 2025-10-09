@@ -43,9 +43,9 @@ export const spec = {
         mtype = 2;
       }
 
-      let tkn = bidRequest.params.tokenId;
-      let seatid = bidRequest.params.seatId;
-      let sspid = bidRequest.params.sspId;
+      const tkn = bidRequest.params.tokenId;
+      const seatid = bidRequest.params.seatId;
+      const sspid = bidRequest.params.sspId;
 
       const payload = {
         sizes: sizes,

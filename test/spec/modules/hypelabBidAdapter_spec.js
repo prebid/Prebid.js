@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { server } from '../../mocks/xhr';
-import { getWinDimensions } from '../../../src/utils';
-import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
+import { server } from '../../mocks/xhr.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 
 import {
   mediaSize,
@@ -114,11 +114,11 @@ const mockBidRequest = {
 
 describe('hypelabBidAdapter', function () {
   describe('mediaSize', function () {
-    describe('when given an invalid media object', function () {
+    it('when given an invalid media object', function () {
       expect(mediaSize({})).to.eql({ width: 0, height: 0 });
     });
 
-    describe('when given a valid media object', function () {
+    it('when given a valid media object', function () {
       expect(
         mediaSize({ creative_set: { image: { width: 728, height: 90 } } })
       ).to.eql({ width: 728, height: 90 });
@@ -126,29 +126,35 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    describe('when given an invalid bid request', function () {
+    it('when given an invalid bid request', function () {
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
 
-    describe('when given a valid bid request', function () {
+    it('when given a valid bid request', function () {
       expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
     });
   });
 
   describe('Bidder code valid', function () {
-    expect(spec.code).to.equal(BIDDER_CODE);
+    it('should match BIDDER_CODE', function () {
+      expect(spec.code).to.equal(BIDDER_CODE);
+    });
   });
 
   describe('Media types valid', function () {
-    expect(spec.supportedMediaTypes).to.contain(BANNER);
+    it('should contain BANNER', function () {
+      expect(spec.supportedMediaTypes).to.contain(BANNER);
+    });
   });
 
   describe('Bid request valid', function () {
-    expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
+    it('should validate correctly', function () {
+      expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
+    });
   });
 
   describe('buildRequests', () => {
-    describe('returns a valid request', function () {
+    it('returns a valid request', function () {
       const result = spec.buildRequests(
         mockValidBidRequests,
         mockBidderRequest
@@ -188,19 +194,19 @@ describe('hypelabBidAdapter', function () {
       });
       const winDimensions = getWinDimensions();
       expect(data.vp).to.deep.equal([
-      Math.max(
-        winDimensions?.document.documentElement.clientWidth || 0,
-        winDimensions?.innerWidth || 0
-      ),
-      Math.max(
-        winDimensions?.document.documentElement.clientHeight || 0,
-        winDimensions?.innerHeight || 0
-      ),
-    ]);
+        Math.max(
+          winDimensions?.document.documentElement.clientWidth || 0,
+          winDimensions?.innerWidth || 0
+        ),
+        Math.max(
+          winDimensions?.document.documentElement.clientHeight || 0,
+          winDimensions?.innerHeight || 0
+        ),
+      ]);
       expect(data.pp).to.deep.equal(null);
     });
 
-    describe('should set uuid to the first id in userIdAsEids', () => {
+    it('should set uuid to the first id in userIdAsEids', () => {
       mockValidBidRequests[0].userIdAsEids = [
         {
           source: 'pubcid.org',
@@ -231,7 +237,7 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('interpretResponse', () => {
-    describe('successfully interpret a valid response', function () {
+    it('successfully interpret a valid response', function () {
       const result = spec.interpretResponse(mockServerResponse, mockBidRequest);
 
       expect(result).to.be.an('array');
@@ -252,7 +258,7 @@ describe('hypelabBidAdapter', function () {
       expect(data.meta.advertiserDomains[0]).to.be.a('string');
     });
 
-    describe('should return a blank array if cpm is not set', () => {
+    it('should return a blank array if cpm is not set', () => {
       mockServerResponse.body.data.cpm = undefined;
       const result = spec.interpretResponse(mockServerResponse, mockBidRequest);
       expect(result).to.eql([]);
@@ -275,7 +281,7 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('callbacks', () => {
-    let bid = {};
+    const bid = {};
     let reportStub;
 
     beforeEach(() => (reportStub = sinon.stub(spec, 'report')));

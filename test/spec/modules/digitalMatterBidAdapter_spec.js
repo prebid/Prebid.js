@@ -1,7 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/digitalMatterBidAdapter';
-import {config} from '../../../src/config';
-import {deepClone} from '../../../src/utils';
+import {config} from '../../../src/config.js';
+import {deepClone} from '../../../src/utils.js';
 
 const bid = {
   'adUnitCode': 'adUnitCode',
@@ -51,13 +51,13 @@ describe('Digital Matter BidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when media type banner is missing', function () {
-      let invalidBid = deepClone(bid);
+      const invalidBid = deepClone(bid);
       delete invalidBid.mediaTypes.banner;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -68,7 +68,7 @@ describe('Digital Matter BidAdapter', function () {
       config.resetConfig();
     });
     it('should send request with correct structure', function () {
-      let request = spec.buildRequests([bid], bidderRequest);
+      const request = spec.buildRequests([bid], bidderRequest);
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://adx.digitalmatter.services/openrtb2/auction');
@@ -77,9 +77,9 @@ describe('Digital Matter BidAdapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'tid,site,device,imp,test,ext'.split(',');
-      let request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
-      let data = Object.keys(request);
+      const keys = 'tid,site,device,imp,test,ext'.split(',');
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = Object.keys(request);
 
       assert.deepEqual(keys, data);
     });
@@ -88,7 +88,7 @@ describe('Digital Matter BidAdapter', function () {
       config.setConfig({
         device: {w: 1920, h: 1080}
       });
-      let request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
       assert.equal(request.device.ua, navigator.userAgent);
       assert.equal(request.device.w, 100);
@@ -96,7 +96,7 @@ describe('Digital Matter BidAdapter', function () {
     });
 
     it('should send info about the site', function () {
-      let request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
       assert.deepEqual(request.site, {
         domain: 'publisher.domain.com',
@@ -109,23 +109,29 @@ describe('Digital Matter BidAdapter', function () {
 
     it('should send currency if defined', function () {
       config.setConfig({currency: {adServerCurrency: 'EUR'}});
-      let request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
       assert.deepEqual(request.cur, [{adServerCurrency: 'EUR'}]);
     });
 
     it('should pass supply chain object', function () {
-      let validBidRequests = {
+      const validBidRequests = {
         ...bid,
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       };
 
-      let request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data);
+      const request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data);
       assert.deepEqual(request.source.ext.schain, {
         validation: 'strict',
         config: {
@@ -135,7 +141,7 @@ describe('Digital Matter BidAdapter', function () {
     });
 
     it('should pass extended ids if exists', function () {
-      let validBidRequests = {
+      const validBidRequests = {
         ...bid,
         userIdAsEids: [
           {
@@ -153,13 +159,13 @@ describe('Digital Matter BidAdapter', function () {
         ]
       };
 
-      let request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data);
+      const request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data);
 
       assert.deepEqual(request.user.ext.eids, validBidRequests.userIdAsEids);
     });
 
     it('should pass gdpr consent data if gdprApplies', function () {
-      let consentedBidderRequest = {
+      const consentedBidderRequest = {
         ...bidderRequest,
         gdprConsent: {
           gdprApplies: true,
@@ -167,7 +173,7 @@ describe('Digital Matter BidAdapter', function () {
         }
       };
 
-      let request = JSON.parse(spec.buildRequests([bid], consentedBidderRequest).data);
+      const request = JSON.parse(spec.buildRequests([bid], consentedBidderRequest).data);
       assert.equal(request.user.ext.consent, consentedBidderRequest.gdprConsent.consentString);
       assert.equal(request.regs.ext.gdpr, consentedBidderRequest.gdprConsent.gdprApplies);
       assert.equal(typeof request.regs.ext.gdpr, 'number');

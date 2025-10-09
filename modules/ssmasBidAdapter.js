@@ -97,7 +97,7 @@ export const spec = {
   ) => {
     const syncs = [];
 
-    let params = ['pbjs=1'];
+    const params = ['pbjs=1'];
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

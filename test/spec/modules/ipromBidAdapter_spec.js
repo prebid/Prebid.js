@@ -44,7 +44,7 @@ describe('iPROM Adapter', function () {
 
   describe('validating bids', function () {
     it('should accept valid bid', function () {
-      let validBid = {
+      const validBid = {
         bidder: 'iprom',
         params: {
           id: '1234',
@@ -58,7 +58,7 @@ describe('iPROM Adapter', function () {
     });
 
     it('should reject bid if missing dimension and id', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'iprom',
         params: {}
       };
@@ -69,7 +69,7 @@ describe('iPROM Adapter', function () {
     });
 
     it('should reject bid if missing dimension', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'iprom',
         params: {
           id: '1234',
@@ -82,7 +82,7 @@ describe('iPROM Adapter', function () {
     });
 
     it('should reject bid if dimension is not a string', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'iprom',
         params: {
           id: '1234',
@@ -96,7 +96,7 @@ describe('iPROM Adapter', function () {
     });
 
     it('should reject bid if missing id', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'iprom',
         params: {
           dimension: '300x250',
@@ -109,7 +109,7 @@ describe('iPROM Adapter', function () {
     });
 
     it('should reject bid if id is not a string', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'iprom',
         params: {
           id: 1234,

@@ -141,33 +141,43 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   function getDimension(value) {
     return value ? value + 'px' : '100%';
   }
-  // resize both container div + iframe
-  ['div', 'iframe'].forEach(elmType => {
-    // not select element that gets removed after dfp render
-    let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+
+  function resize(element) {
     if (element) {
-      let elementStyle = element.style;
+      const elementStyle = element.style;
       elementStyle.width = getDimension(width)
       elementStyle.height = getDimension(height);
     } else {
       logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
-  });
+  }
+
+  // not select element that gets removed after dfp render
+  const iframe = getElementByAdUnit('iframe:not([style*="display: none"])');
+
+  // resize both container div + iframe
+  [iframe, iframe?.parentElement].forEach(resize);
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    let parentDivEle = document.getElementById(id);
+    const id = getElementIdBasedOnAdServer(adId, adUnitCode);
+    const parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      return getDfpElementId(adId);
-    } else if (isApnGetTagDefined()) {
-      return getAstElementId(adUnitCode);
-    } else {
-      return adUnitCode;
+      const dfpId = getDfpElementId(adId);
+      if (dfpId) {
+        return dfpId;
+      }
     }
+    if (isApnGetTagDefined()) {
+      const apnId = getAstElementId(adUnitCode);
+      if (apnId) {
+        return apnId;
+      }
+    }
+    return adUnitCode;
   }
 
   function getDfpElementId(adId) {
@@ -180,7 +190,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   }
 
   function getAstElementId(adUnitCode) {
-    let astTag = window.apntag.getTag(adUnitCode);
+    const astTag = window.apntag.getTag(adUnitCode);
     return astTag && astTag.targetId;
   }
 }

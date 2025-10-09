@@ -280,12 +280,15 @@ const ID_REQUEST = {
         url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(ortbRequest),
         ortbRequest,
-        bidderRequest
+        bidderRequest,
+        options: {
+          endpointCompression: true,
+        },
       }
     }
 
     let publisherId = null;
-    bidRequests.map((bidRequest) => {
+    bidRequests.forEach((bidRequest) => {
       const bidParamsPublisherId = bidRequest.params.publisherId;
       const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
       if (singleRequestMode) {
