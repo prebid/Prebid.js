@@ -33,19 +33,21 @@ describe('msftBidAdapter', function () {
         domain: 'example.com'
       },
       user: {
-        eids: [{
-          source: 'adserver.org',
-          uids: [{
-            id: '12345',
-            atype: 1
+        ext: {
+          eids: [{
+            source: 'adserver.org',
+            uids: [{
+              id: '12345',
+              atype: 1
+            }]
+          }, {
+            source: 'uidapi.com',
+            uids: [{
+              id: '12345',
+              atype: 1
+            }]
           }]
-        }, {
-          source: 'uidapi.com',
-          uids: [{
-            id: '12345',
-            atype: 1
-          }]
-        }]
+        }
       }
     },
     refererInfo: {
@@ -113,11 +115,27 @@ describe('msftBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-  });
 
-  describe('buildRequests', function () {
-    beforeEach(function () {
-      //
+    it('should return false when required params are not the correct type', function () {
+      const bid = {
+        bidder: 'msft',
+        params: {
+          placement_id: '12345'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false, 'placement_id is string, should be number');
+
+      bid.params = {
+        member: '123',
+        inv_code: 'abc'
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false, 'member is string, should be number');
+
+      bid.params = {
+        member: 123,
+        inv_code: 123
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false, 'inv_code is number, should be string');
     });
 
     it('should build a basic banner request', function () {
@@ -333,23 +351,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                "brand": "Chromium",
-                "version": [
-                  "140"
-                ]
-              },
-              {
-                "brand": "Not=A?Brand",
-                "version": [
-                  "24"
-                ]
-              },
-              {
-                "brand": "Google Chrome",
-                "version": [
-                  "140"
-                ]
-              }
+                  "brand": "Chromium",
+                  "version": [
+                    "140"
+                  ]
+                },
+                {
+                  "brand": "Not=A?Brand",
+                  "version": [
+                    "24"
+                  ]
+                },
+                {
+                  "brand": "Google Chrome",
+                  "version": [
+                    "140"
+                  ]
+                }
               ],
               "mobile": 0
             }
@@ -404,23 +422,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-              "brand": "Chromium",
-              "version": [
-                "140"
-              ]
-            },
-            {
-              "brand": "Not=A?Brand",
-              "version": [
-                "24"
-              ]
-            },
-            {
-              "brand": "Google Chrome",
-              "version": [
-                "140"
-              ]
-            }
+                "brand": "Chromium",
+                "version": [
+                  "140"
+                ]
+              },
+              {
+                "brand": "Not=A?Brand",
+                "version": [
+                  "24"
+                ]
+              },
+              {
+                "brand": "Google Chrome",
+                "version": [
+                  "140"
+                ]
+              }
             ],
             "mobile": 0
           }
@@ -599,23 +617,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                "brand": "Chromium",
-                "version": [
-                  "140"
-                ]
-              },
-              {
-                "brand": "Not=A?Brand",
-                "version": [
-                  "24"
-                ]
-              },
-              {
-                "brand": "Google Chrome",
-                "version": [
-                  "140"
-                ]
-              }
+                  "brand": "Chromium",
+                  "version": [
+                    "140"
+                  ]
+                },
+                {
+                  "brand": "Not=A?Brand",
+                  "version": [
+                    "24"
+                  ]
+                },
+                {
+                  "brand": "Google Chrome",
+                  "version": [
+                    "140"
+                  ]
+                }
               ],
               "mobile": 0
             }
@@ -673,23 +691,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-              "brand": "Chromium",
-              "version": [
-                "140"
-              ]
-            },
-            {
-              "brand": "Not=A?Brand",
-              "version": [
-                "24"
-              ]
-            },
-            {
-              "brand": "Google Chrome",
-              "version": [
-                "140"
-              ]
-            }
+                "brand": "Chromium",
+                "version": [
+                  "140"
+                ]
+              },
+              {
+                "brand": "Not=A?Brand",
+                "version": [
+                  "24"
+                ]
+              },
+              {
+                "brand": "Google Chrome",
+                "version": [
+                  "140"
+                ]
+              }
             ],
             "mobile": 0
           }
@@ -859,23 +877,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                "brand": "Google Chrome",
-                "version": [
-                  "141"
-                ]
-              },
-              {
-                "brand": "Not?A_Brand",
-                "version": [
-                  "8"
-                ]
-              },
-              {
-                "brand": "Chromium",
-                "version": [
-                  "141"
-                ]
-              }
+                  "brand": "Google Chrome",
+                  "version": [
+                    "141"
+                  ]
+                },
+                {
+                  "brand": "Not?A_Brand",
+                  "version": [
+                    "8"
+                  ]
+                },
+                {
+                  "brand": "Chromium",
+                  "version": [
+                    "141"
+                  ]
+                }
               ],
               "mobile": 0
             }
@@ -929,23 +947,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-              "brand": "Google Chrome",
-              "version": [
-                "141"
-              ]
-            },
-            {
-              "brand": "Not?A_Brand",
-              "version": [
-                "8"
-              ]
-            },
-            {
-              "brand": "Chromium",
-              "version": [
-                "141"
-              ]
-            }
+                "brand": "Google Chrome",
+                "version": [
+                  "141"
+                ]
+              },
+              {
+                "brand": "Not?A_Brand",
+                "version": [
+                  "8"
+                ]
+              },
+              {
+                "brand": "Chromium",
+                "version": [
+                  "141"
+                ]
+              }
             ],
             "mobile": 0
           }
@@ -1035,63 +1053,6 @@ describe('msftBidAdapter', function () {
           "ortb": {
             "ver": "1.2",
             "assets": [{
-              "id": 1,
-              "required": 1,
-              "img": {
-                "type": 3,
-                "w": 989,
-                "h": 742
-              }
-            },
-            {
-              "id": 2,
-              "required": 1,
-              "title": {
-                "len": 100
-              }
-            },
-            {
-              "id": 3,
-              "required": 1,
-              "data": {
-                "type": 1
-              }
-            }
-            ]
-          }
-        },
-        "nativeOrtbRequest": {
-          "ver": "1.2",
-          "assets": [{
-            "id": 1,
-            "required": 1,
-            "img": {
-              "type": 3,
-              "w": 989,
-              "h": 742
-            }
-          },
-          {
-            "id": 2,
-            "required": 1,
-            "title": {
-              "len": 100
-            }
-          },
-          {
-            "id": 3,
-            "required": 1,
-            "data": {
-              "type": 1
-            }
-          }
-          ]
-        },
-        "mediaTypes": {
-          "native": {
-            "ortb": {
-              "ver": "1.2",
-              "assets": [{
                 "id": 1,
                 "required": 1,
                 "img": {
@@ -1114,6 +1075,63 @@ describe('msftBidAdapter', function () {
                   "type": 1
                 }
               }
+            ]
+          }
+        },
+        "nativeOrtbRequest": {
+          "ver": "1.2",
+          "assets": [{
+              "id": 1,
+              "required": 1,
+              "img": {
+                "type": 3,
+                "w": 989,
+                "h": 742
+              }
+            },
+            {
+              "id": 2,
+              "required": 1,
+              "title": {
+                "len": 100
+              }
+            },
+            {
+              "id": 3,
+              "required": 1,
+              "data": {
+                "type": 1
+              }
+            }
+          ]
+        },
+        "mediaTypes": {
+          "native": {
+            "ortb": {
+              "ver": "1.2",
+              "assets": [{
+                  "id": 1,
+                  "required": 1,
+                  "img": {
+                    "type": 3,
+                    "w": 989,
+                    "h": 742
+                  }
+                },
+                {
+                  "id": 2,
+                  "required": 1,
+                  "title": {
+                    "len": 100
+                  }
+                },
+                {
+                  "id": 3,
+                  "required": 1,
+                  "data": {
+                    "type": 1
+                  }
+                }
               ]
             }
           }
@@ -1156,23 +1174,23 @@ describe('msftBidAdapter', function () {
                 "brand": "macOS"
               },
               "browsers": [{
-                "brand": "Chromium",
-                "version": [
-                  "140"
-                ]
-              },
-              {
-                "brand": "Not=A?Brand",
-                "version": [
-                  "24"
-                ]
-              },
-              {
-                "brand": "Google Chrome",
-                "version": [
-                  "140"
-                ]
-              }
+                  "brand": "Chromium",
+                  "version": [
+                    "140"
+                  ]
+                },
+                {
+                  "brand": "Not=A?Brand",
+                  "version": [
+                    "24"
+                  ]
+                },
+                {
+                  "brand": "Google Chrome",
+                  "version": [
+                    "140"
+                  ]
+                }
               ],
               "mobile": 0
             }
@@ -1227,23 +1245,23 @@ describe('msftBidAdapter', function () {
               "brand": "macOS"
             },
             "browsers": [{
-              "brand": "Chromium",
-              "version": [
-                "140"
-              ]
-            },
-            {
-              "brand": "Not=A?Brand",
-              "version": [
-                "24"
-              ]
-            },
-            {
-              "brand": "Google Chrome",
-              "version": [
-                "140"
-              ]
-            }
+                "brand": "Chromium",
+                "version": [
+                  "140"
+                ]
+              },
+              {
+                "brand": "Not=A?Brand",
+                "version": [
+                  "24"
+                ]
+              },
+              {
+                "brand": "Google Chrome",
+                "version": [
+                  "140"
+                ]
+              }
             ],
             "mobile": 0
           }

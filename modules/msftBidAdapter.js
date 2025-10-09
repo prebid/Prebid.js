@@ -116,8 +116,8 @@ const storage = getStorageManager({
 const converter = ortbConverter({
   context: {
     // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
-    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
-    ttl: 300, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+    netRevenue: true,
+    ttl: 300,
   },
   imp(buildImp, bidRequest, context) {
     const extANData = {};
@@ -153,39 +153,30 @@ const converter = ortbConverter({
     }
 
     if (bidderParams) {
-      if (typeof bidderParams.placement_id === 'number') {
+      if (bidderParams.placement_id) {
         extANData.placement_id = bidderParams.placement_id;
-      } else if (isNotEmptyString(bidderParams.inv_code)) {
+      } else if (bidderParams.inv_code) {
         deepSetValue(imp, 'tagid', bidderParams.inv_code);
       }
 
-      if (typeof bidderParams.allow_smaller_sizes === 'boolean') {
-        extANData.allow_smaller_sizes = bidderParams.allow_smaller_sizes;
-      }
-
-      if (typeof bidderParams.use_pmt_rule === 'boolean') {
-        extANData.use_pmt_rule = bidderParams.use_pmt_rule;
-      }
-
-      if (isNotEmptyString(bidderParams.keywords)) {
-        extANData.keywords = bidderParams.keywords;
-      }
-
-      if (isNotEmptyString(bidderParams.traffic_source_code)) {
-        extANData.traffic_source_code = bidderParams.traffic_source_code;
-      }
-
-      if (isNotEmptyString(bidderParams.pubclick)) {
-        extANData.pubclick = bidderParams.pubclick;
-      }
-
-      if (isNotEmptyString(bidderParams.ext_inv_code)) {
-        extANData.ext_inv_code = bidderParams.ext_inv_code;
-      }
-
-      if (isNotEmptyString(bidderParams.ext_imp_id)) {
-        imp.id = bidderParams.ext_imp_id;
-      }
+      const optionalParamsTypeMap = {
+        allow_smaller_sizes: 'boolean',
+        use_pmt_rule: 'boolean',
+        keywords: 'string',
+        traffic_source_code: 'string',
+        pubclick: 'string',
+        ext_inv_code: 'string',
+        ext_imp_id: 'string'
+      };
+      Object.entries(optionalParamsTypeMap).forEach(([paramName, paramType]) => {
+        if (checkOptionalParams(bidRequest, paramName, paramType)) {
+          if (paramName === 'ext_imp_id') {
+            imp.id = bidderParams.ext_imp_id;
+            return;
+          }
+          extANData[paramName] = bidderParams[paramName];
+        }
+      });
     }
 
     // for force creative we expect the following format:
@@ -204,14 +195,12 @@ const converter = ortbConverter({
     if (Object.keys(extANData).length > 0) {
       deepSetValue(imp, 'ext.appnexus', extANData);
     }
-    // TODO customize the `imp` object here as needed
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    // TODO handle user ids here if needed
-    if (request?.user?.eids.length > 0) {
-      request.user.eids.forEach(eid => {
+    if (request?.user?.ext?.eids.length > 0) {
+      request.user.ext.eids.forEach(eid => {
         if (eid.source === 'adserver.org') {
           eid.rti_partner = 'TDID';
         } else if (eid.source === 'uidapi.com') {
@@ -325,11 +314,7 @@ const converter = ortbConverter({
     }
 
     return bidResponse;
-  },
-  response(buildResponse, bidResponses, ortbResponse, context) {
-    const response = buildResponse(bidResponses, ortbResponse, context);
-    return response;
-  },
+  }
 });
 
 export const spec = {
@@ -339,9 +324,10 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: (bid) => {
+    const params = bid.params;
     return !!(
-      bid.params.placement_id ||
-      (bid.params.member && bid.params.inv_code)
+      (typeof params.placement_id === 'number') ||
+      (typeof params.member === 'number' && isNotEmptyString(params?.inv_code))
     );
   },
 
@@ -407,6 +393,20 @@ export const spec = {
 
 function isNotEmptyString(value) {
   return isStr(value) && value !== '';
+}
+
+function checkOptionalParams(bidRequest, fieldName, expectedType) {
+  const value = bidRequest?.params?.[fieldName];
+  // allow false, but not undefined, null or empty string
+  if (value !== undefined || value !== null || value !== '') {
+    if (typeof value === expectedType) {
+      return true;
+    } else {
+      logWarn(`Removing invalid bid.param ${fieldName} for adUnitCode ${bidRequest.adUnitCode}, expected ${expectedType}`);
+      return false;
+    }
+  }
+  return false;
 }
 
 function formatRequest(payload, bidderRequest) {
