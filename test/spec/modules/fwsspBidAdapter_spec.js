@@ -220,7 +220,7 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString'
       }]);
     });
 
@@ -231,7 +231,64 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid[]=8'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
+      }]);
+    });
+
+    it('should add privacy values to ad request and user sync url when present in keyValues', () => {
+      const bidRequests = getBidRequests();
+
+      bidRequests[0].params.adRequestKeyValues._fw_coppa = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_atts = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_is_lat = 1;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const request = requests[0];
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=1&_fw_atts=1&_fw_is_lat=1&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const actualUrl = `${request.url}?${request.data}`;
+      // Remove pvrn and vprn from both URLs before comparing
+      const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
+      expect(cleanUrl(actualUrl)).to.equal(cleanUrl(expectedUrl));
+
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&_fw_coppa=1&_fw_atts=1&_fw_is_lat=1&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
+      }]);
+    });
+
+    it('ortb2 values should take precedence over keyValues when present and be added to ad request and user sync url', () => {
+      const bidRequests = getBidRequests();
+      bidRequests[0].params.adRequestKeyValues._fw_coppa = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_atts = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_is_lat = 1;
+
+      const bidderRequest2 = { ...bidderRequest }
+      bidderRequest2.ortb2 = {
+        regs: { coppa: 0 },
+        device: {
+          lmt: 0,
+          ext: { atts: 0 }
+        }
+      }
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest2);
+      const request = requests[0];
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=0&_fw_atts=0&_fw_is_lat=0&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const actualUrl = `${request.url}?${request.data}`;
+      // Remove pvrn and vprn from both URLs before comparing
+      const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
+      expect(cleanUrl(actualUrl)).to.equal(cleanUrl(expectedUrl));
+
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest2.gdprConsent, bidderRequest2.uspConsent, bidderRequest2.gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&_fw_coppa=0&_fw_atts=0&_fw_is_lat=0&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
       }]);
     });
 
@@ -496,7 +553,7 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString'
       }]);
     });
 
@@ -507,7 +564,7 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid[]=8'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
       }]);
     });
   });

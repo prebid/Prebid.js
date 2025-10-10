@@ -1,4 +1,4 @@
-import { logInfo, logError, logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
+import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -6,7 +6,8 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'fwssp';
 const GVL_ID = 285;
-const USER_SYNC_URL = 'https://ads.stickyadstv.com/auto-user-sync';
+const USER_SYNC_URL = 'https://user-sync.fwmrm.net/ad/u?';
+let PRIVACY_VALUES = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -195,6 +196,34 @@ export const spec = {
         keyValues._fw_placement_type = videoPlacement;
         keyValues._fw_plcmt_type = videoPlcmt;
       }
+
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (typeof coppa === 'number') {
+        keyValues._fw_coppa = coppa;
+      }
+
+      const atts = deepAccess(bidderRequest, 'ortb2.device.ext.atts');
+      if (typeof atts === 'number') {
+        keyValues._fw_atts = atts;
+      }
+
+      const lmt = deepAccess(bidderRequest, 'ortb2.device.lmt');
+      if (typeof lmt === 'number') {
+        keyValues._fw_is_lat = lmt;
+      }
+
+      PRIVACY_VALUES = {}
+      if (keyValues._fw_coppa != null) {
+        PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
+      }
+
+      if (keyValues._fw_atts != null) {
+        PRIVACY_VALUES._fw_atts = keyValues._fw_atts;
+      }
+      if (keyValues._fw_is_lat != null) {
+        PRIVACY_VALUES._fw_is_lat = keyValues._fw_is_lat;
+      }
+
       return keyValues;
     }
 
@@ -233,16 +262,6 @@ export const spec = {
     }
 
     const constructDataString = (globalParams, keyValues, slotParams) => {
-      // Helper function to append parameters to the data string and to not include the last '&' param before ';
-      const appendParams = (params) => {
-        const keys = Object.keys(params);
-        return keys.map((key, index) => {
-          const encodedKey = encodeURIComponent(key);
-          const encodedValue = encodeURIComponent(params[key]);
-          return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
-        }).join('');
-      };
-
       const globalParamsString = appendParams(globalParams) + ';';
       const keyValuesString = appendParams(keyValues) + ';';
       const slotParamsString = appendParams(slotParams) + ';';
@@ -334,7 +353,10 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    const params = {};
+    const params = {
+      mode: 'auto-user-sync',
+      ...PRIVACY_VALUES
+    };
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -358,21 +380,19 @@ export const spec = {
       }
     }
 
-    let queryString = '';
-    if (params) {
-      queryString = '?' + `${formatQS(params)}`;
-    }
+    const url = USER_SYNC_URL + appendParams(params);
 
     const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: USER_SYNC_URL + queryString
+        url: url
       });
-    } else if (syncOptions.iframeEnabled) {
+    }
+    if (syncOptions && syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL + queryString
+        url: url
       });
     }
 
@@ -726,6 +746,16 @@ function getTopMostWindow() {
   } catch (e) {}
 
   return res;
+}
+
+// Helper function to append parameters to the data string and to not include the last '&' param before ';
+function appendParams(params) {
+  const keys = Object.keys(params);
+  return keys.map((key, index) => {
+    const encodedKey = encodeURIComponent(key);
+    const encodedValue = encodeURIComponent(params[key]);
+    return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
+  }).join('');
 }
 
 registerBidder(spec);
