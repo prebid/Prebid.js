@@ -1,6 +1,8 @@
 import {expect} from 'chai';
-import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/smartytechBidAdapter';
+import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH, getAliasUserId, storage} from 'modules/smartytechBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
+import sinon from 'sinon';
 
 const BIDDER_CODE = 'smartytech';
 
@@ -182,6 +184,43 @@ function mockRefererData() {
   }
 }
 
+function mockBidderRequestWithConsents() {
+  return {
+    refererInfo: {
+      page: 'https://some-test.page'
+    },
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: 'COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA',
+      addtlConsent: '1~1.35.41.101'
+    },
+    uspConsent: '1YNN'
+  }
+}
+
+function mockBidRequestWithUserIds(mediaType, size, customSizes) {
+  const requests = mockBidRequestListData(mediaType, size, customSizes);
+  return requests.map(request => ({
+    ...request,
+    userIdAsEids: [
+      {
+        source: 'unifiedid.com',
+        uids: [{
+          id: 'test-unified-id',
+          atype: 1
+        }]
+      },
+      {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'test-pubcid',
+          atype: 1
+        }]
+      }
+    ]
+  }));
+}
+
 function mockResponseData(requestData) {
   const data = {}
   requestData.data.forEach((request, index) => {
@@ -229,20 +268,25 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   });
   it('correct request URL', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`)
+    request.forEach(req => {
+      expect(req.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`)
+    });
   });
   it('correct request method', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer);
-    expect(request.method).to.be.equal(`POST`)
+    request.forEach(req => {
+      expect(req.method).to.be.equal(`POST`)
+    });
   });
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
-    data.forEach((request, index) => {
-      expect(request.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
-      expect(request.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
-      expect(request.bidId).to.be.equal(mockBidRequest[index].bidId);
-      expect(request.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
-      expect(request.referer).to.be.equal(mockReferer.refererInfo.page);
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+    data.forEach((req, index) => {
+      expect(req.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
+      expect(req.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
+      expect(req.bidId).to.be.equal(mockBidRequest[index].bidId);
+      expect(req.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
+      expect(req.referer).to.be.equal(mockReferer.refererInfo.page);
     })
   });
 });
@@ -256,9 +300,10 @@ describe('SmartyTechDSPAdapter: buildRequests banner custom size', () => {
   });
 
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
-    data.forEach((request, index) => {
-      expect(request.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+    data.forEach((req, index) => {
+      expect(req.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
     })
   });
 });
@@ -272,9 +317,10 @@ describe('SmartyTechDSPAdapter: buildRequests video custom size', () => {
   });
 
   it('correct request data', () => {
-    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
-    data.forEach((request, index) => {
-      expect(request.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+    data.forEach((req, index) => {
+      expect(req.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
     })
   });
 });
@@ -287,7 +333,7 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
   beforeEach(() => {
     const brData = mockBidRequestListData('banner', 2, []);
     mockReferer = mockRefererData();
-    request = spec.buildRequests(brData, mockReferer);
+    request = spec.buildRequests(brData, mockReferer)[0];
     mockBidRequest = {
       data: brData
     }
@@ -333,7 +379,7 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
   beforeEach(() => {
     const brData = mockBidRequestListData('video', 2, []);
     mockReferer = mockRefererData();
-    request = spec.buildRequests(brData, mockReferer);
+    request = spec.buildRequests(brData, mockReferer)[0];
     mockBidRequest = {
       data: brData
     }
@@ -356,6 +402,213 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
       expect(responseItem.height).to.be.equal(mockResponse.body[keys[index]].height);
       expect(responseItem.mediaType).to.be.equal(mockResponse.body[keys[index]].mediaType);
       expect(responseItem.vastXml).to.be.equal(mockResponse.body[keys[index]].ad);
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
+  let mockBidRequest;
+  let mockReferer;
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestWithUserIds('banner', 2, []);
+    mockReferer = mockRefererData();
+  });
+
+  it('should include userIds when available', () => {
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req, index) => {
+      expect(req).to.have.property('userIds');
+      expect(req.userIds).to.deep.equal(mockBidRequest[index].userIdAsEids);
+    });
+  });
+
+  it('should not include userIds when not available', () => {
+    const bidRequestWithoutUserIds = mockBidRequestListData('banner', 2, []);
+    const request = spec.buildRequests(bidRequestWithoutUserIds, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.not.have.property('userIds');
+    });
+  });
+
+  it('should not include userIds when userIdAsEids is undefined', () => {
+    const bidRequestWithUndefinedUserIds = mockBidRequestListData('banner', 2, []).map(req => {
+      const {userIdAsEids, ...requestWithoutUserIds} = req;
+      return requestWithoutUserIds;
+    });
+    const request = spec.buildRequests(bidRequestWithUndefinedUserIds, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.not.have.property('userIds');
+    });
+  });
+
+  it('should not include userIds when userIdAsEids is empty array', () => {
+    const bidRequestWithEmptyUserIds = mockBidRequestListData('banner', 2, []).map(req => ({
+      ...req,
+      userIdAsEids: []
+    }));
+    const request = spec.buildRequests(bidRequestWithEmptyUserIds, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.not.have.property('userIds');
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests with consent data', () => {
+  let mockBidRequest;
+  let mockBidderRequest;
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestListData('banner', 2, []);
+    mockBidderRequest = mockBidderRequestWithConsents();
+  });
+
+  it('should include GDPR consent when available', () => {
+    const request = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.have.property('gdprConsent');
+      expect(req.gdprConsent.gdprApplies).to.be.true;
+      expect(req.gdprConsent.consentString).to.equal('COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA');
+      expect(req.gdprConsent.addtlConsent).to.equal('1~1.35.41.101');
+    });
+  });
+
+  it('should include USP consent when available', () => {
+    const request = spec.buildRequests(mockBidRequest, mockBidderRequest);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.have.property('uspConsent');
+      expect(req.uspConsent).to.equal('1YNN');
+    });
+  });
+
+  it('should not include consent data when not available', () => {
+    const mockReferer = mockRefererData();
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.not.have.property('gdprConsent');
+      expect(req).to.not.have.property('uspConsent');
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: Alias User ID (auId)', () => {
+  let cookiesAreEnabledStub;
+  let getCookieStub;
+  let setCookieStub;
+  let generateUUIDStub;
+
+  beforeEach(() => {
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    setCookieStub = sinon.stub(storage, 'setCookie');
+    generateUUIDStub = sinon.stub(utils, 'generateUUID');
+  });
+
+  afterEach(() => {
+    cookiesAreEnabledStub.restore();
+    getCookieStub.restore();
+    setCookieStub.restore();
+    generateUUIDStub.restore();
+  });
+
+  it('should return null if cookies are not enabled', () => {
+    cookiesAreEnabledStub.returns(false);
+    const auId = getAliasUserId();
+    expect(auId).to.be.null;
+  });
+
+  it('should return existing auId from cookie', () => {
+    const existingAuId = 'existing-uuid-1234';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns(existingAuId);
+
+    const auId = getAliasUserId();
+    expect(auId).to.equal(existingAuId);
+    expect(generateUUIDStub.called).to.be.false;
+  });
+
+  it('should generate and store new auId if cookie does not exist', () => {
+    const newAuId = 'new-uuid-5678';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns(null);
+    generateUUIDStub.returns(newAuId);
+
+    const auId = getAliasUserId();
+    expect(auId).to.equal(newAuId);
+    expect(generateUUIDStub.calledOnce).to.be.true;
+    expect(setCookieStub.calledOnce).to.be.true;
+
+    // Check that setCookie was called with correct parameters
+    const setCookieCall = setCookieStub.getCall(0);
+    expect(setCookieCall.args[0]).to.equal('_smartytech_auid'); // cookie name
+    expect(setCookieCall.args[1]).to.equal(newAuId); // cookie value
+    expect(setCookieCall.args[3]).to.equal('Lax'); // sameSite
+  });
+
+  it('should generate and store new auId if cookie is empty string', () => {
+    const newAuId = 'new-uuid-9999';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns('');
+    generateUUIDStub.returns(newAuId);
+
+    const auId = getAliasUserId();
+    expect(auId).to.equal(newAuId);
+    expect(generateUUIDStub.calledOnce).to.be.true;
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests with auId', () => {
+  let mockBidRequest;
+  let mockReferer;
+  let cookiesAreEnabledStub;
+  let getCookieStub;
+
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestListData('banner', 2, []);
+    mockReferer = mockRefererData();
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+  });
+
+  afterEach(() => {
+    cookiesAreEnabledStub.restore();
+    getCookieStub.restore();
+  });
+
+  it('should include auId in bid request when available', () => {
+    const testAuId = 'test-auid-12345';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns(testAuId);
+
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.have.property('auId');
+      expect(req.auId).to.equal(testAuId);
+    });
+  });
+
+  it('should not include auId when cookies are disabled', () => {
+    cookiesAreEnabledStub.returns(false);
+
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.not.have.property('auId');
     });
   });
 });
