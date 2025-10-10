@@ -801,7 +801,7 @@ export const requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
+  return wrapHook(delegate, logInvocation('requestBids', delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
@@ -817,10 +817,10 @@ export const requestBids = (function() {
     req.defer = defer({ promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
-  }));
+  })));
 })();
 
-addApiMethod('requestBids', requestBids as unknown as RequestBids);
+addApiMethod('requestBids', requestBids as unknown as RequestBids, false);
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);

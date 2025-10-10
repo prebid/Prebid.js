@@ -210,6 +210,7 @@ export const spec = {
         property = bid.params.property;
         return true;
       }
+      return false;
     });
     const query = {
       measurable: true,

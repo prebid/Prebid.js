@@ -229,6 +229,7 @@ export const spec = {
 
         return result;
       }
+      return undefined;
     }).filter(Boolean);
   }
 };

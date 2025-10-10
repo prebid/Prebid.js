@@ -46,13 +46,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "vimayx",
-      "aliasOf": "smarthub",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "artechnology",
       "aliasOf": "smarthub",
       "gvlid": null,
@@ -75,6 +68,13 @@
     {
       "componentType": "bidder",
       "componentName": "jambojar",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "anzu",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
