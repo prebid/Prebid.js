@@ -12,7 +12,7 @@ const BIDDER_CODE = 'sparteo';
 const GVLID = 1028;
 const TTL = 60;
 const HTTP_METHOD = 'POST';
-const REQUEST_URL = 'https://bid.sparteo.com/auction';
+const REQUEST_URL = `https://bid.sparteo.com/auction?network_id=\${NETWORK_ID}&domain=\${DOMAIN}`;
 const USER_SYNC_URL_IFRAME = 'https://sync.sparteo.com/sync/iframe.html?from=prebidjs';
 let isSynced = window.sparteoCrossfire?.started || false;
 
@@ -105,6 +105,20 @@ function outstreamRender(bid) {
   });
 }
 
+function replaceMacros(payload, endpoint) {
+  const networkId = payload?.site?.publisher?.ext?.params?.networkId;
+  const domain = payload?.site?.domain ?? payload?.site?.publisher?.domain;
+
+  const macroMap = {
+    NETWORK_ID: networkId,
+    DOMAIN: domain,
+  };
+
+  return endpoint.replace(/\$\{(NETWORK_ID|DOMAIN)\}/g, (match, key) =>
+    String(macroMap[key] ?? match)
+  );
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -166,9 +180,12 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const payload = converter.toORTB({bidRequests, bidderRequest})
 
+    const endpoint = bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL;
+    const url = replaceMacros(payload, endpoint);
+
     return {
       method: HTTP_METHOD,
-      url: bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL,
+      url: url,
       data: payload
     };
   },
