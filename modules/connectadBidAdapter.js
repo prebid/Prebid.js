@@ -113,7 +113,7 @@ export const spec = {
     }
     data.tmax = bidderRequest.timeout;
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const placement = Object.assign({
         id: generateUUID(),
         divName: bid.bidId,

@@ -40,7 +40,7 @@ export const spec = {
       id: ortb2ConfigFPD.id,
     };
 
-    validBidRequests.map((bid) => {
+    validBidRequests.forEach((bid) => {
       imp.push({
         requestId: bid.bidId,
         adUnitCode: bid.adUnitCode,
