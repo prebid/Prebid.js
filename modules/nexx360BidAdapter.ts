@@ -11,7 +11,7 @@ import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'nexx360';
-const REQUEST_URL = 'http://fast.nexx360.io/booster';
+const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '7.0';
 const GVLID = 965;
@@ -153,7 +153,6 @@ const buildRequests = (
     options: {
       endpointCompression: getGzipSetting()
     },
-
   }
   return adapterRequest;
 }
