@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-  spec, STORAGE, getNexx360LocalStorage,
+  spec, STORAGE, getNexx360LocalStorage, getGzipSetting,
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
 import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
@@ -32,6 +32,11 @@ describe('Nexx360 bid adapter tests', () => {
       }],
     },
   };
+
+  it('We test getGzipSettings', () => {
+    const output = getGzipSetting();
+    expect(output).to.be.a('boolean');
+  });
 
   describe('isBidRequestValid()', () => {
     let bannerBid;
@@ -566,6 +571,7 @@ describe('Nexx360 bid adapter tests', () => {
                     mediaType: 'outstream',
                     ssp: 'appnexus',
                     adUnitCode: 'div-1',
+                    divId: 'div-1',
                   },
                 },
               ],
@@ -587,6 +593,7 @@ describe('Nexx360 bid adapter tests', () => {
         creativeId: '97517771',
         currency: 'USD',
         netRevenue: true,
+        divId: 'div-1',
         ttl: 120,
         mediaType: 'video',
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },

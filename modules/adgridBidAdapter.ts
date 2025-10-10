@@ -1,12 +1,11 @@
 import { deepSetValue, generateUUID } from '../src/utils.js';
 import { getStorageManager, StorageManager } from '../src/storageManager.js';
-import { AdapterRequest, AdapterResponse, BidderSpec, registerBidder, ServerResponse } from '../src/adapters/bidderFactory.js';
+import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
-import { createResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
-import { ORTBRequest, ORTBResponse } from '../src/prebid.public.js';
-import { BidResponse } from '../src/bidfactory.js';
+import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { ORTBRequest } from '../src/prebid.public.js';
 
 const BIDDER_CODE = 'adgrid';
 const REQUEST_URL = 'https://fast.nexx360.io/adgrid';
@@ -14,11 +13,18 @@ const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '2.0';
 const ADGRID_KEY = 'adgrid';
 
-type AdgridBidParams = {
+type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
+  Omit<T, Keys> & {
+    [K in Keys]-?: Required<Pick<T, K>> &
+      Partial<Pick<T, Exclude<Keys, K>>>
+  }[Keys];
+
+type AdgridBidParams = RequireAtLeastOne<{
   domainId?: string;
   placement?: string;
   allBids?: boolean;
-}
+  customId?: string;
+}, "domainId" | "placement">;
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -48,8 +54,11 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     imp = enrichImp(imp, bidRequest);
-    if (bidRequest.params.domainId) deepSetValue(imp, 'ext.adgrid.domainId', bidRequest.params.domainId);
-    if (bidRequest.params.placement) deepSetValue(imp, 'ext.adgrid.placement', bidRequest.params.placement);
+    const params = bidRequest.params as AdgridBidParams;
+    if (params.domainId) deepSetValue(imp, 'ext.adgrid.domainId', params.domainId);
+    if (params.placement) deepSetValue(imp, 'ext.adgrid.placement', params.placement);
+    if (params.allBids) deepSetValue(imp, 'ext.adgrid.allBids', params.allBids);
+    if (params.customId) deepSetValue(imp, 'ext.adgrid.customId', params.customId);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -78,23 +87,6 @@ const buildRequests = (
     data,
   }
   return adapterRequest;
-}
-
-const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
-  if (!serverResponse.body) return [];
-  const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
-
-  const responses: BidResponse[] = [];
-  for (let i = 0; i < respBody.seatbid.length; i++) {
-    const seatbid = respBody.seatbid[i];
-    for (let j = 0; j < seatbid.bid.length; j++) {
-      const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
-      responses.push(response);
-    }
-  }
-  return responses;
 }
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {

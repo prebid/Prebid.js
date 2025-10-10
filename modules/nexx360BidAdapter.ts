@@ -1,24 +1,31 @@
 import { deepSetValue, generateUUID, logError } from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {AdapterRequest, AdapterResponse, BidderSpec, registerBidder, ServerResponse} from '../src/adapters/bidderFactory.js';
+import {AdapterRequest, BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
-import { createResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
-import { ORTBImp, ORTBRequest, ORTBResponse } from '../src/prebid.public.js';
-import { BidResponse } from '../src/bidfactory.js';
+import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'nexx360';
-const REQUEST_URL = 'https://fast.nexx360.io/booster';
+const REQUEST_URL = 'http://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '7.0';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
-type Nexx360BidParams = {
+const DEFAULT_GZIP_ENABLED = false;
+
+type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
+  Omit<T, Keys> & {
+    [K in Keys]-?: Required<Pick<T, K>> &
+      Partial<Pick<T, Exclude<Keys, K>>>
+  }[Keys];
+
+type Nexx360BidParams = RequireAtLeastOne<{
   tagId?: string;
   placement?: string;
   videoTagId?: string;
@@ -28,7 +35,7 @@ type Nexx360BidParams = {
   divId?: string;
   allBids?: boolean;
   customId?: string;
-}
+}, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -67,6 +74,14 @@ export const getNexx360LocalStorage = getLocalStorageFunctionGenerator<{ nexx360
   'nexx360Id'
 );
 
+export const getGzipSetting = (): boolean => {
+  const getBidderConfig = config.getBidderConfig();
+  if (getBidderConfig.nexx360?.gzipEnabled === 'true') {
+    return getBidderConfig.nexx360?.gzipEnabled === 'true';
+  }
+  return DEFAULT_GZIP_ENABLED;
+}
+
 const converter = ortbConverter({
   context: {
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
@@ -90,6 +105,8 @@ const converter = ortbConverter({
     if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
     if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName);
     if (bidRequest.params.allBids) deepSetValue(imp, 'ext.nexx360.allBids', bidRequest.params.allBids);
+    if (bidRequest.params.nativeTagId) deepSetValue(imp, 'ext.nexx360.nativeTagId', bidRequest.params.nativeTagId);
+    if (bidRequest.params.customId) deepSetValue(imp, 'ext.nexx360.customId', bidRequest.params.customId);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -133,29 +150,12 @@ const buildRequests = (
     method: 'POST',
     url: REQUEST_URL,
     data,
+    options: {
+      endpointCompression: getGzipSetting()
+    },
+
   }
   return adapterRequest;
-}
-
-const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
-  if (!serverResponse.body) return [];
-  const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
-
-  const { bidderSettings } = getGlobal();
-  const allowAlternateBidderCodes = bidderSettings && bidderSettings.standard ? bidderSettings.standard.allowAlternateBidderCodes : false;
-
-  const responses: BidResponse[] = [];
-  for (let i = 0; i < respBody.seatbid.length; i++) {
-    const seatbid = respBody.seatbid[i];
-    for (let j = 0; j < seatbid.bid.length; j++) {
-      const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
-      if (allowAlternateBidderCodes) response.bidderCode = `n360_${bid.ext.ssp}`;
-      responses.push(response);
-    }
-  }
-  return responses;
 }
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {

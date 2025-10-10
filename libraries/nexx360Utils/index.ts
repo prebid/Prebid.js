@@ -3,9 +3,10 @@ import {Renderer} from '../../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../ortb2Utils/currency.js';
 import { INSTREAM, OUTSTREAM } from '../../src/video.js';
 import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import { BidResponse } from '../../src/bidfactory.js';
+import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
 import { StorageManager } from '../../src/storageManager.js';
-import { ORTBRequest } from '../../src/prebid.public.js';
+import { BidRequest, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
+import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -72,37 +73,56 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
   }
 };
 
-const outstreamRender = (response: BidResponse): void => {
-  (response as any).renderer.push(() => {
+const createOustreamRendererFunction = (
+  divId: string,
+  width: number,
+  height: number
+) => (bidResponse: VideoBidResponse) => {
+  bidResponse.renderer.push(() => {
     (window as any).ANOutstreamVideo.renderAd({
-      sizes: [(response as any).width, (response as any).height],
-      targetId: (response as any).divId,
-      adResponse: (response as any).vastXml,
+      sizes: [width, height],
+      targetId: divId,
+      adResponse: bidResponse.vastXml,
       rendererOptions: {
         showBigPlayButton: false,
         showProgressBar: 'bar',
         showVolume: false,
         allowFullscreen: true,
         skippable: false,
-        content: (response as any).vastXml
+        content: bidResponse.vastXml
       }
     });
   });
 };
 
-export function createRenderer(bid, url) {
-  const renderer = Renderer.install({
-    id: bid.id,
-    url: url,
+export type CreateRenderPayload = {
+  requestId: string,
+  vastXml: string,
+  divId: string,
+  width: number,
+  height: number
+}
+
+export const createRenderer = (
+  { requestId, vastXml, divId, width, height }: CreateRenderPayload
+): Renderer | undefined => {
+  if (!vastXml) {
+    logInfo('No VAST in bidResponse');
+    return;
+  }
+  const installPayload = {
+    id: requestId,
+    url: OUTSTREAM_RENDERER_URL,
     loaded: false,
-    adUnitCode: bid.ext.adUnitCode,
-    targetId: bid.ext.divId,
-  });
-  renderer.setRender(outstreamRender);
+    adUnitCode: divId,
+    targetId: divId,
+  };
+  const renderer = Renderer.install(installPayload);
+  renderer.setRender(createOustreamRendererFunction(divId, width, height));
   return renderer;
 };
 
-export function enrichImp(imp, bidRequest) {
+export const enrichImp = (imp, bidRequest:BidRequest<string>) => {
   deepSetValue(imp, 'tagid', bidRequest.adUnitCode);
   deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode);
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
@@ -168,10 +188,20 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
-
-  if (bid.ext.mediaType === OUTSTREAM) {
-    response.renderer = createRenderer(bid, OUTSTREAM_RENDERER_URL);
-    if (bid.ext.divId) response.divId = bid.ext.divId
+  if (bid.ext.mediaType === OUTSTREAM && (bid.ext.divId || bid.ext.adUnitCode)) {
+    const renderer = createRenderer({
+      requestId: response.requestId,
+      vastXml: response.vastXml,
+      divId: bid.ext.divId || bid.ext.adUnitCode,
+      width: response.width,
+      height: response.height
+    });
+    if (renderer) {
+      response.renderer = renderer;
+      response.divId = bid.ext.divId;
+    } else {
+      logInfo('Could not create renderer for outstream bid');
+    }
   };
 
   if (bid.ext.mediaType === NATIVE) {
@@ -180,6 +210,23 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
     } catch (e) {}
   }
   return response as BidResponse;
+}
+
+export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
+  if (!serverResponse.body) return [];
+  const respBody = serverResponse.body as ORTBResponse;
+  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
+
+  const responses: BidResponse[] = [];
+  for (let i = 0; i < respBody.seatbid.length; i++) {
+    const seatbid = respBody.seatbid[i];
+    for (let j = 0; j < seatbid.bid.length; j++) {
+      const bid = seatbid.bid[j];
+      const response:BidResponse = createResponse(bid, respBody);
+      responses.push(response);
+    }
+  }
+  return responses;
 }
 
 /**
