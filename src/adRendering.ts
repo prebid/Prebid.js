@@ -351,12 +351,24 @@ export function renderAdDirect(doc, adId, options) {
   }
   const messageHandler = creativeMessageHandler({resizeFn});
 
+  function waitForDocumentReady(doc) {
+    return new PbPromise<void>((resolve) => {
+      if (doc.readyState === 'loading') {
+        doc.addEventListener('DOMContentLoaded', resolve);
+      } else {
+        resolve();
+      }
+    })
+  }
+
   function renderFn(adData) {
-    getCreativeRenderer(bid)
-      .then(render => render(adData, {
-        sendMessage: (type, data) => messageHandler(type, data, bid),
-        mkFrame: createIframe,
-      }, doc.defaultView))
+    PbPromise.all([
+      getCreativeRenderer(bid),
+      waitForDocumentReady(doc)
+    ]).then(([render]) => render(adData, {
+      sendMessage: (type, data) => messageHandler(type, data, bid),
+      mkFrame: createIframe,
+    }, doc.defaultView))
       .then(
         () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
         (e) => {
