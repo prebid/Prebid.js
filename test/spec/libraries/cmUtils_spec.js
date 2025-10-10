@@ -1,5 +1,5 @@
 import * as utils from 'src/utils.js';
-import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils.js';
+import {lookupConsentData, consentManagementHook, configParser} from '../../../libraries/consentManagement/cmUtils.js';
 
 describe('consent management utils', () => {
   let sandbox, clock;
@@ -225,5 +225,78 @@ describe('consent management utils', () => {
         expect(consentData).to.eql({consent: 2});
       })
     });
+  });
+
+  describe('configParser', () => {
+    let namespace, displayName, consentDataHandler, parseConsentData, getNullConsent, cmpHandlers;
+    let getConsentConfig, resetConsentDataHandler;
+
+    beforeEach(() => {
+      namespace = 'test';
+      displayName = 'TEST';
+      resetConsentDataHandler = sinon.stub();
+      consentDataHandler = {
+        reset: sinon.stub(),
+        removeCmpEventListener: sinon.stub(),
+        getConsentData: sinon.stub(),
+        setConsentData: sinon.stub()
+      };
+      parseConsentData = sinon.stub().callsFake(data => data);
+      getNullConsent = sinon.stub().returns({consent: null});
+      cmpHandlers = {
+        iab: sinon.stub().returns(Promise.resolve())
+      };
+
+      // Create a spy for resetConsentDataHandler to verify it's called
+      const configParserInstance = configParser({
+        namespace,
+        displayName,
+        consentDataHandler,
+        parseConsentData,
+        getNullConsent,
+        cmpHandlers
+      });
+
+      getConsentConfig = configParserInstance;
+    });
+
+    it('should reset and return empty object when config is not defined', () => {
+      const result = getConsentConfig();
+      expect(result).to.deep.equal({});
+      sinon.assert.calledWith(utils.logWarn, sinon.match('config not defined'));
+    });
+
+    it('should reset and return empty object when config is not an object', () => {
+      const result = getConsentConfig({[namespace]: 'not an object'});
+      expect(result).to.deep.equal({});
+      sinon.assert.calledWith(utils.logWarn, sinon.match('config not defined'));
+    });
+
+    describe('when module is explicitly disabled', () => {
+      it('should reset consent data handler and return empty object when enabled is false', () => {
+        const result = getConsentConfig({[namespace]: {enabled: false}});
+
+        expect(result).to.deep.equal({});
+        sinon.assert.calledWith(utils.logWarn, sinon.match('config enabled is set to false'));
+        sinon.assert.called(consentDataHandler.removeCmpEventListener);
+        sinon.assert.called(consentDataHandler.reset);
+      });
+
+      it('should not reset consent data handler when enabled is true', () => {
+        getConsentConfig({[namespace]: {enabled: true, cmpApi: 'iab'}});
+
+        sinon.assert.notCalled(consentDataHandler.removeCmpEventListener);
+        sinon.assert.notCalled(consentDataHandler.reset);
+      });
+
+      it('should not reset consent data handler when enabled is not specified', () => {
+        getConsentConfig({[namespace]: {cmpApi: 'iab'}});
+
+        sinon.assert.notCalled(consentDataHandler.removeCmpEventListener);
+        sinon.assert.notCalled(consentDataHandler.reset);
+      });
+    });
+
+    // Additional tests for other configParser functionality could be added here
   });
 });

@@ -736,6 +736,123 @@ describe('consentManagement', function () {
           expect(consent.gdprApplies).to.be.true;
           expect(consent.apiVersion).to.equal(2);
         });
+
+        it('should set CMP listener ID when listenerId is provided in tcfData', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: 123
+          };
+
+          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.calledOnce(setCmpListenerIdSpy);
+          sinon.assert.calledWith(setCmpListenerIdSpy, 123);
+
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should not set CMP listener ID when listenerId is null', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: null
+          };
+
+          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.notCalled(setCmpListenerIdSpy);
+
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should not set CMP listener ID when listenerId is undefined', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: undefined
+          };
+
+          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.notCalled(setCmpListenerIdSpy);
+
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should set CMP listener ID when listenerId is 0 (valid listener ID)', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: 0
+          };
+
+          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.calledOnce(setCmpListenerIdSpy);
+          sinon.assert.calledWith(setCmpListenerIdSpy, 0);
+
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should set CMP API reference when CMP is found', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+
+          const setCmpApiSpy = sinon.spy(gdprDataHandler, 'setCmpApi');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.calledOnce(setCmpApiSpy);
+          expect(setCmpApiSpy.getCall(0).args[0]).to.be.a('function');
+
+          setCmpApiSpy.restore();
+        });
       });
     });
   });

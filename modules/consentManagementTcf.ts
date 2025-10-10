@@ -87,6 +87,9 @@ function lookupIabConsent(setProvisionalConsent) {
 
         if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
           try {
+            if (tcfData.listenerId !== null && tcfData.listenerId !== undefined) {
+              gdprDataHandler.setCmpListenerId(tcfData.listenerId);
+            }
             gdprDataHandler.setConsentData(parseConsentData(tcfData));
             resolve();
           } catch (e) {
@@ -113,6 +116,7 @@ function lookupIabConsent(setProvisionalConsent) {
       logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
     }
 
+    gdprDataHandler.setCmpApi(cmp);
     cmp({
       command: 'addEventListener',
       callback: cmpResponseCallback
