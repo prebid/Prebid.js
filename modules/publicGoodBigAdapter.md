@@ -7,7 +7,8 @@
 # Description
 
 Public Good's bid adapter is for use with approved publishers only.  Any publisher who wishes to integrate with Pubic Good using the this adapter will need a partner ID.
-Please contact Public Good for additional informationand a negotiated set of slots.  
+
+Please contact Public Good for additional information and a negotiated set of slots.  
 
 # Test Parameters
 ```
