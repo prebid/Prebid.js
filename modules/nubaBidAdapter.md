@@ -24,7 +24,7 @@ Nuba.io bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'oraki',
+                            bidder: 'nuba',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ Nuba.io bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'oraki',
+                            bidder: 'nuba',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ Nuba.io bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'oraki',
+                            bidder: 'nuba',
                             params: {
                                 placementId: 'testNative',
                             }
