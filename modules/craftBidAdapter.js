@@ -25,16 +25,19 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-    const bidRequest = bidRequests[0];
+    const bidRequest = bidRequests[0] || {};
     const tags = bidRequests.map(bidToTag);
-    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    const schain = bidRequest.ortb2?.source?.ext?.schain;
     const payload = {
       tags: [...tags],
       ua: navigator.userAgent,
       sdk: {
-        version: '$prebid.version$'
+        version: '$prebid.version$',
       },
-      schain: schain
+      schain: schain,
+      user: {
+        eids: bidRequest.userIdAsEids,
+      },
     };
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
