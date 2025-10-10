@@ -192,9 +192,9 @@ export const spec = {
     if (bidRequests.length === 0) {
       return [];
     }
-    const gdpr = bidderRequest.gdprConsent;
-    const usp = bidderRequest.uspConsent;
-    const gpp = bidderRequest.gppConsent;
+    const gdpr = bidderRequest?.gdprConsent;
+    const usp = bidderRequest?.uspConsent;
+    const gpp = bidderRequest?.gppConsent;
     const hasWallet = detectWalletsPresence();
 
     return bidRequests.map((bidRequest) => {
@@ -264,7 +264,7 @@ export const spec = {
         viewportWidth: utils.getWinDimensions().visualViewport.width,
         timeToFirstByte: getTTFBOnce(),
         ext: {
-          ...bidderRequest.ortb2.ext,
+          ...(bidderRequest?.ortb2?.ext || {}),
           adapter_version: ADAPTER_VERSION,
           prebid_version: PREBID_VERSION
         }
