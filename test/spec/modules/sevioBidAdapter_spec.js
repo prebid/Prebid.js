@@ -206,4 +206,170 @@ describe('sevioBidAdapter', function () {
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponseNative));
     })
   });
+
+  // Minimal env shims some helpers rely on
+  Object.defineProperty(window, 'visualViewport', {
+    value: { width: 1200, height: 800 },
+    configurable: true
+  });
+  Object.defineProperty(window, 'screen', {
+    value: { width: 1920, height: 1080 },
+    configurable: true
+  });
+
+  function mkBid(overrides) {
+    return Object.assign({
+      bidId: 'bid-1',
+      bidder: 'sevio',
+      params: { zone: 'zone-123', referenceId: 'ref-abc', keywords: ['k1', 'k2'] },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      refererInfo: { page: 'https://example.com/page', referer: 'https://referrer.example' },
+      userIdAsEids: []
+    }, overrides || {});
+  }
+
+  const baseBidderRequest = {
+    timeout: 1200,
+    refererInfo: { page: 'https://example.com/page', referer: 'https://referrer.example' },
+    gdprConsent: { consentString: 'TCF-STRING' },
+    uspConsent: { uspString: '1NYN' },
+    gppConsent: { consentString: 'GPP-STRING' },
+    ortb2: { device: {}, ext: {} }
+  };
+
+  describe('Sevio adapter helper coverage via buildRequests (JS)', () => {
+    let stubs = [];
+
+    afterEach(() => {
+      while (stubs.length) stubs.pop().restore();
+      document.title = '';
+      document.head.innerHTML = '';
+      try {
+        Object.defineProperty(navigator, 'connection', { value: undefined, configurable: true });
+      } catch (e) {}
+    });
+
+    it('getReferrerInfo → data.referer', () => {
+      const out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].data.referer).to.equal('https://example.com/page');
+    });
+
+    it('getConnectionDownLink / getNetworkQuality → networkBandwidth / networkQuality', () => {
+      try {
+        Object.defineProperty(navigator, 'connection', {
+          value: { downlink: 1.25, effectiveType: '4g' },
+          configurable: true
+        });
+      } catch (e) {
+        return;
+      }
+
+      const out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.networkBandwidth).to.equal('1.25');
+      expect(out[0].data.networkQuality).to.equal('4g');
+    });
+
+    it('empty bandwidth/quality when connection missing or negative downlink', () => {
+      try {
+        Object.defineProperty(navigator, 'connection', { value: undefined, configurable: true });
+      } catch (e) {}
+      let out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.networkBandwidth).to.equal('');
+      expect(out[0].data.networkQuality).to.equal('');
+
+      try {
+        Object.defineProperty(navigator, 'connection', { value: { downlink: -1 }, configurable: true });
+      } catch (e) {}
+      out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.networkBandwidth).to.equal('');
+      expect(out[0].data.networkQuality).to.equal('');
+    });
+
+    it('getPageTitle prefers top.title; falls back to og:title (top document)', () => {
+      window.top.document.title = 'Doc Title';
+      let out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.pageTitle).to.equal('Doc Title');
+
+      window.top.document.title = '';
+      const meta = window.top.document.createElement('meta');
+      meta.setAttribute('property', 'og:title');
+      meta.setAttribute('content', 'OG Title');
+      window.top.document.head.appendChild(meta);
+
+      out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.pageTitle).to.equal('OG Title');
+
+      meta.remove();
+    });
+
+    it('getPageTitle cross-origin fallback (window.top throws) uses local document.*', function () {
+      document.title = 'Local Title';
+
+      // In jsdom, window.top === window; try to simulate cross-origin by throwing from getter.
+      let restored = false;
+      try {
+        const original = Object.getOwnPropertyDescriptor(window, 'top');
+        Object.defineProperty(window, 'top', {
+          configurable: true,
+          get() { throw new Error('cross-origin'); }
+        });
+        const out = spec.buildRequests([mkBid()], baseBidderRequest);
+        expect(out[0].data.pageTitle).to.equal('Local Title');
+        Object.defineProperty(window, 'top', original);
+        restored = true;
+      } catch (e) {
+        // Environment didn’t allow redefining window.top; skip this case
+        this.skip();
+      } finally {
+        if (!restored) {
+          try { Object.defineProperty(window, 'top', { value: window, configurable: true }); } catch (e) {}
+        }
+      }
+    });
+
+    it('computeTTFB via navigation entries (top.performance) and cached within call', () => {
+      const perfTop = window.top.performance;
+
+      const original = perfTop.getEntriesByType;
+      Object.defineProperty(perfTop, 'getEntriesByType', {
+        configurable: true, writable: true,
+        value: (type) => (type === 'navigation' ? [{ responseStart: 152, requestStart: 100 }] : [])
+      });
+
+      const out = spec.buildRequests([mkBid({ bidId: 'A' }), mkBid({ bidId: 'B' })], baseBidderRequest);
+      expect(out).to.have.lengthOf(2);
+      expect(out[0].data.timeToFirstByte).to.equal('52');
+      expect(out[1].data.timeToFirstByte).to.equal('52');
+
+      Object.defineProperty(perfTop, 'getEntriesByType', { configurable: true, writable: true, value: original });
+    });
+
+    it('computeTTFB falls back to top.performance.timing when no navigation entries', () => {
+      const perfTop = window.top.performance;
+      const originalGetEntries = perfTop.getEntriesByType;
+      const originalTimingDesc = Object.getOwnPropertyDescriptor(perfTop, 'timing');
+
+      Object.defineProperty(perfTop, 'getEntriesByType', {
+        configurable: true, writable: true, value: () => []
+      });
+
+      Object.defineProperty(perfTop, 'timing', {
+        configurable: true,
+        value: { responseStart: 250, requestStart: 200 }
+      });
+
+      const out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.timeToFirstByte).to.equal('50');
+
+      Object.defineProperty(perfTop, 'getEntriesByType', {
+        configurable: true, writable: true, value: originalGetEntries
+      });
+      if (originalTimingDesc) {
+        Object.defineProperty(perfTop, 'timing', originalTimingDesc);
+      } else {
+        Object.defineProperty(perfTop, 'timing', { configurable: true, value: undefined });
+      }
+    });
+  });
 });
