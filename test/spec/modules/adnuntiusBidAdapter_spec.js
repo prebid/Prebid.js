@@ -1,15 +1,14 @@
-import { expect } from 'chai';
-import { spec } from 'modules/adnuntiusBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
+import {expect} from 'chai';
+import {spec} from 'modules/adnuntiusBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { getStorageManager } from 'src/storageManager.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
 import {deepClone, getUnixTimestampFromNow} from 'src/utils.js';
-import { getWinDimensions } from '../../../src/utils.js';
+import {getStorageManager} from 'src/storageManager.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
+import {getWinDimensions} from '../../../src/utils.js';
 
 import {getGlobalVarName} from '../../../src/buildOptions.js';
-import {getExtraWinDimensions} from '../../../libraries/extraWinDimensions/extraWinDimensions.js';
 
 describe('adnuntiusBidAdapter', function () {
   const sandbox = sinon.createSandbox();
@@ -51,7 +50,6 @@ describe('adnuntiusBidAdapter', function () {
   const tzo = new Date().getTimezoneOffset();
   const prebidVersion = getGlobal().version;
 
-  let screen;
   let viewport;
   let ENDPOINT_URL_BASE;
   let ENDPOINT_URL;
@@ -62,15 +60,13 @@ describe('adnuntiusBidAdapter', function () {
 
   function resetExpectedUrls() {
     const winDimensions = getWinDimensions();
-    const extraDims = getExtraWinDimensions();
-    screen = extraDims.screen.availWidth + 'x' + extraDims.screen.availHeight;
     viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
-    ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
+    ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&viewport=${viewport}`;
     ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
-    LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+    LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&viewport=${viewport}&userId=${usi}`;
     ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
     ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-    ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+    ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&viewport=${viewport}&userId=${usi}`;
   }
 
   function expectUrlsEqual(actual, expected) {
@@ -888,12 +884,10 @@ describe('adnuntiusBidAdapter', function () {
   describe('buildRequests', function () {
     it('Test requests', function () {
       const winDimensions = getWinDimensions();
-      const extraDims = getExtraWinDimensions();
-      const screen = extraDims.screen.availWidth + 'x' + extraDims.screen.availHeight;
       const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
       const prebidVersion = window[getGlobalVarName()].version;
       const tzo = new Date().getTimezoneOffset();
-      const ENDPOINT_URL = `https://ads.adnuntius.delivery/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+      const ENDPOINT_URL = `https://ads.adnuntius.delivery/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&viewport=${viewport}&userId=${usi}`;
 
       const bidderRequests = [
         {

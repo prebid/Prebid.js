@@ -78,9 +78,9 @@ export const spec = {
     }
 
     const s = [];
-    serverResponses.map((c) => {
+    serverResponses.forEach((c) => {
       if (c.body.c_sync) {
-        c.body.c_sync.bidder_status.map((p) => {
+        c.body.c_sync.bidder_status.forEach((p) => {
           if (p.usersync.type === 'redirect') {
             p.usersync.type = 'image';
           }
