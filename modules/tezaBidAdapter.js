@@ -12,7 +12,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'teza';
-const ENDPOINT = '/teza-auction';
+const ENDPOINT = 'https://dsp-us-east-1-nyc.tezatags.com/openrtb2/auction';
 
 function sizesToFormat(sizes) {
   return (sizes || []).map(s => ({ w: s[0], h: s[1] }));
