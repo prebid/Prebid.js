@@ -2127,14 +2127,63 @@ describe('adapterManager tests', function () {
         const tids = new Set(reqs.flatMap(br => br.bids).map(b => b.ortb2Imp?.ext?.tid));
         expect(tids.size).to.eql(3);
       });
-      it('should override ortb2Imp.ext.tid if specified in FPD', () => {
-        adUnits[0].ortb2Imp = adUnits[1].ortb2Imp = {
-          ext: {
-            tid: 'tid'
-          }
-        };
+      it('should respect publisher-provided ortb2Imp.ext.tid values', () => {
+        const tidByTransaction = new Map();
+        adUnits.forEach((adUnit, idx) => {
+          const tid = `pub-tid-${idx}`;
+          tidByTransaction.set(adUnit.transactionId, tid);
+          adUnit.ortb2Imp = { ext: { tid } };
+        });
         const reqs = makeRequests();
-        expect(reqs[0].bids[0].ortb2Imp.ext.tid).to.not.eql('tid');
+        reqs.forEach(br => {
+          br.bids.forEach(bid => {
+            expect(bid.ortb2Imp.ext.tid).to.eql(tidByTransaction.get(bid.transactionId));
+          });
+        });
+      });
+
+      it('should mark publisher-provided imp tids as pub when tids are enabled', () => {
+        const tidByTransaction = new Map();
+        adUnits.forEach((adUnit, idx) => {
+          const tid = `pub-tid-${idx}`;
+          tidByTransaction.set(adUnit.transactionId, tid);
+          adUnit.ortb2Imp = { ext: { tid } };
+        });
+        config.setConfig({enableTIDs: true});
+        try {
+          const reqs = makeRequests();
+          reqs.forEach(br => {
+            br.bids.forEach(bid => {
+              const expectedTid = tidByTransaction.get(bid.transactionId);
+              expect(bid.ortb2Imp.ext.tid).to.eql(expectedTid);
+              expect(bid.ortb2Imp.ext.tidSource).to.eql('pub');
+            });
+          });
+        } finally {
+          config.resetConfig();
+        }
+      });
+
+      it('should mark publisher-provided imp tids as pub when consistent tids are enabled', () => {
+        const tidByTransaction = new Map();
+        adUnits.forEach((adUnit, idx) => {
+          const tid = `pub-tid-${idx}`;
+          tidByTransaction.set(adUnit.transactionId, tid);
+          adUnit.ortb2Imp = { ext: { tid } };
+        });
+        config.setConfig({enableTIDs: true, consistentTids: true});
+        try {
+          const reqs = makeRequests();
+          reqs.forEach(br => {
+            br.bids.forEach(bid => {
+              const expectedTid = tidByTransaction.get(bid.transactionId);
+              expect(bid.ortb2Imp.ext.tid).to.eql(expectedTid);
+              expect(bid.ortb2Imp.ext.tidSource).to.eql('pub');
+            });
+          });
+        } finally {
+          config.resetConfig();
+        }
       });
       it('should use matching ext.tid if transactionId match', () => {
         adUnits[1].transactionId = adUnits[0].transactionId;

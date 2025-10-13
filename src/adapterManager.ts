@@ -221,6 +221,7 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   src: SRC;
   metrics: Metrics,
   tids: { [bidderCode: BidderCode]: string };
+  tidsEnabled: boolean;
   tidSource?: string;
   makeImpTid: () => string;
 }
@@ -246,7 +247,7 @@ export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & 
   gvlid?: number | ((config: AnalyticsConfig<P>) => number);
 }
 
-function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, tids, tidSource, makeImpTid}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
+function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, tids, tidsEnabled, tidSource, makeImpTid}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
     const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
     if (bidderCode == null && bids.length === 0 && (adUnit as PBSAdUnit).s2sBid != null) {
@@ -254,12 +255,19 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidde
     }
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
-        if (!tids.hasOwnProperty(adUnit.transactionId)) {
-          tids[adUnit.transactionId] = makeImpTid();
+        const publisherTidRaw = adUnit.ortb2Imp?.ext?.tid ?? bid.ortb2Imp?.ext?.tid;
+        const publisherTid = publisherTidRaw == null ? null : String(publisherTidRaw);
+        let tid = tids[adUnit.transactionId];
+        if (publisherTid != null) {
+          tid = publisherTid;
+        } else if (tid == null) {
+          tid = makeImpTid();
         }
-        const ortbExt: Record<string, any> = { tid: tids[adUnit.transactionId] };
-        if (tidSource != null) {
-          ortbExt.tidSource = tidSource;
+        tids[adUnit.transactionId] = tid;
+        const ortbExt: Record<string, any> = { tid };
+        const tidSourceValue = publisherTid != null && tidsEnabled ? 'pub' : tidSource;
+        if (tidSourceValue != null) {
+          ortbExt.tidSource = tidSourceValue;
         }
         bid = Object.assign({}, bid,
           {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp, {ext: ortbExt})},
@@ -563,6 +571,7 @@ const adapterManager = {
               src: S2S.SRC,
               metrics,
               tids,
+              tidsEnabled,
               tidSource,
               makeImpTid
             }),
@@ -612,6 +621,7 @@ const adapterManager = {
           src: 'client',
           metrics,
           tids,
+          tidsEnabled,
           tidSource,
           makeImpTid
         }),
