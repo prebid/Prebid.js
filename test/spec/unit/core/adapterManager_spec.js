@@ -2143,6 +2143,70 @@ describe('adapterManager tests', function () {
           expect(new Set(br.bids.map(b => b.ortb2Imp.ext.tid)).size).to.eql(1);
         })
       });
+      it('should annotate ortb2Imp.ext.tidSource when tids are enabled', () => {
+        config.setConfig({enableTIDs: true});
+        try {
+          const reqs = makeRequests();
+          reqs.forEach(br => {
+            br.bids.forEach(bid => {
+              expect(bid.ortb2Imp.ext.tidSource).to.eql('pbjs');
+            });
+          });
+        } finally {
+          config.resetConfig();
+        }
+      });
+      it('should provide consistent source.tid when consistentTids is enabled', () => {
+        config.setConfig({enableTIDs: true, consistentTids: true});
+        try {
+          const reqs = makeRequests();
+          const tids = reqs.map(req => req.ortb2.source.tid);
+          expect(new Set(tids).size).to.eql(1);
+          expect(tids[0]).to.match(/^c.+/);
+          expect(tids[0]).to.eql('cmockAuctionId');
+          expect(tids[0].length).to.eql(String(reqs[0].auctionId).length + 1);
+          reqs.forEach(br => {
+            br.bids.forEach(bid => {
+              expect(bid.ortb2Imp.ext.tidSource).to.eql('pbjsStable');
+            });
+          });
+        } finally {
+          config.resetConfig();
+        }
+      });
+      it('should provide consistent imp.ext.tid when consistentTids is enabled', () => {
+        config.setConfig({enableTIDs: true});
+        let baselineTidLength;
+        try {
+          const baselineReqs = makeRequests();
+          baselineTidLength = baselineReqs.flatMap(br => br.bids)
+            .map(bid => bid.ortb2Imp.ext.tid)
+            .find(tid => typeof tid === 'string')
+            .length;
+        } finally {
+          config.resetConfig();
+        }
+
+        config.setConfig({enableTIDs: true, consistentTids: true});
+        try {
+          const reqs = makeRequests();
+          const bids = reqs.flatMap(br => br.bids);
+          const tidsByTransaction = new Map();
+          bids.forEach(bid => {
+            const tid = bid.ortb2Imp.ext.tid;
+            expect(tid).to.match(/^c.+/);
+            expect(tid.length).to.eql(baselineTidLength + 1);
+            if (tidsByTransaction.has(bid.transactionId)) {
+              expect(tidsByTransaction.get(bid.transactionId)).to.eql(tid);
+            } else {
+              tidsByTransaction.set(bid.transactionId, tid);
+            }
+          });
+          expect(tidsByTransaction.size).to.be.greaterThan(0);
+        } finally {
+          config.resetConfig();
+        }
+      });
       describe('when the same bidder is routed to both client and server', () => {
         function route(next) {
           next.bail({
