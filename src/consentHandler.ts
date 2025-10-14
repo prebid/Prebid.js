@@ -42,8 +42,6 @@ export class ConsentHandler<T> {
   #ready;
   #dirty = true;
   #hash;
-  #listenerId: number | undefined = undefined;
-  #cmpApi: any = null;
   generatedTime: number;
   hashFields;
 
@@ -55,43 +53,6 @@ export class ConsentHandler<T> {
     this.#ready = true;
     this.#data = data;
     this.#defer.resolve(data);
-  }
-
-  /**
-   * Set CMP API reference
-   * @param cmpApi - CMP API reference
-   */
-  setCmpApi(cmpApi: any) {
-    this.#cmpApi = cmpApi;
-  }
-
-  /**
-   * Get CMP API reference
-   */
-  getCmpApi() {
-    return this.#cmpApi;
-  }
-
-  /**
-   * Set CMP listener ID
-   * @param listenerId - Unique identifier for the CMP listener
-   */
-  setCmpListenerId(listenerId: number | undefined) {
-    this.#listenerId = listenerId;
-  }
-
-  /**
-   * Get CMP listener ID
-   */
-  getCmpListenerId() {
-    return this.#listenerId;
-  }
-
-  resetCmpApis(success: boolean) {
-    if (success) {
-      this.#cmpApi = null;
-      this.#listenerId = undefined;
-    }
   }
 
   /**
@@ -164,24 +125,6 @@ export class ConsentHandler<T> {
     }
     return this.#hash;
   }
-
-  addApiVersionToParams(params: any) {}
-
-  // Base class defines the algorithm structure
-  removeCmpEventListener() {
-    if (this.getCmpApi() && this.getCmpListenerId() !== undefined && this.getCmpListenerId() !== null) {
-      const params = {
-        command: "removeEventListener",
-        callback: this.resetCmpApis.bind(this),
-        parameter: this.getCmpListenerId(),
-      };
-
-      // Call the method that subclasses will override
-      this.addApiVersionToParams(params);
-
-      this.getCmpApi()(params);
-    }
-  }
 }
 
 class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP>> {
@@ -200,10 +143,6 @@ class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GD
   /**
    * Remove CMP event listener using CMP API
    */
-  addApiVersionToParams(params: any) {
-    const apiVersion = this.getConsentData()?.apiVersion || 2;
-    params.apiVersion = apiVersion;
-  }
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {

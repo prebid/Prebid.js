@@ -142,6 +142,7 @@ export function configParser(
     parseConsentData,
     getNullConsent,
     cmpHandlers,
+    cmpEventCleanup,
     DEFAULT_CMP = 'iab',
     DEFAULT_CONSENT_TIMEOUT = 10000
   } = {} as any
@@ -173,14 +174,20 @@ export function configParser(
       getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
       requestBidsHook = null;
-      logInfo(`${displayName} consentManagement module has been diactivated...`)
+      logInfo(`${displayName} consentManagement module has been deactivated...`);
     }
   }
 
   function resetConsentDataHandler() {
     reset();
-    consentDataHandler.removeCmpEventListener();
-    consentDataHandler.reset();
+    // Call module-specific CMP event cleanup if provided
+    if (typeof cmpEventCleanup === 'function') {
+      try {
+        cmpEventCleanup();
+      } catch (e) {
+        logError(`Error during CMP event cleanup for ${displayName}:`, e);
+      }
+    }
   }
 
   return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {

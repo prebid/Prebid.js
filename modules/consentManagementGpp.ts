@@ -11,9 +11,13 @@ import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
 import {PbPromise, defer} from '../src/utils/promise.js';
 import {type CMConfig, configParser} from '../libraries/consentManagement/cmUtils.js';
+import {createCmpEventManager, type CmpEventManager} from '../libraries/cmp/cmpEventUtils.js';
 import {CONSENT_GPP} from "../src/consentHandler.ts";
 
 export let consentConfig = {} as any;
+
+// CMP event manager instance for GPP
+let gppCmpEventManager: CmpEventManager | null = null;
 
 type RelevantCMPData = {
   applicableSections: number[]
@@ -101,7 +105,13 @@ export class GPPClient {
         logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
       }
       this.initialized = true;
-      gppDataHandler.setCmpApi(this.cmp);
+
+      // Initialize CMP event manager and set CMP API
+      if (!gppCmpEventManager) {
+        gppCmpEventManager = createCmpEventManager('gpp');
+      }
+      gppCmpEventManager.setCmpApi(this.cmp);
+
       this.cmp({
         command: 'addEventListener',
         callback: (event, success) => {
@@ -123,7 +133,7 @@ export class GPPClient {
           }
 
           if (event?.listenerId !== null && event?.listenerId !== undefined) {
-            gppDataHandler.setCmpListenerId(event?.listenerId);
+            gppCmpEventManager?.setCmpListenerId(event?.listenerId);
           }
         }
       });
@@ -223,13 +233,23 @@ export function resetConsentData() {
   GPPClient.INST = null;
 }
 
+export function removeCmpListener() {
+  // Clean up CMP event listeners before resetting
+  if (gppCmpEventManager) {
+    gppCmpEventManager.removeCmpEventListener();
+    gppCmpEventManager = null;
+  }
+  resetConsentData();
+}
+
 const parseConfig = configParser({
   namespace: 'gpp',
   displayName: 'GPP',
   consentDataHandler: gppDataHandler,
   parseConsentData,
   getNullConsent: () => toConsentData(null),
-  cmpHandlers: cmpCallMap
+  cmpHandlers: cmpCallMap,
+  cmpEventCleanup: removeCmpListener
 });
 
 export function setConsentConfig(config) {

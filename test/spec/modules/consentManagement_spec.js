@@ -1,4 +1,4 @@
-import {consentConfig, gdprScope, resetConsentData, setConsentConfig, } from 'modules/consentManagementTcf.js';
+import {consentConfig, gdprScope, resetConsentData, setConsentConfig, tcfCmpEventManager} from 'modules/consentManagementTcf.js';
 import {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
@@ -746,7 +746,8 @@ describe('consentManagement', function () {
             listenerId: 123
           };
 
-          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData, true);
@@ -770,7 +771,8 @@ describe('consentManagement', function () {
             listenerId: null
           };
 
-          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData, true);
@@ -793,7 +795,8 @@ describe('consentManagement', function () {
             listenerId: undefined
           };
 
-          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData, true);
@@ -803,7 +806,6 @@ describe('consentManagement', function () {
           expect(await runHook()).to.be.true;
 
           sinon.assert.notCalled(setCmpListenerIdSpy);
-
           setCmpListenerIdSpy.restore();
         });
 
@@ -816,7 +818,8 @@ describe('consentManagement', function () {
             listenerId: 0
           };
 
-          const setCmpListenerIdSpy = sinon.spy(gdprDataHandler, 'setCmpListenerId');
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData, true);
@@ -827,7 +830,6 @@ describe('consentManagement', function () {
 
           sinon.assert.calledOnce(setCmpListenerIdSpy);
           sinon.assert.calledWith(setCmpListenerIdSpy, 0);
-
           setCmpListenerIdSpy.restore();
         });
 
@@ -839,7 +841,8 @@ describe('consentManagement', function () {
             eventStatus: 'tcloaded'
           };
 
-          const setCmpApiSpy = sinon.spy(gdprDataHandler, 'setCmpApi');
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpApiSpy = sinon.spy(tcfCmpEventManager, 'setCmpApi');
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData, true);
@@ -850,7 +853,6 @@ describe('consentManagement', function () {
 
           sinon.assert.calledOnce(setCmpApiSpy);
           expect(setCmpApiSpy.getCall(0).args[0]).to.be.a('function');
-
           setCmpApiSpy.restore();
         });
       });

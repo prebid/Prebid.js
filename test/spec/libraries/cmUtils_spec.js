@@ -228,7 +228,7 @@ describe('consent management utils', () => {
   });
 
   describe('configParser', () => {
-    let namespace, displayName, consentDataHandler, parseConsentData, getNullConsent, cmpHandlers;
+    let namespace, displayName, consentDataHandler, parseConsentData, getNullConsent, cmpHandlers, cmpEventCleanup;
     let getConsentConfig, resetConsentDataHandler;
 
     beforeEach(() => {
@@ -246,6 +246,7 @@ describe('consent management utils', () => {
       cmpHandlers = {
         iab: sinon.stub().returns(Promise.resolve())
       };
+      cmpEventCleanup = sinon.stub();
 
       // Create a spy for resetConsentDataHandler to verify it's called
       const configParserInstance = configParser({
@@ -254,7 +255,8 @@ describe('consent management utils', () => {
         consentDataHandler,
         parseConsentData,
         getNullConsent,
-        cmpHandlers
+        cmpHandlers,
+        cmpEventCleanup
       });
 
       getConsentConfig = configParserInstance;
@@ -278,22 +280,69 @@ describe('consent management utils', () => {
 
         expect(result).to.deep.equal({});
         sinon.assert.calledWith(utils.logWarn, sinon.match('config enabled is set to false'));
-        sinon.assert.called(consentDataHandler.removeCmpEventListener);
-        sinon.assert.called(consentDataHandler.reset);
       });
 
-      it('should not reset consent data handler when enabled is true', () => {
+      it('should call cmpEventCleanup when enabled is false', () => {
+        getConsentConfig({[namespace]: {enabled: false}});
+
+        sinon.assert.called(cmpEventCleanup);
+        sinon.assert.calledWith(utils.logWarn, sinon.match('config enabled is set to false'));
+      });
+
+      it('should handle cmpEventCleanup errors gracefully', () => {
+        const cleanupError = new Error('Cleanup failed');
+        cmpEventCleanup.throws(cleanupError);
+
+        getConsentConfig({[namespace]: {enabled: false}});
+
+        sinon.assert.called(cmpEventCleanup);
+        sinon.assert.calledWith(utils.logError, sinon.match('Error during CMP event cleanup'), cleanupError);
+      });
+
+      it('should not call cmpEventCleanup when enabled is true', () => {
         getConsentConfig({[namespace]: {enabled: true, cmpApi: 'iab'}});
 
-        sinon.assert.notCalled(consentDataHandler.removeCmpEventListener);
-        sinon.assert.notCalled(consentDataHandler.reset);
+        sinon.assert.notCalled(cmpEventCleanup);
       });
 
-      it('should not reset consent data handler when enabled is not specified', () => {
+      it('should not call cmpEventCleanup when enabled is not specified', () => {
         getConsentConfig({[namespace]: {cmpApi: 'iab'}});
 
-        sinon.assert.notCalled(consentDataHandler.removeCmpEventListener);
-        sinon.assert.notCalled(consentDataHandler.reset);
+        sinon.assert.notCalled(cmpEventCleanup);
+      });
+    });
+
+    describe('cmpEventCleanup parameter', () => {
+      it('should work without cmpEventCleanup parameter', () => {
+        const configParserWithoutCleanup = configParser({
+          namespace,
+          displayName,
+          consentDataHandler,
+          parseConsentData,
+          getNullConsent,
+          cmpHandlers
+          // No cmpEventCleanup provided
+        });
+
+        const result = configParserWithoutCleanup({[namespace]: {enabled: false}});
+        expect(result).to.deep.equal({});
+        // Should not throw error when cmpEventCleanup is undefined
+      });
+
+      it('should only call cmpEventCleanup if it is a function', () => {
+        const configParserWithNonFunction = configParser({
+          namespace,
+          displayName,
+          consentDataHandler,
+          parseConsentData,
+          getNullConsent,
+          cmpHandlers,
+          cmpEventCleanup: 'not a function'
+        });
+
+        const result = configParserWithNonFunction({[namespace]: {enabled: false}});
+        expect(result).to.deep.equal({});
+        // Should not throw error when cmpEventCleanup is not a function
       });
     });
 
