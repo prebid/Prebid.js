@@ -55,11 +55,15 @@ jobs:
           key: ${{ inputs.wdir }}
           fail-on-cache-miss: true
 
+      - name: Start BrowserstackLocal
+        run: |
+          ./BrowserStackLocal --key $BROWSERSTACK_ACCESS_KEY --daemon start
+
       - name: Run tests
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 8
-          max_attempts: 3
+          max_attempts: 1
           command: ${{ inputs.cmd }}
 
       - name: Save working directory

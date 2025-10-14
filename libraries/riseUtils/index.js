@@ -12,6 +12,7 @@ import {
 } from '../../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
+import { getDNT } from '../navigatorData/dnt.js';
 import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
 
 import {getGlobalVarName} from '../../src/buildOptions.js';
@@ -376,7 +377,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,

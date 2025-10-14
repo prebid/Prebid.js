@@ -9,7 +9,6 @@ export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
 export {getWinDimensions, resetWinDimensions, getScreenOrientation} from './utils/winDimensions.js';
-
 const consoleExists = Boolean(window.console);
 const consoleLogExists = Boolean(consoleExists && window.console.log);
 const consoleInfoExists = Boolean(consoleExists && window.console.info);
@@ -789,13 +788,6 @@ export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
     .flatMap((adUnit) => adUnit.bids)
     .filter((bidderData) => bidderData.bidder === bidder)
     .map((bidderData) => bidderData.params || {});
-}
-
-/**
- * Returns Do Not Track state
- */
-export function getDNT() {
-  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
 export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
