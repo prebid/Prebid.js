@@ -247,8 +247,8 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 function generatePossibleEnumerations(arrayOfFields, delimiter) {
   return arrayOfFields.reduce((accum, currentVal) => {
     const ret = [];
-    accum.map(obj => {
-      currentVal.map(obj1 => {
+    accum.forEach(obj => {
+      currentVal.forEach(obj1 => {
         ret.push(obj + delimiter + obj1)
       });
     });

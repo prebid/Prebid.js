@@ -2308,7 +2308,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
       expect(impression.ext.sid).to.equal(sidValue);
 
-      impression.banner.format.map(({ w, h, ext }, index) => {
+      impression.banner.format.forEach(({ w, h, ext }, index) => {
         const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
 
         expect(w).to.equal(size[0]);
@@ -2716,7 +2716,7 @@ describe('IndexexchangeAdapter', function () {
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
         expect(bannerImpression.ext.sid).to.equal(sidValue);
 
-        bannerImpression.banner.format.map(({ w, h, ext }, index) => {
+        bannerImpression.banner.format.forEach(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
 
           expect(w).to.equal(size[0]);
@@ -2839,7 +2839,7 @@ describe('IndexexchangeAdapter', function () {
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
         expect(bannerImpression.ext.sid).to.equal(sidValue);
 
-        bannerImpression.banner.format.map(({ w, h, ext }, index) => {
+        bannerImpression.banner.format.forEach(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
 
           expect(w).to.equal(size[0]);
@@ -2965,7 +2965,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.ext.sid).to.equal(sidValue);
 
-      impression.banner.format.map(({ w, h, ext }, index) => {
+      impression.banner.format.forEach(({ w, h, ext }, index) => {
         const size = bid.mediaTypes.banner.sizes[index];
 
         expect(w).to.equal(size[0]);
@@ -2992,7 +2992,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impressions).to.have.lengthOf(2);
       expect(request.data.sn).to.be.undefined;
 
-      impressions.map((impression, impressionIndex) => {
+      impressions.forEach((impression, impressionIndex) => {
         const firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
         const sidValue = bids[impressionIndex].params.id;
 
@@ -3000,7 +3000,7 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.topframe).to.be.oneOf([0, 1]);
         expect(impression.ext.sid).to.equal(sidValue);
 
-        impression.banner.format.map(({ w, h, ext }, index) => {
+        impression.banner.format.forEach(({ w, h, ext }, index) => {
           const size = bids[impressionIndex].mediaTypes.banner.sizes[index];
 
           expect(w).to.equal(size[0]);
@@ -3463,7 +3463,7 @@ describe('IndexexchangeAdapter', function () {
         expect(bImp.id).to.equal(bids[0].bidId);
         expect(bImp.banner.format).to.have.length(bids[0].mediaTypes.banner.sizes.length);
         expect(bImp.banner.topframe).to.be.oneOf([0, 1]);
-        bImp.banner.format.map(({ w, h, ext }, i) => {
+        bImp.banner.format.forEach(({ w, h, ext }, i) => {
           const [sw, sh] = bids[0].mediaTypes.banner.sizes[i];
           expect(w).to.equal(sw);
           expect(h).to.equal(sh);
