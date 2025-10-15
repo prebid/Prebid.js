@@ -2,63 +2,65 @@ import {
   deepAccess,
   mergeDeep,
   logError,
-  replaceAuctionPrice,
+  replaceMacros,
   triggerPixel,
   deepSetValue,
   isStr,
   isArray,
-  getWinDimensions
-} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
+  getWinDimensions,
+} from "../src/utils.js";
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { config } from "../src/config.js";
+import { VIDEO, BANNER } from "../src/mediaTypes.js";
+import { getConnectionType } from "../libraries/connectionInfo/connectionUtils.js";
 
-export const ENDPOINT = 'https://bid.virgul.com/prebid';
+export const ENDPOINT = "https://bid.virgul.com/prebid";
 
-const BIDDER_CODE = 'empower';
+const BIDDER_CODE = "empower";
+const GVLID = 1248;
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: (bid) =>
     !!(bid && bid.params && bid.params.zone && bid.bidder === BIDDER_CODE),
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const currencyObj = config.getConfig('currency');
-    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
+    const currencyObj = config.getConfig("currency");
+    const currency = (currencyObj && currencyObj.adServerCurrency) || "USD";
 
     const request = {
       id: bidRequests[0].bidderRequestId,
       at: 1,
       imp: bidRequests.map((slot) => impression(slot, currency)),
       site: {
-        page: config.pageURL || bidderRequest?.refererInfo?.page,
-        domain: bidderRequest?.refererInfo?.domain,
-        ref: config.refURL,
-        publisher: { domain: bidderRequest?.refererInfo?.domain },
+        page: bidderRequest.refererInfo.page,
+        domain: bidderRequest.refererInfo.domain,
+        ref: bidderRequest.refererInfo.ref,
+        publisher: { domain: bidderRequest.refererInfo.domain },
       },
       device: {
         ua: navigator.userAgent,
         js: 1,
         dnt:
-          navigator.doNotTrack === 'yes' ||
-          navigator.doNotTrack === '1' ||
-          navigator.msDoNotTrack === '1'
+          navigator.doNotTrack === "yes" ||
+          navigator.doNotTrack === "1" ||
+          navigator.msDoNotTrack === "1"
             ? 1
             : 0,
         h: screen.height,
         w: screen.width,
         language: navigator.language,
-        connectiontype: getDeviceConnectionType(),
+        connectiontype: getConnectionType(),
       },
       cur: [currency],
       source: {
         fd: 1,
         tid: bidderRequest.ortb2?.source?.tid,
         ext: {
-          prebid: '$prebid.version$',
+          prebid: "$prebid.version$",
         },
       },
       user: {},
@@ -69,7 +71,7 @@ export const spec = {
     if (bidderRequest.gdprConsent) {
       request.user = {
         ext: {
-          consent: bidderRequest.gdprConsent.consentString || '',
+          consent: bidderRequest.gdprConsent.consentString || "",
         },
       };
       request.regs = {
@@ -82,20 +84,19 @@ export const spec = {
       };
     }
 
-    let bidUserIdAsEids = deepAccess(bidRequests, '0.userIdAsEids');
-    if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-      deepSetValue(request, 'user.eids', bidUserIdAsEids);
+    if (bidderRequest.ortb2?.source?.ext?.schain) {
+      request.schain = bidderRequest.ortb2.source.ext.schain;
     }
 
-    // First Party Data
-    const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
+    let bidUserIdAsEids = deepAccess(bidRequests, "0.userIdAsEids");
+    if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+      deepSetValue(request, "user.eids", bidUserIdAsEids);
+    }
+
+    const commonFpd = bidderRequest.ortb2 || {};
     const { user, device, site, bcat, badv } = commonFpd;
     if (site) {
-      const { page, domain, ref } = request.site;
       mergeDeep(request, { site: site });
-      request.site.page = page;
-      request.site.domain = domain;
-      request.site.ref = ref;
     }
     if (user) {
       mergeDeep(request, { user: user });
@@ -105,10 +106,6 @@ export const spec = {
     }
     if (bcat) {
       mergeDeep(request, { bcat: bcat });
-    }
-    // check if fpd ortb2 contains device property with sua object
-    if (device?.sua) {
-      request.device.sua = device?.sua;
     }
 
     if (user?.geo && device?.geo) {
@@ -122,13 +119,12 @@ export const spec = {
       }
     }
 
-    // if present, merge device object from ortb2 into `payload.device`
-    if (bidderRequest?.ortb2?.device) {
+    if (bidderRequest.ortb2?.device) {
       mergeDeep(request.device, bidderRequest.ortb2.device);
     }
 
     return {
-      method: 'POST',
+      method: "POST",
       url: ENDPOINT,
       data: JSON.stringify(request),
     };
@@ -138,10 +134,17 @@ export const spec = {
     const idToImpMap = {};
     const idToBidMap = {};
 
-    if (!bidResponse['body']) {
+    if (!bidResponse["body"]) {
       return [];
     }
-    parse(bidRequest.data).imp.forEach((imp) => {
+    if (!bidRequest.data) {
+      return [];
+    }
+    const requestImps = parse(bidRequest.data);
+    if (!requestImps) {
+      return [];
+    }
+    requestImps.imp.forEach((imp) => {
       idToImpMap[imp.id] = imp;
     });
     bidResponse = bidResponse.body;
@@ -154,8 +157,8 @@ export const spec = {
     }
     const bids = [];
     Object.keys(idToImpMap).forEach((id) => {
-      var imp = idToImpMap[id];
-      var result = idToBidMap[id];
+      const imp = idToImpMap[id];
+      const result = idToBidMap[id];
 
       if (result) {
         const bid = {
@@ -169,13 +172,13 @@ export const spec = {
         };
         if (imp.video) {
           bid.vastXml = result.adm;
-          if (bidResponse.nurl) bid.vastUrl = result.nurl;
         } else if (imp.banner) {
           bid.ad = result.adm;
-          bid.width = result.w;
-          bid.height = result.h;
-          bid.burl = result.burl;
         }
+        bid.width = result.w;
+        bid.height = result.h;
+        if (result.burl) bid.burl = result.burl;
+        if (result.nurl) bid.nurl = result.nurl;
         if (result.adomain) {
           bid.meta = {
             advertiserDomains: result.adomain,
@@ -188,46 +191,52 @@ export const spec = {
   },
 
   onBidWon: (bid) => {
-    if (bid.burl && isStr(bid.burl)) {
-      bid.burl = replaceAuctionPrice(bid.burl, bid.cpm);
-      triggerPixel(bid.burl);
+    if (bid.nurl && isStr(bid.nurl)) {
+      bid.nurl = replaceMacros(bid.nurl, {
+        AUCTION_PRICE: bid.cpm,
+        AUCTION_CURRENCY: bid.cur,
+      });
+      triggerPixel(bid.nurl);
     }
   },
 };
 
 function impression(slot, currency) {
   let bidFloorFromModule;
-  if (typeof slot.getFloor === 'function') {
+  if (typeof slot.getFloor === "function") {
     const floorInfo = slot.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
+      currency: "USD",
+      mediaType: "*",
+      size: "*",
     });
     bidFloorFromModule =
-      floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
+      floorInfo?.currency === "USD" ? floorInfo?.floor : undefined;
   }
   const imp = {
     id: slot.bidId,
     bidfloor: bidFloorFromModule || slot.params.bidfloor || 0,
     bidfloorcur:
-     (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || currency || 'USD',
-    tagid: '' + (slot.params.zone || ''),
+      (bidFloorFromModule && "USD") ||
+      slot.params.bidfloorcur ||
+      currency ||
+      "USD",
+    tagid: "" + (slot.params.zone || ""),
   };
 
   if (slot.mediaTypes.banner) {
     imp.banner = bannerImpression(slot);
   } else if (slot.mediaTypes.video) {
-    imp.video = deepAccess(slot, 'mediaTypes.video');
+    imp.video = deepAccess(slot, "mediaTypes.video");
   }
   imp.ext = slot.params || {};
   const { innerWidth, innerHeight } = getWinDimensions();
-  imp.ext.ww = innerWidth || '';
-  imp.ext.wh = innerHeight || '';
+  imp.ext.ww = innerWidth || "";
+  imp.ext.wh = innerHeight || "";
   return imp;
 }
 
 function bannerImpression(slot) {
-  var sizes = slot.mediaTypes.banner.sizes || slot.sizes;
+  const sizes = slot.mediaTypes.banner.sizes || slot.sizes;
   return {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
     w: sizes[0][0],
@@ -238,39 +247,16 @@ function bannerImpression(slot) {
 function parse(rawResponse) {
   try {
     if (rawResponse) {
-      if (typeof rawResponse === 'object') {
+      if (typeof rawResponse === "object") {
         return rawResponse;
       } else {
         return JSON.parse(rawResponse);
       }
     }
   } catch (ex) {
-    logError('empowerBidAdapter', 'ERROR', ex);
+    logError("empowerBidAdapter", "ERROR", ex);
   }
   return null;
-}
-
-function getDeviceConnectionType() {
-  let connection =
-    window.navigator &&
-    (window.navigator.connection ||
-      window.navigator.mozConnection ||
-      window.navigator.webkitConnection);
-  switch (connection?.effectiveType) {
-    case 'ethernet':
-      return 1;
-    case 'wifi':
-      return 2;
-    case 'slow-2g':
-    case '2g':
-      return 4;
-    case '3g':
-      return 5;
-    case '4g':
-      return 6;
-    default:
-      return 0;
-  }
 }
 
 registerBidder(spec);
