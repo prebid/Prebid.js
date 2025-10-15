@@ -71,7 +71,11 @@ If the keys found below are not defined, their values will default to `false`.
             bids:[
                 {
                     bidder: 'mediaConsortium',
-                    params: {}
+                    params: {
+                        video: {
+                            // videoParams, see player for a full list of available parameters
+                        }
+                    }
                 }
             ]
         }

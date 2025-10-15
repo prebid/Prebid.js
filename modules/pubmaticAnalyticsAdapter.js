@@ -93,7 +93,8 @@ function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
   return ajax(url, null, body, { method });
 };
 
-function copyRequiredBidDetails(bid) {
+function copyRequiredBidDetails(bid, bidRequest) {
+  // First check if bid has mediaTypes/sizes, otherwise fallback to bidRequest
   return pick(bid, [
     'bidder',
     'bidderCode',
@@ -191,6 +192,7 @@ function isOWPubmaticBid(adapterName) {
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
       return true;
     }
+    return false;
   })
 }
 
@@ -423,6 +425,15 @@ const eventHandlers = {
     if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
       if (bid.params) {
         args.params = bid.params;
+      }
+      if (bid.adUnit) {
+        // Specifically check for mediaTypes and dimensions
+        if (!args.mediaTypes && bid.adUnit.mediaTypes) {
+          args.mediaTypes = bid.adUnit.mediaTypes;
+        }
+        if (!args.sizes && bid.adUnit.dimensions) {
+          args.sizes = bid.adUnit.dimensions;
+        }
       }
       bid = copyRequiredBidDetails(args);
       cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);

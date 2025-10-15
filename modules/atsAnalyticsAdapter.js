@@ -340,9 +340,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid,
     bidWonTimeout: config.options.bidWonTimeout
   };
-  const initOptions = config.options;
   logInfo('ATS Analytics - adapter enabled! ');
-  atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
+  atsAnalyticsAdapter.originEnableAnalytics(config);
 };
 
 atsAnalyticsAdapter.callHandler = function (evtype, args) {
@@ -361,19 +360,26 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
       if (handlerRequest.length) {
         const wonEvent = {};
         if (handlerResponse.length) {
-          events = handlerRequest.filter(request => handlerResponse.filter(function (response) {
-            if (request.bid_id === response.bid_id) {
-              Object.assign(request, response);
-            }
-          }));
-          if (winningBids.length) {
-            events = events.filter(event => winningBids.filter(function (won) {
-              wonEvent.bid_id = won.requestId;
-              wonEvent.bid_won = true;
-              if (event.bid_id === wonEvent.bid_id) {
-                Object.assign(event, wonEvent);
+          events = [];
+          handlerRequest.forEach(request => {
+            handlerResponse.forEach(function (response) {
+              if (request.bid_id === response.bid_id) {
+                Object.assign(request, response);
               }
-            }))
+            });
+            events.push(request);
+          });
+          if (winningBids.length) {
+            events = events.map(event => {
+              winningBids.forEach(function (won) {
+                wonEvent.bid_id = won.requestId;
+                wonEvent.bid_won = true;
+                if (event.bid_id === wonEvent.bid_id) {
+                  Object.assign(event, wonEvent);
+                }
+              });
+              return event;
+            })
           }
         } else {
           events = handlerRequest;
