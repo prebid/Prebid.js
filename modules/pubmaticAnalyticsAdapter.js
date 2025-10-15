@@ -478,7 +478,7 @@ const eventHandlers = {
       }
       if (!cachedBid.status) {
         cachedBid.status = NO_BID;
-        if (bid.floorData) {
+        if (bid.floorData && isFn(bid.getFloor)) {
           const frvData = bid.getFloor();
           cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode].floorRuleValue = frvData?.floor;
         }
