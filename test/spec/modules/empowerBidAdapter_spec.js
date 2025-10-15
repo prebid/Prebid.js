@@ -644,7 +644,6 @@ describe("EmpowerAdapter", function () {
         const site = {
           ortb2: {
             site: {
-      //        domain: "empower.net",
               publisher: {
                 domain: "empower.net",
               },
