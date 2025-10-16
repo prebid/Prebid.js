@@ -182,7 +182,7 @@ function reportEvent(event, data, sampling = null) {
       event,
       data,
     };
-    ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true, contentType: 'application/json' });
+    ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true });
   }
 }
 
