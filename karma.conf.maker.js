@@ -171,6 +171,9 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
       output: 'minimal'
     },
 
+    hostname: '127.0.0.1',
+    listenAddress: '127.0.0.1',
+    
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
