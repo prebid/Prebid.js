@@ -4,3 +4,16 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    versioning-strategy: increase
+    allow:
+      - dependency-name: 'iab-adcom'
+      - dependency-name: 'iab-native'
+      - dependency-name: 'iab-openrtb'
+      - dependency-name: '@types/*'
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
