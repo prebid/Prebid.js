@@ -441,6 +441,36 @@ describe('sizeMappingV2', function () {
         expect(adUnits[0].mediaTypes).to.have.property('banner');
         expect(adUnits[1].mediaTypes).to.have.property('banner');
       });
+      it('should remove "fluid" size from mediaTypes.banner.sizes but keep other valid sizes', function () {
+        const adUnits = utils.deepClone(AD_UNITS);
+        // Add a fluid size along with a valid one
+        adUnits[0].mediaTypes.banner.sizes = [[300, 250], 'fluid'];
+
+        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+        const bannerSizes = validatedAdUnits[0].mediaTypes.banner.sizes;
+
+        // Expect "fluid" to be filtered out, but 300x250 should remain
+        expect(bannerSizes).to.deep.equal([[300, 250]]);
+      });
+
+      it('should keep mediaTypes.banner if it only had "fluid" size but skip prebid validation', function () {
+        const adUnits = utils.deepClone(AD_UNITS);
+        // Only fluid size
+        adUnits[0].mediaTypes.banner.sizes = ['fluid'];
+
+        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+        // The banner should still exist (since we skip deletion if only fluid)
+        expect(validatedAdUnits[0].mediaTypes).to.have.property('banner');
+
+        // But banner.sizes should be empty since fluid was removed
+        expect(validatedAdUnits[0].mediaTypes.banner.sizes).to.deep.equal([]);
+
+        sinon.assert.calledWith(
+          utils.logWarn,
+          sinon.match(`All sizes removed from mediaTypes.banner for ad unit`)
+        );
+      });
     });
 
     describe('video mediaTypes checks', function () {
