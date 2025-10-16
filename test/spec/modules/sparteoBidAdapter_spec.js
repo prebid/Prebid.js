@@ -79,8 +79,8 @@ const VALID_REQUEST_BANNER = {
       }
     }],
     'site': {
+      'domain': 'dev.sparteo.com',
       'publisher': {
-        'domain': 'dev.sparteo.com',
         'ext': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
@@ -124,8 +124,8 @@ const VALID_REQUEST_VIDEO = {
       }
     }],
     'site': {
+      'domain': 'dev.sparteo.com',
       'publisher': {
-        'domain': 'dev.sparteo.com',
         'ext': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
@@ -188,8 +188,8 @@ const VALID_REQUEST = {
       }
     }],
     'site': {
+      'domain': 'dev.sparteo.com',
       'publisher': {
-        'domain': 'dev.sparteo.com',
         'ext': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
@@ -204,7 +204,7 @@ const VALID_REQUEST = {
 
 const ORTB2_GLOBAL = {
   site: {
-    publisher: { domain: 'dev.sparteo.com' }
+    domain: 'dev.sparteo.com'
   }
 };
 
@@ -544,7 +544,7 @@ describe('SparteoAdapter', function () {
     });
   });
 
-  describe('replaceMacros via buildRequests (nullish-safe)', function () {
+  describe('replaceMacros via buildRequests', function () {
     const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=${DOMAIN}';
 
     it('replaces both macros when both values are defined', function () {
@@ -570,7 +570,9 @@ describe('SparteoAdapter', function () {
       );
     });
 
-    it('falls back to publisher.domain when site.domain is missing', function () {
+    it('uses site.page hostname when site.domain and site.domain and app.domain are missing', function () {
+      const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=${DOMAIN}';
+
       const bid = deepClone(VALID_BID_BANNER);
       bid.params.endpoint = ENDPOINT;
       bid.params.networkId = '1234567a-eb1b-1fae-1d23-e1fbaef234cf';
@@ -579,7 +581,7 @@ describe('SparteoAdapter', function () {
         bids: [bid],
         ortb2: {
           site: {
-            publisher: { domain: 'dev.sparteo.com' }
+            page: 'https://www.dev.sparteo.com:3000/p/some?x=1'
           }
         }
       };
@@ -616,8 +618,7 @@ describe('SparteoAdapter', function () {
         bids: [bid],
         ortb2: {
           site: {
-            // publisher.domain is null; site.domain also missing
-            publisher: { domain: null }
+            domain: null
           }
         }
       };
@@ -639,7 +640,7 @@ describe('SparteoAdapter', function () {
         bids: [bid],
         ortb2: {
           site: {
-            publisher: { domain: 'dev.sparteo.com' }
+            domain: 'dev.sparteo.com'
           }
         }
       };
@@ -661,7 +662,7 @@ describe('SparteoAdapter', function () {
         bids: [bid],
         ortb2: {
           site: {
-            publisher: { domain: 'dev.sparteo.com' }
+            domain: 'dev.sparteo.com'
           }
         }
       };
@@ -672,6 +673,63 @@ describe('SparteoAdapter', function () {
       expect(req.url).to.equal(
         'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=dev.sparteo.com'
       );
+    });
+  });
+
+  describe('domain normalization (strip www., port, path, trim)', function () {
+    const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=${DOMAIN}';
+
+    const CASES = [
+      {
+        label: 'strips leading "www." from site.domain',
+        site: { domain: 'www.dev.sparteo.com' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'trims whitespace and strips "www."',
+        site: { domain: '   www.dev.sparteo.com   ' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'preserves non-"www" prefixes like "www2."',
+        site: { domain: 'www2.dev.sparteo.com' },
+        expected: 'www2.dev.sparteo.com'
+      },
+      {
+        label: 'removes port from site.page',
+        site: { page: 'https://dev.sparteo.com:8080/path?q=1' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'removes "www." and path from site.page',
+        site: { page: 'http://www.dev.sparteo.com/p?q=1' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'removes port when it appears in site.domain',
+        site: { domain: 'dev.sparteo.com:8443' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'removes accidental path in site.domain',
+        site: { domain: 'dev.sparteo.com/some/path' },
+        expected: 'dev.sparteo.com'
+      }
+    ];
+
+    CASES.forEach(({ label, site, expected }) => {
+      it(label, function () {
+        const bid = deepClone(VALID_BID_BANNER);
+        bid.params.endpoint = ENDPOINT;
+        const bidderReq = { bids: [bid], ortb2: { site } };
+
+        const req = adapter.buildRequests([bid], bidderReq);
+        delete req.data.id;
+
+        expect(req.url).to.equal(
+          `https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=${expected}`
+        );
+      });
     });
   });
 });

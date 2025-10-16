@@ -107,7 +107,16 @@ function outstreamRender(bid) {
 
 function replaceMacros(payload, endpoint) {
   const networkId = payload?.site?.publisher?.ext?.params?.networkId;
-  const domain = payload?.site?.domain ?? payload?.site?.publisher?.domain;
+  let domain = payload?.site?.domain ?? payload?.app?.domain;
+  if (!domain && !payload?.app && payload?.site?.page) {
+    try {
+      domain = new URL(payload.site.page).hostname;
+    } catch (e) {}
+  }
+
+  if (domain) {
+    domain = domain.trim().split('/')[0].split(':')[0].replace(/^www\./, '');
+  }
 
   const macroMap = {
     NETWORK_ID: networkId,
