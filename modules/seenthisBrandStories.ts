@@ -83,6 +83,8 @@ export function applyAutoHeight(target: HTMLDivElement) {
 
 // listen to messages from iframes
 window.addEventListener("message", (event) => {
+  if (!["https://video.seenthis.se"].includes(event?.origin)) return;
+
   const data = event?.data;
   if (!data) return;
 
