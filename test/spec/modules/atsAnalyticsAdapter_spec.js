@@ -1,4 +1,4 @@
-import atsAnalyticsAdapter, {parseBrowser, analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
+import atsAnalyticsAdapter, {parseBrowser, analyticsUrl, bidRequestedHandler} from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
@@ -178,9 +178,12 @@ describe('ats analytics adapter', function () {
       // Step 6: Send bid won event
       events.emit(EVENTS.BID_WON, wonRequest);
 
-      sandbox.stub(getGlobal(), 'getAllWinningBids').callsFake((key) => {
-        return [wonRequest]
-      });
+      // Stub getAllWinningBids before auction end processing
+      const globalObj = getGlobal();
+      if (typeof globalObj.getAllWinningBids !== 'function') {
+        globalObj.getAllWinningBids = function() { return []; };
+      }
+      sandbox.stub(globalObj, 'getAllWinningBids').returns([wonRequest]);
 
       clock.tick(2000);
 
@@ -273,6 +276,209 @@ describe('ats analytics adapter', function () {
         options: {}
       });
       expect(utils.logError.called).to.equal(true);
+    })
+
+    describe('has_envelope logic for Prebid v10.0+ compatibility', function () {
+      beforeEach(function () {
+        sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+        sinon.stub(Math, 'random').returns(0.99);
+        storage.setCookie('_lr_env_src_ats', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
+
+        // Enable analytics for testing
+        atsAnalyticsAdapter.enableAnalytics({
+          options: { pid: '10433394' }
+        });
+      });
+
+      it('should return true when userIdAsEids contains liveramp.com source with valid uids', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com',
+              'uids': [{'id': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'}]
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(true);
+      });
+
+      it('should return false when userIdAsEids contains liveramp source but no uids', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com',
+              'uids': []
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids contains non-liveramp sources', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'id5-sync.com',
+              'uids': [{'id': 'some-other-id'}]
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids is empty array', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': []
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids is not present', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17'
+            // No userIdAsEids property
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids is not an array', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': 'not-an-array'
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return true for legacy userId.idl_env (backward compatibility)', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userId': {
+              'idl_env': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'
+            }
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(true);
+      });
+
+      it('should return false when userIdAsEids has liveramp source but uids is null', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com',
+              'uids': null
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids has liveramp source but no uids property', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com'
+              // No uids property
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should handle multiple userIdAsEids entries and find liveramp source', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [
+              {
+                'source': 'id5-sync.com',
+                'uids': [{'id': 'id5-value'}]
+              },
+              {
+                'source': 'liveramp.com',
+                'uids': [{'id': 'liveramp-value'}]
+              },
+              {
+                'source': 'criteo.com',
+                'uids': [{'id': 'criteo-value'}]
+              }
+            ]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(true);
+      });
     })
   })
 })
