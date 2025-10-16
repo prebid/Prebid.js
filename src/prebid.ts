@@ -166,6 +166,36 @@ export function syncOrtb2(adUnit, mediaType) {
 function validateBannerMediaType(adUnit: AdUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
+  // --- ✅ Safely remove "fluid" entries from banner.sizes
+  if (Array.isArray(banner?.sizes)) {
+    const originalCount = banner.sizes.length;
+    // explicitly widen type so TS knows it might include strings
+    const rawSizes = banner.sizes as unknown[];
+    const filteredSizes = rawSizes.filter((size): size is [number, number] => {
+      // handle string case like "fluid"
+      if (typeof size === 'string') {
+        return size.toLowerCase() !== 'fluid';
+      }
+      // handle array case (check it’s a valid numeric size)
+      if (Array.isArray(size) && size.length === 2) {
+        const [w, h] = size;
+        return typeof w === 'number' && typeof h === 'number';
+      }
+      // exclude anything else
+      return false;
+    });
+    if (filteredSizes.length < originalCount) {
+      logWarn(`Removed "fluid" size from mediaTypes.banner for ad unit ${adUnit.code}`, adUnit);
+    }
+    banner.sizes = filteredSizes;
+    if (filteredSizes.length === 0) {
+      logWarn(
+        `All sizes removed from mediaTypes.banner for ad unit ${adUnit.code} (only fluid found). Skipping banner validation.`,
+        adUnit
+      );
+      return validatedAdUnit;
+    }
+  }
   const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
   const format = adUnit.ortb2Imp?.banner?.format ?? banner?.format;
   let formatSizes;
@@ -174,14 +204,14 @@ function validateBannerMediaType(adUnit: AdUnit) {
     banner.format = format;
     try {
       formatSizes = format
-        .filter(({w, h, wratio, hratio}) => {
+        .filter(({ w, h, wratio, hratio }) => {
           if ((w ?? h) != null && (wratio ?? hratio) != null) {
             logWarn(`Ad unit banner.format specifies both w/h and wratio/hratio`, adUnit);
             return false;
           }
           return (w != null && h != null) || (wratio != null && hratio != null);
         })
-        .map(({w, h, wratio, hratio}) => [w ?? wratio, h ?? hratio]);
+        .map(({ w, h, wratio, hratio }) => [w ?? wratio, h ?? hratio]);
     } catch (e) {
       logError(`Invalid format definition on ad unit ${adUnit.code}`, format);
     }
@@ -197,14 +227,15 @@ function validateBannerMediaType(adUnit: AdUnit) {
   }
   if (sizes.length > 0) {
     banner.sizes = sizes;
-    // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.banner.sizes
     validatedAdUnit.sizes = sizes;
   } else {
-    logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
-    delete validatedAdUnit.mediaTypes.banner
+    logError(
+      'Detected a mediaTypes.banner object without a proper sizes field. Removing invalid mediaTypes.banner object from request.'
+    );
+    delete validatedAdUnit.mediaTypes.banner;
   }
   validateOrtbFields(validatedAdUnit, 'banner');
-  syncOrtb2(validatedAdUnit, 'banner')
+  syncOrtb2(validatedAdUnit, 'banner');
   return validatedAdUnit;
 }
 
