@@ -90,7 +90,7 @@ function setBrowsers(karmaConf, browserstack) {
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
       build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
-    if (process.env.TRAVIS) {
+    if (process.env.TRAVIS || process.env.GITHUB_ACTIONS) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
