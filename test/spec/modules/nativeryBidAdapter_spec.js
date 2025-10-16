@@ -285,7 +285,7 @@ const assertTrackEvent = (ajaxStub, event, data) => {
   expect(url).to.equal('https://hb.nativery.com/openrtb2/track-event');
   expect(callback).to.be.undefined;
   expect(body).to.be.a('string');
-  expect(options).to.deep.equal({ method: 'POST', withCredentials: true, keepalive: true });
+  expect(options).to.deep.equal({ method: 'POST', withCredentials: true, keepalive: true, contentType: 'application/json' });
 
   const payload = JSON.parse(body);
   expect(payload.event).to.equal(event);
