@@ -89,12 +89,28 @@ describe('craftAdapter', function () {
       bidderRequestId: '4a859978b5d4bd',
       auctionId: '8720f980-4639-4150-923a-e96da2f1de36',
       transactionId: 'e0c52da2-c008-491c-a910-c6765d948700',
+      ortb2: {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [],
+            },
+          },
+        },
+      },
+      userIdAsEids: [
+        {source: 'foobar1.com', uids: [{id: 'xxxxxxx', atype: 1}]},
+        {source: 'foobar2.com', uids: [{id: 'yyyyyyy', atype: 1}]},
+      ],
     }];
     const bidderRequest = {
       refererInfo: {
         topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
       }
     };
+
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
@@ -110,6 +126,17 @@ describe('craftAdapter', function () {
       }]);
       expect(data.referrer_detection).to.deep.equals({
         rd_ref: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
+      });
+      expect(data.schain).to.deep.equals({
+        complete: 1,
+        nodes: [],
+        ver: '1.0',
+      });
+      expect(data.user).to.deep.equals({
+        eids: [
+          {source: 'foobar1.com', uids: [{id: 'xxxxxxx', atype: 1}]},
+          {source: 'foobar2.com', uids: [{id: 'yyyyyyy', atype: 1}]},
+        ]
       });
     });
   });
