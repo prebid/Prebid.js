@@ -166,22 +166,22 @@ export function syncOrtb2(adUnit, mediaType) {
 function validateBannerMediaType(adUnit: AdUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
-  // --- ✅ Safely remove "fluid" entries from banner.sizes
+  let isFluid = false;
   if (Array.isArray(banner?.sizes)) {
     const originalCount = banner.sizes.length;
-    // explicitly widen type so TS knows it might include strings
     const rawSizes = banner.sizes as unknown[];
     const filteredSizes = rawSizes.filter((size): size is [number, number] => {
-      // handle string case like "fluid"
       if (typeof size === 'string') {
-        return size.toLowerCase() !== 'fluid';
+        if (size.toLowerCase() === 'fluid') {
+          isFluid = true;
+        } else {
+          return size.toLowerCase() !== 'fluid';
+        }
       }
-      // handle array case (check it’s a valid numeric size)
       if (Array.isArray(size) && size.length === 2) {
         const [w, h] = size;
         return typeof w === 'number' && typeof h === 'number';
       }
-      // exclude anything else
       return false;
     });
     if (filteredSizes.length < originalCount) {
@@ -189,11 +189,12 @@ function validateBannerMediaType(adUnit: AdUnit) {
     }
     banner.sizes = filteredSizes;
     if (filteredSizes.length === 0) {
-      logWarn(
-        `All sizes removed from mediaTypes.banner for ad unit ${adUnit.code} (only fluid found). Skipping banner validation.`,
-        adUnit
-      );
-      return validatedAdUnit;
+      if (isFluid) {
+        logWarn(`All sizes removed from mediaTypes.banner for ad unit ${adUnit.code} (only fluid found). Skipping banner validation.`, adUnit);
+      } else {
+        logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
+        delete validatedAdUnit.mediaTypes.banner
+      }
     }
   }
   const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
