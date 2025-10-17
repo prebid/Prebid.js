@@ -349,13 +349,13 @@ export const spec = {
 
     if (bidCurrency) {
       if (ALLOWED_CURRENCIES.indexOf(bidCurrency) === -1) {
-        utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported currencies are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
         return false;
       }
     } else {
       const adServerCurrency = config.getConfig('currency.adServerCurrency');
       if (typeof adServerCurrency === 'string' && ALLOWED_CURRENCIES.indexOf(adServerCurrency) === -1) {
-        utils.logError(`[${BIDDER_CODE}] adServerCurrency "${adServerCurrency}" is not supported. Supported currencies are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        utils.logError(`[${BIDDER_CODE}] adServerCurrency "${adServerCurrency}" is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
         return false;
       }
     }
