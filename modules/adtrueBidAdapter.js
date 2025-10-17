@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -168,7 +169,7 @@ function _createOrtbTemplate(conf) {
       ua: navigator.userAgent,
       os: platform,
       js: 1,
-      dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: _getLanguage(),
@@ -630,6 +631,7 @@ export const spec = {
         });
         return accum.concat(cookieSyncObjects);
       }
+      return accum;
     }, []);
   }
 };

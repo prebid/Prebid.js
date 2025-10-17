@@ -91,9 +91,12 @@ export const spec = {
       // Add GDPR consent if available
       if (bidderRequest && bidderRequest.gdprConsent) {
         oneRequest.gdprConsent = {
-          gdprApplies: bidderRequest.gdprConsent.gdprApplies,
           consentString: bidderRequest.gdprConsent.consentString || ''
         };
+
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          oneRequest.gdprConsent.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+        }
 
         if (bidderRequest.gdprConsent.addtlConsent) {
           oneRequest.gdprConsent.addtlConsent = bidderRequest.gdprConsent.addtlConsent;
@@ -121,7 +124,7 @@ export const spec = {
     });
 
     // Get chunk size from adapter configuration
-    const adapterSettings = config.getConfig(bidderRequest.bidderCode);
+    const adapterSettings = config.getConfig(BIDDER_CODE) || {};
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
 
     // Split bid requests into chunks
