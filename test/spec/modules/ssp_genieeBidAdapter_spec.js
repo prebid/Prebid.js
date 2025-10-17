@@ -21,7 +21,6 @@ describe('ssp_genieeBidAdapter', function () {
     bidderRequestId: 'bidderRequestId12345',
     auctionId: 'auctionId12345',
   };
-  let sandbox;
 
   function getGeparamsDefinedBid(bid, params) {
     const newBid = { ...bid };
@@ -73,15 +72,10 @@ describe('ssp_genieeBidAdapter', function () {
   }
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
     document.documentElement.innerHTML = '';
     const adTagParent = document.createElement('div');
     adTagParent.id = AD_UNIT_CODE;
     document.body.appendChild(adTagParent);
-  });
-
-  afterEach(function () {
-    sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -153,14 +147,14 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should set the title query to the encoded page title', function () {
         const testTitle = "Test Page Title with 'special' & \"chars\"";
-        sandbox.stub(document, 'title').value(testTitle);
+        document.title = testTitle;
         const request = spec.buildRequests([BANNER_BID]);
         const expectedEncodedTitle = encodeURIComponent(testTitle).replace(/'/g, '%27');
         expect(request[0].data.title).to.deep.equal(expectedEncodedTitle);
       });
 
       it('should not set the title query when the page title is empty', function () {
-        sandbox.stub(document, 'title').value('');
+        document.title = '';
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('title');
       });
@@ -421,17 +415,37 @@ describe('ssp_genieeBidAdapter', function () {
         expect(String(request[0].data.gpid)).to.have.string(gpid);
       });
 
-      it('should include gpid when ortb2Imp.ext.gpid exists', function () {
-        const gpid = '/123/abc';
+      it('should include gpid when ortb2Imp.ext.data.pbadslot exists', function () {
+        const pbadslot = '/123/abc';
         const bidWithPbadslot = {
           ...BANNER_BID,
           ortb2Imp: {
             ext: {
-              gpid
+              data: {
+                pbadslot: pbadslot
+              }
             }
           }
         };
         const request = spec.buildRequests([bidWithPbadslot]);
+        expect(String(request[0].data.gpid)).to.have.string(pbadslot);
+      });
+
+      it('should prioritize ortb2Imp.ext.gpid over ortb2Imp.ext.data.pbadslot', function () {
+        const gpid = '/123/abc';
+        const pbadslot = '/456/def';
+        const bidWithBoth = {
+          ...BANNER_BID,
+          ortb2Imp: {
+            ext: {
+              gpid: gpid,
+              data: {
+                pbadslot: pbadslot
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests([bidWithBoth]);
         expect(String(request[0].data.gpid)).to.have.string(gpid);
       });
 
@@ -554,7 +568,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
       }]);
     });
 
@@ -572,7 +586,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
       }]);
     });
 
@@ -629,7 +643,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
       }, {
         type: 'image',
         url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=appier&format=gif&vid=1',
@@ -649,7 +663,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
       }]);
     });
 
