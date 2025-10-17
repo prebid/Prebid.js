@@ -1,11 +1,11 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import { deepClone, mergeDeep } from 'src/utils';
-import {spec as adapter} from 'modules/sparteoBidAdapter';
+import { spec as adapter } from 'modules/sparteoBidAdapter';
 
 const CURRENCY = 'EUR';
 const TTL = 60;
 const HTTP_METHOD = 'POST';
-const REQUEST_URL = 'https://bid.sparteo.com/auction';
+const REQUEST_URL = 'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=dev.sparteo.com';
 const USER_SYNC_URL_IFRAME = 'https://sync.sparteo.com/sync/iframe.html?from=prebidjs';
 
 const VALID_BID_BANNER = {
@@ -79,6 +79,7 @@ const VALID_REQUEST_BANNER = {
       }
     }],
     'site': {
+      'domain': 'dev.sparteo.com',
       'publisher': {
         'ext': {
           'params': {
@@ -123,6 +124,7 @@ const VALID_REQUEST_VIDEO = {
       }
     }],
     'site': {
+      'domain': 'dev.sparteo.com',
       'publisher': {
         'ext': {
           'params': {
@@ -186,6 +188,7 @@ const VALID_REQUEST = {
       }
     }],
     'site': {
+      'domain': 'dev.sparteo.com',
       'publisher': {
         'ext': {
           'params': {
@@ -199,17 +202,26 @@ const VALID_REQUEST = {
   }
 };
 
+const ORTB2_GLOBAL = {
+  site: {
+    domain: 'dev.sparteo.com'
+  }
+};
+
 const BIDDER_REQUEST = {
-  bids: [VALID_BID_BANNER, VALID_BID_VIDEO]
-}
+  bids: [VALID_BID_BANNER, VALID_BID_VIDEO],
+  ortb2: ORTB2_GLOBAL
+};
 
 const BIDDER_REQUEST_BANNER = {
-  bids: [VALID_BID_BANNER]
-}
+  bids: [VALID_BID_BANNER],
+  ortb2: ORTB2_GLOBAL
+};
 
 const BIDDER_REQUEST_VIDEO = {
-  bids: [VALID_BID_VIDEO]
-}
+  bids: [VALID_BID_VIDEO],
+  ortb2: ORTB2_GLOBAL
+};
 
 describe('SparteoAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -251,7 +263,7 @@ describe('SparteoAdapter', function () {
   describe('buildRequests', function () {
     describe('Check method return', function () {
       if (FEATURES.VIDEO) {
-        it('should return the right formatted requests', function() {
+        it('should return the right formatted requests', function () {
           const request = adapter.buildRequests([VALID_BID_BANNER, VALID_BID_VIDEO], BIDDER_REQUEST);
           delete request.data.id;
 
@@ -259,7 +271,7 @@ describe('SparteoAdapter', function () {
         });
       }
 
-      it('should return the right formatted banner requests', function() {
+      it('should return the right formatted banner requests', function () {
         const request = adapter.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
         delete request.data.id;
 
@@ -267,7 +279,7 @@ describe('SparteoAdapter', function () {
       });
 
       if (FEATURES.VIDEO) {
-        it('should return the right formatted video requests', function() {
+        it('should return the right formatted video requests', function () {
           const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
           delete request.data.id;
 
@@ -275,7 +287,7 @@ describe('SparteoAdapter', function () {
         });
       }
 
-      it('should return the right formatted request with endpoint test', function() {
+      it('should return the right formatted request with endpoint test', function () {
         const endpoint = 'https://bid-test.sparteo.com/auction';
 
         const bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
@@ -295,9 +307,9 @@ describe('SparteoAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     describe('Check method return', function () {
-      it('should return the right formatted response', function() {
+      it('should return the right formatted response', function () {
         const response = {
           body: {
             'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
@@ -458,9 +470,9 @@ describe('SparteoAdapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     describe('Check methods succeed', function () {
-      it('should not throw error', function() {
+      it('should not throw error', function () {
         const bids = [
           {
             requestId: '1a2b3c4d',
@@ -500,16 +512,16 @@ describe('SparteoAdapter', function () {
           }
         ];
 
-        bids.forEach(function(bid) {
+        bids.forEach(function (bid) {
           expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw();
         });
       });
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     describe('Check methods succeed', function () {
-      it('should return the sync url', function() {
+      it('should return the sync url', function () {
         const syncOptions = {
           'iframeEnabled': true,
           'pixelEnabled': false
@@ -528,6 +540,195 @@ describe('SparteoAdapter', function () {
         }];
 
         expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent)).to.deep.equal(syncUrls);
+      });
+    });
+  });
+
+  describe('replaceMacros via buildRequests', function () {
+    const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=${DOMAIN}';
+
+    it('replaces both macros when both values are defined', function () {
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+      bid.params.networkId = '1234567a-eb1b-1fae-1d23-e1fbaef234cf';
+
+      const bidderReq = {
+        bids: [bid],
+        ortb2: {
+          site: {
+            domain: 'site.sparteo.com',
+            publisher: { domain: 'dev.sparteo.com' }
+          }
+        }
+      };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=site.sparteo.com'
+      );
+    });
+
+    it('uses site.page hostname when site.domain and site.domain and app.domain are missing', function () {
+      const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=${DOMAIN}';
+
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+      bid.params.networkId = '1234567a-eb1b-1fae-1d23-e1fbaef234cf';
+
+      const bidderReq = {
+        bids: [bid],
+        ortb2: {
+          site: {
+            page: 'https://www.dev.sparteo.com:3000/p/some?x=1'
+          }
+        }
+      };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=dev.sparteo.com'
+      );
+    });
+
+    it('leaves ${DOMAIN} intact when domain is undefined (no domains)', function () {
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+      bid.params.networkId = '1234567a-eb1b-1fae-1d23-e1fbaef234cf';
+
+      const bidderReq = { bids: [bid], ortb2: {} };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=${DOMAIN}'
+      );
+    });
+
+    it('leaves ${DOMAIN} intact when domain is null', function () {
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+      bid.params.networkId = '1234567a-eb1b-1fae-1d23-e1fbaef234cf';
+
+      const bidderReq = {
+        bids: [bid],
+        ortb2: {
+          site: {
+            domain: null
+          }
+        }
+      };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=${DOMAIN}'
+      );
+    });
+
+    it('leaves ${NETWORK_ID} intact when networkId is undefined', function () {
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+      delete bid.params.networkId;
+
+      const bidderReq = {
+        bids: [bid],
+        ortb2: {
+          site: {
+            domain: 'dev.sparteo.com'
+          }
+        }
+      };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=dev.sparteo.com'
+      );
+    });
+
+    it('leaves ${NETWORK_ID} intact when networkId is null', function () {
+      const bid = deepClone(VALID_BID_BANNER);
+      bid.params.endpoint = ENDPOINT;
+      bid.params.networkId = null;
+
+      const bidderReq = {
+        bids: [bid],
+        ortb2: {
+          site: {
+            domain: 'dev.sparteo.com'
+          }
+        }
+      };
+
+      const req = adapter.buildRequests([bid], bidderReq);
+      delete req.data.id;
+
+      expect(req.url).to.equal(
+        'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=dev.sparteo.com'
+      );
+    });
+  });
+
+  describe('domain normalization (strip www., port, path, trim)', function () {
+    const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}&domain=${DOMAIN}';
+
+    const CASES = [
+      {
+        label: 'strips leading "www." from site.domain',
+        site: { domain: 'www.dev.sparteo.com' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'trims whitespace and strips "www."',
+        site: { domain: '   www.dev.sparteo.com   ' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'preserves non-"www" prefixes like "www2."',
+        site: { domain: 'www2.dev.sparteo.com' },
+        expected: 'www2.dev.sparteo.com'
+      },
+      {
+        label: 'removes port from site.page',
+        site: { page: 'https://dev.sparteo.com:8080/path?q=1' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'removes "www." and path from site.page',
+        site: { page: 'http://www.dev.sparteo.com/p?q=1' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'removes port when it appears in site.domain',
+        site: { domain: 'dev.sparteo.com:8443' },
+        expected: 'dev.sparteo.com'
+      },
+      {
+        label: 'removes accidental path in site.domain',
+        site: { domain: 'dev.sparteo.com/some/path' },
+        expected: 'dev.sparteo.com'
+      }
+    ];
+
+    CASES.forEach(({ label, site, expected }) => {
+      it(label, function () {
+        const bid = deepClone(VALID_BID_BANNER);
+        bid.params.endpoint = ENDPOINT;
+        const bidderReq = { bids: [bid], ortb2: { site } };
+
+        const req = adapter.buildRequests([bid], bidderReq);
+        delete req.data.id;
+
+        expect(req.url).to.equal(
+          `https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&domain=${expected}`
+        );
       });
     });
   });
