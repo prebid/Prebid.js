@@ -47,13 +47,19 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 /**
  * @function
  * @param {Object} obj
+ * @param {Object} storageConfig
  */
-function storeObject(obj) {
+function storeObject(obj, storageConfig = {}) {
   const expires = Date.now() + STORAGE_DURATION;
-  if (storage.cookiesAreEnabled()) {
+  const storageType = storageConfig.type;
+
+  const useCookie = !storageType || storageType.includes('cookie');
+  const useLocalStorage = !storageType || storageType.includes('html5');
+
+  if (useCookie && storage.cookiesAreEnabled()) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
   }
-  if (storage.localStorageIsEnabled()) {
+  if (useLocalStorage && storage.localStorageIsEnabled()) {
     storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
   }
 }
@@ -110,8 +116,11 @@ function getIdFromLocalStorage() {
   return null;
 }
 
-function syncLocalStorageToCookie() {
-  if (!storage.cookiesAreEnabled()) {
+function syncLocalStorageToCookie(storageConfig = {}) {
+  const storageType = storageConfig.type;
+  const useCookie = !storageType || storageType.includes('cookie');
+
+  if (!useCookie || !storage.cookiesAreEnabled()) {
     return;
   }
   const value = getIdFromLocalStorage();
@@ -129,12 +138,12 @@ function isStale(storedIdData) {
   return false;
 }
 
-function getStoredId() {
+function getStoredId(storageConfig = {}) {
   let storedId = getIdFromCookie();
   if (!storedId) {
     storedId = getIdFromLocalStorage();
     if (storedId && !isStale(storedId)) {
-      syncLocalStorageToCookie();
+      syncLocalStorageToCookie(storageConfig);
     }
   }
   return storedId;
@@ -191,13 +200,14 @@ export const connectIdSubmodule = {
       return;
     }
     const params = config.params || {};
+    const storageConfig = config.storage || {};
     if (!params ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
       logError(`${MODULE_NAME} module: configuration requires the 'pixelId'.`);
       return;
     }
 
-    const storedId = getStoredId();
+    const storedId = getStoredId(storageConfig);
 
     let shouldResync = isStale(storedId);
 
@@ -213,7 +223,7 @@ export const connectIdSubmodule = {
       }
       if (!shouldResync) {
         storedId.lastUsed = Date.now();
-        storeObject(storedId);
+        storeObject(storedId, storageConfig);
         return {id: storedId};
       }
     }
@@ -274,7 +284,7 @@ export const connectIdSubmodule = {
                   }
                   responseObj.ttl = validTTLMiliseconds;
                 }
-                storeObject(responseObj);
+                storeObject(responseObj, storageConfig);
               } else {
                 logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
               }
