@@ -5,6 +5,7 @@ import { logInfo, logError } from '../src/utils.js';
 
 let ENDPOINT = 'https://prebid-api.highr.ai/analytics';
 const auctions = {};
+const adapterConfig = {};
 
 const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analyticsType: 'endpoint' }),
   {
@@ -125,15 +126,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
             failureMessage: null,
           }
 
-          try {
-            fetch(ENDPOINT, {
-              method: 'POST',
-              body: JSON.stringify(payload),
-              headers: { 'Content-Type': 'application/json' }
-            });
-          } catch (e) {
-            logError('[DatawrkzAnalytics] Failed to send AD_RENDER_SUCCEEDED event', e, payload);
-          }
+          this.sendToEndPoint(payload)
 
           break;
         }
@@ -157,15 +150,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
             failureMessage: message
           }
 
-          try {
-            fetch(ENDPOINT, {
-              method: 'POST',
-              body: JSON.stringify(payload),
-              headers: { 'Content-Type': 'application/json' }
-            });
-          } catch (e) {
-            logError('[DatawrkzAnalytics] Failed to send AD_RENDER_FAILED event', e, payload);
-          }
+          this.sendToEndPoint(payload)
 
           break;
         }
@@ -189,15 +174,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
               adunits: adunitsArray
             };
 
-            try {
-              fetch(ENDPOINT, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
-              });
-            } catch (e) {
-              logError('[DatawrkzAnalytics] Sending failed', e, payload);
-            }
+            this.sendToEndPoint(payload)
 
             delete auctions[auctionId];
           }, 2000); // Wait 2 seconds for BID_WON to happen
@@ -208,6 +185,25 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
         default:
           break;
       }
+    },
+    sendToEndPoint(payload) {
+      if (!adapterConfig.publisherId || !adapterConfig.apiKey) {
+        logError('[DatawrkzAnalytics] Missing mandatory config: publisherId or apiKey. Skipping event.');
+        return;
+      }
+
+      payload.publisherId = adapterConfig.publisherId
+      payload.apiKey = adapterConfig.apiKey
+
+      try {
+        fetch(ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (e) {
+        logError('[DatawrkzAnalytics] Failed to send event', e, payload);
+      }
     }
   }
 );
@@ -215,6 +211,7 @@ const datawrkzAnalyticsAdapter = Object.assign(adapter({ url: ENDPOINT, analytic
 datawrkzAnalyticsAdapter.originEnableAnalytics = datawrkzAnalyticsAdapter.enableAnalytics;
 
 datawrkzAnalyticsAdapter.enableAnalytics = function (config) {
+  Object.assign(adapterConfig, config?.options || {});
   datawrkzAnalyticsAdapter.originEnableAnalytics(config);
   logInfo('[DatawrkzAnalytics] Enabled with config:', config);
 };
