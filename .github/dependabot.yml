@@ -16,7 +16,7 @@ updates:
       - dependency-name: '@types/*'
       - dependency-name: '@eslint/compat'
       - dependency-name: 'eslint'
-      - dependency-name: 'babel/*'
+      - dependency-name: '@babel/*'
       - dependency-name: 'webpack'
     ignore:
       - dependency-name: "*"
