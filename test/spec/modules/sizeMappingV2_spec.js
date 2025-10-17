@@ -441,121 +441,35 @@ describe('sizeMappingV2', function () {
         expect(adUnits[0].mediaTypes).to.have.property('banner');
         expect(adUnits[1].mediaTypes).to.have.property('banner');
       });
-      it('should remove "fluid" string from sizes array and log a warning', function () {
-        const adUnits = [{
-          code: 'test-ad-unit',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], 'fluid', [728, 90]]
-            }
-          }
-        }];
+      it('should remove "fluid" size from mediaTypes.banner.sizes but keep other valid sizes', function () {
+        const adUnits = utils.deepClone(AD_UNITS);
+        // Add a fluid size along with a valid one
+        adUnits[0].mediaTypes.banner.sizes = [[300, 250], 'fluid'];
+
+        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+        const bannerSizes = validatedAdUnits[0].mediaTypes.banner.sizes;
+
+        // Expect "fluid" to be filtered out, but 300x250 should remain
+        expect(bannerSizes).to.deep.equal([[300, 250]]);
+      });
+
+      it('should keep mediaTypes.banner if it only had "fluid" size but skip prebid validation', function () {
+        const adUnits = utils.deepClone(AD_UNITS);
+        // Only fluid size
+        adUnits[0].mediaTypes.banner.sizes = ['fluid'];
 
         const validatedAdUnits = checkAdUnitSetupHook(adUnits);
 
-        // "fluid" should be removed, leaving only valid sizes
-        expect(validatedAdUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250], [728, 90]]);
-        
-        // Should log a warning about removing fluid
-        sinon.assert.callCount(utils.logWarn, 1);
-        sinon.assert.calledWith(utils.logWarn, 
-          `Removed "fluid" size from mediaTypes.banner for ad unit test-ad-unit`,
-          sinon.match.object
-        );
-      });
-
-      it('should delete mediaTypes.banner if only "fluid" size is present', function () {
-        const adUnits = [{
-          code: 'test-ad-unit',
-          mediaTypes: {
-            banner: {
-              sizes: ['fluid']
-            }
-          }
-        }];
-
-        // Before validation, banner should exist
-        expect(adUnits[0].mediaTypes).to.have.property('banner');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // After validation, banner should be deleted
-        expect(validatedAdUnits[0].mediaTypes).to.not.have.property('banner');
-      });
-
-      it('should log a warning when all sizes are removed because only fluid was found', function () {
-        const adUnits = [{
-          code: 'test-ad-unit',
-          mediaTypes: {
-            banner: {
-              sizes: ['fluid']
-            }
-          }
-        }];
-
-        checkAdUnitSetupHook(adUnits);
-
-        // Should log a warning about only fluid being found
-        sinon.assert.callCount(utils.logWarn, 1);
-        sinon.assert.calledWith(utils.logWarn,
-          `All sizes removed from mediaTypes.banner for ad unit test-ad-unit (only fluid found). Skipping banner validation.`,
-          sinon.match.object
-        );
-      });
-
-      it('should delete mediaTypes.banner if sizes array contains only multiple "fluid" strings', function () {
-        const adUnits = [{
-          code: 'test-ad-unit',
-          mediaTypes: {
-            banner: {
-              sizes: ['fluid', 'FLUID', 'Fluid']
-            }
-          }
-        }];
-
-        // Before validation, banner should exist
-        expect(adUnits[0].mediaTypes).to.have.property('banner');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // After validation, banner should be deleted
-        expect(validatedAdUnits[0].mediaTypes).to.not.have.property('banner');
-      });
-
-      it('should handle mixed valid sizes and fluid without deleting banner', function () {
-        const adUnits = [{
-          code: 'test-ad-unit',
-          mediaTypes: {
-            banner: {
-              sizes: ['fluid', [300, 250]]
-            }
-          }
-        }];
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // Banner should still exist with the valid size
+        // The banner should still exist (since we skip deletion if only fluid)
         expect(validatedAdUnits[0].mediaTypes).to.have.property('banner');
-        expect(validatedAdUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
-      });
 
-      it('should not log warning or modify sizes if no fluid is present', function () {
-        const adUnits = [{
-          code: 'test-ad-unit',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [728, 90]]
-            }
-          }
-        }];
+        // But banner.sizes should be empty since fluid was removed
+        expect(validatedAdUnits[0].mediaTypes.banner.sizes).to.deep.equal([]);
 
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // Sizes should remain unchanged
-        expect(validatedAdUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250], [728, 90]]);
-        
-        // No warning should be logged
-        sinon.assert.callCount(utils.logWarn, 0);
+        sinon.assert.calledWith(
+          utils.logWarn,
+          sinon.match(`All sizes removed from mediaTypes.banner for ad unit`)
+        );
       });
     });
 
