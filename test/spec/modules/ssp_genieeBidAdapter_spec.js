@@ -84,7 +84,7 @@ describe('ssp_genieeBidAdapter', function () {
     sandbox.restore();
   });
 
-  describe('isBidRequestValid', function () {describe('isBidRequestValid', function () {
+  describe('isBidRequestValid', function () {
     it('should return false when params.zoneId does not exist', function () {
       expect(spec.isBidRequestValid({ ...BANNER_BID, params: {} })).to.be.false;
     });
