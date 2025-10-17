@@ -82,6 +82,7 @@ describe('ssp_genieeBidAdapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+    config.resetConfig();
   });
 
   describe('isBidRequestValid', function () {
