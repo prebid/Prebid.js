@@ -1168,6 +1168,14 @@ addApiMethod('setBidderConfig', config.setBidderConfig);
 
 pbjsInstance.que.push(() => listenMessagesFromCreative());
 
+let queSetupComplete;
+
+export function resetQueSetup() {
+  queSetupComplete = defer<void>();
+}
+
+resetQueSetup();
+
 /**
  * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
  * before or after their script executes. For example, given the code:
@@ -1189,15 +1197,17 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  * @alias module:pbjs.que.push
  */
 function quePush(command) {
-  if (typeof command === 'function') {
-    try {
-      command.call();
-    } catch (e) {
-      logError('Error processing command :', e.message, e.stack);
+  queSetupComplete.promise.then(() => {
+    if (typeof command === 'function') {
+      try {
+        command.call();
+      } catch (e) {
+        logError('Error processing command :', e.message, e.stack);
+      }
+    } else {
+      logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
     }
-  } else {
-    logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
-  }
+  })
 }
 
 async function _processQueue(queue) {
@@ -1223,8 +1233,12 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, a
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
-  await _processQueue(pbjsInstance.que);
-  await _processQueue(pbjsInstance.cmd);
+  try {
+    await _processQueue(pbjsInstance.que);
+    await _processQueue(pbjsInstance.cmd);
+  } finally {
+    queSetupComplete.resolve();
+  }
 })
 addApiMethod('processQueue', processQueue, false);
 
