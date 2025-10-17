@@ -3,17 +3,21 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     versioning-strategy: increase
     allow:
       - dependency-name: 'iab-adcom'
       - dependency-name: 'iab-native'
       - dependency-name: 'iab-openrtb'
       - dependency-name: '@types/*'
+      - dependency-name: '@eslint/compat'
+      - dependency-name: 'eslint'
+      - dependency-name: 'babel/*'
+      - dependency-name: 'webpack'
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
