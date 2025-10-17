@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("navigator") and
   api = prop.getAPropertyRead("appCodeName")
-select api, "appCodeName is an indicator of fingerprinting, weighed 127.81 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "appCodeName is an indicator of fingerprinting, weighed 145.05 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
