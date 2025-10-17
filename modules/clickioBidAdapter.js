@@ -60,15 +60,7 @@ export const spec = {
     return [
       {
         type: 'iframe',
-        url: `https://onetag-sys.com/usync/?pubId=7685cd60ce8d4f0&${queryParams.join('&')}`
-      },
-      {
-        type: 'iframe',
-        url: `https://ssbsync.smartadserver.com/api/sync?callerId=255&${queryParams.join('&')}`
-      },
-      {
-        type: 'iframe',
-        url: `https://eus.rubiconproject.com/usync.html?p=123&endpoint=eu${queryParams.join('&')}`
+        url: `https://o.clickiocdn.com/cookie_sync_html?${queryParams.join('&')}`
       }
     ];
   }
