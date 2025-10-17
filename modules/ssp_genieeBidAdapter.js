@@ -1,11 +1,11 @@
-import * as utils from '../src/utils.js';
-import { isPlainObject } from '../src/utils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
-import { highEntropySUAAccessor } from '../src/fpd/sua.js';
-import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
+import { isPlainObject } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -341,12 +341,25 @@ export const spec = {
    * @return boolean True if this is a valid bid request, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
-    if (!bidRequest.params.zoneId) return false;
-    const currencyType = config.getConfig('currency.adServerCurrency');
-    if (typeof currencyType === 'string' && ALLOWED_CURRENCIES.indexOf(currencyType) === -1) {
-      utils.logError('Invalid currency type, we support only JPY and USD!');
+    if (!bidRequest.params.zoneId) {
       return false;
     }
+
+    const bidCurrency = bidRequest.params.currency;
+
+    if (bidCurrency) {
+      if (ALLOWED_CURRENCIES.indexOf(bidCurrency) === -1) {
+        utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported currencies are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        return false;
+      }
+    } else {
+      const adServerCurrency = config.getConfig('currency.adServerCurrency');
+      if (typeof adServerCurrency === 'string' && ALLOWED_CURRENCIES.indexOf(adServerCurrency) === -1) {
+        utils.logError(`[${BIDDER_CODE}] adServerCurrency "${adServerCurrency}" is not supported. Supported currencies are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        return false;
+      }
+    }
+
     return true;
   },
   /**
