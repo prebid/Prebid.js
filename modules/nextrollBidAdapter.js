@@ -337,11 +337,7 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return ((Object.keys(osTable)) || []).find(os => {
-    if (userAgent.match(osTable[os])) {
-      return os;
-    }
-  }) || 'etc';
+  return ((Object.keys(osTable)) || []).find(os => userAgent.match(osTable[os])) || 'etc';
 }
 
 registerBidder(spec);

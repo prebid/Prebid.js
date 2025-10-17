@@ -2,7 +2,8 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
+import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
@@ -53,7 +54,7 @@ const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://yandex.ru/ads/prebid';
 const EVENT_TRACKER_URL = 'https://yandex.ru/ads/trace';
 // We send data in 1% of cases
-const DEFAULT_SAMPLING_RATE = 0.1;
+const DEFAULT_SAMPLING_RATE = 0.01;
 const EVENT_LOG_RANDOM_NUMBER = Math.random();
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
@@ -69,7 +70,7 @@ const ORTB_MTYPES = {
 };
 
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.7.0';
+const ADAPTER_VERSION = '2.8.0';
 
 const TRACKER_METHODS = {
   img: 1,
@@ -177,6 +178,14 @@ export const spec = {
         queryParams['tcf-consent'] = consentString;
       }
 
+      const adUnitElement = document.getElementById(bidRequest.params.pubcontainerid || bidRequest.adUnitCode);
+      const windowContext = getContext(adUnitElement);
+      const isIframe = inIframe();
+      const coords = isIframe ? getFramePosition() : {
+        x: adUnitElement && getBoundingClientRect(adUnitElement).x,
+        y: adUnitElement && getBoundingClientRect(adUnitElement).y,
+      };
+
       const imp = {
         id: impId,
         banner: mapBanner(bidRequest),
@@ -184,6 +193,10 @@ export const spec = {
         video: mapVideo(bidRequest),
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$',
+        ext: {
+          isvisible: isVisible(adUnitElement),
+          coords,
+        }
       };
 
       const bidfloor = getBidfloor(bidRequest);
@@ -223,7 +236,15 @@ export const spec = {
         deepSetValue(data, 'user.ext.eids', eids);
       }
 
+      deepSetValue(data, 'ext.isiframe', isIframe);
+
+      if (windowContext) {
+        deepSetValue(data, 'device.ext.scroll.top', windowContext.scrollY);
+        deepSetValue(data, 'device.ext.scroll.left', windowContext.scrollX);
+      }
+
       const queryParamsString = formatQS(queryParams);
+
       const request = {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
@@ -617,6 +638,126 @@ function eventLog(name, resp) {
 
     ajax(EVENT_TRACKER_URL, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
   }
+}
+
+/**
+ * Determines the appropriate window context for a given DOM element by checking
+ * its presence in the current window's DOM or the top-level window's DOM.
+ *
+ * This is useful for cross-window/frame DOM interactions where security restrictions
+ * might apply (e.g., same-origin policy). The function safely handles cases where
+ * cross-window access might throw errors.
+ *
+ * @param {Element|null|undefined} elem - The DOM element to check. Can be falsy.
+ * @returns {Window|undefined} Returns the appropriate window object where the element
+ * belongs (current window or top window). Returns undefined if the element is not found
+ * in either context or if access is denied due to cross-origin restrictions.
+ */
+function getContext(elem) {
+  try {
+    // Check if the element exists and is in the current window's DOM
+    if (elem) {
+      if (window.document.body.contains(elem)) {
+        return window; // Element is in current window
+      } else if (window.top.document.body.contains(elem)) {
+        return window.top; // Element exists in top window's DOM
+      }
+      return undefined; // Element not found in any accessible context}
+    }
+  } catch (e) {
+    // Handle cases where cross-origin access to top window's DOM is blocked
+    return undefined;
+  }
+}
+
+/**
+ * Checks if an element is visible in the DOM
+ * @param {Element} elem - The element to check for visibility
+ * @returns {boolean} True if the element is visible, false otherwise
+ */
+function isVisible(elem) {
+  // Return false for non-existent elements
+  if (!elem) {
+    return false;
+  }
+
+  // Get the rendering context for the element
+  const context = getContext(elem);
+
+  // Return false if no context is available (element not in DOM)
+  if (!context) {
+    return false;
+  }
+
+  let currentElement = elem;
+  let iterations = 0;
+  const MAX_ITERATIONS = 250;
+
+  // Traverse up the DOM tree to check parent elements
+  while (currentElement && iterations < MAX_ITERATIONS) {
+    iterations++;
+
+    try {
+      // Get computed styles for the current element
+      const computedStyle = context.getComputedStyle(currentElement);
+
+      // Check for hiding styles: display: none or visibility: hidden
+      const isHidden = computedStyle.display === 'none' ||
+                       computedStyle.visibility === 'hidden';
+
+      if (isHidden) {
+        return false; // Element is hidden
+      }
+    } catch (error) {
+      // If we can't access styles, assume element is not visible
+      return false;
+    }
+
+    // Move to the parent element for the next iteration
+    currentElement = currentElement.parentElement;
+  }
+
+  // If we've reached the root without finding hiding styles, element is visible
+  return true;
+}
+
+/**
+ * Calculates the cumulative position of the current frame within nested iframes.
+ * This is useful when you need the absolute position of an element within nested iframes
+ * relative to the outermost main window.
+ *
+ * @returns {Array<number>} [totalLeft, totalTop] - Cumulative left and top offsets in pixels
+ */
+function getFramePosition() {
+  let currentWindow = window;
+  let iterationCount = 0;
+  let totalLeft = 0;
+  let totalTop = 0;
+  const MAX_ITERATIONS = 100;
+
+  do {
+    iterationCount++;
+
+    try {
+      // After first iteration, move to parent window
+      if (iterationCount > 1) {
+        currentWindow = currentWindow.parent;
+      }
+
+      // Get the frame element containing current window and its position
+      const frameElement = currentWindow.frameElement;
+      const rect = getBoundingClientRect(frameElement);
+
+      // Accumulate frame element's position offsets
+      totalLeft += rect.left;
+      totalTop += rect.top;
+    } catch (error) {
+      // Continue processing if we can't access frame element (e.g., cross-origin restriction)
+      // Error is ignored as we can't recover frame position information in this case
+    }
+  } while (iterationCount < MAX_ITERATIONS && currentWindow.parent !== currentWindow.self);
+
+  return { x: totalLeft, y: totalTop };
 }
 
 registerBidder(spec);

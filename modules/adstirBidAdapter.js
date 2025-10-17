@@ -73,7 +73,7 @@ function serializeSchain(schain) {
 
   let serializedSchain = `${schain.ver},${schain.complete}`;
 
-  schain.nodes.map(node => {
+  schain.nodes.forEach(node => {
     serializedSchain += `!${encodeURIComponentForRFC3986(node.asi || '')},`;
     serializedSchain += `${encodeURIComponentForRFC3986(node.sid || '')},`;
     serializedSchain += `${encodeURIComponentForRFC3986(node.hp || '')},`;

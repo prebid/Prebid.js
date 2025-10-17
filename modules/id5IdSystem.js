@@ -570,36 +570,16 @@ function incrementNb(cachedObj) {
 
 function updateTargeting(fetchResponse, config) {
   if (config.params.gamTargetingPrefix) {
-    const tags = {};
-    let universalUid = fetchResponse.universal_uid;
-    if (universalUid.startsWith('ID5*')) {
-      tags.id = "y";
+    const tags = fetchResponse.tags;
+    if (tags) {
+      window.googletag = window.googletag || {cmd: []};
+      window.googletag.cmd = window.googletag.cmd || [];
+      window.googletag.cmd.push(() => {
+        for (const tag in tags) {
+          window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
+        }
+      });
     }
-    let abTestingResult = fetchResponse.ab_testing?.result;
-    switch (abTestingResult) {
-      case 'control':
-        tags.ab = 'c';
-        break;
-      case 'normal':
-        tags.ab = 'n';
-        break;
-    }
-    let enrichment = fetchResponse.enrichment;
-    if (enrichment?.enriched === true) {
-      tags.enrich = 'y';
-    } else if (enrichment?.enrichment_selected === true) {
-      tags.enrich = 's';
-    } else if (enrichment?.enrichment_selected === false) {
-      tags.enrich = 'c';
-    }
-
-    window.googletag = window.googletag || {cmd: []};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      for (const tag in tags) {
-        window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
-      }
-    });
   }
 }
 
