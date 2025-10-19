@@ -16,7 +16,7 @@ import * as auctionModule from 'src/auction.js';
 import {resetAuctionState} from 'src/auction.js';
 import {registerBidder} from 'src/adapters/bidderFactory.js';
 import * as pbjsModule from 'src/prebid.js';
-import pbjs, {startAuction} from 'src/prebid.js';
+import pbjs, {resetQueSetup, startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
@@ -246,19 +246,33 @@ describe('Unit: Prebid Module', function () {
         beforeEach(() => {
           ran = false;
           queue = pbjs[prop] = [];
+          resetQueSetup();
         });
         after(() => {
           pbjs.processQueue();
         })
 
-        function pushToQueue() {
-          queue.push(() => { ran = true });
+        function pushToQueue(fn = () => { ran = true }) {
+          return new Promise((resolve) => {
+            queue.push(() => {
+              fn();
+              resolve();
+            });
+          })
         }
 
-        it(`should patch .push`, () => {
+        it(`should patch .push`, async () => {
           pbjs.processQueue();
-          pushToQueue();
+          await pushToQueue();
           expect(ran).to.be.true;
+        });
+
+        it('should respect insertion order', async () => {
+          const log = [];
+          pushToQueue(() => log.push(1));
+          pbjs.processQueue();
+          await pushToQueue(() => log.push(2));
+          expect(log).to.eql([1, 2]);
         });
       })
     });
@@ -3859,19 +3873,32 @@ describe('Unit: Prebid Module', function () {
       utils.logError.restore();
     });
 
-    it('should run commands which are pushed into it', function() {
+    function push(cmd) {
+      return new Promise((resolve) => {
+        pbjs.cmd.push(() => {
+          try {
+            cmd();
+          } finally {
+            resolve();
+          }
+        })
+      })
+    }
+
+    it('should run commands which are pushed into it', async function () {
       const cmd = sinon.spy();
-      pbjs.cmd.push(cmd);
+      await push(cmd);
       assert.isTrue(cmd.called);
     });
 
-    it('should log an error when given non-functions', function() {
+    it('should log an error when given non-functions', async function () {
       pbjs.cmd.push(5);
+      await push(() => null);
       assert.isTrue(utils.logError.calledOnce);
     });
 
-    it('should log an error if the command passed into it fails', function() {
-      pbjs.cmd.push(function() {
+    it('should log an error if the command passed into it fails', async function () {
+      await push(function () {
         throw new Error('Failed function.');
       });
       assert.isTrue(utils.logError.calledOnce);

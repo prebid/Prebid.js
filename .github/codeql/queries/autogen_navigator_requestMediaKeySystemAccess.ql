@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("navigator") and
   api = prop.getAPropertyRead("requestMediaKeySystemAccess")
-select api, "requestMediaKeySystemAccess is an indicator of fingerprinting, weighed 15.3 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "requestMediaKeySystemAccess is an indicator of fingerprinting, weighed 16.48 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

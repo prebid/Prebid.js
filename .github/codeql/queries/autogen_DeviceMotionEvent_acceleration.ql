@@ -12,4 +12,4 @@ import prebid
 from PropRef api
 where  
   api.getPropertyName() = "acceleration"
-select api, "acceleration is an indicator of fingerprinting, weighed 59.51 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "acceleration is an indicator of fingerprinting, weighed 57.38 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
