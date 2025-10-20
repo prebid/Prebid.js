@@ -593,7 +593,10 @@ export const intentIqIdSubmodule = {
               firstPartyData.spd = respJson.spd;
             }
             if ('gpr' in respJson) {
+              // GAM prediction reporting
               partnerData.gpr = respJson.gpr;
+            } else {
+              delete partnerData.gpr // remove prediction flag in case server doesn't provide it
             }
 
             if (rrttStrtTime && rrttStrtTime > 0) {
