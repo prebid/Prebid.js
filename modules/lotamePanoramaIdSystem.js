@@ -40,7 +40,7 @@ const DO_NOT_HONOR_CONFIG = false;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 let cookieDomain;
-let appliedConfig = {
+const appliedConfig = {
   name: 'lotamePanoramaId',
   storage: {
     type: 'cookie&html5',
@@ -54,7 +54,7 @@ let appliedConfig = {
  */
 function setProfileId(profileId) {
   if (cookiesAreEnabled()) {
-    let expirationDate = new Date(timestamp() + NINE_MONTHS_MS).toUTCString();
+    const expirationDate = new Date(timestamp() + NINE_MONTHS_MS).toUTCString();
     storage.setCookie(
       KEY_PROFILE,
       profileId,
@@ -110,7 +110,7 @@ function saveLotameCache(
   expirationTimestamp = timestamp() + DAYS_TO_CACHE * DAY_MS
 ) {
   if (key && value) {
-    let expirationDate = new Date(expirationTimestamp).toUTCString();
+    const expirationDate = new Date(expirationTimestamp).toUTCString();
     if (cookiesAreEnabled()) {
       storage.setCookie(
         key,
@@ -132,7 +132,7 @@ function saveLotameCache(
  * @param {Number} clientId
  */
 function getLotameLocalCache(clientId = undefined) {
-  let cache = {
+  const cache = {
     data: getFromStorage(KEY_ID),
     expiryTimestampMs: 0,
     clientExpiryTimestampMs: 0,
@@ -164,7 +164,7 @@ function getLotameLocalCache(clientId = undefined) {
 function clearLotameCache(key) {
   if (key) {
     if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
-      let expirationDate = new Date(0).toUTCString();
+      const expirationDate = new Date(0).toUTCString();
       storage.setCookie(
         key,
         '',
@@ -283,14 +283,14 @@ export const lotamePanoramaIdSubmodule = {
     const storedUserId = getProfileId();
 
     const getRequestHost = function() {
-      if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+      if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
         return ID_HOST_COOKIELESS;
       }
       return ID_HOST;
     }
 
     const resolveIdFunction = function (callback) {
-      let queryParams = {};
+      const queryParams = {};
       if (storedUserId) {
         queryParams.fp = storedUserId;
       }
@@ -323,7 +323,7 @@ export const lotamePanoramaIdSubmodule = {
           let coreId;
           if (response) {
             try {
-              let responseObj = JSON.parse(response);
+              const responseObj = JSON.parse(response);
               const hasNoConsentErrors = !(
                 isArray(responseObj.errors) &&
                 responseObj.errors.indexOf(MISSING_CORE_CONSENT) !== -1

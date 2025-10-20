@@ -1,6 +1,8 @@
-import {buildUrl, deepAccess} from '../src/utils.js'
+import {buildUrl, deepAccess, isArray} from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -55,11 +57,11 @@ export const spec = {
     const referer = bidderRequest?.refererInfo?.page || window.location.href;
 
     const bidRequests = validBidRequests.map((validBidRequest) => {
-      let video = deepAccess(validBidRequest, 'mediaTypes.video', false);
-      let banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
-      let sizes = validBidRequest.params.sizes;
+      const video = deepAccess(validBidRequest, 'mediaTypes.video', false);
+      const banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
+      const sizes = validBidRequest.params.sizes;
 
-      let oneRequest = {
+      const oneRequest = {
         endpointId: validBidRequest.params.endpointId,
         adUnitCode: validBidRequest.adUnitCode,
         referer: referer,
@@ -80,20 +82,60 @@ export const spec = {
         }
       }
 
+      // Add user IDs if available
+      const userIds = deepAccess(validBidRequest, 'userIdAsEids');
+      if (userIds && isArray(userIds) && userIds.length > 0) {
+        oneRequest.userIds = userIds;
+      }
+
+      // Add GDPR consent if available
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        oneRequest.gdprConsent = {
+          consentString: bidderRequest.gdprConsent.consentString || ''
+        };
+
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          oneRequest.gdprConsent.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+        }
+
+        if (bidderRequest.gdprConsent.addtlConsent) {
+          oneRequest.gdprConsent.addtlConsent = bidderRequest.gdprConsent.addtlConsent;
+        }
+      }
+
+      // Add CCPA/USP consent if available
+      if (bidderRequest && bidderRequest.uspConsent) {
+        oneRequest.uspConsent = bidderRequest.uspConsent;
+      }
+
+      // Add COPPA flag if configured
+      const coppa = config.getConfig('coppa');
+      if (coppa) {
+        oneRequest.coppa = coppa;
+      }
+
       return oneRequest
     });
 
-    let adPartnerRequestUrl = buildUrl({
+    const smartytechRequestUrl = buildUrl({
       protocol: ENDPOINT_PROTOCOL,
       hostname: ENDPOINT_DOMAIN,
       pathname: ENDPOINT_PATH,
     });
 
-    return {
+    // Get chunk size from adapter configuration
+    const adapterSettings = config.getConfig(BIDDER_CODE) || {};
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+
+    // Split bid requests into chunks
+    const bidChunks = chunk(bidRequests, chunkSize);
+
+    // Return array of request objects, one for each chunk
+    return bidChunks.map(bidChunk => ({
       method: 'POST',
-      url: adPartnerRequestUrl,
-      data: bidRequests
-    };
+      url: smartytechRequestUrl,
+      data: bidChunk
+    }));
   },
 
   interpretResponse: function (serverResponse, bidRequest) {

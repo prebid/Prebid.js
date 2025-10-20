@@ -2,6 +2,7 @@ import {assert, expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/unicornBidAdapter.js';
 import * as _ from 'lodash';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const bidRequests = [
   {
@@ -509,14 +510,14 @@ describe('unicornBidAdapterTest', () => {
       return data;
     };
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         unicorn: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
@@ -529,7 +530,7 @@ describe('unicornBidAdapterTest', () => {
       assert.deepStrictEqual(uid, uid2);
     });
     it('test if contains ID5', () => {
-      let _validBidRequests = utils.deepClone(validBidRequests);
+      const _validBidRequests = utils.deepClone(validBidRequests);
       _validBidRequests[0].userId = {
         id5id: {
           uid: 'id5_XXXXX'

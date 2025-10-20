@@ -1,4 +1,3 @@
-
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
@@ -22,7 +21,7 @@ export const timeoutRtdFunctions = {
 const entries = Object.entries || function(obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
-  let resArray = new Array(i);
+  const resArray = new Array(i);
   while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
   return resArray;
 };
@@ -163,7 +162,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 function handleTimeoutIncrement(reqBidsConfigObj, rules) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const timeoutModifier = timeoutRtdFunctions.calculateTimeoutModifier(adUnits, rules);
-  const bidderTimeout = getGlobal().getConfig('bidderTimeout');
+  const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout');
   reqBidsConfigObj.timeout = bidderTimeout + timeoutModifier;
 }
 

@@ -1,10 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {deepAccess, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adnow';
+const GVLID = 1210;
 const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
@@ -28,6 +29,7 @@ const ENDPOINT = 'https://n.nnowa.com/a';
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
 
   /**
@@ -44,7 +46,7 @@ export const spec = {
 
     const mediaType = bid.params.mediaType || NATIVE;
 
-    return includes(this.supportedMediaTypes, mediaType);
+    return this.supportedMediaTypes.includes(mediaType);
   },
 
   /**
@@ -75,7 +77,7 @@ export const spec = {
       } else {
         data.width = data.height = 200;
 
-        let sizes = deepAccess(req, 'mediaTypes.native.image.sizes', []);
+        const sizes = deepAccess(req, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
@@ -106,14 +108,14 @@ export const spec = {
    */
   interpretResponse(response, request) {
     const bidObj = request.bidRequest;
-    let bid = response.body;
+    const bid = response.body;
 
     if (!bid || !bid.currency || !bid.cpm) {
       return [];
     }
 
     const mediaType = bid.meta.mediaType || NATIVE;
-    if (!includes(this.supportedMediaTypes, mediaType)) {
+    if (!this.supportedMediaTypes.includes(mediaType)) {
       return [];
     }
 

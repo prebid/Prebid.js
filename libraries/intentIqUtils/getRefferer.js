@@ -6,11 +6,16 @@ import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../
  */
 export function getReferrer() {
   try {
-    if (getWindowSelf() === getWindowTop()) {
-      return encodeURIComponent(getWindowLocation().href);
-    } else {
-      return encodeURIComponent(getWindowTop().location.href);
+    const url = getWindowSelf() === getWindowTop()
+      ? getWindowLocation().href
+      : getWindowTop().location.href;
+
+    if (url.length >= 50) {
+      const { origin } = new URL(url);
+      return origin;
     }
+
+    return url;
   } catch (error) {
     logError(`Error accessing location: ${error}`);
     return '';
@@ -26,7 +31,7 @@ export function getReferrer() {
  * @return {string} The modified URL with appended `vrref` or `fui` parameters.
  */
 export function appendVrrefAndFui(url, domainName) {
-  const fullUrl = getReferrer();
+  const fullUrl = encodeURIComponent(getReferrer());
   if (fullUrl) {
     return (url += '&vrref=' + getRelevantRefferer(domainName, fullUrl));
   }

@@ -34,8 +34,7 @@ export function bannerResponseProcessor({createPixel = (url) => createTrackPixel
   return function fillBannerResponse(bidResponse, bid) {
     if (bidResponse.mediaType === BANNER) {
       if (bid.adm && bid.nurl) {
-        bidResponse.ad = bid.adm;
-        bidResponse.ad += createPixel(bid.nurl);
+        bidResponse.ad = createPixel(bid.nurl) + bid.adm;
       } else if (bid.adm) {
         bidResponse.ad = bid.adm;
       } else if (bid.nurl) {

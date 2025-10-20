@@ -4,8 +4,8 @@ import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
 import { spec } from 'modules/smartadserverBidAdapter.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {
@@ -1244,12 +1244,12 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('eids');
       expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
       expect(requestContent.eids.length).to.greaterThan(0);
-      for (let index in requestContent.eids) {
-        let eid = requestContent.eids[index];
+      for (const index in requestContent.eids) {
+        const eid = requestContent.eids[index];
         expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
         expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
-        for (let uidsIndex in eid.uids) {
-          let uid = eid.uids[uidsIndex];
+        for (const uidsIndex in eid.uids) {
+          const uid = eid.uids[uidsIndex];
           expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
         }
       }
@@ -1258,7 +1258,7 @@ describe('Smart bid adapter tests', function () {
 
   describe('Supply Chain Serializer tests', function () {
     it('Verify a multi node supply chain serialization matches iab example', function() {
-      let schain = {
+      const schain = {
         'ver': '1.0',
         'complete': 1,
         'nodes': [
@@ -1281,22 +1281,22 @@ describe('Smart bid adapter tests', function () {
         ]
       };
 
-      let serializedSchain = spec.serializeSupplyChain(schain);
+      const serializedSchain = spec.serializeSupplyChain(schain);
       expect(serializedSchain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com');
     });
 
     it('Verifiy that null schain produce null result', function () {
-      let actual = spec.serializeSupplyChain(null);
+      const actual = spec.serializeSupplyChain(null);
       expect(null, actual);
     });
 
     it('Verifiy that schain with null nodes produce null result', function () {
-      let schain = {
+      const schain = {
         'ver': '1.0',
         'complete': 1
 
       };
-      let actual = spec.serializeSupplyChain(null);
+      const actual = spec.serializeSupplyChain(null);
       expect(null, actual);
     });
   });
@@ -1596,9 +1596,8 @@ describe('Smart bid adapter tests', function () {
 
       bidRequests[0].ortb2Imp = {
         ext: {
-          data: {
-            pbadslot: gpid
-          }
+          data: {},
+          gpid
         }
       };
 

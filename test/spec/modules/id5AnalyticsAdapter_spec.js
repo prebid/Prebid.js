@@ -5,6 +5,8 @@ import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
+import {enrichEidsRule} from "../../../modules/tcfControl.ts";
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
@@ -13,6 +15,8 @@ describe('ID5 analytics adapter', () => {
   let config;
 
   beforeEach(() => {
+    // to enforce tcfControl initialization when running in single test mode
+    expect(enrichEidsRule).to.exist
     config = {
       options: {
         partnerId: 12349,
@@ -110,7 +114,7 @@ describe('ID5 analytics adapter', () => {
       expect(body1.event).to.equal('tcf2Enforcement');
       expect(body1.partnerId).to.equal(12349);
       expect(body1.meta).to.be.a('object');
-      expect(body1.meta.pbjs).to.equal($$PREBID_GLOBAL$$.version);
+      expect(body1.meta.pbjs).to.equal(getGlobal().version);
       expect(body1.meta.sampling).to.equal(1);
       expect(body1.meta.tz).to.be.a('number');
 
@@ -119,11 +123,32 @@ describe('ID5 analytics adapter', () => {
       expect(body2.event).to.equal('auctionEnd');
       expect(body2.partnerId).to.equal(12349);
       expect(body2.meta).to.be.a('object');
-      expect(body2.meta.pbjs).to.equal($$PREBID_GLOBAL$$.version);
+      expect(body2.meta.pbjs).to.equal(getGlobal().version);
       expect(body2.meta.sampling).to.equal(1);
       expect(body2.meta.tz).to.be.a('number');
       expect(body2.payload).to.eql(auction);
     });
+
+    it('does not repeat already sent events on new events', () => {
+      id5AnalyticsAdapter.enableAnalytics(config);
+      server.respond();
+      events.emit(EVENTS.AUCTION_END, auction);
+      server.respond();
+      events.emit(EVENTS.BID_WON, auction);
+      server.respond();
+
+      // Why 4? 1: config, 2: tcfEnforcement, 3: auctionEnd 4: bidWon
+      expect(server.requests).to.have.length(4);
+
+      const body1 = JSON.parse(server.requests[1].requestBody);
+      expect(body1.event).to.equal('tcf2Enforcement');
+
+      const body2 = JSON.parse(server.requests[2].requestBody);
+      expect(body2.event).to.equal('auctionEnd');
+
+      const body3 = JSON.parse(server.requests[3].requestBody);
+      expect(body3.event).to.equal('bidWon');
+    })
 
     it('filters unwanted IDs from the events it sends', () => {
       auction.adUnits[0].bids = [{
@@ -451,6 +476,40 @@ describe('ID5 analytics adapter', () => {
       expect(body.payload.bidsReceived[1].requestId).to.equal(undefined);
       expect(body.payload.bidsReceived[0].bidderCode).to.equal('appnexus');
       expect(body.payload.bidsReceived[1].bidderCode).to.equal('ix');
+    });
+
+    it('can replace cleanup rules from server side', () => {
+      auction.bidsReceived = [{
+        'meta': {
+          'advertiserId': 4388779
+        }
+      }]
+      auction.adUnits[0].bids = [{
+        'bidder': 'appnexus',
+        'userId': {
+          'id5id': {
+            'uid': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
+            'ext': { 'linkType': 1 }
+          }
+        }
+      }];
+      server.respondWith('GET', CONFIG_URL, [200,
+        {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        `{ "sampling": 1, "ingestUrl": "${INGEST_URL}", "replaceCleanupRules":true, "additionalCleanupRules": {"auctionEnd": [{"match":["bidsReceived", "*", "meta"],"apply":"erase"}]} }`
+      ]);
+      id5AnalyticsAdapter.enableAnalytics(config);
+      server.respond();
+      events.emit(EVENTS.AUCTION_END, auction);
+      server.respond();
+
+      expect(server.requests).to.have.length(3);
+      const body = JSON.parse(server.requests[2].requestBody);
+      expect(body.event).to.equal('auctionEnd');
+      expect(body.payload.bidsReceived[0].meta).to.equal(undefined);    // new rule
+      expect(body.payload.adUnits[0].bids[0].userId.id5id.uid).to.equal(auction.adUnits[0].bids[0].userId.id5id.uid); // old, overridden rule
     });
   });
 });

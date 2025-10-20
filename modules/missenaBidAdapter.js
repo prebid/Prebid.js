@@ -1,8 +1,12 @@
 import {
   buildUrl,
+  deepAccess,
   formatQS,
   generateUUID,
+  getWinDimensions,
+  isEmpty,
   isFn,
+  isStr,
   logInfo,
   safeJSONParse,
   triggerPixel,
@@ -57,40 +61,30 @@ function toPayload(bidRequest, bidderRequest) {
     timeout: bidderRequest.timeout,
   };
 
-  if (bidderRequest && bidderRequest.refererInfo) {
-    // TODO: is 'topmostLocation' the right value here?
-    payload.referer = bidderRequest.refererInfo.topmostLocation;
-    payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
-  }
-
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    payload.consent_string = bidderRequest.gdprConsent.consentString;
-    payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
-  }
-
-  if (bidderRequest && bidderRequest.uspConsent) {
-    payload.us_privacy = bidderRequest.uspConsent;
-  }
-
   const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
   payload.params = bidRequest.params;
 
-  if (bidRequest.ortb2?.device?.ext?.cdep) {
-    payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
-  }
   payload.userEids = bidRequest.userIdAsEids || [];
-  payload.version = '$prebid.version$';
+  payload.version = 'prebid.js@$prebid.version$';
 
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
   payload.currency = getCurrencyFromBidderRequest(bidderRequest);
-  payload.schain = bidRequest.schain;
-  payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
+  payload.schain = bidRequest?.ortb2?.source?.ext?.schain;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
-  payload.screen = { height: screen.height, width: screen.width };
+  payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  payload.ortb2 = {
+    ...(bidderRequest.ortb2 || {}),
+    ext: {
+      ...(bidderRequest.ortb2?.ext || {}),
+      ...(isStr(gpid) && !isEmpty(gpid) ? { gpid } : {}),
+    },
+  };
 
   return {
     method: 'POST',
@@ -112,7 +106,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid == 'object' && !!bid.params.apiKey;
+    return typeof bid === 'object' && !!bid.params.apiKey;
   },
 
   /**
@@ -129,7 +123,7 @@ export const spec = {
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
-      (!capping?.referer || capping?.referer == referer)
+      (!capping?.referer || capping?.referer === referer)
     ) {
       logInfo('Missena - Capped');
       return [];
