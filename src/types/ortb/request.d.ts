@@ -5,9 +5,16 @@ import type {DSARequest} from "./ext/dsa.d.ts";
 
 import type {BidRequest, Imp} from 'iab-openrtb/v26';
 
+type TidSource = 'pbjs' | 'pbjsStable' | 'pub';
+
 export interface ORTBRequest extends BidRequest {
+  source: BidRequest['source'] & {
+    ext: Ext & {
+      tidSource: TidSource
+    }
+  }
   ext: Ext & {
-    dsa?: DSARequest
+    dsa?: DSARequest;
   }
 }
 
@@ -36,6 +43,6 @@ export type ORTBImp = Imp & {
      * - pbjsStable: Prebid generated the TID and it is consistent across bidders.
      * - pub: The publisher supplied the TID.
      */
-    tidSource?: 'pbjs' | 'pbjsStable' | 'pub';
+    tidSource?: TidSource;
   }
 };
