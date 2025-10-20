@@ -222,7 +222,7 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   metrics: Metrics,
   tids: { [bidderCode: BidderCode]: string };
   tidsEnabled: boolean;
-  tidSource: 'pbjs' | 'pbjsStable' | null;
+  tidSource: 'pbjs' | 'pbjsStable' | 'pub' | null;
   makeImpTid: () => string;
 }
 
@@ -509,7 +509,7 @@ const adapterManager = {
 
     const tidsEnabled = !!config.getConfig('enableTIDs');
     const consistentTidsEnabled = tidsEnabled && !!config.getConfig('consistentTids');
-    const tidSource: 'pbjs' | 'pbjsStable' | null = tidsEnabled ? (consistentTidsEnabled ? 'pbjsStable' : 'pbjs') : null;
+    const tidSource: 'pbjs' | 'pbjsStable' | 'pub' | null = tidsEnabled ? (consistentTidsEnabled ? 'pbjsStable' : 'pbjs') : null;
     const consistentSourceTid = consistentTidsEnabled ? `c${String(auctionId)}` : null;
     const makeImpTid = consistentTidsEnabled ? () => `c${generateUUID()}` : generateUUID;
 
