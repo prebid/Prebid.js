@@ -50,9 +50,11 @@ import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
  * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
  */
 
+const BIDDER_DOMAIN = 'yandex.com';
+
 const BIDDER_CODE = 'yandex';
-const BIDDER_URL = 'https://yandex.ru/ads/prebid';
-const EVENT_TRACKER_URL = 'https://yandex.ru/ads/trace';
+const BIDDER_URL = '/ads/prebid';
+const EVENT_TRACKER_URL = '/ads/trace';
 // We send data in 1% of cases
 const DEFAULT_SAMPLING_RATE = 0.01;
 const EVENT_LOG_RANDOM_NUMBER = Math.random();
@@ -70,7 +72,7 @@ const ORTB_MTYPES = {
 };
 
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.8.0';
+const ADAPTER_VERSION = '2.9.0';
 
 const TRACKER_METHODS = {
   img: 1,
@@ -164,11 +166,14 @@ export const spec = {
 
       const { pageId, impId } = extractPlacementIds(params);
 
+      const domain = getBidderDomain();
+
       const queryParams = {
         'imp-id': impId,
         'target-ref': targetRef || ortb2?.site?.domain,
         'adapter-version': ADAPTER_VERSION,
         'ssp-id': SSP_ID,
+        domain,
       };
 
       const gdprApplies = Boolean(deepAccess(bidderRequest, 'gdprConsent.gdprApplies'));
@@ -247,7 +252,7 @@ export const spec = {
 
       const request = {
         method: 'POST',
-        url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
+        url: `https://${domain}${BIDDER_URL}/${pageId}?${queryParamsString}`,
         data,
         options: {
           withCredentials,
@@ -287,10 +292,7 @@ export const spec = {
   },
   onBidderError: function({ error, bidderRequest }) {
     eventLog('PREBID_BIDDER_ERROR_EVENT', {
-      error: {
-        message: error?.reason?.message,
-        stack: error?.reason?.stack,
-      },
+      error,
       bidderRequest,
     });
   },
@@ -636,8 +638,15 @@ function eventLog(name, resp) {
       data: resp,
     };
 
-    ajax(EVENT_TRACKER_URL, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
+    const domain = getBidderDomain();
+
+    ajax(`https://${domain}${EVENT_TRACKER_URL}`, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
   }
+}
+
+function getBidderDomain() {
+  const bidderConfig = pbjsConfig.getConfig();
+  return bidderConfig?.yandex?.domain ?? BIDDER_DOMAIN;
 }
 
 /**
