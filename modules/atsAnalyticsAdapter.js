@@ -209,14 +209,31 @@ const browsersList = [
 
 const listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
-function bidRequestedHandler(args) {
+export function bidRequestedHandler(args) {
   const envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
   const envelopeSource = envelopeSourceCookieValue === 'true';
   let requests;
   requests = args.bids.map(function(bid) {
     return {
       envelope_source: envelopeSource,
-      has_envelope: bid.userId ? !!bid.userId.idl_env : false,
+      has_envelope: (function() {
+        // Check userIdAsEids for Prebid v10.0+ compatibility
+        if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
+          const liverampEid = bid.userIdAsEids.find(eid =>
+            eid.source === 'liveramp.com'
+          );
+          if (liverampEid && liverampEid.uids && liverampEid.uids.length > 0) {
+            return true;
+          }
+        }
+
+        // Fallback for older versions (backward compatibility)
+        if (bid.userId && bid.userId.idl_env) {
+          return true;
+        }
+
+        return false;
+      })(),
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auction_id: args.auctionId,

@@ -26,7 +26,7 @@ jobs:
       base-commit: ${{ steps.info.outputs.base-commit }}
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -55,11 +55,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Download Browserstack binary
-        run: | 
-          wget https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip
-          unzip BrowserStackLocal-linux-x64.zip
-
       - name: Cache source
         uses: actions/cache/save@v4
         with:
@@ -80,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
       - name: Restore source
@@ -128,7 +123,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
       - name: Restore source
@@ -138,9 +133,17 @@ jobs:
           key: source-${{ github.run_id }}
           fail-on-cache-miss: true
 
-      - name: Start BrowserstackLocal
-        run: |
-          ./BrowserStackLocal --key $BROWSERSTACK_ACCESS_KEY --daemon start
+      - name: 'BrowserStack Env Setup'
+        uses: 'browserstack/github-actions/setup-env@master'
+        with:
+          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+      - name: 'BrowserStackLocal Setup'
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: start
+          local-identifier: random
 
       - name: Run tests
         uses: nick-fields/retry@v3
@@ -148,6 +151,11 @@ jobs:
           timeout_minutes: 20
           max_attempts: 1
           command: npx gulp e2e-test
+
+      - name: 'BrowserStackLocal Stop'
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: stop
 
   coveralls:
     name: Update coveralls

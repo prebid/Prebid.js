@@ -3,12 +3,34 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "dependabotTarget"
     schedule:
-      interval: "weekly"
+      interval: "quarterly"
+    open-pull-requests-limit: 2
     versioning-strategy: increase
+    allow:
+      - dependency-name: 'iab-adcom'
+      - dependency-name: 'iab-native'
+      - dependency-name: 'iab-openrtb'
+      - dependency-name: '@types/*'
+      - dependency-name: '@eslint/compat'
+      - dependency-name: 'eslint'
+      - dependency-name: '@babel/*'
+      - dependency-name: 'webpack'
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "master"
+    schedule:
+      interval: "daily"
+    security-updates-only: true
+    open-pull-requests-limit: 0
+    groups:
+      all-security:
+        applies-to: security-updates
+        patterns: ["*"]
