@@ -2199,8 +2199,10 @@ describe('adapterManager tests', function () {
         try {
           const reqs = makeRequests();
           reqs.forEach(br => {
+            expect(br.ortb2.source.tid).to.match(/^u.+/);
             expect(br.ortb2.source.ext.tidSource).to.eql('pbjs');
             br.bids.forEach(bid => {
+              expect(bid.ortb2Imp.ext.tid).to.match(/^u.+/);
               expect(bid.ortb2Imp.ext.tidSource).to.eql('pbjs');
             });
           });
@@ -2214,9 +2216,8 @@ describe('adapterManager tests', function () {
           const reqs = makeRequests();
           const tids = reqs.map(req => req.ortb2.source.tid);
           expect(new Set(tids).size).to.eql(1);
-          expect(tids[0]).to.match(/^c.+/);
-          expect(tids[0]).to.eql('cmockAuctionId');
-          expect(tids[0].length).to.eql(String(reqs[0].auctionId).length + 1);
+          expect(tids[0]).to.eql(String(reqs[0].auctionId));
+          expect(tids[0].length).to.eql(String(reqs[0].auctionId).length);
           reqs.forEach(br => {
             expect(br.ortb2.source.ext.tidSource).to.eql('pbjsStable');
             br.bids.forEach(bid => {
@@ -2247,8 +2248,7 @@ describe('adapterManager tests', function () {
           const tidsByTransaction = new Map();
           bids.forEach(bid => {
             const tid = bid.ortb2Imp.ext.tid;
-            expect(tid).to.match(/^c.+/);
-            expect(tid.length).to.eql(baselineTidLength + 1);
+            expect(tid.length).to.eql(baselineTidLength - 1);
             if (tidsByTransaction.has(bid.transactionId)) {
               expect(tidsByTransaction.get(bid.transactionId)).to.eql(tid);
             } else {

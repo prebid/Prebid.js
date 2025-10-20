@@ -510,8 +510,14 @@ const adapterManager = {
     const tidsEnabled = !!config.getConfig('enableTIDs');
     const consistentTidsEnabled = tidsEnabled && !!config.getConfig('consistentTids');
     const tidSource: 'pbjs' | 'pbjsStable' | 'pub' | null = tidsEnabled ? (consistentTidsEnabled ? 'pbjsStable' : 'pbjs') : null;
-    const consistentSourceTid = consistentTidsEnabled ? `c${String(auctionId)}` : null;
-    const makeImpTid = consistentTidsEnabled ? () => `c${generateUUID()}` : generateUUID;
+    const consistentSourceTid = consistentTidsEnabled ? String(auctionId) : null;
+    const makeSourceTid = tidsEnabled && !consistentTidsEnabled ? () => `u${generateUUID()}` : generateUUID;
+    const makeImpTid = (() => {
+      if (!tidsEnabled) {
+        return generateUUID;
+      }
+      return consistentTidsEnabled ? generateUUID : () => `u${generateUUID()}`;
+    })();
 
     const sourceTids: any = {};
     const extTids: any = {};
@@ -531,7 +537,7 @@ const adapterManager = {
           ? s2sActivityParams
           : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
       );
-      const tid = consistentSourceTid ?? tidFor(sourceTids, bidderRequest.bidderCode, generateUUID);
+      const tid = consistentSourceTid ?? tidFor(sourceTids, bidderRequest.bidderCode, makeSourceTid);
       const sourceTidSource = (() => {
         if (!tidsEnabled) {
           return null;
