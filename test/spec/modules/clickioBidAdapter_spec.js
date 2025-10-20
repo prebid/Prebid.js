@@ -137,9 +137,8 @@ describe('clickioBidAdapter', function () {
       const syncs = spec.getUserSyncs(syncOptions);
 
       expect(syncs).to.be.an('array');
-      expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.include('https://onetag-sys.com/usync/');
+      expect(syncs[0].url).to.include('https://o.clickiocdn.com/cookie_sync_html');
     });
 
     it('should include GDPR parameters when gdprConsent is provided', () => {

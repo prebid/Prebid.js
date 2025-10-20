@@ -56,13 +56,16 @@ export const spec = {
         queryParams.push(`gpp_sid=${applicableSection}`);
       }
     }
-
-    return [
-      {
-        type: 'iframe',
-        url: `https://o.clickiocdn.com/cookie_sync_html?${queryParams.join('&')}`
-      }
-    ];
+    if (syncOptions.iframeEnabled) {
+      return [
+        {
+          type: 'iframe',
+          url: `https://o.clickiocdn.com/cookie_sync_html?${queryParams.join('&')}`
+        }
+      ];
+    } else {
+      return [];
+    }
   }
 };
 
