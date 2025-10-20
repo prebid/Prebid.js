@@ -222,7 +222,7 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   metrics: Metrics,
   tids: { [bidderCode: BidderCode]: string };
   tidsEnabled: boolean;
-  tidSource?: string;
+  tidSource: 'pbjs' | 'pbjsStable' | null;
   makeImpTid: () => string;
 }
 
@@ -509,8 +509,8 @@ const adapterManager = {
 
     const tidsEnabled = !!config.getConfig('enableTIDs');
     const consistentTidsEnabled = tidsEnabled && !!config.getConfig('consistentTids');
-    const tidSource = tidsEnabled ? (consistentTidsEnabled ? 'pbjsStable' : 'pbjs') : undefined;
-    const consistentSourceTid = consistentTidsEnabled ? `c${String(auctionId)}` : undefined;
+    const tidSource: 'pbjs' | 'pbjsStable' | null = tidsEnabled ? (consistentTidsEnabled ? 'pbjsStable' : 'pbjs') : null;
+    const consistentSourceTid = consistentTidsEnabled ? `c${String(auctionId)}` : null;
     const makeImpTid = consistentTidsEnabled ? () => `c${generateUUID()}` : generateUUID;
 
     const sourceTids: any = {};
@@ -532,11 +532,26 @@ const adapterManager = {
           : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
       );
       const tid = consistentSourceTid ?? tidFor(sourceTids, bidderRequest.bidderCode, generateUUID);
+      const sourceTidSource = (() => {
+        if (!tidsEnabled) {
+          return null;
+        }
+        const bidTidSources = (bidderRequest.bids || [])
+          .map(bid => bid?.ortb2Imp?.ext?.tidSource)
+          .filter((value): value is 'pbjs' | 'pbjsStable' | 'pub' => value != null);
+        if (bidTidSources.includes('pub')) {
+          return 'pub';
+        }
+        return consistentTidsEnabled ? 'pbjsStable' : 'pbjs';
+      })();
+      const sourcePayload = sourceTidSource != null
+        ? {tid, ext: {tidSource: sourceTidSource}}
+        : {tid};
       const fpd = Object.freeze(redact.ortb2(mergeDeep(
         {},
         ortb2,
         bidderOrtb2[bidderRequest.bidderCode],
-        {source: {tid}}
+        {source: sourcePayload}
       )));
       bidderRequest.ortb2 = fpd;
       bidderRequest.bids = bidderRequest.bids.map((bid) => {

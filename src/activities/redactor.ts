@@ -178,7 +178,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
     },
     {
       name: ACTIVITY_TRANSMIT_TID,
-      paths: ['source.tid', 'imp.ext.tidSource'],
+      paths: ['source.tid', 'source.ext.tidSource'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed),
     }
   ].map(redactRule);
