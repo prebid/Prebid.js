@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = instantiationOf("OfflineAudioContext")
-select api, "OfflineAudioContext is an indicator of fingerprinting, weighed 1062.57 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "OfflineAudioContext is an indicator of fingerprinting, weighed 1120.16 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

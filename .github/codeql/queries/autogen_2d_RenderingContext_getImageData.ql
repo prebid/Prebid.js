@@ -14,4 +14,4 @@ where
   invocation.getCalleeName() = "getContext" and
   invocation.getArgument(0).mayHaveStringValue("2d") and
   api = invocation.getAPropertyRead("getImageData")
-select api, "getImageData is an indicator of fingerprinting, weighed 38.11 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "getImageData is an indicator of fingerprinting, weighed 35.4 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

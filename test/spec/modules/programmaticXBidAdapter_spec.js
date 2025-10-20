@@ -242,6 +242,10 @@ describe('programmaticXBidAdapter', function () {
       expect(adapter.code).to.exist.and.to.be.a('string');
     });
 
+    it('exists and is a number', function () {
+      expect(adapter.gvlid).to.exist.and.to.be.a('number');
+    })
+
     it('exists and contains media types', function () {
       expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
       expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
