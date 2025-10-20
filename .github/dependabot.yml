@@ -6,7 +6,7 @@ updates:
       interval: "monthly"
   - package-ecosystem: "npm"
     directory: "/"
-    target-branch: "dependabot"
+    target-branch: "dependabotTarget"
     schedule:
       interval: "quarterly"
     open-pull-requests-limit: 2
