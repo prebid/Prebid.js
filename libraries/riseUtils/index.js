@@ -385,7 +385,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     tmax: timeout
   };
 
-  const userIdsParam = getBidIdParameter('userId', generalObject);
+  const userIdsParam = getBidIdParameter('userIdAsEids', generalObject);
   if (userIdsParam) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }

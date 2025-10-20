@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = instantiationOf("RTCPeerConnection")
-select api, "RTCPeerConnection is an indicator of fingerprinting, weighed 47.04 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "RTCPeerConnection is an indicator of fingerprinting, weighed 47.69 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
