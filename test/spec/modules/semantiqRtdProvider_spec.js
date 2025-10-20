@@ -44,7 +44,7 @@ describe('semantiqRtdProvider', () => {
       expect(body.event_type).to.be.equal('pageImpression');
       expect(body.page_impression_id).not.to.be.empty;
       expect(body.source).to.be.equal('semantiqPrebidModule');
-      expect(body.url).to.be.equal('https://example.com/article');
+      expect(body.page_url).to.be.equal('https://example.com/article');
     });
 
     it('uses the correct company ID', () => {
