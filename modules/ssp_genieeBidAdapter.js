@@ -341,20 +341,18 @@ export const spec = {
    * @return boolean True if this is a valid bid request, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
-    if (!bidRequest.params.zoneId) {
-      return false;
-    }
+    if (!bidRequest.params.zoneId) return false;
 
     const bidCurrency = bidRequest.params.currency;
 
     if (bidCurrency) {
-      if (ALLOWED_CURRENCIES.indexOf(bidCurrency) === -1) {
+      if (!ALLOWED_CURRENCIES.includes(bidCurrency)) {
         utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
         return false;
       }
     } else {
       const adServerCurrency = config.getConfig('currency.adServerCurrency');
-      if (typeof adServerCurrency === 'string' && ALLOWED_CURRENCIES.indexOf(adServerCurrency) === -1) {
+      if (typeof adServerCurrency === 'string' && !ALLOWED_CURRENCIES.includes(adServerCurrency)) {
         utils.logError(`[${BIDDER_CODE}] adServerCurrency "${adServerCurrency}" is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
         return false;
       }

@@ -1,4 +1,4 @@
-import { expect, assert } from 'chai';
+import { expect } from 'chai';
 import {
   spec,
   BANNER_ENDPOINT,
@@ -87,50 +87,50 @@ describe('ssp_genieeBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return false when params.zoneId does not exist', function () {
-      assert.isFalse(spec.isBidRequestValid({ ...BANNER_BID, params: {} }));
+      expect(spec.isBidRequestValid({ ...BANNER_BID, params: {} })).to.be.false;
     });
 
     describe('when params.currency is specified', function() {
       it('should return true if currency is USD', function() {
         const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'USD' } };
-        assert.isTrue(spec.isBidRequestValid(bid));
+        expect(spec.isBidRequestValid(bid)).to.be.true;
       });
 
       it('should return true if currency is JPY', function() {
         const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'JPY' } };
-        assert.isTrue(spec.isBidRequestValid(bid));
+        expect(spec.isBidRequestValid(bid)).to.be.true;
       });
 
       it('should return false if currency is not supported (e.g., EUR)', function() {
         const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'EUR' } };
-        assert.isFalse(spec.isBidRequestValid(bid));
+        expect(spec.isBidRequestValid(bid)).to.be.false;
       });
 
       it('should return true if currency is valid, ignoring adServerCurrency', function() {
         config.setConfig({ currency: { adServerCurrency: 'EUR' } });
         const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'USD' } };
-        assert.isTrue(spec.isBidRequestValid(bid));
+        expect(spec.isBidRequestValid(bid)).to.be.true;
       });
     });
 
     describe('when params.currency is NOT specified (fallback to adServerCurrency)', function() {
       it('should return true if adServerCurrency is not set', function() {
-        assert.isTrue(spec.isBidRequestValid(BANNER_BID));
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
       });
 
       it('should return true if adServerCurrency is JPY', function() {
         config.setConfig({ currency: { adServerCurrency: 'JPY' } });
-        assert.isTrue(spec.isBidRequestValid(BANNER_BID));
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
       });
 
       it('should return true if adServerCurrency is USD', function() {
         config.setConfig({ currency: { adServerCurrency: 'USD' } });
-        assert.isTrue(spec.isBidRequestValid(BANNER_BID));
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
       });
 
       it('should return false if adServerCurrency is not supported (e.g., EUR)', function() {
         config.setConfig({ currency: { adServerCurrency: 'EUR' } });
-        assert.isFalse(spec.isBidRequestValid(BANNER_BID));
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.false;
       });
     });
   });
