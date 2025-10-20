@@ -191,6 +191,33 @@ describe('msftBidAdapter', function () {
       expect(data.imp[0].id).to.equal('ext_imp_id_456');
     });
 
+    it('should build a banner request without eids but request.user.ext exists', function () {
+      let testBidRequest = deepClone(baseBidRequests);
+      // testBidRequest.user.ext = {};
+      const bidRequests = [{
+        ...testBidRequest,
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250],
+              [300, 600]
+            ]
+          }
+        },
+      }];
+      const testBidderRequest = deepClone(baseBidderRequest);
+      delete testBidderRequest.ortb2.user.ext.eids; // no eids
+      const bidderRequest = Object.assign({}, testBidderRequest, {
+        bids: bidRequests
+      });
+      debugger;// eslint-disable-line no-debugger
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.method).to.equal('POST');
+      const data = request.data;
+      expect(data).to.exist;
+      expect(data.user.ext).to.exist;
+    });
+
     if (FEATURES.VIDEO) {
       it('should build a video request', function () {
         const testBidRequests = deepClone(baseBidRequests);
