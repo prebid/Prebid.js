@@ -111,18 +111,9 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
-  wait-for-browserstack:
-    name: "Wait for other test runs to complete"
-    uses: ./.github/workflows/browserstack-queue.yml
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
   test-e2e:
     name: "End-to-end tests"
-    needs:
-      - checkout
-      - wait-for-browserstack
+    needs: checkout
     runs-on: ubuntu-latest
     concurrency:
       # see test-chunk.yml for notes on concurrency groups
@@ -154,6 +145,12 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
+
+      - name: 'Wait for browserstack'
+        uses: ./.github/actions/wait-for-browserstack
+        with:
+          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
       - name: Run tests
         uses: nick-fields/retry@v3
