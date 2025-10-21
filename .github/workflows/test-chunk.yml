@@ -34,6 +34,7 @@ concurrency:
 
 jobs:
   wait-for-browserstack:
+    if: ${{ inputs.serialize }}
     name: "Wait for other test runs to complete"
     uses: ./.github/workflows/browserstack-queue.yml
     secrets:
