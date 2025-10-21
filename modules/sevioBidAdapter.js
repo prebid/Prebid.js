@@ -176,7 +176,7 @@ export const spec = {
             ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
           },
         ],
-        keywords: { tokens: ortbRequest.site.keywords || bidRequest.params?.keywords || [] },
+        keywords: { tokens: ortbRequest?.site?.keywords || bidRequest.params?.keywords || [] },
         privacy: {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
