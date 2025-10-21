@@ -14,13 +14,13 @@ export const EVENTS = [
   "@seenthis_modal/beforeclose",
 ];
 
-const frameElements: Record<string, HTMLIFrameElement> = {};
-const containerElements: Record<string, HTMLDivElement> = {};
-const isInitialized: Record<string, boolean> = {};
 const classNames: Record<string, string> = {
   container: "storylines-container",
   expandedBody: "seenthis-storylines-fullscreen",
 };
+const containerElements: Record<string, HTMLDivElement> = {};
+const frameElements: Record<string, HTMLIFrameElement> = {};
+const isInitialized: Record<string, boolean> = {};
 
 export function calculateMargins(element: HTMLElement) {
   const boundingClientRect = getBoundingClientRect(element);
