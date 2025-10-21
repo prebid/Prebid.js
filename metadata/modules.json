@@ -5645,13 +5645,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "quantcastId",
-      "gvlid": "11",
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "rewardedInterestId",
       "gvlid": null,
       "disclosureURL": null,
