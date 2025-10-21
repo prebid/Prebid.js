@@ -33,8 +33,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  wait-for-browserstack:
+    name: "Wait for other test runs to complete"
+    uses: ./.github/workflows/browserstack-queue.yml
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test:
     name: "Test chunk ${{ inputs.chunk-no }}"
+    needs: wait-for-browserstack
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -66,9 +73,6 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-
-      - name: "Wait for other test runs to complete"
-        uses: ./.github/workflows/browserstack-queue.yml
 
       - name: Run tests
         uses: nick-fields/retry@v3
