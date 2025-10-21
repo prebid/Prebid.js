@@ -3,175 +3,14 @@ import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
-
+import * as converter from '../libraries/ortbConverter/converter.js';
+const ORTB = converter.ortbConverter({
+  context: { ttl: 300 }
+});
 const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
 const ACTION_METHOD = "POST";
-
-const detectJsonLdKeywords = () => {
-  const scriptTags = document.querySelectorAll(
-    'script[type="application/ld+json"]'
-  );
-  let keywords = [];
-
-  for (let i = 0; i < scriptTags.length; i++) {
-    const scriptTag = scriptTags[i];
-
-    try {
-      const jsonData = JSON.parse(scriptTag.textContent);
-      const jsonObjects = Array.isArray(jsonData) ? jsonData : [jsonData];
-
-      for (let j = 0; j < jsonObjects.length; j++) {
-        const jsonObject = jsonObjects[j];
-
-        if (
-          jsonObject.keywords &&
-          typeof jsonObject.keywords === 'string'
-        ) {
-          keywords.push(
-            ...jsonObject.keywords
-              .split(',')
-              .map((keyword) => keyword.trim())
-              .filter((keyword) => keyword.length > 0)
-          );
-        }
-      }
-    } catch (error) {
-      // console.error('Error parsing JSON-LD:', error);
-    }
-  }
-
-  return keywords;
-};
-
-const detectHeaderKeywords = () => {
-  const metaTags = document.getElementsByTagName('meta');
-  for (let i = 0; i < metaTags.length; i++) {
-    const metaTag = metaTags[i];
-    if (metaTag.getAttribute('name') === 'keywords') {
-      const keywords = metaTag.getAttribute('content');
-      return keywords
-        ? keywords.split(',').map((keyword) => keyword.trim())
-        : [];
-    }
-  }
-
-  return [];
-};
-
-const detectTitleAndH1AndUrl = () => {
-  const MAX_KEYWORDS = 12;
-  const MIN_WORD_LEN = 2;
-
-  try {
-    const title = (document.querySelector('title')?.textContent || '').trim();
-    const h1 = Array.from(document.querySelectorAll('h1'))
-      .map(el => (el.textContent || '').trim())
-      .filter(Boolean)
-      .join(' ');
-    const { hostname, pathname } = window.location;
-
-    // URL normalization
-    const path = decodeURIComponent(pathname || '');
-    const urlWithSpaces = path.replace(/[-_]+/g, ' ');
-    const urlNoBreak = path.replace(/[-_]/g, '');
-    const hostWords = (hostname || '').replace(/\./g, ' ');
-
-    const raw = [title, h1, urlWithSpaces, urlNoBreak, hostWords].join(' ');
-
-    // ---- tiny RAKE-like candidate generation & scoring ----
-    const STOP = new Set([
-      'a', 'an', 'and', 'the', 'of', 'in', 'on', 'for', 'to', 'from', 'by', 'with', 'as', 'at', 'is', 'are', 'was', 'were',
-      'be', 'been', 'being', 'or', 'if', 'then', 'else', 'than', 'that', 'this', 'those', 'these', 'it', 'its', 'into',
-      'about', 'over', 'under', 'between', 'within', 'without', 'across', 'up', 'down', 'out', 'off', 'per', 'via',
-      'you', 'your', 'we', 'our', 'they', 'their', 'i', 'me', 'my', 'he', 'she', 'his', 'her', 'them', 'us', 'can', 'could',
-      'should', 'would', 'may', 'might', 'will', 'just', 'not', 'no', 'yes', 'how', 'what', 'when', 'where', 'why', 'which'
-    ]);
-
-    const norm = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-    const tokens = norm(raw).split(' ');
-
-    // Split into candidate phrases on stopwords; cap phrase length to 3
-    const phrasesTok = [];
-    let cur = [];
-    for (const t of tokens) {
-      if (!t || STOP.has(t)) {
-        if (cur.length) { phrasesTok.push(cur.slice(0, 3)); cur = []; }
-      } else {
-        cur.push(t);
-      }
-    }
-    if (cur.length) phrasesTok.push(cur.slice(0, 3));
-
-    const phraseStrs = phrasesTok
-      .filter(p => p.length && !p.every(tok => /^\d+$/.test(tok)))
-      .map(p => p.join(' '));
-
-    // Word stats: frequency & degree (RAKE-like)
-    const freq = Object.create(null);
-    const deg = Object.create(null);
-    for (const p of phraseStrs) {
-      const ws = p.split(' ');
-      const d = ws.length - 1;
-      for (const w of ws) { freq[w] = (freq[w] || 0) + 1; deg[w] = (deg[w] || 0) + d; }
-    }
-    for (const w in freq) deg[w] += freq[w];
-
-    // Phrase scores
-    const scores = new Map();
-    for (const p of phraseStrs) {
-      let s = 0; for (const w of p.split(' ')) s += (deg[w] || 0) / (freq[w] || 1);
-      scores.set(p, s);
-    }
-
-    // Rank phrases, then explode to words (implicit behavior)
-    const rankedPhrases = [...scores.entries()]
-      .sort((a, b) => b[1] - a[1] || b[0].split(' ').length - a[0].split(' ').length)
-      .map(([p]) => p);
-
-    const seen = new Set();
-    const out = [];
-    for (const ph of rankedPhrases) {
-      for (const w of ph.split(' ')) {
-        if (w.length >= MIN_WORD_LEN && !STOP.has(w) && !seen.has(w)) {
-          seen.add(w);
-          out.push(w);
-          if (out.length >= MAX_KEYWORDS) break;
-        }
-      }
-      if (out.length >= MAX_KEYWORDS) break;
-    }
-
-    return out; // resulted keywords array
-  } catch {
-    return [];
-  }
-};
-
-const detectKeywords = () => {
-  let keywords = [];
-
-  const jsonKeywords = detectJsonLdKeywords();
-  if (jsonKeywords && jsonKeywords.length) {
-    keywords.push(...jsonKeywords);
-    return keywords;
-  }
-
-  const headerKeywords = detectHeaderKeywords();
-  if (headerKeywords && headerKeywords.length) {
-    keywords.push(...headerKeywords);
-    return keywords;
-  }
-
-  const titleH1UrlKeywords = detectTitleAndH1AndUrl();
-  if (titleH1UrlKeywords) {
-    keywords.push(...titleH1UrlKeywords);
-    return keywords;
-  }
-
-  return keywords;
-}
 
 const detectAdType = (bid) =>
   (
@@ -284,6 +123,7 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const userSyncEnabled = config.getConfig("userSync.syncEnabled");
+    const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
 
     if (bidRequests.length === 0) {
       return [];
@@ -314,13 +154,7 @@ export const spec = {
         }
         return asset;
       });
-      const providedKeywords = bidRequest.params?.keywords;
-      const detectedKeywords = detectKeywords();
-      const keywords = {
-        tokens: (Array.isArray(providedKeywords) && providedKeywords.length > 0)
-          ? providedKeywords
-          : (Array.isArray(detectedKeywords) && detectedKeywords.length > 0 ? detectedKeywords : [])
-      };
+
       const payload = {
         userLanguage: navigator.language,
         pageUrl: bidRequest?.refererInfo?.page,
@@ -342,7 +176,7 @@ export const spec = {
             ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
           },
         ],
-        keywords,
+        keywords: { tokens: ortbRequest.site.keywords || bidRequest.params?.keywords || [] },
         privacy: {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
