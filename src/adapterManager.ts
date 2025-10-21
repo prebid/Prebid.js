@@ -67,6 +67,7 @@ import type {
   AnalyticsConfig,
   AnalyticsProvider, AnalyticsProviderConfig,
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
+import {getGlobal} from "./prebidGlobal.ts";
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -168,6 +169,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
    */
   bidderRequestId: Identifier;
   auctionId: Identifier;
+  pageViewId: Identifier;
   /**
    * The bidder associated with this request, or null in the case of stored impressions.
    */
@@ -525,6 +527,15 @@ const adapterManager = {
       return bidderRequest as T;
     }
 
+    const pbjsInstance = getGlobal();
+
+    function getPageViewIdForBidder(bidderCode: string | null): string {
+      if (!pbjsInstance.pageViewIdPerBidder.has(bidderCode)) {
+        pbjsInstance.pageViewIdPerBidder.set(bidderCode, generateUUID());
+      }
+      return pbjsInstance.pageViewIdPerBidder.get(bidderCode);
+    }
+
     _s2sConfigs.forEach(s2sConfig => {
       const s2sParams = s2sActivityParams(s2sConfig);
       if (s2sConfig && s2sConfig.enabled && dep.isAllowed(ACTIVITY_FETCH_BIDS, s2sParams)) {
@@ -536,11 +547,13 @@ const adapterManager = {
         (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
           const tids = tidFor(extTids, bidderCode, () => ({}));
           const bidderRequestId = generateUUID();
+          const pageViewId = getPageViewIdForBidder(bidderCode);
           const metrics = auctionMetrics.fork();
           const bidderRequest = addOrtb2({
             bidderCode,
             auctionId,
             bidderRequestId,
+            pageViewId,
             uniquePbsTid,
             bids: getBids({
               bidderCode,
@@ -584,10 +597,12 @@ const adapterManager = {
     clientBidders.forEach(bidderCode => {
       const tids = tidFor(extTids, bidderCode, () => ({}));
       const bidderRequestId = generateUUID();
+      const pageViewId = getPageViewIdForBidder(bidderCode);
       const metrics = auctionMetrics.fork();
       const bidderRequest = addOrtb2({
         bidderCode,
         auctionId,
+        pageViewId,
         bidderRequestId,
         bids: getBids({
           bidderCode,

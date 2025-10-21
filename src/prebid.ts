@@ -102,6 +102,7 @@ declare module './prebidGlobal' {
      */
     delayPrerendering?: boolean
     adUnits: AdUnitDefinition[];
+    pageViewIdPerBidder: Map<string | null, string>
   }
 }
 
@@ -113,6 +114,7 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
+pbjsInstance.pageViewIdPerBidder = pbjsInstance.pageViewIdPerBidder || new Map<string | null, string>();
 
 function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
@@ -483,6 +485,7 @@ declare module './prebidGlobal' {
     setBidderConfig: typeof config.setBidderConfig;
     processQueue: typeof processQueue;
     triggerBilling: typeof triggerBilling;
+    refreshPageViewId: typeof refreshPageViewId;
   }
 }
 
@@ -1244,5 +1247,16 @@ function triggerBilling({adId, adUnitCode}: {
     });
 }
 addApiMethod('triggerBilling', triggerBilling);
+
+/**
+ * Refreshes the previously generated page view ID. Can be used to instruct bidders
+ * that use page view ID to consider future auctions as part of a new page load.
+ */
+function refreshPageViewId() {
+  for (const key of pbjsInstance.pageViewIdPerBidder.keys()) {
+    pbjsInstance.pageViewIdPerBidder.set(key, generateUUID());
+  }
+}
+addApiMethod('refreshPageViewId', refreshPageViewId);
 
 export default pbjsInstance;
