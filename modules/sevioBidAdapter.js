@@ -32,16 +32,6 @@ const getPageTitle = () => {
   }
 }
 
-const getConnectionDownLink = (userNav) => {
-  return userNav && userNav.connection && userNav.connection.downlink >= 0 ? userNav.connection.downlink.toString() : '';
-}
-
-const getNetworkQuality = (userNav) => {
-  const connection = userNav.connection || userNav.mozConnection || userNav.webkitConnection;
-
-  return connection?.effectiveType ?? '';
-}
-
 const getDomComplexity = (document) => {
   return document?.querySelectorAll('*')?.length ?? -1;
 }
@@ -253,8 +243,6 @@ export const spec = {
         referer: getReferrerInfo(bidderRequest),
         pageReferer: document.referrer,
         pageTitle: getPageTitle().slice(0, 300),
-        networkBandwidth: getConnectionDownLink(window.navigator),
-        networkQuality: getNetworkQuality(window.navigator),
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
         deviceWidth: screen.width,
