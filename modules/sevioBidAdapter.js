@@ -3,6 +3,7 @@ import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
+import { getDomComplexity } from "../libraries/fpdUtils/pageInfo.js";
 
 const PREBID_VERSION = '$prebid.version$';
 const ADAPTER_VERSION = '1.0';
@@ -30,10 +31,6 @@ const getPageTitle = () => {
 
     return document.title || (ogTitle && ogTitle.content) || '';
   }
-}
-
-const getDomComplexity = (document) => {
-  return document?.querySelectorAll('*')?.length ?? -1;
 }
 
 const parseNativeAd = function (bid) {
