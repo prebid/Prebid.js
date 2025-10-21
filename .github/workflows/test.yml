@@ -100,15 +100,11 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   wait-for-browserstack:
-    runs-on: ubuntu-latest
     name: "Wait for other test runs to complete"
-    steps:
-      - env:
-          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-        run: |
-          curl -u "${BROWSERSTACK_USER_NAME}:${BROWSERSTACK_ACCESS_KEY}" \
-            -X GET "https://api-cloud.browserstack.com/app-automate/plan.json"
+    uses: ./.github/workflows/browserstack-queue.yml
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   test:
     name: "Unit tests (all features enabled + coverage)"
