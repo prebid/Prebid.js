@@ -67,6 +67,9 @@ jobs:
           local-testing: start
           local-identifier: random
 
+      - name: "Wait for other test runs to complete"
+        uses: ./.github/workflows/browserstack-queue.yml
+
       - name: Run tests
         uses: nick-fields/retry@v3
         with:

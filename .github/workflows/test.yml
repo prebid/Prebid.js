@@ -99,18 +99,9 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-  wait-for-browserstack:
-    name: "Wait for other test runs to complete"
-    uses: ./.github/workflows/browserstack-queue.yml
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
   test:
     name: "Unit tests (all features enabled + coverage)"
-    needs:
-     - checkout
-     - wait-for-browserstack
+    needs: checkout
     uses: ./.github/workflows/run-unit-tests.yml
     with:
       build-cmd: npx gulp precompile
@@ -119,6 +110,14 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  wait-for-browserstack:
+    name: "Wait for other test runs to complete"
+    uses: ./.github/workflows/browserstack-queue.yml
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
   test-e2e:
     name: "End-to-end tests"
     needs:
