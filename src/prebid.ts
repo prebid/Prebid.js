@@ -189,15 +189,11 @@ function validateBannerMediaType(adUnit: AdUnit) {
     }
     banner.sizes = filteredSizes;
     if (filteredSizes.length === 0) {
-      if (isFluid) {
         logWarn(`All sizes removed from mediaTypes.banner for ad unit ${adUnit.code} (only fluid found). Skipping banner validation.`, adUnit);
-      } else {
-        logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
-        delete validatedAdUnit.mediaTypes.banner
-      }
+        return;
     }
   }
-  const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
+  validateSizes(banner.sizes);
   const format = adUnit.ortb2Imp?.banner?.format ?? banner?.format;
   let formatSizes;
   if (format != null) {
@@ -216,11 +212,11 @@ function validateBannerMediaType(adUnit: AdUnit) {
     } catch (e) {
       logError(`Invalid format definition on ad unit ${adUnit.code}`, format);
     }
-    if (formatSizes != null && bannerSizes != null && !deepEqual(bannerSizes, formatSizes)) {
+    if (formatSizes != null && banner.sizes != null && !deepEqual(banner.sizes, formatSizes)) {
       logWarn(`Ad unit ${adUnit.code} has conflicting sizes and format definitions`, adUnit);
     }
   }
-  const sizes = formatSizes ?? bannerSizes ?? [];
+  const sizes = formatSizes ?? banner.sizes ?? [];
   const expdir = adUnit.ortb2Imp?.banner?.expdir ?? banner.expdir;
   if (expdir != null) {
     banner.expdir = expdir;
