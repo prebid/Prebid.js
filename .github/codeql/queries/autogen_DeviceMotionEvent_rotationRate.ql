@@ -12,4 +12,4 @@ import prebid
 from PropRef api
 where  
   api.getPropertyName() = "rotationRate"
-select api, "rotationRate is an indicator of fingerprinting, weighed 59.32 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "rotationRate is an indicator of fingerprinting, weighed 57.43 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
