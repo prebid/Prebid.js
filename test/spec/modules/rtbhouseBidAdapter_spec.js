@@ -208,6 +208,128 @@ describe('RTBHouseAdapter', () => {
       expect(data.user.ext.consent).to.equal('');
     });
 
+    it('should populate GPP consent string when gppConsent.gppString is provided', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(
+        bidRequest,
+        Object.assign({}, bidderRequest, {
+          gppConsent: {
+            gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+            applicableSections: [7]
+          }
+        })
+      );
+      const data = JSON.parse(request.data);
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(data.regs.gpp_sid).to.deep.equal([7]);
+    });
+
+    it('should populate GPP consent with multiple applicable sections', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(
+        bidRequest,
+        Object.assign({}, bidderRequest, {
+          gppConsent: {
+            gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+            applicableSections: [2, 6, 7]
+          }
+        })
+      );
+      const data = JSON.parse(request.data);
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(data.regs.gpp_sid).to.deep.equal([2, 6, 7]);
+    });
+
+    it('should fallback to ortb2.regs.gpp when gppConsent.gppString is not provided', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const localBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          regs: {
+            gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+            gpp_sid: [8, 10]
+          }
+        }
+      };
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(data.regs.gpp_sid).to.deep.equal([8, 10]);
+    });
+
+    it('should prioritize gppConsent.gppString over ortb2.regs.gpp', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const localBidderRequest = {
+        ...bidderRequest,
+        gppConsent: {
+          gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+          applicableSections: [7]
+        },
+        ortb2: {
+          regs: {
+            gpp: 'DIFFERENT_GPP_STRING',
+            gpp_sid: [8, 10]
+          }
+        }
+      };
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(data.regs.gpp_sid).to.deep.equal([7]);
+    });
+
+    it('should not populate GPP consent when neither gppConsent nor ortb2.regs.gpp is provided', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data).to.not.have.nested.property('regs.gpp');
+      expect(data).to.not.have.nested.property('regs.gpp_sid');
+    });
+
+    it('should not populate GPP when gppConsent exists but gppString is missing', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(
+        bidRequest,
+        Object.assign({}, bidderRequest, {
+          gppConsent: {
+            applicableSections: [7]
+          }
+        })
+      );
+      const data = JSON.parse(request.data);
+      expect(data).to.not.have.nested.property('regs.gpp');
+      expect(data).to.not.have.nested.property('regs.gpp_sid');
+    });
+
+    it('should handle both GDPR and GPP consent together', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      delete bidRequest[0].params.test;
+      const request = spec.buildRequests(
+        bidRequest,
+        Object.assign({}, bidderRequest, {
+          gdprConsent: {
+            gdprApplies: true,
+            consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+          },
+          gppConsent: {
+            gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+            applicableSections: [7]
+          }
+        })
+      );
+      const data = JSON.parse(request.data);
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
+      expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(data.regs.gpp_sid).to.deep.equal([7]);
+    });
+
     it('should include banner imp in request', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
