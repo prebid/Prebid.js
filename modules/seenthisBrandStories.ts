@@ -2,7 +2,6 @@ import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingC
 import { getWinDimensions } from "../src/utils.js";
 
 export const DEFAULT_MARGINS = "16px";
-
 export const EVENTS = [
   "@seenthis_storylines/ready",
   "@seenthis_enabled",
@@ -18,7 +17,10 @@ export const EVENTS = [
 const frameElements: Record<string, HTMLIFrameElement> = {};
 const containerElements: Record<string, HTMLDivElement> = {};
 const isInitialized: Record<string, boolean> = {};
-let classNames: Record<string, string> = {};
+const classNames: Record<string, string> = {
+  container: "storylines-container",
+  expandedBody: "seenthis-storylines-fullscreen",
+};
 
 export function calculateMargins(element: HTMLElement) {
   const boundingClientRect = getBoundingClientRect(element);
@@ -30,27 +32,38 @@ export function calculateMargins(element: HTMLElement) {
     element.style.setProperty("--storylines-margin-left", DEFAULT_MARGINS);
     return;
   }
-
   element.style.setProperty("--storylines-margin-left", `-${marginLeft}px`);
   element.style.setProperty("--storylines-margins", `${marginLeft * 2}px`);
 }
 
 export function getFrameByEvent(event: MessageEvent) {
-  return Array.from(document.getElementsByTagName("iframe")).filter(
-    (iframe) => {
-      return iframe.contentWindow === event.source;
+  const isAncestor = (childWindow: Window, frameWindow: Window) => {
+    if (frameWindow === childWindow) {
+      return true;
+    } else if (childWindow === window.top) {
+      return false;
     }
-  )[0];
+    if (!childWindow?.parent) return false;
+    return isAncestor(childWindow.parent, frameWindow);
+  };
+  const iframeThatMatchesSource = Array.from(
+    document.getElementsByTagName("iframe")
+  ).find((frame) =>
+    isAncestor(event.source as Window, frame.contentWindow as Window)
+  );
+  return iframeThatMatchesSource || null;
 }
 
 export function addStyleToSingleChildAncestors(
   element: HTMLElement,
   { key, value }: { key: string; value: string }
 ) {
-  const windowWidth = getWinDimensions().width;
-  const elementWidth = element.offsetWidth;
-
-  if (key in element.style && elementWidth < windowWidth) {
+  if (!element || !key) return;
+  if (
+    key in element.style &&
+    "offsetWidth" in element &&
+    element.offsetWidth < getWinDimensions().innerWidth
+  ) {
     element.style.setProperty(key, value);
   }
   if (!element.parentElement || element.parentElement?.children.length > 1) {
@@ -92,7 +105,6 @@ window.addEventListener("message", (event) => {
     case "storylines:init": {
       const storyKey = data.storyKey;
       if (!storyKey || isInitialized[storyKey]) return;
-
       isInitialized[storyKey] = true;
 
       frameElements[storyKey] = getFrameByEvent(event);
@@ -113,7 +125,6 @@ window.addEventListener("message", (event) => {
         applyAutoHeight(containerElements[storyKey]);
       }
 
-      classNames = data.classNames;
       containerElements[storyKey]?.classList.add(classNames.container);
       calculateMargins(containerElements[storyKey]);
       break;

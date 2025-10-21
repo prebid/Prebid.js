@@ -11,6 +11,7 @@ import {
 } from "modules/seenthisBrandStories.ts";
 import * as boundingClientRect from "../../../libraries/boundingClientRect/boundingClientRect.js";
 import * as utils from "../../../src/utils.js";
+import * as winDimensions from "src/utils/winDimensions.js";
 
 describe("seenthisBrandStories", function () {
   describe("constants", function () {
@@ -142,17 +143,15 @@ describe("seenthisBrandStories", function () {
 
       const result = getFrameByEvent(mockEvent);
 
-      expect(result).to.be.undefined;
+      expect(result).to.be.null;
     });
   });
 
   describe("addStyleToSingleChildAncestors", function () {
-    let getWinDimensionsStub;
-
     beforeEach(function () {
-      getWinDimensionsStub = sinon
-        .stub(utils, "getWinDimensions")
-        .returns({ width: 1024, height: 768 });
+      sinon
+        .stub(winDimensions, "getWinDimensions")
+        .returns({ innerWidth: 1024, innerHeight: 768 });
     });
 
     afterEach(function () {
