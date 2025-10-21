@@ -343,9 +343,9 @@ export const spec = {
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params.zoneId) return false;
 
-    const bidCurrency = bidRequest.params.currency;
+    if (bidRequest.params.hasOwnProperty('currency')) {
+      const bidCurrency = bidRequest.params.currency;
 
-    if (bidCurrency) {
       if (!ALLOWED_CURRENCIES.includes(bidCurrency)) {
         utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
         return false;
