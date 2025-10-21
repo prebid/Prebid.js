@@ -3,7 +3,7 @@ import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
-import { getDomComplexity } from "../libraries/fpdUtils/pageInfo.js";
+import {getDomComplexity, getPageDescription, getPageTitle} from "../libraries/fpdUtils/pageInfo.js";
 
 const PREBID_VERSION = '$prebid.version$';
 const ADAPTER_VERSION = '1.0';
@@ -19,18 +19,6 @@ const detectAdType = (bid) =>
 
 const getReferrerInfo = (bidderRequest) => {
   return bidderRequest?.refererInfo?.page ?? '';
-}
-
-const getPageTitle = () => {
-  try {
-    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
-
-    return window.top.document.title || (ogTitle && ogTitle.content) || '';
-  } catch (e) {
-    const ogTitle = document.querySelector('meta[property="og:title"]')
-
-    return document.title || (ogTitle && ogTitle.content) || '';
-  }
 }
 
 const parseNativeAd = function (bid) {
@@ -240,6 +228,7 @@ export const spec = {
         referer: getReferrerInfo(bidderRequest),
         pageReferer: document.referrer,
         pageTitle: getPageTitle().slice(0, 300),
+        pageDescription: getPageDescription().slice(0, 300),
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
         deviceWidth: screen.width,
