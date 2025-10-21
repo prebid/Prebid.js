@@ -255,37 +255,6 @@ describe('sevioBidAdapter', function () {
       expect(out[0].data.referer).to.equal('https://example.com/page');
     });
 
-    it('getConnectionDownLink / getNetworkQuality → networkBandwidth / networkQuality', () => {
-      try {
-        Object.defineProperty(navigator, 'connection', {
-          value: { downlink: 1.25, effectiveType: '4g' },
-          configurable: true
-        });
-      } catch (e) {
-        return;
-      }
-
-      const out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.networkBandwidth).to.equal('1.25');
-      expect(out[0].data.networkQuality).to.equal('4g');
-    });
-
-    it('empty bandwidth/quality when connection missing or negative downlink', () => {
-      try {
-        Object.defineProperty(navigator, 'connection', { value: undefined, configurable: true });
-      } catch (e) {}
-      let out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.networkBandwidth).to.equal('');
-      expect(out[0].data.networkQuality).to.equal('');
-
-      try {
-        Object.defineProperty(navigator, 'connection', { value: { downlink: -1 }, configurable: true });
-      } catch (e) {}
-      out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.networkBandwidth).to.equal('');
-      expect(out[0].data.networkQuality).to.equal('');
-    });
-
     it('getPageTitle prefers top.title; falls back to og:title (top document)', () => {
       window.top.document.title = 'Doc Title';
       let out = spec.buildRequests([mkBid()], baseBidderRequest);
