@@ -14,4 +14,4 @@ where
   invocation.getCalleeName() = "getContext" and
   invocation.getArgument(0).mayHaveStringValue("2d") and
   api = invocation.getAPropertyRead("isPointInPath")
-select api, "isPointInPath is an indicator of fingerprinting, weighed 4216.23 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "isPointInPath is an indicator of fingerprinting, weighed 4458.33 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

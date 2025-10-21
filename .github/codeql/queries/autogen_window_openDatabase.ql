@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = windowPropertyRead("openDatabase")
-select api, "openDatabase is an indicator of fingerprinting, weighed 139.85 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "openDatabase is an indicator of fingerprinting, weighed 137.87 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
