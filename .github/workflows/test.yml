@@ -99,9 +99,22 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  wait-for-browserstack:
+    runs-on: ubuntu-latest
+    name: "Wait for other test runs to complete"
+    steps:
+      - env:
+          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+        run: |
+          curl -u "${BROWSERSTACK_USER_NAME}:${BROWSERSTACK_ACCESS_KEY}" \
+            -X GET "https://api-cloud.browserstack.com/app-automate/plan.json"
+
   test:
     name: "Unit tests (all features enabled + coverage)"
-    needs: checkout
+    needs:
+     - checkout
+     - wait-for-browserstack
     uses: ./.github/workflows/run-unit-tests.yml
     with:
       build-cmd: npx gulp precompile
@@ -112,7 +125,9 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-e2e:
     name: "End-to-end tests"
-    needs: checkout
+    needs:
+      - checkout
+      - wait-for-browserstack
     runs-on: ubuntu-latest
     concurrency:
       # see test-chunk.yml for notes on concurrency groups
