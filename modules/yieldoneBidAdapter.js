@@ -25,6 +25,30 @@ const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstvi
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
+const BOL_LIKE_USER_AGENTS = [
+  'Googlebot',
+  'AdsBot-Google',
+  'Mediapartners-Google',
+  'GPTBot',
+  'DuckDuckBot',
+  'AhrefsBot',
+  'facebookexternalhit',
+  'Twitterbot',
+  'Applebot',
+  'YandexBot',
+  'SemrushBot',
+  'amazon-kendra',
+  'YisouSpider',
+  'Brightbot',
+  'crawler',
+  'bot',
+  'spider',
+  'python',
+  'curl',
+  'wget',
+  'httpclient'
+];
+
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
@@ -410,12 +434,12 @@ function cmerRender(bid) {
 }
 
 /**
- * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies.
+ * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies OR it's bot-like traffic.
  * Data extracted from navigator's userAgent
  * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
  */
 function skipSync(gdprConsent) {
-  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent);
+  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent) || isBotLikeTraffic();
 }
 
 /**
@@ -423,6 +447,16 @@ function skipSync(gdprConsent) {
  */
 function gdprApplies(gdprConsent) {
   return gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies;
+}
+
+/**
+ * Check if the user agent is bot-like
+ * @returns {boolean}
+ */
+function isBotLikeTraffic() {
+  const botPattern = new RegExp(BOL_LIKE_USER_AGENTS.join('|'), 'i');
+
+  return botPattern.test(navigator.userAgent);
 }
 
 registerBidder(spec);
