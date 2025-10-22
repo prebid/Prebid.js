@@ -445,7 +445,7 @@ declare module './hook' {
 }
 
 function tidFactory() {
-  const consistent = !!config.getConfig('consistentTids');
+  const consistent = !!config.getConfig('consistentTIDs');
   let tidSource, getTid;
   if (consistent) {
     tidSource = 'pbjsStable';
