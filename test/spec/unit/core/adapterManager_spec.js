@@ -2104,7 +2104,7 @@ describe('adapterManager tests', function () {
         consistent() {
           config.setConfig({
             enableTIDs: true,
-            consistentTids: true,
+            consistentTIDs: true,
           })
         },
         inconsistent() {
@@ -2189,7 +2189,7 @@ describe('adapterManager tests', function () {
         });
         describe('and consistent', () => {
           beforeEach(() => {
-            config.setConfig({consistentTids: true});
+            config.setConfig({consistentTIDs: true});
           });
           it('should populate source.tid with auctionId', () => {
             const reqs = makeRequests();
