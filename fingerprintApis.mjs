@@ -101,21 +101,6 @@ select api, ${message(weight, api)}`
     ]
 }
 
-function simplePropertyMatch(weight, target, prop) {
-  return [
-    `${target}_${prop}`,
-    QUERY_FILE_TPL({
-      id: `${target}-${prop}`.toLowerCase(),
-      name: `Potential access to ${target}.${prop}`,
-      description: `Finds uses of ${prop}`,
-      query: `import prebid
-from PropRef api
-where  
-  api.getPropertyName() = "${prop}"
-select api, ${message(weight, prop)}`
-    })
-  ]
-}
 function glContextMatcher(contextType) {
   return function(weight, api) {
     return [
@@ -155,6 +140,27 @@ select api, ${message(weight, api)}`
   }
 }
 
+function adHocPropertyMatcher(type, ...args) {
+  const argDesc = args.length > 0 ? ` (${args.join(', ')})` : '';
+  const argId = args.length > 0 ? '-' + args.join('-') : '';
+  return function(weight, api) {
+    return [
+      `${type}_${args.join('_')}_${api}`,
+      QUERY_FILE_TPL({
+        id: `${type}${argId}-${api}`.toLowerCase(),
+        name: `Access to ${type} ${api}${argDesc}`,
+        description: `Finds uses of ${api} on ${type}${argDesc}`,
+        query: `import ${type}
+from SourceNode target, SourceNode api
+where
+  target = ${type}(${args.map(arg => `"${arg}"`).join(', ')}) and
+  api = target.getAPropertyRead("${api}")
+select api, ${message(weight, api)}`
+      })
+    ]
+  }
+}
+
 const API_MATCHERS = [
     [/^([^.]+)\.prototype.constructor$/, globalConstructor],
     [/^Screen\.prototype\.(.*)$/, globalProp('screen')],
@@ -163,11 +169,12 @@ const API_MATCHERS = [
     [/^Navigator.prototype\.(.*)$/, globalProp('navigator')],
     [/^(Date|Gyroscope)\.prototype\.(.*)$/, globalConstructorProperty],
     [/^(Intl)\.(DateTimeFormat)\.prototype\.(.*)$/, globalConstructorProperty],
-    [/^DeviceMotionEvent\.prototype\.(.*)$/, eventPropertyMatcher("devicemotion")],
-    [/^DeviceOrientationEvent\.prototype\.(.*)$/, eventPropertyMatcher("deviceorientation")],
+    [/^DeviceMotionEvent\.prototype\.(.*)$/, adHocPropertyMatcher("domEvent", "devicemotion")],
+    [/^DeviceOrientationEvent\.prototype\.(.*)$/, adHocPropertyMatcher("domEvent", "deviceorientation")],
     [/^WebGLRenderingContext\.prototype\.(.*)$/, glContextMatcher('webgl')],
     [/^WebGL2RenderingContext\.prototype\.(.*)$/, glContextMatcher('webgl2')],
     [/^CanvasRenderingContext2D\.prototype\.(.*)$/, glContextMatcher('2d')],
+    [/^Sensor.prototype\.(.*)$/, adHocPropertyMatcher('sensor')],
 ];
 
 async function generateQueries() {
