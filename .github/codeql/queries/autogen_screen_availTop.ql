@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("screen") and
   api = prop.getAPropertyRead("availTop")
-select api, "availTop is an indicator of fingerprinting, weighed 1527.75 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "availTop is an indicator of fingerprinting, weighed 1374.93 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
