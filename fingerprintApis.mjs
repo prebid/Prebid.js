@@ -136,6 +136,25 @@ select api, ${message(weight, api)}`
   }
 }
 
+function eventPropertyMatcher(event) {
+  return function(weight, api) {
+    return [
+      `${event}_${api}`,
+      QUERY_FILE_TPL({
+        id: `${event}-${api}`.toLowerCase(),
+        name: `Access to ${event}.${api}`,
+        description: `Finds uses of ${api} on ${event} events`,
+        query: `import event
+from SourceNode event, SourceNode api
+where
+  event = domEvent("${event}") and
+  api = event.getAPropertyRead("${api}")
+select api, ${message(weight, api)}`
+      })
+    ]
+  }
+}
+
 const API_MATCHERS = [
     [/^([^.]+)\.prototype.constructor$/, globalConstructor],
     [/^Screen\.prototype\.(.*)$/, globalProp('screen')],
@@ -144,7 +163,8 @@ const API_MATCHERS = [
     [/^Navigator.prototype\.(.*)$/, globalProp('navigator')],
     [/^(Date|Gyroscope)\.prototype\.(.*)$/, globalConstructorProperty],
     [/^(Intl)\.(DateTimeFormat)\.prototype\.(.*)$/, globalConstructorProperty],
-    [/^(DeviceMotionEvent)\.prototype\.(.*)$/, simplePropertyMatch],
+    [/^DeviceMotionEvent\.prototype\.(.*)$/, eventPropertyMatcher("devicemotion")],
+    [/^DeviceOrientationEvent\.prototype\.(.*)$/, eventPropertyMatcher("deviceorientation")],
     [/^WebGLRenderingContext\.prototype\.(.*)$/, glContextMatcher('webgl')],
     [/^WebGL2RenderingContext\.prototype\.(.*)$/, glContextMatcher('webgl2')],
     [/^CanvasRenderingContext2D\.prototype\.(.*)$/, glContextMatcher('2d')],
