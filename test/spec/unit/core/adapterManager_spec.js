@@ -2099,50 +2099,113 @@ describe('adapterManager tests', function () {
         return adapterManager.makeBidRequests(adUnits, 0, 'mockAuctionId', 1000, [], ortb2Fragments);
       }
 
-      it('should NOT populate source.tid with auctionId', () => {
-        const reqs = makeRequests();
-        expect(reqs[0].ortb2.source.tid).to.not.equal('mockAuctionId');
-      });
-      it('should override source.tid if specified in FPD', () => {
-        const reqs = makeRequests({
-          global: {
-            source: {
-              tid: 'tid'
-            }
-          },
-          rubicon: {
-            source: {
-              tid: 'tid'
-            }
-          }
-        });
-        reqs.forEach(req => {
-          expect(req.ortb2.source.tid).to.exist;
-          expect(req.ortb2.source.tid).to.not.eql('tid');
-        });
-        expect(reqs[0].ortb2.source.tid).to.not.eql(reqs[1].ortb2.source.tid);
-      });
-      it('should generate ortb2Imp.ext.tid', () => {
-        const reqs = makeRequests();
-        const tids = new Set(reqs.flatMap(br => br.bids).map(b => b.ortb2Imp?.ext?.tid));
-        expect(tids.size).to.eql(3);
-      });
-      it('should override ortb2Imp.ext.tid if specified in FPD', () => {
-        adUnits[0].ortb2Imp = adUnits[1].ortb2Imp = {
-          ext: {
-            tid: 'tid'
-          }
-        };
-        const reqs = makeRequests();
-        expect(reqs[0].bids[0].ortb2Imp.ext.tid).to.not.eql('tid');
-      });
-      it('should use matching ext.tid if transactionId match', () => {
-        adUnits[1].transactionId = adUnits[0].transactionId;
-        const reqs = makeRequests();
-        reqs.forEach(br => {
-          expect(new Set(br.bids.map(b => b.ortb2Imp.ext.tid)).size).to.eql(1);
+      Object.entries({
+        disabled() {},
+        consistent() {
+          config.setConfig({
+            enableTIDs: true,
+            consistentTIDs: true,
+          })
+        },
+        inconsistent() {
+          config.setConfig({
+            enableTIDs: true
+          })
+        }
+      }).forEach(([t, setup]) => {
+        describe(`when TIDs are ${t}`, () => {
+          beforeEach(setup);
+          afterEach(() => {
+            config.resetConfig()
+          });
+          it('should respect source.tid from FPD', () => {
+            const reqs = makeRequests({
+              global: {
+                source: {
+                  tid: 'tid'
+                }
+              },
+              bidder: {
+                rubicon: {
+                  source: {
+                    tid: 'tid2'
+                  }
+                }
+              }
+            });
+            reqs.forEach(req => {
+              expect(req.ortb2.source.tid).to.eql(req.bidderCode === 'rubicon' ? 'tid2' : 'tid');
+              expect(req.ortb2.source.ext.tidSource).to.eql('pub');
+            });
+          })
+          it('should respect publisher-provided ortb2Imp.ext.tid values', () => {
+            adUnits[1].ortb2Imp = {ext: {tid: 'pub-tid'}};
+            const tidRequests = makeRequests().flatMap(br => br.bids).filter(req => req.adUnitCode === adUnits[1].code);
+            expect(tidRequests.length).to.eql(2);
+            tidRequests.forEach(req => {
+              expect(req.ortb2Imp.ext.tid).to.eql('pub-tid');
+              expect(req.ortb2Imp.ext.tidSource).to.eql('pub');
+            })
+          });
         })
-      });
+      })
+      describe('when tids are enabled', () => {
+        beforeEach(() => {
+          config.setConfig({enableTIDs: true});
+        })
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        it('should populate source.tid', () => {
+          makeRequests().forEach(req => {
+            expect(req.ortb2.source.tid).to.exist;
+          });
+        })
+
+        it('should generate ortb2Imp.ext.tid', () => {
+          makeRequests().flatMap(br => br.bids).forEach(req => {
+            expect(req.ortb2Imp.ext.tid).to.exist;
+          })
+        });
+
+        describe('and inconsistent', () => {
+          it('should NOT populate source.tid with auctionId', () => {
+            const reqs = makeRequests();
+            expect(reqs[0].ortb2.source.tid).to.not.equal('mockAuctionId');
+            expect(reqs[0].ortb2.source.ext.tidSource).to.eql('pbjs')
+          });
+          it('should provide different source.tid to different bidders', () => {
+            const reqs = makeRequests();
+            expect(reqs[0].ortb2.source.tid).to.not.equal(reqs[1].ortb2.source.tid);
+          });
+          it('should provide different ortb2Imp.ext.tid to different bidders', () => {
+            const reqs = makeRequests().flatMap(br => br.bids).filter(br => br.adUnitCode === adUnits[1].code);
+            expect(reqs[0].ortb2Imp.ext.tid).to.not.eql(reqs[1].ortb2Imp.ext.tid);
+            reqs.forEach(req => {
+              expect(req.ortb2Imp.ext.tidSource).to.eql('pbjs');
+            })
+          });
+        });
+        describe('and consistent', () => {
+          beforeEach(() => {
+            config.setConfig({consistentTIDs: true});
+          });
+          it('should populate source.tid with auctionId', () => {
+            const reqs = makeRequests();
+            expect(reqs[0].ortb2.source.tid).to.eql('mockAuctionId');
+            expect(reqs[0].ortb2.source.ext.tidSource).to.eql('pbjsStable');
+          });
+          it('should provide the same ext.tid to all bidders', () => {
+            const reqs = makeRequests().flatMap(br => br.bids).filter(req => req.adUnitCode === adUnits[1].code);
+            expect(reqs[0].ortb2Imp.ext.tid).to.eql(reqs[1].ortb2Imp.ext.tid);
+            reqs.forEach(req => {
+              expect(req.ortb2Imp.ext.tid).to.exist;
+              expect(req.ortb2Imp.ext.tidSource).to.eql('pbjsStable');
+            })
+          })
+        })
+      })
       describe('when the same bidder is routed to both client and server', () => {
         function route(next) {
           next.bail({
