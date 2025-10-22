@@ -11,5 +11,5 @@
 import prebid
 from SourceNode api
 where
-  api = instantiationOf("Gyroscope")
-select api, "Gyroscope is an indicator of fingerprinting, weighed 160.04 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+  api = callTo("Gyroscope")
+select api, "Gyroscope is an indicator of fingerprinting, weighed 142.79 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

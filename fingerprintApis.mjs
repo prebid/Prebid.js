@@ -76,13 +76,15 @@ function globalConstructor(weight, ctr) {
         query: `import prebid
 from SourceNode api
 where
-  api = instantiationOf("${ctr}")
+  api = callTo("${ctr}")
 select api, ${message(weight, ctr)}`
       })
     ]
 }
 
-function globalConstructorProperty(weight, ctr, api) {
+function globalConstructorProperty(weight, ...args) {
+  const api = args.pop();
+  const ctr = args.join('-');
     return [
       `${ctr}_${api}`,
       QUERY_FILE_TPL({
@@ -92,7 +94,7 @@ function globalConstructorProperty(weight, ctr, api) {
         query: `import prebid
 from SourceNode inst, SourceNode api
 where
-  inst = instantiationOf("${ctr}") and
+  inst = callTo(${args.map(arg => `"${arg}"`).join(', ')}) and
   api = inst.getAPropertyRead("${api}")
 select api, ${message(weight, api)}`
       })
@@ -141,6 +143,7 @@ const API_MATCHERS = [
     [/^window\.(.*)$/, windowProp],
     [/^Navigator.prototype\.(.*)$/, globalProp('navigator')],
     [/^(Date|Gyroscope)\.prototype\.(.*)$/, globalConstructorProperty],
+    [/^(Intl)\.(DateTimeFormat)\.prototype\.(.*)$/, globalConstructorProperty],
     [/^(DeviceMotionEvent)\.prototype\.(.*)$/, simplePropertyMatch],
     [/^WebGLRenderingContext\.prototype\.(.*)$/, glContextMatcher('webgl')],
     [/^WebGL2RenderingContext\.prototype\.(.*)$/, glContextMatcher('webgl2')],

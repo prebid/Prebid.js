@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("Notification") and
   api = prop.getAPropertyRead("permission")
-select api, "permission is an indicator of fingerprinting, weighed 22.63 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "permission is an indicator of fingerprinting, weighed 22.02 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

@@ -14,4 +14,4 @@ where
   invocation.getCalleeName() = "getContext" and
   invocation.getArgument(0).mayHaveStringValue("webgl") and
   api = invocation.getAPropertyRead("getContextAttributes")
-select api, "getContextAttributes is an indicator of fingerprinting, weighed 2006.6 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "getContextAttributes is an indicator of fingerprinting, weighed 1404.12 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
