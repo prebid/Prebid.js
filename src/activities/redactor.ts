@@ -218,7 +218,7 @@ declare module '../config' {
      * When enabled alongside enableTIDs, bidders receive a consistent source.tid for an auction rather than
      * bidder-specific values.
      */
-    consistentTids?: boolean;
+    consistentTIDs?: boolean;
   }
 }
 // by default, TIDs are off since version 8
