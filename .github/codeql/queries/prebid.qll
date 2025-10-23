@@ -63,22 +63,32 @@ SourceNode windowPropertyRead(string prop) {
   result = windowPropertyRead(TypeTracker::end(), prop)
 }
 
-SourceNode callTo(string globalVar) {
-   exists(SourceNode fn |
-     fn = windowPropertyRead(globalVar) and
-     (
-       result = fn.getAnInstantiation() or
-       result = fn.getAnInvocation()
-     )
+SourceNode callTo(SourceNode fn) {
+   result = fn.getAnInstantiation() or
+   result = fn.getAnInvocation()
+}
+
+SourceNode global(TypeTracker t, string name) {
+   t.start() and (
+     result = windowPropertyRead(name)
+   ) or exists(TypeTracker t2 |
+     result = global(t2, name).track(t2, t)
    )
 }
 
-SourceNode callTo(string globalVar, string name) {
-   exists(SourceNode fn |
-      fn = windowPropertyRead(globalVar).getAPropertyRead(name) and
-      (
-      result = fn.getAnInstantiation() or
-      result = fn.getAnInvocation()
-      )
-   )
+
+SourceNode global(string name) {
+   result = global(TypeTracker::end(), name)
+}
+
+SourceNode oneDeepGlobal(TypeTracker t, string parent, string name) {
+  t.start() and (
+     result = global(parent).getAPropertyRead(name)
+  ) or exists(TypeTracker t2 |
+     result = oneDeepGlobal(t2, parent, name).track(t2, t)
+  )
+}
+
+SourceNode oneDeepGlobal(string parent, string name) {
+  result = oneDeepGlobal(TypeTracker::end(), parent, name)
 }
