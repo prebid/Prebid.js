@@ -16,6 +16,8 @@ class EventProperty extends string {
        or 
       ( this = "alpha"  and weight = 366.53  and event = "deviceorientation" )
        or 
+      ( this = "candidate"  and weight = 69.63  and event = "icecandidate" )
+       or 
       ( this = "acceleration"  and weight = 58.05  and event = "devicemotion" )
        or 
       ( this = "rotationRate"  and weight = 57.59  and event = "devicemotion" )

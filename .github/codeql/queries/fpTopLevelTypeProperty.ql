@@ -1,5 +1,5 @@
 /**
- * @id prebid/fp-top-level-object-prop
+ * @id prebid/fp-top-level-type-prop
  * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning

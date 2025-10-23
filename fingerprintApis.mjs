@@ -97,12 +97,23 @@ function renderingContextProperty(matches) {
 
 function eventProperty(matches) {
   const fields = [['string', 'event']];
-  matches = matches.map(([weight, eventType, prop]) => [weight, eventType.toLowerCase(), prop])
+  const eventMap = {
+    'RTCPeerConnectionIce': 'icecandidate'
+  }
+  matches = matches.map(([weight, eventType, prop]) => [weight, eventMap[eventType] ?? eventType.toLowerCase(), prop])
   return makeTupleType('EventProperty', fields, matches);
 }
 
 function sensorProperty(matches) {
   return makeTupleType('SensorProperty', [], matches);
+}
+
+function domMethod(matches) {
+  return makeTupleType('DOMMethod', [['string', 'type']], matches)
+}
+
+function audioBufferProperty(matches) {
+  return makeTupleType('AudioBufferProperty', [], matches)
 }
 
 const API_MATCHERS = [
@@ -118,9 +129,10 @@ const API_MATCHERS = [
   )],
   [/^window\.(.*)$/, globalVar],
   [/^(WebGL2?RenderingContext|CanvasRenderingContext2D)\.prototype\.(.*)$/, renderingContextProperty],
-  [/^(DeviceOrientation|DeviceMotion)Event\.prototype\.(.*)$/, eventProperty],
+  [/^(DeviceOrientation|DeviceMotion|RTCPeerConnectionIce)Event\.prototype\.(.*)$/, eventProperty],
   [/^MediaDevices\.prototype\.(.*)$/, globalObjectProperty(1, () => ['navigator', 'mediaDevices'])],
   [/^Sensor.prototype\.(.*)$/, sensorProperty],
+  [/^(HTMLCanvasElement|AudioBuffer)\.prototype\.(toDataURL|getChannelData)/, domMethod],
 ];
 
 async function generateTypes() {
