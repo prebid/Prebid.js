@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("screen") and
   api = prop.getAPropertyRead("pixelDepth")
-select api, "pixelDepth is an indicator of fingerprinting, weighed 37.51 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "pixelDepth is an indicator of fingerprinting, weighed 37.72 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
