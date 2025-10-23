@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = windowPropertyRead("screenTop")
-select api, "screenTop is an indicator of fingerprinting, weighed 329.11 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "screenTop is an indicator of fingerprinting, weighed 313.8 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

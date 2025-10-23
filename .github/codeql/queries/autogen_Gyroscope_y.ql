@@ -11,6 +11,6 @@
 import prebid
 from SourceNode inst, SourceNode api
 where
-  inst = instantiationOf("Gyroscope") and
+  inst = callTo("Gyroscope") and
   api = inst.getAPropertyRead("y")
-select api, "y is an indicator of fingerprinting, weighed 4458.33 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "y is an indicator of fingerprinting, weighed 5043.14 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
