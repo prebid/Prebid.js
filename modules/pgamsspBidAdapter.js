@@ -8,7 +8,6 @@ const SYNC_URL = 'https://cs.pgammedia.com';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),
