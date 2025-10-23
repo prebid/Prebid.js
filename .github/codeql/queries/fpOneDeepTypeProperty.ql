@@ -1,6 +1,6 @@
 /**
  * @id prebid/fp-one-deep-constructor-prop
- * @name Fingerprinting API (1-deep global constructor)
+ * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning
  * @description Usage of browser APIs associated with fingerprinting

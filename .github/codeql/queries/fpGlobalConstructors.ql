@@ -1,6 +1,6 @@
 /**
  * @id prebid/fp-global-constructors
- * @name Fingerprinting API (global constructor)
+ * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning
  * @description Usage of browser APIs associated with fingerprinting

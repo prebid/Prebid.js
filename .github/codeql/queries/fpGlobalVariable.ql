@@ -1,6 +1,6 @@
 /**
  * @id prebid/fp-global-var
- * @name Fingerprinting API (global variable)
+ * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning
  * @description Usage of browser APIs associated with fingerprinting

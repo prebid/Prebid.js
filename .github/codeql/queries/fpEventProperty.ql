@@ -1,6 +1,6 @@
 /**
  * @id prebid/fp-event-property
- * @name Fingerprinting API (event property)
+ * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning
  * @description Usage of browser APIs associated with fingerprinting

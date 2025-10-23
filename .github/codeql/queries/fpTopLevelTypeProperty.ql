@@ -1,6 +1,6 @@
 /**
  * @id prebid/fp-top-level-object-prop
- * @name Fingerprinting API (global constructor property)
+ * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning
  * @description Usage of browser APIs associated with fingerprinting

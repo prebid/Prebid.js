@@ -1,6 +1,6 @@
 /**
  * @id prebid/fp-rendering-context-property
- * @name Fingerprinting API (rendering context)
+ * @name Use of browser API associated with fingerprinting
  * @kind problem
  * @problem.severity warning
  * @description Usage of browser APIs associated with fingerprinting
