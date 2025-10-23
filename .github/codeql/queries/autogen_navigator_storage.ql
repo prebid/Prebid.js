@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("navigator") and
   api = prop.getAPropertyRead("storage")
-select api, "storage is an indicator of fingerprinting, weighed 150.75 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "storage is an indicator of fingerprinting, weighed 151.33 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

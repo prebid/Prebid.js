@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("navigator") and
   api = prop.getAPropertyRead("getGamepads")
-select api, "getGamepads is an indicator of fingerprinting, weighed 211.66 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "getGamepads is an indicator of fingerprinting, weighed 235.72 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

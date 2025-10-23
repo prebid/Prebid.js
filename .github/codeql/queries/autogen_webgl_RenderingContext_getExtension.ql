@@ -14,4 +14,4 @@ where
   invocation.getCalleeName() = "getContext" and
   invocation.getArgument(0).mayHaveStringValue("webgl") and
   api = invocation.getAPropertyRead("getExtension")
-select api, "getExtension is an indicator of fingerprinting, weighed 21.18 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "getExtension is an indicator of fingerprinting, weighed 20.11 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

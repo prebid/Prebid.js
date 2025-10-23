@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("navigator") and
   api = prop.getAPropertyRead("deviceMemory")
-select api, "deviceMemory is an indicator of fingerprinting, weighed 70.5 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "deviceMemory is an indicator of fingerprinting, weighed 75.06 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
