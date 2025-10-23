@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -76,7 +77,7 @@ export const sharethroughAdapterSpec = {
         ua: navigator.userAgent,
         language: navigator.language,
         js: 1,
-        dnt: navigator.doNotTrack === '1' ? 1 : 0,
+        dnt: getDNT() ? 1 : 0,
         h: window.screen.height,
         w: window.screen.width,
         ext: {},

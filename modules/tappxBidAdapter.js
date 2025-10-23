@@ -1,6 +1,7 @@
 'use strict';
 
-import { logWarn, deepAccess, isFn, isPlainObject, getDNT, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
+import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -205,9 +206,9 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
-  if (typeof serverBid.lurl != 'undefined') { bidReturned.lurl = serverBid.lurl }
-  if (typeof serverBid.nurl != 'undefined') { bidReturned.nurl = serverBid.nurl }
-  if (typeof serverBid.burl != 'undefined') { bidReturned.burl = serverBid.burl }
+  if (typeof serverBid.lurl !== 'undefined') { bidReturned.lurl = serverBid.lurl }
+  if (typeof serverBid.nurl !== 'undefined') { bidReturned.nurl = serverBid.nurl }
+  if (typeof serverBid.burl !== 'undefined') { bidReturned.burl = serverBid.burl }
 
   if (typeof request.bids?.mediaTypes !== 'undefined' && typeof request.bids?.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
@@ -359,7 +360,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     video.mimes = videoMediaType.mimes;
 
     const videoExt = {};
-    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded == 1) {
+    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded === 1) {
       videoExt.rewarded = videoMediaType.rewarded;
     }
     video.ext = videoExt;
@@ -394,7 +395,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
   bidder.bidfloor = BIDFLOOR;
-  bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : undefined;
+  bidder.ext = (typeof BIDEXTRA === 'object') ? BIDEXTRA : undefined;
 
   imp.ext = {};
   imp.ext.bidder = bidder;
@@ -453,8 +454,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     eidsArr = eidsArr.filter(
       uuid =>
         (typeof uuid !== 'undefined' && uuid !== null) &&
-        (typeof uuid.source == 'string' && uuid.source !== null) &&
-        (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
+        (typeof uuid.source === 'string' && uuid.source !== null) &&
+        (typeof uuid.uids[0].id === 'string' && uuid.uids[0].id !== null)
     );
 
     user.ext.eids = eidsArr;
@@ -486,7 +487,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payloadExt.bidder.mktag = MKTAG;
   payloadExt.bidder.bcid = deepAccess(validBidRequests, 'params.bcid');
   payloadExt.bidder.bcrid = deepAccess(validBidRequests, 'params.bcrid');
-  payloadExt.bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : {};
+  payloadExt.bidder.ext = (typeof BIDEXTRA === 'object') ? BIDEXTRA : {};
   if (typeof videoMediaType !== 'undefined') {
     payloadExt.bidder.ext.pbvidtype = videoMediaType.context;
   }
@@ -523,12 +524,12 @@ function getLanguage() {
 
 function getOs() {
   const ua = navigator.userAgent;
-  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') !== -1) { return 'macOS'; } else if (ua.indexOf('Windows') !== -1) { return 'Windows'; } else if (ua.indexOf('Linux') !== -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
 function getVendor() {
   const ua = navigator.userAgent;
-  if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
+  if (ua.indexOf('Chrome') !== -1) { return 'Google'; } else if (ua.indexOf('Firefox') !== -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') !== -1) { return 'Apple'; } else if (ua.indexOf('Edge') !== -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') !== -1 || ua.indexOf('Trident') !== -1) { return 'Microsoft'; } else { return ''; }
 }
 
 export function _getHostInfo(validBidRequests) {
@@ -565,7 +566,7 @@ export function _getHostInfo(validBidRequests) {
 
 function outstreamRender(bid, request) {
   let rendererOptions = {};
-  rendererOptions = (typeof bid.params[0].video != 'undefined') ? bid.params[0].video : {};
+  rendererOptions = (typeof bid.params[0].video !== 'undefined') ? bid.params[0].video : {};
   rendererOptions.content = bid.vastXml;
 
   bid.renderer.push(() => {

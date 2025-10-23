@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -55,12 +55,36 @@ jobs:
           key: ${{ inputs.wdir }}
           fail-on-cache-miss: true
 
+      - name: 'BrowserStack Env Setup'
+        uses: 'browserstack/github-actions/setup-env@master'
+        with:
+          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+      - name: 'BrowserStackLocal Setup'
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: start
+          local-identifier: random
+
+      - name: 'Wait for browserstack'
+        if: ${{ inputs.serialize }}
+        uses: ./.github/actions/wait-for-browserstack
+        with:
+          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
       - name: Run tests
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 8
           max_attempts: 3
           command: ${{ inputs.cmd }}
+
+      - name: 'BrowserStackLocal Stop'
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: stop
 
       - name: Save working directory
         uses: actions/cache/save@v4
