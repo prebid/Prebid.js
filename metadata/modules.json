@@ -3748,13 +3748,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "quantcast",
-      "aliasOf": null,
-      "gvlid": "11",
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "qwarry",
       "aliasOf": null,
       "gvlid": null,
