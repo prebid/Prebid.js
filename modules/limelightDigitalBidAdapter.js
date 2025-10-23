@@ -47,7 +47,8 @@ export const spec = {
     { code: 'anzuExchange' },
     { code: 'adnimation' },
     { code: 'rtbdemand' },
-    { code: 'altstar' }
+    { code: 'altstar' },
+    { code: 'vaayaMedia' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 

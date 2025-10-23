@@ -152,6 +152,7 @@ export const spec = {
           data: ''
         };
       }
+      return undefined;
     }).filter(Boolean);
   },
 
