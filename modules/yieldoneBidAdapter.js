@@ -455,7 +455,6 @@ function gdprApplies(gdprConsent) {
  */
 function isBotLikeTraffic() {
   const botPattern = new RegExp(BOL_LIKE_USER_AGENTS.join('|'), 'i');
-
   return botPattern.test(navigator.userAgent);
 }
 
