@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("navigator") and
   api = prop.getAPropertyRead("onLine")
-select api, "onLine is an indicator of fingerprinting, weighed 20.21 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "onLine is an indicator of fingerprinting, weighed 19.76 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
