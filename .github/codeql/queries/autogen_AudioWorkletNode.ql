@@ -11,5 +11,5 @@
 import prebid
 from SourceNode api
 where
-  api = instantiationOf("AudioWorkletNode")
-select api, "AudioWorkletNode is an indicator of fingerprinting, weighed 32.68 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+  api = callTo("AudioWorkletNode")
+select api, "AudioWorkletNode is an indicator of fingerprinting, weighed 17.63 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

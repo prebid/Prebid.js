@@ -796,7 +796,7 @@ export const requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
+  return wrapHook(delegate, logInvocation('requestBids', delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
@@ -812,10 +812,10 @@ export const requestBids = (function() {
     req.defer = defer({ promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
-  }));
+  })));
 })();
 
-addApiMethod('requestBids', requestBids as unknown as RequestBids);
+addApiMethod('requestBids', requestBids as unknown as RequestBids, false);
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
@@ -845,7 +845,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
     // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder).filter(Boolean);
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
@@ -1163,6 +1163,14 @@ addApiMethod('setBidderConfig', config.setBidderConfig);
 
 pbjsInstance.que.push(() => listenMessagesFromCreative());
 
+let queSetupComplete;
+
+export function resetQueSetup() {
+  queSetupComplete = defer<void>();
+}
+
+resetQueSetup();
+
 /**
  * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
  * before or after their script executes. For example, given the code:
@@ -1184,15 +1192,17 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  * @alias module:pbjs.que.push
  */
 function quePush(command) {
-  if (typeof command === 'function') {
-    try {
-      command.call();
-    } catch (e) {
-      logError('Error processing command :', e.message, e.stack);
+  queSetupComplete.promise.then(() => {
+    if (typeof command === 'function') {
+      try {
+        command.call();
+      } catch (e) {
+        logError('Error processing command :', e.message, e.stack);
+      }
+    } else {
+      logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
     }
-  } else {
-    logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
-  }
+  })
 }
 
 function runCommand(cmd) {
@@ -1222,7 +1232,9 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, a
   insertLocatorFrame();
   hook.ready();
   _processQueue(pbjsInstance.que, () => {
-    _processQueue(pbjsInstance.cmd);
+    _processQueue(pbjsInstance.cmd, () => {
+      queSetupComplete.resolve();
+    });
   });
 })
 addApiMethod('processQueue', processQueue, false);

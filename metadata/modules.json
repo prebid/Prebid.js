@@ -87,6 +87,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adbro",
+      "aliasOf": null,
+      "gvlid": 1316,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adbutler",
       "aliasOf": null,
       "gvlid": null,
@@ -480,6 +487,20 @@
     {
       "componentType": "bidder",
       "componentName": "smartyexchange",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "infinety",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "qohere",
       "aliasOf": "adkernel",
       "gvlid": null,
       "disclosureURL": null
@@ -1893,6 +1914,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "defineMedia",
+      "aliasOf": null,
+      "gvlid": 440,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "deltaprojects",
       "aliasOf": null,
       "gvlid": 209,
@@ -2078,6 +2106,13 @@
       "componentName": "eightPod",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "empower",
+      "aliasOf": null,
+      "gvlid": 1248,
       "disclosureURL": null
     },
     {
@@ -2775,6 +2810,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "vaayaMedia",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3083,6 +3125,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "msft",
+      "aliasOf": null,
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "my6sense",
       "aliasOf": null,
       "gvlid": null,
@@ -3286,6 +3335,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "nuba",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "ogury",
       "aliasOf": null,
       "gvlid": 31,
@@ -3295,7 +3351,7 @@
       "componentType": "bidder",
       "componentName": "omnidex",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1463,
       "disclosureURL": null
     },
     {
@@ -3512,7 +3568,7 @@
       "componentType": "bidder",
       "componentName": "pgamssp",
       "aliasOf": null,
-      "gvlid": 1353,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3940,6 +3996,13 @@
       "componentName": "rumble",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "scalibur",
+      "aliasOf": null,
+      "gvlid": 1471,
       "disclosureURL": null
     },
     {
@@ -4505,6 +4568,13 @@
     {
       "componentType": "bidder",
       "componentName": "uniquest",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "uniquest_widget",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null

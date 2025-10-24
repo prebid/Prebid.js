@@ -288,7 +288,7 @@ const ID_REQUEST = {
     }
 
     let publisherId = null;
-    bidRequests.map((bidRequest) => {
+    bidRequests.forEach((bidRequest) => {
       const bidParamsPublisherId = bidRequest.params.publisherId;
       const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
       if (singleRequestMode) {

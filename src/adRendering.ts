@@ -22,6 +22,7 @@ import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 import type {Bid} from "./bidfactory.ts";
+import {PbPromise} from "./utils/promise.ts";
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -348,12 +349,24 @@ export function renderAdDirect(doc, adId, options) {
   }
   const messageHandler = creativeMessageHandler({resizeFn});
 
+  function waitForDocumentReady(doc) {
+    return new PbPromise<void>((resolve) => {
+      if (doc.readyState === 'loading') {
+        doc.addEventListener('DOMContentLoaded', resolve);
+      } else {
+        resolve();
+      }
+    })
+  }
+
   function renderFn(adData) {
-    getCreativeRenderer(bid)
-      .then(render => render(adData, {
-        sendMessage: (type, data) => messageHandler(type, data, bid),
-        mkFrame: createIframe,
-      }, doc.defaultView))
+    PbPromise.all([
+      getCreativeRenderer(bid),
+      waitForDocumentReady(doc)
+    ]).then(([render]) => render(adData, {
+      sendMessage: (type, data) => messageHandler(type, data, bid),
+      mkFrame: createIframe,
+    }, doc.defaultView))
       .then(
         () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
         (e) => {
