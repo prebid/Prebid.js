@@ -1,3 +1,10 @@
+/**
+ * Implementation of `gulp update-codeql`;
+ * this fetches duckduckgo's "fingerprinting score" of browser APIs
+ * and generates codeQL classes (essentially data tables) containing info about
+ * the APIs, used by codeQL queries to scan for their usage in the codebase.
+ */
+
 import _ from 'lodash';
 
 const weightsUrl = `https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json`;
@@ -34,7 +41,20 @@ class <%= name %> extends string {
 } 
 `);
 
-
+/**
+ * Generate source for a codeQL class containing a set of API names and other data
+ * that may be necessary to query for them.
+ *
+ * The generated type has at least
+ *
+ *  "string this" set to the API name,
+ *  "float weight" set to the fingerprinting weight.
+ *
+ * @param name Class name
+ * @param fields Additional fields, provided a list of [type, name] pairs.
+ * @param values A list of values each provided as a [weight, ...fieldValues, apiName] tuples.
+ *   `fieldValues` must have the same length as `fields`.
+ */
 function makeTupleType(name, fields, values) {
   const quote = (val)  => typeof val === 'string' ? `"${val}"` : val;
   fields.unshift(['float', 'weight']);
@@ -52,10 +72,31 @@ function makeTupleType(name, fields, values) {
   ];
 }
 
+/**
+ * Global names - no other metadata necessary
+ */
 function globalConstructor(matches) {
   return makeTupleType('GlobalConstructor', [], matches)
 }
 
+/**
+ * Global names - no other metadata necessary
+ */
+function globalVar(matches) {
+  return makeTupleType(
+    'GlobalVar',
+    [],
+    matches
+  );
+}
+
+
+/**
+ * Property of some globally available type.
+ * this = property name
+ * global0...globalN: names used to reach the type from the global; last is the type itself.
+ *  e.g. `Intl.DateTimeFormat` has global0 = 'Intl', global1 = 'DateTimeFormat'.
+ */
 function globalTypeProperty(depth = 0) {
   const fields = Array.from(Array(depth + 1).keys()).map(i => (['string', `global${i}`]))
   return function (matches) {
@@ -63,6 +104,11 @@ function globalTypeProperty(depth = 0) {
   }
 }
 
+/**
+ * Property of some globally available object.
+ * this = property name
+ * global0...globalN: path to reach the object (as in globalTypeProperty)
+ */
 function globalObjectProperty(depth, getPath) {
   const fields = Array.from(Array(depth + 1).keys()).map((i) => (['string', `global${i}`]))
   return function (matches) {
@@ -74,14 +120,12 @@ function globalObjectProperty(depth, getPath) {
   }
 }
 
-function globalVar(matches) {
-  return makeTupleType(
-    'GlobalVar',
-    [],
-    matches
-  );
-}
-
+/**
+ * Property of a canvas' RenderingContext.
+ *
+ * this = property name
+ * contextType = the argument passed to `getContext`.
+ */
 function renderingContextProperty(matches) {
   const fields = [['string', 'contextType']];
   const contextMap = {
@@ -95,6 +139,12 @@ function renderingContextProperty(matches) {
   return makeTupleType('RenderingContextProperty', fields, matches);
 }
 
+/**
+ * Property of an event object.
+ *
+ *  this = property name
+ *  event = event type
+ */
 function eventProperty(matches) {
   const fields = [['string', 'event']];
   const eventMap = {
@@ -104,16 +154,20 @@ function eventProperty(matches) {
   return makeTupleType('EventProperty', fields, matches);
 }
 
+/**
+ * Property of a sensor object.
+ */
 function sensorProperty(matches) {
   return makeTupleType('SensorProperty', [], matches);
 }
 
+/**
+ * Method of some type.
+ * this =  method name
+ * type = prototype name
+ */
 function domMethod(matches) {
   return makeTupleType('DOMMethod', [['string', 'type']], matches)
-}
-
-function audioBufferProperty(matches) {
-  return makeTupleType('AudioBufferProperty', [], matches)
 }
 
 const API_MATCHERS = [

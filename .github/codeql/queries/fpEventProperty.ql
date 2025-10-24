@@ -11,6 +11,10 @@
 import prebid
 import autogen_fpEventProperty
 
+/*
+ Tracks event objects through `addEventListener`
+ (1st argument to the 2nd argument passed to an `addEventListener`)
+*/
 SourceNode eventListener(TypeTracker t, string event) {
   t.start() and
   (
@@ -26,6 +30,10 @@ SourceNode eventListener(TypeTracker t, string event) {
   )
 }
 
+/*
+  Tracks event objects through 'onevent' property assignments
+  (1st argument of the assignment's right hand)
+*/
 SourceNode eventSetter(TypeTracker t, string eventSetter) {
   t.start() and
   exists(PropWrite write |

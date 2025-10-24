@@ -11,6 +11,9 @@
 import prebid
 import autogen_fpRenderingContextProperty
 
+/*
+  Tracks objects returned by a call to `.getContext()`
+*/
 SourceNode renderingContext(TypeTracker t, string contextType) {
   t.start() and exists(MethodCallNode invocation |
     invocation.getMethodName() = "getContext" and

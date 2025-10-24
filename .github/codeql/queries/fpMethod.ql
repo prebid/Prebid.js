@@ -15,4 +15,5 @@ import autogen_fpDOMMethod
 from DOMMethod meth, MethodCallNode use
 where
    use.getMethodName() = meth
+   // there's no easy way to check the method call is on the right type
 select use, meth + " is an indicator of fingerprinting if used on " + meth.getType() +"; weight: " + meth.getWeight()

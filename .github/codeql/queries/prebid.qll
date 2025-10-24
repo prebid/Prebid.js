@@ -63,6 +63,9 @@ SourceNode windowPropertyRead(string prop) {
   result = windowPropertyRead(TypeTracker::end(), prop)
 }
 
+/**
+ Matches both invocations and instantiations of fn.
+*/
 SourceNode callTo(SourceNode fn) {
    result = fn.getAnInstantiation() or
    result = fn.getAnInvocation()
@@ -77,6 +80,9 @@ SourceNode global(TypeTracker t, string name) {
 }
 
 
+/**
+ Tracks a global (name reachable from a window object).
+*/
 SourceNode global(string name) {
    result = global(TypeTracker::end(), name)
 }
@@ -89,6 +95,9 @@ SourceNode oneDeepGlobal(TypeTracker t, string parent, string name) {
   )
 }
 
+/*
+ Tracks a name reachable 1 level down from the global (e.g. `Intl.DateTimeFormat`).
+*/
 SourceNode oneDeepGlobal(string parent, string name) {
   result = oneDeepGlobal(TypeTracker::end(), parent, name)
 }

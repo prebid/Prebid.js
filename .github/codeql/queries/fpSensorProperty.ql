@@ -14,8 +14,10 @@ import autogen_fpSensorProperty
 SourceNode sensor(TypeTracker t) {
   t.start() and exists(string variant |
     variant in [
+      // Sensor subtypes, https://developer.mozilla.org/en-US/docs/Web/API/Sensor_APIs
       "Gyroscope",
       "Accelerometer",
+      "GravitySensor",
       "LinearAccelerationSensor",
       "AbsoluteOrientationSensor",
       "RelativeOrientationSensor",
