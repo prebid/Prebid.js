@@ -4,6 +4,7 @@ import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
 import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
+import {BOL_LIKE_USER_AGENTS} from '../libraries/userAgentUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -24,30 +25,6 @@ const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-pre
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
-
-const BOL_LIKE_USER_AGENTS = [
-  'Googlebot',
-  'AdsBot-Google',
-  'Mediapartners-Google',
-  'GPTBot',
-  'DuckDuckBot',
-  'AhrefsBot',
-  'facebookexternalhit',
-  'Twitterbot',
-  'Applebot',
-  'YandexBot',
-  'SemrushBot',
-  'amazon-kendra',
-  'YisouSpider',
-  'Brightbot',
-  'crawler',
-  'bot',
-  'spider',
-  'python',
-  'curl',
-  'wget',
-  'httpclient'
-];
 
 /** @type {BidderSpec} */
 export const spec = {
