@@ -1297,14 +1297,13 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should write the ad to the doc', function () {
-      const ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       pushBidResponseToAuction({
-        ad
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
-      const iframe = {};
-      doc.createElement.returns(iframe);
+      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       return renderAd(doc, bidId).then(() => {
-        expect(iframe.srcdoc).to.eql(ad);
+        assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
+        assert.ok(doc.close.called, 'close method called');
       })
     });
 
@@ -1350,7 +1349,7 @@ describe('Unit: Prebid Module', function () {
         mediatype: 'video'
       });
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.notCalled(doc.createElement);
+        sinon.assert.notCalled(doc.write);
       });
     });
 
@@ -1360,7 +1359,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       var error = { message: 'doc write error' };
-      doc.createElement.throws(error);
+      doc.write = sinon.stub().throws(error);
 
       return renderAd(doc, bidId).then(() => {
         var errorMessage = `Error rendering ad (id: ${bidId}): doc write error`
@@ -1440,13 +1439,13 @@ describe('Unit: Prebid Module', function () {
         spyAddWinningBid.resetHistory();
         onWonEvent.resetHistory();
         onStaleEvent.resetHistory();
-        doc.createElement.resetHistory();
+        doc.write.resetHistory();
         return renderAd(doc, bidId);
       }).then(() => {
         // Second render should have a warning but still be rendered
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.calledWith(onStaleEvent, adResponse);
-        sinon.assert.called(doc.createElement);
+        sinon.assert.called(doc.write);
 
         // Clean up
         pbjs.offEvent(EVENTS.BID_WON, onWonEvent);
