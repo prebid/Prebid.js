@@ -209,6 +209,7 @@ export function ortbConverter<B extends BidderCode>({
           }
           logError('Converted ORTB imp does not specify an id, ignoring bid request', bidRequest, result);
         }
+        return undefined;
       }).filter(Boolean);
 
       const request = buildRequest(imps, bidderRequest, ctx.req);
@@ -236,6 +237,7 @@ export function ortbConverter<B extends BidderCode>({
             return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
           }
           logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
+          return undefined;
         })
       ).filter(Boolean);
       return buildResponse(bidResponses, response, augmentContext(ctx.req));

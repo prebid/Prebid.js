@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -64,12 +65,12 @@ export const spec = {
       }
 
       var targetKey = 0;
-      if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
+      if (bySlotTargetKey[bidReq.adUnitCode] !== undefined && bySlotTargetKey[bidReq.adUnitCode] !== null) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
       } else {
         var biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
-          if (bySlotSizesCount[biggestSize] != undefined) {
+          if (bySlotSizesCount[biggestSize] !== undefined && bySlotSizesCount[biggestSize] !== null) {
             bySlotSizesCount[biggestSize]++
             targetKey = bySlotSizesCount[biggestSize];
           } else {
@@ -99,7 +100,7 @@ export const spec = {
     payload.device.ua = navigator.userAgent;
     payload.device.height = window.screen.height;
     payload.device.width = window.screen.width;
-    payload.device.dnt = _getDoNotTrack();
+    payload.device.dnt = getDNT() ? 1 : 0;
     payload.device.language = navigator.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
@@ -256,28 +257,6 @@ function _getBiggestSize(sizes) {
     }
   }
   return sizes[index][0] + 'x' + sizes[index][1];
-}
-
-function _getDoNotTrack() {
-  try {
-    if (window.top.doNotTrack && window.top.doNotTrack == '1') {
-      return 1;
-    }
-  } catch (e) { }
-
-  try {
-    if (navigator.doNotTrack && (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1')) {
-      return 1;
-    }
-  } catch (e) { }
-
-  try {
-    if (navigator.msDoNotTrack && navigator.msDoNotTrack == '1') {
-      return 1;
-    }
-  } catch (e) { }
-
-  return 0
 }
 
 /**

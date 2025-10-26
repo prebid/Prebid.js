@@ -615,7 +615,7 @@ function aliasEidsHook(next, bidderRequests) {
       Object.defineProperty(bid, 'userIdAsEids', {
         configurable: true,
         get() {
-          return bidderRequest.ortb2.user?.ext?.eids;
+          return bidderRequest.ortb2.user?.ext?.eids ?? [];
         }
       })
     )
@@ -731,21 +731,16 @@ function registerSignalSources() {
     return;
   }
 
-  const providers: googletag.secureSignals.SecureSignalProvider[] = window.googletag.secureSignalProviders = (window.googletag.secureSignalProviders || []) as googletag.secureSignals.SecureSignalProvider[];
-  const existingIds = new Set(providers.map(p => 'id' in p ? p.id : p.networkCode));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
       encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
         source.forEach((src) => {
-          if (!existingIds.has(src)) {
-            providers.push({
-              id: src,
-              collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
-            });
-            existingIds.add(src);
-          }
+          window.googletag.secureSignalProviders.push({
+            id: src,
+            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+          });
         });
       })
     }, registerDelay)

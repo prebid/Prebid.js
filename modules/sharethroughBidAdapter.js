@@ -1,9 +1,11 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
+import { handleCookieSync, PID_STORAGE_NAME, prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -13,8 +15,11 @@ const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=233';
 const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const IDENTIFIER_PREFIX = 'Sharethrough:';
 
-const impIdMap = {};
+let impIdMap = {};
+let eqtvNetworkId = 0;
 let isEqtvTest = null;
+
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Gets value of the local variable impIdMap
@@ -72,7 +77,7 @@ export const sharethroughAdapterSpec = {
         ua: navigator.userAgent,
         language: navigator.language,
         js: 1,
-        dnt: navigator.doNotTrack === '1' ? 1 : 0,
+        dnt: getDNT() ? 1 : 0,
         h: window.screen.height,
         w: window.screen.width,
         ext: {},
@@ -94,12 +99,21 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
+    req.user = firstPartyData.user ?? {}
+    if (!req.user.ext) req.user.ext = {};
+    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
+
     if (bidRequests[0].params.equativNetworkId) {
       isEqtvTest = true;
+      eqtvNetworkId = bidRequests[0].params.equativNetworkId;
       req.site.publisher = {
         id: bidRequests[0].params.equativNetworkId,
         ...req.site.publisher
       };
+      const pid = storage.getDataFromLocalStorage(PID_STORAGE_NAME);
+      if (pid) {
+        req.user.buyeruid = pid;
+      }
     }
 
     if (bidderRequest.ortb2?.device?.ext?.cdep) {
@@ -110,10 +124,6 @@ export const sharethroughAdapterSpec = {
     if (bidderRequest?.ortb2?.device) {
       mergeDeep(req.device, bidderRequest.ortb2.device);
     }
-
-    req.user = nullish(firstPartyData.user, {});
-    if (!req.user.ext) req.user.ext = {};
-    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
@@ -190,7 +200,7 @@ export const sharethroughAdapterSpec = {
           };
 
           impression.video = {
-            pos: nullish(videoRequest.pos, 0),
+            pos: videoRequest.pos ?? 0,
             topframe: inIframe() ? 0 : 1,
             w,
             h,
@@ -327,11 +337,15 @@ export const sharethroughAdapterSpec = {
     }
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
-    const shouldCookieSync =
-      syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
+    if (isEqtvTest) {
+      return handleCookieSync(syncOptions, serverResponses, gdprConsent, eqtvNetworkId, storage)
+    } else {
+      const shouldCookieSync =
+        syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
+      return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
+    }
   },
 
   // Empty implementation for prebid core to be able to find it
@@ -361,11 +375,6 @@ function getBidRequestFloor(bid) {
 
 function getProtocol() {
   return window.location.protocol;
-}
-
-// stub for ?? operator
-function nullish(input, def) {
-  return input === null || input === undefined ? def : input;
 }
 
 registerBidder(sharethroughAdapterSpec);

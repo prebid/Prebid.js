@@ -60,6 +60,24 @@ export const allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domai
 type DefaultField = { [K in (typeof allowedFields)[number]]: K extends string ? K : never}[(typeof allowedFields)[number]];
 
 /**
+ * @summary Global set to track valid userId tier fields
+ */
+const validUserIdTierFields = new Set<string>();
+
+/**
+ * @summary Checks if a field is a valid user ID tier field (userId.tierName)
+ * A field is only considered valid if it appears in the validUserIdTierFields set,
+ * which is populated during config validation based on explicitly configured userIds.
+ * Fields will be rejected if they're not in the configured set, even if they follow the userId.tierName format.
+ */
+function isUserIdTierField(field: string): boolean {
+  if (typeof field !== 'string') return false;
+
+  // Simply check if the field exists in our configured userId tier fields set
+  return validUserIdTierFields.has(field);
+}
+
+/**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
  */
 let fetching = false;
@@ -103,7 +121,33 @@ const getHostname = (() => {
   }
 })();
 
-// First look into bidRequest!
+/**
+ * @summary Check if a bidRequest contains any user IDs from the specified tiers
+ * Returns an object with keys like 'userId.tierName' with boolean values (0/1)
+ */
+export function resolveTierUserIds(tiers, bidRequest) {
+  if (!tiers || !bidRequest?.userIdAsEid?.length) {
+    return {};
+  }
+
+  // Get all available EID sources from the bidRequest (single pass)
+  const availableSources = bidRequest.userIdAsEid.reduce((acc: Set<string>, eid: { source?: string }) => {
+    if (eid?.source) {
+      acc.add(eid.source);
+    }
+    return acc;
+  }, new Set());
+
+  // For each tier, check if any of its sources are available
+  return Object.entries(tiers).reduce((result, [tierName, sources]) => {
+    const hasAnyIdFromTier = Array.isArray(sources) &&
+      sources.some(source => availableSources.has(source));
+
+    result[`userId.${tierName}`] = hasAnyIdFromTier ? 1 : 0;
+    return result;
+  }, {});
+}
+
 function getGptSlotFromAdUnit(adUnitId, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit({adUnitId});
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
@@ -133,9 +177,25 @@ export const fieldMatchingFunctions = {
  */
 function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
   if (!floorFields.length) return [];
+
+  // Get userId tier values if needed
+  let userIdTierValues = {};
+  const userIdFields = floorFields.filter(isUserIdTierField);
+  if (userIdFields.length > 0 && _floorsConfig.userIds) {
+    userIdTierValues = resolveTierUserIds(_floorsConfig.userIds, bidObject);
+  }
+
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
-    const exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    let exactMatch: string;
+    // Handle userId tier fields
+    if (isUserIdTierField(field)) {
+      exactMatch = String(userIdTierValues[field] ?? '*');
+    } else {
+      // Standard fields use the field matching functions
+      exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    }
+
     // storing exact matches as lowerCase since we want to compare case insensitively
     accum.push(exactMatch === '*' ? ['*'] : [exactMatch.toLowerCase(), '*']);
     return accum;
@@ -187,8 +247,8 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 function generatePossibleEnumerations(arrayOfFields, delimiter) {
   return arrayOfFields.reduce((accum, currentVal) => {
     const ret = [];
-    accum.map(obj => {
-      currentVal.map(obj1 => {
+    accum.forEach(obj => {
+      currentVal.forEach(obj1 => {
         ret.push(obj + delimiter + obj1)
       });
     });
@@ -481,7 +541,7 @@ export function continueAuction(hookConfig) {
 
 function validateSchemaFields(fields) {
   if (Array.isArray(fields) && fields.length > 0) {
-    if (fields.every(field => allowedFields.includes(field))) {
+    if (fields.every(field => allowedFields.includes(field) || isUserIdTierField(field))) {
       return true;
     } else {
       logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
@@ -768,6 +828,13 @@ export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> 
    * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
    */
   floorMin?: number;
+  /**
+   * Configuration for user ID tiers. Each tier is an array of EID sources
+   * that will be matched against available EIDs in the bid request.
+   */
+  userIds?: {
+    [tierName: string]: string[];
+  };
   enforcement?: Pick<Schema2FloorData['modelGroups'][0], 'noFloorSignalBidders'> & {
     /**
      * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
@@ -830,6 +897,7 @@ export function handleSetFloorsConfig(config) {
     'floorProvider', floorProvider => deepAccess(config, 'data.floorProvider', floorProvider),
     'endpoint', endpoint => endpoint || {},
     'skipRate', () => !isNaN(deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
+    'userIds', validateUserIdsConfig,
     'enforcement', enforcement => pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
@@ -1085,3 +1153,31 @@ registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
 registerOrtbProcessor({type: IMP, name: 'extBidfloor', fn: setGranularBidfloors, priority: -10})
 registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
 registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});
+
+/**
+ * Validate userIds config: must be an object with array values
+ * Also populates the validUserIdTierFields set with field names in the format "userId.tierName"
+ */
+function validateUserIdsConfig(userIds: Record<string, unknown>): Record<string, unknown> {
+  if (!userIds || typeof userIds !== 'object') return {};
+
+  // Clear the previous set of valid tier fields
+  validUserIdTierFields.clear();
+
+  // Check if userIds is an object with array values
+  const invalidKey = Object.entries(userIds).some(([tierName, value]) => {
+    if (!Array.isArray(value)) {
+      return true;
+    }
+    // Add the tier field to the validUserIdTierFields set
+    validUserIdTierFields.add(`userId.${tierName}`);
+    return false;
+  });
+
+  if (invalidKey) {
+    validUserIdTierFields.clear();
+    return {};
+  }
+
+  return userIds;
+}

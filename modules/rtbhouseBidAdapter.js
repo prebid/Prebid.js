@@ -1,4 +1,4 @@
-import {deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr} from '../src/utils.js';
+import {deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -85,6 +85,14 @@ export const spec = {
           }
         }
       });
+    }
+
+    if (bidderRequest.gppConsent?.gppString) {
+      deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (ortb2Params.regs?.gpp) {
+      deepSetValue(request, 'regs.gpp', ortb2Params.regs.gpp);
+      deepSetValue(request, 'regs.gpp_sid', ortb2Params.regs.gpp_sid);
     }
 
     const computedEndpointUrl = ENDPOINT_URL;

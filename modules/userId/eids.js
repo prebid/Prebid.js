@@ -68,7 +68,7 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
       eids = deepClone(values);
     } else if (typeof eidConf === 'function') {
       try {
-        eids = eidConf(values);
+        eids = deepClone(eidConf(values));
         if (!Array.isArray(eids)) {
           eids = [eids];
         }

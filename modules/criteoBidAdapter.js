@@ -232,7 +232,7 @@ export const spec = {
       queryParams.push(`topUrl=${refererInfo.domain}`);
       if (gdprConsent) {
         if (gdprConsent.gdprApplies) {
-          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`);
         }
         if (gdprConsent.consentString) {
           queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
@@ -262,8 +262,8 @@ export const spec = {
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
-      window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != 'https://gum.criteo.com') {
+      function handleGumMessage(event) {
+        if (!event.data || event.origin !== 'https://gum.criteo.com') {
           return;
         }
 
@@ -271,7 +271,7 @@ export const spec = {
           return;
         }
 
-        this.removeEventListener('message', handler);
+        window.removeEventListener('message', handleGumMessage, true);
 
         event.stopImmediatePropagation();
 
@@ -288,7 +288,10 @@ export const spec = {
 
           response?.callbacks?.forEach?.(triggerPixel);
         }
-      }, true);
+      }
+
+      window.removeEventListener('message', handleGumMessage, true);
+      window.addEventListener('message', handleGumMessage, true);
 
       const jsonHashSerialized = JSON.stringify(jsonHash).replace(/"/g, '%22');
 
@@ -392,7 +395,7 @@ export const spec = {
    * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
    */
   interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
+    if (typeof response?.body === 'undefined') {
       return []; // no bid
     }
 
@@ -564,7 +567,7 @@ function checkNativeSendId(bidRequest) {
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  if (!sizes) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])

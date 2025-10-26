@@ -1,5 +1,6 @@
 'use strict';
 
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -41,19 +42,19 @@ const helpers = {
       },
     };
 
-    if (typeof bid.params.format == 'string') {
+    if (typeof bid.params.format === 'string') {
       ext.impactify.format = bid.params.format;
     }
 
-    if (typeof bid.params.style == 'string') {
+    if (typeof bid.params.style === 'string') {
       ext.impactify.style = bid.params.style;
     }
 
-    if (typeof bid.params.container == 'string') {
+    if (typeof bid.params.container === 'string') {
       ext.impactify.container = bid.params.container;
     }
 
-    if (typeof bid.params.size == 'string') {
+    if (typeof bid.params.size === 'string') {
       ext.impactify.size = bid.params.size;
     }
 
@@ -155,7 +156,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
   request.site = { page: bidderRequest.refererInfo.page };
@@ -168,7 +169,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   }
   deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
-  if (GET_CONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
+  if (GET_CONFIG('coppa') === true) deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -187,7 +188,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       ext: helpers.getExtParamsFromBid(bid)
     };
 
-    if (bannerObj && typeof imp.ext.impactify.size == 'string') {
+    if (bannerObj && typeof imp.ext.impactify.size === 'string') {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
       }
@@ -228,10 +229,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (typeof bid.params.appId != 'string' || !bid.params.appId) {
+    if (typeof bid.params.appId !== 'string' || !bid.params.appId) {
       return false;
     }
-    if (typeof bid.params.format != 'string' || typeof bid.params.style != 'string' || !bid.params.format || !bid.params.style) {
+    if (typeof bid.params.format !== 'string' || typeof bid.params.style !== 'string' || !bid.params.format || !bid.params.style) {
       return false;
     }
     if (bid.params.format !== 'screen' && bid.params.format !== 'display') {

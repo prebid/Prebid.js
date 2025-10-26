@@ -41,7 +41,14 @@ export const spec = {
     { code: 'adtg_org' },
     { code: 'velonium' },
     { code: 'orangeclickmedia', gvlid: 1148 },
-    { code: 'streamvision' }
+    { code: 'streamvision' },
+    { code: 'stellorMediaRtb' },
+    { code: 'smootai' },
+    { code: 'anzuExchange' },
+    { code: 'adnimation' },
+    { code: 'rtbdemand' },
+    { code: 'altstar' },
+    { code: 'vaayaMedia' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 

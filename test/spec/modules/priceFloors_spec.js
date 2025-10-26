@@ -13,6 +13,7 @@ import {
   isFloorsDataValid,
   addBidResponseHook,
   fieldMatchingFunctions,
+  resolveTierUserIds,
   allowedFields, parseFloorData, normalizeDefault, getFloorDataFromAdUnits, updateAdUnitsForAuction, createFloorsDataForAuction
 } from 'modules/priceFloors.js';
 import * as events from 'src/events.js';
@@ -2520,3 +2521,182 @@ describe('setting null as rule value', () => {
     expect(exposedAdUnits[0].bids[0].getFloor(inputParams)).to.deep.equal(null);
   });
 })
+
+describe('Price Floors User ID Tiers', function() {
+  let sandbox;
+  let logErrorStub;
+
+  beforeEach(function() {
+    sandbox = sinon.createSandbox();
+    logErrorStub = sandbox.stub(utils, 'logError');
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  describe('resolveTierUserIds', function() {
+    it('returns empty object when no tiers provided', function() {
+      const bidRequest = {
+        userIdAsEid: [
+          { source: 'liveintent.com', uids: [{ id: 'test123' }] },
+          { source: 'sharedid.org', uids: [{ id: 'test456' }] }
+        ]
+      };
+      const result = resolveTierUserIds(null, bidRequest);
+      expect(result).to.deep.equal({});
+    });
+
+    it('returns empty object when no userIdAsEid in bidRequest', function() {
+      const tiers = {
+        tierOne: ['liveintent.com', 'sharedid.org'],
+        tierTwo: ['pairid.com']
+      };
+      const result = resolveTierUserIds(tiers, { userIdAsEid: [] });
+      expect(result).to.deep.equal({});
+    });
+
+    it('correctly identifies tier matches for present EIDs', function() {
+      const tiers = {
+        tierOne: ['liveintent.com', 'sharedid.org'],
+        tierTwo: ['pairid.com']
+      };
+
+      const bidRequest = {
+        userIdAsEid: [
+          { source: 'liveintent.com', uids: [{ id: 'test123' }] },
+          { source: 'sharedid.org', uids: [{ id: 'test456' }] }
+        ]
+      };
+
+      const result = resolveTierUserIds(tiers, bidRequest);
+      expect(result).to.deep.equal({
+        'userId.tierOne': 1,
+        'userId.tierTwo': 0
+      });
+    });
+
+    it('handles multiple tiers correctly', function() {
+      const tiers = {
+        tierOne: ['liveintent.com'],
+        tierTwo: ['pairid.com'],
+        tierThree: ['sharedid.org']
+      };
+
+      const bidRequest = {
+        userIdAsEid: [
+          { source: 'sharedid.org', uids: [{ id: 'test456' }] }
+        ]
+      };
+
+      const result = resolveTierUserIds(tiers, bidRequest);
+      expect(result).to.deep.equal({
+        'userId.tierOne': 0,
+        'userId.tierTwo': 0,
+        'userId.tierThree': 1
+      });
+    });
+  });
+
+  describe('Floor selection with user ID tiers', function() {
+    const mockFloorData = {
+      skipRate: 0,
+      enforcement: {},
+      data: {
+        currency: 'USD',
+        skipRate: 0,
+        schema: {
+          fields: ['mediaType', 'userId.tierOne', 'userId.tierTwo'],
+          delimiter: '|'
+        },
+        values: {
+          'banner|1|0': 1.0,
+          'banner|0|1': 0.5,
+          'banner|0|0': 0.1,
+          'banner|1|1': 2.0
+        }
+      }
+    };
+
+    const mockBidRequest = {
+      mediaType: 'banner',
+      userIdAsEid: [
+        { source: 'liveintent.com', uids: [{ id: 'test123' }] }
+      ]
+    };
+
+    beforeEach(function() {
+      // Set up floors config with userIds
+      handleSetFloorsConfig({
+        enabled: true,
+        userIds: {
+          tierOne: ['liveintent.com', 'sharedid.org'],
+          tierTwo: ['pairid.com']
+        }
+      });
+    });
+
+    it('selects correct floor based on userId tiers', function() {
+      // User has tierOne ID but not tierTwo
+      const result = getFirstMatchingFloor(
+        mockFloorData.data,
+        mockBidRequest,
+        { mediaType: 'banner' }
+      );
+
+      expect(result.matchingFloor).to.equal(1.0);
+    });
+
+    it('selects correct floor when different userId tier is present', function() {
+      const bidRequest = {
+        ...mockBidRequest,
+        userIdAsEid: [
+          { source: 'pairid.com', uids: [{ id: 'test123' }] }
+        ]
+      };
+
+      const result = getFirstMatchingFloor(
+        mockFloorData.data,
+        bidRequest,
+        { mediaType: 'banner' }
+      );
+
+      expect(result.matchingFloor).to.equal(0.5);
+    });
+
+    it('selects correct floor when no userId tiers are present', function() {
+      const bidRequest = {
+        ...mockBidRequest,
+        userIdAsEid: [
+          { source: 'unknown.com', uids: [{ id: 'test123' }] }
+        ]
+      };
+
+      const result = getFirstMatchingFloor(
+        mockFloorData.data,
+        bidRequest,
+        { mediaType: 'banner' }
+      );
+
+      expect(result.matchingFloor).to.equal(0.1);
+    });
+
+    it('selects correct floor when both userId tiers are present', function() {
+      const bidRequest = {
+        ...mockBidRequest,
+        userIdAsEid: [
+          { source: 'liveintent.com', uids: [{ id: 'test123' }] },
+          { source: 'pairid.com', uids: [{ id: 'test456' }] }
+        ]
+      };
+
+      const result = getFirstMatchingFloor(
+        mockFloorData.data,
+        bidRequest,
+        { mediaType: 'banner' }
+      );
+
+      expect(result.matchingFloor).to.equal(2.0);
+    });
+  });
+});

@@ -209,7 +209,7 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     // skip banner-only requests
     const bidRequestType = bidType(bidRequest);
-    if (bidRequestType.includes(BANNER) && bidRequestType.length == 1) return;
+    if (bidRequestType.includes(BANNER) && bidRequestType.length === 1) return;
 
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
@@ -936,16 +936,17 @@ function applyFPD(bidRequest, mediaType, data) {
           result.push(obj.id);
           return result;
         }, []);
-        if (segments.length > 0) return segments.toString();
+        return segments.length > 0 ? segments.toString() : '';
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
       return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
-        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+        if (typeof value !== 'object' && typeof value !== 'undefined') return true;
 
         logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
-      }).toString() : prop.toString();
+        return false;
+      }).map(value => value.toString()).toString() : prop.toString();
     }
   };
   const addBannerData = function(obj, name, key, isParent = true) {
@@ -1318,7 +1319,7 @@ function partitionArray(array, size) {
  * @param {*} imp
  */
 function setBidFloors(bidRequest, imp) {
-  if (imp.bidfloorcur != 'USD') {
+  if (imp.bidfloorcur !== 'USD') {
     delete imp.bidfloor;
     delete imp.bidfloorcur;
   }

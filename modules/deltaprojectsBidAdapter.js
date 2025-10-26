@@ -63,7 +63,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   if (gdprConsent) {
     user.ext = { consent: gdprConsent.consentString };
-    if (typeof gdprConsent.gdprApplies == 'boolean') {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
       regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
     }
   }

@@ -277,9 +277,9 @@ export const spec = {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
           const tmp = {'source': eid.source, 'id': uid.id};
-          if (eid.source == 'adserver.org') {
+          if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
-          } else if (eid.source == 'uidapi.com') {
+          } else if (eid.source === 'uidapi.com') {
             tmp.rti_partner = 'UID2';
           }
           eids.push(tmp);
@@ -396,7 +396,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
           const scriptArray = nestedDoc.getElementsByTagName('script');
           for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
             const currentScript = scriptArray[j];
-            if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
+            if (currentScript.getAttribute('data-src') === jsTrackerSrc) {
               currentScript.setAttribute('src', newJsTrackerSrc);
               currentScript.setAttribute('data-src', '');
               if (currentScript.removeAttribute) {
@@ -625,7 +625,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     let jsTrackers = nativeAd.javascript_trackers;
 
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined || jsTrackers === null) {
       jsTrackers = jsTrackerDisarmed;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];
@@ -832,6 +832,7 @@ function bidToTag(bid) {
                 if (v >= 1 && v <= 5) {
                   return v;
                 }
+                return undefined;
               }).filter(v => v);
               tag['video_frameworks'] = apiTmp;
             }
@@ -948,14 +949,14 @@ function createAdPodRequest(tags, adPodBid) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(tag => {
+      chunked[index].forEach(tag => {
         setVideoProperty(tag, 'minduration', duration);
         setVideoProperty(tag, 'maxduration', duration);
       });
     });
   } else {
     // all maxdurations should be the same
-    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+    request.forEach(tag => setVideoProperty(tag, 'maxduration', maxDuration));
   }
 
   return request;

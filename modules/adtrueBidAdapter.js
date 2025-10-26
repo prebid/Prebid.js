@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -95,7 +96,7 @@ function _generateGUID() {
   var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
-    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   })
   return guid;
 }
@@ -168,7 +169,7 @@ function _createOrtbTemplate(conf) {
       ua: navigator.userAgent,
       os: platform,
       js: 1,
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: _getLanguage(),
@@ -483,7 +484,7 @@ export const spec = {
         payload.imp.push(impObj);
       }
     });
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
     publisherId = conf.pubId.trim();
@@ -630,6 +631,7 @@ export const spec = {
         });
         return accum.concat(cookieSyncObjects);
       }
+      return accum;
     }, []);
   }
 };

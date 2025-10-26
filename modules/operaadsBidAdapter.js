@@ -1,8 +1,8 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   deepAccess,
   deepSetValue,
   generateUUID,
-  getDNT,
   isArray,
   isFn,
   isPlainObject,
