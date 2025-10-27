@@ -2615,6 +2615,7 @@ describe('adapterManager tests', function () {
 
     describe('gdpr consent module', function () {
       it('inserts gdprConsent object to bidRequest only when module was enabled', function () {
+        gdprDataHandler.enable();
         gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
           consentRequired: true
