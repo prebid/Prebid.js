@@ -500,6 +500,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "qohere",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -1903,6 +1910,13 @@
       "componentName": "deepintent",
       "aliasOf": null,
       "gvlid": 541,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "defineMedia",
+      "aliasOf": null,
+      "gvlid": 440,
       "disclosureURL": null
     },
     {
@@ -3554,7 +3568,7 @@
       "componentType": "bidder",
       "componentName": "pgamssp",
       "aliasOf": null,
-      "gvlid": 1353,
+      "gvlid": null,
       "disclosureURL": null
     },
     {

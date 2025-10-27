@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = windowPropertyRead("indexedDB")
-select api, "indexedDB is an indicator of fingerprinting, weighed 17.63 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "indexedDB is an indicator of fingerprinting, weighed 17.79 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

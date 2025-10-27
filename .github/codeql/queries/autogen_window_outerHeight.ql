@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = windowPropertyRead("outerHeight")
-select api, "outerHeight is an indicator of fingerprinting, weighed 181.21 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "outerHeight is an indicator of fingerprinting, weighed 183.94 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

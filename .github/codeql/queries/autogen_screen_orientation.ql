@@ -13,4 +13,4 @@ from SourceNode prop, SourceNode api
 where
   prop = windowPropertyRead("screen") and
   api = prop.getAPropertyRead("orientation")
-select api, "orientation is an indicator of fingerprinting, weighed 44.76 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "orientation is an indicator of fingerprinting, weighed 35.82 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

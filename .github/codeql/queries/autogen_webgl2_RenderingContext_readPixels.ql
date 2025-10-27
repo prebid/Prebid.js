@@ -14,4 +14,4 @@ where
   invocation.getCalleeName() = "getContext" and
   invocation.getArgument(0).mayHaveStringValue("webgl2") and
   api = invocation.getAPropertyRead("readPixels")
-select api, "readPixels is an indicator of fingerprinting, weighed 66.74 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "readPixels is an indicator of fingerprinting, weighed 68.7 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
