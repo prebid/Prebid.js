@@ -140,9 +140,6 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
 
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
   hashFields = ["gdprApplies", "consentString"];
-  /**
-   * Remove CMP event listener using CMP API
-   */
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
