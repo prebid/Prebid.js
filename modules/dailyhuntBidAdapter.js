@@ -2,7 +2,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
 import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {find} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
@@ -68,8 +67,7 @@ const ORTB_NATIVE_PARAMS = {
     id: 4,
     name: 'data',
     type: 10
-  },
-};
+  }};
 
 // Encode URI.
 const _encodeURIComponent = function (a) {
@@ -129,7 +127,7 @@ const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validB
 // get bidFloor Function for different creatives
 function getBidFloor(bid, creative) {
   let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
-  return Math.floor(floorInfo.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
+  return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
 }
 
 const createOrtbImpObj = (bid) => {
@@ -412,7 +410,7 @@ export const spec = {
 
     seatBids.forEach(ortbResponseBid => {
       let bidId = ortbResponseBid.impid;
-      let actualBid = find(bids, (bid) => bid.bidId === bidId);
+      let actualBid = ((bids) || []).find((bid) => bid.bidId === bidId);
       let bidMediaType = ortbResponseBid.ext.prebid.type
       switch (bidMediaType) {
         case mediaTypes.BANNER:

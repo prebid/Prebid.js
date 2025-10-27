@@ -1,4 +1,3 @@
-import {find} from './polyfill.js';
 import { isEmpty, logWarn } from './utils.js';
 import { config } from './config.js';
 
@@ -81,7 +80,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   });
 
   let bucketFloor = 0;
-  let bucket = find(config.buckets, bucket => {
+  let bucket = config.buckets.find(bucket => {
     if (cpm > cap.max * granularityMultiplier) {
       // cpm exceeds cap, just return the cap.
       let precision = bucket.precision;

@@ -4,6 +4,11 @@ import { spec } from 'modules/cointrafficBidAdapter.js';
 import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {
@@ -92,7 +97,8 @@ describe('cointrafficBidAdapter', function () {
     });
 
     it('throws an error if currency provided in params is not allowed', function () {
-      const utilsMock = sinon.mock(utils).expects('logError').twice()
+      const utilsMock = sinon.mock(utils)
+      utilsMock.expects('logError').twice()
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.cointraffic' ? 'BTC' : 'EUR'
       );

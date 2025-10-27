@@ -50,14 +50,15 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 
 #### Context
 
-Permutive is not listed as a TCF vendor as all data collection is on behalf of the publisher and based on consent the publisher has received from the user.
-Rather than through the TCF framework, this consent is provided to Permutive when the user gives the relevant permissions on the publisher website which allow the Permutive SDK to run.
-This means that if GDPR enforcement is configured _and_ the user consent isn’t given for Permutive to fire, no cohorts will populate.
-As Prebid utilizes TCF vendor consent, for the Permutive RTD module to load, Permutive needs to be labeled within the Vendor Exceptions
+While Permutive is listed as a TCF vendor (ID: 361), Permutive does not obtain consent directly from the TCF. As we act as a processor on behalf of our publishers consent is given to the Permutive SDK by the publisher, not by the [GDPR Consent Management Module](https://prebid-docs.atre.net/dev-docs/modules/consentManagement.html).
+
+This means that if GDPR enforcement is configured within the Permutive SDK _and_ the user consent isn’t given for Permutive to fire, no cohorts will populate.
+
+If you are also using the [TCF Control Module](https://docs.prebid.org/dev-docs/modules/tcfControl.html), in order to prevent Permutive from being blocked, it needs to be labeled within the Vendor Exceptions.
 
 #### Instructions
 
-1. Publisher enables rules within Prebid GDPR module
+1. Publisher enables rules within Prebid.js configuration. 
 2. Label Permutive as an exception, as shown below.
 ```javascript
 [

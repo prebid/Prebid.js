@@ -3,6 +3,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'integr8';
 const DEFAULT_ENDPOINT_URL = 'https://central.sea.integr8.digital/bid';
 const DIMENSION_SEPARATOR = 'x';
@@ -27,8 +34,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let deliveryUrl = '';
@@ -128,11 +136,11 @@ export const spec = {
 };
 
 /**
-* Generate size param for bid request using sizes array
-*
-* @param {Array} sizes Possible sizes for the ad unit.
-* @return {string} Processed sizes param to be used for the bid request.
-*/
+ * Generate size param for bid request using sizes array
+ *
+ * @param {Array} sizes Possible sizes for the ad unit.
+ * @return {string} Processed sizes param to be used for the bid request.
+ */
 function generateSizeParam(sizes) {
   return sizes.map(size => size.join(DIMENSION_SEPARATOR)).join(SIZE_SEPARATOR);
 }

@@ -1,4 +1,6 @@
 import { spec } from '../../../modules/bridBidAdapter.js'
+import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
+import { deepClone } from '../../../src/utils.js';
 
 describe('Brid Bid Adapter', function() {
   const videoRequest = [{
@@ -34,6 +36,29 @@ describe('Brid Bid Adapter', function() {
       version: '$prebid.version$'
     });
     expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal(12345);
+  });
+
+  it('Test the request schain sending', function() {
+    const globalSchain = {
+      ver: '1.0',
+      complete: 1,
+      nodes: [{
+        asi: 'examplewebsite.com',
+        sid: '00001',
+        hp: 1
+      }]
+    };
+
+    let videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].schain = globalSchain;
+
+    const request = spec.buildRequests(videoRequestCloned, videoRequestCloned[0]);
+    expect(request).to.not.be.empty;
+
+    const payload = JSON.parse(request[0].data);
+    expect(payload).to.not.be.empty;
+    expect(payload.source.ext.schain).to.exist;
+    expect(payload.source.ext.schain).to.deep.equal(globalSchain);
   });
 
   it('Test nobid responses', function () {
@@ -125,5 +150,24 @@ describe('Brid Bid Adapter', function() {
 
     expect(payload.regs.ext.gdpr).to.be.undefined;
     expect(payload.regs.ext.us_privacy).to.equal(uspConsentString);
+  });
+
+  it('Test userSync have only one object and it should have a property type=iframe', function () {
+    let userSync = spec.getUserSyncs({ iframeEnabled: true });
+    expect(userSync).to.be.an('array');
+    expect(userSync.length).to.be.equal(1);
+    expect(userSync[0]).to.have.property('type');
+    expect(userSync[0].type).to.be.equal('iframe');
+  });
+
+  it('Test userSync valid sync url for iframe', function () {
+    let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=brid&gdpr=0&gdpr_consent=anyString');
+    expect(userSync.type).to.be.equal('iframe');
+  });
+
+  it('Test userSyncs iframeEnabled=false', function () {
+    let userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    expect(userSyncs).to.have.lengthOf(0);
   });
 });

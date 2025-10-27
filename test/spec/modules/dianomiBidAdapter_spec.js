@@ -3,6 +3,8 @@ import { assert } from 'chai';
 import { spec } from 'modules/dianomiBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Dianomi adapter', () => {
   let bids = [];
@@ -250,32 +252,31 @@ describe('Dianomi adapter', () => {
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          userIdAsEids: createEidsArray({
-            tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-            pubcid: 'pubCommonId_FROM_USER_ID_MODULE',
-          }),
+          userIdAsEids: [
+            {
+              source: 'adserver.org',
+              uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }],
+            },
+            { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] },
+          ],
         },
       ];
 
       let request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
-      assert.deepEqual(request.user.ext.eids, [
-        {
-          source: 'adserver.org',
-          uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }],
-        },
-        { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] },
-      ]);
+      assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
     });
 
     it('should send currency if defined', () => {
-      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+      setCurrencyConfig({ adServerCurrency: 'EUR' })
       let validBidRequests = [{ params: { smartadId: 1234 } }];
       let refererInfo = { page: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
-
-      assert.deepEqual(request.cur, ['EUR']);
+      return addFPDToBidderRequest({ refererInfo }).then(res => {
+        let request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        assert.deepEqual(request.cur, ['EUR']);
+        setCurrencyConfig({});
+      });
     });
 
     it('should pass supply chain object', () => {
@@ -397,12 +398,18 @@ describe('Dianomi adapter', () => {
         });
 
         it('should request floor price in adserver currency', () => {
-          config.setConfig({ currency: { adServerCurrency: 'GBP' } });
-          const validBidRequests = [getBidWithFloor()];
-          let imp = getRequestImps(validBidRequests)[0];
+          setCurrencyConfig({ adServerCurrency: 'GBP' })
+          let validBidRequests = [getBidWithFloor()];
+          let refererInfo = { page: 'page' };
+          return addFPDToBidderRequest({ refererInfo }).then(res => {
+            let imp = JSON.parse(
+              spec.buildRequests(validBidRequests, res).data
+            ).imp[0];
 
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'GBP');
+            assert.equal(imp.bidfloor, undefined);
+            assert.equal(imp.bidfloorcur, 'GBP');
+            setCurrencyConfig({});
+          });
         });
 
         it('should add correct floor values', () => {

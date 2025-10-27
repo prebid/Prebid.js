@@ -4,6 +4,10 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { isEmptyStr, mergeDeep } from '../src/utils.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'a1Media';
 const SCRIPT_URL = 'https://linkback.contentsfeed.com/src';
@@ -35,7 +39,7 @@ function loadLbScript(tagname) {
     linkback.l = true;
 
     const scriptUrl = `${SCRIPT_URL}/${tagname}`;
-    loadExternalScript(scriptUrl, MODULE_NAME);
+    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   }
 }
 

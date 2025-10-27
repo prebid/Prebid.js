@@ -13,6 +13,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ */
+
 const gvlid = 91;
 const bidderCode = 'criteo';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode });
@@ -218,8 +224,7 @@ export const criteoIdSubmodule = {
   /**
    * get the Criteo Id from local storages and initiate a new user sync
    * @function
-   * @param {SubmoduleConfig} [config]
-   * @param {ConsentData} [consentData]
+   * @param {SubmoduleConfig} [submoduleConfig]
    * @returns {{id: {criteoId: string} | undefined}}}
    */
   getId(submoduleConfig) {

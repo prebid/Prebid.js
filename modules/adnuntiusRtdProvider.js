@@ -1,9 +1,12 @@
-
 import { submodule } from '../src/hook.js'
 import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 
 import { config as sourceConfig } from '../src/config.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 const GVLID = 855;
 

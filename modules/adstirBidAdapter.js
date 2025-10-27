@@ -36,6 +36,7 @@ export const spec = {
             topurl: config.getConfig('pageUrl') ? false : bidderRequest.refererInfo.reachedTop,
           },
           sua,
+          user: utils.deepAccess(r, 'ortb2.user', null),
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           usp: (bidderRequest.uspConsent || '1---') !== '1---',
           eids: utils.deepAccess(r, 'userIdAsEids', []),

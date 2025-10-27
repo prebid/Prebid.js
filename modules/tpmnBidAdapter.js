@@ -1,4 +1,3 @@
-/* eslint-disable no-tabs */
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -6,6 +5,10 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'tpmn';
 const DEFAULT_BID_TTL = 500;
@@ -108,8 +111,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
-    data: rtbData,
-    options: { contentType: 'application/json;charset=UTF-8', withCredentials: false }
+    data: rtbData
   }
 }
 
@@ -185,7 +187,7 @@ function createRenderer(bid) {
 
 function outstreamRender(bid, doc) {
   bid.renderer.push(() => {
-    const win = utils.getWindowFromDocument(doc) || window;
+    const win = (doc) ? doc.defaultView : window;
     win.ANOutstreamVideo.renderAd({
       sizes: [bid.playerWidth, bid.playerHeight],
       targetId: bid.adUnitCode,

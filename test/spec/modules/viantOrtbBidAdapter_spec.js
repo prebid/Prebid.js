@@ -1,8 +1,9 @@
-import { spec, converter } from 'modules/viantOrtbBidAdapter.js';
+import {spec, converter} from 'modules/viantOrtbBidAdapter.js';
 import {assert, expect} from 'chai';
-import { deepClone } from '../../../src/utils';
+import {deepClone} from '../../../src/utils';
 import {buildWindowTree} from '../../helpers/refererDetectionHelper';
 import {detectReferer} from '../../../src/refererDetection';
+
 describe('viantOrtbBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
     let clonedBidderRequest = deepClone(bidderRequestBase);
@@ -10,7 +11,8 @@ describe('viantOrtbBidAdapter', function () {
     let requests = spec.buildRequests(bidRequests, clonedBidderRequest);
     return requests
   }
-  describe('isBidRequestValid', function() {
+
+  describe('isBidRequestValid', function () {
     function makeBid() {
       return {
         'bidder': 'viant',
@@ -46,9 +48,7 @@ describe('viantOrtbBidAdapter', function () {
       it('should return true if placementId is not passed ', function () {
         let bid = makeBid();
         delete bid.params.placementId;
-        bid.ortb2Imp = {
-
-        }
+        bid.ortb2Imp = {}
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
@@ -98,6 +98,7 @@ describe('viantOrtbBidAdapter', function () {
             'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
           }
         }
+
         it('should return true when required params found', function () {
           expect(spec.isBidRequestValid(makeBid())).to.equal(true);
         });
@@ -109,6 +110,50 @@ describe('viantOrtbBidAdapter', function () {
         });
       });
     });
+
+    describe('native', function () {
+      describe('and request config uses mediaTypes', () => {
+        function makeBid() {
+          return {
+            'bidder': 'viant',
+            'params': {
+              'unit': '12345678',
+              'delDomain': 'test-del-domain',
+              'publisherId': '464',
+              'placementId': 'some-PlacementId_2'
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'instream',
+                'playerSize': [[640, 480]],
+                'mimes': ['video/mp4'],
+                'protocols': [1, 2, 3, 4, 5, 6, 7, 8],
+                'api': [1, 3],
+                'skip': 1,
+                'skipafter': 5,
+                'minduration': 10,
+                'maxduration': 30
+              }
+            },
+            'adUnitCode': 'adunit-code',
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+            'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+          }
+        }
+
+        it('should return true when required params found', function () {
+          expect(spec.isBidRequestValid(makeBid())).to.equal(true);
+        });
+
+        it('should return false when required params are not passed', function () {
+          let nativeBidWithMediaTypes = Object.assign({}, makeBid());
+          nativeBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(nativeBidWithMediaTypes)).to.equal(false);
+        });
+      });
+    });
   });
 
   describe('buildRequests-banner', function () {
@@ -117,6 +162,57 @@ describe('viantOrtbBidAdapter', function () {
       'params': {
         'publisherId': '464',
         'placementId': '1'
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[728, 90]]
+        }
+      },
+      'gdprConsent': {
+        'consentString': 'consentString',
+        'gdprApplies': true,
+      },
+      'uspConsent': '1YYY',
+      'sizes': [[728, 90]],
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'bidId': '243310435309b5',
+      'bidderRequestId': '18084284054531',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'src': 'client',
+      'bidRequestsCount': 1
+    }];
+    const basePMPDealsBidRequests = [{
+      'bidder': 'viant',
+      'params': {
+        'publisherId': '464',
+        'placementId': '1'
+      },
+      'ortb2Imp': {
+        'pmp': {
+          'private_auction': 0,
+          'deals': [
+            {
+              'id': '1234567',
+              'at': 3,
+              'bidfloor': 25,
+              'bidfloorcur': 'USD',
+              'ext': {
+                'must_bid': 1,
+                'private_auction': 1
+              }
+            },
+            {
+              'id': '1234568',
+              'at': 3,
+              'bidfloor': 25,
+              'bidfloorcur': 'USD',
+              'ext': {
+                'must_bid': 0
+              }
+            }
+          ]
+        },
       },
       'mediaTypes': {
         'banner': {
@@ -172,7 +268,7 @@ describe('viantOrtbBidAdapter', function () {
     });
     it('sends bid requests to the correct endpoint', function () {
       const url = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0].url;
-      expect(url).to.equal('https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder_test');
+      expect(url).to.equal('https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder');
     });
 
     it('sends site', function () {
@@ -192,6 +288,34 @@ describe('viantOrtbBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest)[0].data;
       expect(requestBody.imp[0].banner.pos).to.equal(1);
+    });
+    it('includes the deals in the bid request', function () {
+      const requestBody = testBuildRequests(basePMPDealsBidRequests, baseBidderRequest)[0].data;
+      expect(requestBody.imp[0].pmp).to.be.not.null;
+      expect(requestBody.imp[0].pmp).to.deep.equal({
+        'private_auction': 0,
+        'deals': [
+          {
+            'id': '1234567',
+            'at': 3,
+            'bidfloor': 25,
+            'bidfloorcur': 'USD',
+            'ext': {
+              'must_bid': 1,
+              'private_auction': 1
+            }
+          },
+          {
+            'id': '1234568',
+            'at': 3,
+            'bidfloor': 25,
+            'bidfloorcur': 'USD',
+            'ext': {
+              'must_bid': 0
+            }
+          }
+        ]
+      });
     });
   });
 
@@ -216,6 +340,7 @@ describe('viantOrtbBidAdapter', function () {
               'skip': 1,
               'skipafter': 5,
               'minduration': 10,
+              'placement': 1,
               'maxduration': 31
             }
           },

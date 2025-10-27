@@ -1,6 +1,14 @@
-import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
+import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
+import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
@@ -11,7 +19,10 @@ const gdprStatus = {
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND_OR_ERROR: 22
 };
+
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
+const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
+
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
@@ -27,8 +38,8 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
-      let isValidPlacementId = _validateId(getValue(bid.params, 'placementId'));
-      let isValidPageId = _validateId(getValue(bid.params, 'pageId'));
+      let isValidPlacementId = _validateId(bid.params.placementId);
+      let isValidPageId = _validateId(bid.params.pageId);
       isValid = isValidPlacementId && isValidPageId;
     }
 
@@ -40,11 +51,13 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const topWindow = window.top;
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -52,11 +65,23 @@ export const spec = {
       pageTitle: getPageTitle().slice(0, 300),
       pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
+      networkQuality: getNetworkQuality(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      domComplexity: getDomComplexity(document),
+      device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
+      deviceHeight: screen.height,
+      devicePixelRatio: topWindow.devicePixelRatio,
+      screenOrientation: screen.orientation?.type,
+      historyLength: getHLen(),
+      viewportHeight: getWinDimensions().visualViewport.height,
+      viewportWidth: getWinDimensions().visualViewport.width,
+      hardwareConcurrency: getHC(),
+      deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
+      outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
     };
 
@@ -64,6 +89,18 @@ export const spec = {
 
     if (firstBidRequest.schain) {
       payload.schain = firstBidRequest.schain;
+    }
+
+    let gpp = bidderRequest.gppConsent;
+    if (bidderRequest && gpp) {
+      let isValidConsentString = typeof gpp.gppString === 'string';
+      let validateApplicableSections =
+        Array.isArray(gpp.applicableSections) &&
+        gpp.applicableSections.every((section) => typeof (section) === 'number')
+      payload.gpp = {
+        consentString: isValidConsentString ? gpp.gppString : '',
+        applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
+      };
     }
 
     let gdpr = bidderRequest.gdprConsent;
@@ -84,9 +121,14 @@ export const spec = {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
-    const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    const userAgentClientHints = firstBidRequest?.ortb2?.device?.sua;
     if (userAgentClientHints) {
       payload.userAgentClientHints = userAgentClientHints;
+    }
+
+    const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
+    if (dsa) {
+      payload.dsa = dsa;
     }
 
     const payloadString = JSON.stringify(payload);
@@ -103,11 +145,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidderRequest) {
-    const bidResponses = [];
     serverResponse = serverResponse.body;
 
-    if (serverResponse.responses) {
-      serverResponse.responses.forEach(function (bid) {
+    if (!serverResponse.responses) {
+      return [];
+    }
+
+    const autoplayEnabled = isAutoplayEnabled();
+    return serverResponse.responses
+      .filter((bid) =>
+        // ignore this bid if it requires autoplay but it is not enabled on this browser
+        !bid.needAutoplay || autoplayEnabled
+      ).map((bid) => {
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
@@ -126,10 +175,11 @@ export const spec = {
         if (bid.dealId) {
           bidResponse.dealId = bid.dealId
         }
-        bidResponses.push(bidResponse);
+        if (bid?.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
+        return bidResponse;
       });
-    }
-    return bidResponses;
   }
 };
 
@@ -202,33 +252,14 @@ function getConnectionDownLink(nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
-function getTimeToFirstByte(win) {
-  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+function getNetworkQuality(navigator) {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
-  const ttfbWithTimingV2 = performance &&
-    typeof performance.getEntriesByType === 'function' &&
-    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
-    performance.getEntriesByType('navigation')[0] &&
-    performance.getEntriesByType('navigation')[0].responseStart &&
-    performance.getEntriesByType('navigation')[0].requestStart &&
-    performance.getEntriesByType('navigation')[0].responseStart > 0 &&
-    performance.getEntriesByType('navigation')[0].requestStart > 0 &&
-    Math.round(
-      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
-    );
+  return connection?.effectiveType ?? '';
+}
 
-  if (ttfbWithTimingV2) {
-    return ttfbWithTimingV2.toString();
-  }
-
-  const ttfbWithTimingV1 = performance &&
-    performance.timing.responseStart &&
-    performance.timing.requestStart &&
-    performance.timing.responseStart > 0 &&
-    performance.timing.requestStart > 0 &&
-    performance.timing.responseStart - performance.timing.requestStart;
-
-  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+function getDomComplexity(document) {
+  return document?.querySelectorAll('*')?.length ?? -1;
 }
 
 function findGdprStatus(gdprApplies, gdprData) {
@@ -245,10 +276,10 @@ function findGdprStatus(gdprApplies, gdprData) {
 
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = getValue(bid.params, 'placementId');
-  let pageId = getValue(bid.params, 'pageId');
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
-  const videoPlcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
+  let placementId = bid.params.placementId;
+  let pageId = bid.params.pageId;
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
+  const videoPlcmt = bid?.mediaTypes?.video?.plcmt;
 
   reqObj.sizes = getSizes(bid);
   reqObj.bidId = getBidIdParameter('bidId', bid);
@@ -267,9 +298,9 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  let playerSize = bid?.mediaTypes?.video?.playerSize;
+  let videoSizes = bid?.mediaTypes?.video?.sizes;
+  let bannerSizes = bid?.mediaTypes?.banner?.sizes;
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
     let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
@@ -301,7 +332,7 @@ function _validateId(id) {
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
 function getFirstPartyTeadsIdParameter(validBidRequests) {
-  const firstPartyTeadsIdFromUserIdModule = deepAccess(validBidRequests, '0.userId.teadsId');
+  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userId?.teadsId;
 
   if (firstPartyTeadsIdFromUserIdModule) {
     return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};

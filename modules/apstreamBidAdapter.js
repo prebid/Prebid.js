@@ -292,7 +292,6 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
     return null;
   }
 
-  let isIab = config.getConfig('consentManagement.cmpApi') != 'static';
   let vendorConsents = (
     gdprConsentConfig.vendorData.vendorConsents ||
     (gdprConsentConfig.vendorData.vendor || {}).consents ||
@@ -300,7 +299,7 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
   );
   let isConsentGiven = !!vendorConsents[CONSTANTS.GVLID.toString(10)];
 
-  return isIab && isConsentGiven ? consentString : null;
+  return isConsentGiven ? consentString : null;
 }
 
 function getIabConsentString(bidderRequest) {

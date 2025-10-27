@@ -40,19 +40,19 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
     /**
      * Register an activity control rule.
      *
-     * @param {string} activity activity name - set is defined in `activities.js`
-     * @param {string} ruleName a name for this rule; used for logging.
-     * @param {function({}): {allow: boolean, reason?: string}} rule definition function. Takes in activity
+     * @param {string} activity - Activity name, as defined in `activities.js`.
+     * @param {string} ruleName - A name for this rule, used for logging.
+     * @param {function(Object): {allow: boolean, reason?: string}} rule - Rule definition function. Takes in activity
      *        parameters as a single map; MAY return an object {allow, reason}, where allow is true/false,
      *        and reason is an optional message used for logging.
      *
-     *        {allow: true} will allow this activity AS LONG AS no other rules with same or higher priority return {allow: false};
+     *        {allow: true} will allow this activity AS LONG AS no other rules with the same or higher priority return {allow: false};
      *        {allow: false} will deny this activity AS LONG AS no other rules with higher priority return {allow: true};
-     *        returning null/undefined has no effect - the decision is left to other rules.
+     *        Returning null/undefined has no effect - the decision is left to other rules.
      *        If no rule returns an allow value, the default is to allow the activity.
      *
-     * @param {number} priority rule priority; lower number means higher priority
-     * @returns {function(void): void} a function that unregisters the rule when called.
+     * @param {number} [priority=10] - Rule priority; lower number means higher priority.
+     * @returns {function(): void} - A function that unregisters the rule when called.
      */
     function registerActivityControl(activity, ruleName, rule, priority = 10) {
       const rules = getRules(activity);

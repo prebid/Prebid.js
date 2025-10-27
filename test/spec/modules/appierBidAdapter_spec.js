@@ -30,17 +30,17 @@ describe('AppierAdapter', function () {
     });
 
     it('should return false when required param zoneId is missing', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required param zoneId has wrong type', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {
         'hzid': null
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 

@@ -143,7 +143,7 @@ describe('JustIdSystem', function () {
     var scriptTagCallback;
 
     beforeEach(() => {
-      loadExternalScriptStub.callsFake((url, moduleCode, callback) => {
+      loadExternalScriptStub.callsFake((url, moduleCode, moduleType, callback) => {
         scriptTagCallback = callback;
         return scriptTag;
       });
@@ -190,7 +190,7 @@ describe('JustIdSystem', function () {
       const b = { y: 'y' }
       const c = { z: 'z' }
 
-      justIdSubmodule.getId(a, b, c).callback(callbackSpy);
+      justIdSubmodule.getId(a, {gdpr: b}, c).callback(callbackSpy);
 
       scriptTagCallback();
 

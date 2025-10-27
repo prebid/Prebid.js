@@ -1,8 +1,12 @@
-import {createTrackPixelHtml, logError, logWarn, deepAccess, getBidIdParameter} from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
+import {createTrackPixelHtml, logError, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
 
 const BidderCode = 'aja';
 const URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
@@ -25,7 +29,7 @@ const BannerSizeMap = {
 
 export const spec = {
   code: BidderCode,
-  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid has all the params needed to make a valid request.
@@ -51,32 +55,22 @@ export const spec = {
 
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const bidRequest = validBidRequests[i];
+
       let queryString = '';
 
       const asi = getBidIdParameter('asi', bidRequest.params);
       queryString = tryAppendQueryString(queryString, 'asi', asi);
       queryString = tryAppendQueryString(queryString, 'skt', SDKType);
+      queryString = tryAppendQueryString(queryString, 'gpid', bidRequest.ortb2Imp?.ext?.gpid)
       queryString = tryAppendQueryString(queryString, 'tid', bidRequest.ortb2Imp?.ext?.tid)
+      queryString = tryAppendQueryString(queryString, 'cdep', bidRequest.ortb2?.device?.ext?.cdep)
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
+      queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
+      queryString = tryAppendQueryString(queryString, 'schain', spec.serializeSupplyChain(bidRequest.schain || []))
 
-      if (pageUrl) {
-        queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
-      }
-
-      const banner = deepAccess(bidRequest, `mediaTypes.${BANNER}`)
-      if (banner) {
-        const adFormatIDs = [];
-        for (const size of banner.sizes || []) {
-          if (size.length !== 2) {
-            continue
-          }
-
-          const adFormatID = BannerSizeMap[`${size[0]}x${size[1]}`];
-          if (adFormatID) {
-            adFormatIDs.push(adFormatID);
-          }
-        }
+      const adFormatIDs = pickAdFormats(bidRequest)
+      if (adFormatIDs && adFormatIDs.length > 0) {
         queryString = tryAppendQueryString(queryString, 'ad_format_ids', adFormatIDs.join(','));
       }
 
@@ -87,7 +81,7 @@ export const spec = {
         }));
       }
 
-      const sua = deepAccess(bidRequest, 'ortb2.device.sua');
+      const sua = bidRequest.ortb2?.device?.sua
       if (sua) {
         queryString = tryAppendQueryString(queryString, 'sua', JSON.stringify(sua));
       }
@@ -110,9 +104,17 @@ export const spec = {
     }
 
     const ad = bidderResponseBody.ad;
+    if (AdType.Banner !== ad.ad_type) {
+      return []
+    }
 
+    const bannerAd = bidderResponseBody.ad.banner;
     const bid = {
       requestId: ad.prebid_id,
+      mediaType: BANNER,
+      ad: bannerAd.tag,
+      width: bannerAd.w,
+      height: bannerAd.h,
       cpm: ad.price,
       creativeId: ad.creative_id,
       dealId: ad.deal_id,
@@ -120,80 +122,16 @@ export const spec = {
       netRevenue: true,
       ttl: 300, // 5 minutes
       meta: {
-        advertiserDomains: []
+        advertiserDomains: bannerAd.adomain,
       },
     }
-
-    if (AdType.Video === ad.ad_type) {
-      const videoAd = bidderResponseBody.ad.video;
-      Object.assign(bid, {
-        vastXml: videoAd.vtag,
-        width: videoAd.w,
-        height: videoAd.h,
-        renderer: newRenderer(bidderResponseBody),
-        adResponse: bidderResponseBody,
-        mediaType: VIDEO
+    try {
+      bannerAd.imps.forEach(impTracker => {
+        const tracker = createTrackPixelHtml(impTracker);
+        bid.ad += tracker;
       });
-
-      Array.prototype.push.apply(bid.meta.advertiserDomains, videoAd.adomain)
-    } else if (AdType.Banner === ad.ad_type) {
-      const bannerAd = bidderResponseBody.ad.banner;
-      Object.assign(bid, {
-        width: bannerAd.w,
-        height: bannerAd.h,
-        ad: bannerAd.tag,
-        mediaType: BANNER
-      });
-      try {
-        bannerAd.imps.forEach(impTracker => {
-          const tracker = createTrackPixelHtml(impTracker);
-          bid.ad += tracker;
-        });
-      } catch (error) {
-        logError('Error appending tracking pixel', error);
-      }
-
-      Array.prototype.push.apply(bid.meta.advertiserDomains, bannerAd.adomain)
-    } else if (AdType.Native === ad.ad_type) {
-      const nativeAds = ad.native.template_and_ads.ads;
-      if (nativeAds.length === 0) {
-        return [];
-      }
-
-      const nativeAd = nativeAds[0];
-      const assets = nativeAd.assets;
-
-      Object.assign(bid, {
-        mediaType: NATIVE
-      });
-
-      bid.native = {
-        title: assets.title,
-        body: assets.description,
-        cta: assets.cta_text,
-        sponsoredBy: assets.sponsor,
-        clickUrl: assets.lp_link,
-        impressionTrackers: nativeAd.imps,
-        privacyLink: assets.adchoice_url
-      };
-
-      if (assets.img_main !== undefined) {
-        bid.native.image = {
-          url: assets.img_main,
-          width: parseInt(assets.img_main_width, 10),
-          height: parseInt(assets.img_main_height, 10)
-        };
-      }
-
-      if (assets.img_icon !== undefined) {
-        bid.native.icon = {
-          url: assets.img_icon,
-          width: parseInt(assets.img_icon_width, 10),
-          height: parseInt(assets.img_icon_height, 10)
-        };
-      }
-
-      Array.prototype.push.apply(bid.meta.advertiserDomains, nativeAd.adomain)
+    } catch (error) {
+      logError('Error appending tracking pixel', error);
     }
 
     return [bid];
@@ -227,36 +165,50 @@ export const spec = {
 
     return syncs;
   },
+
+  /**
+   * Serialize supply chain object
+   * @param {Object} supplyChain
+   * @returns {String | undefined}
+   */
+  serializeSupplyChain: function(supplyChain) {
+    if (!supplyChain || !supplyChain.nodes) return undefined
+    const { ver, complete, nodes } = supplyChain
+    return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`
+  },
+
+  /**
+   * Serialize each supply chain nodes
+   * @param {Array} nodes
+   * @returns {String}
+   */
+  serializeSupplyChainNodes: function(nodes) {
+    const fields = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+    return nodes.map((n) => {
+      return fields.map((f) => {
+        return encodeURIComponent(n[f] || '').replace(/!/g, '%21')
+      }).join(',')
+    }).join('!')
+  }
 }
 
-function newRenderer(bidderResponse) {
-  const renderer = Renderer.install({
-    id: bidderResponse.ad.prebid_id,
-    url: bidderResponse.ad.video.purl,
-    loaded: false,
-  });
+function pickAdFormats(bidRequest) {
+  let sizes = bidRequest.sizes || []
+  sizes.push(...(bidRequest.mediaTypes?.banner?.sizes || []))
 
-  try {
-    renderer.setRender(outstreamRender);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on newRenderer', err);
+  const adFormatIDs = [];
+  for (const size of sizes) {
+    if (size.length !== 2) {
+      continue
+    }
+
+    const adFormatID = BannerSizeMap[`${size[0]}x${size[1]}`];
+    if (adFormatID) {
+      adFormatIDs.push(adFormatID);
+    }
   }
 
-  return renderer;
-}
-
-function outstreamRender(bid) {
-  bid.renderer.push(() => {
-    window['aja_vast_player'].init({
-      vast_tag: bid.adResponse.ad.video.vtag,
-      ad_unit_code: bid.adUnitCode, // target div id to render video
-      width: bid.width,
-      height: bid.height,
-      progress: bid.adResponse.ad.video.progress,
-      loop: bid.adResponse.ad.video.loop,
-      inread: bid.adResponse.ad.video.inread
-    });
-  });
+  return [...new Set(adFormatIDs)]
 }
 
 registerBidder(spec);

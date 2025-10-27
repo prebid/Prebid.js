@@ -2,6 +2,7 @@ import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesI
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -141,18 +142,6 @@ function fillBidMeta(bid, tag) {
   if (isArray(tag.secondaryCatIds)) {
     deepSetValue(bid, 'meta.secondaryCatIds', tag.secondaryCatIds);
   }
-}
-
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
 }
 
 export const spec = {

@@ -1,11 +1,16 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, getDefinedParams, getDNT, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, getDefinedParams, getDNT, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
-import {GreedyPromise} from '../utils/promise.js';
+import {PbPromise} from '../utils/promise.js';
 import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
+import {isActivityAllowed} from '../activities/rules.js';
+import {activityParams} from '../activities/activityParams.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
+import {MODULE_TYPE_PREBID} from '../activities/modules.js';
+import { getViewportSize } from '../../libraries/viewport/viewport.js';
 
 export const dep = {
   getRefererInfo,
@@ -14,29 +19,45 @@ export const dep = {
   getWindowSelf,
   getHighEntropySUA,
   getLowEntropySUA,
+  getDocument
 };
 
 const oneClient = clientSectionChecker('FPD')
 
 /**
- * Enrich an ortb2 object with first party data.
- * @param {Promise[{}]} fpd: a promise to an ortb2 object.
- * @returns: {Promise[{}]}: a promise to an enriched ortb2 object.
+ * Enrich an ortb2 object with first-party data.
+ * @param {Promise<Object>} fpd - A promise that resolves to an ortb2 object.
+ * @returns {Promise<Object>} - A promise that resolves to an enriched ortb2 object.
  */
 export const enrichFPD = hook('sync', (fpd) => {
-  return GreedyPromise.all([fpd, getSUA().catch(() => null)])
-    .then(([ortb2, sua]) => {
+  const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
+
+  return PbPromise.all(promArr)
+    .then(([ortb2, sua, cdep]) => {
       const ri = dep.getRefererInfo();
-      mergeLegacySetConfigs(ortb2);
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments(ortb2, ri);
         if (data && Object.keys(data).length > 0) {
           ortb2[section] = mergeDeep({}, data, ortb2[section]);
         }
       });
+
       if (sua) {
         deepSetValue(ortb2, 'device.sua', Object.assign({}, sua, ortb2.device.sua));
       }
+
+      if (cdep) {
+        const ext = {
+          cdep
+        }
+        deepSetValue(ortb2, 'device.ext', Object.assign({}, ext, ortb2.device.ext));
+      }
+
+      const documentLang = dep.getDocument().documentElement.lang;
+      if (documentLang) {
+        deepSetValue(ortb2, 'site.ext.data.documentLang', documentLang);
+      }
+
       ortb2 = oneClient(ortb2);
       for (let section of CLIENT_SECTIONS) {
         if (hasSection(ortb2, section)) {
@@ -44,20 +65,10 @@ export const enrichFPD = hook('sync', (fpd) => {
           break;
         }
       }
+
       return ortb2;
     });
 });
-
-function mergeLegacySetConfigs(ortb2) {
-  // merge in values from "legacy" setConfig({app, site, device})
-  // TODO: deprecate these eventually
-  ['app', 'site', 'device'].forEach(prop => {
-    const cfg = config.getConfig(prop);
-    if (cfg != null) {
-      ortb2[prop] = mergeDeep({}, cfg, ortb2[prop]);
-    }
-  })
-}
 
 function winFallback(fn) {
   try {
@@ -70,12 +81,16 @@ function winFallback(fn) {
 function getSUA() {
   const hints = config.getConfig('firstPartyData.uaHints');
   return !Array.isArray(hints) || hints.length === 0
-    ? GreedyPromise.resolve(dep.getLowEntropySUA())
+    ? PbPromise.resolve(dep.getLowEntropySUA())
     : dep.getHighEntropySUA(hints);
 }
 
 function removeUndef(obj) {
   return getDefinedParams(obj, Object.keys(obj))
+}
+
+function tryToGetCdepLabel() {
+  return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
 }
 
 const ENRICHMENTS = {
@@ -91,21 +106,36 @@ const ENRICHMENTS = {
   },
   device() {
     return winFallback((win) => {
-      const w = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-      const h = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
-      return {
+      // screen.width and screen.height are the physical dimensions of the screen
+      const w = getWinDimensions().screen.width;
+      const h = getWinDimensions().screen.height;
+
+      // vpw and vph are the viewport dimensions of the browser window
+      const {width: vpw, height: vph} = getViewportSize();
+
+      const device = {
         w,
         h,
         dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
+        ext: {
+          vpw,
+          vph,
+        },
       };
+
+      if (win.navigator?.webdriver) {
+        deepSetValue(device, 'ext.webdriver', true);
+      }
+
+      return device;
     })
   },
   regs() {
     const regs = {};
     if (winFallback((win) => win.navigator.globalPrivacyControl)) {
-      deepSetValue(regs, 'ext.gpc', 1);
+      deepSetValue(regs, 'ext.gpc', '1');
     }
     const coppa = config.getConfig('coppa');
     if (typeof coppa === 'boolean') {

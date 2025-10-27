@@ -1,9 +1,9 @@
-import { deepSetValue, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v2';
@@ -31,25 +31,39 @@ export const spec = {
       return ret;
     }
 
+    const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
+    const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
+
     const data = Object.assign({
       placements: [],
       time: Date.now(),
-      user: {},
-      // TODO: does the fallback to window.location make sense?
-      url: bidderRequest.refererInfo?.page || window.location.href,
+      url: bidderRequest.refererInfo?.page,
       referrer: bidderRequest.refererInfo?.ref,
-      // TODO: please do not send internal data structures over the network
-      referrer_info: bidderRequest.refererInfo?.legacy,
       screensize: getScreenSize(),
       dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       language: navigator.language,
       ua: navigator.userAgent,
-      pversion: '$prebid.version$'
+      pversion: '$prebid.version$',
+      cur: 'USD',
+      user: {},
+      regs: {},
+      source: {},
+      site: {},
+      sda: sellerDefinedAudience,
+      sdc: sellerDefinedContext,
+    });
+
+    const ortb2Params = bidderRequest?.ortb2 || {};
+    ['site', 'user', 'device', 'bcat', 'badv', 'regs'].forEach(entry => {
+      const ortb2Param = ortb2Params[entry];
+      if (ortb2Param) {
+        mergeDeep(data, { [entry]: ortb2Param });
+      }
     });
 
     // coppa compliance
     if (config.getConfig('coppa') === true) {
-      deepSetValue(data, 'user.coppa', 1);
+      deepSetValue(data, 'regs.coppa', 1);
     }
 
     // adding schain object
@@ -72,23 +86,48 @@ export const spec = {
       deepSetValue(data, 'user.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // GPP Support
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(data, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(data, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(data, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(data, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
+    // DSA Support
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      deepSetValue(data, 'regs.ext.dsa', bidderRequest.ortb2.regs.ext.dsa);
+    }
+
     // EIDS Support
     if (validBidRequests[0].userIdAsEids) {
       deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
+    const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+    if (tid) {
+      deepSetValue(data, 'source.tid', tid)
+    }
+    data.tmax = bidderRequest.timeout;
+
     validBidRequests.map(bid => {
       const placement = Object.assign({
-        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        id: bid.transactionId,
+        id: generateUUID(),
         divName: bid.bidId,
+        tagId: bid.adUnitCode,
         pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],
         sizes: bid.mediaTypes.banner.sizes,
-        adTypes: getSize(bid.mediaTypes.banner.sizes || bid.sizes),
         bidfloor: getBidFloor(bid),
         siteId: bid.params.siteId,
-        networkId: bid.params.networkId
+        networkId: bid.params.networkId,
+        tid: bid.ortb2Imp?.ext?.tid
       });
+
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        placement.gpid = gpid;
+      }
 
       if (placement.networkId && placement.siteId) {
         data.placements.push(placement);
@@ -127,12 +166,22 @@ export const spec = {
           bid.width = decision.width;
           bid.height = decision.height;
           bid.dealid = decision.dealid || null;
-          bid.meta = { advertiserDomains: decision && decision.adomain ? decision.adomain : [] };
+          bid.meta = {
+            advertiserDomains: decision && decision.adomain ? decision.adomain : []
+          };
           bid.ad = retrieveAd(decision);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
           bid.ttl = 360;
           bid.netRevenue = true;
+
+          if (decision.dsa) {
+            bid.meta = Object.assign({}, bid.meta, { dsa: decision.dsa })
+          }
+          if (decision.category) {
+            bid.meta = Object.assign({}, bid.meta, { primaryCatId: decision.category })
+          }
+
           bidResponses.push(bid);
         }
       }
@@ -141,15 +190,15 @@ export const spec = {
     return bidResponses;
   },
 
-  transformBidParams: function (params, isOpenRtb) {
-    return convertTypes({
-      'siteId': 'number',
-      'networkId': 'number'
-    }, params);
-  },
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let syncEndpoint;
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    let syncEndpoint = 'https://cdn.connectad.io/connectmyusers.php?';
+    if (pixelType == 'iframe') {
+      syncEndpoint = 'https://sync.connectad.io/iFrameSyncer?';
+    } else {
+      syncEndpoint = 'https://sync.connectad.io/ImageSyncer?';
+    }
 
     if (gdprConsent) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
@@ -163,72 +212,25 @@ export const spec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', uspConsent);
     }
 
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp', gppConsent.gppString);
+      syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', gppConsent?.applicableSections?.join(','));
+    }
+
     if (config.getConfig('coppa') === true) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'coppa', 1);
     }
 
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
       return [{
-        type: 'iframe',
+        type: pixelType,
         url: syncEndpoint
       }];
     } else {
-      logWarn('Bidder ConnectAd: Please activate iFrame Sync');
+      logWarn('Bidder ConnectAd: No User-Matching allowed');
     }
   }
 };
-
-const sizeMap = [
-  null,
-  '120x90',
-  '200x200',
-  '468x60',
-  '728x90',
-  '300x250',
-  '160x600',
-  '120x600',
-  '300x100',
-  '180x150',
-  '336x280',
-  '240x400',
-  '234x60',
-  '88x31',
-  '120x60',
-  '120x240',
-  '125x125',
-  '220x250',
-  '250x250',
-  '250x90',
-  '0x0',
-  '200x90',
-  '300x50',
-  '320x50',
-  '320x480',
-  '185x185',
-  '620x45',
-  '300x125',
-  '800x250',
-  '980x120',
-  '980x150',
-  '320x150',
-  '300x300',
-  '200x600',
-  '320x500',
-  '320x320'
-];
-
-sizeMap[77] = '970x90';
-sizeMap[123] = '970x250';
-sizeMap[43] = '300x600';
-sizeMap[286] = '970x66';
-sizeMap[3230] = '970x280';
-sizeMap[429] = '486x60';
-sizeMap[374] = '700x500';
-sizeMap[934] = '300x1050';
-sizeMap[1578] = '320x100';
-sizeMap[331] = '320x250';
-sizeMap[3301] = '320x267';
-sizeMap[2730] = '728x250';
 
 function getBidFloor(bidRequest) {
   let floorInfo = {};
@@ -241,20 +243,9 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  let floor = floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
+  let floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
 
   return floor;
-}
-
-function getSize(sizes) {
-  const result = [];
-  sizes.forEach(function(size) {
-    const index = sizeMap.indexOf(size[0] + 'x' + size[1]);
-    if (index >= 0) {
-      result.push(index);
-    }
-  });
-  return result;
 }
 
 function retrieveAd(decision) {

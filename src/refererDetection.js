@@ -34,9 +34,11 @@ export function ensureProtocol(url, win = window) {
 
 /**
  * Extract the domain portion from a URL.
- * @param url
- * @param noLeadingWww: if true, remove 'www.' appearing at the beginning of the domain.
- * @param noPort: if true, do not include the ':[port]' portion
+ * @param {string} url - The URL to extract the domain from.
+ * @param {Object} options - Options for parsing the domain.
+ * @param {boolean} options.noLeadingWww - If true, remove 'www.' appearing at the beginning of the domain.
+ * @param {boolean} options.noPort - If true, do not include the ':[port]' portion.
+ * @return {string|undefined} - The extracted domain or undefined if the URL is invalid.
  */
 export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
   try {
@@ -108,13 +110,13 @@ export function detectReferer(win) {
    * @property {string|null} ref the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
    * @property {string} topmostLocation of the top-most frame for which we could guess the location. Outside of cross-origin scenarios, this is equivalent to `location`.
    * @property {number} numIframes number of steps between window.self and window.top
-   * @property {Array[string|null]} stack our best guess at the location for each frame, in the direction top -> self.
+   * @property {Array<string|null>} stack our best guess at the location for each frame, in the direction top -> self.
    */
 
   /**
    * Walk up the windows to get the origin stack and best available referrer, canonical URL, etc.
    *
-   * @returns {refererInfo}
+   * @returns {refererInfo} An object containing referer information.
    */
   function refererInfo() {
     const stack = [];

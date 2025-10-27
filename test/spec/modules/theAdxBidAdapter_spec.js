@@ -81,7 +81,21 @@ describe('TheAdxAdapter', function () {
             [300, 600]
           ]
         }
-      }
+      },
+      userId: {
+        uid2: { id: 'sample-uid2' },
+        id5id: {
+          'uid': 'sample-id5id',
+          'ext': {
+            'linkType': 'abc'
+          }
+        },
+        netId: 'sample-netid',
+        sharedid: {
+          'id': 'sample-sharedid',
+        },
+
+      },
     };
 
     const sampleBidderRequest = {
@@ -357,6 +371,30 @@ describe('TheAdxAdapter', function () {
       expect(mediaTypes.video).to.not.be.null;
       expect(mediaTypes.video).to.not.be.undefined;
     });
+
+    it('add eids to request', function () {
+      let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
+
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
+      let result = results.pop();
+      let payload = JSON.parse(result.data);
+      expect(payload).to.not.be.null;
+      expect(payload.ext).to.not.be.null;
+
+      expect(payload.ext.uid2).to.not.be.null;
+      expect(payload.ext.uid2.length).to.greaterThan(0);
+
+      expect(payload.ext.id5id).to.not.be.null;
+      expect(payload.ext.id5id.length).to.greaterThan(0);
+      expect(payload.ext.id5_linktype).to.not.be.null;
+      expect(payload.ext.id5_linktype.length).to.greaterThan(0);
+
+      expect(payload.ext.netid).to.not.be.null;
+      expect(payload.ext.netid.length).to.greaterThan(0);
+
+      expect(payload.ext.sharedid).to.not.be.null;
+      expect(payload.ext.sharedid.length).to.greaterThan(0);
+    });
   });
 
   describe('response interpreter', function () {
@@ -444,6 +482,78 @@ describe('TheAdxAdapter', function () {
       expect(processedBid.creativeId).to.equal(responseCreativeId);
       expect(processedBid.netRevenue).to.equal(true);
       expect(processedBid.currency).to.equal(responseCurrency);
+    });
+
+    it('returns a valid deal bid response on sucessful banner request with deal', function () {
+      let incomingRequestId = 'XXtestingXX';
+      let responsePrice = 3.14
+
+      let responseCreative = 'sample_creative&{FOR_COVARAGE}';
+
+      let responseCreativeId = '274';
+      let responseCurrency = 'TRY';
+
+      let responseWidth = 300;
+      let responseHeight = 250;
+      let responseTtl = 213;
+      let dealId = 'theadx_deal_id';
+
+      let sampleResponse = {
+        id: '66043f5ca44ecd8f8769093b1615b2d9',
+        seatbid: [{
+          bid: [{
+            id: 'c21bab0e-7668-4d8f-908a-63e094c09197',
+            dealid: 'theadx_deal_id',
+            impid: '1',
+            price: responsePrice,
+            adid: responseCreativeId,
+            crid: responseCreativeId,
+            adm: responseCreative,
+            adomain: [
+              'www.domain.com'
+            ],
+            cid: '274',
+            attr: [],
+            w: responseWidth,
+            h: responseHeight,
+            ext: {
+              ttl: responseTtl
+            }
+          }],
+          seat: '201',
+          group: 0
+        }],
+        bidid: 'c21bab0e-7668-4d8f-908a-63e094c09197',
+        cur: responseCurrency
+      };
+
+      let sampleRequest = {
+        bidId: incomingRequestId,
+        mediaTypes: {
+          banner: {}
+        },
+        requestId: incomingRequestId,
+        deals: [{ id: dealId }]
+      };
+      let serverResponse = {
+        body: sampleResponse
+      }
+      let result = spec.interpretResponse(serverResponse, sampleRequest);
+
+      expect(result.length).to.equal(1);
+
+      let processedBid = result[0];
+
+      // expect(processedBid.requestId).to.equal(incomingRequestId);
+      expect(processedBid.cpm).to.equal(responsePrice);
+      expect(processedBid.width).to.equal(responseWidth);
+      expect(processedBid.height).to.equal(responseHeight);
+      expect(processedBid.ad).to.equal(responseCreative);
+      expect(processedBid.ttl).to.equal(responseTtl);
+      expect(processedBid.creativeId).to.equal(responseCreativeId);
+      expect(processedBid.netRevenue).to.equal(true);
+      expect(processedBid.currency).to.equal(responseCurrency);
+      expect(processedBid.dealId).to.equal(dealId);
     });
 
     it('returns an valid bid response on sucessful video request', function () {

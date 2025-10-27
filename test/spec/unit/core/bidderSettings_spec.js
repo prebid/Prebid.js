@@ -19,6 +19,13 @@ describe('ScopedSettings', () => {
       expect(settings.get('scope', 'key')).to.equal('value');
     });
 
+    it('can retrieve nested settings', () => {
+      data = {
+        scope: {outer: {key: 'value'}}
+      }
+      expect(settings.get('scope', 'outer.key')).to.equal('value');
+    })
+
     it('should fallback to fallback scope', () => {
       data = {
         fallback: {
@@ -103,7 +110,7 @@ describe('ScopedSettings', () => {
 describe('bidderSettings', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(prebidGlobal, 'getGlobal').returns({
       bidderSettings: {
         scope: {

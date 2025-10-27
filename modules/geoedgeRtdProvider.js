@@ -17,11 +17,17 @@
 
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
-import { generateUUID, insertElement, isEmpty, logError } from '../src/utils.js';
+import { generateUUID, createInvisibleIframe, insertElement, isEmpty, logError } from '../src/utils.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { auctionManager } from '../src/auctionManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /** @type {string} */
 const SUBMODULE_NAME = 'geoedge';
@@ -48,10 +54,14 @@ export let wrapper
 let wrapperReady;
 /** @type {boolean} */;
 let preloaded;
+/** @type {object} */;
+let refererInfo = getRefererInfo();
+/** @type {object} */;
+let overrides = window.grumi?.overrides;
 
 /**
  * fetches the creative wrapper
- * @param {function} sucess - success callback
+ * @param {function} success - success callback
  */
 export function fetchWrapper(success) {
   if (wrapperReady) {
@@ -69,17 +79,37 @@ export function setWrapper(responseText) {
   wrapper = responseText;
 }
 
+export function getInitialParams(key) {
+  let params = {
+    wver: '1.1.1',
+    wtype: 'pbjs-module',
+    key,
+    meta: {
+      topUrl: refererInfo.page
+    },
+    site: refererInfo.domain,
+    pimp: PV_ID,
+    fsRan: true,
+    frameApi: true
+  };
+  return params;
+}
+
+export function markAsLoaded() {
+  preloaded = true;
+}
+
 /**
  * preloads the client
-  * @param {string} key
+ * @param {string} key
  */
 export function preloadClient(key) {
-  let link = document.createElement('link');
-  link.rel = 'preload';
-  link.as = 'script';
-  link.href = getClientUrl(key);
-  link.onload = () => { preloaded = true };
-  insertElement(link);
+  let iframe = createInvisibleIframe();
+  iframe.id = 'grumiFrame';
+  insertElement(iframe);
+  iframe.contentWindow.grumi = getInitialParams(key);
+  let url = getClientUrl(key);
+  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
 }
 
 /**
@@ -103,7 +133,7 @@ export function wrapHtml(wrapper, html) {
  * @param {string} key
  * @return {Object}
  */
-function getMacros(bid, key) {
+export function getMacros(bid, key) {
   return {
     '${key}': key,
     '%%ADUNIT%%': bid.adUnitCode,
@@ -115,8 +145,10 @@ function getMacros(bid, key) {
     '%_hbcid!': bid.creativeId || '',
     '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
-    '%%SITE%%': location.hostname,
-    '%_pimp%': PV_ID
+    '%%SITE%%': overrides?.site || refererInfo.domain,
+    '%_pimp%': PV_ID,
+    '%_hbCpm!': bid.cpm,
+    '%_hbCurrency!': bid.currency
   };
 }
 
@@ -209,7 +241,7 @@ function fireBillableEventsForApplicableBids(params) {
     let data = message.data;
     if (isBillingMessage(data, params)) {
       let winningBid = auctionManager.findBidByAdId(data.adId);
-      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      events.emit(EVENTS.BILLABLE_EVENT, {
         vendor: SUBMODULE_NAME,
         billingId: data.impressionId,
         type: winningBid ? 'impression' : data.type,
@@ -228,7 +260,7 @@ function fireBillableEventsForApplicableBids(params) {
 function setupInPage(params) {
   window.grumi = params;
   window.grumi.fromPrebid = true;
-  loadExternalScript(getInPageUrl(params.key), SUBMODULE_NAME);
+  loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME);
 }
 
 function init(config, userConsent) {
@@ -250,9 +282,9 @@ function init(config, userConsent) {
 /** @type {RtdSubmodule} */
 export const geoedgeSubmodule = {
   /**
-     * used to link submodule with realTimeData
-     * @type {string}
-     */
+   * used to link submodule with realTimeData
+   * @type {string}
+   */
   name: SUBMODULE_NAME,
   init,
   onBidResponseEvent: conditionallyWrap

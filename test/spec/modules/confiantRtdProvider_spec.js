@@ -1,7 +1,7 @@
 import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 
 import confiantModule from '../../../modules/confiantRtdProvider.js';
 
@@ -14,14 +14,24 @@ const {
 
 describe('Confiant RTD module', function () {
   describe('setupPage()', function() {
+    let logErrorStub;
+    beforeEach(function() {
+      logErrorStub = sinon.stub(utils, 'logError');
+    });
+    afterEach(function() {
+      logErrorStub.restore();
+    });
+
     it('should return false if propertId is not present in config', function() {
       expect(setupPage({})).to.be.false;
       expect(setupPage({ params: {} })).to.be.false;
       expect(setupPage({ params: { propertyId: '' } })).to.be.false;
+      expect(logErrorStub.callCount).to.equal(3);
     });
 
     it('should return true if expected parameters are present', function() {
       expect(setupPage({ params: { propertyId: 'clientId' } })).to.be.true;
+      expect(logErrorStub.callCount).to.equal(0);
     });
   });
 
@@ -48,7 +58,7 @@ describe('Confiant RTD module', function () {
       let billableEventsCounter = 0;
       const propertyId = 'fff';
 
-      events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (e) => {
+      events.on(EVENTS.BILLABLE_EVENT, (e) => {
         if (e.vendor === 'confiant') {
           billableEventsCounter++;
           expect(e.type).to.equal('impression');

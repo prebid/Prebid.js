@@ -10,7 +10,7 @@ describe('Mgid bid adapter', function () {
   let logErrorSpy;
   let logWarnSpy;
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
@@ -20,7 +20,6 @@ describe('Mgid bid adapter', function () {
     utils.logError.restore();
     utils.logWarn.restore();
   });
-  const ua = navigator.userAgent;
   const screenHeight = screen.height;
   const screenWidth = screen.width;
   const dnt = (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0;
@@ -320,6 +319,14 @@ describe('Mgid bid adapter', function () {
     let abid = {
       adUnitCode: 'div',
       bidder: 'mgid',
+      ortb2Imp: {
+        ext: {
+          gpid: '/1111/gpid',
+          data: {
+            pbadslot: '/1111/gpid',
+          }
+        }
+      },
       params: {
         accountId: '1',
         placementId: '2',
@@ -441,18 +448,19 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
       expect(data.device.language).to.deep.equal(lang);
       expect(data.imp[0].tagid).to.deep.equal('2/div');
+      expect(data.imp[0].ext.gpid).to.deep.equal('/1111/gpid');
       expect(data.imp[0].banner).to.deep.equal({w: 300, h: 250});
       expect(data.imp[0].secure).to.deep.equal(secure);
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"banner":{"w":300,"h":250}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"banner":{"w":300,"h":250}}],"tmax":3000}`,
       });
     });
     it('should not return native imp if minimum asset list not requested', function () {
@@ -490,18 +498,19 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
       expect(data.device.language).to.deep.equal(lang);
       expect(data.imp[0].tagid).to.deep.equal('2/div');
+      expect(data.imp[0].ext.gpid).to.deep.equal('/1111/gpid');
       expect(data.imp[0].native).is.a('object').and.to.deep.equal({'request': {'assets': [{'id': 1, 'required': 1, 'title': {'len': 80}}, {'id': 2, 'img': {'h': 80, 'type': 3, 'w': 80}, 'required': 0}, {'data': {'type': 1}, 'id': 11, 'required': 0}], 'plcmtcnt': 1}});
       expect(data.imp[0].secure).to.deep.equal(secure);
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
       });
     });
     it('should return proper native imp with image altered', function () {
@@ -527,7 +536,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -538,7 +547,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":492,"h":328,"wmin":50,"hmin":50}},{"id":3,"required":0,"img":{"type":1,"w":50,"h":50}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":492,"h":328,"wmin":50,"hmin":50}},{"id":3,"required":0,"img":{"type":1,"w":50,"h":50}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
       });
     });
     it('should return proper native imp with sponsoredBy', function () {
@@ -563,7 +572,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -574,7 +583,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":4,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":4,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
       });
     });
     it('should return proper banner request', function () {
@@ -596,7 +605,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -608,7 +617,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"banner":{"w":300,"h":600,"format":[{"w":300,"h":600},{"w":300,"h":250}],"pos":1}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"banner":{"w":300,"h":600,"format":[{"w":300,"h":600},{"w":300,"h":250}],"pos":1}}],"tmax":3000}`,
       });
     });
     it('should proper handle ortb2 data', function () {

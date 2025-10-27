@@ -1,8 +1,8 @@
 import {deepClone, getParameterByName, logError, logInfo} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {includes} from '../src/polyfill.js';
+
 import {ajaxBuilder} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
@@ -18,15 +18,13 @@ const DEFAULT_SERVER_CONFIG_URL = 'pa.rxthdr.com/v3';
 const analyticsType = 'endpoint';
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_ADJUSTMENT,
-    BIDDER_DONE,
-    BID_WON
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_ADJUSTMENT,
+  BIDDER_DONE,
+  BID_WON
+} = EVENTS;
 
 const AUCTION_STATUS = {
   'RUNNING': 'running',
@@ -97,7 +95,7 @@ function isSupportedAdUnit(adUnit) {
     return true;
   }
 
-  return includes(initOptions.adUnits, adUnit);
+  return initOptions.adUnits.includes(adUnit);
 }
 
 function deleteOldAuctions() {

@@ -1,5 +1,6 @@
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 import { expect } from 'chai';
+import { server } from '../../../../mocks/xhr';
 
 describe('Vast XML Editor', function () {
   const adWrapperXml = `

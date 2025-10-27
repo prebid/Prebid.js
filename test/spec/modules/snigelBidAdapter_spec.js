@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/snigelBidAdapter.js';
 import {config} from 'src/config.js';
 import {isValid} from 'src/adapters/bidderFactory.js';
+import {registerActivityControl} from 'src/activities/rules.js';
+import {ACTIVITY_ACCESS_DEVICE} from 'src/activities/activities.js';
 
 const BASE_BID_REQUEST = {
   adUnitCode: 'top_leaderboard',
@@ -34,6 +36,7 @@ const makeBidderRequest = function (overrides) {
 const DUMMY_USP_CONSENT = '1YYN';
 const DUMMY_GDPR_CONSENT_STRING =
   'BOSSotLOSSotLAPABAENBc-AAAAgR7_______9______9uz_Gv_v_f__33e8__9v_l_7_-___u_-33d4-_1vX99yfm1-7ftr3tp_86ues2_XqK_9oIiA';
+const DUMMY_GPP_CONSENT_STRING = 'DBABrw~BAAAAAAAAABA.QA~BAAAAABA.QA';
 
 describe('snigelBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -179,6 +182,50 @@ describe('snigelBidAdapter', function () {
       expect(data.placements[2].refresh.count).to.equal(1);
       expect(data.placements[2].refresh.time).to.be.greaterThanOrEqual(0);
     });
+
+    it('should increment auction counter upon every request', function () {
+      const bidderRequest = makeBidderRequest({});
+
+      let request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      const previousCounter = data.counter;
+
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.counter).to.equal(previousCounter + 1);
+    });
+
+    it('should increment placement counter for each placement', function () {
+      const bidderRequest = Object.assign({}, BASE_BIDDER_REQUEST);
+      const topLeaderboard = makeBidRequest({adUnitCode: 'top_leaderboard', params: {placement: 'ros'}});
+      const bottomLeaderboard = makeBidRequest({adUnitCode: 'bottom_leaderboard', params: {placement: 'ros'}});
+      const sidebar = makeBidRequest({adUnitCode: 'sidebar', params: {placement: 'other'}});
+
+      let request = spec.buildRequests([topLeaderboard, bottomLeaderboard, sidebar], bidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      const previousCounters = {};
+      data.placements.forEach((placement) => {
+        previousCounters[placement.name] = Math.max(previousCounters[placement.name] || 0, placement.counter);
+      });
+
+      request = spec.buildRequests([topLeaderboard, bottomLeaderboard, sidebar], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data).to.have.property('placements');
+      expect(data.placements.length).to.equal(3);
+      expect(data.placements[0].id).to.equal('top_leaderboard');
+      expect(previousCounters).to.have.property(data.placements[0].name);
+      expect(data.placements[0].counter).to.equal(previousCounters[data.placements[0].name] + 1);
+      expect(data.placements[1].id).to.equal('bottom_leaderboard');
+      expect(previousCounters).to.have.property(data.placements[1].name);
+      expect(data.placements[1].counter).to.equal(previousCounters[data.placements[1].name] + 2);
+      expect(data.placements[2].id).to.equal('sidebar');
+      expect(previousCounters).to.have.property(data.placements[2].name);
+      expect(data.placements[2].counter).to.equal(previousCounters[data.placements[2].name] + 1);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -264,31 +311,6 @@ describe('snigelBidAdapter', function () {
       expect(syncs).to.be.undefined;
     });
 
-    it('should not return any user syncs if GDPR applies and the user did not consent to purpose one', function () {
-      const response = {
-        body: {
-          id: BASE_BIDDER_REQUEST.bidderRequestId,
-          cur: 'USD',
-          syncUrl: 'https://somesyncurl',
-          bids: [],
-        },
-      };
-      const syncOptions = {
-        iframeEnabled: true,
-      };
-      const gdprConsent = {
-        gdprApplies: true,
-        vendorData: {
-          purpose: {
-            consents: {1: false},
-          },
-        },
-      };
-
-      const syncs = spec.getUserSyncs(syncOptions, [response], gdprConsent);
-      expect(syncs).to.be.undefined;
-    });
-
     it("should return an iframe specific to the publisher's property if all conditions are met", function () {
       const response = {
         body: {
@@ -311,7 +333,7 @@ describe('snigelBidAdapter', function () {
       expect(sync).to.have.property('type');
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
-      expect(sync.url).to.equal('https://somesyncurl?gdpr=0&gdpr_consent=');
+      expect(sync.url).to.equal('https://somesyncurl?gdpr=0&gdpr_consent=&gpp_sid=&gpp=&us_privacy=');
     });
 
     it('should pass GDPR applicability and consent string as query parameters', function () {
@@ -342,7 +364,88 @@ describe('snigelBidAdapter', function () {
       expect(sync).to.have.property('type');
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
-      expect(sync.url).to.equal(`https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}`);
+      expect(sync.url).to.equal(
+        `https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}&gpp_sid=&gpp=&us_privacy=`
+      );
+    });
+
+    it('should pass GPP section IDs and consent string as query parameters', function () {
+      const response = {
+        body: {
+          id: BASE_BIDDER_REQUEST.bidderRequestId,
+          cur: 'USD',
+          syncUrl: 'https://somesyncurl',
+          bids: [],
+        },
+      };
+      const syncOptions = {
+        iframeEnabled: true,
+      };
+      const gppConsent = {
+        applicableSections: [7, 8],
+        gppString: DUMMY_GPP_CONSENT_STRING,
+      };
+
+      const syncs = spec.getUserSyncs(syncOptions, [response], undefined, undefined, gppConsent);
+      expect(syncs).to.be.an('array').and.of.length(1);
+      const sync = syncs[0];
+      expect(sync).to.have.property('type');
+      expect(sync.type).to.equal('iframe');
+      expect(sync).to.have.property('url');
+      expect(sync.url).to.equal(
+        `https://somesyncurl?gdpr=0&gdpr_consent=&gpp_sid=7,8&gpp=${DUMMY_GPP_CONSENT_STRING}&us_privacy=`
+      );
+    });
+
+    it('should omit session ID if no device access', function () {
+      const bidderRequest = makeBidderRequest();
+      const unregisterRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'denyAccess', () => {
+        return {allow: false, reason: 'no consent'};
+      });
+
+      try {
+        const request = spec.buildRequests([], bidderRequest);
+        expect(request).to.have.property('data');
+        const data = JSON.parse(request.data);
+        expect(data.sessionId).to.be.undefined;
+      } finally {
+        unregisterRule();
+      }
+    });
+
+    it('should determine full GDPR consent correctly', function () {
+      const baseBidderRequest = makeBidderRequest({
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {
+            purpose: {
+              consents: {1: true, 2: true, 3: true, 4: true, 5: true},
+            },
+            vendor: {
+              consents: {[spec.gvlid]: true},
+            },
+          },
+        },
+      });
+      let request = spec.buildRequests([], baseBidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      expect(data.gdprConsent).to.be.true;
+
+      let bidderRequest = {...baseBidderRequest, ...{gdprConsent: {vendorData: {purpose: {consents: {1: false}}}}}};
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.gdprConsent).to.be.false;
+
+      bidderRequest = {
+        ...baseBidderRequest,
+        ...{gdprConsent: {vendorData: {vendor: {consents: {[spec.gvlid]: false}}}}},
+      };
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.gdprConsent).to.be.false;
     });
   });
 });

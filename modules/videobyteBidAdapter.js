@@ -2,6 +2,14 @@ import { logMessage, logError, deepAccess, isFn, isPlainObject, isStr, isNumber,
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'videobyte';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -11,6 +19,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -78,7 +87,6 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse) {
@@ -183,16 +191,6 @@ function buildRequestData(bidRequest, bidderRequest) {
     }
   });
 
-  // Placement Inference Rules:
-  // - If no placement is defined then default to 1 (In Stream)
-  video.placement = video.placement || 2;
-
-  // - If product is instream (for instream context) then override placement to 1
-  if (params.context === 'instream') {
-    video.startdelay = video.startdelay || 0;
-    video.placement = 1;
-  }
-
   // bid floor
   const bidFloorRequest = {
     currency: bidRequest.params.cur || 'USD',
@@ -215,8 +213,8 @@ function buildRequestData(bidRequest, bidderRequest) {
         id: '1',
         video: video,
         secure: isSecure() ? 1 : 0,
-        bidfloor: floorData.floor,
-        bidfloorcur: floorData.currency
+        bidfloor: floorData?.floor,
+        bidfloorcur: floorData?.currency
       }
     ],
     site: {
