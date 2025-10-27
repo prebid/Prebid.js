@@ -169,7 +169,6 @@ describe('objectGuard', () => {
       expect(obj).to.eql({foo: {inner: {}}});
     })
 
-
     it('should prevent deletes if a higher level property is protected', () => {
       const obj = {foo: {inner: {prop: 'value'}}};
       const guard = objectGuard([rule])(obj);
@@ -213,7 +212,6 @@ describe('objectGuard', () => {
       delete guard.outer.inner.bar;
       expect(guard).to.eql({outer: {inner: {foo: {nested: 'val'}, bar: 'val'}}})
     });
-
 
     it('should prevent higher level deletes that would result in inner properties changing', () => {
       const guard = objectGuard([rule])({outer: {inner: {bar: 'baz'}}});
