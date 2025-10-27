@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {OUTSTREAM} from '../src/video.js';
-import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice} from '../src/utils.js';
+import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
@@ -14,7 +14,6 @@ import {Renderer} from '../src/Renderer.js';
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
 const CURRENCY = 'USD';
-const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: { id: 0, name: 'title' },
   icon: { id: 2, type: 1, name: 'img' },
@@ -23,6 +22,10 @@ const NATIVE_PARAMS = {
   body: { id: 4, name: 'data', type: 2 },
   cta: { id: 1, type: 12, name: 'data' }
 };
+const NATIVE_ASSET_IDS = Object.entries(NATIVE_PARAMS).reduce((acc, [key, value]) => {
+  acc[value.id] = key;
+  return acc;
+}, {});
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
@@ -75,7 +78,6 @@ export const spec = {
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
-      bid.netRevenue = 'net';
       const imp = {
         id: id + 1 + ''
       }
@@ -94,7 +96,7 @@ export const spec = {
         imp.video = getVideoAsset(bid);
       } else {
         imp.banner = {
-          format: transformSizes(bid.sizes)
+          format: bid.sizes?.map((size) => parseGPTSingleSizeArrayToRtbSize(size))
         }
       }
 
@@ -111,7 +113,7 @@ export const spec = {
     const request = {
       id: bidderRequest.bidderRequestId,
       site: { page, publisher },
-      device: { ua },
+      device: ortb2?.device || { ua },
       source: { fd: 1 },
       cur: [cur],
       tmax: timeout,
@@ -174,7 +176,7 @@ export const spec = {
     }
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+    const bidResponses = seatbid.map(seat => seat.bid).flat().reduce((result, bid) => {
       result[bid.impid - 1] = bid;
       return result;
     }, []);
@@ -193,7 +195,7 @@ export const spec = {
           cpm: bidResponse.price,
           creativeId: bidResponse.crid,
           ttl: 360,
-          netRevenue: bid.netRevenue === 'net',
+          netRevenue: true,
           currency: cur,
           mediaType: type,
           nurl: bidResponse.nurl,
@@ -288,19 +290,6 @@ function parseNative(bid) {
   return result;
 }
 
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
-}
-
-function flatten(arr) {
-  return [].concat(...arr);
-}
-
 function getNativeAssets(bid) {
   return _map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
@@ -319,7 +308,7 @@ function getNativeAssets(bid) {
       }
 
       if (bidParams.sizes) {
-        const sizes = flatten(bidParams.sizes);
+        const sizes = bidParams.sizes.flat();
         w = parseInt(sizes[0], 10);
         h = parseInt(sizes[1], 10);
       }
@@ -339,7 +328,7 @@ function getNativeAssets(bid) {
 }
 
 function getVideoAsset(bid) {
-  const sizes = flatten(bid.mediaTypes.video.playerSize);
+  const sizes = bid.mediaTypes.video.playerSize.flat();
   return {
     w: parseInt(sizes[0], 10),
     h: parseInt(sizes[1], 10),
@@ -355,31 +344,9 @@ function getVideoAsset(bid) {
     maxduration: bid.mediaTypes.video.maxduration,
     startdelay: bid.mediaTypes.video.startdelay,
     placement: bid.mediaTypes.video.placement,
+    plcmt: bid.mediaTypes.video.plcmt,
     linearity: bid.mediaTypes.video.linearity
   };
-}
-
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  if (!isArray(requestSizes)) {
-    return [];
-  }
-
-  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
-    return [{
-      w: parseInt(requestSizes[0], 10),
-      h: parseInt(requestSizes[1], 10)
-    }];
-  } else if (isArray(requestSizes[0])) {
-    return requestSizes.map(item =>
-      ({
-        w: parseInt(item[0], 10),
-        h: parseInt(item[1], 10)
-      })
-    );
-  }
-
-  return [];
 }
 
 function _getFloor(bid, type) {
@@ -388,7 +355,7 @@ function _getFloor(bid, type) {
     mediaType: type,
     size: '*'
   });
-  if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+  if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
     return parseFloat(floorInfo.floor);
   }
   return null;

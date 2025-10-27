@@ -50,3 +50,45 @@ Please use ```admixer``` as the bidder code.
            },
        ];
 ```
+
+### RTB Stack Test Parameters
+```
+    var adUnits = [
+           {
+               code: 'desktop-banner-ad-div',
+               sizes: [[300, 250]],  // a display size
+               bids: [
+                   {
+                       bidder: "rtbstack",
+                       params: {
+                           tagId: 41512
+                       }
+                   }
+               ]
+           },{
+               code: 'mobile-banner-ad-div',
+               sizes: [[300, 50]],   // a mobile size
+               bids: [
+                   {
+                       bidder: "rtbstack",
+                       params: {
+                           tagId: 41512
+                       }
+                   }
+               ]
+           },{
+               code: 'video-ad',
+               sizes: [[300, 50]],
+               mediaType: 'video',
+               bids: [
+                   {
+                       bidder: "rtbstack",
+                       params: {
+                           tagId: 41512
+                       }
+                   }
+               ]
+           },
+       ];
+```
+

@@ -80,6 +80,7 @@ describe('pbjs-ortb converter', () => {
             if (context.reqContext?.ctx) {
               bidResponse.reqCtx = context.reqContext?.ctx;
             }
+            bidResponse.seatbid = context.seatbid;
           }
         }
       },
@@ -116,13 +117,16 @@ describe('pbjs-ortb converter', () => {
     const response = cvt.fromORTB({request, response: MOCK_ORTB_RESPONSE});
     expect(response.bids).to.eql([{
       impid: 'imp0',
-      bidId: 111
+      bidId: 111,
+      seatbid: MOCK_ORTB_RESPONSE.seatbid[0]
     }, {
       impid: 'imp1',
-      bidId: 112
+      bidId: 112,
+      seatbid: MOCK_ORTB_RESPONSE.seatbid[0]
     }, {
       impid: 'imp1',
-      bidId: 112
+      bidId: 112,
+      seatbid: MOCK_ORTB_RESPONSE.seatbid[1]
     }]);
     expect(response.marker).to.be.true;
   });

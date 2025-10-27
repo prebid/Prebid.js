@@ -81,7 +81,7 @@ function parseBannerResponse(rec, response) {
   const title = rec.title && rec.title.trim() ? `<div class="eng_tag_ttl" style="display: none">${rec.title}</div>` : '';
   const displayName = rec.displayName && title ? `<div class="eng_tag_brnd" style="display: none">${rec.displayName}</div>` : '';
   const trackers = getImpressionTrackers(rec, response)
-    .map(createTrackPixelHtml)
+    .map((url) => createTrackPixelHtml(url))
     .join('');
   return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }

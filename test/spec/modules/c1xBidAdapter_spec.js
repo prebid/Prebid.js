@@ -31,9 +31,9 @@ describe('C1XAdapter', () => {
     });
 
     it('should return false when require params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(c1xAdapter.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(c1xAdapter.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
   describe('buildRequests', () => {

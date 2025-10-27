@@ -9,8 +9,14 @@ import {isStr, isNumber, logError, logInfo, isEmpty, timestamp} from '../src/uti
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'teadsId';
 const GVL_ID = 132;
@@ -34,9 +40,9 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 /** @type {Submodule} */
 export const teadsIdSubmodule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
    * Vendor id of Teads
@@ -44,21 +50,21 @@ export const teadsIdSubmodule = {
    */
   gvlid: GVL_ID,
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {string} value
-     * @returns {{teadsId:string}}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{teadsId:string}}
+   */
   decode(value) {
     return {teadsId: value}
   },
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleConfig} [submoduleConfig]
-     * @param {ConsentData} [consentData]
-     * @returns {IdResponse|undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [submoduleConfig]
+   * @param {ConsentData} [consentData]
+   * @returns {IdResponse|undefined}
+   */
   getId(submoduleConfig, consentData) {
     const resp = function (callback) {
       const url = buildAnalyticsTagUrl(submoduleConfig, consentData);
@@ -101,9 +107,9 @@ export const teadsIdSubmodule = {
 export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
   const pubId = getPublisherId(submoduleConfig);
   const teadsViewerId = getTeadsViewerId();
-  const status = getGdprStatus(consentData);
-  const gdprConsentString = getGdprConsentString(consentData);
-  const ccpaConsentString = getCcpaConsentString(uspDataHandler?.getConsentData());
+  const status = getGdprStatus(consentData?.gdpr);
+  const gdprConsentString = getGdprConsentString(consentData?.gdpr);
+  const ccpaConsentString = getCcpaConsentString(consentData?.usp);
   const gdprReason = getGdprReasonFromStatus(status);
   const params = {
     analytics_tag_id: pubId,

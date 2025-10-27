@@ -1,16 +1,37 @@
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {ajax} from '../../src/ajax.js';
 import {logError, logMessage} from '../../src/utils.js';
 import * as events from '../../src/events.js';
+import {config} from '../../src/config.js';
 
 export const _internal = {
   ajax
 };
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
+const LABELS_KEY = 'analyticsLabels';
 
-export const DEFAULT_INCLUDE_EVENTS = Object.values(CONSTANTS.EVENTS)
-  .filter(ev => ev !== CONSTANTS.EVENTS.AUCTION_DEBUG);
+const labels = {
+  internal: {},
+  publisher: {},
+};
+
+let allLabels = {};
+
+config.getConfig(LABELS_KEY, (cfg) => {
+  labels.publisher = cfg[LABELS_KEY];
+  allLabels = combineLabels(); ;
+});
+
+export function setLabels(internalLabels) {
+  labels.internal = internalLabels;
+  allLabels = combineLabels();
+};
+
+const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({...acc, ...curr}), {});
+
+export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
+  .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
 
 let debounceDelay = 100;
 
@@ -90,12 +111,18 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   }
 
   function _callEndpoint({ eventType, args, callback }) {
-    _internal.ajax(url, callback, JSON.stringify({ eventType, args }));
+    _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: allLabels }));
   }
 
   function _enqueue({eventType, args}) {
     queue.push(() => {
-      this.track({eventType, args});
+      if (Object.keys(allLabels || []).length > 0) {
+        args = {
+          [LABELS_KEY]: allLabels,
+          ...args,
+        }
+      }
+      this.track({eventType, labels: allLabels, args});
     });
     emptyQueue();
   }
@@ -114,7 +141,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       const trackedEvents = (() => {
         const {includeEvents = DEFAULT_INCLUDE_EVENTS, excludeEvents = []} = (config || {});
         return new Set(
-          Object.values(CONSTANTS.EVENTS)
+          Object.values(EVENTS)
             .filter(ev => includeEvents.includes(ev))
             .filter(ev => !excludeEvents.includes(ev))
         );

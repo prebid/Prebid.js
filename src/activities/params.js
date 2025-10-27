@@ -39,9 +39,11 @@ export const ACTIVITY_PARAM_SYNC_TYPE = 'syncType'
  */
 export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
 /**
+ * Configuration options for analytics adapter - the argument passed to `enableAnalytics`.
+ * Relevant for: reportAnalytics
  * @private
- * configuration options for analytics adapter - the argument passed to `enableAnalytics`.
- * relevant for: reportAnalytics
+ * @constant
+ * @type {string}
  */
 export const ACTIVITY_PARAM_ANL_CONFIG = '_config';
 

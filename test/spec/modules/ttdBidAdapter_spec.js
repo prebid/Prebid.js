@@ -55,8 +55,14 @@ describe('ttdBidAdapter', function () {
 
       it('should return false when publisherId is longer than 64 characters', function () {
         let bid = makeBid();
-        bid.params.publisherId = '1111111111111111111111111111111111111111111111111111111111111111111111';
+        bid.params.publisherId = '1'.repeat(65);
         expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return true when publisherId is equal to 64 characters', function () {
+        let bid = makeBid();
+        bid.params.publisherId = '1'.repeat(64);
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return true if placementId is not passed and gpid is passed', function () {
@@ -262,6 +268,29 @@ describe('ttdBidAdapter', function () {
       expect(request.data).to.be.not.null;
     });
 
+    it('bid request should parse tmax or have a default and minimum', function () {
+      const requestWithoutTimeout = {
+        ...baseBidderRequest,
+        timeout: null
+      };
+      var requestBody = testBuildRequests(baseBannerBidRequests, requestWithoutTimeout).data;
+      expect(requestBody.tmax).to.be.equal(400);
+
+      const requestWithTimeout = {
+        ...baseBidderRequest,
+        timeout: 600
+      };
+      requestBody = testBuildRequests(baseBannerBidRequests, requestWithTimeout).data;
+      expect(requestBody.tmax).to.be.equal(600);
+
+      const requestWithLowerTimeout = {
+        ...baseBidderRequest,
+        timeout: 300
+      };
+      requestBody = testBuildRequests(baseBannerBidRequests, requestWithLowerTimeout).data;
+      expect(requestBody.tmax).to.be.equal(400);
+    });
+
     it('sets bidrequest.id to bidderRequestId', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.id).to.equal('18084284054531');
@@ -275,6 +304,13 @@ describe('ttdBidAdapter', function () {
     it('sends bid requests to the correct endpoint', function () {
       const url = testBuildRequests(baseBannerBidRequests, baseBidderRequest).url;
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
+    });
+
+    it('sends bid requests to the correct custom endpoint', function () {
+      let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
+      const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
     });
 
     it('sends publisher id', function () {
@@ -442,7 +478,9 @@ describe('ttdBidAdapter', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       const battr = [1, 2, 3];
       clonedBannerRequests[0].ortb2Imp = {
-        battr: battr
+        banner: {
+          battr: battr
+        }
       };
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.battr).to.equal(battr);
@@ -706,8 +744,8 @@ describe('ttdBidAdapter', function () {
       let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.pmp.ext)
-      expect(requestBody.pmp.private_auction).to.equal(1)
+      validateExtFirstPartyData(requestBody.imp[0].pmp.ext)
+      expect(requestBody.imp[0].pmp.private_auction).to.equal(1)
     });
   });
 

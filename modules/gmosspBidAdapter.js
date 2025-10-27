@@ -1,3 +1,7 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
@@ -7,10 +11,16 @@ import {
   isEmpty,
   logError
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
@@ -32,14 +42,15 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} validBidRequests an array of bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
-    const cur = getCurrencyType();
+    const cur = getCurrencyType(bidderRequest);
     const dnt = getDNT() ? '1' : '0';
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -79,10 +90,11 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {*} bidderResponse A successful response from the server.
+   * @param {Array} requests
+   * @return {Array} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (bidderResponse, requests) {
+ interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
     if (isEmpty(res)) {
@@ -145,11 +157,8 @@ export const spec = {
 
 };
 
-function getCurrencyType() {
-  if (config.getConfig('currency.adServerCurrency')) {
-    return config.getConfig('currency.adServerCurrency');
-  }
-  return 'JPY';
+function getCurrencyType(bidderRequest) {
+  return getCurrencyFromBidderRequest(bidderRequest) || 'JPY';
 }
 
 function getUrlInfo(refererInfo) {

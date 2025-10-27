@@ -7,6 +7,13 @@
 
 import {submodule} from '../src/hook.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 /** @type {Submodule} */
 export const netIdSubmodule = {
   /**
@@ -27,8 +34,6 @@ export const netIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
-   * @param {ConsentData} [consentData]
-   * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
   getId(config) {

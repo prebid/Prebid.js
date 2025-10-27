@@ -1,13 +1,10 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert } from 'chai';
-import { spec } from 'modules/adxcgBidAdapter.js';
-import { config } from 'src/config.js';
-import { createEidsArray } from 'modules/userId/eids.js';
 /* eslint dot-notation:0, quote-props:0 */
-import { expect } from 'chai';
+import {assert, expect} from 'chai';
+import {spec} from 'modules/adxcgBidAdapter.js';
+import {config} from 'src/config.js';
 
-import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
-import { deepClone } from '../../../src/utils';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 
 const utils = require('src/utils');
 
@@ -104,9 +101,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid12345',
     params: {
-      cp: 'p10000',
-      ct: 't10000',
-      cf: '300x250',
       adzoneid: '77'
     }
   }, {
@@ -118,9 +112,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid23456',
     params: {
-      cp: 'p10000',
-      ct: 't20000',
-      cf: '728x90',
       adzoneid: '77'
     }
   }];
@@ -160,8 +151,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     nativeOrtbRequest,
     params: {
-      cp: 'p10000',
-      ct: 't10000',
+
       adzoneid: '77'
     }
   }];
@@ -182,8 +172,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       }
     },
     params: {
-      cp: 'p10000',
-      ct: 't10000',
       adzoneid: '77'
     }
   }];
@@ -196,9 +184,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid12345',
     params: {
-      cp: 'p10000',
-      ct: 't10000',
-      cf: '1x1',
       adzoneid: '77',
       extra_key1: 'extra_val1',
       extra_key2: 12345,
@@ -219,9 +204,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid12345',
     params: {
-      cp: 'p10000',
-      ct: 't10000',
-      cf: '1x1',
       adzoneid: '77',
       bcat: ['IAB-1', 'IAB-20'],
       battr: [1, 2, 3],
@@ -244,39 +226,40 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
   }];
 
-  const bidderRequest = {
-    refererInfo: {
-      page: 'https://publisher.com/home',
-      ref: 'https://referrer'
-    }
-  };
+  let bidderRequest;
+
+  beforeEach(() => {
+    return addFPDToBidderRequest({
+      refererInfo: {
+        page: 'https://publisher.com/home',
+        ref: 'https://referrer'
+      }
+    }).then(br => { bidderRequest = br });
+  })
 
   it('Verify build request', function () {
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
     // site object
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
-    // expect(ortbRequest.site.publisher.id).to.equal('p10000');
     expect(ortbRequest.site.page).to.equal('https://publisher.com/home');
     expect(ortbRequest.imp).to.have.lengthOf(2);
     // device object
     expect(ortbRequest.device).to.not.equal(null);
     expect(ortbRequest.device.ua).to.equal(navigator.userAgent);
     // slot 1
-    // expect(ortbRequest.imp[0].tagid).to.equal('t10000');
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
     expect(ortbRequest.imp[0].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }, { 'w': 160, 'h': 600 }]);
     // slot 2
-    // expect(ortbRequest.imp[1].tagid).to.equal('t20000');
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
     expect(ortbRequest.imp[1].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }]);
   });
 
   it('Verify parse response', function () {
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
@@ -318,7 +301,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
 
   if (FEATURES.NATIVE) {
     it('Verify Native request', function () {
-      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
       expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -354,7 +337,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     });
 
     it('Verify Native response', function () {
-      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
       expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -426,7 +409,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
 
   if (FEATURES.VIDEO) {
     it('Verify Video request', function () {
-      const request = spec.buildRequests(videoSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(videoSlotConfig, bidderRequest);
       expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -447,7 +430,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
   }
 
   it('Verify extra parameters', function () {
-    let request = spec.buildRequests(additionalParamsConfig, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(additionalParamsConfig, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
@@ -477,7 +460,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       },
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gpdr_data'
+        consentString: 'serialized_gdpr_data'
       },
       ortb2: {
         user: {
@@ -492,7 +475,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(slotConfigs, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.user).to.not.equal(null);
@@ -519,7 +502,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(slotConfigs, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.site).to.not.equal(null);
@@ -536,7 +519,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       page: 'http://pub.com/news',
       ref: 'http://google.com',
       publisher: {
-        // id: 'p10000',
         domain: 'pub.com'
       }
     });
@@ -552,8 +534,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       },
       bidId: 'bid12345',
       params: {
-        cp: 'p10000',
-        ct: 't10000',
         adzoneid: '77',
         extra_key1: 'extra_val1',
         extra_key2: 12345

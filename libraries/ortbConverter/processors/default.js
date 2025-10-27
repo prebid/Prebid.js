@@ -61,6 +61,12 @@ export const DEFAULT_PROCESSORS = {
           delete imp.ext?.data?.pbadslot;
         }
       }
+    },
+    secure: {
+      // should set imp.secure to 1 unless publisher has set it
+      fn(imp, bidRequest) {
+        imp.secure = imp.secure ?? 1;
+      }
     }
   },
   [BID_RESPONSE]: {
@@ -83,6 +89,8 @@ export const DEFAULT_PROCESSORS = {
           currency: context.ortbResponse.cur || context.currency,
           width: bid.w,
           height: bid.h,
+          wratio: bid.wratio,
+          hratio: bid.hratio,
           dealId: bid.dealid,
           creative_id: bid.crid,
           creativeId: bid.crid,
@@ -96,6 +104,19 @@ export const DEFAULT_PROCESSORS = {
         }
         if (bid.adomain) {
           bidResponse.meta.advertiserDomains = bid.adomain;
+        }
+        if (bid.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
+        if (bid.cat) {
+          bidResponse.meta.primaryCatId = bid.cat[0];
+          bidResponse.meta.secondaryCatIds = bid.cat.slice(1);
+        }
+        if (bid.attr) {
+          bidResponse.meta.attr = bid.attr;
+        }
+        if (bid.ext?.eventtrackers) {
+          bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers);
         }
       }
     }

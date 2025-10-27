@@ -6,10 +6,9 @@
  * @module modules/adlooxRtdProvider
  * @requires module:modules/realTimeData
  * @requires module:modules/adlooxAnalyticsAdapter
- * @optional module:modules/intersectionRtdProvider
+ * @see module:modules/intersectionRtdProvider (optional)
  */
 
-/* eslint standard/no-callback-literal: "off" */
 /* eslint prebid/validate-imports: "off" */
 
 import {auctionManager} from '../src/auctionManager.js';
@@ -106,7 +105,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
   // buildUrl creates PHP style multi-parameters and includes undefined... (╯°□°)╯ ┻━┻
   const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), { search: {
-    'v': `pbjs-${getGlobal().version}`,
+    'v': 'pbjs-v' + '$prebid.version$',
     'c': config.params.clientid,
     'p': config.params.platformid,
     't': config.params.tagid,

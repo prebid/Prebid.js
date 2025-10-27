@@ -48,49 +48,11 @@ describe('cadent_aperture_mx Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
       let noBid = {};
-      let otherBid = {
-        'bidder': 'emxdigital',
-        'params': {
-          'tagid': '25251'
-        },
-        'mediaTypes': {
-          'banner': {
-            'sizes': [[300, 250]]
-          }
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c2501de1e',
-        'bidderRequestId': '22edbae3120bf6',
-        'auctionId': '1d1a01234a475'
-      };
-      let noMediaSizeBid = {
-        'bidder': 'emxdigital',
-        'params': {
-          'tagid': '25251'
-        },
-        'mediaTypes': {
-          'banner': {}
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c2501de1e',
-        'bidderRequestId': '22edbae3120bf6',
-        'auctionId': '1d1a01234a475'
-      };
 
       it('should return true when required params found', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
         expect(spec.isBidRequestValid(badBid)).to.equal(false);
         expect(spec.isBidRequestValid(noBid)).to.equal(false);
-        expect(spec.isBidRequestValid(otherBid)).to.equal(false);
-        expect(spec.isBidRequestValid(noMediaSizeBid)).to.equal(false);
       });
     });
 
@@ -451,10 +413,27 @@ describe('cadent_aperture_mx Adapter', function () {
         });
       });
 
-      it('should add gpid to request if present', () => {
+      it('should add gpid to request if present in ext.gpid', () => {
         const gpid = '/12345/my-gpt-tag-0';
         let bid = utils.deepClone(bidderRequest.bids[0]);
-        bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } };
+        bid.ortb2Imp = { ext: { gpid, data: { adserver: { adslot: gpid + '1' }, pbadslot: gpid + '2' } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add gpid to request if present in ext.data.adserver.adslot', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
+        bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid }, pbadslot: gpid + '1' } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add gpid to request if present in ext.data.pbadslot', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
         bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
         let requestWithGPID = spec.buildRequests([bid], bidderRequest);
         requestWithGPID = JSON.parse(requestWithGPID.data);

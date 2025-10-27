@@ -1,9 +1,9 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -11,9 +11,15 @@ const DEFAULT_URL = 'https://adserv.snigelweb.com/bp/v1/prebid';
 const DEFAULT_TTL = 60;
 const DEFAULT_CURRENCIES = ['USD'];
 const FLOOR_MATCH_ALL_SIZES = '*';
+const SESSION_ID_KEY = '_sn_session_pba';
 
 const getConfig = config.getConfig;
+const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
 const refreshes = {};
+const placementCounters = {};
+const pageViewId = generateUUID();
+const pageViewStart = new Date().getTime();
+let auctionCounter = 0;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,6 +31,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+    const { width: w, height: h } = getViewportSize();
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     return {
       method: 'POST',
@@ -33,9 +40,15 @@ export const spec = {
         id: bidderRequest.auctionId,
         accountId: deepAccess(bidRequests, '0.params.accountId'),
         site: deepAccess(bidRequests, '0.params.site'),
+        sessionId: getSessionId(),
+        counter: auctionCounter++,
+        pageViewId: pageViewId,
+        pageViewStart: pageViewStart,
+        gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),
         test: getTestFlag(),
-        version: getGlobal().version,
+        version: 'v' + '$prebid.version$',
+        adapterVersion: '2.0',
         gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || deepAccess(bidderRequest, 'ortb2.regs.gpp'),
         gpp_sid:
           deepAccess(bidderRequest, 'gppConsent.applicableSections') || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'),
@@ -49,8 +62,8 @@ export const spec = {
         page: getPage(bidderRequest),
         topframe: inIframe() === true ? 0 : 1,
         device: {
-          w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-          h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
+          w,
+          h,
           dnt: getDNT() ? 1 : 0,
           language: getLanguage(),
         },
@@ -61,6 +74,7 @@ export const spec = {
             gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
             pbadslot: deepAccess(r, 'ortb2Imp.ext.data.pbadslot') || deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
+            counter: getPlacementCounter(r.params.placement),
             sizes: r.sizes,
             floor: getPriceFloor(r, BANNER, FLOOR_MATCH_ALL_SIZES),
             refresh: getRefreshInformation(r.adUnitCode),
@@ -95,8 +109,8 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncUrl = getSyncUrl(responses || []);
-    if (syncUrl && syncOptions.iframeEnabled && hasSyncConsent(gdprConsent, uspConsent, gppConsent)) {
-      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent)}];
+    if (syncUrl && syncOptions.iframeEnabled) {
+      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent)}];
     }
   },
 };
@@ -104,9 +118,7 @@ export const spec = {
 registerBidder(spec);
 
 function getPage(bidderRequest) {
-  return (
-    getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href
-  );
+  return getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href;
 }
 
 function getEndpoint() {
@@ -174,31 +186,59 @@ function getRefreshInformation(adUnitCode) {
   };
 }
 
+function getPlacementCounter(placement) {
+  const counter = placementCounters[placement];
+  if (counter === undefined) {
+    placementCounters[placement] = 0;
+    return 0;
+  }
+
+  placementCounters[placement]++;
+  return placementCounters[placement];
+}
+
 function mapIdToRequestId(id, bidRequest) {
   return bidRequest.bidderRequest.bids.filter((bid) => bid.adUnitCode === id)[0].bidId;
 }
 
-function hasUspConsent(uspConsent) {
-  return typeof uspConsent !== 'string' || !(uspConsent[0] === '1' && uspConsent[2] === 'Y');
-}
-
-function hasGppConsent(gppConsent) {
-  return (
-    !(gppConsent && Array.isArray(gppConsent.applicableSections)) ||
-    gppConsent.applicableSections.every((section) => typeof section === 'number' && section <= 5)
-  );
-}
-
-function hasSyncConsent(gdprConsent, uspConsent, gppConsent) {
-  return hasPurpose1Consent(gdprConsent) && hasUspConsent(uspConsent) && hasGppConsent(gppConsent);
+function hasFullGdprConsent(gdprConsent) {
+  try {
+    const purposeConsents = Object.values(gdprConsent.vendorData.purpose.consents);
+    return (
+      purposeConsents.length > 0 &&
+      purposeConsents.every((value) => value === true) &&
+      gdprConsent.vendorData.vendor.consents[GVLID] === true
+    );
+  } catch (e) {
+    return false;
+  }
 }
 
 function getSyncUrl(responses) {
   return getConfig(`${BIDDER_CODE}.syncUrl`) || deepAccess(responses[0], 'body.syncUrl');
 }
 
-function getSyncEndpoint(url, gdprConsent) {
+function getSyncEndpoint(url, gdprConsent, uspConsent, gppConsent) {
   return `${url}?gdpr=${gdprConsent?.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(
     gdprConsent?.consentString || ''
-  )}`;
+  )}&gpp_sid=${gppConsent?.applicableSections?.join(',') || ''}&gpp=${encodeURIComponent(
+    gppConsent?.gppString || ''
+  )}&us_privacy=${uspConsent || ''}`;
+}
+
+function getSessionId() {
+  try {
+    if (storageManager.localStorageIsEnabled()) {
+      let sessionId = storageManager.getDataFromLocalStorage(SESSION_ID_KEY);
+      if (sessionId == null) {
+        sessionId = generateUUID();
+        storageManager.setDataInLocalStorage(SESSION_ID_KEY, sessionId);
+      }
+      return sessionId;
+    } else {
+      return undefined;
+    }
+  } catch (e) {
+    return undefined;
+  }
 }

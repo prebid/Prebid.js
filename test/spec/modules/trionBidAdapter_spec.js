@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter.js';
 import {deepClone} from 'src/utils.js';
 
-const CONSTANTS = require('src/constants.json');
+const CONSTANTS = require('src/constants.js');
 const adloader = require('src/adloader');
 
 const PLACEMENT_CODE = 'ad-tag';

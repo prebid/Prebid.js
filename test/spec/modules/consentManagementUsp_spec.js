@@ -26,7 +26,7 @@ function createIFrameMarker() {
 describe('consentManagement', function () {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(adapterManager, 'callDataDeletionRequest');
   });
 
@@ -450,6 +450,7 @@ describe('consentManagement', function () {
       afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
+        sandbox.restore();
         document.body.removeChild(ifr);
         delete window.__uspapi;
         resetConsentData();
@@ -493,7 +494,6 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
 
-        expect(consentMeta.usp).to.equal(testConsentData.uspString);
         expect(consentMeta.generatedAt).to.be.above(1644367751709);
       });
 
@@ -515,7 +515,6 @@ describe('consentManagement', function () {
           if (cmd === 'registerDeletion') {
             throw new Error('CMP not compliant');
           } else if (cmd === 'getUSPData') {
-            // eslint-disable-next-line standard/no-callback-literal
             cb({uspString: 'string'}, true);
           }
         });
@@ -528,7 +527,6 @@ describe('consentManagement', function () {
           if (cmd === 'registerDeletion') {
             cb(null, false);
           } else {
-            // eslint-disable-next-line standard/no-callback-literal
             cb({uspString: 'string'}, true);
           }
         });

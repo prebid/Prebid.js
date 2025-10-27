@@ -1,4 +1,4 @@
-import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
+import { timestamp, deepAccess, isStr, deepClone, isPlainObject } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -25,20 +25,51 @@ export const spec = {
         ? config.getConfig('userSync').syncsPerBidder
         : 5;
 
+    function extractUserIdsFromEids(eids) {
+      const result = {};
+
+      if (!Array.isArray(eids)) return result;
+
+      eids.forEach(eid => {
+        const source = eid.source;
+        if (!source || !Array.isArray(eid.uids)) return;
+
+        if (eid.uids.length === 1) {
+          const uid = eid.uids[0];
+          result[source] = { id: uid.id };
+          if (uid.ext) {
+            result[source].ext = uid.ext;
+          }
+        } else {
+          const subObj = {};
+          eid.uids.forEach(uid => {
+            if (uid.ext && uid.ext.rtiPartner) {
+              subObj[uid.ext.rtiPartner] = uid.id;
+            }
+          });
+          if (Object.keys(subObj).length > 0) {
+            result[source] = subObj;
+          }
+        }
+      });
+
+      return result;
+    }
+
+    const userIds = extractUserIdsFromEids(bidderRequest.userIdAsEids);
+
     const payload = {
       start_time: timestamp(),
       language: window.navigator.userLanguage || window.navigator.language,
       site: {
         domain: getOrigin(),
         iframe: !bidderRequest.refererInfo.reachedTop,
-        // TODO: the last element in refererInfo.stack is window.location.href, that's unlikely to have been the intent here
-        url: stack && stack.length > 0 ? [stack.length - 1] : null,
+        url: stack && stack.length > 0 ? stack[stack.length - 1] : null,
         https: window.location.protocol === 'https:',
-        // TODO: is 'page' the right value here?
         referrer: bidderRequest.refererInfo.page,
       },
       imps: [],
-      user_ids: validBidRequests[0].userId,
+      user_ids: userIds,
       sync_limit: spb,
     };
 
@@ -70,10 +101,8 @@ export const spec = {
       return result;
     }
 
-    // get the ortb2 keywords data (if it exists)
     let ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
     let ortb2KeywordsList = getOrtb2Keywords(ortb2);
-    // get meta keywords data (if it exists)
     let metaKeywords = document.getElementsByTagName('meta')['keywords'];
     if (metaKeywords && metaKeywords.content) {
       metaKeywords = metaKeywords.content.split(',');
@@ -92,7 +121,7 @@ export const spec = {
           size: '*',
         });
         if (
-          typeof floorInfo === 'object' &&
+          isPlainObject(floorInfo) &&
           floorInfo.currency === CURRENCY &&
           !isNaN(parseFloat(floorInfo.floor))
         ) {
@@ -101,11 +130,15 @@ export const spec = {
         }
       }
 
-      // get param kewords (if it exists)
-      let paramsKeywords = req.params.keywords
-        ? req.params.keywords.split(',')
-        : [];
-      // merge all keywords
+      let paramsKeywords = req.params.keywords;
+      if (typeof req.params.keywords === 'string') {
+        paramsKeywords = req.params.keywords.split(',');
+      } else if (Array.isArray(req.params.keywords)) {
+        paramsKeywords = req.params.keywords;
+      } else {
+        paramsKeywords = [];
+      }
+
       let keywords = ortb2KeywordsList
         .concat(paramsKeywords)
         .concat(metaKeywords);
@@ -123,8 +156,7 @@ export const spec = {
         keywords: keywords.join(','),
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
-        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        imp_id: req.transactionId,
+        imp_id: req.bidId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -178,14 +210,8 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
-
+    let syncs = [];
     if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
-    }
-
-    let pixels = serverResponses[0].body.pixels;
-    if (!pixels || !pixels.length) {
       return syncs;
     }
 
@@ -200,14 +226,20 @@ export const spec = {
       }
     }
 
-    if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      return [
-        {
-          type: 'iframe',
-          url: 'https://media.reset-digital.com/prebid/async_usersync.html?' + gdprParams.length ? gdprParams : '',
-        },
-      ];
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: `https://async.resetdigital.co/async_usersync.html?${gdprParams}`,
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: `https://meta.resetdigital.co/pchain${
+          gdprParams ? `?${gdprParams}` : ''
+        }`,
+      });
     }
+    return syncs;
   },
 };
 

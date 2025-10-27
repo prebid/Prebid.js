@@ -1,7 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { generateUUID } from '../src/utils.js';
+import { generateUUID, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
 
 export const BIDDER_CODE = 'hypelab';
 export const ENDPOINT_URL = 'https://api.hypelab.com';
@@ -12,7 +14,7 @@ export const REPORTING_ROUTE = '';
 
 const PREBID_VERSION = '$prebid.version$';
 const PROVIDER_NAME = 'prebid';
-const PROVIDER_VERSION = '0.0.1';
+const PROVIDER_VERSION = '0.0.3';
 
 const url = (route) => ENDPOINT_URL + route;
 
@@ -37,36 +39,51 @@ function buildRequests(validBidRequests, bidderRequest) {
     }, []);
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
+    const floor = getBidFloor(request, request.sizes || []);
+    const dpr = typeof window != 'undefined' ? window.devicePixelRatio : 1;
+    const wp = getWalletPresence();
+    const wpfs = getWalletProviderFlags();
+    const winDimensions = getWinDimensions();
+    const vp = [
+      Math.max(
+        winDimensions?.document.documentElement.clientWidth || 0,
+        winDimensions?.innerWidth || 0
+      ),
+      Math.max(
+        winDimensions?.document.documentElement.clientHeight || 0,
+        winDimensions?.innerHeight || 0
+      ),
+    ];
+    const pp = getPosition(request.adUnitCode);
 
     const payload = {
       property_slug: request.params.property_slug,
       placement_slug: request.params.placement_slug,
       provider_version: PROVIDER_VERSION,
       provider_name: PROVIDER_NAME,
-      referrer:
+      location:
         bidderRequest.refererInfo?.page || typeof window != 'undefined'
           ? window.location.href
           : '',
       sdk_version: PREBID_VERSION,
       sizes: request.sizes,
       wids: [],
+      floor,
+      dpr,
       uuid,
       bidRequestsCount: request.bidRequestsCount,
       bidderRequestsCount: request.bidderRequestsCount,
       bidderWinsCount: request.bidderWinsCount,
-      wp: {
-        ada: typeof window != 'undefined' && !!window.cardano,
-        bnb: typeof window != 'undefined' && !!window.BinanceChain,
-        eth: typeof window != 'undefined' && !!window.ethereum,
-        sol: typeof window != 'undefined' && !!window.solana,
-        tron: typeof window != 'undefined' && !!window.tron,
-      },
+      wp,
+      wpfs,
+      vp,
+      pp,
     };
 
     return {
       method: 'POST',
       url: url(REQUEST_ROUTE),
-      options: { contentType: 'application/json', withCredentials: false },
+      options: { contentType: 'application/json', withCredentials: true },
       data: payload,
       bidId: request.bidId,
     };
@@ -77,6 +94,37 @@ function buildRequests(validBidRequests, bidderRequest) {
 
 function generateTemporaryUUID() {
   return 'tmp_' + generateUUID();
+}
+
+function getBidFloor(bid, sizes) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidFloor ? bid.params.bidFloor : null;
+  }
+
+  let floor;
+
+  let floorInfo = bid.getFloor({
+    currency: 'USD',
+    mediaType: 'banner',
+    size: sizes.length === 1 ? sizes[0] : '*',
+  });
+
+  if (
+    isPlainObject(floorInfo) &&
+    floorInfo.currency === 'USD' &&
+    !isNaN(parseFloat(floorInfo.floor))
+  ) {
+    floor = parseFloat(floorInfo.floor);
+  }
+
+  return floor;
+}
+
+function getPosition(id) {
+  const element = document.getElementById(id);
+  if (!element) return null;
+  const rect = getBoundingClientRect(element);
+  return [rect.left, rect.top];
 }
 
 function interpretResponse(serverResponse, bidRequest) {
@@ -94,12 +142,12 @@ function interpretResponse(serverResponse, bidRequest) {
     creativeId: data.creative_set_slug,
     currency: data.currency,
     netRevenue: true,
-    referrer: bidRequest.data.referrer,
+    referrer: bidRequest.data.location,
     ttl: data.ttl,
     ad: data.html,
     mediaType: serverResponse.body.data.media_type,
     meta: {
-      advertiserDomains: data.advertiserDomains || [],
+      advertiserDomains: data.advertiser_domains || [],
     },
   };
 

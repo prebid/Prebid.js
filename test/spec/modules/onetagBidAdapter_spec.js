@@ -1,8 +1,33 @@
 import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
-import { find } from 'src/polyfill.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
+import { toOrtbNativeRequest } from 'src/native.js';
+import { hasTypeNative } from '../../../modules/onetagBidAdapter';
+
+const NATIVE_SUFFIX = 'Ad';
+
+const getFloor = function(params) {
+    let floorPrice = 0.0001;
+    switch (params.mediaType) {
+      case BANNER:
+        floorPrice = 1.0;
+        break;
+      case VIDEO:
+        floorPrice = 2.0;
+        break;
+      case INSTREAM:
+        floorPrice = 3.0;
+        break;
+      case OUTSTREAM:
+        floorPrice = 4.0;
+        break;
+      case NATIVE:
+        floorPrice = 5.0;
+        break;
+    }
+    return {currency: params.currency, floor: floorPrice};
+};
 
 describe('onetag', function () {
   function createBid() {
@@ -42,12 +67,148 @@ describe('onetag', function () {
     };
   }
 
+  function createNativeLegacyBid(bidRequest) {
+    let bid = bidRequest || createBid();
+    bid.mediaTypes = bid.mediaTypes || {};
+    bid.mediaTypes.native = {
+      adTemplate: "<div><figure><img decoding=\"async\" referrerpolicy=\"no-referrer\" loading=\"lazy\" src=\"##hb_native_image##\" alt=\"##hb_native_brand##\" width=\"0\" height=\"0\"></figure><div class=\"a-nativeframe__text\"><span class=\"a-nativeframe__label\">##hb_native_brand##</span><h3 class=\"a-nativeframe__title\">##hb_native_title##</h3><div class=\"a-nativeframe__details\"><span class=\"a-nativeframe__cta\">##hb_native_cta##</span><span class=\"a-nativeframe__info\">##hb_native_brand##</span></div></div><a class=\"o-faux-link\" href=\"##hb_native_linkurl##\" target=\"_blank\"></a>",
+      title: {
+        required: 1,
+        sendId: 1
+      },
+      body: {
+          required: 1,
+          sendId: 1
+      },
+      cta: {
+          required: 0,
+          sendId: 1
+      },
+      displayUrl: {
+          required: 0,
+          sendId: 1
+      },
+      icon: {
+          required: 0,
+          sendId: 1
+      },
+      image: {
+          required: 1,
+          sendId: 1
+      },
+      sponsoredBy: {
+          required: 1,
+          sendId: 1
+      }
+    }
+    bid = addNativeParams(bid);
+    const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
+    bid.mediaTypes.native = {};
+    bid.mediaTypes.native.adTemplate = bid.nativeParams.adTemplate;
+    bid.mediaTypes.native.ortb = ortbConversion;
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'native|*': 1.10
+      }
+    }
+    bid.getFloor = getFloor;
+    return bid;
+  }
+
+  function addNativeParams(bidRequest) {
+    let bidParams = bidRequest.nativeParams || {};
+    for (const property in bidRequest.mediaTypes.native) {
+      bidParams[property] = bidRequest.mediaTypes.native[property];
+    }
+    bidRequest.nativeParams = bidParams;
+    return bidRequest;
+  }
+
+  function createNativeBid(bidRequest) {
+    const bid = bidRequest || createBid();
+    bid.mediaTypes = bid.mediaTypes || {};
+
+    bid.mediaTypes.native = {
+      ortb: {
+        ver: '1.2',
+        assets: [{
+          id: 1,
+          required: 1,
+          title: {
+            len: 140
+          }
+        },
+        {
+          id: 2,
+          required: true,
+          img: {
+            type: 3,
+            wmin: 100,
+            hmin: 100,
+          }
+        },
+        {
+          id: 3,
+          required: true,
+          data: {
+            type: 6
+          }
+        },
+        {
+          id: 4,
+          video: {
+            mimes: ['video/mp4', 'video/x-mswmv'],
+            minduration: 5,
+            maxduration: 30,
+            protocols: [2, 3]
+      }
+        }],
+        eventtrackers: [{
+          event: 1,
+          methods: [1],
+          url: 'sample-url'
+        }]
+      }
+    };
+
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'native|*': 1.10
+      }
+    }
+    bid.getFloor = getFloor;
+
+    return bid;
+  }
+
   function createBannerBid(bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.banner = {
       sizes: [[300, 250]]
     };
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'banner|300x250': 0.10
+      }
+    }
+    bid.getFloor = getFloor;
+
     return bid;
   }
 
@@ -59,6 +220,17 @@ describe('onetag', function () {
       mimes: ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
       playerSize: [640, 480]
     };
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'video|640x480': 0.10
+      }
+    }
+    bid.getFloor = getFloor;
     return bid;
   }
 
@@ -70,6 +242,17 @@ describe('onetag', function () {
       mimes: ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
       playerSize: [640, 480]
     };
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'video|640x480': 0.10
+      }
+    }
+    bid.getFloor = getFloor;
     return bid;
   }
 
@@ -77,11 +260,13 @@ describe('onetag', function () {
     return createInstreamVideoBid(createBannerBid());
   }
 
-  let bannerBid, instreamVideoBid, outstreamVideoBid;
+  let bannerBid, instreamVideoBid, outstreamVideoBid, nativeBid, nativeLegacyBid;
   beforeEach(() => {
     bannerBid = createBannerBid();
     instreamVideoBid = createInstreamVideoBid();
     outstreamVideoBid = createOutstreamVideoBid();
+    nativeBid = createNativeBid();
+    nativeLegacyBid = createNativeLegacyBid();
   })
 
   describe('isBidRequestValid', function () {
@@ -98,11 +283,120 @@ describe('onetag', function () {
     });
     describe('banner bidRequest', function () {
       it('Should return false when the sizes array is empty', function () {
-        // TODO (dgirardi): this test used to pass because `bannerBid` was global state
-        // and other test code made it invalid for reasons other than sizes.
-        // cleaning up the setup code, it now (correctly) fails.
-        bannerBid.sizes = [];
-        // expect(spec.isBidRequestValid(bannerBid)).to.be.false;
+        bannerBid.mediaTypes.banner.sizes = [];
+        expect(spec.isBidRequestValid(bannerBid)).to.be.false;
+      });
+    });
+    describe('native bidRequest', function () {
+      it('Should return true when correct native bid is passed', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        expect(spec.isBidRequestValid(nativeBid)).to.be.true && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.true;
+      });
+      it('Should return false when native is not an object', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        nativeBid.mediaTypes.native = nativeLegacyBid.mediaTypes.native = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb if defined but it isn\'t an object', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb = 30 || 'string';
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets is not an array', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        nativeBid.mediaTypes.native.ortb.assets = nativeLegacyBid.mediaTypes.native.ortb.assets = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets is an empty array', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        nativeBid.mediaTypes.native.ortb.assets = nativeLegacyBid.mediaTypes.native.ortb.assets = [];
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] doesnt have \'id\'', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0], 'id');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[0], 'id');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] doesnt have any of \'title\', \'img\', \'data\' and \'video\' properties', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        const titleIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        const legacyTitleIndex = nativeLegacyBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[titleIndex], 'title');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[legacyTitleIndex], 'title');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] have title, but doesnt have \'len\' property', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        const titleIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        const legacyTitleIndex = nativeLegacyBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[titleIndex].title, 'len');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[legacyTitleIndex].title, 'len');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is data but doesnt have \'type\' property', function () {
+        const nativeBid = createNativeBid();
+        const nativeLegacyBid = createNativeLegacyBid();
+        const dataIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.data);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[dataIndex].data, 'type');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[dataIndex].data, 'type');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'mimes\' property', function () {
+        const nativeBid = createNativeBid();
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'mimes');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'minduration\' property', function () {
+        const nativeBid = createNativeBid();
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'minduration');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'maxduration\' property', function () {
+        const nativeBid = createNativeBid();
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'maxduration');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'protocols\' property', function () {
+        const nativeBid = createNativeBid();
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'protocols');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers is not an array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].event is not a number', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = 'test-string';
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].event is not defined', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = undefined;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].methods is not an array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].methods is empty array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = [];
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
     });
     describe('video bidRequest', function () {
@@ -171,7 +465,7 @@ describe('onetag', function () {
   describe('buildRequests', function () {
     let serverRequest, data;
     before(() => {
-      serverRequest = spec.buildRequests([bannerBid, instreamVideoBid]);
+      serverRequest = spec.buildRequests([bannerBid, instreamVideoBid, nativeBid, nativeLegacyBid]);
       data = JSON.parse(serverRequest.data);
     });
 
@@ -189,7 +483,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
@@ -213,6 +507,7 @@ describe('onetag', function () {
       expect(data.networkEffectiveConnectionType).to.satisfy(function (value) {
         return value === null || typeof value === 'string'
       });
+      expect(data.fledgeEnabled).to.be.a('boolean');
       expect(data.bids).to.be.an('array');
       expect(data.version).to.have.all.keys('prebid', 'adapter');
       const bids = data['bids'];
@@ -225,6 +520,7 @@ describe('onetag', function () {
             'bidId',
             'bidderRequestId',
             'pubId',
+            'ortb2Imp',
             'transactionId',
             'context',
             'playerSize',
@@ -232,6 +528,21 @@ describe('onetag', function () {
             'type',
             'priceFloors'
           );
+        } else if (hasTypeNative(bid)) {
+          expect(bid).to.have.all.keys(
+            'adUnitCode',
+            'auctionId',
+            'bidId',
+            'bidderRequestId',
+            'pubId',
+            'ortb2Imp',
+            'transactionId',
+            'mediaTypeInfo',
+            'sizes',
+            'type',
+            'priceFloors'
+          ) &&
+          expect(bid.mediaTypeInfo).to.have.key('ortb');
         } else if (isValid(BANNER, bid)) {
           expect(bid).to.have.all.keys(
             'adUnitCode',
@@ -239,6 +550,7 @@ describe('onetag', function () {
             'bidId',
             'bidderRequestId',
             'pubId',
+            'ortb2Imp',
             'transactionId',
             'mediaTypeInfo',
             'sizes',
@@ -251,6 +563,33 @@ describe('onetag', function () {
         }
         expect(bid.bidId).to.be.a('string');
         expect(bid.pubId).to.be.a('string');
+        expect(bid.priceFloors).to.be.an('array');
+        expect(bid.priceFloors).to.satisfy(function (priceFloors) {
+          if (priceFloors.length === 0) {
+            return true;
+          }
+          return priceFloors.every(function (priceFloor) {
+            expect(priceFloor).to.have.all.keys('currency', 'floor', 'size');
+            expect(priceFloor.currency).to.be.a('string');
+            expect(priceFloor.floor).to.be.a('number');
+            expect(priceFloor.size).to.satisfy(function (size) {
+              if (typeof size !== 'object' && size !== null && typeof size !== 'undefined') {
+                return false;
+              }
+              if (size !== null) {
+                const keys = Object.keys(size);
+                if (keys.length == 0) {
+                  return true;
+                }
+                expect(size).to.have.keys('width', 'height');
+                expect(size.width).to.be.a('number');
+                expect(size.height).to.be.a('number');
+              }
+              return true;
+            });
+            return true;
+          });
+        });
       }
     });
     it('Returns empty data if no valid requests are passed', function () {
@@ -269,9 +608,11 @@ describe('onetag', function () {
       expect(payload.bids).to.exist.and.to.have.length(1);
       expect(payload.bids[0].auctionId).to.equal(bannerBid.ortb2.source.tid);
       expect(payload.bids[0].transactionId).to.equal(bannerBid.ortb2Imp.ext.tid);
+      expect(payload.bids[0].ortb2Imp).to.deep.equal(bannerBid.ortb2Imp);
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';
+      let addtlConsent = '2~1.35.41.101~dv.9.21.81';
       let bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
@@ -279,7 +620,8 @@ describe('onetag', function () {
         'timeout': 3000,
         'gdprConsent': {
           consentString: consentString,
-          gdprApplies: true
+          gdprApplies: true,
+          addtlConsent: addtlConsent
         }
       };
       let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
@@ -288,6 +630,7 @@ describe('onetag', function () {
       expect(payload).to.exist;
       expect(payload.gdprConsent).to.exist;
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.addtlConsent).to.exist.and.to.equal(addtlConsent);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
     it('Should send GPP consent data', function () {
@@ -395,19 +738,99 @@ describe('onetag', function () {
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(firtPartyData);
     });
+    it('Should send DSA (ortb2 field)', function () {
+      const dsa = {
+        'regs': {
+          'ext': {
+            'dsa': {
+              'required': 1,
+              'pubrender': 0,
+              'datatopub': 1,
+              'transparency': [{
+                'domain': 'dsa-domain',
+                'params': [1, 2]
+              }]
+            }
+          }
+        }
+      };
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'ortb2': dsa
+      }
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+      expect(payload.ortb2).to.exist;
+      expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
+    });
+    it('Should send FLEDGE eligibility flag when FLEDGE is enabled', function () {
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'paapi': {
+          'enabled': true
+        }
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.fledgeEnabled).to.exist;
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
+    });
+    it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        paapi: {
+          enabled: false
+        }
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.fledgeEnabled).to.exist;
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
+    });
+    it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.fledgeEnabled).to.exist;
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(false);
+    });
   });
   describe('interpretResponse', function () {
     const request = getBannerVideoRequest();
-    const response = getBannerVideoResponse();
+    const response = getBannerVideoNativeResponse();
+    const fledgeResponse = getFledgeBannerResponse();
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
+      const fledgeInterpretedResponse = spec.interpretResponse(fledgeResponse, request);
       expect(interpretedResponse).to.be.an('array').that.is.not.empty;
+      expect(fledgeInterpretedResponse).to.be.an('object');
+      expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
+        return value === null || Array.isArray(value);
+      });
+      expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
         if (dataItem.meta.mediaType === VIDEO) {
-          const { context } = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
+          const { context } = requestData.bids.find((item) => item.bidId === dataItem.requestId);
           if (context === INSTREAM) {
             expect(dataItem).to.include.all.keys('videoCacheKey', 'vastUrl');
             expect(dataItem.vastUrl).to.be.a('string');
@@ -421,6 +844,9 @@ describe('onetag', function () {
         } else if (dataItem.meta.mediaType === BANNER) {
           expect(dataItem).to.include.all.keys('ad');
           expect(dataItem.ad).to.be.a('string');
+        } else if (dataItem.meta.mediaType === NATIVE || dataItem.meta.mediaType === NATIVE + NATIVE_SUFFIX) {
+          expect(dataItem).to.include.all.keys('native');
+          expect(dataItem.native).to.be.an('object');
         }
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
@@ -436,6 +862,21 @@ describe('onetag', function () {
     it('Returns an empty array if response is not valid', function () {
       const serverResponses = spec.interpretResponse('invalid_response', { data: '{}' });
       expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Returns meta dsa field if dsa field is present in response', function () {
+      const dsaResponseObj = {
+        'behalf': 'Advertiser',
+        'paid': 'Advertiser',
+        'transparency': {
+          'domain': 'dsp1domain.com',
+          'params': [1, 2]
+        },
+        'adrender': 1
+      };
+      const responseWithDsa = {...response};
+      responseWithDsa.body.bids.forEach(bid => bid.dsa = {...dsaResponseObj});
+      const serverResponse = spec.interpretResponse(responseWithDsa, request);
+      serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
     });
   });
   describe('getUserSyncs', function () {
@@ -551,7 +992,7 @@ describe('onetag', function () {
   });
 });
 
-function getBannerVideoResponse() {
+function getBannerVideoNativeResponse() {
   return {
     body: {
       nobid: false,
@@ -594,10 +1035,62 @@ function getBannerVideoResponse() {
           rendererUrl: 'https://testRenderer',
           mediaType: VIDEO,
           adomain: []
+        },
+        {
+          requestId: 'nativeRequestId',
+          cpm: 10,
+          width: 300,
+          height: 600,
+          adomain: ['test-domain'],
+          creativeId: '1821',
+          mediaType: 'nativeAd',
+          native: {
+            ortb: {
+              ver: '1.2',
+              assets: [
+                {
+                  id: 1,
+                  title: {
+                    text: 'test-title',
+                    len: 9
+                  }
+                }],
+              link: {
+                url: 'test-url',
+                clicktrackers: ['test-clicktracker']
+              },
+              eventtrackers: [
+                {
+                  event: 1,
+                  method: 1,
+                  url: 'test-url'
+                }
+              ]
+            }
+          },
+          currency: 'EUR',
         }
       ]
     }
   };
+}
+
+function getFledgeBannerResponse() {
+  const bannerVideoResponse = getBannerVideoNativeResponse();
+  bannerVideoResponse.body.fledgeAuctionConfigs = [
+    {
+      bidId: 'fledge',
+      config: {
+        seller: 'https://onetag-sys.com',
+        decisionLogicUrl:
+          'https://onetag-sys.com/paapi/decision_logic.js',
+        interestGroupBuyers: [
+          'https://onetag-sys.com'
+        ],
+      }
+    }
+  ]
+  return bannerVideoResponse;
 }
 
 function getBannerVideoRequest() {

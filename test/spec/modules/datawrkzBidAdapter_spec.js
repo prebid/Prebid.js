@@ -36,26 +36,26 @@ describe('datawrkzAdapterTests', function () {
     });
 
     it('should return false when params not found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required site_id param not found', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {'bidfloor': '1.0'}
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {'bidfloor': '1.0'}
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when adunit is adpod video', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {'bidfloor': '1.0', 'site_id': SITE_ID};
-      bid.mediaTypes = {
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {'bidfloor': '1.0', 'site_id': SITE_ID};
+      invalidBid.mediaTypes = {
         'video': {
           'context': 'adpod'
         }
       }
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 

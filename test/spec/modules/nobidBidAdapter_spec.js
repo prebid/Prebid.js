@@ -62,7 +62,6 @@ describe('Nobid Adapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
         'siteId': 2
@@ -72,7 +71,6 @@ describe('Nobid Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
         'siteId': 0
@@ -399,6 +397,7 @@ describe('Nobid Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
       expect(payload.pjbdr).to.equal('nobid');
+      expect(payload.pbver).to.equal('$prebid.version$');
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.a).to.exist;
       expect(payload.t).to.exist;

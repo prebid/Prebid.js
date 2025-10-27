@@ -1,10 +1,18 @@
 'use strict';
 
-import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -13,16 +21,17 @@ const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
+const LOGGER_JS_URI = 'https://log.impactify.it'
 const AUCTION_URI = '/bidder';
 const COOKIE_SYNC_URI = '/static/cookie_sync.html';
 const GVL_ID = 606;
 const GET_CONFIG = config.getConfig;
-export const STORAGE = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
+export const STORAGE = getStorageManager({ gvlid: GVL_ID, bidderCode: BIDDER_CODE });
 export const STORAGE_KEY = '_im_str'
 
 /**
  * Helpers object
- * @type {{getExtParamsFromBid(*): {impactify: {appId}}, createOrtbImpVideoObj(*): {context: string, playerSize: [number,number], id: string, mimes: [string]}, getDeviceType(): (number), createOrtbImpBannerObj(*, *): {format: [], id: string}}}
+ * @type {Object}
  */
 const helpers = {
   getExtParamsFromBid(bid) {
@@ -89,7 +98,7 @@ const helpers = {
       mediaType: '*',
       size: '*'
     });
-    if (typeof floorInfo === 'object' && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
       return parseFloat(floorInfo.floor);
     }
     return null;
@@ -114,7 +123,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
-    source: {tid: bidderRequest.ortb2?.source?.tid}
+    source: { tid: bidderRequest.ortb2?.source?.tid }
   };
 
   // Get the url parameters
@@ -141,15 +150,15 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   if (!request.device) request.device = {};
   if (!request.site) request.site = {};
   request.device = {
-    w: window.innerWidth,
-    h: window.innerHeight,
+    w: getWinDimensions().innerWidth,
+    h: getWinDimensions().innerHeight,
     devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
-  request.site = {page: bidderRequest.refererInfo.page};
+  request.site = { page: bidderRequest.refererInfo.page };
 
   // Handle privacy settings for GDPR/CCPA/COPPA
   let gdprApplies = 0;
@@ -158,11 +167,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
   deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
-
-  if (bidderRequest.uspConsent) {
-    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    this.syncStore.uspConsent = bidderRequest.uspConsent;
-  }
 
   if (GET_CONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
@@ -176,7 +180,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create imps with bids
   validBidRequests.forEach((bid) => {
     let bannerObj = deepAccess(bid.mediaTypes, `banner`);
-    let videoObj = deepAccess(bid.mediaTypes, `video`);
 
     let imp = {
       id: bid.bidId,
@@ -184,15 +187,13 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       ext: helpers.getExtParamsFromBid(bid)
     };
 
-    if (videoObj) {
-      imp.video = {
-        ...helpers.createOrtbImpVideoObj(bid)
-      }
-    }
-
     if (bannerObj && typeof imp.ext.impactify.size == 'string') {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
+      }
+    } else {
+      imp.video = {
+        ...helpers.createOrtbImpVideoObj(bid)
       }
     }
 
@@ -227,8 +228,6 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    let isBanner = deepAccess(bid.mediaTypes, `banner`);
-
     if (typeof bid.params.appId != 'string' || !bid.params.appId) {
       return false;
     }
@@ -241,9 +240,6 @@ export const spec = {
     if (bid.params.style !== 'inline' && bid.params.style !== 'impact' && bid.params.style !== 'static') {
       return false;
     }
-    if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
-      return false;
-    }
 
     return true;
   },
@@ -251,9 +247,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @param {bidderRequest} - the bidding request
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - the bidding request
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
@@ -367,9 +363,9 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
-  */
-  onBidWon: function(bid) {
+   * @param {Object} bid The bid that won the auction
+   */
+  onBidWon: function (bid) {
     ajax(`${LOGGER_URI}/prebid/won`, null, JSON.stringify(bid), {
       method: 'POST',
       contentType: 'application/json'
@@ -380,15 +376,28 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
-  */
-  onTimeout: function(data) {
+   * @param {Object} data Containing timeout specific data
+   */
+  onTimeout: function (data) {
     ajax(`${LOGGER_URI}/prebid/timeout`, null, JSON.stringify(data[0]), {
       method: 'POST',
       contentType: 'application/json'
     });
 
     return true;
-  }
+  },
+
+  /**
+   * Register bidder specific code, which will execute if the bid request failed
+   * @param {*} param0
+   */
+  onBidderError: function ({ error, bidderRequest }) {
+    ajax(`${LOGGER_JS_URI}/logger`, null, JSON.stringify({ error, bidderRequest }), {
+      method: 'POST',
+      contentType: 'application/json'
+    });
+
+    return true;
+  },
 };
 registerBidder(spec);

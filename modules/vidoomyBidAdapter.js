@@ -1,4 +1,4 @@
-import {deepAccess, logError, parseSizesInput} from '../src/utils.js';
+import {deepAccess, isPlainObject, logError, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -88,7 +88,7 @@ function getBidFloor(bid, mediaType, sizes, bidfloor) {
   var size = sizes && sizes.length > 0 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(bidfloor, parseFloat(floorInfo.floor));
     }
   }
@@ -120,7 +120,10 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       sizes = bid.mediaTypes[VIDEO].playerSize;
       adType = VIDEO;
     }
-    const [w, h] = (parseSizesInput(sizes)[0] || '0x0').split('x');
+
+    const parsedSizes = (sizes ? parseSizesInput(sizes) : []).map(size => size.split('x'));
+    const widths = parsedSizes.length ? parsedSizes.map(size => size[0]).join(',') : '0';
+    const heights = parsedSizes.length ? parsedSizes.map(size => size[1]).join(',') : '0';
 
     // TODO: is 'domain' the right value here?
     const hostname = bidderRequest.refererInfo.domain || window.location.hostname;
@@ -147,8 +150,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.id,
       adtype: adType,
       auc: bid.adUnitCode,
-      w,
-      h,
+      w: widths,
+      h: heights,
       pos: parseInt(bid.params.position) || 1,
       ua: navigator.userAgent,
       l: navigator.language && navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : '',
@@ -164,6 +167,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
       videoContext: videoContext || '',
+      multiBidsSupport: 1,
       bcat: ortb2.bcat || bid.params.bcat || [],
       badv: ortb2.badv || bid.params.badv || [],
       bapp: ortb2.bapp || bid.params.bapp || [],
@@ -200,71 +204,75 @@ const render = (bid) => {
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
-    let responseBody = serverResponse.body;
-    if (!responseBody) return;
-    if (responseBody.mediaType === 'video') {
-      responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
-      const videoContext = bidRequest.data.videoContext;
-
-      if (videoContext === OUTSTREAM) {
-        try {
-          const renderer = Renderer.install({
-            id: bidRequest.bidId,
-            adunitcode: bidRequest.tagId,
-            loaded: false,
-            config: responseBody.mediaType,
-            url: responseBody.meta.rendererUrl
-          });
-          renderer.setRender(render);
-
-          responseBody.renderer = renderer;
-        } catch (e) {
-          responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
-          logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
-        }
-      }
-    }
-    const bid = {
-      ad: responseBody.ad,
-      renderer: responseBody.renderer,
-      mediaType: responseBody.mediaType,
-      requestId: responseBody.requestId,
-      cpm: responseBody.cpm,
-      currency: responseBody.currency,
-      width: responseBody.width,
-      height: responseBody.height,
-      creativeId: responseBody.creativeId,
-      netRevenue: responseBody.netRevenue,
-      ttl: responseBody.ttl,
-      meta: {
-        mediaType: responseBody.meta.mediaType,
-        rendererUrl: responseBody.meta.rendererUrl,
-        advertiserDomains: responseBody.meta.advertiserDomains,
-        advertiserId: responseBody.meta.advertiserId,
-        advertiserName: responseBody.meta.advertiserName,
-        agencyId: responseBody.meta.agencyId,
-        agencyName: responseBody.meta.agencyName,
-        brandId: responseBody.meta.brandId,
-        brandName: responseBody.meta.brandName,
-        dchain: responseBody.meta.dchain,
-        networkId: responseBody.meta.networkId,
-        networkName: responseBody.meta.networkName,
-        primaryCatId: responseBody.meta.primaryCatId,
-        secondaryCatIds: responseBody.meta.secondaryCatIds
-      }
-    };
-    if (responseBody.vastUrl) {
-      bid.vastUrl = responseBody.vastUrl;
-    } else if (responseBody.vastXml) {
-      bid.vastXml = responseBody.vastXml;
-    }
+    let responseBodies = serverResponse.body;
+    if (!Array.isArray(responseBodies) || responseBodies.length === 0) return;
 
     const bids = [];
 
-    if (isBidResponseValid(bid)) {
-      bids.push(bid);
-    } else {
-      logError(BIDDER_CODE + ': server returns invalid response');
+    for (let responseBody of responseBodies) {
+      if (!responseBody) continue;
+      if (responseBody.mediaType === 'video') {
+        responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
+        const videoContext = bidRequest.data.videoContext;
+
+        if (videoContext === OUTSTREAM) {
+          try {
+            const renderer = Renderer.install({
+              id: bidRequest.bidId,
+              adunitcode: bidRequest.tagId,
+              loaded: false,
+              config: responseBody.mediaType,
+              url: responseBody.meta.rendererUrl
+            });
+            renderer.setRender(render);
+
+            responseBody.renderer = renderer;
+          } catch (e) {
+            responseBody.ad = responseBody.vastUrl || responseBody.vastXml;
+            logError(BIDDER_CODE + ': error while installing renderer to show outstream ad');
+          }
+        }
+      }
+      const bid = {
+        ad: responseBody.ad,
+        renderer: responseBody.renderer,
+        mediaType: responseBody.mediaType,
+        requestId: responseBody.requestId,
+        cpm: responseBody.cpm,
+        currency: responseBody.currency,
+        width: responseBody.width,
+        height: responseBody.height,
+        creativeId: responseBody.creativeId,
+        netRevenue: responseBody.netRevenue,
+        ttl: responseBody.ttl,
+        meta: {
+          mediaType: responseBody.meta.mediaType,
+          rendererUrl: responseBody.meta.rendererUrl,
+          advertiserDomains: responseBody.meta.advertiserDomains,
+          advertiserId: responseBody.meta.advertiserId,
+          advertiserName: responseBody.meta.advertiserName,
+          agencyId: responseBody.meta.agencyId,
+          agencyName: responseBody.meta.agencyName,
+          brandId: responseBody.meta.brandId,
+          brandName: responseBody.meta.brandName,
+          dchain: responseBody.meta.dchain,
+          networkId: responseBody.meta.networkId,
+          networkName: responseBody.meta.networkName,
+          primaryCatId: responseBody.meta.primaryCatId,
+          secondaryCatIds: responseBody.meta.secondaryCatIds
+        }
+      };
+      if (responseBody.vastUrl) {
+        bid.vastUrl = responseBody.vastUrl;
+      } else if (responseBody.vastXml) {
+        bid.vastXml = responseBody.vastXml;
+      }
+
+      if (isBidResponseValid(bid)) {
+        bids.push(bid);
+      } else {
+        logError(BIDDER_CODE + ': server returns invalid response');
+      }
     }
 
     return bids;
@@ -277,7 +285,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
-    const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
+    const urls = deepAccess(responses, '0.body.0.pixels') || COOKIE_SYNC_FALLBACK_URLS;
 
     return [].concat(urls).map(url => ({
       type: pixelType,
