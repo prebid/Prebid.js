@@ -28,7 +28,7 @@ describe('ChtnwAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [{
+    const bidRequests = [{
       code: 'adunit-code',
       bidder: 'chtnw',
       params: {
@@ -39,14 +39,17 @@ describe('ChtnwAdapter', function () {
       ],
     }];
 
-    const request = spec.buildRequests(bidRequests);
+    let request;
+    before(() => {
+      request = spec.buildRequests(bidRequests);
+    })
 
     it('Returns POST method', function () {
       expect(request.method).to.equal('POST');
     });
 
     it('Returns general data valid', function () {
-      let data = request.data;
+      const data = request.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('bids');
       expect(data).to.have.property('uuid');
@@ -56,7 +59,7 @@ describe('ChtnwAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let responseBody = [{
+    const responseBody = [{
       'requestId': 'test',
       'cpm': 0.5,
       'currency': 'USD',
@@ -75,19 +78,19 @@ describe('ChtnwAdapter', function () {
     }];
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: responseBody
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.not.equal(0);
       expect(result[0].meta.advertiserDomains).to.be.an('array');
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: []
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });
@@ -97,7 +100,7 @@ describe('ChtnwAdapter', function () {
       const syncOptions = {
         'pixelEnabled': 'true'
       }
-      let userSync = spec.getUserSyncs(syncOptions);
+      const userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('image');
       expect(userSync[0].url).to.have.string('ssp');
     });

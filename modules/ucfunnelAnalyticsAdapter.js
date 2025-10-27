@@ -1,6 +1,6 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {logError, logInfo, deepClone} from '../src/utils.js';
@@ -12,12 +12,10 @@ export const ANALYTICS_VERSION = '1.0.0';
 const ANALYTICS_SERVER = 'https://hbwa.aralego.com';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_WON,
-    BID_TIMEOUT
-  }
-} = CONSTANTS;
+  AUCTION_END,
+  BID_WON,
+  BID_TIMEOUT
+} = EVENTS;
 
 export const BIDDER_STATUS = {
   BID: 'bid',
@@ -29,7 +27,7 @@ export const BIDDER_STATUS = {
 const analyticsOptions = {};
 
 export const parseBidderCode = function (bid) {
-  let bidderCode = bid.bidderCode || bid.bidder;
+  const bidderCode = bid.bidderCode || bid.bidder;
   return bidderCode.toLowerCase();
 };
 

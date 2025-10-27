@@ -1,4 +1,3 @@
-import {includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -85,7 +84,7 @@ export const spec = {
           return false
         }
       }
-      if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], placeType)) {
+      if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(placeType)) {
         if (imageUrl && imageWidth && imageHeight) {
           return true
         }
@@ -100,17 +99,17 @@ export const spec = {
       pageUrl: IS_DEV ? TEST_PAGE_URL : refererInfo.page,
       gdprConsent: gdprConsent,
       bidRequests: validBidRequests.map(validBidRequest => {
-        const {bidId, transactionId, sizes, params: {
+        const {bidId, ortb2Imp, sizes, params: {
           placeId, placeType, imageUrl, imageWidth, imageHeight
         }} = validBidRequest
         bidRequestMap[bidId] = validBidRequest
         const bidRequest = {
           bidId,
-          transactionId,
+          transactionId: ortb2Imp?.ext?.tid,
           sizes,
           placeId,
         }
-        if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], placeType)) {
+        if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(placeType)) {
           Object.assign(bidRequest, {
             imageUrl,
             imageWidth: Math.floor(imageWidth),

@@ -9,6 +9,11 @@ import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
+
 const IDX_MODULE_NAME = 'idx';
 const IDX_COOKIE_NAME = '_idx';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: IDX_MODULE_NAME});
@@ -43,12 +48,11 @@ export const idxIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleConfig} config
    * @return {{id: string | undefined } | undefined}
    */
   getId() {
     const idxString = readIDxFromLocalStorage() || readIDxFromCookie();
-    if (typeof idxString == 'string' && idxString) {
+    if (typeof idxString === 'string' && idxString) {
       try {
         const idxObj = JSON.parse(idxString);
         return idxObj && idxObj.idx ? { id: idxObj.idx } : undefined;
@@ -57,6 +61,12 @@ export const idxIdSubmodule = {
       }
     }
     return undefined;
+  },
+  eids: {
+    'idx': {
+      source: 'idx.lat',
+      atype: 1
+    },
   }
 };
 submodule('userId', idxIdSubmodule);

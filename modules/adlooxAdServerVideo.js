@@ -9,7 +9,7 @@
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
 import { ajax } from '../src/ajax.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { targeting } from '../src/targeting.js';
 import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
 
@@ -49,7 +49,7 @@ export function buildVideoUrl(options, callback) {
     return false;
   }
 
-  // same logic used in modules/dfpAdServerVideo.js
+  // same logic used in modules/gamAdServerVideo.js
   options.bid = options.bid || targeting.getWinningBids(options.adUnit.code)[0];
 
   deepSetValue(options.bid, 'ext.adloox.video.adserver', true);
@@ -74,7 +74,7 @@ function track(options, callback) {
   bid.ext.adloox.video.adserver = false;
 
   analyticsCommand(COMMAND.TRACK, {
-    eventType: CONSTANTS.EVENTS.BID_WON,
+    eventType: EVENTS.BID_WON,
     args: bid
   });
 }
@@ -84,7 +84,7 @@ function VASTWrapper(options, callback) {
 
   function process(result) {
     function getAd(xml) {
-      if (!xml || xml.documentElement.tagName != 'VAST') {
+      if (!xml || xml.documentElement.tagName !== 'VAST') {
         logError(MODULE, 'not a VAST tag, using non-wrapped tracking');
         return;
       }
@@ -186,9 +186,9 @@ function VASTWrapper(options, callback) {
       [ 'id19', 'na' ],
       [ 'id20', 'na' ]
     ];
-    if (version && version != 3) args.push([ 'version', version ]);
+    if (version && version !== 3) args.push([ 'version', version ]);
     if (vpaid) args.push([ 'vpaid', 1 ]);
-    if (duration != 15) args.push([ 'duration', duration ]);
+    if (duration !== 15) args.push([ 'duration', duration ]);
     if (skip) args.push([ 'skip', skip ]);
 
     logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);

@@ -11,6 +11,13 @@ import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'adriverId';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
@@ -35,17 +42,16 @@ export const adriverIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
-   * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
   getId(config) {
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
-    const url = 'https://ad.adriver.ru/cgi-bin/json.cgi?sid=1&ad=719473&bt=55&pid=3198680&bid=7189165&bn=7189165&tuid=1';
+    const url = 'https://ad.adriver.ru/cgi-bin/json.cgi?sid=1&ad=719473&bt=55&pid=3198680&bid=7189165&bn=7189165&tuid=1&cfa=1';
     const resp = function (callback) {
-      let creationDate = storage.getDataFromLocalStorage('adrcid_cd') || storage.getCookie('adrcid_cd');
-      let cookie = storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid');
+      const creationDate = storage.getDataFromLocalStorage('adrcid_cd') || storage.getCookie('adrcid_cd');
+      const cookie = storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid');
 
       if (cookie && creationDate && ((new Date().getTime() - creationDate) < 86400000)) {
         const responseObj = cookie;
@@ -60,7 +66,7 @@ export const adriverIdSubmodule = {
               } catch (error) {
                 logError(error);
               }
-              let now = new Date();
+              const now = new Date();
               now.setTime(now.getTime() + 86400 * 1825 * 1000);
               storage.setCookie('adrcid', responseObj, now.toUTCString(), 'Lax');
               storage.setDataInLocalStorage('adrcid', responseObj);
@@ -74,7 +80,7 @@ export const adriverIdSubmodule = {
             callback();
           }
         };
-        let newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
+        const newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
         ajax(newUrl, callbacks, undefined, {method: 'GET'});
       }
     };

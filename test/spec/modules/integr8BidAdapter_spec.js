@@ -72,7 +72,7 @@ describe('integr8AdapterTest', () => {
     });
 
     it('bidRequest url', () => {
-      const endpointUrl = 'https://integr8.central.gjirafa.tech/bid';
+      const endpointUrl = 'https://central.sea.integr8.digital/bid';
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function (requestItem) {
         expect(requestItem.url).to.match(new RegExp(`${endpointUrl}`));
@@ -113,7 +113,7 @@ describe('integr8AdapterTest', () => {
   describe('interpretResponse', () => {
     const bidRequest = {
       'method': 'POST',
-      'url': 'https://integr8.central.gjirafa.tech/bid',
+      'url': 'https://central.sea.integr8.digital/bid',
       'data': {
         'sizes': '728x90',
         'adUnitId': 'hb-leaderboard',
@@ -145,7 +145,7 @@ describe('integr8AdapterTest', () => {
     it('all keys present', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
-      let keys = [
+      const keys = [
         'requestId',
         'cpm',
         'width',
@@ -161,7 +161,7 @@ describe('integr8AdapterTest', () => {
         'meta'
       ];
 
-      let resultKeys = Object.keys(result[0]);
+      const resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function (key) {
         expect(keys.indexOf(key) !== -1).to.equal(true);
       });

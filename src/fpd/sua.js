@@ -1,5 +1,5 @@
 import {isEmptyStr, isStr, isEmpty} from '../utils.js';
-import {GreedyPromise} from '../utils/promise.js';
+import {PbPromise} from '../utils/promise.js';
 
 export const SUA_SOURCE_UNKNOWN = 0;
 export const SUA_SOURCE_LOW_ENTROPY = 1;
@@ -13,6 +13,12 @@ export const HIGH_ENTROPY_HINTS = [
   'model',
   'platformVersion',
   'fullVersionList'
+]
+
+export const LOW_ENTROPY_HINTS = [
+  'brands',
+  'mobile',
+  'platform'
 ]
 
 /**
@@ -32,7 +38,7 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
 export const getHighEntropySUA = highEntropySUAAccessor();
 
 export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
-  const sua = isEmpty(uaData) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData));
+  const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null;
   return function () {
     return sua;
   }
@@ -54,7 +60,7 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
           return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result))
         }).catch(() => null);
       } catch (e) {
-        cache[key] = GreedyPromise.resolve(null);
+        cache[key] = PbPromise.resolve(null);
       }
     }
     return cache[key];
@@ -85,7 +91,7 @@ export function uaDataToSUA(source, uaData) {
   if (uaData.fullVersionList || uaData.brands) {
     sua.browsers = (uaData.fullVersionList || uaData.brands).map(({brand, version}) => toBrandVersion(brand, version));
   }
-  if (uaData.hasOwnProperty('mobile')) {
+  if (typeof uaData['mobile'] !== 'undefined') {
     sua.mobile = uaData.mobile ? 1 : 0;
   }
   ['model', 'bitness', 'architecture'].forEach(prop => {

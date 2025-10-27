@@ -1,5 +1,10 @@
-import { getBidIdParameter, isFn, isInteger } from '../src/utils.js';
+import {getBidIdParameter, isFn, isInteger, logError} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -38,7 +43,7 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
-   * */
+   */
   isBidRequestValid: function(bid) {
     return !!(bid && bid.params && bid.params.pid && bid.params.tid);
   },
@@ -51,7 +56,7 @@ export const spec = {
    */
   buildRequests: function(bidRequests) {
     return bidRequests.map(bidRequest => {
-      let giBidRequest = buildGiBidRequest(bidRequest);
+      const giBidRequest = buildGiBidRequest(bidRequest);
       return {
         method: 'GET',
         url: buildUrl(giBidRequest),
@@ -68,11 +73,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    let responseBody = serverResponse.body;
+    const responseBody = serverResponse.body;
     const bids = [];
     if (responseBody && responseBody.no_bid !== 1) {
-      let size = parseSize(responseBody.size);
-      let bid = {
+      const size = parseSize(responseBody.size);
+      const bid = {
         requestId: responseBody.bid_id,
         ttl: BID_RESPONSE_TTL_SEC,
         netRevenue: IS_NET_REVENUE,
@@ -106,11 +111,11 @@ function buildUrl(bid) {
 /**
  * Builds GI bid request from BidRequest.
  *
- * @param {BidRequest} bidRequest.
- * @return {object} GI bid request.
- * */
+ * @param {BidRequest} bidRequest
+ * @return {object} GI bid request
+ */
 function buildGiBidRequest(bidRequest) {
-  let giBidRequest = {
+  const giBidRequest = {
     bid_id: bidRequest.bidId,
     pid: bidRequest.params.pid, // required
     tid: bidRequest.params.tid, // required
@@ -147,7 +152,7 @@ function getBidFloor(bidRequest, currency) {
       currency: currency || DEFAULT_CURRENCY,
       mediaType: bidRequest.mediaType,
       size: bidRequest.sizes || '*'
-    });
+    }) || {};
   }
 
   return {
@@ -160,7 +165,7 @@ function addVideo(videoParams, mediaTypesVideoParams, giBidRequest) {
   videoParams = videoParams || {};
   mediaTypesVideoParams = mediaTypesVideoParams || {};
 
-  for (let videoParam in VIDEO_PROPERTIES) {
+  for (const videoParam in VIDEO_PROPERTIES) {
     let paramValue;
 
     const mediaTypesVideoParam = VIDEO_PROPERTIES[videoParam];
@@ -191,7 +196,7 @@ function addOptional(params, request, props) {
 /**
  * @param {String} s The string representing a size (e.g. "300x250").
  * @return {Number[]} An array with two elements: [width, height] (e.g.: [300, 250]).
- * */
+ */
 function parseSize(s) {
   return s.split('x').map(Number);
 }
@@ -200,13 +205,15 @@ function parseSize(s) {
  * @param {Array} sizes An array of sizes/numbers to be joined into single string.
  *                      May be an array (e.g. [300, 250]) or array of arrays (e.g. [[300, 250], [640, 480]].
  * @return {String} The string with sizes, e.g. array of sizes [[50, 50], [80, 80]] becomes "50x50,80x80" string.
- * */
+ */
 function produceSize (sizes) {
   function sizeToStr(s) {
     if (Array.isArray(s) && s.length === 2 && isInteger(s[0]) && isInteger(s[1])) {
       return s.join('x');
     } else {
-      throw "Malformed parameter 'sizes'";
+      const msg = "Malformed parameter 'sizes'";
+      logError(msg);
+      return undefined;
     }
   }
   if (Array.isArray(sizes) && Array.isArray(sizes[0])) {

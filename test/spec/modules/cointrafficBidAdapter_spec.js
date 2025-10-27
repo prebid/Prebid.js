@@ -4,12 +4,17 @@ import { spec } from 'modules/cointrafficBidAdapter.js';
 import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {
     /** @type {BidRequest} */
-    let bidRequest = {
+    const bidRequest = {
       bidder: 'cointraffic',
       params: {
         placementId: 'testPlacementId'
@@ -30,7 +35,7 @@ describe('cointrafficBidAdapter', function () {
 
   describe('buildRequests', function () {
     /** @type {BidRequest[]} */
-    let bidRequests = [
+    const bidRequests = [
       {
         bidder: 'cointraffic',
         params: {
@@ -60,7 +65,7 @@ describe('cointrafficBidAdapter', function () {
     ];
 
     /** @type {BidderRequest} */
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -92,7 +97,8 @@ describe('cointrafficBidAdapter', function () {
     });
 
     it('throws an error if currency provided in params is not allowed', function () {
-      const utilsMock = sinon.mock(utils).expects('logError').twice()
+      const utilsMock = sinon.mock(utils)
+      utilsMock.expects('logError').twice()
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.cointraffic' ? 'BTC' : 'EUR'
       );
@@ -124,7 +130,7 @@ describe('cointrafficBidAdapter', function () {
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
       /** @type {BidRequest[]} */
-      let bidRequest = [{
+      const bidRequest = [{
         method: 'POST',
         url: ENDPOINT_URL,
         data: {
@@ -137,7 +143,7 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let serverResponse = {
+      const serverResponse = {
         body: {
           requestId: 'bidId12345',
           cpm: 3.9,
@@ -153,7 +159,7 @@ describe('cointrafficBidAdapter', function () {
         }
       };
 
-      let expectedResponse = [{
+      const expectedResponse = [{
         requestId: 'bidId12345',
         cpm: 3.9,
         currency: 'EUR',
@@ -171,13 +177,13 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
     it('should get the correct bid response without advertiser domains specified', function () {
       /** @type {BidRequest[]} */
-      let bidRequest = [{
+      const bidRequest = [{
         method: 'POST',
         url: ENDPOINT_URL,
         data: {
@@ -190,7 +196,7 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let serverResponse = {
+      const serverResponse = {
         body: {
           requestId: 'bidId12345',
           cpm: 3.9,
@@ -205,7 +211,7 @@ describe('cointrafficBidAdapter', function () {
         }
       };
 
-      let expectedResponse = [{
+      const expectedResponse = [{
         requestId: 'bidId12345',
         cpm: 3.9,
         currency: 'EUR',
@@ -221,13 +227,13 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
     it('should get the correct bid response with different currency', function () {
       /** @type {BidRequest[]} */
-      let bidRequest = [{
+      const bidRequest = [{
         method: 'POST',
         url: ENDPOINT_URL,
         data: {
@@ -240,7 +246,7 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let serverResponse = {
+      const serverResponse = {
         body: {
           requestId: 'bidId12345',
           cpm: 3.9,
@@ -256,7 +262,7 @@ describe('cointrafficBidAdapter', function () {
         }
       };
 
-      let expectedResponse = [{
+      const expectedResponse = [{
         requestId: 'bidId12345',
         cpm: 3.9,
         currency: 'USD',
@@ -276,7 +282,7 @@ describe('cointrafficBidAdapter', function () {
 
       const getConfigStub = sinon.stub(config, 'getConfig').returns('USD');
 
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
 
       getConfigStub.restore();
@@ -284,7 +290,7 @@ describe('cointrafficBidAdapter', function () {
 
     it('should get empty bid response requested currency is not available', function () {
       /** @type {BidRequest[]} */
-      let bidRequest = [{
+      const bidRequest = [{
         method: 'POST',
         url: ENDPOINT_URL,
         data: {
@@ -297,13 +303,13 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let serverResponse = {};
+      const serverResponse = {};
 
-      let expectedResponse = [];
+      const expectedResponse = [];
 
       const getConfigStub = sinon.stub(config, 'getConfig').returns('BTC');
 
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
 
       getConfigStub.restore();
@@ -311,7 +317,7 @@ describe('cointrafficBidAdapter', function () {
 
     it('should get empty bid response if no server response', function () {
       /** @type {BidRequest[]} */
-      let bidRequest = [{
+      const bidRequest = [{
         method: 'POST',
         url: ENDPOINT_URL,
         data: {
@@ -324,11 +330,11 @@ describe('cointrafficBidAdapter', function () {
         }
       }];
 
-      let serverResponse = {};
+      const serverResponse = {};
 
-      let expectedResponse = [];
+      const expectedResponse = [];
 
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
   });

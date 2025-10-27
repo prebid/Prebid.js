@@ -1,5 +1,4 @@
 import { logMessage } from '../src/utils.js';
-import { uspDataHandler } from '../src/adapterManager.js';
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js'
 
@@ -22,14 +21,14 @@ export const tapadIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse }}
    */
-  getId(config) {
-    const uspData = uspDataHandler.getConsentData();
+  getId(config, consentData) {
+    const uspData = consentData?.usp;
     if (uspData && uspData !== '1---') {
       return { id: undefined };
     }
     const configParams = config.params || {};
 
-    if (configParams.companyId == null || isNaN(Number(configParams.companyId))) {
+    if (configParams.companyId === null || configParams.companyId === undefined || isNaN(Number(configParams.companyId))) {
       logMessage('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
     }
 
@@ -56,6 +55,12 @@ export const tapadIdSubmodule = {
         );
       }
     }
+  },
+  eids: {
+    'tapadId': {
+      source: 'tapad.com',
+      atype: 1
+    },
   }
 }
 submodule('userId', tapadIdSubmodule);

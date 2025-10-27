@@ -1,13 +1,25 @@
-import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray, isNumber, parseSizesInput } from '../src/utils.js';
+import {
+  deepAccess,
+  logWarn,
+  parseQueryStringParameters,
+  triggerPixel,
+  generateUUID,
+  isArray,
+  isNumber,
+  parseSizesInput,
+  getBidIdParameter,
+  isGptPubadsDefined
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import sha1 from 'crypto-js/sha1';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.1.0';
+const ADAPTER_VERSION = '1.2.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -15,7 +27,7 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
-    logWarn('placementId param is reqeuired.');
+    logWarn('placementId param is required.');
     return false;
   }
   if (hasVideoMediaType(bid) && isVideoValid(bid)) {
@@ -33,10 +45,10 @@ function isBidRequestValid(bid) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
-  let imuid = null;
   let bidDomain = null;
   let bidder = null;
   let count = null;
+  let isOgUrlOption = false;
 
   for (let i = 0; i < validBidRequests.length; i++) {
     const bidRequest = validBidRequests[i];
@@ -59,13 +71,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       mediaType = BANNER;
     }
 
-    if (!imuid) {
-      const pickImuid = deepAccess(bidRequest, 'userId.imuid');
-      if (pickImuid) {
-        imuid = pickImuid;
-      }
-    }
-
     if (!bidDomain) {
       bidDomain = bidRequest.params.domain;
     }
@@ -82,20 +87,29 @@ function buildRequests(validBidRequests, bidderRequest) {
       count = bidRequest.bidRequestsCount;
     }
 
+    if (getBidIdParameter('ogUrl', bidRequest.params)) {
+      isOgUrlOption = true;
+    }
+
     bids.push({
       bid_id: bidRequest.bidId,
       placement_id: getBidIdParameter('placementId', bidRequest.params),
-      transaction_id: bidRequest.transactionId,
+      transaction_id: bidRequest.ortb2Imp?.ext?.tid,
       bidder_request_id: bidRequest.bidderRequestId,
       ad_unit_code: bidRequest.adUnitCode,
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auction_id: bidRequest.auctionId,
       player: bidRequest.params.player,
       width: width,
       height: height,
       banner_sizes: getBannerSizes(bidRequest),
-      media_type: mediaType
+      media_type: mediaType,
+      userIdAsEids: bidRequest.userIdAsEids || [],
+      pagekvt: getTargeting(bidRequest),
     });
   }
+
+  const canonicalUrl = getCanonicalUrl(bidderRequest.refererInfo?.canonicalUrl, isOgUrlOption);
 
   const data = JSON.stringify({
     version: ADAPTER_VERSION,
@@ -105,8 +119,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     bid_requests_count: count,
     uuid: getUuid(),
     pv: '$prebid.version$',
-    imuid: imuid,
-    canonical_url_hash: getCanonicalUrlHash(bidderRequest.refererInfo),
+    imuid: null,
+    canonical_url: canonicalUrl,
+    canonical_url_hash: getCanonicalUrlHash(canonicalUrl),
     ref: bidderRequest.refererInfo.page
   });
 
@@ -123,14 +138,15 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const body = serverResponse.body;
-  if (!body || body.status != 'ok') {
+  if (!body || body.status !== 'ok') {
     return [];
   }
 
   for (const res of body.ads) {
     const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
-    let bidResponse = {
+    const bidResponse = {
       requestId: res.bidId,
+      placementId: res.placementId,
       width: res.width,
       height: res.height,
       cpm: res.price,
@@ -179,7 +195,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 }
 
 function onBidWon(bid) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(bid, 'params.0.placementId'),
     creative_id: deepAccess(bid, 'creativeId'),
     price: deepAccess(bid, 'cpm'),
@@ -188,14 +204,14 @@ function onBidWon(bid) {
     ad_id: deepAccess(bid, 'adId'),
     ad_unit_code: deepAccess(bid, 'adUnitCode'),
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(bid, 'params.0.domain') || BIDDER_DOMAIN;
   const burl = `https://${bidDomain}/tr/v1/prebid/win.gif?${query}`;
   triggerPixel(burl);
 }
 
 function onTimeout(data) {
-  let query = parseQueryStringParameters({
+  const query = parseQueryStringParameters({
     placement_id: deepAccess(data, '0.params.0.placementId'),
     timeout: deepAccess(data, '0.timeout'),
     auction_id: deepAccess(data, '0.auctionId'),
@@ -203,7 +219,7 @@ function onTimeout(data) {
     ad_unit_code: deepAccess(data, '0.adUnitCode'),
     version: ADAPTER_VERSION,
     ref: window.location.href,
-  }).replace(/\&$/, '');
+  }).replace(/&$/, '');
   const bidDomain = deepAccess(data, '0.params.0.domain') || BIDDER_DOMAIN;
   const timeoutUrl = `https://${bidDomain}/tr/v1/prebid/timeout.gif?${query}`;
   triggerPixel(timeoutUrl);
@@ -246,6 +262,7 @@ function outstreamRender(bid) {
       height: bid.height,
       vastXml: bid.vastXml,
       mediaType: bid.mediaType,
+      placementId: bid.placementId,
     });
   });
 }
@@ -280,12 +297,25 @@ function getUuid() {
   return newId;
 }
 
-function getCanonicalUrlHash(refererInfo) {
-  const canonicalUrl = refererInfo.canonicalUrl || null;
-  if (!canonicalUrl) {
-    return null;
+function getOgUrl() {
+  try {
+    const ogURLElement = window.top.document.querySelector('meta[property="og:url"]');
+    return ogURLElement ? ogURLElement.content : null;
+  } catch (e) {
+    const ogURLElement = document.querySelector('meta[property="og:url"]');
+    return ogURLElement ? ogURLElement.content : null;
   }
-  return sha1(canonicalUrl).toString();
+}
+
+function getCanonicalUrl(canonicalUrl, isOgUrlOption) {
+  if (!canonicalUrl) {
+    return (isOgUrlOption) ? getOgUrl() : null;
+  }
+  return canonicalUrl;
+}
+
+function getCanonicalUrlHash(canonicalUrl) {
+  return (canonicalUrl) ? sha1(canonicalUrl).toString() : null;
 }
 
 function hasBannerMediaType(bid) {
@@ -297,13 +327,13 @@ function hasVideoMediaType(bid) {
 }
 
 function getValidSizes(sizes) {
-  let result = [];
+  const result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
-      if (isArray(sizes[i]) && sizes[i].length == 2) {
+      if (isArray(sizes[i]) && sizes[i].length === 2) {
         const width = sizes[i][0];
         const height = sizes[i][1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
@@ -312,7 +342,7 @@ function getValidSizes(sizes) {
       } else if (isNumber(sizes[i])) {
         const width = sizes[0];
         const height = sizes[1];
-        if (width == 1 && height == 1) {
+        if (width === 1 && height === 1) {
           return [[1, 1]];
         }
         if ((width >= 300 && height >= 250)) {
@@ -333,6 +363,44 @@ function getBannerSizes(bidRequest) {
     return null;
   }
   return parseSizesInput(sizes).join(',');
+}
+
+function getTargeting(bidRequest) {
+  const targetings = {};
+  const pubads = getPubads();
+  if (pubads) {
+    const keys = pubads.getTargetingKeys();
+    for (const key of keys) {
+      const values = pubads.getTargeting(key);
+      targetings[key] = values;
+    }
+  }
+  const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
+  if (adUnitSlot) {
+    const keys = adUnitSlot.getTargetingKeys();
+    for (const key of keys) {
+      const values = adUnitSlot.getTargeting(key);
+      targetings[key] = values;
+    }
+  }
+  return targetings;
+}
+
+function getPubads() {
+  return (isGptPubadsDefined()) ? window.googletag.pubads() : null;
+}
+
+function getAdUnit(adUnitCode) {
+  if (isGptPubadsDefined()) {
+    const adSlots = window.googletag.pubads().getSlots();
+    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        return adSlots[i];
+      }
+    }
+  }
+  return null;
 }
 
 export const spec = {

@@ -1,6 +1,6 @@
-import { getBidIdParameter } from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 export const spec = {
   code: 'lockerdome',
@@ -12,7 +12,8 @@ export const spec = {
     let schain;
 
     const adUnitBidRequests = bidRequests.map(function (bid) {
-      if (bid.schain) schain = schain || bid.schain;
+      const bidSchain = bid?.ortb2?.source?.ext?.schain;
+      if (bidSchain) schain = schain || bidSchain;
       return {
         requestId: bid.bidId,
         adUnitCode: bid.adUnitCode,

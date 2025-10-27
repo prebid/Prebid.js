@@ -1,7 +1,7 @@
 /* COPYRIGHT SCALEABLE LLC 2019 */
 
 import { ajax } from '../src/ajax.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { logMessage } from '../src/utils.js';
@@ -10,23 +10,23 @@ import { logMessage } from '../src/utils.js';
 const entries = Object.entries || function(obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
-  let resArray = new Array(i); // preallocate the Array
+  const resArray = new Array(i); // preallocate the Array
   while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
 
   return resArray;
 };
 
-const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
-const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
-const BID_WON = CONSTANTS.EVENTS.BID_WON;
-const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
+const BID_TIMEOUT = EVENTS.BID_TIMEOUT;
+const AUCTION_INIT = EVENTS.AUCTION_INIT;
+const BID_WON = EVENTS.BID_WON;
+const AUCTION_END = EVENTS.AUCTION_END;
 
 const URL = 'https://auction.scaleable.ai/';
 const ANALYTICS_TYPE = 'endpoint';
 
 let auctionData = {};
 
-let scaleableAnalytics = Object.assign({},
+const scaleableAnalytics = Object.assign({},
   adapter({
     URL,
     ANALYTICS_TYPE
@@ -76,8 +76,8 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 const onAuctionInit = args => {
   const config = scaleableAnalytics.config || {options: {}};
 
-  let adunitObj = {};
-  let adunits = [];
+  const adunitObj = {};
+  const adunits = [];
 
   // Loop through adunit codes first
   args.adUnitCodes.forEach((code) => {
@@ -116,8 +116,8 @@ const onAuctionInit = args => {
 const onAuctionEnd = args => {
   const config = scaleableAnalytics.config || {options: {}};
 
-  let adunitObj = {};
-  let adunits = [];
+  const adunitObj = {};
+  const adunits = [];
 
   // Add Bids Received
   args.bidsReceived.forEach((bidObj) => {

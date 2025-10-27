@@ -20,6 +20,13 @@
         },
 
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
@@ -37,11 +44,13 @@
               divId: 'player',
               vendorCode: 1, // jwplayer vendorCode
               playerConfig: {
-                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                licenseKey: 'zwqnWJlovTKhXv2JIcKBj0Si//K7cVPmBDEyaILcAMw+nVKaizsJRA==',
                 params: {
                   vendorConfig: {
                     file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
-                    advertising: { client: 'vast' }
+                    advertising: { client: 'vast' },
+                    width: 640,
+                    height: 480
                   }
                 }
               },
@@ -84,7 +93,7 @@
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
-        pbjs.requestBids(adUnits);
+        pbjs.requestBids();
       });
     </script>
 </head>

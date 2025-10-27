@@ -1,11 +1,11 @@
 import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
-import { ajax } from 'src/ajax.js';
 import { buildVideoUrl } from 'modules/adlooxAdServerVideo.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -34,7 +34,6 @@ describe('Adloox Ad Server Video', function () {
   };
 
   const analyticsOptions = {
-    js: 'https://j.adlooxtracking.com/ads/js/tfav_adl_%%clientid%%.js',
     client: 'adlooxtest',
     clientid: 127,
     platformid: 0,
@@ -99,7 +98,7 @@ describe('Adloox Ad Server Video', function () {
   });
 
   before(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]);
 
     adapterManager.enableAnalytics({
@@ -154,9 +153,9 @@ describe('Adloox Ad Server Video', function () {
       });
 
       it('should require options.adUnit or options.bid', function (done) {
-        let BID = utils.deepClone(bid);
+        const BID = utils.deepClone(bid);
 
-        let getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
+        const getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
         getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
 
         const ret = buildVideoUrl({ url: vastUrl }, function () {});
@@ -199,11 +198,9 @@ describe('Adloox Ad Server Video', function () {
     });
 
     describe('process VAST', function () {
-      let server = null;
       let BID = null;
       let getWinningBidsStub;
       beforeEach(function () {
-        server = sinon.createFakeServer();
         BID = utils.deepClone(bid);
         getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
         getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
@@ -212,8 +209,6 @@ describe('Adloox Ad Server Video', function () {
         getWinningBidsStub.restore();
         getWinningBidsStub = undefined;
         BID = null;
-        server.restore();
-        server = null;
       });
 
       it('should return URL unchanged for non-VAST', function (done) {

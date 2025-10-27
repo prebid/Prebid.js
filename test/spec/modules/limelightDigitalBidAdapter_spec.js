@@ -24,7 +24,15 @@ describe('limelightDigitalAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
     userIdAsEids: [
       {
         source: 'test1.org',
@@ -35,16 +43,22 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
   const bid2 = {
@@ -64,7 +78,15 @@ describe('limelightDigitalAdapter', function () {
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
     sizes: [[350, 200]],
-    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
     userIdAsEids: [
       {
         source: 'test2.org',
@@ -75,21 +97,27 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
-        },
-        {
-          asi: 'example1.com',
-          sid: '2',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              },
+              {
+                asi: 'example1.com',
+                sid: '2',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
   const bid3 = {
@@ -110,7 +138,15 @@ describe('limelightDigitalAdapter', function () {
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     sizes: [[800, 600]],
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
     userIdAsEids: [
       {
         source: 'test3.org',
@@ -124,16 +160,22 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
   const bid4 = {
@@ -155,7 +197,15 @@ describe('limelightDigitalAdapter', function () {
     video: {
       playerSize: [800, 600]
     },
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
     userIdAsEids: [
       {
         source: 'test.org',
@@ -166,21 +216,42 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
 
   describe('buildRequests', function () {
-    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4])
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      },
+      refererInfo: {
+        page: 'testPage'
+      }
+    }
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
     it('Creates two ServerRequests', function() {
       expect(serverRequests).to.exist
       expect(serverRequests).to.have.lengthOf(2)
@@ -196,13 +267,17 @@ describe('limelightDigitalAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        let data = serverRequest.data;
+        const data = serverRequest.data;
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys(
           'deviceWidth',
           'deviceHeight',
           'secure',
-          'adUnits'
+          'adUnits',
+          'sua',
+          'page',
+          'ortb2',
+          'refererInfo'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
@@ -221,7 +296,8 @@ describe('limelightDigitalAdapter', function () {
             'custom2',
             'custom3',
             'custom4',
-            'custom5'
+            'custom5',
+            'ortb2Imp'
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -235,7 +311,15 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.custom3).to.be.a('string');
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
+          expect(adUnit.ortb2Imp).to.be.an('object');
         })
+        expect(data.sua.browsers).to.be.a('array');
+        expect(data.sua.platform).to.be.a('array');
+        expect(data.sua.mobile).to.be.a('number');
+        expect(data.sua.architecture).to.be.a('string');
+        expect(data.page).to.be.a('string');
+        expect(data.page).to.be.equal('testPage');
+        expect(data.ortb2).to.be.an('object');
       })
     })
     it('Returns valid URL', function () {
@@ -251,9 +335,20 @@ describe('limelightDigitalAdapter', function () {
       const serverRequests = spec.buildRequests([])
       expect(serverRequests).to.be.an('array').that.is.empty
     })
+    it('Returns request with page field value from ortb2 object if ortb2 has page field', function () {
+      bidderRequest.ortb2.site = {
+        page: 'testSitePage'
+      }
+      const serverRequests = spec.buildRequests([bid1], bidderRequest)
+      expect(serverRequests).to.have.lengthOf(1)
+      serverRequests.forEach(serverRequest => {
+        expect(serverRequest.data.page).to.be.a('string');
+        expect(serverRequest.data.page).to.be.equal('testSitePage');
+      })
+    })
   })
   describe('interpretBannerResponse', function () {
-    let resObject = {
+    const resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -274,7 +369,7 @@ describe('limelightDigitalAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -296,7 +391,7 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('interpretVideoResponse', function () {
-    let resObject = {
+    const resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -317,7 +412,7 @@ describe('limelightDigitalAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -339,7 +434,7 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('isBidRequestValid', function() {
-    let bid = {
+    const bid = {
       bidId: '2dd581a2b6281d',
       bidder: 'limelightDigital',
       bidderRequestId: '145e1d6a7837c9',
@@ -366,7 +461,7 @@ describe('limelightDigitalAdapter', function () {
     });
 
     it('should return false when required params are not passed', function() {
-      let bidFailed = {
+      const bidFailed = {
         bidder: 'limelightDigital',
         bidderRequestId: '145e1d6a7837c9',
         params: {
@@ -382,7 +477,7 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('interpretResponse', function() {
-    let resObject = {
+    const resObject = {
       requestId: '123',
       cpm: 0.3,
       width: 320,
@@ -398,7 +493,7 @@ describe('limelightDigitalAdapter', function () {
       }
     };
     it('should skip responses which do not contain required params', function() {
-      let bidResponses = {
+      const bidResponses = {
         body: [ {
           cpm: 0.3,
           ttl: 1000,
@@ -412,28 +507,28 @@ describe('limelightDigitalAdapter', function () {
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should skip responses which do not contain advertiser domains', function() {
-      let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithoutAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should return responses which contain empty advertiser domains', function() {
-      let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
     it('should skip responses which do not contain meta media type', function() {
-      let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
+      const resObjectWithoutMetaMediaType = Object.assign({}, resObject);
       resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutMetaMediaType.meta.mediaType;
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithoutMetaMediaType, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
@@ -445,10 +540,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -472,10 +567,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-1.ortb.net/sync.html';
               }
             }
@@ -507,10 +602,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -534,10 +629,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-1.ortb.net/sync.html';
               }
             }
@@ -547,10 +642,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-2.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-2.ortb.net/sync.html';
               }
             }
@@ -578,10 +673,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -591,10 +686,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -618,10 +713,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -647,7 +742,7 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.id).to.equal(bid.params.adUnitId);
   expect(adUnit.bidId).to.equal(bid.bidId);
   expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
-  expect(adUnit.transactionId).to.equal(bid.transactionId);
+  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid);
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
@@ -668,5 +763,6 @@ function validateAdUnit(adUnit, bid) {
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
-  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
+  expect(adUnit.supplyChain).to.deep.equal(bid.ortb2.source.ext.schain);
+  expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
 }

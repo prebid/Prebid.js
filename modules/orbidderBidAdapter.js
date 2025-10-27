@@ -1,11 +1,14 @@
 import { isFn, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 
-const storageManager = getStorageManager({bidderCode: 'orbidder'});
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+const storageManager = getStorageManager({ bidderCode: 'orbidder' });
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -69,7 +72,7 @@ export const spec = {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
-      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
+      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
   },
 
   /**
@@ -89,24 +92,20 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.page || '';
       }
+      if (bidRequest?.mediaTypes?.video) {
+        delete bidRequest.mediaTypes.video;
+      }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
-      let httpReq = {
+      const httpReq = {
         url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: getGlobal().version,
+          v: 'v' + '$prebid.version$',
           pageUrl: referer,
-          bidId: bidRequest.bidId,
-          auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
-          adUnitCode: bidRequest.adUnitCode,
-          bidRequestCount: bidRequest.bidRequestCount,
-          params: bidRequest.params,
-          sizes: bidRequest.sizes,
-          mediaTypes: bidRequest.mediaTypes
+          ...bidRequest // get all data provided by bid request
         }
       };
 
@@ -148,7 +147,7 @@ export const spec = {
 /**
  * Get bid floor from Price Floors Module
  * @param {Object} bid
- * @returns {float||undefined}
+ * @returns {(number|undefined)}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

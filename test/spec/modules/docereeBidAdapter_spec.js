@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/docereeBidAdapter.js';
 import { config } from '../../../src/config.js';
+import * as utils from 'src/utils.js';
 
 describe('BidlabBidAdapter', function () {
   config.setConfig({
@@ -26,7 +27,7 @@ describe('BidlabBidAdapter', function () {
       }
     }
   });
-  let bid = {
+  const bid = {
     bidId: 'testing',
     bidder: 'doceree',
     params: {
@@ -84,9 +85,9 @@ describe('BidlabBidAdapter', function () {
           advertiserDomain: 'doceree.com',
         }
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl',
         'netRevenue', 'currency', 'mediaType', 'creativeId', 'meta');
       expect(dataItem.requestId).to.equal('G125fzC5NKl3FHeOT8yvL98ILfQS9TVUgk6Q');
@@ -102,4 +103,36 @@ describe('BidlabBidAdapter', function () {
       expect(dataItem.meta.advertiserDomains[0]).to.equal('doceree.com')
     });
   })
+  describe('onBidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+  describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon([]);
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
 });

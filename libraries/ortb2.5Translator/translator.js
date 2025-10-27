@@ -1,10 +1,12 @@
 import {deepAccess, deepSetValue, logError} from '../../src/utils.js';
 
 export const EXT_PROMOTIONS = [
+  'device.sua',
   'source.schain',
   'regs.gdpr',
   'regs.us_privacy',
   'regs.gpp',
+  'regs.gpp_sid',
   'user.consent',
   'user.eids'
 ];
@@ -40,7 +42,7 @@ function kwarrayRule(section) {
   return (ortb2) => {
     const kwarray = ortb2[section]?.kwarray;
     if (kwarray != null) {
-      let kw = (ortb2[section].keywords || '').split(',');
+      const kw = (ortb2[section].keywords || '').split(',');
       if (Array.isArray(kwarray)) kw.push(...kwarray);
       ortb2[section].keywords = kw.join(',');
       return () => delete ortb2[section].kwarray;

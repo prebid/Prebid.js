@@ -1,8 +1,8 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {
   deepAccess,
   deepSetValue,
   generateUUID,
-  getDNT,
   isArray,
   isFn,
   isPlainObject,
@@ -16,8 +16,16 @@ import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 const BIDDER_CODE = 'operaads';
 
 const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
@@ -70,7 +78,7 @@ const NATIVE_DEFAULTS = {
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: 1135,
   // short code
   aliases: ['opera'],
 
@@ -179,14 +187,14 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    *
-   * @param {data} timeoutData Containing timeout specific data
+   * @param {Object} timeoutData Containing timeout specific data
    */
   onTimeout: function (timeoutData) { },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    *
-   * @param {Bid} bid The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     if (!bid || !isStr(bid.nurl)) {
@@ -227,18 +235,11 @@ export const spec = {
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
   // build OpenRTB request body
   const payload = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     tmax: bidderRequest.timeout,
     test: config.getConfig('debug') ? 1 : 0,
     imp: createImp(bidRequest),
     device: getDevice(),
-    site: {
-      id: String(deepAccess(bidRequest, 'params.publisherId')),
-      // TODO: does the fallback make sense here?
-      domain: bidderRequest?.refererInfo?.domain || window.location.host,
-      page: bidderRequest?.refererInfo?.page,
-      ref: bidderRequest?.refererInfo?.ref || '',
-    },
     at: 1,
     bcat: getBcat(bidRequest),
     cur: [DEFAULT_CURRENCY],
@@ -250,6 +251,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
       buyeruid: getUserId(bidRequest)
     }
   }
+  fulfillInventoryInfo(payload, bidRequest, bidderRequest);
 
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
@@ -286,10 +288,10 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
 /**
  * Build bid response from openrtb bid response.
  *
- * @param {OpenRtbBid} bid
+ * @param {Object} bid
  * @param {BidRequest} bidRequest
- * @param {OpenRtbResponseBody} responseBody
- * @returns {BidResponse}
+ * @param {Object} responseBody
+ * @returns {Object} bid response
  */
 function buildBidResponse(bid, bidRequest, responseBody) {
   let mediaType = BANNER;
@@ -383,10 +385,10 @@ function buildBidResponse(bid, bidRequest, responseBody) {
 /**
  * Convert OpenRtb native response to bid native object.
  *
- * @param {OpenRtbNativeResponse} nativeResponse
+ * @param {Object} nativeResponse
  * @param {String} currency
  * @param {String} cpm
- * @returns {BidNative} native
+ * @returns {Object} native
  */
 function interpretNativeAd(nativeResponse, currency, cpm) {
   const native = {};
@@ -485,9 +487,8 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
 /**
  * Create an imp array
  *
- * @param {BidRequest} bidRequest
- * @param {Currency} cur
- * @returns {Imp[]}
+ * @param {Object} bidRequest
+ * @returns {Array}
  */
 function createImp(bidRequest) {
   const imp = [];
@@ -524,7 +525,6 @@ function createImp(bidRequest) {
       playbackmethod: videoReq.playbackmethod || VIDEO_DEFAULTS.PLAYBACK_METHODS,
       delivery: videoReq.delivery || VIDEO_DEFAULTS.DELIVERY,
       api: videoReq.api || VIDEO_DEFAULTS.API,
-      placement: videoReq.context === OUTSTREAM ? 3 : 1,
     };
 
     mediaType = VIDEO;
@@ -564,8 +564,8 @@ function createImp(bidRequest) {
 /**
  * Convert bid sizes to size array
  *
- * @param {Size[]|Size[][]} sizes
- * @returns {Size[][]}
+ * @param {number[]|number[][]} sizes
+ * @returns {number[][]}
  */
 function canonicalizeSizesArray(sizes) {
   if (sizes.length === 2 && !isArray(sizes[0])) {
@@ -578,7 +578,7 @@ function canonicalizeSizesArray(sizes) {
  * Create Assets Object for Native request
  *
  * @param {Object} params
- * @returns {Asset[]}
+ * @returns {Object[]}
  */
 function createNativeAssets(params) {
   const assets = [];
@@ -650,7 +650,7 @@ function createNativeAssets(params) {
  *
  * @param {Object} image
  * @param {Number} type
- * @returns {NativeImage}
+ * @returns {Object}
  */
 function mapNativeImage(image, type) {
   const img = { type: type };
@@ -680,13 +680,18 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
-  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  const operaId = deepAccess(bidRequest, 'userId.operaId');
+  if (operaId) {
+    return operaId;
+  }
+
+  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
   }
 
   for (const idModule of ['pubcid', 'tdid']) {
-    let userId = deepAccess(bidRequest, `userId.${idModule}`);
+    const userId = deepAccess(bidRequest, `userId.${idModule}`);
     if (userId) {
       return userId;
     }
@@ -699,8 +704,10 @@ function getUserId(bidRequest) {
  * Get bid floor price
  *
  * @param {BidRequest} bid
- * @param {Params} params
- * @returns {Floor} floor price
+ * @param {Object} params
+ * @param {string} params.mediaType
+ * @param {*} params.size
+ * @returns {Object} floor price
  */
 function getBidFloor(bid, {mediaType = '*', size = '*'}) {
   if (isFn(bid.getFloor)) {
@@ -757,6 +764,38 @@ function getDevice() {
     ? device.dnt : (getDNT() ? 1 : 0);
 
   return device;
+}
+
+/**
+ * Fulfill inventory info
+ *
+ * @param payload
+ * @param bidRequest
+ * @param bidderRequest
+ */
+function fulfillInventoryInfo(payload, bidRequest, bidderRequest) {
+  let info = deepAccess(bidRequest, 'params.site');
+  // 1.If the inventory info for site specified, use the site object provided in params.
+  let key = 'site';
+  if (!isPlainObject(info)) {
+    info = deepAccess(bidRequest, 'params.app');
+    if (isPlainObject(info)) {
+      // 2.If the inventory info for app specified, use the app object provided in params.
+      key = 'app';
+    } else {
+      // 3.Otherwise, we use site by default.
+      info = {};
+    }
+  }
+  // Fulfill key parameters.
+  info.id = String(deepAccess(bidRequest, 'params.publisherId'));
+  info.domain = info.domain || bidderRequest?.refererInfo?.domain || window.location.host;
+  if (key === 'site') {
+    info.ref = info.ref || bidderRequest?.refererInfo?.ref || '';
+    info.page = info.page || bidderRequest?.refererInfo?.page;
+  }
+
+  payload[key] = info;
 }
 
 /**

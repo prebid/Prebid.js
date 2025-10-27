@@ -1,7 +1,14 @@
-import { submodule } from '../src/hook.js';
+import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {ajax} from '../src/ajax.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+import { mergeDeep } from '../src/utils.js';
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -50,7 +57,7 @@ export function init(config, userConsent) {
   }
   if (params.hasOwnProperty('keyMappings')) {
     const keyMappings = params.keyMappings;
-    for (let prop in keyMappings) {
+    for (const prop in keyMappings) {
       if (IAS_KEY_MAPPINGS.hasOwnProperty(prop)) {
         IAS_KEY_MAPPINGS[prop] = keyMappings[prop]
       }
@@ -76,7 +83,7 @@ function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
   if (!utils.isEmpty(adSlot)) {
     p = adSlot.gptSlot;
   } else {
-    if (!utils.isEmpty(adUnitPath) && utils.hasOwn(adUnitPath, bidRequest.code)) {
+    if (!utils.isEmpty(adUnitPath) && adUnitPath.hasOwnProperty(bidRequest.code)) {
       if (utils.isStr(adUnitPath[bidRequest.code]) && !utils.isEmpty(adUnitPath[bidRequest.code])) {
         p = adUnitPath[bidRequest.code];
       }
@@ -86,20 +93,21 @@ function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
 }
 
 function stringifySlot(bidRequest, adUnitPath) {
-  const sizes = utils.getAdUnitSizes(bidRequest);
+  const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
-  const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
+  const adSlot = getGptSlotInfoForAdUnitCode(bidRequest.code);
   const p = getAdUnitPath(adSlot, bidRequest, adUnitPath);
   const slot = { id, ss, p };
-  const keyValues = utils.getKeys(slot).map(function (key) {
+  const keyValues = Object.keys(slot).map(function (key) {
     return [key, slot[key]].join(':');
   });
   return '{' + keyValues.join(',') + '}';
 }
 
 function stringifyWindowSize() {
-  return [window.innerWidth || -1, window.innerHeight || -1].join('.');
+  const { innerWidth, innerHeight } = utils.getWinDimensions();
+  return [innerWidth || -1, innerHeight || -1].join('.');
 }
 
 function stringifyScreenSize() {
@@ -107,8 +115,8 @@ function stringifyScreenSize() {
 }
 
 function renameKeyValues(source) {
-  let result = {};
-  for (let prop in IAS_KEY_MAPPINGS) {
+  const result = {};
+  for (const prop in IAS_KEY_MAPPINGS) {
     if (source.hasOwnProperty(prop)) {
       result[IAS_KEY_MAPPINGS[prop]] = source[prop];
     }
@@ -117,7 +125,7 @@ function renameKeyValues(source) {
 }
 
 function formatTargetingData(adUnit) {
-  let result = {};
+  const result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
   }
@@ -150,13 +158,23 @@ function constructQueryString(anId, adUnits, pageUrl, adUnitPath) {
 }
 
 function parseResponse(result) {
-  let iasResponse = {};
   try {
-    iasResponse = JSON.parse(result);
+    mergeResponseData(JSON.parse(result));
   } catch (err) {
     utils.logError('error', err);
   }
+}
+
+function mergeResponseData(iasResponse) {
+  const cachedSlots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
+
   iasTargeting = iasResponse;
+
+  const slots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
+
+  Object.keys(cachedSlots)
+    .filter((adUnit) => adUnit in slots === false)
+    .forEach((adUnit) => (slots[adUnit] = cachedSlots[adUnit]));
 }
 
 function getTargetingData(adUnits, config, userConsent) {
@@ -184,21 +202,103 @@ function isValidHttpUrl(string) {
   return url.protocol === 'http:' || url.protocol === 'https:';
 }
 
-export function getApiCallback() {
+/**
+ * Maps data using IAS_KEY_MAPPINGS
+ * @param {Object} data - The data to map
+ * @return {Object} The mapped data
+ */
+function mapIasData(data) {
+  const mappedData = {};
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (IAS_KEY_MAPPINGS.hasOwnProperty(key)) {
+      mappedData[IAS_KEY_MAPPINGS[key]] = value;
+    }
+  });
+
+  return mappedData;
+}
+
+/**
+ * Inject brand safety data into ortb2Fragments
+ * @param {Object} brandSafetyData - The brand safety data
+ * @param {Object} ortb2Fragments - The ortb2 fragments object
+ */
+export function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) {
+  if (!brandSafetyData || !ortb2Fragments?.global) return;
+
+  // Map the brand safety data
+  const mappedData = mapIasData(brandSafetyData);
+  if (Object.keys(mappedData).length === 0) return;
+
+  // Add to site.ext.data
+  mergeDeep(ortb2Fragments.global, { site: { ext: { data: mappedData } } });
+  // for nonstandard modules to use
+  mergeDeep(ortb2Fragments.global, { site: { ext: { data: { 'ias-brand-safety': mappedData } } } });
+}
+
+/**
+ * Inject slot-specific data into adUnits
+ * @param {Object} impressionData - The slots data
+ * @param {boolean} fraudData - The fraud data - boolean string value
+ * @param {Array} adUnits - The ad units array
+ */
+export function injectImpressionData(impressionData, fraudData, adUnits) {
+  if (!impressionData || !adUnits?.length) return;
+
+  adUnits.forEach(adUnit => {
+    const impressionDataForAdUnit = impressionData[adUnit.code];
+    if (!impressionDataForAdUnit) return;
+
+    const mappedImpressionData = mapIasData(impressionDataForAdUnit);
+    const mappedFraudData = mapIasData({ "fr": fraudData });
+
+    if (Object.keys(mappedImpressionData).length > 0) {
+      mergeDeep(adUnit, { ortb2Imp: { ext: { data: mappedImpressionData } } });
+    }
+    mergeDeep(adUnit, { ortb2Imp: { ext: { data: mappedFraudData } } });
+  });
+}
+
+/**
+ * Creates a callback for the IAS API response
+ * @param {Object} reqBidsConfigObj - The bid request config object
+ * @return {Object} The callback object
+ */
+export function getApiCallback(reqBidsConfigObj, callback) {
   return {
     success: function (response, req) {
       if (req.status === 200) {
         try {
           parseResponse(response);
+          const data = iasTargeting;
+          if (!data) {
+            utils.logInfo('IAS RTD: No data after parsing response');
+            callback();
+            return;
+          }
+
+          // 1. Inject page-level brand safety data
+          injectBrandSafetyData(data.brandSafety, reqBidsConfigObj.ortb2Fragments, reqBidsConfigObj.adUnits);
+
+          // 2. Inject impression-specific data
+          injectImpressionData(data.slots, data.fr, reqBidsConfigObj.adUnits);
+
+          callback();
         } catch (e) {
-          utils.logError('Unable to parse IAS response.', e);
+          utils.logError('Unable to parse IAS response', e);
+          callback();
         }
+      } else {
+        utils.logInfo('IAS RTD: Non-200 status code:', req.status);
+        callback();
       }
     },
     error: function () {
       utils.logError('failed to retrieve IAS data');
+      callback();
     }
-  }
+  };
 }
 
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
@@ -212,11 +312,10 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const queryString = constructQueryString(pubId, adUnits, pageUrl, adUnitPath);
   ajax(
     `${IAS_HOST}?${queryString}`,
-    getApiCallback(),
+    getApiCallback(reqBidsConfigObj, callback),
     undefined,
     { method: 'GET' }
   );
-  callback()
 }
 
 /** @type {RtdSubmodule} */

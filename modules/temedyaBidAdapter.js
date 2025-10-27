@@ -3,6 +3,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'temedya';
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
 const ENDPOINT_METHOD = 'GET';
@@ -12,20 +20,21 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   /**
-  * Determines whether or not the given bid request is valid.
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params.widgetId);
   },
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -54,16 +63,16 @@ export const spec = {
     });
   },
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {ServerResponse} serverResponse A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     try {
       const bidResponse = serverResponse.body;
       const bidResponses = [];
-      if (bidResponse && bidRequest.options.mediaType == NATIVE) {
+      if (bidResponse && bidRequest.options.mediaType === NATIVE) {
         bidResponse.ads.forEach(function(ad) {
           bidResponses.push({
             requestId: bidRequest.options.requestId,
@@ -97,10 +106,10 @@ export const spec = {
             },
           });
         });
-      } else if (bidResponse && bidRequest.options.mediaType == 'display') {
+      } else if (bidResponse && bidRequest.options.mediaType === 'display') {
         bidResponse.ads.forEach(function(ad) {
-          let w = ad.assets.width || 300;
-          let h = ad.assets.height || 250;
+          const w = ad.assets.width || 300;
+          const h = ad.assets.height || 250;
           let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
           htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
           htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>';

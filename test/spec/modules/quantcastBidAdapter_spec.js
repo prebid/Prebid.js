@@ -13,6 +13,7 @@ import {
 import { newBidder } from '../../../src/adapters/bidderFactory.js';
 import { parseUrl } from 'src/utils.js';
 import { config } from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -20,10 +21,10 @@ describe('Quantcast adapter', function () {
   let bidderRequest;
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
   });
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       quantcast: {
         storageAllowed: true
       }
@@ -181,7 +182,6 @@ describe('Quantcast adapter', function () {
         maxbitrate: 10, // optional
         playbackmethod: [1], // optional
         delivery: [1], // optional
-        placement: 1, // optional
         api: [2, 3] // optional
       }, {
         context: 'instream',
@@ -205,7 +205,6 @@ describe('Quantcast adapter', function () {
               maxbitrate: 10,
               playbackmethod: [1],
               delivery: [1],
-              placement: 1,
               api: [2, 3],
               w: 600,
               h: 300
@@ -242,7 +241,6 @@ describe('Quantcast adapter', function () {
         maxbitrate: 10, // optional
         playbackmethod: [1], // optional
         delivery: [1], // optional
-        placement: 1, // optional
         api: [2, 3], // optional
         context: 'instream',
         playerSize: [600, 300]
@@ -265,7 +263,6 @@ describe('Quantcast adapter', function () {
               maxbitrate: 10,
               playbackmethod: [1],
               delivery: [1],
-              placement: 1,
               api: [2, 3],
               w: 600,
               h: 300
@@ -611,7 +608,7 @@ describe('Quantcast adapter', function () {
   describe('propagates coppa', function() {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {

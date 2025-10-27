@@ -4,6 +4,14 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 import {Renderer} from '../src/Renderer.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'rtbsape';
 const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid';
 const RENDERER_SRC = 'https://cdn-rtb.sape.ru/js/player.js';
@@ -32,13 +40,14 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let tz = (new Date()).getTimezoneOffset()
-    let padInt = (v) => (v < 10 ? '0' + v : '' + v);
+    const tz = (new Date()).getTimezoneOffset()
+    const padInt = (v) => (v < 10 ? '0' + v : '' + v);
 
     return {
       url: ENDPOINT,
       method: 'POST',
       data: {
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidderRequest.auctionId,
         requestId: bidderRequest.bidderRequestId,
         bids: validBidRequests,
@@ -61,17 +70,19 @@ export const spec = {
       return [];
     }
 
-    let bids = {};
-    bidRequest.data.bids.forEach(bid => bids[bid.bidId] = bid);
+    const bids = {};
+    bidRequest.data.bids.forEach(bid => {
+      bids[bid.bidId] = bid;
+    });
 
     return serverResponse.body.bids
       .filter(bid => typeof (bid.meta || {}).advertiserDomains !== 'undefined')
       .map(bid => {
-        let requestBid = bids[bid.requestId];
-        let context = deepAccess(requestBid, 'mediaTypes.video.context');
+        const requestBid = bids[bid.requestId];
+        const context = deepAccess(requestBid, 'mediaTypes.video.context');
 
         if (context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
-          let renderer = Renderer.install({
+          const renderer = Renderer.install({
             id: bid.requestId,
             url: RENDERER_SRC,
             loaded: false
@@ -126,7 +137,7 @@ export const spec = {
  * @param bid
  */
 function setOutstreamRenderer(bid) {
-  let props = {};
+  const props = {};
   if (bid.vastUrl) {
     props.url = bid.vastUrl;
   }
@@ -134,7 +145,7 @@ function setOutstreamRenderer(bid) {
     props.xml = bid.vastXml;
   }
   bid.renderer.push(() => {
-    let player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, {singleton: true});
+    const player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, {singleton: true});
     props.onComplete = () => player.destroy();
     props.onError = () => player.destroy();
     player.addSlot(props);

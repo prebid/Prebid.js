@@ -1,23 +1,44 @@
-import { deepAccess, isArray, isStr, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import {
+  buildUrl,
+  deepAccess, generateUUID, getBidIdParameter,
+  getValue,
+  isArray,
+  isPlainObject,
+  logInfo,
+  logWarn,
+  triggerPixel
+} from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'beop';
-const ENDPOINT_URL = 'https://hb.beop.io/bid';
+const ENDPOINT_URL = 'https://hb.collectiveaudience.co/bid';
+const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: TCF_VENDOR_ID,
   aliases: ['bp'],
   /**
-    * Test if the bid request is valid.
-    *
-    * @param {bid} : The Bid params
-    * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
-    */
+   * Test if the bid request is valid.
+   *
+   * @param {Bid} bid The Bid params
+   * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
+   */
   isBidRequestValid: function(bid) {
     const id = bid.params.accountId || bid.params.networkId;
     if (id === null || typeof id === 'undefined') {
@@ -29,43 +50,54 @@ export const spec = {
     return bid.mediaTypes.banner !== null && typeof bid.mediaTypes.banner !== 'undefined';
   },
   /**
-    * Create a BeOp server request from a list of BidRequest
-    *
-    * @param {validBidRequests[], ...} : The array of validated bidRequests
-    * @param {... , bidderRequest} : Common params for each bidRequests
-    * @return ServerRequest Info describing the request to the BeOp's server
-    */
+   * Create a BeOp server request from a list of BidRequest
+   *
+   * @param {validBidRequests} validBidRequests The array of validated bidRequests
+   * @param {BidderRequest} bidderRequest Common params for each bidRequests
+   * @return ServerRequest Info describing the request to the BeOp's server
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const slots = validBidRequests.map((bid) => beOpRequestSlotsMaker(bid, bidderRequest));
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
+    const userBpSegs = firstPartyData.user?.ext?.bpsegs || firstPartyData.user?.ext?.data?.bpsegs || [];
+    const siteBpSegs = firstPartyData.site?.ext?.bpsegs || firstPartyData.site?.ext?.data?.bpsegs || [];
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
     const kwdsFromRequest = firstSlot.kwds;
-    let keywords = [];
-    if (kwdsFromRequest) {
-      if (isArray(kwdsFromRequest)) {
-        keywords = kwdsFromRequest;
-      } else if (isStr(kwdsFromRequest)) {
-        if (kwdsFromRequest.indexOf(',') != -1) {
-          keywords = kwdsFromRequest.split(',').map((e) => { return e.trim() });
-        } else {
-          keywords.push(kwdsFromRequest);
-        }
+    const keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
+
+    let beopid = '';
+    if (storage.cookiesAreEnabled) {
+      beopid = storage.getCookie(COOKIE_NAME, undefined);
+      if (!beopid) {
+        beopid = generateUUID();
+        const expirationDate = new Date();
+        expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
+        storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
       }
+    } else {
+      storage.setCookie(COOKIE_NAME, '', 0);
     }
+
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
+      bpsegs: (userBpSegs.concat(siteBpSegs, psegs)).map(item => item.toString()),
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
       dbg: false,
+      fg: beopid,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
+      eids: firstSlot.eids,
+      pv: '$prebid.version$'
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -82,61 +114,91 @@ export const spec = {
     return [];
   },
   onTimeout: function(timeoutData) {
-    if (timeoutData === null || typeof timeoutData === 'undefined' || Object.keys(timeoutData).length === 0) {
+    if (!Array.isArray(timeoutData) || timeoutData.length === 0) {
       return;
     }
 
-    let trackingParams = buildTrackingParams(timeoutData, 'timeout', timeoutData.timeout);
+    timeoutData.forEach((timeout) => {
+      const trackingParams = buildTrackingParams(timeout, 'timeout', timeout.timeout);
 
-    logWarn(BIDDER_CODE + ': timed out request');
-    triggerPixel(buildUrl({
-      protocol: 'https',
-      hostname: 't.beop.io',
-      pathname: '/bid',
-      search: trackingParams
-    }));
+      logWarn(BIDDER_CODE + ': timed out request for adUnitCode ' + timeout.adUnitCode);
+      triggerPixel(buildUrl({
+        protocol: 'https',
+        hostname: 't.collectiveaudience.co',
+        pathname: '/bid',
+        search: trackingParams
+      }));
+    });
   },
   onBidWon: function(bid) {
     if (bid === null || typeof bid === 'undefined' || Object.keys(bid).length === 0) {
       return;
     }
-    let trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
+    const trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
 
     logInfo(BIDDER_CODE + ': won request');
     triggerPixel(buildUrl({
       protocol: 'https',
-      hostname: 't.beop.io',
+      hostname: 't.collectiveaudience.co',
       pathname: '/bid',
       search: trackingParams
     }));
   },
-  onSetTargeting: function(bid) {}
+
+  /**
+   * User syncs.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {UserSync[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+
+    if (serverResponses.length > 0) {
+      const body = serverResponses[0].body;
+
+      if (syncOptions.iframeEnabled && Array.isArray(body.sync_frames)) {
+        body.sync_frames.forEach(url => {
+          syncs.push({ type: 'iframe', url });
+        });
+      }
+
+      if (syncOptions.pixelEnabled && Array.isArray(body.sync_pixels)) {
+        body.sync_pixels.forEach(url => {
+          syncs.push({ type: 'image', url });
+        });
+      }
+    }
+
+    return syncs;
+  }
 }
 
 function buildTrackingParams(data, info, value) {
-  let params = Array.isArray(data.params) ? data.params[0] : data.params;
+  const params = Array.isArray(data.params) ? data.params[0] : data.params || {};
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    pid: params.accountId ?? (data.ad?.match(/account: “([a-f\d]{24})“/)?.[1] ?? ''),
     nid: params.networkId,
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
-    aid: data.auctionId,
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
-    url: pageUrl
+    url: pageUrl,
+    pv: '$prebid.version$'
   };
 }
 
-function beOpRequestSlotsMaker(bid) {
+function beOpRequestSlotsMaker(bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-  const publisherCurrency = config.getConfig('currency.adServerCurrency') || getValue(bid.params, 'currency') || 'EUR';
+  const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
-    if (typeof floorInfo === 'object' && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }
@@ -150,11 +212,11 @@ function beOpRequestSlotsMaker(bid) {
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
     name: getBidIdParameter('adUnitCode', bid),
-    aid: getBidIdParameter('auctionId', bid),
-    tid: getBidIdParameter('transactionId', bid),
+    tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
+    eids: bid.userIdAsEids,
   }
 }
 

@@ -1,6 +1,15 @@
-import {deepAccess, isArray} from '../src/utils.js';
+import {isArray, setOnAny} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'codefuel';
 const CURRENCY = 'USD';
@@ -10,11 +19,11 @@ export const spec = {
   supportedMediaTypes: [ BANNER ],
   aliases: ['ex'], // short code
   /**
-         * Determines whether or not the given bid request is valid.
-         *
-         * @param {BidRequest} bid The bid params to validate.
-         * @return boolean True if this is a valid bid, and false otherwise.
-         */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     if (bid.nativeParams) {
       return false;
@@ -22,11 +31,11 @@ export const spec = {
     return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
   /**
-         * Make a server request from the list of BidRequests.
-         *
-         * @param {validBidRequests[]} - an array of bids
-         * @return ServerRequest Info describing the request to the server.
-         */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests} validBidRequests - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.page;
     const domain = bidderRequest.refererInfo.domain;
@@ -37,7 +46,9 @@ export const spec = {
     const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
-    validBidRequests.forEach(bid => bid.netRevenue = 'net');
+    validBidRequests.forEach(bid => {
+      bid.netRevenue = 'net';
+    });
 
     const imps = validBidRequests.map((bid, idx) => {
       const imp = {
@@ -58,7 +69,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: { page, domain, publisher },
       device: { ua, devicetype },
       source: { fd: 1 },
@@ -78,11 +89,11 @@ export const spec = {
     };
   },
   /**
-         * Unpack the response from the server into a list of bids.
-         *
-         * @param {ServerResponse} serverResponse A successful response from the server.
-         * @return {Bid[]} An array of bids which were nested inside the server.
-         */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: (serverResponse, { bids }) => {
     if (!serverResponse.body) {
       return [];
@@ -112,16 +123,17 @@ export const spec = {
         };
         return bidObject;
       }
+      return undefined;
     }).filter(Boolean);
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     return [];
   }
@@ -137,15 +149,6 @@ function getDeviceType() {
     return 4; // 'mobile'
   }
   return 2; // 'desktop'
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

@@ -5,6 +5,7 @@ import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
 import { deepClone, parseQueryStringParameters } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import * as utils from 'src/utils.js';
 
 const {
   code,
@@ -175,7 +176,7 @@ describe('pubGENIUS adapter', () => {
         method: 'POST',
         url: 'https://auction.adpearl.io/prebid/auction',
         data: {
-          id: 'fake-auction-id',
+          id: 'fakebidderrequestid',
           imp: [
             {
               id: 'fakebidid',
@@ -294,7 +295,10 @@ describe('pubGENIUS adapter', () => {
           }
         ]
       };
-      bidRequest.schain = deepClone(schain);
+      bidRequest.ortb2 = bidRequest.ortb2 || {};
+      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
+      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
+      bidRequest.ortb2.source.ext.schain = deepClone(schain);
       expectedRequest.data.source = {
         ext: { schain: deepClone(schain) },
       };
@@ -382,7 +386,6 @@ describe('pubGENIUS adapter', () => {
         w: 200,
         h: 100,
         startdelay: -1,
-        placement: 1,
         skip: 1,
         skipafter: 1,
         playbackmethod: [3, 4],

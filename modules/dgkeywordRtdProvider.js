@@ -6,11 +6,14 @@
  * @module modules/dgkeywordProvider
  * @requires module:modules/realTimeData
  */
-
-import {logMessage, deepSetValue, logError, logInfo, mergeDeep} from '../src/utils.js';
+import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /**
  * get keywords from api server. and set keywords.
@@ -34,7 +37,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
-  let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
+  const setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
   if (setKeywordTargetBidders.length <= 0) {
     logMessage('[dgkeyword sub module] no dgkeyword targets.');
     callback();
@@ -47,7 +50,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         if (!isFinish) {
           logMessage('[dgkeyword sub module] get targets from profile api end.');
           if (res) {
-            let keywords = {};
+            const keywords = {};
             if (res['s'] != null && res['s'].length > 0) {
               keywords['opeaud'] = res['s'];
             }
@@ -56,20 +59,12 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
             }
             if (Object.keys(keywords).length > 0) {
               const targetBidKeys = {};
-              for (let bid of setKeywordTargetBidders) {
-                // set keywords to params
-                bid.params.keywords = keywords;
+              for (const bid of setKeywordTargetBidders) {
+                // set keywords to ortb2Imp
+                deepSetValue(bid, 'ortb2Imp.ext.data.keywords', convertKeywordsToString(keywords));
                 if (!targetBidKeys[bid.bidder]) {
                   targetBidKeys[bid.bidder] = true;
                 }
-              }
-
-              if (!reqBidsConfigObj._ignoreSetOrtb2) {
-                // set keywrods to ortb2
-                let addOrtb2 = {};
-                deepSetValue(addOrtb2, 'site.keywords', keywords);
-                deepSetValue(addOrtb2, 'user.keywords', keywords);
-                mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, Object.fromEntries(Object.keys(targetBidKeys).map(bidder => [bidder, addOrtb2])));
               }
             }
           }
@@ -106,6 +101,8 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
+    // TODO: use storageManager
+    // eslint-disable-next-line no-restricted-properties
     const fpid = window.localStorage.getItem('ope_fpid');
     if (fpid) {
       return fpid;
@@ -121,9 +118,9 @@ export function readFpidFromLocalStrage() {
  * @param {Object} adUnits
  */
 export function getTargetBidderOfDgKeywords(adUnits) {
-  let setKeywordTargetBidders = [];
-  for (let adUnit of adUnits) {
-    for (let bid of adUnit.bids) {
+  const setKeywordTargetBidders = [];
+  for (const adUnit of adUnits) {
+    for (const bid of adUnit.bids) {
       if (bid.params && bid.params['dgkeyword'] === true) {
         delete bid.params['dgkeyword'];
         setKeywordTargetBidders.push(bid);
@@ -156,4 +153,37 @@ function init(moduleConfig) {
 function registerSubModule() {
   submodule('realTimeData', dgkeywordSubmodule);
 }
+
+// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
+export function convertKeywordsToString(keywords) {
+  let result = '';
+  Object.keys(keywords).forEach(key => {
+    // if 'text' or ''
+    if (isStr(keywords[key])) {
+      if (keywords[key] !== '') {
+        result += `${key}=${keywords[key]},`
+      } else {
+        result += `${key},`;
+      }
+    } else if (isArray(keywords[key])) {
+      let isValSet = false
+      keywords[key].forEach(val => {
+        if (isStr(val) && val) {
+          result += `${key}=${val},`
+          isValSet = true
+        }
+      });
+      if (!isValSet) {
+        result += `${key},`
+      }
+    } else {
+      result += `${key},`
+    }
+  });
+
+  // remove last trailing comma
+  result = result.substring(0, result.length - 1);
+  return result;
+}
+
 registerSubModule();

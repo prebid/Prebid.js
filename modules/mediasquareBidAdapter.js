@@ -6,6 +6,15 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {Renderer} from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
 const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
@@ -20,50 +29,51 @@ export const spec = {
   aliases: ['msq'], // short code
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
-         * Determines whether or not the given bid request is valid.
-         *
-         * @param {BidRequest} bid The bid params to validate.
-         * @return boolean True if this is a valid bid, and false otherwise.
-         */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.owner && bid.params.code);
   },
   /**
-         * Make a server request from the list of BidRequests.
-         *
-         * @param {validBidRequests[]} - an array of bids
-         * @return ServerRequest Info describing the request to the server.
-         */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let codes = [];
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let floor = {};
+    const codes = [];
+    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
-      floor = {};
       adunitValue = validBidRequests[key];
-      if (typeof adunitValue.getFloor === 'function') {
-        if (Array.isArray(adunitValue.sizes)) {
-          adunitValue.sizes.forEach(value => {
-            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
-          });
-        }
-      }
-      codes.push({
+      const code = {
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
-        auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
         mediatypes: adunitValue.mediaTypes,
-        floor: floor
-      });
+        floor: {}
+      }
+      if (typeof adunitValue.getFloor === 'function') {
+        if (Array.isArray(adunitValue.sizes)) {
+          adunitValue.sizes.forEach(value => {
+            const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor[value.join('x')] = tmpFloor; }
+          });
+        }
+        const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
+      }
+      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
+      codes.push(code);
     });
     const payload = {
       codes: codes,
@@ -79,12 +89,10 @@ export const spec = {
         };
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
-      if (bidderRequest.userId) {
-        payload.userId = bidderRequest.userId;
-      } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
-        payload.userId = bidderRequest.bids[0].userId;
-      }
+      if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
+      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
+      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -95,11 +103,11 @@ export const spec = {
     };
   },
   /**
-         * Unpack the response from the server into a list of bids.
-         *
-         * @param {ServerResponse} serverResponse A successful response from the server.
-         * @return {Bid[]} An array of bids which were nested inside the server.
-         */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     // const headerValue = serverResponse.headers.get('some-response-header');
@@ -119,20 +127,18 @@ export const spec = {
           netRevenue: value['net_revenue'],
           ttl: value['ttl'],
           ad: value['ad'],
-          mediasquare: {
-            'bidder': value['bidder'],
-            'code': value['code']
-          },
+          mediasquare: {},
           meta: {
             'advertiserDomains': value['adomain']
           }
         };
-        if ('match' in value) {
-          bidResponse['mediasquare']['match'] = value['match'];
-        }
-        if ('hasConsent' in value) {
-          bidResponse['mediasquare']['hasConsent'] = value['hasConsent'];
-        }
+        if ('dsa' in value) { bidResponse.meta.dsa = value['dsa']; }
+        const paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+        paramsToSearchFor.forEach(param => {
+          if (param in value) {
+            bidResponse['mediasquare'][param] = value[param];
+          }
+        });
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -150,14 +156,14 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
+    if (typeof serverResponses === 'object' && serverResponses !== null && serverResponses !== undefined && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
@@ -166,26 +172,36 @@ export const spec = {
   },
 
   /**
-     * Register bidder specific code, which will execute if a bid from this bidder won the auction
-     * @param {Bid} The bid that won the auction
-     */
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {Object} bid The bid that won the auction
+   */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
-    if (bid.hasOwnProperty('mediasquare')) {
-      if (bid['mediasquare'].hasOwnProperty('bidder')) { params['bidder'] = bid['mediasquare']['bidder']; }
-      if (bid['mediasquare'].hasOwnProperty('code')) { params['code'] = bid['mediasquare']['code']; }
-      if (bid['mediasquare'].hasOwnProperty('match')) { params['match'] = bid['mediasquare']['match']; }
-      if (bid['mediasquare'].hasOwnProperty('hasConsent')) { params['hasConsent'] = bid['mediasquare']['hasConsent']; }
-    };
-    for (let i = 0; i < paramsToSearchFor.length; i++) {
-      if (bid.hasOwnProperty(paramsToSearchFor[i])) {
-        params[paramsToSearchFor[i]] = bid[paramsToSearchFor[i]];
-        if (typeof params[paramsToSearchFor[i]] == 'number') { params[paramsToSearchFor[i]] = params[paramsToSearchFor[i]].toString() }
-      }
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType === 'video') {
+      return;
     }
+    const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
+    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+    if (bid.hasOwnProperty('mediasquare')) {
+      paramsToSearchFor.forEach(param => {
+        if (bid['mediasquare'].hasOwnProperty(param)) {
+          params[param] = bid['mediasquare'][param];
+          if (typeof params[param] === 'number') {
+            params[param] = params[param].toString();
+          }
+        }
+      });
+    };
+    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+    paramsToSearchFor.forEach(param => {
+      if (bid.hasOwnProperty(param)) {
+        params[param] = bid[param];
+        if (typeof params[param] === 'number') {
+          params[param] = params[param].toString();
+        }
+      }
+    });
     ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
     return true;
   }

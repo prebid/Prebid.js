@@ -1,7 +1,7 @@
 import {memoize, timestamp} from '../utils.js';
 import {getCoreStorageManager} from '../storageManager.js';
 
-export const coreStorage = getCoreStorageManager();
+export const coreStorage = getCoreStorageManager('fpdEnrichment');
 
 /**
  * Find the root domain by testing for the topmost domain that will allow setting cookies.
@@ -23,7 +23,7 @@ export const findRootDomain = memoize(function findRootDomain(fullDomain = windo
   const TEST_COOKIE_VALUE = 'writeable';
   do {
     rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
+    const expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
 
     // Write a test cookie
     coreStorage.setCookie(

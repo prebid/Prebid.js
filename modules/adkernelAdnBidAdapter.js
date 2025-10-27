@@ -1,7 +1,8 @@
-import { deepAccess, parseSizesInput, isArray, deepSetValue, isStr, isNumber, logInfo } from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -14,21 +15,21 @@ function isRtbDebugEnabled(refInfo) {
 }
 
 function buildImp(bidRequest) {
-  let imp = {
+  const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
   let mediaType;
-  let bannerReq = deepAccess(bidRequest, `mediaTypes.banner`);
-  let videoReq = deepAccess(bidRequest, `mediaTypes.video`);
+  const bannerReq = deepAccess(bidRequest, `mediaTypes.banner`);
+  const videoReq = deepAccess(bidRequest, `mediaTypes.video`);
   if (bannerReq) {
-    let sizes = canonicalizeSizesArray(bannerReq.sizes);
+    const sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: parseSizesInput(sizes)
     };
     mediaType = BANNER;
   } else if (videoReq) {
-    let size = canonicalizeSizesArray(videoReq.playerSize)[0];
+    const size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
       w: size[0],
       h: size[1],
@@ -38,7 +39,7 @@ function buildImp(bidRequest) {
     };
     mediaType = VIDEO;
   }
-  let bidFloor = getBidFloor(bidRequest, mediaType, '*');
+  const bidFloor = getBidFloor(bidRequest, mediaType, '*');
   if (bidFloor) {
     imp.bidfloor = bidFloor;
   }
@@ -58,11 +59,11 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
-  let req = {
-    id: auctionId,
-    // TODO: transactionId is undefined here, should this be auctionId? see #8573
-    tid: transactionId,
+  const {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
+  const req = {
+    id: bidderRequest.bidderRequestId,
+    // TODO: root-level `tid` is not ORTB; is this intentional?
+    tid: ortb2?.source?.tid,
     site: buildSite(refererInfo),
     imp: tags
   };
@@ -89,7 +90,7 @@ function buildSite(refInfo) {
     secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
     ref: refInfo.ref
   }
-  let keywords = document.getElementsByTagName('meta')['keywords'];
+  const keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
     result.keywords = keywords.content;
   }
@@ -97,9 +98,8 @@ function buildSite(refInfo) {
 }
 
 function buildBid(tag) {
-  let bid = {
+  const bid = {
     requestId: tag.impid,
-    bidderCode: spec.code,
     cpm: tag.bid,
     creativeId: tag.crid,
     currency: 'USD',
@@ -144,23 +144,11 @@ function fillBidMeta(bid, tag) {
   }
 }
 
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
-}
-
 export const spec = {
   code: 'adkernelAdn',
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['engagesimply'],
+  aliases: ['engagesimply', 'adpluto_dsp'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&
@@ -171,21 +159,21 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
-    let dispatch = bidRequests.map(buildImp)
+    const dispatch = bidRequests.map(buildImp)
       .reduce((acc, curr, index) => {
-        let bidRequest = bidRequests[index];
-        let pubId = bidRequest.params.pubId;
-        let host = bidRequest.params.host || DEFAULT_ADKERNEL_DSP_DOMAIN;
+        const bidRequest = bidRequests[index];
+        const pubId = bidRequest.params.pubId;
+        const host = bidRequest.params.host || DEFAULT_ADKERNEL_DSP_DOMAIN;
         acc[host] = acc[host] || {};
         acc[host][pubId] = acc[host][pubId] || [];
         acc[host][pubId].push(curr);
         return acc;
       }, {});
 
-    let requests = [];
+    const requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(dispatch[host][pubId], bidderRequest);
+        const request = buildRequestParams(dispatch[host][pubId], bidderRequest);
         requests.push({
           method: 'POST',
           url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
@@ -197,7 +185,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse) {
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (!response.tags) {
       return [];
     }

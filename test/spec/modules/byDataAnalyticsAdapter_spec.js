@@ -1,14 +1,15 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
-let adapterManager = require('src/adapterManager').default;
-let events = require('src/events');
-let constants = require('src/constants.json');
-let auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2';
+import {EVENTS} from 'src/constants.js';
+
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
+const auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2';
 const initOptions = {
   clientId: 'asc00000',
   logFrequency: 1,
 };
-let userData = {
+const userData = {
   'uid': '271a8-2b86-f4a4-f59bc',
   'cid': 'asc00000',
   'pid': 'www.letsrun.com',
@@ -23,13 +24,13 @@ let userData = {
   'de': 'Desktop',
   'tz': 'Asia/Calcutta'
 };
-let bidTimeoutArgs = [{
+const bidTimeoutArgs = [{
   auctionId,
   bidId: '12e90cb5ddc5dea',
   bidder: 'appnexus',
   adUnitCode: 'div-gpt-ad-mrec1'
 }];
-let noBidArgs = {
+const noBidArgs = {
   adUnitCode: 'div-gpt-ad-mrec1',
   auctionId,
   bidId: '14480e9832f2d2b',
@@ -40,7 +41,7 @@ let noBidArgs = {
   src: 'client',
   transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
 }
-let bidWonArgs = {
+const bidWonArgs = {
   auctionId,
   adUnitCode: 'div-gpt-ad-mrec1',
   size: '300x250',
@@ -52,7 +53,7 @@ let bidWonArgs = {
   cpm: 0.50
 }
 
-let auctionEndArgs = {
+const auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
   adUnits: [{
     code: 'div-gpt-ad-mrec1',
@@ -86,7 +87,7 @@ let auctionEndArgs = {
     ]
   }]
 }
-let expectedDataArgs = {
+const expectedDataArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
   as: 1627973484504,
@@ -96,7 +97,7 @@ let expectedDataArgs = {
     aus: '300x250',
     bidadv: 'appnexus',
     bid: '14480e9832f2d2b',
-    inb: 0,
+    inb: 1,
     ito: 0,
     ipwb: 0,
     iwb: 0,
@@ -107,14 +108,14 @@ let expectedDataArgs = {
     aus: '250x250',
     bidadv: 'appnexus',
     bid: '14480e9832f2d2b',
-    inb: 0,
+    inb: 1,
     ito: 0,
     ipwb: 0,
     iwb: 0,
     mt: 'display',
   }]
 }
-let expectedBidWonArgs = {
+const expectedBidWonArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
   as: '',
@@ -167,16 +168,18 @@ describe('byData Analytics Adapter ', () => {
   });
 
   describe('track-events', function () {
-    ascAdapter.enableAnalytics(initOptions)
-    // Step 1: Initialize adapter
-    adapterManager.enableAnalytics({
-      provider: 'bydata',
-      options: initOptions
+    before(() => {
+      ascAdapter.enableAnalytics(initOptions)
+      // Step 1: Initialize adapter
+      adapterManager.enableAnalytics({
+        provider: 'bydata',
+        options: initOptions
+      });
     });
     it('sends and formatted auction data ', function () {
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
-      events.emit(constants.EVENTS.NO_BID, noBidArgs);
-      events.emit(constants.EVENTS.BID_WON, bidWonArgs)
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
+      events.emit(EVENTS.NO_BID, noBidArgs);
+      events.emit(EVENTS.BID_WON, bidWonArgs)
       var userToken = ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);

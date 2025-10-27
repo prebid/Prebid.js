@@ -19,6 +19,13 @@
           divId: 'player', // required to indicate which player is being used to render this ad unit.
         },
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
@@ -36,10 +43,12 @@
               divId: 'player',
               vendorCode: 1, // JW Player vendorCode
               playerConfig: {
-                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                licenseKey: 'zwqnWJlovTKhXv2JIcKBj0Si//K7cVPmBDEyaILcAMw+nVKaizsJRA==',
                 params: {
                   vendorConfig: {
                     file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                    width: 640,
+                    height: 480,
                     advertising: { client: 'googima' }
                   }
                 }
@@ -56,7 +65,6 @@
                 //   output: 'vast'
                 // },
                 baseAdTagUrl: 'https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_preroll_skippable&sz=640x480&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator='
-                //'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/137679306/HB_Dev_Center_Example&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&correlator=',
               },
             },]
           },
@@ -106,7 +114,7 @@
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
-        pbjs.requestBids(adUnits);
+        pbjs.requestBids();
       });
     </script>
 </head>

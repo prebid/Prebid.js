@@ -3,6 +3,12 @@ import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'consumable';
 
 const BASE_URI = 'https://e.serverbid.com/api/v2';
@@ -27,12 +33,13 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests An array of bids
+   * @param {Object} bidderRequest The bidder's request info.
    * @return ServerRequest Info describing the request to the server.
    */
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let ret = {
+    const ret = {
       method: 'POST',
       url: '',
       data: '',
@@ -55,7 +62,8 @@ export const spec = {
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }]
+      }],
+      lang: bidderRequest.ortb2.device.language,
     }, validBidRequests[0].params);
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -65,19 +73,25 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.gppConsent && bidderRequest.gppConsent.gppString) {
+      data.gpp = bidderRequest.gppConsent.gppString;
+      data.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    }
+
     if (bidderRequest && bidderRequest.uspConsent) {
       data.ccpa = bidderRequest.uspConsent;
     }
 
-    if (bidderRequest && bidderRequest.schain) {
-      data.schain = bidderRequest.schain;
+    const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      data.schain = schain;
     }
 
     if (config.getConfig('coppa')) {
       data.coppa = true;
     }
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
@@ -116,7 +130,7 @@ export const spec = {
     let bids;
     let bidId;
     let bidObj;
-    let bidResponses = [];
+    const bidResponses = [];
 
     bids = bidRequest.bidRequest;
 
@@ -180,20 +194,26 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncUrl = 'https://sync.serverbid.com/ss/' + siteId + '.html';
 
     if (syncOptions.iframeEnabled) {
       if (gdprConsent && gdprConsent.consentString) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
+          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
         } else {
-          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${gdprConsent.consentString}`);
+          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
+        }
+      }
+      if (gppConsent && gppConsent.gppString) {
+        syncUrl = appendUrlParam(syncUrl, `gpp=${encodeURIComponent(gppConsent.gppString)}`);
+        if (gppConsent.applicableSections && gppConsent.applicableSections.length > 0) {
+          syncUrl = appendUrlParam(syncUrl, `gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
         }
       }
 
-      if (uspConsent && uspConsent.consentString) {
-        syncUrl = appendUrlParam(syncUrl, `us_privacy=${uspConsent.consentString}`);
+      if (uspConsent) {
+        syncUrl = appendUrlParam(syncUrl, `us_privacy=${encodeURIComponent(uspConsent)}`);
       }
 
       if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
@@ -282,6 +302,7 @@ function retrieveAd(decision, unitId, unitName) {
 function handleEids(data, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);
   } else {
     deepSetValue(data, 'user.eids', undefined);
@@ -295,7 +316,7 @@ function getBidFloor(bid, sizes) {
 
   let floor;
 
-  let floorInfo = bid.getFloor({
+  const floorInfo = bid.getFloor({
     currency: 'USD',
     mediaType: bid.mediaTypes.video ? 'video' : 'banner',
     size: sizes.length === 1 ? sizes[0] : '*'

@@ -1,6 +1,11 @@
 import { submodule } from '../src/hook.js';
 import { mergeDeep } from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -24,7 +29,7 @@ function init(config, userConsent) {
     } else {
       scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
     }
-    loadExternalScript(scriptUrl, SUBMODULE_NAME);
+    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME);
   }
   return true;
 }
@@ -34,13 +39,13 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
   var _v1s = [];
   var _v2 = [];
   var arcobj1 = window.arcobj1;
-  if (typeof arcobj1 != 'undefined') {
-    if (typeof arcobj1.page_iab_codes.text != 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.text); }
-    if (typeof arcobj1.page_iab_codes.images != 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.images); }
-    if (typeof arcobj1.page_iab.text != 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.text); }
-    if (typeof arcobj1.page_iab.images != 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.images); }
-    if (typeof arcobj1.page_iab_newcodes.text != 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.text])]; }
-    if (typeof arcobj1.page_iab_newcodes.images != 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.images])]; }
+  if (typeof arcobj1 !== 'undefined') {
+    if (typeof arcobj1.page_iab_codes.text !== 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.text); }
+    if (typeof arcobj1.page_iab_codes.images !== 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.images); }
+    if (typeof arcobj1.page_iab.text !== 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.text); }
+    if (typeof arcobj1.page_iab.images !== 'undefined') { _v1s = _v1s.concat(arcobj1.page_iab.images); }
+    if (typeof arcobj1.page_iab_newcodes.text !== 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.text])]; }
+    if (typeof arcobj1.page_iab_newcodes.images !== 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.images])]; }
 
     var _content = {};
     _content.data = [];

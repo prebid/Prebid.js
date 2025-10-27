@@ -2,9 +2,10 @@ import yieldoneAnalytics from 'modules/yieldoneAnalyticsAdapter.js';
 import { targeting } from 'src/targeting.js';
 import { expect } from 'chai';
 import _ from 'lodash';
-let events = require('src/events');
-let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
+import { EVENTS } from 'src/constants.js';
+
+const events = require('src/events');
+const adapterManager = require('src/adapterManager').default;
 
 describe('Yieldone Prebid Analytic', function () {
   let sendStatStub;
@@ -12,25 +13,28 @@ describe('Yieldone Prebid Analytic', function () {
   const fakeTargeting = {
     '0000': {'someId': 'someValue'}
   };
+  let clock;
 
   describe('enableAnalytics', function () {
     beforeEach(function () {
       sendStatStub = sinon.stub(yieldoneAnalytics, 'sendStat');
       getAllTargetingStub = sinon.stub(targeting, 'getAllTargeting').returns(fakeTargeting);
       sinon.stub(events, 'getEvents').returns([]);
+      clock = sinon.useFakeTimers();
     });
 
     afterEach(function () {
       sendStatStub.restore();
       getAllTargetingStub.restore();
       events.getEvents.restore();
+      clock.restore();
     });
 
     after(function () {
       yieldoneAnalytics.disableAnalytics();
     });
 
-    it('should catch all events', function (done) {
+    it('should catch all events', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'yieldone',
         adapter: yieldoneAnalytics
@@ -187,38 +191,38 @@ describe('Yieldone Prebid Analytic', function () {
 
       const expectedEvents = [
         {
-          eventType: constants.EVENTS.AUCTION_INIT,
+          eventType: EVENTS.AUCTION_INIT,
           params: {
             config: initOptions,
             auctionId: auctionId
           }
         },
         {
-          eventType: constants.EVENTS.BID_REQUESTED,
+          eventType: EVENTS.BID_REQUESTED,
           params: Object.assign(request[0])
         },
         {
-          eventType: constants.EVENTS.BID_REQUESTED,
+          eventType: EVENTS.BID_REQUESTED,
           params: Object.assign(request[1])
         },
         {
-          eventType: constants.EVENTS.BID_REQUESTED,
+          eventType: EVENTS.BID_REQUESTED,
           params: Object.assign(request[2])
         },
         {
-          eventType: constants.EVENTS.BID_RESPONSE,
+          eventType: EVENTS.BID_RESPONSE,
           params: Object.assign(preparedResponses[0])
         },
         {
-          eventType: constants.EVENTS.BID_RESPONSE,
+          eventType: EVENTS.BID_RESPONSE,
           params: Object.assign(preparedResponses[1])
         },
         {
-          eventType: constants.EVENTS.BID_RESPONSE,
+          eventType: EVENTS.BID_RESPONSE,
           params: Object.assign(preparedResponses[2])
         },
         {
-          eventType: constants.EVENTS.BID_TIMEOUT,
+          eventType: EVENTS.BID_TIMEOUT,
           params: Object.assign(request[2])
         }
       ];
@@ -235,7 +239,7 @@ describe('Yieldone Prebid Analytic', function () {
       delete preparedWinnerParams.ad;
       const wonExpectedEvents = [
         {
-          eventType: constants.EVENTS.BID_WON,
+          eventType: EVENTS.BID_WON,
           params: preparedWinnerParams
         }
       ];
@@ -251,37 +255,35 @@ describe('Yieldone Prebid Analytic', function () {
         options: initOptions
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: auctionId});
+      events.emit(EVENTS.AUCTION_INIT, { config: initOptions, auctionId: auctionId });
 
-      events.emit(constants.EVENTS.BID_REQUESTED, request[0]);
-      events.emit(constants.EVENTS.BID_REQUESTED, request[1]);
-      events.emit(constants.EVENTS.BID_REQUESTED, request[2]);
+      events.emit(EVENTS.BID_REQUESTED, request[0]);
+      events.emit(EVENTS.BID_REQUESTED, request[1]);
+      events.emit(EVENTS.BID_REQUESTED, request[2]);
 
-      events.emit(constants.EVENTS.BID_RESPONSE, responses[0]);
-      events.emit(constants.EVENTS.BID_RESPONSE, responses[1]);
-      events.emit(constants.EVENTS.BID_RESPONSE, responses[2]);
+      events.emit(EVENTS.BID_RESPONSE, responses[0]);
+      events.emit(EVENTS.BID_RESPONSE, responses[1]);
+      events.emit(EVENTS.BID_RESPONSE, responses[2]);
 
-      events.emit(constants.EVENTS.BID_TIMEOUT, [responses[3], responses[4]]);
+      events.emit(EVENTS.BID_TIMEOUT, [responses[3], responses[4]]);
 
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
 
       sinon.assert.match(yieldoneAnalytics.eventsStorage[auctionId], expectedResult);
 
       delete yieldoneAnalytics.eventsStorage[auctionId];
 
-      setTimeout(function() {
-        events.emit(constants.EVENTS.BID_WON, winner);
+      clock.tick(1000);
+      events.emit(EVENTS.BID_WON, winner);
 
-        sinon.assert.callCount(sendStatStub, 2)
-        const billableEventIndex = yieldoneAnalytics.eventsStorage[auctionId].events.findIndex(event => event.eventType === constants.EVENTS.BILLABLE_EVENT);
-        if (billableEventIndex > -1) {
-          yieldoneAnalytics.eventsStorage[auctionId].events.splice(billableEventIndex, 1);
-        }
-        expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
+      sinon.assert.callCount(sendStatStub, 2);
+      const billableEventIndex = yieldoneAnalytics.eventsStorage[auctionId].events.findIndex(event => event.eventType === EVENTS.BILLABLE_EVENT);
+      if (billableEventIndex > -1) {
+        yieldoneAnalytics.eventsStorage[auctionId].events.splice(billableEventIndex, 1);
+      }
+      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
 
-        delete yieldoneAnalytics.eventsStorage[auctionId];
-        done();
-      }, 1000);
+      delete yieldoneAnalytics.eventsStorage[auctionId];
     });
   });
 });

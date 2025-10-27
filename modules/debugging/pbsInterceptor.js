@@ -1,11 +1,10 @@
-import {deepClone, delayExecution} from '../../src/utils.js';
-import CONSTANTS from '../../src/constants.json';
-
-export function makePbsInterceptor({createBid}) {
+export function makePbsInterceptor({createBid, utils}) {
+  const {deepClone, delayExecution} = utils;
   return function pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {
     onResponse,
     onError,
-    onBid
+    onBid,
+    onFledge,
   }) {
     let responseArgs;
     const done = delayExecution(() => onResponse(...responseArgs), bidRequests.length + 1)
@@ -16,11 +15,23 @@ export function makePbsInterceptor({createBid}) {
     function addBid(bid, bidRequest) {
       onBid({
         adUnit: bidRequest.adUnitCode,
-        bid: Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid)
+        bid: Object.assign(createBid(bidRequest), {requestBidder: bidRequest.bidder}, bid)
       })
     }
     bidRequests = bidRequests
-      .map((req) => interceptBids({bidRequest: req, addBid, done}).bidRequest)
+      .map((req) => interceptBids({
+        bidRequest: req,
+        addBid,
+        addPaapiConfig(config, bidRequest, bidderRequest) {
+          onFledge({
+            adUnitCode: bidRequest.adUnitCode,
+            ortb2: bidderRequest.ortb2,
+            ortb2Imp: bidRequest.ortb2Imp,
+            ...config
+          })
+        },
+        done
+      }).bidRequest)
       .filter((req) => req.bids.length > 0)
 
     if (bidRequests.length > 0) {

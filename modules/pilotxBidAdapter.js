@@ -1,4 +1,12 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'pilotx';
 const ENDPOINT_URL = '//adn.pilotx.tv/hb'
 export const spec = {
@@ -6,14 +14,14 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
   aliases: ['pilotx'], // short code
   /**
-         * Determines whether or not the given bid request is valid.
-         *
-         * @param {BidRequest} bid The bid params to validate.
-         * @return boolean True if this is a valid bid, and false otherwise.
-         */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (bid) {
-    let sizesCheck = !!bid.sizes
-    let paramSizesCheck = !!bid.params.sizes
+    const sizesCheck = !!bid.sizes
+    const paramSizesCheck = !!bid.params.sizes
     var sizeConfirmed = false
     if (sizesCheck) {
       if (bid.sizes.length < 1) {
@@ -35,16 +43,17 @@ export const spec = {
     return !!(bid.params.placementId);
   },
   /**
-         * Make a server request from the list of BidRequests.
-         *
-         * @param {validBidRequests[]} - an array of bids
-         * @return ServerRequest Info describing the request to the server.
-         */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payloadItems = {};
+    const payloadItems = {};
     validBidRequests.forEach(bidRequest => {
-      let sizes = [];
-      let placementId = this.setPlacementID(bidRequest.params.placementId)
+      const sizes = [];
+      const placementId = this.setPlacementID(bidRequest.params.placementId)
       payloadItems[placementId] = {}
       if (bidRequest.sizes.length > 0) {
         if (Array.isArray(bidRequest.sizes[0])) {
@@ -57,7 +66,7 @@ export const spec = {
         payloadItems[placementId]['sizes'] = sizes
       }
       if (bidRequest.mediaTypes != null) {
-        for (let i in bidRequest.mediaTypes) {
+        for (const i in bidRequest.mediaTypes) {
           payloadItems[placementId][i] = {
             ...bidRequest.mediaTypes[i]
           }
@@ -84,58 +93,55 @@ export const spec = {
     };
   },
   /**
-         * Unpack the response from the server into a list of bids.
-         *
-         * @param {ServerResponse} serverResponse A successful response from the server.
-         * @return {Bid[]} An array of bids which were nested inside the server.
-         */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function (serverResponse, bidRequest) {
-    const serverBody = serverResponse.body;
     const bidResponses = [];
-    if (serverBody.mediaType == 'banner') {
-      const bidResponse = {
-        requestId: serverBody.requestId,
-        cpm: serverBody.cpm,
-        width: serverBody.width,
-        height: serverBody.height,
-        creativeId: serverBody.creativeId,
-        currency: serverBody.currency,
-        netRevenue: false,
-        ttl: serverBody.ttl,
-        ad: serverBody.ad,
-        mediaType: 'banner',
-        meta: {
-          mediaType: 'banner',
-          advertiserDomains: serverBody.advertiserDomains
-        }
+    const serverBody = serverResponse.body;
+
+    const bids = Array.isArray(serverBody?.bids)
+      ? serverBody.bids
+      : [serverBody];
+
+    bids.forEach(bid => {
+      if (!bid || !bid.mediaType || !bid.requestId) {
+        return;
       }
-      bidResponses.push(bidResponse)
-    } else if (serverBody.mediaType == 'video') {
-      const bidResponse = {
-        requestId: serverBody.requestId,
-        cpm: serverBody.cpm,
-        width: serverBody.width,
-        height: serverBody.height,
-        creativeId: serverBody.creativeId,
-        currency: serverBody.currency,
-        netRevenue: false,
-        ttl: serverBody.ttl,
-        vastUrl: serverBody.vastUrl,
-        mediaType: 'video',
+
+      const baseResponse = {
+        requestId: bid.requestId,
+        cpm: bid.cpm,
+        width: bid.width,
+        height: bid.height,
+        creativeId: bid.creativeId,
+        currency: bid.currency,
+        netRevenue: !!bid.netRevenue,
+        ttl: bid.ttl,
+        mediaType: bid.mediaType,
         meta: {
-          mediaType: 'video',
-          advertiserDomains: serverBody.advertiserDomains
+          mediaType: bid.mediaType,
+          advertiserDomains: bid.advertiserDomains || []
         }
+      };
+
+      if (bid.mediaType === 'banner') {
+        baseResponse.ad = bid.ad;
+      } else if (bid.mediaType === 'video') {
+        baseResponse.vastUrl = bid.vastUrl;
       }
-      bidResponses.push(bidResponse)
-    }
+
+      bidResponses.push(baseResponse);
+    });
 
     return bidResponses;
   },
 
   /**
    * Formats placement ids for adserver ingestion purposes
-   * @param {string[]} The placement ID/s in an array
+   * @param {string[]} placementId the placement ID/s in an array
    */
   setPlacementID: function (placementId) {
     if (Array.isArray(placementId)) {

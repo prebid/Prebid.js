@@ -5,6 +5,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'mgid';
 const MGID_RTD_API_URL = 'https://servicer.mgid.com/sda';
@@ -138,10 +142,10 @@ function getContextUrl() {
 }
 
 function getDataForMerge(responseData) {
-  let siteData = {
+  const siteData = {
     name: ORTB2_NAME
   };
-  let userData = {
+  const userData = {
     name: ORTB2_NAME
   };
 
@@ -163,7 +167,7 @@ function getDataForMerge(responseData) {
     }
   }
 
-  let result = {};
+  const result = {};
   if (siteData.segment || siteData.ext) {
     result.site = {
       content: {

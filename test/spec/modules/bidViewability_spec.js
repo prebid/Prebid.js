@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import {expect, spy} from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import parse from 'url-parse';
 
@@ -18,6 +18,10 @@ const GPT_SLOT = {
     return 'DIV-1';
   }
 };
+
+const EVENT_OBJ = {
+  slot: GPT_SLOT
+}
 
 const PBJS_WINNING_BID = {
   'adUnitCode': '/harshad/Jan/2021/',
@@ -71,7 +75,7 @@ describe('#bidViewability', function() {
     let winningBidsArray;
     let sandbox
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       // mocking winningBidsArray
       winningBidsArray = [];
       sandbox.stub(prebidGlobal, 'getGlobal').returns({
@@ -87,27 +91,27 @@ describe('#bidViewability', function() {
 
     it('should find a match by using customMatchFunction provided in config', function() {
       // Needs config to be passed with customMatchFunction
-      let bidViewabilityConfig = {
+      const bidViewabilityConfig = {
         customMatchFunction(bid, slot) {
           return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
         }
       };
-      let newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
+      const newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(newWinningBid);
-      let wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
       expect(wb).to.deep.equal(newWinningBid);
     });
 
     it('should NOT find a match by using customMatchFunction provided in config', function() {
       // Needs config to be passed with customMatchFunction
-      let bidViewabilityConfig = {
+      const bidViewabilityConfig = {
         customMatchFunction(bid, slot) {
           return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
         }
       };
       // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
-      let wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
       expect(wb).to.equal(null);
     });
 
@@ -115,14 +119,14 @@ describe('#bidViewability', function() {
       // Needs config to be passed without customMatchFunction
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(PBJS_WINNING_BID);
-      let wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
       expect(wb).to.deep.equal(PBJS_WINNING_BID);
     });
 
     it('should NOT find a match by using default matching function', function() {
       // Needs config to be passed without customMatchFunction
       // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
-      let wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
       expect(wb).to.equal(null);
     });
   });
@@ -132,7 +136,7 @@ describe('#bidViewability', function() {
     let triggerPixelSpy;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
     });
 
@@ -141,27 +145,27 @@ describe('#bidViewability', function() {
     });
 
     it('DO NOT fire pixels if NOT mentioned in module config', function() {
-      let moduleConfig = {};
+      const moduleConfig = {};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       expect(triggerPixelSpy.callCount).to.equal(0);
     });
 
     it('fire pixels if mentioned in module config', function() {
-      let moduleConfig = {firePixels: true};
+      const moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0]).to.equal(url);
       });
     });
 
     it('USP: should include the us_privacy key when USP Consent is available', function () {
-      let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+      const uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
       uspDataHandlerStub.returns('1YYY');
-      let moduleConfig = {firePixels: true};
+      const moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0].indexOf(url)).to.equal(0);
         const testurl = parse(call.args[0]);
         const queryObject = utils.parseQS(testurl.query);
@@ -171,10 +175,10 @@ describe('#bidViewability', function() {
     });
 
     it('USP: should not include the us_privacy key when USP Consent is not available', function () {
-      let moduleConfig = {firePixels: true};
+      const moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0].indexOf(url)).to.equal(0);
         const testurl = parse(call.args[0]);
         const queryObject = utils.parseQS(testurl.query);
@@ -183,16 +187,16 @@ describe('#bidViewability', function() {
     });
 
     it('GDPR: should include the GDPR keys when GDPR Consent is available', function() {
-      let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+      const gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       gdprDataHandlerStub.returns({
         gdprApplies: true,
         consentString: 'consent',
         addtlConsent: 'moreConsent'
       });
-      let moduleConfig = {firePixels: true};
+      const moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0].indexOf(url)).to.equal(0);
         const testurl = parse(call.args[0]);
         const queryObject = utils.parseQS(testurl.query);
@@ -204,10 +208,10 @@ describe('#bidViewability', function() {
     });
 
     it('GDPR: should not include the GDPR keys when GDPR Consent is not available', function () {
-      let moduleConfig = {firePixels: true};
+      const moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0].indexOf(url)).to.equal(0);
         const testurl = parse(call.args[0]);
         const queryObject = utils.parseQS(testurl.query);
@@ -218,15 +222,15 @@ describe('#bidViewability', function() {
     });
 
     it('GDPR: should only include the GDPR keys for GDPR Consent fields with values', function () {
-      let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+      const gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       gdprDataHandlerStub.returns({
         gdprApplies: true,
         consentString: 'consent'
       });
-      let moduleConfig = {firePixels: true};
+      const moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0].indexOf(url)).to.equal(0);
         const testurl = parse(call.args[0]);
         const queryObject = utils.parseQS(testurl.query);
@@ -245,18 +249,31 @@ describe('#bidViewability', function() {
     let logWinningBidNotFoundSpy;
     let callBidViewableBidderSpy;
     let winningBidsArray;
+    let triggerBillingSpy;
+    const adUnits = [
+      {
+        'code': 'abc123',
+        'bids': [
+          {
+            'bidder': 'pubmatic'
+          }
+        ]
+      }
+    ];
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
       eventsEmitSpy = sandbox.spy(events, ['emit']);
       callBidViewableBidderSpy = sandbox.spy(adapterManager, ['callBidViewableBidder']);
+      triggerBillingSpy = sandbox.spy(adapterManager, ['triggerBilling']);
       // mocking winningBidsArray
       winningBidsArray = [];
       sandbox.stub(prebidGlobal, 'getGlobal').returns({
         getAllWinningBids: function (number) {
           return winningBidsArray;
-        }
+        },
+        adUnits
       });
     });
 
@@ -265,23 +282,23 @@ describe('#bidViewability', function() {
     })
 
     it('matching winning bid is found', function() {
-      let moduleConfig = {
+      const moduleConfig = {
         firePixels: true
       };
       winningBidsArray.push(PBJS_WINNING_BID);
-      bidViewability.impressionViewableHandler(moduleConfig, GPT_SLOT, null);
+      bidViewability.impressionViewableHandler(moduleConfig, EVENT_OBJ);
       // fire pixels should be called
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
-        let call = triggerPixelSpy.getCall(i);
+        const call = triggerPixelSpy.getCall(i);
         expect(call.args[0]).to.equal(url);
       });
       // adapterManager.callBidViewableBidder is called with required args
       let call = callBidViewableBidderSpy.getCall(0);
       expect(call.args[0]).to.equal(PBJS_WINNING_BID.bidder);
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
-      // CONSTANTS.EVENTS.BID_VIEWABLE is triggered
+      // EVENTS.BID_VIEWABLE is triggered
       call = eventsEmitSpy.getCall(0);
-      expect(call.args[0]).to.equal(CONSTANTS.EVENTS.BID_VIEWABLE);
+      expect(call.args[0]).to.equal(EVENTS.BID_VIEWABLE);
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
     });
 
@@ -290,8 +307,20 @@ describe('#bidViewability', function() {
       expect(triggerPixelSpy.callCount).to.equal(0);
       // adapterManager.callBidViewableBidder is NOT called
       expect(callBidViewableBidderSpy.callCount).to.equal(0);
-      // CONSTANTS.EVENTS.BID_VIEWABLE is NOT triggered
+      // EVENTS.BID_VIEWABLE is NOT triggered
       expect(eventsEmitSpy.callCount).to.equal(0);
+    });
+
+    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function() {
+      const moduleConfig = {};
+      const bid = {
+        ...PBJS_WINNING_BID,
+        deferBilling: true
+      }
+      winningBidsArray.push(bid);
+      bidViewability.impressionViewableHandler(moduleConfig, EVENT_OBJ);
+      expect(triggerBillingSpy.callCount).to.equal(1);
+      sinon.assert.calledWith(triggerBillingSpy, bid);
     });
   });
 });

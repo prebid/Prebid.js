@@ -1,7 +1,20 @@
-import {deepAccess} from '../src/utils.js';
+import {deepAccess, logMessage} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {includes} from '../src/polyfill.js';
+
+import {
+  handleSyncUrls,
+  isBannerRequest,
+  isVideoRequest,
+  convertMediaInfoForRequest,
+  getMediaTypesInfo,
+  getBidFloor,
+  interpretResponse
+} from '../libraries/dspxUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'stv';
 const ENDPOINT_URL = 'https://ads.smartstream.tv/r/';
@@ -33,13 +46,13 @@ export const spec = {
       const isDev = params.devMode || false;
       const pbcode = bidRequest.adUnitCode || false; // div id
 
-      let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
+      const endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
-      let mediaTypesInfo = getMediaTypesInfo(bidRequest);
-      let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
-      let sizes = mediaTypesInfo[type];
+      const mediaTypesInfo = getMediaTypesInfo(bidRequest);
+      const type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
+      const sizes = mediaTypesInfo[type];
 
-      let payload = {
+      const payload = {
         _f: 'vast2',
         alternative: 'prebid_js',
         _ps: placementId,
@@ -50,9 +63,22 @@ export const spec = {
         ref: referrer,
         bid_id: bidId,
         pbver: '$prebid.version$',
+        schain: '',
+        uids: '',
       };
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
+      }
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        payload.schain = serializeSChain(schain);
+      } else {
+        delete payload.schain;
+      }
+
+      payload.uids = serializeUids(bidRequest);
+      if (payload.uids === '') {
+        delete payload.uids;
       }
 
       payload.pfilter = { ...params };
@@ -62,7 +88,7 @@ export const spec = {
       if (params.devMode !== undefined) { delete payload.pfilter.devMode; }
 
       if (payload.pfilter === undefined || !payload.pfilter.floorprice) {
-        let bidFloor = getBidFloor(bidRequest);
+        const bidFloor = getBidFloor(bidRequest);
         if (bidFloor > 0) {
           if (payload.pfilter !== undefined) {
             payload.pfilter.floorprice = bidFloor;
@@ -74,12 +100,14 @@ export const spec = {
       }
 
       if (mediaTypesInfo[VIDEO] !== undefined) {
-        let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+        const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
-          .filter(key => includes(Object.keys(VIDEO_ORTB_PARAMS), key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
-          .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
+          .filter(key => Object.keys(VIDEO_ORTB_PARAMS).includes(key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
+          .forEach(key => {
+            payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key];
+          });
       }
-      if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }
+      if (Object.keys(payload.pfilter).length === 0) { delete payload.pfilter }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -105,225 +133,112 @@ export const spec = {
       return {
         method: 'GET',
         url: endpoint,
-        data: objectToQueryString(payload),
+        data: stvObjectToQueryString(payload),
       };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = [];
-    const response = serverResponse.body;
-    const crid = response.crid || 0;
-    const cpm = response.cpm / 1000000 || 0;
-    if (cpm !== 0 && crid !== 0) {
-      const dealId = response.dealid || '';
-      const currency = response.currency || 'EUR';
-      const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const bidResponse = {
-        requestId: response.bid_id,
-        cpm: cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: crid,
-        dealId: dealId,
-        currency: currency,
-        netRevenue: netRevenue,
-        ttl: 60,
-        meta: {
-          advertiserDomains: response.adomain || []
-        }
-      };
-      if (response.vastXml) {
-        bidResponse.vastXml = response.vastXml;
-        bidResponse.mediaType = 'video';
-      } else {
-        bidResponse.ad = response.adTag;
-      }
-
-      bidResponses.push(bidResponse);
-    }
-    return bidResponses;
+    logMessage('STV: serverResponse', serverResponse);
+    logMessage('STV: bidRequest', bidRequest);
+    return interpretResponse(serverResponse, bidRequest, (bidRequest, response) => null); // we don't use any renderer
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (!serverResponses || serverResponses.length === 0) {
-      return [];
-    }
-
-    const syncs = []
-
-    let gdprParams = '';
-    if (gdprConsent) {
-      if ('gdprApplies' in gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-
-    if (serverResponses.length > 0 && serverResponses[0].body !== undefined &&
-        serverResponses[0].body.userSync !== undefined && serverResponses[0].body.userSync.iframeUrl !== undefined &&
-        serverResponses[0].body.userSync.iframeUrl.length > 0) {
-      if (syncOptions.iframeEnabled) {
-        serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
-          type: 'iframe',
-          url: appendToUrl(url, gdprParams)
-        }));
-      }
-      if (syncOptions.pixelEnabled) {
-        serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
-          type: 'image',
-          url: appendToUrl(url, gdprParams)
-        }));
-      }
-    }
-    return syncs;
+    return handleSyncUrls(syncOptions, serverResponses, gdprConsent);
   }
 }
 
-function appendToUrl(url, what) {
-  if (!what) {
-    return url;
-  }
-  return url + (url.indexOf('?') !== -1 ? '&' : '?') + what;
-}
-
-function objectToQueryString(obj, prefix) {
-  let str = [];
+function stvObjectToQueryString(obj, prefix) {
+  const str = [];
   let p;
   for (p in obj) {
     if (obj.hasOwnProperty(p)) {
-      let k = prefix ? prefix + '[' + p + ']' : p;
-      let v = obj[p];
+      const k = prefix ? prefix + '[' + p + ']' : p;
+      const v = obj[p];
       str.push((v !== null && typeof v === 'object')
-        ? objectToQueryString(v, k)
-        : encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        ? stvObjectToQueryString(v, k)
+        : (k === 'schain' || k === 'uids' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
     }
   }
   return str.join('&');
 }
 
-/**
- * Check if it's a banner bid request
- *
- * @param {BidRequest} bid - Bid request generated from ad slots
- * @returns {boolean} True if it's a banner bid
- */
-function isBannerRequest(bid) {
-  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
-}
+function serializeSChain(schain) {
+  let ret = '';
 
-/**
- * Check if it's a video bid request
- *
- * @param {BidRequest} bid - Bid request generated from ad slots
- * @returns {boolean} True if it's a video bid
- */
-function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
-}
+  ret += encodeURIComponent(schain.ver);
+  ret += ',';
+  ret += encodeURIComponent(schain.complete);
 
-/**
- * Get video sizes
- *
- * @param {BidRequest} bid - Bid request generated from ad slots
- * @returns {object} True if it's a video bid
- */
-function getVideoSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
-}
-
-/**
- * Get banner sizes
- *
- * @param {BidRequest} bid - Bid request generated from ad slots
- * @returns {object} True if it's a video bid
- */
-function getBannerSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
-}
-
-/**
- * Parse size
- * @param sizes
- * @returns {width: number, h: height}
- */
-function parseSize(size) {
-  let sizeObj = {}
-  sizeObj.width = parseInt(size[0], 10);
-  sizeObj.height = parseInt(size[1], 10);
-  return sizeObj;
-}
-
-/**
- * Parse sizes
- * @param sizes
- * @returns {{width: number , height: number }[]}
- */
-function parseSizes(sizes) {
-  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
-    return sizes.map(size => parseSize(size));
-  }
-  return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
-}
-
-/**
- * Get MediaInfo object for server request
- *
- * @param mediaTypesInfo
- * @returns {*}
- */
-function convertMediaInfoForRequest(mediaTypesInfo) {
-  let requestData = {};
-  Object.keys(mediaTypesInfo).forEach(mediaType => {
-    requestData[mediaType] = mediaTypesInfo[mediaType].map(size => {
-      return size.width + 'x' + size.height;
-    }).join(',');
-  });
-  return requestData;
-}
-
-/**
- * Get Bid Floor
- * @param bid
- * @returns {number|*}
- */
-function getBidFloor(bid) {
-  if (typeof bid.getFloor !== 'function') {
-    return deepAccess(bid, 'params.bidfloor', 0);
+  for (const node of schain.nodes) {
+    ret += '!';
+    ret += encodeURIComponent(node.asi);
+    ret += ',';
+    ret += encodeURIComponent(node.sid);
+    ret += ',';
+    ret += encodeURIComponent(node.hp);
+    ret += ',';
+    ret += encodeURIComponent(node.rid ?? '');
+    ret += ',';
+    ret += encodeURIComponent(node.name ?? '');
+    ret += ',';
+    ret += encodeURIComponent(node.domain ?? '');
+    if (node.ext) {
+      ret += ',';
+      ret += encodeURIComponent(node.ext ?? '');
+    }
   }
 
-  try {
-    const bidFloor = bid.getFloor({
-      currency: 'EUR',
-      mediaType: '*',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (_) {
-    return 0
-  }
+  return ret;
 }
 
-/**
- * Get media types info
- *
- * @param bid
- */
-function getMediaTypesInfo(bid) {
-  let mediaTypesInfo = {};
+function serializeUids(bidRequest) {
+  const uids = [];
 
-  if (bid.mediaTypes) {
-    Object.keys(bid.mediaTypes).forEach(mediaType => {
-      if (mediaType === BANNER) {
-        mediaTypesInfo[mediaType] = getBannerSizes(bid);
-      }
-      if (mediaType === VIDEO) {
-        mediaTypesInfo[mediaType] = getVideoSizes(bid);
-      }
-    });
-  } else {
-    mediaTypesInfo[BANNER] = getBannerSizes(bid);
+  if (bidRequest.userIdAsEids === undefined || !Array.isArray(bidRequest.userIdAsEids)) {
+    return '';
   }
-  return mediaTypesInfo;
+
+  const buids = {};
+  bidRequest.userIdAsEids.forEach((src) => (buids[deepAccess(src, 'source')] = deepAccess(src, 'uids.0')));
+
+  const id5 = deepAccess(buids['id5-sync.com'], 'id');
+  if (id5) {
+    uids.push(encodeURIComponent('id5:' + id5));
+    const id5Linktype = deepAccess(buids['id5-sync.com'], 'ext.linkType');
+    if (id5Linktype) {
+      uids.push(encodeURIComponent('id5_linktype:' + id5Linktype));
+    }
+  }
+  const netId = deepAccess(buids['netid.de'], 'id');
+  if (netId) {
+    uids.push(encodeURIComponent('netid:' + netId));
+  }
+  const uId2 = deepAccess(buids['uidapi.com'], 'id');
+  if (uId2) {
+    uids.push(encodeURIComponent('uid2:' + uId2));
+  }
+  const sharedId = deepAccess(buids['pubcid.org'], 'id');
+  if (sharedId) {
+    uids.push(encodeURIComponent('sharedid:' + sharedId));
+  }
+  const liverampId = deepAccess(buids['liveramp.com'], 'id');
+  if (liverampId) {
+    uids.push(encodeURIComponent('liverampid:' + liverampId));
+  }
+  const criteoId = deepAccess(buids['criteo.com'], 'id');
+  if (criteoId) {
+    uids.push(encodeURIComponent('criteoid:' + criteoId));
+  }
+  const utiqId = deepAccess(buids['utiq.com'], 'id');
+  if (utiqId) {
+    uids.push(encodeURIComponent('utiq:' + utiqId));
+  }
+  const euidId = deepAccess(buids['euid.eu'], 'id');
+  if (euidId) {
+    uids.push(encodeURIComponent('euid:' + euidId));
+  }
+
+  return uids.join(',');
 }
 
 registerBidder(spec);

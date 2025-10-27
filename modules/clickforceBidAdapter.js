@@ -2,6 +2,12 @@ import { _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'clickforce';
 const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
 
@@ -54,7 +60,7 @@ export const spec = {
     const cfResponses = [];
     const bidRequestList = [];
 
-    if (typeof bidRequest != 'undefined') {
+    if (typeof bidRequest !== 'undefined') {
       _each(bidRequest.validBidRequests, function(req) {
         bidRequestList[req.bidId] = req;
       });
@@ -63,7 +69,7 @@ export const spec = {
     _each(serverResponse.body, function(response) {
       if (response.requestId != null) {
         // native ad size
-        if (response.width == 3) {
+        if (Number(response.width) === 3) {
           cfResponses.push({
             requestId: response.requestId,
             cpm: response.cpm,

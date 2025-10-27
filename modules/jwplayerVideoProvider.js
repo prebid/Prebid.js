@@ -12,9 +12,15 @@ import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 import { submodule } from '../src/hook.js';
+/**
+ * @typedef {import('../libraries/video/constants/ortb.js').OrtbVideoParams} OrtbVideoParams
+ * @typedef {import('../libraries/video/shared/state.js').State} State
+ * @typedef {import('../modules/videoModule/coreVideo.js').VideoProvider} VideoProvider
+ * @typedef {import('../modules/videoModule/coreVideo.js').videoProviderConfig} videoProviderConfig
+ */
 
 /**
- * @constructor
+ * @class
  * @param {videoProviderConfig} config
  * @param {Object} jwplayer_ - JW Player global factory
  * @param {State} adState_
@@ -29,12 +35,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let playerVersion = null;
   const playerConfig = config.playerConfig;
   const divId = config.divId;
-  let adState = adState_;
-  let timeState = timeState_;
-  let callbackStorage = callbackStorage_;
+  const adState = adState_;
+  const timeState = timeState_;
+  const callbackStorage = callbackStorage_;
   let pendingSeek = {};
   let supportedMediaTypes = null;
-  let minimumSupportedPlayerVersion = '8.20.1';
+  const minimumSupportedPlayerVersion = '8.20.1';
   let setupCompleteCallbacks = [];
   let setupFailedCallbacks = [];
   const MEDIA_TYPES = [
@@ -44,6 +50,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     VIDEO_MIME_TYPE.AAC,
     VIDEO_MIME_TYPE.HLS
   ];
+  let height = null;
+  let width = null;
 
   function init() {
     if (!jwplayer) {
@@ -86,6 +94,20 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     const adConfig = config.advertising || {};
     supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
 
+    if (height === null) {
+      height = utils.getPlayerHeight(player, config);
+    }
+
+    if (width === null) {
+      width = utils.getPlayerWidth(player, config);
+    }
+
+    if (config.aspectratio && !height && !width) {
+      const size = utils.getPlayerSizeFromAspectRatio(player, config);
+      height = size.height;
+      width = size.width;
+    }
+
     const video = {
       mimes: supportedMediaTypes,
       protocols: [
@@ -96,8 +118,8 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         PROTOCOLS.VAST_3_0_WRAPPER,
         PROTOCOLS.VAST_4_0_WRAPPER
       ],
-      h: player.getHeight(), // TODO does player call need optimization ?
-      w: player.getWidth(), // TODO does player call need optimization ?
+      h: height,
+      w: width,
       startdelay: utils.getStartDelay(),
       placement: utils.getPlacement(adConfig, player),
       // linearity is omitted because both forms are supported.
@@ -185,6 +207,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     player.playAd(adTagUrl || options.adXml, options);
+  }
+
+  function setAdXml(vastXml, options) {
+    if (!player || !vastXml) {
+      return;
+    }
+
+    player.loadAdXml(vastXml, options);
   }
 
   function onEvent(externalEventName, callback, basePayload) {
@@ -408,10 +438,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         break;
 
       case PLAYER_RESIZE:
-        getEventPayload = e => ({
-          height: e.height,
-          width: e.width,
-        });
+        getEventPayload = e => {
+          height = e.height;
+          width = e.width;
+          return {
+            height,
+            width
+          };
+        };
         break;
 
       case VIEWABLE:
@@ -470,6 +504,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy
@@ -577,6 +612,83 @@ export const utils = {
 
     jwConfig.advertising = advertising;
     return jwConfig;
+  },
+
+  getPlayerHeight: function(player, config) {
+    let height;
+
+    if (player.getHeight) {
+      height = player.getHeight();
+    }
+
+    // Height is undefined when player has not yet rendered
+    if (height !== undefined && height !== null) {
+      return height;
+    }
+
+    return config.height;
+  },
+
+  getPlayerWidth: function(player, config) {
+    let width;
+
+    if (player.getWidth) {
+      width = player.getWidth();
+    }
+
+    // Width is undefined when player has not yet rendered
+    if (width !== undefined && width !== null) {
+      return width;
+    }
+
+    // Width can be a string when aspectratio is set
+    if (typeof config.width === 'number') {
+      return config.width;
+    }
+  },
+
+  getPlayerSizeFromAspectRatio: function(player, config) {
+    const aspectRatio = config.aspectratio;
+    const percentageWidth = config.width;
+
+    if (typeof aspectRatio !== 'string' || typeof percentageWidth !== 'string') {
+      return {};
+    }
+
+    const ratios = aspectRatio.split(':');
+
+    if (ratios.length !== 2) {
+      return {};
+    }
+
+    const containerElement = player.getContainer && player.getContainer();
+    if (!containerElement) {
+      return {};
+    }
+
+    const containerWidth = containerElement.clientWidth;
+    const containerHeight = containerElement.clientHeight;
+
+    const xRatio = parseInt(ratios[0], 10);
+    const yRatio = parseInt(ratios[1], 10);
+
+    if (isNaN(xRatio) || isNaN(yRatio) || xRatio === 0 || yRatio === 0) {
+      return {};
+    }
+
+    const numericWidthPercentage = parseInt(percentageWidth, 10);
+
+    if (isNaN(numericWidthPercentage)) {
+      return {};
+    }
+
+    const desiredWidth = containerWidth * numericWidthPercentage / 100;
+    const desiredHeight = Math.min(desiredWidth * yRatio / xRatio, containerHeight);
+
+    return {
+      height: desiredHeight,
+      width: desiredWidth
+    };
   },
 
   getJwEvent: function(eventName) {
@@ -695,7 +807,7 @@ export const utils = {
    * @returns {boolean} - support of omid
    */
   isOmidSupported: function(adClient) {
-    const omidIsLoaded = window.OmidSessionClient !== undefined;
+    const omidIsLoaded = window.OmidSessionClient !== undefined && window.OmidSessionClient !== null;
     return omidIsLoaded && adClient === 'vast';
   },
 
@@ -728,7 +840,6 @@ export const utils = {
     const formattedSegments = jwpsegs.reduce((convertedSegments, rawSegment) => {
       convertedSegments.push({
         id: rawSegment,
-        value: rawSegment
       });
       return convertedSegments;
     }, []);
@@ -743,7 +854,7 @@ export const utils = {
    * @return {Object} - Object compliant with the oRTB content.data[index] spec.
    */
   getContentDatum: function (mediaId, segments) {
-    if (!mediaId && !segments) {
+    if (!mediaId && (!segments || segments.length === 0)) {
       return;
     }
 
@@ -753,10 +864,10 @@ export const utils = {
     };
 
     if (mediaId) {
-      contentData.ext.cids = [mediaId];
+      contentData.ext.cids = contentData.cids = [mediaId];
     }
 
-    if (segments) {
+    if (segments && segments.length > 0) {
       contentData.segment = segments;
       contentData.ext.segtax = 502;
     }
@@ -789,7 +900,7 @@ export function callbackStorageFactory() {
   }
 
   function getCallback(eventType, callback) {
-    let eventHandlers = storage[eventType];
+    const eventHandlers = storage[eventType];
     if (!eventHandlers) {
       return;
     }
@@ -886,13 +997,13 @@ export function adStateFactory() {
     }
 
     const adProperties = Object.keys(ad);
-    adProperties.forEach(property => {
+    for (const property of adProperties) {
       const value = ad[property];
       const wrapperIds = value.adWrapperIds;
       if (wrapperIds) {
         return wrapperIds;
       }
-    });
+    }
   }
 
   return adState;

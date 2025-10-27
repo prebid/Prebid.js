@@ -37,7 +37,7 @@ describe('innityAdapterTest', () => {
       'auctionId': '18fd8b8b0bd757'
     }];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         page: 'https://refererExample.com'
       }
@@ -86,9 +86,9 @@ describe('innityAdapterTest', () => {
       }
     };
 
-    let advDomains = ['advertiserExample.com'];
+    const advDomains = ['advertiserExample.com'];
 
-    let bidResponse = {
+    const bidResponse = {
       body: {
         'cpm': 100,
         'width': '300',
@@ -119,6 +119,12 @@ describe('innityAdapterTest', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
       expect(result[0].meta.advertiserDomains).to.deep.equal([]);
+    });
+
+    it('result with no bids', () => {
+      bidResponse.body = {};
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result).to.deep.equal([]);
     });
   });
 });

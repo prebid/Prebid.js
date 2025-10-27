@@ -2,7 +2,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 export const ADAPTER_VERSION = '1.0.0';
+const GVLID = 728;
 const SUPPORTED_AD_TYPES = [BANNER];
 
 // we have different servers for different regions / farms
@@ -16,6 +22,7 @@ const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
 
 export const spec = {
   code: 'appier',
+  gvlid: GVLID,
   aliases: ['appierBR', 'appierExt', 'appierGM'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
@@ -32,7 +39,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidRequests[]} - an array of bids
+   * @param {object} bidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {

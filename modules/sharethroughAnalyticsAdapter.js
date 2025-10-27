@@ -1,6 +1,6 @@
-import { tryAppendQueryString } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -35,7 +35,7 @@ var sharethroughAdapter = Object.assign(adapter(
     const curBidderCode = args.bidderCode;
 
     if (curBidderCode !== STR_BIDDER_CODE && (args.adUnitCode in this.placementCodeSet)) {
-      let strBid = this.placementCodeSet[args.adUnitCode];
+      const strBid = this.placementCodeSet[args.adUnitCode];
       this.fireLoseBeacon(curBidderCode, args.cpm, strBid.adserverRequestId, 'headerBidLose');
     }
   },

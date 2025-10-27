@@ -1,8 +1,15 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
+import { config } from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -56,30 +63,36 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidRequests} - bidRequests.bids[] is an array of AdUnits and bids
+   * @param {BidRequest} bidRequests is an array of AdUnits and bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     let hasVideo = false;
+    let eids;
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
-        let mediatype = getMediatype(bidReq);
-        let sizesArray = getSizeArray(bidReq);
-        let size = getSize(sizesArray);
+        const mediatype = getMediatype(bidReq);
+        const sizesArray = getSizeArray(bidReq);
+        const size = getSize(sizesArray);
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
-        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
+        accumulator[bidReq.bidId].TransactionID = bidReq.ortb2Imp?.ext?.tid;
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
         accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
-        if (bidReq.schain) {
-          accumulator[bidReq.bidId].SChain = bidReq.schain;
+        const schain = bidReq?.ortb2?.source?.ext?.schain;
+        if (schain) {
+          accumulator[bidReq.bidId].SChain = schain;
+        }
+        if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
+          eids = bidReq.userIdAsEids;
         }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
@@ -120,9 +133,8 @@ export const spec = {
     if (bidderRequest.ortb2) {
       payload.ortb2 = bidderRequest.ortb2;
     }
-
-    if (deepAccess(bidderRequest, 'userIdAsEids')) {
-      payload.userId = bidderRequest.userIdAsEids;
+    if (eids) {
+      payload.eids = eids;
     }
 
     payload.pbjs_version = '$prebid.version$';
@@ -149,6 +161,10 @@ export const spec = {
     const bidResponses = [];
     var bidRequests = {};
 
+    if (!serverResponse || !serverResponse.body) {
+      return bidResponses;
+    }
+
     try {
       bidRequests = JSON.parse(request.data).Bids;
     } catch (err) {
@@ -163,12 +179,56 @@ export const spec = {
       }
     });
     return bidResponses;
+  },
+
+  /**
+   * List user sync endpoints.
+   * Legal information have to be added to the request.
+   * Only iframe syncs are supported.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {UserSync[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    if (!syncOptions.iframeEnabled) {
+      return [];
+    }
+
+    let params = '';
+
+    // GDPR
+    if (gdprConsent) {
+      params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      params += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      params += '&coppa=1';
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // GPP
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      params += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+    }
+
+    return [{
+      type: 'iframe',
+      url: `https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4${params}`
+    }];
   }
 }
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
-  let dcHostname = find(bidderRequest, bid => bid.params.DC);
+  const dcHostname = ((bidderRequest) || []).find(bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
   }
@@ -196,7 +256,7 @@ function getFloor(bidRequest, size, mediaType) {
     size: [ size.width, size.height ]
   });
 
-  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+  if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }
@@ -213,7 +273,7 @@ function getPageRefreshed() {
 
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest, hasVideo) {
-  let host = getHostname(bidRequests);
+  const host = getHostname(bidRequests);
   const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
@@ -241,7 +301,7 @@ function createEndpointQS(bidderRequest) {
       qs.PageReferrer = encodeURIComponent(ref.location);
     }
 
-    // retreive info from ortb2 object if present (prebid7)
+    // retrieve info from ortb2 object if present (prebid7)
     const siteInfo = bidderRequest.ortb2?.site;
     if (siteInfo) {
       qs.PageUrl = encodeURIComponent(siteInfo.page || ref?.topmostLocation);
@@ -341,7 +401,7 @@ function getTrackers(eventsArray, jsTrackers) {
 
   if (!eventsArray) return result;
 
-  eventsArray.map((item, index) => {
+  eventsArray.forEach((item, index) => {
     if ((jsTrackers && item.Kind === 'JAVASCRIPT_URL') ||
         (!jsTrackers && item.Kind === 'PIXEL_URL')) {
       result.push(item.Url);
@@ -386,7 +446,7 @@ function getNativeAssets(response, nativeConfig) {
     native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
-  Object.keys(nativeConfig).map(function(key, index) {
+  Object.keys(nativeConfig).forEach(function(key, index) {
     switch (key) {
       case 'title':
         native[key] = textsJson.TITLE;
@@ -456,7 +516,7 @@ function createBid(response, bidRequests) {
 
   const request = bidRequests && bidRequests[response.BidID];
 
-  // In case we don't retreive the size from the adserver, use the given one.
+  // In case we don't retrieve the size from the adserver, use the given one.
   if (request) {
     if (!response.Width || response.Width === '0') {
       response.Width = request.Width;
@@ -477,7 +537,7 @@ function createBid(response, bidRequests) {
     meta: response.Meta || { advertiserDomains: [] }
   };
 
-  // retreive video response if present
+  // retrieve video response if present
   const vast64 = response.Vast;
   if (vast64) {
     bid.width = response.Width;

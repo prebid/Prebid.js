@@ -12,7 +12,7 @@ const SUPPORTED_SIZES = [
 ];
 
 function getPageUrl(bidRequest, bidderRequest) {
-  if (bidRequest.params.pageUrl && bidRequest.params.pageUrl != '[PAGE_URL]') {
+  if (bidRequest.params.pageUrl && bidRequest.params.pageUrl !== '[PAGE_URL]') {
     return bidRequest.params.pageUrl;
   }
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
@@ -72,7 +72,7 @@ function parseBannerResponse(rec, response) {
   }
   let style;
   try {
-    let additionalData = JSON.parse(response.widget.additionalData);
+    const additionalData = JSON.parse(response.widget.additionalData);
     const css = additionalData.css || '';
     style = css ? `<style>${css}</style>` : '';
   } catch (e) {
@@ -81,7 +81,7 @@ function parseBannerResponse(rec, response) {
   const title = rec.title && rec.title.trim() ? `<div class="eng_tag_ttl" style="display: none">${rec.title}</div>` : '';
   const displayName = rec.displayName && title ? `<div class="eng_tag_brnd" style="display: none">${rec.displayName}</div>` : '';
   const trackers = getImpressionTrackers(rec, response)
-    .map(createTrackPixelHtml)
+    .map((url) => createTrackPixelHtml(url))
     .join('');
   return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }
@@ -152,6 +152,7 @@ export const spec = {
           data: ''
         };
       }
+      return undefined;
     }).filter(Boolean);
   },
 
@@ -160,9 +161,9 @@ export const spec = {
       return [];
     }
     var response = serverResponse.body;
-    var isNative = response.pbtypeId == 1;
+    var isNative = Number(response.pbtypeId) === 1;
     return response.recs.map(rec => {
-      let bid = {
+      const bid = {
         requestId: response.ireqId,
         width: response.imageWidth,
         height: response.imageHeight,

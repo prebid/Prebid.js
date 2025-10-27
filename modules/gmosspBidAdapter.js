@@ -1,17 +1,26 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
-  deepSetValue,
-  getBidIdParameter,
-  getDNT,
+  deepSetValue, getBidIdParameter,
   getWindowTop,
   isEmpty,
-  logError,
-  tryAppendQueryString
+  logError
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
@@ -33,21 +42,22 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} validBidRequests an array of bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
-    const cur = getCurrencyType();
+    const cur = getCurrencyType(bidderRequest);
     const dnt = getDNT() ? '1' : '0';
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
 
       const request = validBidRequests[i];
-      const tid = request.transactionId;
+      const tid = request.ortb2Imp?.ext?.tid;
       const bid = request.bidId;
       const imuid = deepAccess(request, 'userId.imuid');
       const sharedId = deepAccess(request, 'userId.pubcid');
@@ -80,8 +90,9 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {*} bidderResponse A successful response from the server.
+   * @param {Array} requests
+   * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
@@ -146,20 +157,17 @@ export const spec = {
 
 };
 
-function getCurrencyType() {
-  if (config.getConfig('currency.adServerCurrency')) {
-    return config.getConfig('currency.adServerCurrency');
-  }
-  return 'JPY';
+function getCurrencyType(bidderRequest) {
+  return getCurrencyFromBidderRequest(bidderRequest) || 'JPY';
 }
 
 function getUrlInfo(refererInfo) {
   let canonicalLink = refererInfo.canonicalUrl;
 
   if (!canonicalLink) {
-    let metaElements = getMetaElements();
+    const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }

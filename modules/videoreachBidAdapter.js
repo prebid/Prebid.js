@@ -1,12 +1,10 @@
-import { getValue, getBidIdParameter } from '../src/utils.js';
+import {getBidIdParameter, getValue} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
-const GVLID = 547;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {
@@ -14,15 +12,16 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let data = {
+    const data = {
       data: validBidRequests.map(function(bid) {
         return {
           TagId: getValue(bid.params, 'TagId'),
           adUnitCode: getBidIdParameter('adUnitCode', bid),
           bidId: getBidIdParameter('bidId', bid),
           bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: getBidIdParameter('auctionId', bid),
-          transactionId: getBidIdParameter('transactionId', bid)
+          transactionId: bid.ortb2Imp?.ext?.tid,
         }
       })
     };

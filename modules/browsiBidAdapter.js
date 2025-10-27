@@ -3,6 +3,11 @@ import {config} from '../src/config.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {logError, logInfo, isArray, isStr} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'browsi';
 const DATA = 'brwvidtag';
 const ADAPTER = '__bad';
@@ -38,7 +43,8 @@ export const spec = {
     const requests = [];
     const {refererInfo, bidderRequestId, gdprConsent, uspConsent} = bidderRequest;
     validBidRequests.forEach(bidRequest => {
-      const {bidId, adUnitCode, auctionId, transactionId, schain, params} = bidRequest;
+      const {bidId, adUnitCode, auctionId, ortb2Imp, params} = bidRequest;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
       const video = getVideoMediaType(bidRequest);
 
       const request = {
@@ -55,8 +61,9 @@ export const spec = {
           sizes: video.playerSize,
           video: video,
           aUCode: adUnitCode,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           aID: auctionId,
-          tID: transactionId,
+          tID: ortb2Imp?.ext?.tid,
           schain: schain,
           params: params
         }
@@ -98,7 +105,6 @@ export const spec = {
       width: w,
       height: h,
       currency: cur,
-      bidderCode: BIDDER_CODE,
       ...extraParams
     };
     bidResponses.push(bidResponse);

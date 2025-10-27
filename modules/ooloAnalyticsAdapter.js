@@ -2,7 +2,7 @@ import { _each, deepClone, pick, deepSetValue, logError, logInfo } from '../src/
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'
-import CONSTANTS from '../src/constants.json'
+import { EVENTS } from '../src/constants.js'
 import { ajax } from '../src/ajax.js'
 import { config } from '../src/config.js'
 
@@ -33,7 +33,7 @@ const {
   BID_WON,
   BID_TIMEOUT,
   AD_RENDER_FAILED
-} = CONSTANTS.EVENTS
+} = EVENTS
 
 const SERVER_EVENTS = {
   AUCTION: 'auction',
@@ -51,12 +51,12 @@ const SERVER_BID_STATUS = {
 
 let auctions = {}
 let initOptions = {}
-let eventsQueue = []
+const eventsQueue = []
 
 const onAuctionInit = (args) => {
   const { auctionId, adUnits, timestamp } = args
 
-  let auction = auctions[auctionId] = {
+  const auction = auctions[auctionId] = {
     ...args,
     adUnits: {},
     auctionStart: timestamp,
@@ -99,7 +99,7 @@ const onBidResponse = (args) => {
   const { auctionId, adUnitCode } = args
   const auction = auctions[auctionId]
   const bidId = parseBidId(args)
-  let bid = auction.adUnits[adUnitCode].bids[bidId]
+  const bid = auction.adUnits[adUnitCode].bids[bidId]
 
   Object.assign(bid, args, {
     bidStatus: SERVER_BID_STATUS.BID_RECEIVED,
@@ -113,7 +113,7 @@ const onNoBid = (args) => {
   const bidId = parseBidId(args)
   const end = Date.now()
   const auction = auctions[auctionId]
-  let bid = auction.adUnits[adUnitCode].bids[bidId]
+  const bid = auction.adUnits[adUnitCode].bids[bidId]
 
   Object.assign(bid, args, {
     bidStatus: SERVER_BID_STATUS.NO_BID,
@@ -148,7 +148,7 @@ const onBidTimeout = (args) => {
   _each(args, bid => {
     const { auctionId, adUnitCode } = bid
     const bidId = parseBidId(bid)
-    let bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
+    const bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
 
     Object.assign(bidCache, bid, {
       bidStatus: SERVER_BID_STATUS.BID_TIMEDOUT,
@@ -233,7 +233,7 @@ function handleEvent(eventType, args) {
 }
 
 function sendEvent(eventType, args, isRaw) {
-  let data = deepClone(args)
+  const data = deepClone(args)
 
   Object.assign(data, buildCommonDataProperties(), {
     eventType
@@ -433,6 +433,11 @@ function sendPage() {
 function sendHbConfigData() {
   const conf = {}
   const pbjsConfig = config.getConfig()
+  // Check if pbjsConfig.userSync exists and has userIds property
+  if (pbjsConfig.userSync && pbjsConfig.userSync.userIds) {
+    // Delete the userIds property
+    delete pbjsConfig.userSync.userIds;
+  }
 
   Object.keys(pbjsConfig).forEach(key => {
     if (key[0] !== '_') {

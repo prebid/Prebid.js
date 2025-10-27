@@ -9,7 +9,7 @@
 
 ## Release Schedule
 
-We aim to push a new release of Prebid.js every week on Tuesday.
+We aim to push a new release of Prebid.js each week barring any unforseen circumstances or in observance of holidays.
 
 While the releases will be available immediately for those using direct Git access,
 it will be about a week before the Prebid Org [Download Page](https://docs.prebid.org/download.html) will be updated.
@@ -26,7 +26,7 @@ Announcements regarding releases will be made to the #prebid-js channel in prebi
 
 ### 2. Make sure all browserstack tests are passing
 
-   On PR merge to master, CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid/Prebid.js) for master branch will show you detailed results.**
+   On PR merge to master, Github Actions will run unit tests on browserstack. Checking the last build for master branch will show you detailed results.**
 
    In case of failure do following,
      - Try to fix the failing tests.

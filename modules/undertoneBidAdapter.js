@@ -2,7 +2,9 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl} from '../src/utils.js';
+import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -26,52 +28,24 @@ function getBidFloor(bidRequest, mediaType) {
   return (floor && floor.currency === 'USD' && floor.floor) || 0;
 }
 
-function extractDomainFromHost(pageHost) {
-  let domain = null;
-  try {
-    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
-    if (domains != null && domains.length > 0) {
-      domain = domains[0];
-      for (let i = 1; i < domains.length; i++) {
-        if (domains[i].length > domain.length) {
-          domain = domains[i];
-        }
-      }
-    }
-  } catch (e) {
-    domain = null;
-  }
-  return domain;
-}
-
 function getGdprQueryParams(gdprConsent) {
   if (!gdprConsent) {
     return null;
   }
 
-  let gdpr = gdprConsent.gdprApplies ? '1' : '0';
-  let gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
+  const gdpr = gdprConsent.gdprApplies ? '1' : '0';
+  const gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
 function getBannerCoords(id) {
-  let element = document.getElementById(id);
-  let left = -1;
-  let top = -1;
+  const element = document.getElementById(id);
   if (element) {
-    left = element.offsetLeft;
-    top = element.offsetTop;
-
-    let parent = element.offsetParent;
-    if (parent) {
-      left += parent.offsetLeft;
-      top += parent.offsetTop;
-    }
-
-    return [left, top];
-  } else {
-    return null;
+    const {left, top} = getBoundingClientRect(element);
+    const viewport = getViewportCoordinates();
+    return [Math.round(left + (viewport.left || 0)), Math.round(top + (viewport.top || 0))];
   }
+  return null;
 }
 
 export const spec = {
@@ -85,16 +59,18 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-    const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
+    const windowDimensions = getWinDimensions();
+    const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
+    const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
+    const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
       'uids': validBidRequests[0].userId,
       'pageSize': pageSizeArray
     };
-    if (validBidRequests[0].schain) {
-      commons.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      commons.schain = schain;
     }
     const payload = {
       'x-ut-hb-params': [],
@@ -109,13 +85,13 @@ export const spec = {
       commons.canonicalUrl = canonicalUrl;
     }
     const hostname = parseUrl(referer).hostname;
-    let domain = extractDomainFromHost(hostname);
+    const domain = extractDomainFromHost(hostname);
     const pageUrl = canonicalUrl || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
 
-    let gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
+    const gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
     if (gdprParams) {
       reqUrl += `&${gdprParams}`;
     }
@@ -124,15 +100,22 @@ export const spec = {
       reqUrl += `&ccpa=${bidderRequest.uspConsent}`;
     }
 
-    validBidRequests.map(bidReq => {
+    if (bidderRequest.gppConsent) {
+      const gppString = bidderRequest.gppConsent.gppString ?? '';
+      const ggpSid = bidderRequest.gppConsent.applicableSections ?? '';
+      reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
+    }
+
+    validBidRequests.forEach(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
         coordinates: getBannerCoords(bidReq.adUnitCode),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
-        placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
+        placementId: bidReq.params.placementId ?? null,
         publisherId: bidReq.params.publisherId,
+        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', ''),
         sizes: bidReq.sizes,
         params: bidReq.params
       };
@@ -146,7 +129,9 @@ export const spec = {
           streamType: deepAccess(bidReq, 'mediaTypes.video.context') || null,
           playbackMethod: deepAccess(bidReq, 'params.video.playbackMethod') || null,
           maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
-          skippable: deepAccess(bidReq, 'params.video.skippable') || null
+          skippable: deepAccess(bidReq, 'params.video.skippable') || null,
+          placement: deepAccess(bidReq, 'mediaTypes.video.placement') || null,
+          plcmt: deepAccess(bidReq, 'mediaTypes.video.plcmt') || null
         };
       }
       payload['x-ut-hb-params'].push(bid);
@@ -192,7 +177,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
-    let gdprParams = getGdprQueryParams(gdprConsent);
+    const gdprParams = getGdprQueryParams(gdprConsent);
     let iframePrivacyParams = '';
     let pixelPrivacyParams = '';
 
@@ -202,7 +187,7 @@ export const spec = {
     }
 
     if (usPrivacy) {
-      if (iframePrivacyParams != '') {
+      if (iframePrivacyParams !== '') {
         iframePrivacyParams += '&'
       } else {
         iframePrivacyParams += '?'

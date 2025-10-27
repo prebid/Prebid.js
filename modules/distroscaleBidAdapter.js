@@ -1,3 +1,4 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -14,14 +15,14 @@ const UNDEF = undefined;
 const SUPPORTED_MEDIATYPES = [ BANNER ];
 
 function _getHost(url) {
-  let a = document.createElement('a');
+  const a = document.createElement('a');
   a.href = url;
   return a.hostname;
 }
 
 function _getBidFloor(bid, mType, sz) {
   if (isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
+    const floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: mType || '*',
       size: sz || '*'
@@ -72,7 +73,7 @@ function _createImpressionObject(bid) {
       addSize(bid.mediaTypes[BANNER].sizes[i]);
     }
   }
-  if (sizesCount == 0) {
+  if (sizesCount === 0) {
     logWarn(LOG_WARN_PREFIX + 'Error: missing sizes: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
   } else {
     // Use the first preferred size
@@ -140,7 +141,7 @@ export const spec = {
         if (win.vx.cs_loaded) {
           dsloaded = 1;
         }
-        if (win != win.parent) {
+        if (win !== win.parent) {
           win = win.parent;
         } else {
           break;
@@ -163,7 +164,7 @@ export const spec = {
         h: screen.height,
         w: screen.width,
         language: (navigator.language && navigator.language.replace(/-.*/, '')) || 'en',
-        dnt: (navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1' || navigator.doNotTrack == 'yes') ? 1 : 0
+        dnt: getDNT() ? 1 : 0
       },
       imp: [],
       user: {},
@@ -180,7 +181,7 @@ export const spec = {
       }
     });
 
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
 
@@ -197,8 +198,9 @@ export const spec = {
     }
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params
@@ -230,9 +232,6 @@ export const spec = {
     if (validBidRequests[0].userIdAsEids && validBidRequests[0].userIdAsEids.length > 0) {
       // Standard ORTB structure
       deepSetValue(payload, 'user.eids', validBidRequests[0].userIdAsEids);
-    } else if (validBidRequests[0].userId && Object.keys(validBidRequests[0].userId).length > 0) {
-      // Fallback to non-ortb structure
-      deepSetValue(payload, 'user.ext.userId', validBidRequests[0].userId);
     }
 
     return {
@@ -252,7 +251,7 @@ export const spec = {
           seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
+              const newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0),
                 currency: DEFAULT_CURRENCY,

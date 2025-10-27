@@ -4,9 +4,11 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js'
 
 const ENDPOINT = '//prebid.vlyby.com/';
 const BIDDER_CODE = 'vlyby';
+const GVLID = 1009;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
@@ -23,6 +25,7 @@ export const spec = {
       url: `${ENDPOINT}`,
       data: {
         request: {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: bidderRequest.auctionId
         },
         gdprConsent: {
@@ -48,7 +51,7 @@ export const spec = {
     if (serverResponse.body) {
       const vHB = serverResponse.body.bids;
       try {
-        let bidResponse = {
+        const bidResponse = {
           requestId: vHB.bid,
           cpm: vHB.cpm,
           width: vHB.size.width,

@@ -1,7 +1,7 @@
-import { logInfo } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {BANNER} from '../src/mediaTypes.js'
-import {ajax} from '../src/ajax.js'
+import {logInfo} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER = 'automatad'
 
@@ -18,7 +18,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     // will receive request bid. check if have necessary params for bidding
-    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.siteId != null && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && typeof bid.mediaTypes.banner == 'object')
+    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.siteId != null && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && typeof bid.mediaTypes.banner === 'object')
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -57,7 +57,7 @@ export const spec = {
 
     // params from bid request
     const openrtbRequest = {
-      id: validBidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: impressions,
       site: {
         id: siteId,

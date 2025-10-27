@@ -6,11 +6,9 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const CURRENCY = 'EUR';
 const BIDDER_CODE = 'talkads';
-const GVLID = 1074;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
 
   /**
@@ -58,10 +56,11 @@ export const spec = {
       }
       return loOne;
     });
-    let laParams = paValidBidRequests[0].params;
+    const laParams = paValidBidRequests[0].params;
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auction_id: paValidBidRequests[0].auctionId,
       // TODO: should this use auctionId? see #8573
       transaction_id: paValidBidRequests[0].transactionId,
@@ -97,7 +96,7 @@ export const spec = {
     if (!poServerResponse.body) {
       return [];
     }
-    let laResponse = [];
+    const laResponse = [];
     if (poServerResponse.body.status !== 'ok') {
       utils.logInfo('Error : ', poServerResponse.body.error);
       return laResponse;
@@ -126,7 +125,7 @@ export const spec = {
    */
   onBidWon: function (poBid) {
     utils.logInfo('onBidWon : ', poBid);
-    let laParams = poBid.params[0];
+    const laParams = poBid.params[0];
     if (poBid.pbid) {
       ajax(laParams.bidder_url + 'won/' + poBid.pbid);
     }

@@ -1,8 +1,10 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {getWindowFromDocument, logWarn} from '../src/utils.js';
+import {logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
@@ -20,7 +22,7 @@ export const spec = {
   },
   buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bid => {
-      let url = '//' + bid.params.adsSrvDomain + '/srv?method=getPlacement&app=' +
+      const url = '//' + bid.params.adsSrvDomain + '/srv?method=getPlacement&app=' +
         bid.params.siteId + '&placement=' + bid.params.placementId;
       const data = getPayload(bid, bidderRequest);
       return {
@@ -74,8 +76,8 @@ function getPayload (bid, bidderRequest) {
     let us = storage.getDataFromLocalStorage(US_KEY);
     if (!us) {
       us = 'us_web_xxxxxxxxxxxx'.replace(/[x]/g, c => {
-        let r = Math.random() * 16 | 0;
-        let v = c === 'x' ? r : (r & 0x3 | 0x8);
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
       storage.setDataInLocalStorage(US_KEY, us);
@@ -105,7 +107,7 @@ function getPayload (bid, bidderRequest) {
       renderURL,
       data: {
         pagecat: pageCategory ? pageCategory.split(',').map(k => k.trim()) : [],
-        keywords: keywords ? keywords.split(',').map(k => k.trim()) : [],
+        keywords: getAllOrtbKeywords(bidderRequest.ortb2, keywords),
         lang_content: document.documentElement.lang,
         lang: window.navigator.language,
         domain: refererInfo.domain,
@@ -117,7 +119,7 @@ function getPayload (bid, bidderRequest) {
       complianceData: {
         child: '-1',
         us_privacy: uspConsent,
-        dnt: window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false,
+        dnt: getDNT(),
         iabConsent: {},
         mediation: {
           gdprConsent: mediation.gdprConsent,
@@ -155,7 +157,7 @@ function newRenderer(bid) {
 
 function webisRender(bid, doc) {
   bid.renderer.push(() => {
-    const win = getWindowFromDocument(doc) || window;
+    const win = doc?.defaultView || window;
     win.webis.init(bid.adData, bid.adUnitCode, bid.params);
   })
 }

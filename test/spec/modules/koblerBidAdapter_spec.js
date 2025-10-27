@@ -1,17 +1,27 @@
 import {expect} from 'chai';
-import {spec} from 'modules/koblerBidAdapter.js';
+import {pageViewId, spec} from 'modules/koblerBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
-function createBidderRequest(auctionId, timeout, pageUrl) {
+function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}) {
+  const gdprConsent = {
+    consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
+    apiVersion: 2,
+    vendorData: gdprVendorData,
+    gdprApplies: true
+  };
   return {
+    bidderRequestId: 'mock-uuid',
     auctionId: auctionId || 'c1243d83-0bed-4fdb-8c76-42b456be17d0',
     timeout: timeout || 2000,
     refererInfo: {
       page: pageUrl || 'example.com'
-    }
+    },
+    gdprConsent: gdprConsent
   };
 }
 
@@ -37,6 +47,16 @@ function createValidBidRequest(params, bidId, sizes) {
 }
 
 describe('KoblerAdapter', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(() => {
+    sandbox.restore()
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -207,8 +227,47 @@ describe('KoblerAdapter', function () {
       const openRtbRequest = JSON.parse(result.data);
 
       expect(openRtbRequest.tmax).to.be.equal(timeout);
-      expect(openRtbRequest.id).to.be.equal(auctionId);
+      expect(openRtbRequest.id).to.exist;
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
+    });
+
+    it('should handle missing consent from bidder request', function () {
+      const testUrl = 'kobler.no';
+      const auctionId = 'f3d41a92-104a-4ff7-8164-29197cfbf4af';
+      const timeout = 5000;
+      const validBidRequests = [createValidBidRequest()];
+      const bidderRequest = createBidderRequest(auctionId, timeout, testUrl, {
+        purpose: {
+          consents: {
+            1: false,
+            2: false
+          }
+        }
+      });
+
+      const result = spec.buildRequests(validBidRequests, bidderRequest);
+      const openRtbRequest = JSON.parse(result.data);
+
+      expect(openRtbRequest.tmax).to.be.equal(timeout);
+      expect(openRtbRequest.id).to.exist;
+      expect(openRtbRequest.site.page).to.be.equal(testUrl);
+      expect(openRtbRequest.ext.kobler.tcf_purpose_2_given).to.be.equal(false);
+      expect(openRtbRequest.ext.kobler.tcf_purpose_3_given).to.be.equal(false);
+    });
+
+    it('should reuse the same page view ID on subsequent calls', function () {
+      const testUrl = 'kobler.no';
+      const auctionId1 = '8319af54-9795-4642-ba3a-6f57d6ff9100';
+      const auctionId2 = 'e19f2d0c-602d-4969-96a1-69a22d483f47';
+      const timeout = 5000;
+      const validBidRequests = [createValidBidRequest()];
+      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl);
+      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl);
+
+      const openRtbRequest1 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest1).data);
+      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId);
+      const openRtbRequest2 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest2).data);
+      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId);
     });
 
     it('should read data from valid bid requests', function () {
@@ -275,27 +334,6 @@ describe('KoblerAdapter', function () {
 
       const openRtbRequest = JSON.parse(result.data);
       expect(openRtbRequest.site.page).to.be.equal('example.com');
-      expect(openRtbRequest.test).to.be.equal(1);
-    });
-
-    it('should read pageUrl from config when testing', function () {
-      config.setConfig({
-        pageUrl: 'https://testing-url.com'
-      });
-      const validBidRequests = [
-        createValidBidRequest(
-          {
-            test: true
-          }
-        )
-      ];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(result.url).to.be.equal('https://bid-service.dev.essrtb.com/bid/prebid_rtb_call');
-
-      const openRtbRequest = JSON.parse(result.data);
-      expect(openRtbRequest.site.page).to.be.equal('https://testing-url.com');
       expect(openRtbRequest.test).to.be.equal(1);
     });
 
@@ -428,14 +466,31 @@ describe('KoblerAdapter', function () {
       const bidderRequest = createBidderRequest(
         '9ff580cf-e10e-4b66-add7-40ac0c804e21',
         4500,
-        'bid.kobler.no'
+        'bid.kobler.no',
+        {
+          purpose: {
+            consents: {
+              1: false,
+              2: true,
+              3: false
+            }
+          },
+          publisher: {
+            restrictions: {
+              '2': {
+                // require consent
+                '11': 1
+              }
+            }
+          }
+        }
       );
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
       const openRtbRequest = JSON.parse(result.data);
 
       const expectedOpenRtbRequest = {
-        id: '9ff580cf-e10e-4b66-add7-40ac0c804e21',
+        id: 'mock-uuid',
         at: 1,
         tmax: 4500,
         cur: ['USD'],
@@ -513,12 +568,20 @@ describe('KoblerAdapter', function () {
           }
         ],
         device: {
-          devicetype: 2
+          devicetype: 2,
+          ua: navigator.userAgent
         },
         site: {
           page: 'bid.kobler.no'
         },
-        test: 0
+        test: 0,
+        ext: {
+          kobler: {
+            tcf_purpose_2_given: true,
+            tcf_purpose_3_given: false,
+            page_view_id: pageViewId
+          }
+        }
       };
 
       expect(openRtbRequest).to.deep.equal(expectedOpenRtbRequest);
@@ -551,6 +614,7 @@ describe('KoblerAdapter', function () {
                   price: 7.981,
                   nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'edea9b03-3a57-41aa-9c00-abd673e22006',
+                  cid: '572',
                   dealid: '',
                   w: 320,
                   h: 250,
@@ -565,6 +629,7 @@ describe('KoblerAdapter', function () {
                   nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'fa2d5af7-2678-4204-9023-44c526160742',
                   dealid: '2783483223432342',
+                  cid: '800',
                   w: 580,
                   h: 400,
                   adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432"></script>',
@@ -578,7 +643,7 @@ describe('KoblerAdapter', function () {
           cur: 'USD'
         }
       };
-      const bids = spec.interpretResponse(responseWithTwoBids)
+      const bids = spec.interpretResponse(responseWithTwoBids, {})
 
       const expectedBids = [
         {
@@ -593,6 +658,7 @@ describe('KoblerAdapter', function () {
           ttl: 600,
           ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324"></script>',
           nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+          cid: '572',
           meta: {
             advertiserDomains: [
               'https://kobler.no'
@@ -611,6 +677,7 @@ describe('KoblerAdapter', function () {
           ttl: 600,
           ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432"></script>',
           nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+          cid: '800',
           meta: {
             advertiserDomains: [
               'https://bid.kobler.no'
@@ -645,25 +712,30 @@ describe('KoblerAdapter', function () {
     });
 
     it('Should trigger pixel with replaced nurl if nurl is not empty', function () {
-      config.setConfig({
-        'currency': {
-          'adServerCurrency': 'NOK'
-        }
-      });
-      spec.onBidWon({
-        originalCpm: 1.532,
-        cpm: 8.341,
-        currency: 'NOK',
-        nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
-        adserverTargeting: {
+      setCurrencyConfig({ adServerCurrency: 'NOK' });
+      const validBidRequests = [{ params: {} }];
+      const refererInfo = { page: 'page' };
+      const bidderRequest = { refererInfo };
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        const bids = spec.interpretResponse({ body: { seatbid: [{ bid: [{
+          originalCpm: 1.532,
+          price: 8.341,
+          currency: 'NOK',
+          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+        }]}]}}, { bidderRequest: res });
+        const bidToWon = bids[0];
+        bidToWon.adserverTargeting = {
           hb_pb: 8
         }
-      });
+        spec.onBidWon(bidToWon);
 
-      expect(utils.triggerPixel.callCount).to.be.equal(1);
-      expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
-        'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&sp_cur=NOK&asp=8&asp_cur=NOK'
-      );
+        expect(utils.triggerPixel.callCount).to.be.equal(1);
+        expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
+          'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&sp_cur=NOK&asp=8&asp_cur=NOK'
+        );
+        setCurrencyConfig({});
+      });
     });
   });
 
@@ -691,14 +763,12 @@ describe('KoblerAdapter', function () {
       spec.onTimeout([
         {
           adUnitCode: 'adunit-code',
-          auctionId: 'a1fba829-dd41-409f-acfb-b7b0ac5f30c6',
           bidId: 'ef236c6c-e934-406b-a877-d7be8e8a839a',
           timeout: 100,
           params: [],
         },
         {
           adUnitCode: 'adunit-code-2',
-          auctionId: 'a1fba829-dd41-409f-acfb-b7b0ac5f30c6',
           bidId: 'ca4121c8-9a4a-46ba-a624-e9b64af206f2',
           timeout: 100,
           params: [],
@@ -708,13 +778,11 @@ describe('KoblerAdapter', function () {
       expect(utils.triggerPixel.callCount).to.be.equal(2);
       expect(utils.triggerPixel.getCall(0).args[0]).to.be.equal(
         'https://bid.essrtb.com/notify/prebid_timeout?ad_unit_code=adunit-code&' +
-        'auction_id=a1fba829-dd41-409f-acfb-b7b0ac5f30c6&bid_id=ef236c6c-e934-406b-a877-d7be8e8a839a&timeout=100&' +
-        'page_url=' + encodeURIComponent(getRefererInfo().page)
+        'bid_id=ef236c6c-e934-406b-a877-d7be8e8a839a&timeout=100&page_url=' + encodeURIComponent(getRefererInfo().page)
       );
       expect(utils.triggerPixel.getCall(1).args[0]).to.be.equal(
         'https://bid.essrtb.com/notify/prebid_timeout?ad_unit_code=adunit-code-2&' +
-        'auction_id=a1fba829-dd41-409f-acfb-b7b0ac5f30c6&bid_id=ca4121c8-9a4a-46ba-a624-e9b64af206f2&timeout=100&' +
-        'page_url=' + encodeURIComponent(getRefererInfo().page)
+        'bid_id=ca4121c8-9a4a-46ba-a624-e9b64af206f2&timeout=100&page_url=' + encodeURIComponent(getRefererInfo().page)
       );
     });
   });

@@ -2,7 +2,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const bidderConfig = 'hb_pb_ortb';
@@ -12,12 +12,12 @@ export const SYNC_URL = 'https://u.openx.net/w/1.0/pd';
 export const DEFAULT_PH = '2d1251ae-7f3a-47cf-bd2a-2f288854a0ba';
 export const spec = {
   code: 'openx',
-  supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 69,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
-  transformBidParams
+  getUserSyncs
 };
 
 registerBidder(spec);
@@ -25,7 +25,12 @@ registerBidder(spec);
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    nativeRequest: {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]},
+      ]
+    }
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
@@ -48,7 +53,8 @@ const converter = ortbConverter({
     mergeDeep(req, {
       at: 1,
       ext: {
-        bc: `${bidderConfig}_${bidderVersion}`
+        bc: `${bidderConfig}_${bidderVersion}`,
+        pv: '$prebid.version$'
       }
     })
     const bid = context.bidRequests[0];
@@ -79,11 +85,6 @@ const converter = ortbConverter({
       bidResponse.meta.advertiserId = bid.ext.buyer_id;
       bidResponse.meta.brandId = bid.ext.brand_id;
     }
-    const {ortbResponse} = context;
-    if (ortbResponse.ext && ortbResponse.ext.paf) {
-      bidResponse.meta.paf = Object.assign({}, ortbResponse.ext.paf);
-      bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
-    }
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
@@ -104,17 +105,19 @@ const converter = ortbConverter({
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
         return {
           bidId,
-          config: Object.assign({
-            auctionSignals: {},
-          }, cfg)
+          config: mergeDeep(Object.assign({}, cfg), {
+            auctionSignals: {
+              ortb2Imp: context.impContext[bidId]?.imp,
+            },
+          }),
         }
       });
       return {
         bids: response.bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       }
     } else {
-      return response.bids
+      return response
     }
   },
   overrides: {
@@ -139,21 +142,11 @@ const converter = ortbConverter({
             bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
           }
           orig(imp, bidRequest, context);
-          if (imp.video && videoParams?.context === 'outstream') {
-            imp.video.placement = imp.video.placement || 4;
-          }
         }
       }
     }
   }
 });
-
-function transformBidParams(params, isOpenRtb) {
-  return utils.convertTypes({
-    'unit': 'string',
-    'customFloor': 'number'
-  }, params);
-}
 
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||
@@ -168,11 +161,14 @@ function isBidRequestValid(bidRequest) {
   return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
 }
 
-function buildRequests(bids, bidderRequest) {
-  let videoBids = bids.filter(bid => isVideoBid(bid));
-  let bannerBids = bids.filter(bid => isBannerBid(bid));
-  let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
-  videoBids.forEach(bid => {
+function buildRequests(bidRequests, bidderRequest) {
+  const videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
+  const bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
+    // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
+    .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
+
+  const requests = bannerAndNativeRequests.length ? [createRequest(bannerAndNativeRequests, bidderRequest, null)] : [];
+  videoRequests.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
   return requests;
@@ -186,12 +182,17 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video');
+function isVideoBidRequest(bidRequest) {
+  return utils.deepAccess(bidRequest, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+function isNativeBidRequest(bidRequest) {
+  return utils.deepAccess(bidRequest, 'mediaTypes.native');
+}
+
+function isBannerBidRequest(bidRequest) {
+  const isNotVideoOrNativeBid = !isVideoBidRequest(bidRequest) && !isNativeBidRequest(bidRequest)
+  return utils.deepAccess(bidRequest, 'mediaTypes.banner') || isNotVideoOrNativeBid;
 }
 
 function interpretResponse(resp, req) {
@@ -206,12 +207,13 @@ function interpretResponse(resp, req) {
  * @param responses
  * @param gdprConsent
  * @param uspConsent
+ * @param gppConsent
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let queryParamStrings = [];
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const queryParamStrings = [];
     let syncUrl = SYNC_URL;
     if (gdprConsent) {
       queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
@@ -219,6 +221,10 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
     }
     if (uspConsent) {
       queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      queryParamStrings.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+      queryParamStrings.push('gpp_sid=' + gppConsent.applicableSections.join(','));
     }
     if (responses.length > 0 && responses[0].body && responses[0].body.ext) {
       const ext = responses[0].body.ext;

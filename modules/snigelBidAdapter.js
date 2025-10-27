@@ -1,9 +1,10 @@
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID} from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -11,8 +12,15 @@ const DEFAULT_URL = 'https://adserv.snigelweb.com/bp/v1/prebid';
 const DEFAULT_TTL = 60;
 const DEFAULT_CURRENCIES = ['USD'];
 const FLOOR_MATCH_ALL_SIZES = '*';
+const SESSION_ID_KEY = '_sn_session_pba';
 
 const getConfig = config.getConfig;
+const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
+const refreshes = {};
+const placementCounters = {};
+const pageViewId = generateUUID();
+const pageViewStart = new Date().getTime();
+let auctionCounter = 0;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,31 +32,53 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+    const { width: w, height: h } = getViewportSize();
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     return {
       method: 'POST',
       url: getEndpoint(),
       data: JSON.stringify({
-        id: bidderRequest.bidderRequestId,
+        id: bidderRequest.auctionId,
+        accountId: deepAccess(bidRequests, '0.params.accountId'),
+        site: deepAccess(bidRequests, '0.params.site'),
+        sessionId: getSessionId(),
+        counter: auctionCounter++,
+        pageViewId: pageViewId,
+        pageViewStart: pageViewStart,
+        gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),
         test: getTestFlag(),
-        devw: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-        devh: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
-        version: getGlobal().version,
+        version: 'v' + '$prebid.version$',
+        adapterVersion: '2.0',
+        gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || deepAccess(bidderRequest, 'ortb2.regs.gpp'),
+        gpp_sid:
+          deepAccess(bidderRequest, 'gppConsent.applicableSections') || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'),
         gdprApplies: gdprApplies,
         gdprConsentString: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.consentString') : undefined,
         gdprConsentProv: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.addtlConsent') : undefined,
         uspConsent: deepAccess(bidderRequest, 'uspConsent'),
         coppa: getConfig('coppa'),
         eids: deepAccess(bidRequests, '0.userIdAsEids'),
-        schain: deepAccess(bidRequests, '0.schain'),
+        schain: deepAccess(bidRequests, '0.ortb2.source.ext.schain'),
         page: getPage(bidderRequest),
+        topframe: inIframe() === true ? 0 : 1,
+        device: {
+          w,
+          h,
+          dnt: getDNT() ? 1 : 0,
+          language: getLanguage(),
+        },
         placements: bidRequests.map((r) => {
           return {
-            uuid: r.bidId,
+            id: r.adUnitCode,
+            tid: r.transactionId,
+            gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
+            counter: getPlacementCounter(r.params.placement),
             sizes: r.sizes,
             floor: getPriceFloor(r, BANNER, FLOOR_MATCH_ALL_SIZES),
+            refresh: getRefreshInformation(r.adUnitCode),
+            params: r.params.additionalParams,
           };
         }),
       }),
@@ -56,14 +86,14 @@ export const spec = {
     };
   },
 
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body || !serverResponse.body.bids) {
       return [];
     }
 
     return serverResponse.body.bids.map((bid) => {
       return {
-        requestId: bid.uuid,
+        requestId: mapIdToRequestId(bid.id, bidRequest),
         cpm: bid.price,
         creativeId: bid.crid,
         currency: serverResponse.body.cur,
@@ -77,10 +107,10 @@ export const spec = {
     });
   },
 
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncUrl = getSyncUrl(responses || []);
-    if (syncUrl && syncOptions.iframeEnabled && hasSyncConsent(gdprConsent, uspConsent)) {
-      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent)}];
+    if (syncUrl && syncOptions.iframeEnabled) {
+      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent)}];
     }
   },
 };
@@ -88,9 +118,7 @@ export const spec = {
 registerBidder(spec);
 
 function getPage(bidderRequest) {
-  return (
-    getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || window.location.href
-  );
+  return getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href;
 }
 
 function getEndpoint() {
@@ -99,6 +127,14 @@ function getEndpoint() {
 
 function getTestFlag() {
   return getConfig(`${BIDDER_CODE}.test`) === true;
+}
+
+function getLanguage() {
+  return navigator && navigator.language
+    ? navigator.language.indexOf('-') !== -1
+      ? navigator.language.split('-')[0]
+      : navigator.language
+    : undefined;
 }
 
 function getCurrencies() {
@@ -130,13 +166,51 @@ function getPriceFloor(bidRequest, mediaType, size) {
   }
 }
 
-function hasSyncConsent(gdprConsent, uspConsent) {
-  if (gdprConsent?.gdprApplies && !hasPurpose1Consent(gdprConsent)) {
+function getRefreshInformation(adUnitCode) {
+  const refresh = refreshes[adUnitCode];
+  if (!refresh) {
+    refreshes[adUnitCode] = {
+      count: 0,
+      previousTime: new Date(),
+    };
+    return undefined;
+  }
+
+  const currentTime = new Date();
+  const timeDifferenceSeconds = Math.floor((currentTime - refresh.previousTime) / 1000);
+  refresh.count += 1;
+  refresh.previousTime = currentTime;
+  return {
+    count: refresh.count,
+    time: timeDifferenceSeconds,
+  };
+}
+
+function getPlacementCounter(placement) {
+  const counter = placementCounters[placement];
+  if (counter === undefined) {
+    placementCounters[placement] = 0;
+    return 0;
+  }
+
+  placementCounters[placement]++;
+  return placementCounters[placement];
+}
+
+function mapIdToRequestId(id, bidRequest) {
+  return bidRequest.bidderRequest.bids.filter((bid) => bid.adUnitCode === id)[0].bidId;
+}
+
+function hasFullGdprConsent(gdprConsent) {
+  try {
+    const purposeConsents = Object.values(gdprConsent.vendorData.purpose.consents);
+    return (
+      purposeConsents.length > 0 &&
+      purposeConsents.every((value) => value === true) &&
+      gdprConsent.vendorData.vendor.consents[GVLID] === true
+    );
+  } catch (e) {
     return false;
-  } else if (uspConsent && uspConsent[1] === 'Y' && uspConsent[2] === 'Y') {
-    return false;
-  } else {
-    return true;
   }
 }
 
@@ -144,8 +218,27 @@ function getSyncUrl(responses) {
   return getConfig(`${BIDDER_CODE}.syncUrl`) || deepAccess(responses[0], 'body.syncUrl');
 }
 
-function getSyncEndpoint(url, gdprConsent) {
+function getSyncEndpoint(url, gdprConsent, uspConsent, gppConsent) {
   return `${url}?gdpr=${gdprConsent?.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(
     gdprConsent?.consentString || ''
-  )}`;
+  )}&gpp_sid=${gppConsent?.applicableSections?.join(',') || ''}&gpp=${encodeURIComponent(
+    gppConsent?.gppString || ''
+  )}&us_privacy=${uspConsent || ''}`;
+}
+
+function getSessionId() {
+  try {
+    if (storageManager.localStorageIsEnabled()) {
+      let sessionId = storageManager.getDataFromLocalStorage(SESSION_ID_KEY);
+      if (sessionId == null) {
+        sessionId = generateUUID();
+        storageManager.setDataInLocalStorage(SESSION_ID_KEY, sessionId);
+      }
+      return sessionId;
+    } else {
+      return undefined;
+    }
+  } catch (e) {
+    return undefined;
+  }
 }

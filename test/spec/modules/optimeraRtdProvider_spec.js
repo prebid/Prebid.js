@@ -10,7 +10,8 @@ describe('Optimera RTD sub module', () => {
         params: {
           clientID: '9999',
           optimeraKeyName: 'optimera',
-          device: 'de'
+          device: 'de',
+          transmitWithBidRequests: 'allow',
         }
       }]
     };
@@ -18,13 +19,81 @@ describe('Optimera RTD sub module', () => {
     expect(optimeraRTD.clientID).to.equal('9999');
     expect(optimeraRTD.optimeraKeyName).to.equal('optimera');
     expect(optimeraRTD.device).to.equal('de');
+    expect(optimeraRTD.transmitWithBidRequests).to.equal('allow');
   });
 });
 
-describe('Optimera RTD score file url is properly set', () => {
-  it('Proerly set the score file url', () => {
+describe('Optimera RTD score file URL is properly set for v0', () => {
+  it('should properly set the score file URL', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+          apiVersion: 'v0',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
     optimeraRTD.setScores();
-    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost:9876/context.html.js');
+    expect(optimeraRTD.apiVersion).to.equal('v0');
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
+  });
+
+  it('should properly set the score file URL without apiVersion set', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
+    optimeraRTD.setScores();
+    expect(optimeraRTD.apiVersion).to.equal('v0');
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
+  });
+
+  it('should properly set the score file URL with an api version other than v0 or v1', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+          apiVersion: 'v15',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
+    optimeraRTD.setScores();
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
+  });
+});
+
+describe('Optimera RTD score file URL is properly set for v1', () => {
+  it('should properly set the score file URL', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+          apiVersion: 'v1',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
+    optimeraRTD.setScores();
+    expect(optimeraRTD.apiVersion).to.equal('v1');
+    expect(optimeraRTD.scoresURL).to.equal('https://v1.oapi26b.com/api/products/scores?c=9999&h=localhost:9876&p=/context.html&s=de');
   });
 });
 
@@ -132,5 +201,31 @@ describe('Optimera RTD error logging', () => {
   it('if adUnits is not an array should log an error', () => {
     optimeraRTD.returnTargetingData('test');
     expect(utils.logError.called).to.equal(true);
+  });
+});
+
+describe('Optimera RTD injectOrtbScores', () => {
+  it('injects optimera targeting into ortb2Imp.ext.data', () => {
+    const adUnits = [
+      { code: 'div-0', ortb2Imp: {} },
+      { code: 'div-1', ortb2Imp: {} }
+    ];
+
+    const reqBidsConfigObj = { adUnits };
+
+    optimeraRTD.injectOrtbScores(reqBidsConfigObj);
+
+    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.optimera).to.deep.equal(['A5', 'A6']);
+    expect(reqBidsConfigObj.adUnits[1].ortb2Imp.ext.data.optimera).to.deep.equal(['A7', 'A8']);
+  });
+
+  it('does not inject when no targeting data is available', () => {
+    const adUnits = [{ code: 'div-unknown', ortb2Imp: {} }];
+
+    const reqBidsConfigObj = { adUnits };
+
+    optimeraRTD.injectOrtbScores(reqBidsConfigObj);
+
+    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
   });
 });

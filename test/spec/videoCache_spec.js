@@ -1,38 +1,13 @@
 import chai from 'chai';
-import { getCacheUrl, store } from 'src/videoCache.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
+import {batchingCache, getCacheUrl, store, _internal, storeBatch} from 'src/videoCache.js';
+import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
-import { batchingCache } from '../../src/auction.js';
+import * as utils from 'src/utils.js';
+import { storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
-
-function getMockBid(bidder, auctionId, bidderRequestId) {
-  return {
-    'bidder': bidder,
-    'params': {
-      'placementId': '10433394',
-      'member': 123,
-      'keywords': {
-        'foo': ['bar', 'baz'],
-        'fizz': ['buzz']
-      }
-    },
-    'bid_id': '12345abc',
-    'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'mediaTypes': {
-      'banner': {
-        'sizes': [[300, 250]]
-      }
-    },
-    'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
-    'sizes': [300, 250],
-    'bidId': '123',
-    'bidderRequestId': bidderRequestId,
-    'auctionId': auctionId
-  };
-}
 
 describe('The video cache', function () {
   function assertError(callbackSpy) {
@@ -63,7 +38,7 @@ describe('The video cache', function () {
     beforeEach(function () {
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'https://test.cache.url/endpoint'
         }
       })
     });
@@ -126,9 +101,7 @@ describe('The video cache', function () {
     <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression></Impression>
-        <Creatives></Creatives>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>\n        \n        <Creatives></Creatives>
       </Wrapper>
     </Ad>
   </VAST>`;
@@ -147,6 +120,20 @@ describe('The video cache', function () {
     </Ad>
   </VAST>`;
       assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
+    });
+
+    it('should include multiple vastImpUrl when it\'s an array', function() {
+      const expectedValue = `<VAST version="3.0">
+    <Ad>
+      <Wrapper>
+        <AdSystem>prebid.org wrapper</AdSystem>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
+        <Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression>
+        <Creatives></Creatives>
+      </Wrapper>
+    </Ad>
+  </VAST>`;
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com'], ttl: 25, cpm: 1.2 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
@@ -173,9 +160,9 @@ describe('The video cache', function () {
       store(bids, function () { });
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
-      let payload = {
+      request.url.should.equal('https://test.cache.url/endpoint');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
+      const payload = {
         puts: [{
           type: 'xml',
           value: vastXml1,
@@ -194,7 +181,7 @@ describe('The video cache', function () {
     it('should include additional params in request payload should config.cache.vasttrack be true', () => {
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          url: 'https://test.cache.url/endpoint',
           vasttrack: true
         }
       });
@@ -223,9 +210,9 @@ describe('The video cache', function () {
       store(bids, function () { });
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
-      let payload = {
+      request.url.should.equal('https://test.cache.url/endpoint');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
+      const payload = {
         puts: [{
           type: 'xml',
           value: vastXml1,
@@ -251,7 +238,7 @@ describe('The video cache', function () {
     it('should include additional params in request payload should config.cache.vasttrack be true - with timestamp', () => {
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          url: 'https://test.cache.url/endpoint',
           vasttrack: true
         }
       });
@@ -294,9 +281,9 @@ describe('The video cache', function () {
 
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
-      let payload = {
+      request.url.should.equal('https://test.cache.url/endpoint');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
+      const payload = {
         puts: [{
           type: 'xml',
           value: vastXml1,
@@ -321,42 +308,44 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
-    it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
-      const mockAfterBidAdded = function() {};
-      let callback = null;
-      let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+    if (FEATURES.VIDEO) {
+      it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
+        const mockAfterBidAdded = function() {};
+        let callback = null;
+        const mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
 
-      config.setConfig({
-        cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
-          batchSize: 3,
-          batchTimeout: 20
+        config.setConfig({
+          cache: {
+            url: 'https://test.cache.url/endpoint',
+            batchSize: 3,
+            batchTimeout: 20
+          }
+        });
+
+        const stubCache = sinon.stub();
+        const batchAndStore = batchingCache(mockTimeout, stubCache);
+        for (let i = 0; i < 3; i++) {
+          batchAndStore({}, {}, mockAfterBidAdded);
         }
+
+        sinon.assert.calledOnce(mockTimeout);
+        sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
+
+        const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
+
+        callback();
+
+        sinon.assert.calledWith(stubCache, expectedBatch);
       });
-
-      let stubCache = sinon.stub();
-      const batchAndStore = batchingCache(mockTimeout, stubCache);
-      for (let i = 0; i < 3; i++) {
-        batchAndStore({}, {}, mockAfterBidAdded);
-      }
-
-      sinon.assert.calledOnce(mockTimeout);
-      sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
-
-      const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
-
-      callback();
-
-      sinon.assert.calledWith(stubCache, expectedBatch);
-    });
+    }
 
     function assertRequestMade(bid, expectedValue) {
       store([bid], function () { });
 
       const request = server.requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.url.should.equal('https://test.cache.url/endpoint');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
 
       JSON.parse(request.requestBody).should.deep.equal({
         puts: [{
@@ -379,13 +368,74 @@ describe('The video cache', function () {
       return callback;
     }
   });
+
+  describe('storeBatch', () => {
+    let sandbox;
+    let err, cacheIds
+    beforeEach(() => {
+      err = null;
+      cacheIds = [];
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'logError');
+      sandbox.stub(_internal, 'store').callsFake((_, cb) => cb(err, cacheIds));
+    });
+    afterEach(() => {
+      sandbox.restore();
+      config.resetConfig();
+    })
+    it('should log an error when store replies with an error', () => {
+      err = new Error('err');
+      storeBatch([]);
+      sinon.assert.called(utils.logError);
+    });
+    it('should not process returned uuids if they do not match the batch size', () => {
+      const el = {auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub()}
+      const batch = [el, el];
+      cacheIds = [{uuid: 'mock-id'}]
+      storeBatch(batch);
+      expect(el.bidResponse.videoCacheKey).to.not.exist;
+      sinon.assert.notCalled(batch[0].afterBidAdded);
+      sinon.assert.called(utils.logError);
+    });
+    it('should set bids\' videoCacheKey and vastUrl', () => {
+      config.setConfig({
+        cache: {
+          url: 'mock-cache'
+        }
+      })
+      const el = {auctionInstance: {addBidReceived: sinon.stub()}, bidResponse: {}, afterBidAdded: sinon.stub()};
+      cacheIds = [{uuid: 'mock-id'}]
+      storeBatch([el]);
+      sinon.assert.match(el.bidResponse, {
+        videoCacheKey: 'mock-id',
+        vastUrl: 'mock-cache?uuid=mock-id'
+      })
+    });
+  })
+
+  describe('local video cache', function() {
+    afterEach(function () {
+      config.resetConfig();
+    });
+
+    it('should store bid vast locally with blob by default', () => {
+      const bid = {
+        vastXml: `<VAST version="3.0"></VAST>`
+      };
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
+      expect(bid.videoCacheKey).to.not.be.empty;
+    });
+  });
 });
 
 describe('The getCache function', function () {
   beforeEach(function () {
     config.setConfig({
       cache: {
-        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        url: 'https://test.cache.url/endpoint'
       }
     })
   });
@@ -397,6 +447,6 @@ describe('The getCache function', function () {
   it('should return the expected URL', function () {
     const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
     const url = getCacheUrl(uuid);
-    url.should.equal(`https://prebid.adnxs.com/pbc/v1/cache?uuid=${uuid}`);
+    url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
   });
 })
