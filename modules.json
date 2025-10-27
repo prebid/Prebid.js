@@ -14,6 +14,7 @@
   "mediasquareBidAdapter",
   "nexx360BidAdapter",
   "openxBidAdapter",
+  "onetagBidAdapter",
   "pubmaticBidAdapter",
   "richaudienceBidAdapter",
   "rubiconBidAdapter",
@@ -23,13 +24,11 @@
   "smilewantedBidAdapter",
   "tripleliftBidAdapter",
   "yahoosspBidAdapter",
-
   "adlooxRtdProvider",
   "intersectionRtdProvider",
   "iasRtdProvider",
   "sirdataRtdProvider",
   "weboramaRtdProvider",
-
   "amxIdSystem",
   "consentManagement",
   "consentManagementUsp",
