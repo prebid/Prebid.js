@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {buildUrl, logInfo, logMessage, parseSizesInput, triggerPixel} from '../src/utils.js';
 
 /**
@@ -25,7 +25,7 @@ const ADQUERY_TTL = 360;
 export const spec = {
   code: ADQUERY_BIDDER_CODE,
   gvlid: ADQUERY_GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * @param {object} bid
