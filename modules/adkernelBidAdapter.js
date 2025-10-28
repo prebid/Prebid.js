@@ -105,7 +105,8 @@ export const spec = {
     {code: 'pixelpluses', gvlid: 1209},
     {code: 'urekamedia'},
     {code: 'smartyexchange'},
-    {code: 'infinety'}
+    {code: 'infinety'},
+    {code: 'qohere'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

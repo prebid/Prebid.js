@@ -1,205 +1,235 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <meta name=viewport content="width=device-width, initial-scale=1">
-        <script src="../../build/dev/prebid.js" async type="text/javascript"></script>
-        <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
-        <script>
-            /* adapted from https://docs.prebid.org/dev-docs/examples/basic-example.html */
-            var div_1_sizes = [
-                [300, 250],
-                [300, 600]
-            ];
-            var div_2_sizes = [
-                [728, 90],
-                [970, 250]
-            ];
-            var PREBID_TIMEOUT = 1000;
-            var FAILSAFE_TIMEOUT = 3000;
+<!DOCTYPE html>
+<html lang="en">
 
-            var adUnits = [
-                {
-                    code: '/19968336/header-bid-tag-0',
-                    mediaTypes: {
-                        banner: {
-                            sizes: div_1_sizes
-                        }
-                    },
-                    bids: [{
-                        bidder: 'appnexus',
-                        params: {
-                            placementId: 13144370
-                        }
-                    }]
-                },
-                {
-                    code: '/19968336/header-bid-tag-1',
-                    mediaTypes: {
-                        banner: {
-                            sizes: div_2_sizes
-                        }
-                    },
-                    bids: [{
-                        bidder: 'appnexus',
-                        params: {
-                            placementId: 13144370
-                        }
-                    }]
-                }
-            ];         
+<head>
+    <meta charset="utf-8">
+    <meta name=viewport content="width=device-width, initial-scale=1">
 
-            var pbjs = pbjs || {};
-            pbjs.que = pbjs.que || [];
+    <title>RTD Module Test</title>
 
-            var googletag = googletag || {};
-            googletag.cmd = googletag.cmd || [];
+    <script src="../../build/dev/prebid.js" async type="text/javascript"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+        /* adapted from https://docs.prebid.org/dev-docs/examples/basic-example.html */
 
-            // DYNAMIC CONFIGURATION BLOCK
-            function requestBids() {
-                pbjs.que.push(function() {
-                    // send requests
-                    pbjs.addAdUnits(adUnits);
-                    pbjs.requestBids({
-                        bidsBackHandler: initAdserver,
-                        timeout: PREBID_TIMEOUT
-                    });
-                })
-            }
+        // 1. Global Variables and Initialization
+        var div_1_sizes = [
+            [300, 250],
+            [300, 600]
+        ];
+        var div_2_sizes = [
+            [728, 90],
+            [970, 250]
+        ];
 
-            function timeout() {
-                setTimeout(function() {
-                    initAdserver();
-                }, FAILSAFE_TIMEOUT);
-            }
+        var PREBID_TIMEOUT = 3000;
 
-            function requestDisplay() {
-                googletag.cmd.push(function() {
-                    googletag.display('div-2');
-                });
-                
-                googletag.cmd.push(function() {
-                    googletag.display('div-1');
-                });
-            }
-
-            function onSettingsUpdate() {
-                let fieldElem = document.getElementById('token-to-use');
-                let publicToken = fieldElem ? fieldElem.value : '';
-                if (!publicToken) {
-                    alert('please enter your token for Neuwo AI API to the field');
-                    if (fieldElem) fieldElem.focus();
-                    return;
-                }
-                let apiUrlField = document.getElementById('neuwo-api-url');
-                let apiUrl = apiUrlField ? apiUrlField.value : '';
-                if (!apiUrl) {
-                    alert('please enter Neuwo AI API url to the field');
-                    if (apiUrlField) apiUrlField.focus();
-                    return;
-                }
-
-                let urlElem = document.getElementById('url-to-use');
-                let argUrl = urlElem ? urlElem.value : undefined;
-                pbjs.que.push(function() {
-                    pbjs.setConfig({
-                        debug: true,
-                        realTimeData: {
-                            dataProviders: [
-                                {
-                                    name: "NeuwoRTDModule",
-                                    waitForIt: true,
-                                    params: {
-                                        publicToken,
-                                        apiUrl,
-                                        argUrl
-                                    }
-                                }
-                            ]
-                        }
-                    })
-                })
-
-                // trigger the bidding process, timeout handling and ad display
-
-                requestBids();
-                timeout();
-                requestDisplay();
-            }
-            // DYNAMIC CONFIGURATION BLOCK END
-            googletag.cmd.push(function() {
-                googletag.pubads().disableInitialLoad();
-            });
-
-            function initAdserver() {
-                if (pbjs.initAdserverSet) return;
-                pbjs.initAdserverSet = true;
-                googletag.cmd.push(function() {
-                    if (pbjs.libLoaded) {
-                        pbjs.que.push(function() {
-                            pbjs.setTargetingForGPTAsync();
-                            googletag.pubads().refresh();
-                        });
-                    } else {
-                        googletag.pubads().refresh();
+        var adUnits = [
+            {
+                code: '/19968336/header-bid-tag-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: div_1_sizes
                     }
-                });
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13144370
+                    }
+                }]
+            },
+            {
+                code: '/19968336/header-bid-tag-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: div_2_sizes
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13144370
+                    }
+                }]
+            }
+        ];
+
+
+        // 2. GPT and PBJS Configuration
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        // Custom Request Bids logic in onSettingsUpdate()
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+            pbjs.initAdserverSet = true;
+            googletag.cmd.push(function () {
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function () {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                } else {
+                    googletag.pubads().refresh();
+                }
+            });
+        }
+
+        // Custom Timeout logic in onSettingsUpdate()
+
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-1', div_1_sizes, 'div-1').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-1', div_2_sizes, 'div-2').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+
+
+        // 3. User Triggered Setup (RTD Module)
+        function onSettingsUpdate() {
+            const inputNeuwoApiToken = document.getElementById('neuwo-api-token');
+            const neuwoApiToken = inputNeuwoApiToken ? inputNeuwoApiToken.value : '';
+            if (!neuwoApiToken) {
+                alert('Please enter your token for Neuwo AI API to the field');
+                if (inputNeuwoApiToken) inputNeuwoApiToken.focus();
+                return;
             }
 
-            googletag.cmd.push(function() {
-                googletag.defineSlot('/19968336/header-bid-tag-0', div_1_sizes, 'div-1').addService(googletag.pubads());
-                googletag.pubads().enableSingleRequest();
-                googletag.enableServices();
-            });
-            googletag.cmd.push(function() {
-                googletag.defineSlot('/19968336/header-bid-tag-1', div_2_sizes, 'div-2').addService(googletag.pubads());
-                googletag.pubads().enableSingleRequest();
-                googletag.enableServices();
-            });
-        </script>
-    </head>
-    <body>
-        <h2>Basic Prebid.js Example using neuwoRtdProvider</h2>
-        <div id="need-help" style="padding: 1em; border: 2px solid gray; background-color: rgb(255, 218, 218); white-space: pre-line;">
-            Looks like you're not following the testing environment setup, try accessing <a href="http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html">http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html</a>
-            after running commands in the prebid.js source folder that includes libraries/modules/neuwoRtdProvider.js
-            <code style="display: block; white-space: pre-line;">
-                npm ci
-                npm i -g gulp-cli
-                gulp serve --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter
-            </code>
-        </div>
-        <div>
-            <p>Add token and url to use for Neuwo extension configuration</p>
-            <input type="text" placeholder="Neuwo API url" id="neuwo-api-url" />
-            <input type="text" placeholder="Token for Neuwo API" id="token-to-use" />
-            <input type="text" placeholder="Use url for site" id="url-to-use" />
-            <button onClick="onSettingsUpdate()">Update</button>
-        </div>
+            const inputNeuwoApiUrl = document.getElementById('neuwo-api-url');
+            const neuwoApiUrl = inputNeuwoApiUrl ? inputNeuwoApiUrl.value : '';
+            if (!neuwoApiUrl) {
+                alert('Please enter Neuwo AI API url to the field');
+                if (inputNeuwoApiUrl) inputNeuwoApiUrl.focus();
+                return;
+            }
 
-        <h5>Div-1</h5>
-        <div id='div-1'>
-            Ad spot div-1: This content will be replaced by prebid.js and/or related components once you click "Update"
-        </div>
+            const inputWebsiteToAnalyseUrl = document.getElementById('website-to-analyse-url');
+            const websiteToAnalyseUrl = inputWebsiteToAnalyseUrl ? inputWebsiteToAnalyseUrl.value : undefined;
 
-        <br>
+            const inputIabContentTaxonomyVersion = document.getElementById('iab-content-taxonomy-version');
+            const iabContentTaxonomyVersion = inputIabContentTaxonomyVersion ? inputIabContentTaxonomyVersion.value : undefined;
 
-        <h5>Div-2</h5>
-        <div id='div-2'>
-            Ad spot div-2: Replaces this text as well, if everything goes to plan
-            <!-- example of an ad field trigger content below -->
-            <!--
-            <script type="text/javascript">
-                googletag.cmd.push(function() {
-                    googletag.display('div-2');
+            pbjs.que.push(function () {
+                pbjs.setConfig({
+                    debug: true,
+                    realTimeData: {
+                        dataProviders: [
+                            {
+                                name: "NeuwoRTDModule",
+                                waitForIt: true,
+                                params: {
+                                    neuwoApiUrl,
+                                    neuwoApiToken,
+                                    websiteToAnalyseUrl,
+                                    iabContentTaxonomyVersion
+                                }
+                            }
+                        ]
+                    }
+                })
+            })
+
+            // Request Bids
+            pbjs.que.push(function () {
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    bidsBackHandler: initAdserver,
                 });
-            </script>
-            -->
+            })
+            // Timeout
+            setTimeout(function () {
+                initAdserver();
+            }, PREBID_TIMEOUT);
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Basic Prebid.js Example using Neuwo Rtd Provider</h1>
+
+    <div id="help" style="padding: 1em; border: 2px solid gray; background-color: #ed4f4f; white-space: pre-line;">
+        Looks like you're not following the testing environment setup, try accessing
+        <a href="http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html">
+            http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html
+        </a>
+        after running commands in the prebid.js source folder that includes libraries/modules/neuwoRtdProvider.js
+        <code style="display: block; white-space: pre-line;">
+            npm ci
+            npx gulp serve --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter
+
+            // No tests
+            npx gulp serve-fast --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter --notests
+
+            // Only tests
+            npx gulp test-only --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter --file=test/spec/modules/neuwoRtdProvider_spec.js
+        </code>
+    </div>
+
+    <div>
+        <h2>Neuwo Rtd Provider Configuration</h2>
+        <p>Add token and url to use for Neuwo extension configuration</p>
+        <input type="text" placeholder="Neuwo Edge API Endpoint URL" id="neuwo-api-url" />
+        <input type="text" placeholder="Neuwo API Token" id="neuwo-api-token" />
+        <input type="text" placeholder="URL for website to analyse" id="website-to-analyse-url" />
+        <input type="text" placeholder="IAB Content Taxonomy Version (default 3.0)" id="iab-content-taxonomy-version" />
+        <button onClick="onSettingsUpdate()">Update</button>
+    </div>
+
+    <div>
+        <h2>Ad Examples</h2>
+
+        <div>
+            <h3>Div-1</h3>
+            <div id='div-1'>
+                <script type='text/javascript'>
+                    googletag.cmd.push(function () {
+                        googletag.display('div-1');
+                    });
+                </script>
+                Ad spot div-1: This content will be replaced by prebid.js and/or related components once you click
+                "Update" and there are no errors.
+            </div>
         </div>
 
-    </body>
-    <script type="text/javascript">
-        var helper = document.getElementById('need-help');
-        if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
-    </script>
+        <div>
+            <h3>Div-2</h3>
+            <div id='div-2'>
+                <script type='text/javascript'>
+                    googletag.cmd.push(function () {
+                        googletag.display('div-2');
+                    });
+                </script>
+                Ad spot div-2: This content will be replaced by prebid.js and/or related components once you click
+                "Update" and there are no errors.
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h2>Neuwo Data in Bid Request</h2>
+        <p>The retrieved data from Neuwo API is injected into the bid request as OpenRTB (ORTB2)`site.content.data` and
+            `user.data`. Full bid request can be inspected in Developer Tools Console under
+            <code>INFO: NeuwoRTDModule injectIabCategories: post-injection bidsConfig</code>
+        </p>
+    </div>
+
+</body>
+
+<script type="text/javascript">
+    const helper = document.getElementById('help');
+    if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
+</script>
+
 </html>
