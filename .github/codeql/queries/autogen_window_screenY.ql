@@ -12,4 +12,4 @@ import prebid
 from SourceNode api
 where
   api = windowPropertyRead("screenY")
-select api, "screenY is an indicator of fingerprinting, weighed 285.97 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+select api, "screenY is an indicator of fingerprinting, weighed 303.5 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"

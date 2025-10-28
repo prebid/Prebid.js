@@ -178,7 +178,8 @@ describe('WelectAdapter', function () {
           ttl: 120,
           vastUrl: 'some vast url',
           height: 640,
-          width: 320
+          width: 320,
+          mediaType: 'video'
         }
       }
     }
@@ -213,7 +214,8 @@ describe('WelectAdapter', function () {
       requestId: 'some bid id',
       ttl: 120,
       vastUrl: 'some vast url',
-      width: 320
+      width: 320,
+      mediaType: 'video'
     }
 
     it('if response reflects unavailability, should be empty', function () {
