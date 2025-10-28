@@ -11,5 +11,5 @@
 import prebid
 from SourceNode api
 where
-  api = instantiationOf("SharedWorker")
-select api, "SharedWorker is an indicator of fingerprinting, weighed 93.37 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
+  api = callTo("SharedWorker")
+select api, "SharedWorker is an indicator of fingerprinting, weighed 78.14 in https://raw.githubusercontent.com/duckduckgo/tracker-radar/refs/heads/main/build-data/generated/api_fingerprint_weights.json"
