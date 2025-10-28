@@ -8,9 +8,9 @@ import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
 import { REPORTER_ID, preparePayload, restoreReportList } from '../../../modules/intentIqAnalyticsAdapter.js';
-import {FIRST_PARTY_KEY, PREBID, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import { FIRST_PARTY_KEY, PREBID, VERSION } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
-import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
+import { getReferrer, appendVrrefAndFui } from '../../../libraries/intentIqUtils/getRefferer.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
 
 const partner = 10;
@@ -47,8 +47,6 @@ const getUserConfigWithReportingServerAddress = () => [
     'params': {
       'partner': partner,
       'unpack': null,
-      'manualWinReportEnabled': false,
-      'reportingServerAddress': REPORT_SERVER_ADDRESS
     },
     'storage': {
       'type': 'html5',
@@ -90,6 +88,14 @@ const getWonRequest = () => ({
   'size': '728x90',
   'status': 'rendered'
 });
+
+const enableAnalyticWithSpecialOptions = (options) => {
+  iiqAnalyticsAnalyticsAdapter.disableAnalytics()
+  iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+    provider: 'iiqAnalytics',
+    options
+  })
+}
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
@@ -140,8 +146,10 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should send POST request with payload in request body if reportMethod is POST', function () {
+    enableAnalyticWithSpecialOptions({
+      reportMethod: 'POST'
+    })
     const [userConfig] = getUserConfig();
-    userConfig.params.reportMethod = 'POST';
     const wonRequest = getWonRequest();
 
     config.getConfig.restore();
@@ -188,7 +196,7 @@ describe('IntentIQ tests all', function () {
 
   it('IIQ Analytical Adapter bid win report', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876'});
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876' });
     const expectedVrref = getWindowLocationStub().href;
     events.emit(EVENTS.BID_WON, getWonRequest());
 
@@ -220,10 +228,10 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should include adType in payload when present in reportExternalWin event', function () {
+    enableAnalyticWithSpecialOptions({ manualWinReportEnabled: true })
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
     const externalWinEvent = { cpm: 1, currency: 'USD', adType: 'banner' };
     const [userConfig] = getUserConfig();
-    userConfig.params.manualWinReportEnabled = true;
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
 
@@ -352,7 +360,7 @@ describe('IntentIQ tests all', function () {
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
     expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin).to.be.a('function');
-    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(false);
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({ cpm: 1, currency: 'USD' })).to.equal(false);
   });
 
   it('should return window.location.href when window.self === window.top', function () {
@@ -427,6 +435,7 @@ describe('IntentIQ tests all', function () {
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
     detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
+    enableAnalyticWithSpecialOptions({ reportingServerAddress: REPORT_SERVER_ADDRESS })
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     events.emit(EVENTS.BID_WON, getWonRequest());
@@ -502,7 +511,7 @@ describe('IntentIQ tests all', function () {
     const spdObject = { foo: 'bar', value: 42 };
     const expectedSpdEncoded = encodeURIComponent(JSON.stringify(spdObject));
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ ...defaultData, spd: spdObject }));
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     events.emit(EVENTS.BID_WON, getWonRequest());
@@ -517,7 +526,7 @@ describe('IntentIQ tests all', function () {
     const spdObject = 'server provided data';
     const expectedSpdEncoded = encodeURIComponent(spdObject);
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ ...defaultData, spd: spdObject }));
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     events.emit(EVENTS.BID_WON, getWonRequest());
@@ -561,11 +570,13 @@ describe('IntentIQ tests all', function () {
       // provide recent auctionEnd with matching bid to enrich payload
       events.getEvents.restore();
       sinon.stub(events, 'getEvents').returns([
-        { eventType: 'auctionEnd', args: {
-          auctionId: 'auc-1',
-          adUnitCodes: ['ad-unit-1'],
-          bidsReceived: [{ bidder: 'pubmatic', adUnitCode: 'ad-unit-1', cpm: 1, currency: 'USD', originalCpm: 1, originalCurrency: 'USD', status: 'rendered' }]
-        }}
+        {
+          eventType: 'auctionEnd', args: {
+            auctionId: 'auc-1',
+            adUnitCodes: ['ad-unit-1'],
+            bidsReceived: [{ bidder: 'pubmatic', adUnitCode: 'ad-unit-1', cpm: 1, currency: 'USD', originalCpm: 1, originalCurrency: 'USD', status: 'rendered' }]
+          }
+        }
       ]);
 
       // trigger adapter to subscribe
@@ -735,7 +746,7 @@ describe('IntentIQ tests all', function () {
   adUnitConfigTests.forEach(({ adUnitConfig, description, event, expectedPlacementId }) => {
     it(description, function () {
       const [userConfig] = getUserConfig();
-      userConfig.params.adUnitConfig = adUnitConfig;
+      enableAnalyticWithSpecialOptions({ adUnitConfig })
 
       config.getConfig.restore();
       sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);

@@ -80,11 +80,10 @@ function getIntentIqConfig() {
 const DEFAULT_URL = 'https://reports.intentiq.com/report';
 
 const getDataForDefineURL = () => {
-  const iiqConfig = getIntentIqConfig();
   const cmpData = getCmpData();
   const gdprDetected = cmpData.gdprString;
 
-  return [iiqConfig, gdprDetected];
+  return [iiqAnalyticsAnalyticsAdapter.initOptions.reportingServerAddress, gdprDetected];
 };
 
 const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, analyticsType }), {
@@ -100,7 +99,8 @@ const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, a
     domainName: null,
     siloEnabled: false,
     reportMethod: null,
-    additionalParams: null
+    additionalParams: null,
+    reportingServerAddress: ''
   },
   track({ eventType, args }) {
     switch (eventType) {
@@ -125,27 +125,32 @@ const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, a
 // Events needed
 const { BID_WON, BID_REQUESTED } = EVENTS;
 
-function initAdapterConfig() {
+function initAdapterConfig(config) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  const iiqConfig = getIntentIqConfig();
+  const iiqIdSystemConfig = getIntentIqConfig();
 
-  if (iiqConfig) {
+  if (iiqIdSystemConfig) {
+    const { manualWinReportEnabled, gamPredictReporting, reportMethod, reportingServerAddress: reportEndpoint, adUnitConfig } = config?.options || {}
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
     iiqAnalyticsAnalyticsAdapter.initOptions.partner =
-            iiqConfig.params?.partner && !isNaN(iiqConfig.params.partner) ? iiqConfig.params.partner : -1;
+            iiqIdSystemConfig.params?.partner && !isNaN(iiqIdSystemConfig.params.partner) ? iiqIdSystemConfig.params.partner : -1;
 
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList =
-            typeof iiqConfig.params?.browserBlackList === 'string'
-              ? iiqConfig.params.browserBlackList.toLowerCase()
+            typeof iiqIdSystemConfig.params?.browserBlackList === 'string'
+              ? iiqIdSystemConfig.params.browserBlackList.toLowerCase()
               : '';
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
-            iiqConfig.params?.manualWinReportEnabled || false;
-    iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqConfig.params?.domainName || '';
+            manualWinReportEnabled || false;
+    iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqIdSystemConfig.params?.domainName || '';
     iiqAnalyticsAnalyticsAdapter.initOptions.siloEnabled =
-            typeof iiqConfig.params?.siloEnabled === 'boolean' ? iiqConfig.params.siloEnabled : false;
-    iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = parseReportingMethod(iiqConfig.params?.reportMethod);
-    iiqAnalyticsAnalyticsAdapter.initOptions.additionalParams = iiqConfig.params?.additionalParams || null;
+            typeof iiqIdSystemConfig.params?.siloEnabled === 'boolean' ? iiqIdSystemConfig.params.siloEnabled : false;
+    iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = parseReportingMethod(reportMethod);
+    iiqAnalyticsAnalyticsAdapter.initOptions.additionalParams = iiqIdSystemConfig.params?.additionalParams || null;
+    iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting = typeof gamPredictReporting === 'boolean' ? gamPredictReporting : false;
+    iiqAnalyticsAnalyticsAdapter.initOptions.reportingServerAddress = typeof reportEndpoint === 'string' ? reportEndpoint : '';
+    iiqAnalyticsAnalyticsAdapter.initOptions.adUnitConfig = typeof adUnitConfig === 'number' ? adUnitConfig : 1;
   } else {
+    logError('IIQ ANALYTICS -> there is no initialized intentIqIdSystem module')
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = false;
     iiqAnalyticsAnalyticsAdapter.initOptions.partner = -1;
     iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = 'GET';
@@ -205,7 +210,7 @@ function shouldSubscribeOnGAM() {
 
   if (partnerDataFromLS) {
     const partnerData = JSON.parse(partnerDataFromLS);
-    return partnerData.gpr || (!('gpr' in partnerData) && iiqConfig?.params?.gamPredictReporting);
+    return partnerData.gpr || (!('gpr' in partnerData) && iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting);
   }
   return false;
 }
@@ -375,10 +380,8 @@ function prepareData(data, result) {
   if (adTypeValue) {
     result[PARAMS_NAMES.adType] = adTypeValue;
   }
-  const iiqConfig = getIntentIqConfig();
-  const adUnitConfig = iiqConfig.params?.adUnitConfig;
 
-  switch (adUnitConfig) {
+  switch (iiqAnalyticsAnalyticsAdapter.initOptions.adUnitConfig) {
     case 1:
       // adUnitCode or placementId
       result.placementId = data.adUnitCode || extractPlacementId(data) || '';
@@ -483,6 +486,7 @@ iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapte
 
 iiqAnalyticsAnalyticsAdapter.enableAnalytics = function (myConfig) {
   iiqAnalyticsAnalyticsAdapter.originEnableAnalytics(myConfig); // call the base class function
+  initAdapterConfig(myConfig)
 };
 adapterManager.registerAnalyticsAdapter({
   adapter: iiqAnalyticsAnalyticsAdapter,
