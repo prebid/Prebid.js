@@ -11,8 +11,6 @@ function makeBid(overrides = {}) {
       banner: { sizes: [[300, 250]] }
     },
     bidder: 'clydo',
-    userIdAsEids: [],
-    schain: { ver: '1.0' },
     params: {
       partnerId: 'abcdefghij',
       region: 'us'
@@ -63,42 +61,6 @@ describe('clydoBidAdapter', () => {
         const data = spec.buildRequests([bid], {})[0].data;
         expect(data.imp[0]).to.have.property('banner');
       });
-    });
-
-    describe('video', () => {
-      it('builds video imp when mediaTypes.video present', () => {
-        const bid = makeBid({ mediaTypes: { video: { playerSize: [[640, 480]], context: 'instream', mimes: ['video/mp4'] } } });
-        const data = spec.buildRequests([bid], {})[0].data;
-        expect(data.imp[0]).to.have.property('video');
-      });
-    });
-
-    describe('native', () => {
-      it('builds native imp request when mediaTypes.native present', () => {
-        const bid = makeBid({ mediaTypes: { native: { title: { required: true }, image: { required: true, sizes: [120, 120] } } } });
-        const data = spec.buildRequests([bid], {})[0].data;
-        expect(data.imp[0]).to.have.property('native');
-        expect(data.imp[0].native).to.have.property('request');
-      });
-    });
-
-    it('propagates schain and eids and consent', () => {
-      const bid = makeBid({
-        userIdAsEids: [{ source: 'test', uids: [{ id: 'abc', atype: 1 }] }]
-      });
-      const bidderRequest = {
-        gdprConsent: { gdprApplies: 1, consentString: 'CONSENT' },
-        uspConsent: '1YA-',
-        gppConsent: { gppString: 'GPP', applicableSections: [7] }
-      };
-      const data = spec.buildRequests([bid], bidderRequest)[0].data;
-      expect(data.source.ext.schain).to.deep.equal(bid.schain);
-      expect(data.user.ext.eids).to.deep.equal(bid.userIdAsEids);
-      expect(data.user.ext.consent).to.equal('CONSENT');
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.regs.ext.us_privacy).to.equal('1YA-');
-      expect(data.regs.gpp).to.equal('GPP');
-      expect(data.regs.gpp_sid).to.deep.equal([7]);
     });
   });
 

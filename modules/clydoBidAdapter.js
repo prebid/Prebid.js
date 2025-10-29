@@ -1,11 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, deepAccess, isFn } from '../src/utils.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'clydo';
 const METHOD = 'POST';
+const DEFAULT_CURRENCY = 'USD';
 const params = {
   region: "{{region}}",
   partnerId: "{{partnerId}}"
@@ -22,9 +22,6 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  userSync: {
-    topics: false,
-  },
   isBidRequestValid: function(bid) {
     if (!bid || !bid.params) return false;
     const { partnerId, region } = bid.params;
@@ -43,61 +40,22 @@ export const spec = {
         const bidderParams = deepAccess(srcBid, 'params') || {};
         deepSetValue(data, `imp.${index}.ext.clydo`, bidderParams);
 
-        const mediaTypes = deepAccess(srcBid, 'mediaTypes') || {};
-        if (mediaTypes.video && !imp.video) {
-          deepSetValue(data, `imp.${index}.video`, {});
-        }
-        if (mediaTypes.native && !imp.native) {
-          deepSetValue(data, `imp.${index}.native`, {});
-        }
-
         const mediaType = imp.banner ? 'banner' : (imp.video ? 'video' : (imp.native ? 'native' : '*'));
-        let floor = deepAccess(srcBid, 'params.floor');
+        let floor = deepAccess(srcBid, 'floor');
         if (!floor && isFn(srcBid.getFloor)) {
-          const floorInfo = srcBid.getFloor({currency: 'USD', mediaType, size: '*'});
+          const floorInfo = srcBid.getFloor({currency: DEFAULT_CURRENCY, mediaType, size: '*'});
           if (floorInfo && typeof floorInfo.floor === 'number') {
             floor = floorInfo.floor;
           }
         }
+
         if (typeof floor === 'number') {
           deepSetValue(data, `imp.${index}.bidfloor`, floor);
-          deepSetValue(data, `imp.${index}.bidfloorcur`, 'USD');
-        }
-
-        if (imp.native && !imp.native.request) {
-          const nativeParams = srcBid.nativeParams || deepAccess(srcBid, 'mediaTypes.native');
-          if (nativeParams) {
-            const ortbNative = toOrtbNativeRequest(nativeParams);
-            if (ortbNative) {
-              deepSetValue(data, `imp.${index}.native.request`, JSON.stringify(ortbNative));
-              deepSetValue(data, `imp.${index}.native.ver`, '1.2');
-            }
-          }
+          deepSetValue(data, `imp.${index}.bidfloorcur`, DEFAULT_CURRENCY);
         }
       });
     }
 
-    const schain = deepAccess(validBidRequests, '0.schain');
-    if (schain) {
-      deepSetValue(data, 'source.ext.schain', schain);
-    }
-
-    const eids = deepAccess(validBidRequests, '0.userIdAsEids');
-    if (Array.isArray(eids)) {
-      deepSetValue(data, 'user.ext.eids', eids);
-    }
-
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(data, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-    }
-    if (bidderRequest && typeof bidderRequest.uspConsent === 'string') {
-      deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    }
-    if (bidderRequest && bidderRequest.gppConsent) {
-      deepSetValue(data, 'regs.gpp', bidderRequest.gppConsent.gppString);
-      deepSetValue(data, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
-    }
     const ENDPOINT_URL = BASE_ENDPOINT_URL
       .replace(params.partnerId, partnerId)
       .replace(params.region, region);
