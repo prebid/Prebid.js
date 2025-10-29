@@ -805,6 +805,18 @@ describe('VisxAdapter', function () {
         }
       });
     });
+
+    it('if gpid is present payload must have gpid param', function () {
+      const firstBid = Object.assign({}, bidRequests[0]);
+      firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } }
+      const bids = [firstBid];
+      const request = spec.buildRequests(bids, bidderRequest);
+      const payload = parseRequest(request.url);
+      const postData = request.data;
+
+      expect(postData).to.be.an('object');
+      expect(postData.imp[0].ext.gpid).to.equal('adunit-gpid-1');
+    });
   });
 
   describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
