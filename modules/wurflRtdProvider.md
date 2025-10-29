@@ -55,6 +55,35 @@ pbjs.setConfig({
 | params                    | Object        |                                                                  |                   |
 | params.altHost            | String        | Alternate host to connect to WURFL.js                            |                   |
 | params.debug              | Boolean       | Enable debug                                                     | `false`           |
+| params.abTest             | Boolean       | Enable A/B testing mode                                          | `false`           |
+| params.abName             | String        | A/B test name identifier                                         | `'unknown'`       |
+| params.abSplit            | Number        | Percentage of users in treatment group (0-100)                   | `50`              |
+
+### A/B Testing
+
+The WURFL RTD module supports A/B testing to measure the impact of WURFL enrichment on ad performance:
+
+```javascript
+pbjs.setConfig({
+    realTimeData: {
+        auctionDelay: 1000,
+        dataProviders: [{
+            name: 'wurfl',
+            waitForIt: true,
+            params: {
+                abTest: true,
+                abName: 'pub_test_sept23',
+                abSplit: 50  // 50% treatment, 50% control
+            }
+        }]
+    }
+});
+```
+
+- **Treatment group** (`abSplit` %): Module enabled, bid requests enriched with WURFL device data
+- **Control group** (100 - `abSplit` %): Module disabled, no enrichment occurs
+- Assignment is random on each page load based on `Math.random()`
+- Example: `abSplit: 75` means 75% get WURFL enrichment, 25% don't
 
 ## Testing
 
