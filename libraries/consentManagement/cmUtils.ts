@@ -112,6 +112,12 @@ export interface BaseCMConfig {
    * for the user to interact with the CMP.
    */
   actionTimeout?: number;
+  /**
+   * Flag to enable or disable the consent management module.
+   * When set to false, the module will be reset and disabled.
+   * Defaults to true when not specified.
+   */
+  enabled?: boolean;
 }
 
 export interface IABCMConfig {
@@ -136,6 +142,7 @@ export function configParser(
     parseConsentData,
     getNullConsent,
     cmpHandlers,
+    cmpEventCleanup,
     DEFAULT_CMP = 'iab',
     DEFAULT_CONSENT_TIMEOUT = 10000
   } = {} as any
@@ -167,6 +174,19 @@ export function configParser(
       getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
       requestBidsHook = null;
+      logInfo(`${displayName} consentManagement module has been deactivated...`);
+    }
+  }
+
+  function resetConsentDataHandler() {
+    reset();
+    // Call module-specific CMP event cleanup if provided
+    if (typeof cmpEventCleanup === 'function') {
+      try {
+        cmpEventCleanup();
+      } catch (e) {
+        logError(`Error during CMP event cleanup for ${displayName}:`, e);
+      }
     }
   }
 
@@ -177,6 +197,14 @@ export function configParser(
       reset();
       return {};
     }
+
+    // Check if module is explicitly disabled
+    if (cmConfig?.enabled === false) {
+      logWarn(msg(`config enabled is set to false, disabling consent manager module`));
+      resetConsentDataHandler();
+      return {};
+    }
+
     let cmpHandler;
     if (isStr(cmConfig.cmpApi)) {
       cmpHandler = cmConfig.cmpApi;
