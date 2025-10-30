@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';

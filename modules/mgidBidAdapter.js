@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess,

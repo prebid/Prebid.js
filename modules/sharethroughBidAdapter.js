@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
