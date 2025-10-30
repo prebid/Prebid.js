@@ -111,15 +111,6 @@ export const DEFAULT_PROCESSORS = {
         if (bid.ext?.eventtrackers) {
           bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers);
         }
-        if (bid.mtype) {
-          const bidMediaTypeMap = {
-            1: 'banner',
-            2: 'video',
-            3: 'audio',
-            4: 'native'
-          };
-          bidResponse.meta.mediaType = bidMediaTypeMap[bid.mtype];
-        }
       }
     }
   }

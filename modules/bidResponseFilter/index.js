@@ -30,8 +30,8 @@ export function reset() {
 
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
   const {bcat = [], badv = []} = index.getOrtb2(bid) || {};
-  const adUnit = index.getAdUnit(bid);
-  const battr = index.getBidRequest(bid)?.ortb2Imp[bid.mediaType]?.battr || adUnit?.ortb2Imp[bid.mediaType]?.battr || [];
+  const bidRequest = index.getBidRequest(bid);
+  const battr = bidRequest?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
 
   const catConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {})};
   const advConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {})};
@@ -55,7 +55,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } else if ((attrConfig.enforce && battr.includes(metaAttr)) ||
     (attrConfig.blockUnknown && !metaAttr)) {
     reject(BID_ATTR_REJECTION_REASON);
-  } else if ((mediaTypesConfig.enforce && !Object.keys(adUnit?.mediaTypes || {}).includes(metaMediaType)) ||
+  } else if ((mediaTypesConfig.enforce && !Object.keys(bidRequest?.mediaTypes || {}).includes(metaMediaType)) ||
     (mediaTypesConfig.blockUnknown && !metaMediaType)) {
     reject(BID_MEDIA_TYPE_REJECTION_REASON);
   } else {

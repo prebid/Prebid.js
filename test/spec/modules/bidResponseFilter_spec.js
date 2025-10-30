@@ -57,7 +57,7 @@ describe('bidResponseFilter', () => {
       badv: [], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
     });
 
-    mockAuctionIndex.getAdUnit = () => ({
+    mockAuctionIndex.getBidRequest = () => ({
       mediaTypes: {
         banner: {}
       },
@@ -152,7 +152,7 @@ describe('bidResponseFilter', () => {
       }
     };
 
-    mockAuctionIndex.getAdUnit = () => ({
+    mockAuctionIndex.getBidRequest = () => ({
       mediaTypes: {
         banner: {}
       },
@@ -185,7 +185,7 @@ describe('bidResponseFilter', () => {
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
     });
 
-    mockAuctionIndex.getAdUnit = () => ({
+    mockAuctionIndex.getBidRequest = () => ({
       mediaTypes: {
         banner: {}
       },
@@ -224,7 +224,7 @@ describe('bidResponseFilter', () => {
       }
     })
 
-    mockAuctionIndex.getAdUnit = () => ({
+    mockAuctionIndex.getBidRequest = () => ({
       mediaTypes: {
         banner: {},
       },
