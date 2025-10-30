@@ -72,9 +72,6 @@ const AB_TEST = {
   DEFAULT_NAME: 'unknown'
 };
 
-// Tier constants
-const TIER_FREE = 'free';
-
 const logger = prefixLog('[WURFL RTD Submodule]');
 
 // Storage manager for WURFL RTD provider
@@ -696,11 +693,6 @@ const WurflJSDevice = {
       ...this._getPubCaps(),
       ...(isAuthorized ? this._getBidderCaps(bidderCode) : {})
     };
-
-    // Exclude wurfl_id for free tier
-    if (this._pbjsData.tier === TIER_FREE && 'wurfl_id' in wurflData) {
-      delete wurflData.wurfl_id;
-    }
 
     return {
       device: {

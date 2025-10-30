@@ -1302,67 +1302,6 @@ describe('wurflRtdProvider', function () {
       });
     });
 
-    describe('tier-based wurfl_id exclusion', () => {
-      beforeEach(() => {
-        // Reset reqBidsConfigObj
-        reqBidsConfigObj.ortb2Fragments.global.device = {};
-        reqBidsConfigObj.ortb2Fragments.bidder = {};
-      });
-
-      it('should exclude wurfl_id from device.ext.wurfl when tier is free', (done) => {
-        // Setup free tier scenario
-        const wurfl_pbjs_free = {
-          ...wurfl_pbjs,
-          tier: 'free'
-        };
-        const cachedData = { WURFL, wurfl_pbjs: wurfl_pbjs_free };
-        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-        sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-        const callback = () => {
-          // Verify bidder1 (authorized) gets capabilities but NOT wurfl_id
-          expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device.ext.wurfl).to.exist;
-          expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device.ext.wurfl).to.not.have.property('wurfl_id');
-
-          // Verify other capabilities are still present
-          expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device.ext.wurfl).to.have.property('advertised_browser');
-
-          done();
-        };
-
-        const config = { params: {} };
-        const userConsent = {};
-
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
-      });
-
-      it('should include wurfl_id in device.ext.wurfl when tier is not free', (done) => {
-        // Setup large tier scenario
-        const wurfl_pbjs_large = {
-          ...wurfl_pbjs,
-          tier: 'large'
-        };
-        const cachedData = { WURFL, wurfl_pbjs: wurfl_pbjs_large };
-        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-        sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-        const callback = () => {
-          // Verify bidder1 (authorized) gets ALL capabilities including wurfl_id
-          expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device.ext.wurfl).to.exist;
-          expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device.ext.wurfl).to.have.property('wurfl_id', 'lg_nexus5_ver1');
-
-          done();
-        };
-
-        const config = { params: {} };
-        const userConsent = {};
-
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
-      });
-    });
-
     describe('device type mapping', () => {
       it('should map is_ott priority over form_factor', (done) => {
         const wurflWithOtt = { ...WURFL, is_ott: true, form_factor: 'Desktop' };
