@@ -68,7 +68,7 @@ const DEFAULT_SAMPLING_RATE = 100;
 const AB_TEST = {
   CONTROL_GROUP: 'control',
   TREATMENT_GROUP: 'treatment',
-  DEFAULT_SPLIT: 50,
+  DEFAULT_SPLIT: 0.5,
   DEFAULT_NAME: 'unknown'
 };
 
@@ -287,6 +287,21 @@ function shouldSample(rate) {
   }
   const randomValue = Math.floor(Math.random() * 100);
   return randomValue < rate;
+}
+
+/**
+ * getABVariant determines A/B test variant assignment based on split
+ * @param {number} split Treatment group split from 0-1 (float, e.g., 0.5 = 50% treatment)
+ * @returns {string} AB_TEST.TREATMENT_GROUP or AB_TEST.CONTROL_GROUP
+ */
+function getABVariant(split) {
+  if (split >= 1) {
+    return AB_TEST.TREATMENT_GROUP;
+  }
+  if (split <= 0) {
+    return AB_TEST.CONTROL_GROUP;
+  }
+  return Math.random() < split ? AB_TEST.TREATMENT_GROUP : AB_TEST.CONTROL_GROUP;
 }
 
 /**
@@ -986,8 +1001,7 @@ const init = (config, userConsent) => {
   if (abTestEnabled) {
     const abName = config?.params?.abName ?? AB_TEST.DEFAULT_NAME;
     const abSplit = config?.params?.abSplit ?? AB_TEST.DEFAULT_SPLIT;
-    const isInTreatment = shouldSample(abSplit);
-    const abVariant = isInTreatment ? AB_TEST.TREATMENT_GROUP : AB_TEST.CONTROL_GROUP;
+    const abVariant = getABVariant(abSplit);
     abTest = { ab_name: abName, ab_variant: abVariant };
     logger.logMessage(`A/B test "${abName}": user in ${abVariant} group`);
   }

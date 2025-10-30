@@ -57,7 +57,7 @@ pbjs.setConfig({
 | params.debug              | Boolean       | Enable debug                                                     | `false`           |
 | params.abTest             | Boolean       | Enable A/B testing mode                                          | `false`           |
 | params.abName             | String        | A/B test name identifier                                         | `'unknown'`       |
-| params.abSplit            | Number        | Percentage of users in treatment group (0-100)                   | `50`              |
+| params.abSplit            | Number        | Fraction of users in treatment group (0-1)                       | `0.5`             |
 
 ### A/B Testing
 
@@ -73,17 +73,17 @@ pbjs.setConfig({
             params: {
                 abTest: true,
                 abName: 'pub_test_sept23',
-                abSplit: 50  // 50% treatment, 50% control
+                abSplit: 0.5  // 50% treatment, 50% control
             }
         }]
     }
 });
 ```
 
-- **Treatment group** (`abSplit` %): Module enabled, bid requests enriched with WURFL device data
-- **Control group** (100 - `abSplit` %): Module disabled, no enrichment occurs
+- **Treatment group** (`abSplit` * 100%): Module enabled, bid requests enriched with WURFL device data
+- **Control group** ((1 - `abSplit`) * 100%): Module disabled, no enrichment occurs
 - Assignment is random on each page load based on `Math.random()`
-- Example: `abSplit: 75` means 75% get WURFL enrichment, 25% don't
+- Example: `abSplit: 0.75` means 75% get WURFL enrichment, 25% don't
 
 ## Testing
 

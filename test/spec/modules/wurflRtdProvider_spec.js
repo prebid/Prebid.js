@@ -145,7 +145,6 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
         const callback = async () => {
-          console.log('Callback executed');
           // Verify client hints were requested
           expect(getHighEntropyValuesStub.calledOnce).to.be.true;
           expect(getHighEntropyValuesStub.calledWith(
@@ -176,10 +175,8 @@ describe('wurflRtdProvider', function () {
         };
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
-
       })
       it('should load WURFL.js without client hints when not available', (done) => {
-        console.log('Starting No Client Hints test...');
         reqBidsConfigObj.ortb2Fragments.global.device = {};
         reqBidsConfigObj.ortb2Fragments.bidder = {};
 
@@ -331,38 +328,38 @@ describe('wurflRtdProvider', function () {
       });
 
       it('should return true for users in treatment group (random < abSplit)', () => {
-        sandbox.stub(Math, 'random').returns(0.25); // 25% -> random value = 25
-        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 50 } };
+        sandbox.stub(Math, 'random').returns(0.25); // 0.25 < 0.5 = treatment
+        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0.5 } };
         expect(wurflSubmodule.init(config)).to.be.true;
       });
 
       it('should return true for users in control group (random >= abSplit)', () => {
-        sandbox.stub(Math, 'random').returns(0.75); // 75% -> random value = 75
-        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 50 } };
+        sandbox.stub(Math, 'random').returns(0.75); // 0.75 >= 0.5 = control
+        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0.5 } };
         expect(wurflSubmodule.init(config)).to.be.true;
       });
 
-      it('should use default abSplit of 50 when not specified', () => {
-        sandbox.stub(Math, 'random').returns(0.40); // 40% -> random value = 40
+      it('should use default abSplit of 0.5 when not specified', () => {
+        sandbox.stub(Math, 'random').returns(0.40); // 0.40 < 0.5 = treatment
         const config = { params: { abTest: true, abName: 'test_sept' } };
         expect(wurflSubmodule.init(config)).to.be.true;
       });
 
       it('should handle abSplit of 0 (all control)', () => {
-        sandbox.stub(Math, 'random').returns(0.01); // 1% -> random value = 1
+        sandbox.stub(Math, 'random').returns(0.01); // split <= 0 = control
         const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0 } };
         expect(wurflSubmodule.init(config)).to.be.true;
       });
 
-      it('should handle abSplit of 100 (all treatment)', () => {
-        sandbox.stub(Math, 'random').returns(0.99); // 99% -> random value = 99
-        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 100 } };
+      it('should handle abSplit of 1 (all treatment)', () => {
+        sandbox.stub(Math, 'random').returns(0.99); // split >= 1 = treatment
+        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 1 } };
         expect(wurflSubmodule.init(config)).to.be.true;
       });
 
       it('should skip enrichment for control group in getBidRequestData', (done) => {
         sandbox.stub(Math, 'random').returns(0.75); // Control group
-        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 50 } };
+        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0.5 } };
 
         // Initialize with A/B test config
         wurflSubmodule.init(config);
@@ -382,7 +379,7 @@ describe('wurflRtdProvider', function () {
 
       it('should send beacon with ab_name and ab_variant for treatment group', (done) => {
         sandbox.stub(Math, 'random').returns(0.25); // Treatment group
-        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 50 } };
+        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0.5 } };
 
         // Initialize with A/B test config
         wurflSubmodule.init(config);
@@ -429,7 +426,7 @@ describe('wurflRtdProvider', function () {
 
       it('should send beacon with ab_name and ab_variant for control group', (done) => {
         sandbox.stub(Math, 'random').returns(0.75); // Control group
-        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 50 } };
+        const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0.5 } };
 
         // Initialize with A/B test config
         wurflSubmodule.init(config);
