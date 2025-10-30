@@ -811,7 +811,6 @@ describe('VisxAdapter', function () {
       firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } }
       const bids = [firstBid];
       const request = spec.buildRequests(bids, bidderRequest);
-      const payload = parseRequest(request.url);
       const postData = request.data;
 
       expect(postData).to.be.an('object');
