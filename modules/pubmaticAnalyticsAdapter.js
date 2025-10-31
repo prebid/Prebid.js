@@ -1,4 +1,4 @@
-import { isArray, logError, logWarn, pick } from '../src/utils.js';
+import { isArray, logError, logWarn, pick, isFn } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { BID_STATUS, STATUS, REJECTION_REASON } from '../src/constants.js';
@@ -478,6 +478,10 @@ const eventHandlers = {
       }
       if (!cachedBid.status) {
         cachedBid.status = NO_BID;
+        if (bid.floorData && isFn(bid.getFloor)) {
+          const frvData = bid.getFloor();
+          cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode].floorRuleValue = frvData?.floor;
+        }
       }
       if (!cachedBid.clientLatencyTimeMs) {
         cachedBid.clientLatencyTimeMs = Date.now() - cache.auctions[bid.auctionId].timestamp;
