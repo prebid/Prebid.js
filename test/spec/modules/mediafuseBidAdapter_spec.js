@@ -5,6 +5,7 @@ import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
@@ -18,7 +19,7 @@ describe('MediaFuseAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'mediafuse',
       'params': {
         'placementId': '10433394'
@@ -35,7 +36,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'member': '1234',
@@ -46,7 +47,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placementId': 0
@@ -57,7 +58,7 @@ describe('MediaFuseAdapter', function () {
 
   describe('buildRequests', function () {
     let getAdUnitsStub;
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'mediafuse',
         'params': {
@@ -83,7 +84,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should parse out private sizes', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -101,7 +102,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should add publisher_id in request', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -129,7 +130,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should populate the ad_types array on all requests', function () {
-      let adUnits = [{
+      const adUnits = [{
         code: 'adunit-code',
         mediaTypes: {
           banner: {
@@ -192,7 +193,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should attach valid video params to the tag', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -216,7 +217,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should include ORTB video values when video params were not set', function() {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       bidRequest.params = {
         placementId: '1234235',
         video: {
@@ -292,7 +293,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should attach valid user params to the tag', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -317,9 +318,9 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
-      let getFloorResponse = { currency: 'USD', floor: 3 };
-      let request, payload = null;
-      let bidRequest = deepClone(bidRequests[0]);
+      const getFloorResponse = { currency: 'USD', floor: 3 };
+      let request; let payload = null;
+      const bidRequest = deepClone(bidRequests[0]);
 
       // 1 -> reserve not defined, getFloor not defined > empty
       request = spec.buildRequests([bidRequest]);
@@ -347,7 +348,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should duplicate adpod placements into batches and set correct maxduration', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: { placementId: '14542875' }
@@ -380,7 +381,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should round down adpod placements when numbers are uneven', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: { placementId: '14542875' }
@@ -403,7 +404,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should duplicate adpod placements when requireExactDuration is set', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: { placementId: '14542875' }
@@ -445,7 +446,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should set durations for placements when requireExactDuration is set and numbers are uneven', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: { placementId: '14542875' }
@@ -476,7 +477,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should break adpod request into batches', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: { placementId: '14542875' }
@@ -504,7 +505,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should contain hb_source value for adpod', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: { placementId: '14542875' }
@@ -526,7 +527,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should contain hb_source value for other media', function() {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           mediaType: 'banner',
@@ -542,7 +543,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('adds brand_category_exclusion to request when set', function() {
-      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0]);
       sinon
         .stub(config, 'getConfig')
         .withArgs('adpod.brandCategoryExclusion')
@@ -557,7 +558,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('adds auction level keywords to request when set', function() {
-      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0]);
       sinon
         .stub(config, 'getConfig')
         .withArgs('mediafuseAuctionKeywords')
@@ -584,7 +585,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should attach native params to the request', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           mediaType: 'native',
@@ -635,7 +636,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           mediaType: 'native',
@@ -659,7 +660,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -704,7 +705,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should add payment rules to the request', function () {
-      let bidRequest = Object.assign({},
+      const bidRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -721,9 +722,9 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should add gpid to the request', function () {
-      let testGpid = '/12345/my-gpt-tag-0';
-      let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+      const testGpid = '/12345/my-gpt-tag-0';
+      const bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -732,8 +733,8 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should add gdpr consent information to the request', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
         'bidderCode': 'mediafuse',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -757,8 +758,8 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should add us privacy string to payload', function() {
-      let consentString = '1YA-';
-      let bidderRequest = {
+      const consentString = '1YA-';
+      const bidderRequest = {
         'bidderCode': 'mediafuse',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -775,7 +776,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('supports sending hybrid mobile app parameters', function () {
-      let appRequest = Object.assign({},
+      const appRequest = Object.assign({},
         bidRequests[0],
         {
           params: {
@@ -846,16 +847,22 @@ describe('MediaFuseAdapter', function () {
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'blob.com',
-              'sid': '001',
-              'hp': 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'blob.com',
+                    'sid': '001',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       });
 
@@ -875,7 +882,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should populate coppa if set in config', function () {
-      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0]);
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
         .returns(true);
@@ -889,7 +896,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should set the X-Is-Test customHeader if test flag is enabled', function () {
-      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0]);
       sinon.stub(config, 'getConfig')
         .withArgs('apn_test')
         .returns(true);
@@ -901,14 +908,14 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should always set withCredentials: true on the request.options', function () {
-      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       expect(request.options.withCredentials).to.equal(true);
     });
 
     it('should set simple domain variant if purpose 1 consent is not given', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
         'bidderCode': 'mediafuse',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -934,13 +941,28 @@ describe('MediaFuseAdapter', function () {
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          tdid: 'sample-userid',
-          uid2: { id: 'sample-uid2-value' },
-          criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid'
-        }
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [{ id: 'sample-userid' }]
+        }, {
+          source: 'criteo.com',
+          uids: [{ id: 'sample-criteo-userid' }]
+        }, {
+          source: 'netid.de',
+          uids: [{ id: 'sample-netId-userid' }]
+        }, {
+          source: 'liveramp.com',
+          uids: [{ id: 'sample-idl-userid' }]
+        }, {
+          source: 'uidapi.com',
+          uids: [{ id: 'sample-uid2-value' }]
+        }, {
+          source: 'puburl.com',
+          uids: [{ id: 'pubid1' }]
+        }, {
+          source: 'puburl2.com',
+          uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
+        }]
       });
 
       const request = spec.buildRequests([bidRequest]);
@@ -975,7 +997,7 @@ describe('MediaFuseAdapter', function () {
 
     it('should populate iab_support object at the root level if omid support is detected', function () {
       // with bid.params.frameworks
-      let bidRequest_A = Object.assign({}, bidRequests[0], {
+      const bidRequest_A = Object.assign({}, bidRequests[0], {
         params: {
           frameworks: [1, 2, 5, 6],
           video: {
@@ -1024,14 +1046,14 @@ describe('MediaFuseAdapter', function () {
     let bidderSettingsStorage;
 
     before(function() {
-      bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
+      bidderSettingsStorage = getGlobal().bidderSettings;
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+      getGlobal().bidderSettings = bidderSettingsStorage;
     });
 
-    let response = {
+    const response = {
       'version': '3.0.0',
       'tags': [
         {
@@ -1080,7 +1102,7 @@ describe('MediaFuseAdapter', function () {
     };
 
     it('should get correct bid response', function () {
-      let expectedResponse = [
+      const expectedResponse = [
         {
           'requestId': '3db3773286ee59',
           'cpm': 0.5,
@@ -1108,39 +1130,39 @@ describe('MediaFuseAdapter', function () {
           }
         }
       ];
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       };
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('should reject 0 cpm bids', function () {
-      let zeroCpmResponse = deepClone(response);
+      const zeroCpmResponse = deepClone(response);
       zeroCpmResponse.tags[0].ads[0].cpm = 0;
 
-      let bidderRequest = {
+      const bidderRequest = {
         bidderCode: 'mediafuse'
       };
 
-      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
+      const result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
     it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         mediafuse: {
           allowZeroCpmBids: true
         }
       };
 
-      let zeroCpmResponse = deepClone(response);
+      const zeroCpmResponse = deepClone(response);
       zeroCpmResponse.tags[0].ads[0].cpm = 0;
 
-      let bidderRequest = {
+      const bidderRequest = {
         bidderCode: 'mediafuse',
         bids: [{
           bidId: '3db3773286ee59',
@@ -1148,13 +1170,13 @@ describe('MediaFuseAdapter', function () {
         }]
       };
 
-      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
+      const result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0);
     });
 
     it('handles nobid responses', function () {
-      let response = {
+      const response = {
         'version': '0.0.1',
         'tags': [{
           'uuid': '84ab500420319d',
@@ -1165,12 +1187,12 @@ describe('MediaFuseAdapter', function () {
       };
       let bidderRequest;
 
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
 
     it('handles outstream video responses', function () {
-      let response = {
+      const response = {
         'tags': [{
           'uuid': '84ab500420319d',
           'ads': [{
@@ -1186,7 +1208,7 @@ describe('MediaFuseAdapter', function () {
           }]
         }]
       };
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '84ab500420319d',
           adUnitCode: 'code',
@@ -1198,14 +1220,14 @@ describe('MediaFuseAdapter', function () {
         }]
       }
 
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastXml');
       expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
     it('handles instream video responses', function () {
-      let response = {
+      const response = {
         'tags': [{
           'uuid': '84ab500420319d',
           'ads': [{
@@ -1221,7 +1243,7 @@ describe('MediaFuseAdapter', function () {
           }]
         }]
       };
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '84ab500420319d',
           adUnitCode: 'code',
@@ -1233,14 +1255,14 @@ describe('MediaFuseAdapter', function () {
         }]
       }
 
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
       expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
     it('handles adpod responses', function () {
-      let response = {
+      const response = {
         'tags': [{
           'uuid': '84ab500420319d',
           'ads': [{
@@ -1261,7 +1283,7 @@ describe('MediaFuseAdapter', function () {
         }]
       };
 
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '84ab500420319d',
           adUnitCode: 'code',
@@ -1273,14 +1295,14 @@ describe('MediaFuseAdapter', function () {
         }]
       };
 
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
       expect(result[0].video.context).to.equal('adpod');
       expect(result[0].video.durationSeconds).to.equal(30);
     });
 
     it('handles native responses', function () {
-      let response1 = deepClone(response);
+      const response1 = deepClone(response);
       response1.tags[0].ads[0].ad_type = 'native';
       response1.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
@@ -1315,14 +1337,14 @@ describe('MediaFuseAdapter', function () {
         'privacy_link': 'https://www.mediafuse.com/privacy-policy-agreement/',
         'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=mediafuse.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
       };
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       }
 
-      let result = spec.interpretResponse({ body: response1 }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response1 }, {bidderRequest});
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
@@ -1357,7 +1379,7 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should add deal_priority and deal_code', function() {
-      let responseWithDeal = deepClone(response);
+      const responseWithDeal = deepClone(response);
       responseWithDeal.tags[0].ads[0].ad_type = 'video';
       responseWithDeal.tags[0].ads[0].deal_priority = 5;
       responseWithDeal.tags[0].ads[0].deal_code = '123';
@@ -1367,7 +1389,7 @@ describe('MediaFuseAdapter', function () {
         player_height: 340,
       };
 
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code',
@@ -1378,50 +1400,50 @@ describe('MediaFuseAdapter', function () {
           }
         }]
       }
-      let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].mediafuse)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
       expect(result[0].video.dealTier).to.equal(5);
     });
 
     it('should add advertiser id', function() {
-      let responseAdvertiserId = deepClone(response);
+      const responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
 
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       }
-      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
 
     it('should add brand id', function() {
-      let responseBrandId = deepClone(response);
+      const responseBrandId = deepClone(response);
       responseBrandId.tags[0].ads[0].brand_id = 123;
 
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       }
-      let result = spec.interpretResponse({ body: responseBrandId }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseBrandId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
 
     it('should add advertiserDomains', function() {
-      let responseAdvertiserId = deepClone(response);
+      const responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
 
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
       }
-      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });

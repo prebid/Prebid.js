@@ -7,7 +7,6 @@ import { deepAccess, logInfo } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'scattered';
-const GVLID = 1179;
 export const converter = ortbConverter({
   context: {
     mediaType: BANNER,
@@ -18,7 +17,6 @@ export const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   // 1.

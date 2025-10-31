@@ -13,10 +13,10 @@ import {
 } from 'modules/1plusXRtdProvider';
 import {deepClone} from '../../../src/utils.js';
 import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from 'src/storageManager.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('1plusXRtdProvider', () => {
   // Fake server config
-  let fakeServer;
   const fakeResponseHeaders = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*'
@@ -80,10 +80,7 @@ describe('1plusXRtdProvider', () => {
   after(() => { })
 
   beforeEach(() => {
-    fakeServer = sinon.createFakeServer();
-    fakeServer.respondWith('GET', '*', [200, fakeResponseHeaders, JSON.stringify(fakeResponse)]);
-    fakeServer.respondImmediately = true;
-    fakeServer.autoRespond = true;
+    server.respondWith('GET', '*', [200, fakeResponseHeaders, JSON.stringify(fakeResponse)]);
   })
 
   describe('onePlusXSubmodule', () => {
@@ -98,6 +95,7 @@ describe('1plusXRtdProvider', () => {
         const callbackSpy = sinon.spy();
         const config = { params: { customerId: 'test', bidders: ['appnexus'] } };
         onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
+        server.respond();
         setTimeout(() => {
           expect(callbackSpy.calledOnce).to.be.true
         }, 100)
@@ -107,6 +105,7 @@ describe('1plusXRtdProvider', () => {
         const callbackSpy = sinon.spy();
         const config = {}
         onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
+        server.respond();
         setTimeout(() => {
           expect(callbackSpy.calledOnce).to.be.true
         }, 100);
@@ -116,6 +115,7 @@ describe('1plusXRtdProvider', () => {
         const callbackSpy = sinon.spy();
         const config = { customerId: 'test' }
         onePlusXSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, config);
+        server.respond();
         setTimeout(() => {
           expect(callbackSpy.calledOnce).to.be.true
         }, 100);
@@ -161,7 +161,7 @@ describe('1plusXRtdProvider', () => {
       const bidders = ['appnexus', 'rubicon'];
       const moduleConfig = { params: { customerId, timeout, bidders } };
       const { bidders: extractedBidders } = extractConfig(moduleConfig, reqBidsConfigObj);
-      expect(extractedBidders).to.be.an('array').and.to.have.length(1); 7
+      expect(extractedBidders).to.be.an('array').and.to.have.length(1);
       expect(extractedBidders[0]).to.equal('appnexus');
     })
     it('Throws an error if no bidder can be used by the module', () => {
@@ -266,7 +266,7 @@ describe('1plusXRtdProvider', () => {
       expect(extractConsent(consent1)).to.equal(null)
     })
 
-    it('throws an error if the consent is malformed', () => {
+    it('returns null if the consent is malformed', () => {
       const consent1 = {
         gdpr: {
           consentString: 'myConsent'
@@ -289,14 +289,7 @@ describe('1plusXRtdProvider', () => {
       }
 
       for (const consent of [consent1, consent2, consent3, consent4]) {
-        var failed = false;
-        try {
-          extractConsent(consent)
-        } catch (e) {
-          failed = true;
-        } finally {
-          assert(failed, 'Should be throwing an exception')
-        }
+        expect(extractConsent(consent)).to.be.null
       }
     })
   })

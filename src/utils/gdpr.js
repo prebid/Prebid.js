@@ -1,5 +1,3 @@
-import {deepAccess} from '../utils.js';
-
 /**
  * Check if GDPR purpose 1 consent was given.
  *
@@ -8,7 +6,7 @@ import {deepAccess} from '../utils.js';
  */
 export function hasPurpose1Consent(gdprConsent) {
   if (gdprConsent?.gdprApplies) {
-    return deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true;
+    return gdprConsent?.vendorData?.purpose?.consents?.[1] === true;
   }
   return true;
 }

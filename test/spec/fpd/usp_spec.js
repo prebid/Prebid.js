@@ -5,7 +5,7 @@ describe('FPD enrichment USP', () => {
   let sandbox, consent;
   beforeEach(() => {
     consent = null;
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(uspDataHandler, 'getConsentData').callsFake(() => consent);
   });
 

@@ -129,7 +129,7 @@ const response_video = {
   }],
 };
 
-let imgData = {
+const imgData = {
   url: `https://example.com/image`,
   w: 1200,
   h: 627
@@ -174,7 +174,7 @@ describe('BraveBidAdapter', function() {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, request_banner);
+      const bid = Object.assign({}, request_banner);
       bid.params = {
         'IncorrectParam': 0
       };
@@ -197,11 +197,11 @@ describe('BraveBidAdapter', function() {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://point.bravegroup.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
+      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
     });
 
     it('Returns empty data if no valid requests are passed', function () {
-      let serverRequest = spec.buildRequests([]);
+      const serverRequest = spec.buildRequests([]);
       expect(serverRequest).to.be.an('array').that.is.empty;
     });
   });
@@ -221,7 +221,7 @@ describe('BraveBidAdapter', function() {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://point.bravegroup.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
+      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
     });
   });
 
@@ -240,14 +240,14 @@ describe('BraveBidAdapter', function() {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://point.bravegroup.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
+      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
     });
   });
 
   describe('interpretResponse', function () {
     it('Empty response must return empty array', function() {
       const emptyResponse = null;
-      let response = spec.interpretResponse(emptyResponse);
+      const response = spec.interpretResponse(emptyResponse);
 
       expect(response).to.be.an('array').that.is.empty;
     })
@@ -271,10 +271,10 @@ describe('BraveBidAdapter', function() {
         ad: response_banner.seatbid[0].bid[0].adm
       }
 
-      let bannerResponses = spec.interpretResponse(bannerResponse);
+      const bannerResponses = spec.interpretResponse(bannerResponse);
 
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
@@ -304,18 +304,18 @@ describe('BraveBidAdapter', function() {
         creativeId: response_video.seatbid[0].bid[0].crid,
         dealId: response_video.seatbid[0].bid[0].dealid,
         mediaType: 'video',
-        vastUrl: response_video.seatbid[0].bid[0].adm
+        vastXml: response_video.seatbid[0].bid[0].adm
       }
 
-      let videoResponses = spec.interpretResponse(videoResponse);
+      const videoResponses = spec.interpretResponse(videoResponse);
 
       expect(videoResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = videoResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastUrl', 'ttl', 'creativeId',
+      const dataItem = videoResponses[0];
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.vastUrl).to.equal(expectedBidResponse.vastUrl)
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
@@ -343,10 +343,10 @@ describe('BraveBidAdapter', function() {
         native: {clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url}
       }
 
-      let nativeResponses = spec.interpretResponse(nativeResponse);
+      const nativeResponses = spec.interpretResponse(nativeResponse);
 
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = nativeResponses[0];
+      const dataItem = nativeResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'native', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);

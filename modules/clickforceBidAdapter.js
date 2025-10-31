@@ -60,7 +60,7 @@ export const spec = {
     const cfResponses = [];
     const bidRequestList = [];
 
-    if (typeof bidRequest != 'undefined') {
+    if (typeof bidRequest !== 'undefined') {
       _each(bidRequest.validBidRequests, function(req) {
         bidRequestList[req.bidId] = req;
       });
@@ -69,7 +69,7 @@ export const spec = {
     _each(serverResponse.body, function(response) {
       if (response.requestId != null) {
         // native ad size
-        if (response.width == 3) {
+        if (Number(response.width) === 3) {
           cfResponses.push({
             requestId: response.requestId,
             cpm: response.cpm,

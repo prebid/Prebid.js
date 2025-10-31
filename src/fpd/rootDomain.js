@@ -23,7 +23,7 @@ export const findRootDomain = memoize(function findRootDomain(fullDomain = windo
   const TEST_COOKIE_VALUE = 'writeable';
   do {
     rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
+    const expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
 
     // Write a test cookie
     coreStorage.setCookie(

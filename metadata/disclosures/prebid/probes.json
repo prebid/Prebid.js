@@ -1,0 +1,28 @@
+{
+  "disclosures": [
+    {
+      "identifier": "_rdc*",
+      "type": "cookie",
+      "maxAgeSeconds": 10,
+      "cookieRefresh": false,
+      "domains": ["*"],
+      "purposes": [
+        1
+      ]
+    },
+    {
+      "identifier": "prebid.cookieTest",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        1
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Temporary 'probing' cookies are written (and deleted) to determine the top-level domain; likewise, probes are temporarily written to local and sessionStorage to determine their availability"
+    }
+  ]
+}

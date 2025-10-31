@@ -9,9 +9,9 @@ All the `request-response` pairs are stored in the `fixtures/` directory. They a
 
 Follow the steps below to add another `request-response` pair.
 
-1. Inside the `/fixtures` directory, create a directory and give it a suitable name. 
-  - If you are creating a one-off type of test, you can name this directory with a name that describes the test; for example `basic-banner`.  
-  - If you plan to create a series of tests focusing on one feature/topic, then you can create a generic container directory to hold all your tests together; for example `longform`.  
+1. Inside the `/fixtures` directory, create a directory and give it a suitable name.
+  - If you are creating a one-off type of test, you can name this directory with a name that describes the test; for example `basic-banner`.
+  - If you plan to create a series of tests focusing on one feature/topic, then you can create a generic container directory to hold all your tests together; for example `longform`.
   - If you did the latter case, please proceed to create the necessary test directories describing them with a meaningful and **unique** test name.
 2. If you are planning to handle multiple bidder requests as part of your tests, you will need to create a specific directory for each request.  For example, you could create a pair named like so `longform_biddersettings_1` and `longform_biddersettings_2`.
 3. Once all your directories are created, inside the bottom test folder(s), create **three files**:

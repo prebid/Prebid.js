@@ -39,7 +39,7 @@ function loadLbScript(tagname) {
     linkback.l = true;
 
     const scriptUrl = `${SCRIPT_URL}/${tagname}`;
-    loadExternalScript(scriptUrl, MODULE_NAME);
+    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   }
 }
 

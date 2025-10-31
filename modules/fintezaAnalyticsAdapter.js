@@ -53,7 +53,7 @@ function getUniqId() {
   }
 
   if (uniq && isUniqFromLS) {
-    let expires = new Date();
+    const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {
@@ -287,9 +287,9 @@ function getAntiCacheParam() {
 
 function replaceBidder(str, bidder) {
   let _str = str;
-  _str = _str.replace(/\%bidder\%/, bidder.toLowerCase());
-  _str = _str.replace(/\%BIDDER\%/, bidder.toUpperCase());
-  _str = _str.replace(/\%Bidder\%/, bidder.charAt(0).toUpperCase() + bidder.slice(1).toLowerCase());
+  _str = _str.replace(/%bidder%/, bidder.toLowerCase());
+  _str = _str.replace(/%BIDDER%/, bidder.toUpperCase());
+  _str = _str.replace(/%Bidder%/, bidder.charAt(0).toUpperCase() + bidder.slice(1).toLowerCase());
 
   return _str;
 }

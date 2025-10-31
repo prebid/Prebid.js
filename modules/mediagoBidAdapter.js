@@ -10,6 +10,7 @@ import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 // import { config } from '../src/config.js';
 // import { isPubcidEnabled } from './pubCommonId.js';
@@ -25,20 +26,20 @@ const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
 // const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
-const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
-let globals = {};
-let itemMaps = {};
+const globals = {};
+const itemMaps = {};
 
 /* ----- mguid:start ------ */
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
+const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 let reqTimes = 0;
 
 /**
@@ -72,7 +73,7 @@ export const getPmgUID = () => {
 function getProperty(obj, ...keys) {
   let o = obj;
 
-  for (let key of keys) {
+  for (const key of keys) {
     // console.log(key, o);
     if (o && o[key]) {
       o = o[key];
@@ -119,13 +120,13 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-    let mediaTypes = getProperty(req, 'mediaTypes');
+    const mediaTypes = getProperty(req, 'mediaTypes');
 
-    let sizes = transformSizes(getProperty(req, 'sizes'));
+    const sizes = transformSizes(getProperty(req, 'sizes'));
     let matchSize;
 
     // 确认尺寸是否符合我们要求
-    for (let size of sizes) {
+    for (const size of sizes) {
       matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
         break;
@@ -138,7 +139,6 @@ function getItems(validBidRequests, bidderRequest) {
     const bidFloor = getBidFloor(req);
     const gpid =
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
       utils.deepAccess(req, 'params.placementId', 0);
 
     const gdprConsent = {};
@@ -156,7 +156,7 @@ function getItems(validBidRequests, bidderRequest) {
     // if (mediaTypes.native) {}
     // banner广告类型
     if (mediaTypes.banner) {
-      let id = '' + (i + 1);
+      const id = '' + (i + 1);
       ret = {
         id: id,
         bidfloor: bidFloor,
@@ -172,6 +172,7 @@ function getItems(validBidRequests, bidderRequest) {
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+          publisher: req.params.publisher || '',
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
@@ -206,23 +207,18 @@ export function getCurrentTimeToUTCString() {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const sharedid =
-    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
 
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
-  const bidsUserid = validBidRequests[0].userId;
-  const eids = bidsUserIdAsEids || bidsUserid;
-  const ppuid = bidsUserid && bidsUserid.pubProvidedId;
+  const eids = bidsUserIdAsEids;
   const content = utils.deepAccess(bidderRequest, 'ortb2.site.content');
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
 
-  let isMobile = getDevice() ? 1 : 0;
+  const isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
-  let isTest = validBidRequests[0].params.test || 0;
-  let auctionId = getProperty(bidderRequest, 'auctionId');
-  let items = getItems(validBidRequests, bidderRequest);
+  const isTest = validBidRequests[0].params.test || 0;
+  const auctionId = getProperty(bidderRequest, 'auctionId');
+  const items = getItems(validBidRequests, bidderRequest);
 
   const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
   const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
@@ -236,7 +232,7 @@ function getParam(validBidRequests, bidderRequest) {
   const keywords = getPageKeywords();
 
   if (items && items.length) {
-    let c = {
+    const c = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'mgprebidjs_' + auctionId,
       test: +isTest,
@@ -256,8 +252,6 @@ function getParam(validBidRequests, bidderRequest) {
       ext: {
         eids,
         bidsUserIdAsEids,
-        bidsUserid,
-        ppuid,
         firstPartyData,
         content,
         cat,
@@ -275,7 +269,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
-        id: sharedid || pubcid,
+        id: pubcid,
       },
       eids,
       site: {
@@ -286,9 +280,7 @@ function getParam(validBidRequests, bidderRequest) {
         mobile: isMobile,
         cat: [], // todo
         publisher: {
-          // todo
-          id: domain,
-          name: domain
+          id: globals['publisher']
         }
       },
       imp: items,
@@ -317,6 +309,9 @@ export const spec = {
     if (bid.params.token) {
       globals['token'] = bid.params.token;
     }
+    if (bid.params.publisher) {
+      globals['publisher'] = bid.params.publisher;
+    }
     return !!bid.params.token;
   },
 
@@ -328,7 +323,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = getParam(validBidRequests, bidderRequest);
+    const payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
     return {
@@ -348,10 +343,10 @@ export const spec = {
     const cur = getProperty(serverResponse, 'body', 'cur');
 
     const bidResponses = [];
-    for (let bid of bids) {
-      let impid = getProperty(bid, 'impid');
+    for (const bid of bids) {
+      const impid = getProperty(bid, 'impid');
       if (itemMaps[impid]) {
-        let bidId = getProperty(itemMaps[impid], 'req', 'bidId');
+        const bidId = getProperty(itemMaps[impid], 'req', 'bidId');
         const bidResponse = {
           requestId: bidId,
           cpm: getProperty(bid, 'price'),
@@ -382,56 +377,21 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    const origin = encodeURIComponent(location.origin || `https://${location.host}`);
-    let syncParamUrl = `dm=${origin}`;
-
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
-          return;
-        }
-
-        this.removeEventListener('message', handler);
-
-        event.stopImmediatePropagation();
-
-        const response = event.data;
-        if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
-        }
-      }, true);
-      return [
-        {
-          type: 'iframe',
-          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
-        }
-      ];
-    }
+    return cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, THIRD_PARTY_COOKIE_ORIGIN, COOKY_SYNC_IFRAME_URL, getCurrentTimeToUTCString());
   },
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
-  //     // Bidder specifc code
+  //     // Bidder specific code
   //   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     // console.log('onBidWon： ', bid, config.getConfig('priceGranularity'));

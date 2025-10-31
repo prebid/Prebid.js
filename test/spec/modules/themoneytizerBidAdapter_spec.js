@@ -102,12 +102,6 @@ describe('The Moneytizer Bidder Adapter', function () {
     });
   });
 
-  describe('gvlid', function () {
-    it('should expose gvlid', function () {
-      expect(spec.gvlid).to.equal(1265)
-    });
-  });
-
   describe('isBidRequestValid', function () {
     it('should return true for a bid with all required fields', function () {
       const validBid = spec.isBidRequestValid(VALID_BID_BANNER);

@@ -10,62 +10,10 @@ import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
-const validSM = {
-  name: 'validSM',
-  init: () => { return true },
-  getTargetingData: (adUnitsCodes) => {
-    return {'ad2': {'key': 'validSM'}}
-  },
-  getBidRequestData: getBidRequestDataSpy
-};
-
-const validSMWait = {
-  name: 'validSMWait',
-  init: () => { return true },
-  getTargetingData: (adUnitsCodes) => {
-    return {'ad1': {'key': 'validSMWait'}}
-  },
-  getBidRequestData: getBidRequestDataSpy
-};
-
-const invalidSM = {
-  name: 'invalidSM'
-};
-
-const failureSM = {
-  name: 'failureSM',
-  init: () => { return false }
-};
-
-const nonConfSM = {
-  name: 'nonConfSM',
-  init: () => { return true }
-};
-
-const conf = {
-  'realTimeData': {
-    'auctionDelay': 100,
-    dataProviders: [
-      {
-        'name': 'validSMWait',
-        'waitForIt': true,
-      },
-      {
-        'name': 'validSM',
-        'waitForIt': false,
-      },
-      {
-        'name': 'invalidSM'
-      },
-      {
-        'name': 'failureSM'
-      }]
-  }
-};
-
 describe('Real time module', function () {
   let eventHandlers;
   let sandbox;
+  let validSM, validSMWait, invalidSM, failureSM, nonConfSM, conf;
 
   function mockEmitEvent(event, ...args) {
     (eventHandlers[event] || []).forEach((h) => h(...args));
@@ -73,7 +21,7 @@ describe('Real time module', function () {
 
   before(() => {
     eventHandlers = {};
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'on').callsFake((event, handler) => {
       if (!eventHandlers.hasOwnProperty(event)) {
         eventHandlers[event] = [];
@@ -85,6 +33,61 @@ describe('Real time module', function () {
   after(() => {
     sandbox.restore();
   });
+
+  beforeEach(() => {
+    validSM = {
+      name: 'validSM',
+      init: () => { return true },
+      getTargetingData: (adUnitsCodes) => {
+        return {'ad2': {'key': 'validSM'}}
+      },
+      getBidRequestData: getBidRequestDataSpy
+    };
+
+    validSMWait = {
+      name: 'validSMWait',
+      init: () => { return true },
+      getTargetingData: (adUnitsCodes) => {
+        return {'ad1': {'key': 'validSMWait'}}
+      },
+      getBidRequestData: getBidRequestDataSpy
+    };
+
+    invalidSM = {
+      name: 'invalidSM'
+    };
+
+    failureSM = {
+      name: 'failureSM',
+      init: () => { return false }
+    };
+
+    nonConfSM = {
+      name: 'nonConfSM',
+      init: () => { return true }
+    };
+
+    conf = {
+      'realTimeData': {
+        'auctionDelay': 100,
+        dataProviders: [
+          {
+            'name': 'validSMWait',
+            'waitForIt': true,
+          },
+          {
+            'name': 'validSM',
+            'waitForIt': false,
+          },
+          {
+            'name': 'invalidSM'
+          },
+          {
+            'name': 'failureSM'
+          }]
+      }
+    };
+  })
 
   describe('GVL IDs', () => {
     beforeEach(() => {
@@ -101,16 +104,18 @@ describe('Real time module', function () {
         mod = attachRealTimeDataProvider({name: 'mockRtd', gvlid: 123});
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
-        mod && mod();
+        if (mod) {
+          mod();
+        }
       }
     })
   })
 
   describe('', () => {
-    const PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
-    let _detachers;
+    let PROVIDERS, _detachers;
 
     beforeEach(function () {
+      PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
       _detachers = PROVIDERS.map(rtdModule.attachRealTimeDataProvider);
       rtdModule.init(config);
       config.setConfig(conf);
@@ -166,6 +171,36 @@ describe('Real time module', function () {
       done();
     });
 
+    it('should isolate targeting from different submodules', () => {
+      const auction = {
+        adUnitCodes: ['ad1', 'ad2'],
+        adUnits: [
+          {
+            code: 'ad1'
+          },
+          {
+            code: 'ad2',
+          }
+        ]
+      };
+      validSM.getTargetingData = (adUnits) => {
+        const targeting = {'module1': 'targeting'}
+        return {
+          ad1: targeting,
+          ad2: targeting
+        }
+      }
+
+      rtdModule.getAdUnitTargeting(auction);
+      expect(auction.adUnits[0].adserverTargeting).to.eql({
+        module1: 'targeting',
+        key: 'validSMWait'
+      });
+      expect(auction.adUnits[1].adserverTargeting).to.eql({
+        module1: 'targeting'
+      })
+    })
+
     describe('setBidRequestData', () => {
       let withWait, withoutWait;
 
@@ -214,44 +249,6 @@ describe('Real time module', function () {
         });
       });
     });
-  });
-
-  it('deep merge object', function () {
-    const obj1 = {
-      id1: {
-        key: 'value',
-        key2: 'value2'
-      },
-      id2: {
-        k: 'v'
-      }
-    };
-    const obj2 = {
-      id1: {
-        key3: 'value3'
-      }
-    };
-    const obj3 = {
-      id3: {
-        key: 'value'
-      }
-    };
-    const expected = {
-      id1: {
-        key: 'value',
-        key2: 'value2',
-        key3: 'value3'
-      },
-      id2: {
-        k: 'v'
-      },
-      id3: {
-        key: 'value'
-      }
-    };
-
-    const merged = rtdModule.deepMerge([obj1, obj2, obj3]);
-    assert.deepEqual(expected, merged);
   });
 
   describe('event', () => {

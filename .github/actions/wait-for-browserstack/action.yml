@@ -1,0 +1,32 @@
+name: Wait for browserstack sessions
+description: Wait until enough browserstack sessions have become available
+inputs:
+  BROWSERSTACK_USER_NAME:
+    description: "Browserstack user name"
+  BROWSERSTACK_ACCESS_KEY:
+    description: "Browserstack access key"
+
+runs:
+  using: 'composite'
+  steps:
+    - env:
+        BROWSERSTACK_USERNAME: ${{ inputs.BROWSERSTACK_USER_NAME }}
+        BROWSERSTACK_ACCESS_KEY: ${{ inputs.BROWSERSTACK_ACCESS_KEY }}
+      shell: bash
+      run: |
+        while            
+          status=$(curl -u "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" \
+            -X GET "https://api-cloud.browserstack.com/automate/plan.json" 2> /dev/null);
+          running=$(jq '.parallel_sessions_running' <<< $status)
+          max_running=$(jq '.parallel_sessions_max_allowed' <<< $status)
+          queued=$(jq '.queued_sessions' <<< $status)
+          max_queued=$(jq '.queued_sessions_max_allowed' <<< $status)
+          spare=$(( ${max_running} + ${max_queued} - ${running} - ${queued} ))
+          required=6
+          echo "Browserstack status: ${running} sessions running, ${queued} queued, ${spare} free"
+          (( ${required} > ${spare} ))
+        do
+          delay=$(( 60 + $(shuf -i 1-60 -n 1) ))
+          echo "Waiting for ${required} sessions to free up, checking again in ${delay}s"
+          sleep $delay
+        done

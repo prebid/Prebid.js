@@ -1,7 +1,8 @@
 import * as sinon from 'sinon';
-import yandexAnalytics, { EVENTS_TO_TRACK } from 'modules/yandexAnalyticsAdapter.js';
+import yandexAnalytics, { EVENTS_TO_TRACK, PBJS_INIT_EVENT_NAME } from 'modules/yandexAnalyticsAdapter.js';
 import * as log from '../../../src/utils.js'
 import * as events from '../../../src/events.js';
+import * as globalUtils from '../../../src/prebidGlobal.js';
 
 describe('Yandex analytics adapter testing', () => {
   const sandbox = sinon.createSandbox();
@@ -11,6 +12,13 @@ describe('Yandex analytics adapter testing', () => {
   let onEvent;
   const counterId = 123;
   const counterWindowKey = 'yaCounter123';
+  const prebidVersion = '123.0';
+  const prebidInitEvent = {
+    event: PBJS_INIT_EVENT_NAME,
+    data: {
+      version: prebidVersion,
+    },
+  }
 
   beforeEach(() => {
     yandexAnalytics.counters = {};
@@ -19,6 +27,9 @@ describe('Yandex analytics adapter testing', () => {
     yandexAnalytics.oneCounterInited = false;
     clock = sinon.useFakeTimers();
     logError = sandbox.stub(log, 'logError');
+    sandbox.stub(globalUtils, 'getGlobal').returns({
+      version: prebidVersion,
+    });
     sandbox.stub(log, 'logInfo');
     getEvents = sandbox.stub(events, 'getEvents').returns([]);
     onEvent = sandbox.stub(events, 'on');
@@ -86,12 +97,15 @@ describe('Yandex analytics adapter testing', () => {
         eventType: 'Some_untracked_event',
       }
     ]);
-    const eventsToSend = [{
-      event: EVENTS_TO_TRACK[0],
-      data: {
-        eventType: EVENTS_TO_TRACK[0],
+    const eventsToSend = [
+      prebidInitEvent,
+      {
+        event: EVENTS_TO_TRACK[0],
+        data: {
+          eventType: EVENTS_TO_TRACK[0],
+        }
       }
-    }];
+    ];
 
     yandexAnalytics.enableAnalytics({
       options: {
@@ -139,9 +153,12 @@ describe('Yandex analytics adapter testing', () => {
     clock.tick(2001);
 
     const [ sentEvents ] = counterPbjsMethod.getCall(0).args;
-    chai.expect(sentEvents).to.deep.equal([{
-      event,
-      data: {},
-    }]);
+    chai.expect(sentEvents).to.deep.equal([
+      prebidInitEvent,
+      {
+        event,
+        data: {},
+      }
+    ]);
   });
 });

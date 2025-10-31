@@ -337,15 +337,21 @@ describe('The smartx adapter', function () {
     it('should pass schain param', function () {
       var request;
 
-      bid.schain = {
-        complete: 1,
-        nodes: [
-          {
-            asi: 'indirectseller.com',
-            sid: '00001',
-            hp: 1
+      bid.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'indirectseller.com',
+                  sid: '00001',
+                  hp: 1
+                }
+              ]
+            }
           }
-        ]
+        }
       }
 
       request = spec.buildRequests([bid], bidRequestObj)[0];

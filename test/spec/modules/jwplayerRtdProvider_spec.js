@@ -768,6 +768,9 @@ describe('jwplayerRtdProvider', function() {
       const contentData = getContentData(testMediaId, testSegments);
       expect(contentData).to.have.property('name', 'jwplayer.com');
       expect(contentData.ext).to.have.property('segtax', 502);
+      expect(contentData).to.have.property('cids');
+      expect(contentData.cids).to.have.length(1);
+      expect(contentData.cids[0]).to.equal(testMediaId);
       expect(contentData.ext).to.have.property('cids');
       expect(contentData.ext.cids).to.have.length(1);
       expect(contentData.ext.cids[0]).to.equal(testMediaId);
@@ -779,6 +782,9 @@ describe('jwplayerRtdProvider', function() {
       const contentData = getContentData(testMediaId);
       expect(contentData).to.have.property('name', 'jwplayer.com');
       expect(contentData.ext.segtax).to.be.undefined;
+      expect(contentData).to.have.property('cids');
+      expect(contentData.cids).to.have.length(1);
+      expect(contentData.cids[0]).to.equal(testMediaId);
       expect(contentData.ext).to.have.property('cids');
       expect(contentData.ext.cids).to.have.length(1);
       expect(contentData.ext.cids[0]).to.equal(testMediaId);
@@ -790,6 +796,7 @@ describe('jwplayerRtdProvider', function() {
       const contentData = getContentData(null, testSegments);
       expect(contentData).to.have.property('name', 'jwplayer.com');
       expect(contentData.ext).to.have.property('segtax', 502);
+      expect(contentData).to.not.have.property('cids');
       expect(contentData.ext).to.not.have.property('cids');
       expect(contentData.segment).to.deep.equal(testSegments);
     });

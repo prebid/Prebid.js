@@ -1,0 +1,26 @@
+{
+  "disclosures": [
+    {
+      "identifier": "iabToFwMappingkey",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        1
+      ]
+    },
+    {
+      "identifier": "iabToFwMappingkeyPub",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        1
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Category translation mappings are cached in localStorage"
+    }
+  ]
+}

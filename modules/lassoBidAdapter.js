@@ -3,6 +3,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { getWinDimensions } from '../src/utils.js';
 
 const BIDDER_CODE = 'lasso';
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
@@ -32,6 +33,29 @@ export const spec = {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       }
 
+      const { params } = bidRequest;
+
+      let npi = params.npi || '';
+      let dgid = params.dgid || '';
+      let aimOnly = params.aimOnly || '';
+      let test = false;
+      let testDk = '';
+
+      if (params.testNPI) {
+        npi = params.testNPI;
+        test = true;
+      }
+
+      if (params.testDGID) {
+        dgid = params.testDGID;
+        test = true;
+      }
+
+      if (params.testDk) {
+        testDk = params.testDk;
+        test = true;
+      }
+
       const payload = {
         auctionStart: bidderRequest.auctionStart,
         url: encodeURIComponent(window.location.href),
@@ -44,12 +68,18 @@ export const spec = {
         sizes,
         aimXR,
         uid: '$UID',
+        npi,
+        dgid,
+        npi_hash: params.npiHash || '',
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
         version: 4,
-        coppa: config.getConfig('coppa') == true ? 1 : 0,
-        ccpa: bidderRequest.uspConsent || undefined
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        ccpa: bidderRequest.uspConsent || undefined,
+        test,
+        testDk,
+        aimOnly
       }
 
       if (
@@ -124,22 +154,24 @@ export const spec = {
 }
 
 function getBidRequestUrl(aimXR, params) {
+  const { npi, dgid, npiHash, testNPI, testDGID, aimOnly, testDk, dtc } = params;
   let path = '/request';
-  if (params && params.dtc) {
+  if (dtc) {
     path = '/dtc-request';
   }
-  if (!aimXR) {
-    return GET_IUD_URL + ENDPOINT_URL + path;
+  if (aimXR || npi || dgid || npiHash || testNPI || testDGID || aimOnly || testDk) {
+    return ENDPOINT_URL + path;
   }
-  return ENDPOINT_URL + path;
+  return GET_IUD_URL + ENDPOINT_URL + path;
 }
 
 function getDeviceData() {
   const win = window.top;
+  const winDimensions = getWinDimensions();
   return {
     ua: navigator.userAgent,
-    width: win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth,
-    height: win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight,
+    width: winDimensions.innerWidth || winDimensions.document.documentElement.clientWidth || win.document.body.clientWidth,
+    height: winDimensions.innerHeight || winDimensions.document.documentElement.clientHeight || win.document.body.clientHeight,
     browserLanguage: navigator.language,
   }
 }

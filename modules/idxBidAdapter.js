@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { isArray, isNumber } from '../src/utils.js'
+import { interpretResponse } from '../libraries/precisoUtils/bidUtils.js';
 
 const BIDDER_CODE = 'idx'
 const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'
@@ -49,32 +50,7 @@ export const spec = {
       }
     }
   },
-  interpretResponse: function (serverResponse) {
-    const response = serverResponse.body
-
-    const bids = []
-
-    response.seatbid.forEach(seat => {
-      seat.bid.forEach(bid => {
-        bids.push({
-          requestId: bid.impid,
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          creativeId: bid.crid,
-          ad: bid.adm,
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 300,
-          meta: {
-            advertiserDomains: bid.adomain || [],
-          },
-        })
-      })
-    })
-
-    return bids
-  },
+  interpretResponse,
 }
 
 registerBidder(spec)

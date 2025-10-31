@@ -35,7 +35,7 @@ describe('TargetVideo Ad Server Video', function() {
   };
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     bid = {
       videoCacheKey: '123',
       adserverTargeting: {
@@ -125,7 +125,7 @@ describe('TargetVideo Ad Server Video', function() {
     expect(url).to.include('mute=[vpmute]');
     expect(url).to.include('page_url=[page_url]');
     expect(url).to.include('cachebuster=[timestamp]');
-    expect(url).to.include('consent=[consent]');
+    expect(url).to.include('gdpr_consent=[consent]');
 
     getWinningBidsStub.restore();
     getAllTargetingDataStub.restore();

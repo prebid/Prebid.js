@@ -1,5 +1,6 @@
 import {spec} from '../../../modules/rhythmoneBidAdapter.js';
 import * as utils from '../../../src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import * as sinon from 'sinon';
 
 var r1adapter = spec;
@@ -434,7 +435,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var dntStub = sinon.stub(utils, 'getDNT').returns(1);
+      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
@@ -704,7 +705,13 @@ describe('rhythmone adapter tests', function () {
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead',
-        'schain': schain
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': schain
+            }
+          }
+        }
       }
     ];
 

@@ -8,71 +8,71 @@ describe('Orbitsoft adapter', function () {
   describe('implementation', function () {
     describe('for requests', function () {
       it('should accept valid bid', function () {
-        let validBid = {
-            bidder: 'orbitsoft',
-            params: {
-              placementId: '123',
-              requestUrl: ENDPOINT_URL
-            }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+        const validBid = {
+          bidder: 'orbitsoft',
+          params: {
+            placementId: '123',
+            requestUrl: ENDPOINT_URL
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
 
         expect(isValid).to.equal(true);
       });
 
       it('should reject invalid bid', function () {
-        let invalidBid = {
-            bidder: 'orbitsoft'
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
+        const invalidBid = {
+          bidder: 'orbitsoft'
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
       });
     });
     describe('for requests', function () {
       it('should accept valid bid with styles', function () {
-        let validBid = {
-            bidder: 'orbitsoft',
-            params: {
-              placementId: '123',
-              requestUrl: ENDPOINT_URL,
-              style: {
-                title: {
-                  family: 'Tahoma',
-                  size: 'medium',
-                  weight: 'normal',
-                  style: 'normal',
-                  color: '0053F9'
-                },
-                description: {
-                  family: 'Tahoma',
-                  size: 'medium',
-                  weight: 'normal',
-                  style: 'normal',
-                  color: '0053F9'
-                },
-                url: {
-                  family: 'Tahoma',
-                  size: 'medium',
-                  weight: 'normal',
-                  style: 'normal',
-                  color: '0053F9'
-                },
-                colors: {
-                  background: 'ffffff',
-                  border: 'E0E0E0',
-                  link: '5B99FE'
-                }
+        const validBid = {
+          bidder: 'orbitsoft',
+          params: {
+            placementId: '123',
+            requestUrl: ENDPOINT_URL,
+            style: {
+              title: {
+                family: 'Tahoma',
+                size: 'medium',
+                weight: 'normal',
+                style: 'normal',
+                color: '0053F9'
+              },
+              description: {
+                family: 'Tahoma',
+                size: 'medium',
+                weight: 'normal',
+                style: 'normal',
+                color: '0053F9'
+              },
+              url: {
+                family: 'Tahoma',
+                size: 'medium',
+                weight: 'normal',
+                style: 'normal',
+                color: '0053F9'
+              },
+              colors: {
+                background: 'ffffff',
+                border: 'E0E0E0',
+                link: '5B99FE'
               }
-            },
-            refererInfo: {referer: REFERRER_URL},
+            }
           },
-          isValid = spec.isBidRequestValid(validBid);
+          refererInfo: {referer: REFERRER_URL},
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
 
-        let buildRequest = spec.buildRequests([validBid])[0];
-        let requestUrl = buildRequest.url;
-        let requestUrlParams = buildRequest.data;
+        const buildRequest = spec.buildRequests([validBid])[0];
+        const requestUrl = buildRequest.url;
+        const requestUrlParams = buildRequest.data;
         expect(requestUrl).to.equal(ENDPOINT_URL);
         expect(requestUrlParams).have.property('f1', 'Tahoma');
         expect(requestUrlParams).have.property('fs1', 'medium');
@@ -95,54 +95,54 @@ describe('Orbitsoft adapter', function () {
       });
 
       it('should accept valid bid with custom params', function () {
-        let validBid = {
-            bidder: 'orbitsoft',
-            params: {
-              placementId: '123',
-              requestUrl: ENDPOINT_URL,
-              customParams: {
-                cacheBuster: 'bf4d7c1',
-                clickUrl: 'http://testclickurl.com'
-              }
-            },
-            refererInfo: {referer: REFERRER_URL},
+        const validBid = {
+          bidder: 'orbitsoft',
+          params: {
+            placementId: '123',
+            requestUrl: ENDPOINT_URL,
+            customParams: {
+              cacheBuster: 'bf4d7c1',
+              clickUrl: 'http://testclickurl.com'
+            }
           },
-          isValid = spec.isBidRequestValid(validBid);
+          refererInfo: {referer: REFERRER_URL},
+        };
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
 
-        let buildRequest = spec.buildRequests([validBid])[0];
-        let requestUrlCustomParams = buildRequest.data;
+        const buildRequest = spec.buildRequests([validBid])[0];
+        const requestUrlCustomParams = buildRequest.data;
         expect(requestUrlCustomParams).have.property('c.cacheBuster', 'bf4d7c1');
         expect(requestUrlCustomParams).have.property('c.clickUrl', 'http://testclickurl.com');
       });
 
       it('should reject invalid bid without requestUrl', function () {
-        let invalidBid = {
-            bidder: 'orbitsoft',
-            params: {
-              placementId: '123'
-            }
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
+        const invalidBid = {
+          bidder: 'orbitsoft',
+          params: {
+            placementId: '123'
+          }
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
       });
 
       it('should reject invalid bid without placementId', function () {
-        let invalidBid = {
-            bidder: 'orbitsoft',
-            params: {
-              requestUrl: ENDPOINT_URL
-            }
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
+        const invalidBid = {
+          bidder: 'orbitsoft',
+          params: {
+            requestUrl: ENDPOINT_URL
+          }
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
       });
     });
     describe('bid responses', function () {
       it('should return complete bid response', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             callback_uid: '265b29b70cc106',
             cpm: 0.5,
@@ -153,7 +153,7 @@ describe('Orbitsoft adapter', function () {
           }
         };
 
-        let bidRequests = [
+        const bidRequests = [
           {
             bidder: 'orbitsoft',
             params: {
@@ -162,7 +162,7 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        let bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].cpm).to.equal(serverResponse.body.cpm);
         expect(bids[0].width).to.equal(serverResponse.body.width);
@@ -176,7 +176,7 @@ describe('Orbitsoft adapter', function () {
       });
 
       it('should return empty bid response', function () {
-        let bidRequests = [
+        const bidRequests = [
           {
             bidder: 'orbitsoft',
             params: {
@@ -185,19 +185,19 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        let serverResponse = {
-            body: {
-              callback_uid: '265b29b70cc106',
-              cpm: 0
-            }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const serverResponse = {
+          body: {
+            callback_uid: '265b29b70cc106',
+            cpm: 0
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });
 
       it('should return empty bid response on incorrect size', function () {
-        let bidRequests = [
+        const bidRequests = [
           {
             bidder: 'orbitsoft',
             params: {
@@ -206,21 +206,21 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        let serverResponse = {
-            body: {
-              callback_uid: '265b29b70cc106',
-              cpm: 1.5,
-              width: 0,
-              height: 0
-            }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const serverResponse = {
+          body: {
+            callback_uid: '265b29b70cc106',
+            cpm: 1.5,
+            width: 0,
+            height: 0
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });
 
       it('should return empty bid response with error', function () {
-        let bidRequests = [
+        const bidRequests = [
           {
             bidder: 'orbitsoft',
             params: {
@@ -229,14 +229,14 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        let serverResponse = {error: 'error'},
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const serverResponse = {error: 'error'};
+        const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });
 
       it('should return empty bid response on empty body', function () {
-        let bidRequests = [
+        const bidRequests = [
           {
             bidder: 'orbitsoft',
             params: {
@@ -245,8 +245,8 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        let serverResponse = {},
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const serverResponse = {};
+        const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });

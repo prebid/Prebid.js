@@ -33,7 +33,7 @@ export const spec = {
         deliveryUrl = bid.params.deliveryUrl;
       }
       idParams.push(bid.bidId);
-      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      const bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       sizeParams.push(bidSizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
@@ -42,7 +42,7 @@ export const spec = {
       deliveryUrl = A4G_DEFAULT_BID_URL;
     }
 
-    let data = {
+    const data = {
       [IFRAME_PARAM_NAME]: 0,
       [LOCATION_PARAM_NAME]: bidderRequest.refererInfo?.page,
       [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),

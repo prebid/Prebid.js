@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse} from '../src/utils.js';
+import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
@@ -102,7 +102,7 @@ const converter = ortbConverter({
     ttl: 300
   },
   imp(buildImp, bidRequest, context) {
-    let imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context);
     fillTaboolaImpData(bidRequest, imp);
     return imp;
   },
@@ -170,7 +170,7 @@ export const spec = {
         if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
           return;
         }
-        let buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
+        const buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
         if (!buyerdata) {
           return;
         }
@@ -179,7 +179,7 @@ export const spec = {
           if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
             return;
           }
-          let parsedData = safeJSONParse(buyerItem.buyerdata)
+          const parsedData = safeJSONParse(buyerItem.buyerdata)
           if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
             return;
           }
@@ -276,9 +276,9 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
 function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
-  deepSetValue(data, 'device.ua', navigator.userAgent);
+  deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
-  if (data.user == undefined) {
+  if (data.user === undefined || data.user === null) {
     data.user = {
       buyeruid: 0,
       ext: {}
@@ -287,7 +287,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
   }
-  if (data.regs?.ext == undefined) {
+  if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
     }
@@ -320,7 +320,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
 
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
-  data.tmax = (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout);
+  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
@@ -338,7 +338,7 @@ function fillTaboolaImpData(bid, imp) {
       currency: CURRENCY,
       size: '*'
     });
-    if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
       imp.bidfloor = parseFloat(floorInfo.floor);
       imp.bidfloorcur = CURRENCY;
     }
@@ -347,7 +347,7 @@ function fillTaboolaImpData(bid, imp) {
     imp.bidfloor = bidfloor;
     imp.bidfloorcur = bidfloorcur;
   }
-  deepSetValue(imp, 'ext.gpid', deepAccess(bid, 'ortb2Imp.ext.gpid'));
+  deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid);
 }
 
 function getBanners(bid, pos) {

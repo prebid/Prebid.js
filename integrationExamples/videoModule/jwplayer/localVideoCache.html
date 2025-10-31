@@ -1,0 +1,135 @@
+<html>
+
+<head>
+  <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+  <script async src="../../../build/dev/prebid.js"></script>
+
+  <title>JW Player with Local Cache & GAM</title>
+
+  <script>
+    // Setup ad units
+    var adUnits = [{
+      code: 'div-gpt-ad-51545-0',
+      mediaTypes: {
+        video: {
+        }
+      },
+      video: {
+        divId: 'player', // required to indicate which player is being used to render this ad unit.
+      },
+
+      bids: [{
+        bidder: 'jwplayer',
+        params: {
+          publisherId: 'test-publisher-id',
+          siteId: 'test-site-id',
+          placementId: 'test-placement-id'
+        }
+      }, {
+        bidder: 'ix',
+        params: {
+          siteId: '300',
+        }
+      }]
+    }];
+    const vastXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        cache: {
+            useLocal: true
+        },
+        video: {
+          providers: [{
+            adServer: {
+              vendorCode: 'gam',
+              baseAdTagUrl: 'https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp'
+            },
+            divId: 'player',
+            vendorCode: 1, // JW Player vendorCode
+            playerConfig: {
+              params: {
+                licenseKey: 'zwqnWJlovTKhXv2JIcKBj0Si//K7cVPmBDEyaILcAMw+nVKaizsJRA==',
+                vendorConfig: {
+                  playlist: [{
+                    mediaid: 'XYXYXYXY',
+                    file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                    title: 'Subaru Outback On Street And Dirt',
+                    description: 'Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.',
+                  }, {
+                    mediaid: 'ZAZAZAZA',
+                    file : "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                    title : "Big Buck Bunny",
+                    description : "Big Buck Bunny tells the story of a giant rabbit with a heart bigger than himself. When one sunny day three rodents rudely harass him, something snaps... and the rabbit ain't no bunny anymore! In the typical cartoon tradition he prepares the nasty rodents a comical revenge.\n\nLicensed under the Creative Commons Attribution license\nhttp://www.bigbuckbunny.org",
+                  }, {
+                    mediaid: 'WSWSWSWS',
+                    file: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+                    title : "Sintel",
+                    description: "Sintel is an independently produced short film, initiated by the Blender Foundation as a means to further improve and validate the free/open source 3D creation suite Blender. With initial funding provided by 1000s of donations via the internet community, it has again proven to be a viable development model for both open 3D technology as for independent animation film.\nThis 15 minute film has been realized in the studio of the Amsterdam Blender Institute, by an international team of artists and developers. In addition to that, several crucial technical and creative targets have been realized online, by developers and artists and teams all over the world.\nwww.sintel.org",
+                  }],
+                  advertising: { client: 'vast' }
+                }
+              }
+            }
+          },]
+        },
+        debugging: {
+          enabled: true,
+          intercept: [
+            {
+              when: {
+                adUnitCode: 'div-gpt-ad-51545-0',
+              },
+              then: {
+                cpm: 25,
+                mediaType: "video",
+                vastXml
+              }
+            },
+          ]
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+
+      pbjs.onEvent('videoSetupComplete', e => {
+        console.log('player setup complete: ', e);
+      });
+
+      pbjs.onEvent('videoSetupFailed', e => {
+        console.log('player setup failed: ', e);
+      });
+
+      pbjs.onEvent('videoPlaylist', (e) => {
+        console.log('videos pb playlist: ', e);
+      });
+
+      // request a bid when media is loaded
+      pbjs.onEvent('videoContentLoaded', (e) => {
+        console.log('videos pb contentLoaded: ', e);
+      });
+
+      pbjs.onEvent('videoComplete', (e) => {
+        console.log('videos pb complete: ', e);
+      });
+
+      pbjs.onEvent('videoPlaylistComplete', (e) => {
+        console.log('videos pb playlistComplete: ', e);
+      });
+
+      pbjs.requestBids();
+    });
+  </script>
+
+</head>
+
+<body>
+<h2>JW Player with Local Cache & GAM</h2>
+
+<h5>Div-1: Player placeholder div</h5>
+<div id='player'></div>
+</body>
+
+</html>

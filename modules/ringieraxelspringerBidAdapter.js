@@ -7,6 +7,7 @@ import {
 } from '../src/utils.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { BO_CSR_ONET } from '../libraries/paapiTools/buyerOrigins.js';
 
 const BIDDER_CODE = 'ringieraxelspringer';
 const VERSION = '1.0';
@@ -186,7 +187,6 @@ function parseNativeResponse(ad) {
   const { dsaurl, height, width, adclick } = ad.data.meta;
   const link = adclick + (url || Thirdpartyclicktracker);
   const nativeResponse = {
-    sendTargetingKeys: false,
     title: title || Headline || '',
     image: {
       url: image || Image || '',
@@ -292,7 +292,7 @@ const getSlots = (bidRequests) => {
 
 const getGdprParams = (bidderRequest) => {
   const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-  let consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+  const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
   let queryString = '';
   if (gdprApplies !== undefined) {
     queryString += `&gdpr_applies=${encodeURIComponent(gdprApplies)}`;
@@ -314,9 +314,9 @@ const parseAuctionConfigs = (serverResponse, bidRequest) => {
     auctionConfigs.push({
       'bidId': bid.bidId,
       'config': {
-        'seller': 'https://csr.onet.pl',
-        'decisionLogicUrl': `https://csr.onet.pl/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
-        'interestGroupBuyers': ['https://csr.onet.pl'],
+        'seller': BO_CSR_ONET,
+        'decisionLogicUrl': `${BO_CSR_ONET}/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
+        'interestGroupBuyers': [ BO_CSR_ONET ],
         'auctionSignals': {
           'params': bid.params,
           'sizes': bid.sizes,
@@ -339,7 +339,7 @@ const getAdUnitCreFormat = (adUnit) => {
   }
 
   let creFormat = 'html';
-  let mediaTypes = Object.keys(adUnit.mediaTypes);
+  const mediaTypes = Object.keys(adUnit.mediaTypes);
 
   if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
     creFormat = 'native';

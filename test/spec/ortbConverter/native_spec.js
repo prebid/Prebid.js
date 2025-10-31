@@ -46,6 +46,16 @@ describe('pbjs -> ortb native requests', () => {
     expect(imp.native.something).to.eql('orother')
   });
 
+  it('should keep ortb2Imp.native.battr', () => {
+    const imp = {
+      native: {
+        battr: 'battr'
+      }
+    };
+    fillNativeImp(imp, {mediaTypes: {native: {sizes: [1, 2]}}}, {});
+    expect(imp.native.battr).to.eql('battr');
+  });
+
   it('should do nothing if there are no assets', () => {
     const imp = {};
     fillNativeImp(imp, {nativeOrtbRequest: {assets: []}}, {});

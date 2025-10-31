@@ -189,7 +189,7 @@ describe('ringieraxelspringerBidAdapter', function () {
           }
         }
       };
-      let bidderRequest = {
+      const bidderRequest = {
         ortb2: {
           regs: {
             ext: {
@@ -236,7 +236,7 @@ describe('ringieraxelspringerBidAdapter', function () {
     });
 
     it('should handle empty ad', function () {
-      let res = {
+      const res = {
         'ads': [{
           type: 'empty'
         }]
@@ -246,7 +246,7 @@ describe('ringieraxelspringerBidAdapter', function () {
     });
 
     it('should handle empty server response', function () {
-      let res = {
+      const res = {
         'ads': []
       };
       const resp = spec.interpretResponse({ body: res }, {});
@@ -254,7 +254,7 @@ describe('ringieraxelspringerBidAdapter', function () {
     });
 
     it('should generate auctionConfig when fledge is enabled', function () {
-      let bidRequest = {
+      const bidRequest = {
         method: 'GET',
         url: 'https://example.com',
         bidIds: [{
@@ -283,7 +283,7 @@ describe('ringieraxelspringerBidAdapter', function () {
         }]
       };
 
-      let auctionConfigs = [{
+      const auctionConfigs = [{
         'bidId': '123',
         'config': {
           'seller': 'https://csr.onet.pl',
@@ -545,7 +545,6 @@ describe('ringieraxelspringerBidAdapter', function () {
       privacy: '//dsa.url'
     };
     const expectedTeaserStandardResponse = {
-      sendTargetingKeys: false,
       title: 'Headline',
       image: {
         url: '//img.url',
@@ -633,7 +632,6 @@ describe('ringieraxelspringerBidAdapter', function () {
       privacy: '//dsa.url',
     };
     const expectedNativeInFeedResponse = {
-      sendTargetingKeys: false,
       title: 'Headline',
       image: {
         url: '//img.url',

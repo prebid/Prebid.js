@@ -40,7 +40,7 @@ export const spec = {
 
   buildRequests: (bidRequests) => {
     return bidRequests.map(bid => {
-      let url = BEDIGITECH_ENDPOINT;
+      const url = BEDIGITECH_ENDPOINT;
       const data = {'pid': bid.params.placementId};
       return {
         method: BEDIGITECH_REQUEST_METHOD,
@@ -56,7 +56,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse) {
-    let bids = [];
+    const bids = [];
     if (isArray(serverResponse.body)) {
       _each(serverResponse.body, function(placementResponse) {
         interpretResponse(placementResponse, bids);

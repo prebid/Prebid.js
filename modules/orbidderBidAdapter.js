@@ -98,7 +98,7 @@ export const spec = {
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
-      let httpReq = {
+      const httpReq = {
         url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
@@ -147,7 +147,7 @@ export const spec = {
 /**
  * Get bid floor from Price Floors Module
  * @param {Object} bid
- * @returns {float||undefined}
+ * @returns {(number|undefined)}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

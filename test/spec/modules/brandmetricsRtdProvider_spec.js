@@ -1,6 +1,6 @@
 import * as brandmetricsRTD from '../../../modules/brandmetricsRtdProvider.js';
 import {config} from 'src/config.js';
-import * as events from '../../../src/events';
+import * as events from '../../../src/events.js';
 import * as sinon from 'sinon';
 
 const VALID_CONFIG = {
@@ -204,7 +204,7 @@ describe('getBidRequestData', () => {
     let eventsEmitSpy;
 
     before(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       eventsEmitSpy = sandbox.spy(events, ['emit']);
     });
 

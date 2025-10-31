@@ -3,7 +3,7 @@
 ```
 Module Name: OMS Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: alexandruc@onlinemediasolutions.com
+Maintainer: devsupport@onlinemediasolutions.com
 ```
 
 # Description
@@ -33,6 +33,21 @@ var adUnits = [
     mediaTypes: {
       banner: {
         sizes: [[300, 250]]
+      }
+    },
+    bids: [{
+      bidder: 'oms',
+      params: {
+        publisherId: 2141020
+      }
+    }]
+  },
+  {
+    code: 'video-instream',
+    mediaTypes: {
+      video: {
+        context: 'instream',  
+        playerSize: [640, 480]
       }
     },
     bids: [{
