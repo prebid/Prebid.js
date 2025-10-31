@@ -834,7 +834,7 @@ export const spec = {
       originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
       _handleCustomParams(bid.params, conf);
-      conf.transactionId = bid.ortb2Imp?.ext?.tid;
+      // conf.transactionId = bid.ortb2Imp?.ext?.tid;
       const { bcat, acat } = bid.params;
       if (bcat) {
         blockedIabCategories = blockedIabCategories.concat(bcat);
