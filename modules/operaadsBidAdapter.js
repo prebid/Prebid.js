@@ -1,8 +1,8 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
   generateUUID,
-  getDNT,
   isArray,
   isFn,
   isPlainObject,
@@ -680,18 +680,18 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
-  let operaId = deepAccess(bidRequest, 'userId.operaId');
+  const operaId = deepAccess(bidRequest, 'userId.operaId');
   if (operaId) {
     return operaId;
   }
 
-  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
   }
 
   for (const idModule of ['pubcid', 'tdid']) {
-    let userId = deepAccess(bidRequest, `userId.${idModule}`);
+    const userId = deepAccess(bidRequest, `userId.${idModule}`);
     if (userId) {
       return userId;
     }

@@ -25,7 +25,7 @@ const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
 
-let invalidRequestIds = {};
+const invalidRequestIds = {};
 let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
@@ -122,7 +122,7 @@ function _serializeSupplyChainObj(schainObj) {
   let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
 
   // order of properties: asi,sid,hp,rid,name,domain
-  schainObj.nodes.map(node => {
+  schainObj.nodes.forEach(node => {
     serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
@@ -310,8 +310,8 @@ function getGreatestDimensions(sizes) {
   let maxh = 0;
   let greatestVal = 0;
   sizes.forEach(bannerSize => {
-    let [width, height] = bannerSize;
-    let greaterSide = width > height ? width : height;
+    const [width, height] = bannerSize;
+    const greaterSide = width > height ? width : height;
     if ((greaterSide > greatestVal) || (greaterSide === greatestVal && width >= maxw && height >= maxh)) {
       greatestVal = greaterSide;
       maxw = width;
@@ -367,14 +367,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
-      schain,
       userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
-    const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
     let data = {};
@@ -399,9 +398,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     // Send filtered pubProvidedId's
     if (userId && userId.pubProvidedId) {
-      let filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
-      let maxLength = 1800; // replace this with your desired maximum length
-      let truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
+      const filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
+      const maxLength = 1800; // replace this with your desired maximum length
+      const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
       data.pubProvidedId = truncatedJsonString
     }
     // ADJS-1286 Read id5 id linktype field
@@ -490,6 +489,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (coppa) {
       data.coppa = coppa;
     }
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
@@ -526,7 +526,7 @@ export function getCids(site) {
   return null;
 }
 export function setIrisId(data, site, params) {
-  let irisID = getCids(site);
+  const irisID = getCids(site);
   if (irisID) {
     data.irisid = irisID;
   } else {
@@ -633,11 +633,11 @@ function interpretResponse(serverResponse, bidRequest) {
       mediaType: type
     }
   } = Object.assign(defaultResponse, serverResponseBody);
-  let data = bidRequest.data || {};
-  let product = data.pi;
-  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER;
-  let isTestUnit = (product === 3 && data.si === 9);
-  let metaData = {
+  const data = bidRequest.data || {};
+  const product = data.pi;
+  const mediaType = (product === 6 || product === 7) ? VIDEO : BANNER;
+  const isTestUnit = (product === 3 && data.si === 9);
+  const metaData = {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
   };
@@ -656,7 +656,7 @@ function interpretResponse(serverResponse, bidRequest) {
     sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
-  let [width, height] = sizes[0].split('x');
+  const [width, height] = sizes[0].split('x');
 
   if (jcsi) {
     serverResponseBody.jcsi = JCSI

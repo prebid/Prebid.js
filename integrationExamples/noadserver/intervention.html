@@ -1,0 +1,66 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Heavy Ad Test</title>
+    <script src="../../../build/dev/prebid.js" async></script>
+    <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+      const adUnitCode = 'div-gpt-ad-1756369646964-0';
+      const adUnits = [{
+        mediaTypes: {
+          banner: {
+            sizes: [486, 60]
+          }
+        },
+        code: adUnitCode,
+        bids: [{
+          bidder: 'testBidder',
+          params: {}
+        }]
+      }];
+      pbjs.que.push(function() {
+        pbjs.registerBidAdapter(null, 'testBidder', {
+          supportedMediaTypes: ['banner', 'video', 'native'],
+          isBidRequestValid: () => true,
+          onIntervention: (param) => {
+            console.log('Intervention detected for param:', param);
+          }
+        });
+        pbjs.setConfig({
+          debugging: {
+            enabled: true,
+            intercept: [{
+              when: {
+                bidder: 'testBidder'
+              },
+              then: {
+                creativeId: 'testCreativeId',
+                ad: "<html><body><script" + ">setTimeout(()=>{fetch(\"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4\").then(r=>r.arrayBuffer()).then(b=>console.log(\"Pobranobytes:\",b.byteLength));},4000)</scr" + "ipt><div style=\"display: inline-block; width: 486px; height: 60px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png);\"></div></body></html>"
+              }
+            }]
+          }
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          adUnitCodes: [adUnitCode],
+          bidsBackHandler: function() {
+            const bids = pbjs.getHighestCpmBids(adUnitCode);
+            const winningBid = bids[0];
+            const div = document.getElementById('div-gpt-ad-1756369646964-0')
+            let iframe = document.createElement('iframe');
+            iframe.src = "http://adlooxtracking.com/dummy-url"; //hack for chrome to identify as ad
+            iframe.frameBorder = '0';
+            div.appendChild(iframe);
+            var iframeDoc = iframe.contentWindow.document;
+            pbjs.renderAd(iframeDoc, winningBid.adId);
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h2>Heavy ad intervention test</h2>
+    <div id='div-gpt-ad-1756369646964-0'></div>
+  </body>
+</html>

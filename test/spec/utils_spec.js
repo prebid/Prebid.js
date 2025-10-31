@@ -5,21 +5,22 @@ import * as utils from 'src/utils.js';
 import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
+import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
 
 describe('Utils', function () {
-  var obj_string = 's',
-    obj_number = 1,
-    obj_object = {},
-    obj_array = [],
-    obj_function = function () {};
+  var obj_string = 's';
+  var obj_number = 1;
+  var obj_object = {};
+  var obj_array = [];
+  var obj_function = function () {};
 
-  var type_string = 'String',
-    type_number = 'Number',
-    type_object = 'Object',
-    type_array = 'Array',
-    type_function = 'Function';
+  var type_string = 'String';
+  var type_number = 'Number';
+  var type_object = 'Object';
+  var type_array = 'Array';
+  var type_function = 'Function';
 
   describe('canAccessWindowTop', function () {
     let sandbox;
@@ -505,15 +506,15 @@ describe('Utils', function () {
   });
 
   describe('contains', function () {
-    	it('should return true if the input string contains in the input obj', function () {
+    it('should return true if the input string contains in the input obj', function () {
       var output = utils.contains('123', '1');
       assert.deepEqual(output, true);
-    	});
+    });
 
-    	it('should return false if the input string do not contain in the input obj', function () {
+    it('should return false if the input string do not contain in the input obj', function () {
       var output = utils.contains('234', '1');
       assert.deepEqual(output, false);
-    	});
+    });
 
     it('should return false if the input string is empty', function () {
       var output = utils.contains();
@@ -522,37 +523,37 @@ describe('Utils', function () {
   });
 
   describe('_map', function () {
-    	it('return empty array when input object is empty', function () {
+    it('return empty array when input object is empty', function () {
       var input = {};
       var callback = function () {};
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, []);
-    	});
+    });
 
-    	it('return value array with vaild input object', function () {
+    it('return value array with vaild input object', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v) { return v; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
-    	});
+    });
 
-    	it('return value array with vaild input object_callback func changed 1', function () {
+    it('return value array with vaild input object_callback func changed 1', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k) { return v + k; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
-    	});
+    });
 
-    	it('return value array with vaild input object_callback func changed 2', function () {
+    it('return value array with vaild input object_callback func changed 2', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k, o) { return o; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
-    	});
+    });
   });
 
   describe('createInvisibleIframe', function () {
@@ -763,12 +764,12 @@ describe('Utils', function () {
 
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
-      let var1 = 'placementIdTest';
-      let test1 = convertCamelToUnderscore(var1);
+      const var1 = 'placementIdTest';
+      const test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
-      let var2 = 'my_test_value';
-      let test2 = convertCamelToUnderscore(var2);
+      const var2 = 'my_test_value';
+      const test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
     });
   });
@@ -1218,12 +1219,12 @@ describe('Utils', function () {
 
   describe('setScriptAttributes', () => {
     it('correctly adds attributes from an object', () => {
-      const script = document.createElement('script'),
-        attrs = {
-          'data-first_prop': '1',
-          'data-second_prop': 'b',
-          'id': 'newId'
-        };
+      const script = document.createElement('script');
+      const attrs = {
+        'data-first_prop': '1',
+        'data-second_prop': 'b',
+        'id': 'newId'
+      };
       script.id = 'oldId';
       utils.setScriptAttributes(script, attrs);
       expect(script.dataset['first_prop']).to.equal('1');
@@ -1266,7 +1267,7 @@ describe('Utils', function () {
             if (typeof window.CompressionStream === 'undefined') {
               cachedResult = false;
             } else {
-              let newCompressionStream = new window.CompressionStream('gzip');
+              const newCompressionStream = new window.CompressionStream('gzip');
               cachedResult = true;
             }
           } catch (error) {
@@ -1444,18 +1445,18 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should invoke resetWinDimensions once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(internal, 'resetWinDimensions');
-    getWinDimensions();
+  it('should clear cache once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'reset');
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledOnce(resetWinDimensionsSpy);
     clock.tick(18);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
 });

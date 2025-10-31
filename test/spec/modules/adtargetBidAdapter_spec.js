@@ -8,7 +8,6 @@ const DISPLAY_REQUEST = {
   'params': {
     'aid': 12345
   },
-  'schain': { ver: 1 },
   'userId': { criteo: 2 },
   'mediaTypes': { 'banner': { 'sizes': [300, 250] } },
   'bidderRequestId': '7101db09af0db2',
@@ -95,7 +94,16 @@ const displayBidderRequestWithConsents = {
     gdprApplies: true,
     consentString: 'test'
   },
-  uspConsent: 'iHaveIt'
+  uspConsent: 'iHaveIt',
+  ortb2: {
+    source: {
+      ext: {
+        schain: {
+          ver: '1.0'
+        }
+      }
+    }
+  }
 };
 
 const videoEqResponse = [{
@@ -193,16 +201,16 @@ describe('adtargetBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, VIDEO_REQUEST);
+      const bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', () => {
-    let videoBidRequests = [VIDEO_REQUEST];
-    let displayBidRequests = [DISPLAY_REQUEST];
-    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    const videoBidRequests = [VIDEO_REQUEST];
+    const displayBidRequests = [DISPLAY_REQUEST];
+    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
     const displayRequest = spec.buildRequests(displayBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});
     const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
@@ -284,7 +292,7 @@ describe('adtargetBidAdapter', () => {
         expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1);
       })
       it('sets Schain', () => {
-        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(DISPLAY_REQUEST.schain);
+        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain);
       })
       it('sets UserId\'s', () => {
         expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);

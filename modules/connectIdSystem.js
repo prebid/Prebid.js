@@ -235,13 +235,13 @@ export const connectIdSubmodule = {
       }
     }
 
-    let topmostLocation = getRefererInfo().topmostLocation;
+    const topmostLocation = getRefererInfo().topmostLocation;
     if (typeof topmostLocation === 'string') {
       data.url = topmostLocation.split('?')[0];
     }
 
     INPUT_PARAM_KEYS.forEach(key => {
-      if (typeof params[key] != 'undefined') {
+      if (typeof params[key] !== 'undefined') {
         data[key] = params[key];
       }
     });
@@ -290,7 +290,7 @@ export const connectIdSubmodule = {
         }
       };
       const endpoint = UPS_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
-      let url = `${params.endpoint || endpoint}?${formatQS(data)}`;
+      const url = `${params.endpoint || endpoint}?${formatQS(data)}`;
       connectIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     const result = {callback: resp};

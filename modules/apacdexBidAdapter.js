@@ -1,3 +1,4 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -43,13 +44,14 @@ export const spec = {
     let eids;
     let geo;
     let test;
-    let bids = [];
+    const bids = [];
 
     test = config.getConfig('debug');
 
     validBidRequests.forEach(bidReq => {
-      if (bidReq.schain) {
-        schain = schain || bidReq.schain
+      const bidSchain = bidReq?.ortb2?.source?.ext?.schain;
+      if (bidSchain) {
+        schain = schain || bidSchain
       }
 
       if (bidReq.userIdAsEids) {
@@ -63,12 +65,12 @@ export const spec = {
       }
 
       var targetKey = 0;
-      if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
+      if (bySlotTargetKey[bidReq.adUnitCode] !== undefined && bySlotTargetKey[bidReq.adUnitCode] !== null) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
       } else {
         var biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
-          if (bySlotSizesCount[biggestSize] != undefined) {
+          if (bySlotSizesCount[biggestSize] !== undefined && bySlotSizesCount[biggestSize] !== null) {
             bySlotSizesCount[biggestSize]++
             targetKey = bySlotSizesCount[biggestSize];
           } else {
@@ -80,7 +82,7 @@ export const spec = {
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
 
-      let bidFloor = getBidFloor(bidReq);
+      const bidFloor = getBidFloor(bidReq);
       if (bidFloor) {
         bidReq.bidFloor = bidFloor;
       }
@@ -98,7 +100,7 @@ export const spec = {
     payload.device.ua = navigator.userAgent;
     payload.device.height = window.screen.height;
     payload.device.width = window.screen.width;
-    payload.device.dnt = _getDoNotTrack();
+    payload.device.dnt = getDNT() ? 1 : 0;
     payload.device.language = navigator.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
@@ -257,28 +259,6 @@ function _getBiggestSize(sizes) {
   return sizes[index][0] + 'x' + sizes[index][1];
 }
 
-function _getDoNotTrack() {
-  try {
-    if (window.top.doNotTrack && window.top.doNotTrack == '1') {
-      return 1;
-    }
-  } catch (e) { }
-
-  try {
-    if (navigator.doNotTrack && (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1')) {
-      return 1;
-    }
-  } catch (e) { }
-
-  try {
-    if (navigator.msDoNotTrack && navigator.msDoNotTrack == '1') {
-      return 1;
-    }
-  } catch (e) { }
-
-  return 0
-}
-
 /**
  * Extracts the page url from given bid request or use the (top) window location as fallback
  *
@@ -334,7 +314,7 @@ function getBidFloor(bid) {
     return (bid.params.floorPrice) ? bid.params.floorPrice : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

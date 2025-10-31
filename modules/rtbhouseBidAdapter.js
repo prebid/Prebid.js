@@ -1,4 +1,4 @@
-import {deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr} from '../src/utils.js';
+import {deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -49,8 +49,9 @@ export const spec = {
       request.regs = {ext: {gdpr: gdpr}};
       request.user = {ext: {consent: consentStr}};
     }
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         request.ext = {
           schain: schain,
@@ -86,7 +87,15 @@ export const spec = {
       });
     }
 
-    let computedEndpointUrl = ENDPOINT_URL;
+    if (bidderRequest.gppConsent?.gppString) {
+      deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (ortb2Params.regs?.gpp) {
+      deepSetValue(request, 'regs.gpp', ortb2Params.regs.gpp);
+      deepSetValue(request, 'regs.gpp_sid', ortb2Params.regs.gpp_sid);
+    }
+
+    const computedEndpointUrl = ENDPOINT_URL;
 
     return {
       method: 'POST',
@@ -165,14 +174,12 @@ function mapImpression(slot, bidderRequest) {
     imp.bidfloor = bidfloor;
   }
 
-  if (imp.ext?.ae) {
-    delete imp.ext.ae;
-  }
-
-  const tid = deepAccess(slot, 'ortb2Imp.ext.tid');
-  if (tid) {
-    imp.ext = imp.ext || {};
-    imp.ext.tid = tid;
+  const ext = deepAccess(slot, 'ortb2Imp.ext');
+  if (ext) {
+    imp.ext = deepClone(ext);
+    if (imp.ext.ae) {
+      delete imp.ext.ae;
+    }
   }
 
   return imp;
@@ -213,7 +220,7 @@ function mapSite(slot, bidderRequest) {
       .toString()
       .slice(0, 50);
   }
-  let siteData = {
+  const siteData = {
     publisher: {
       id: pubId.toString(),
     },

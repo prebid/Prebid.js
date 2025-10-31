@@ -4,12 +4,14 @@
  */
 
 var gulp = require('gulp');
-var express = require('express');
-var http = require('http');
+var connect = require('gulp-connect');
 var port = 5000;
 
 gulp.task('serve', function() {
-  var app = express();
-  app.use(express.static('./'));
-  http.createServer(app).listen(port);
+  connect.server({
+    port: port,
+    root: './',
+    livereload: true,
+    https: true
+  });
 });

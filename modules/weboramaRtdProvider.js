@@ -353,17 +353,21 @@ class WeboramaRtdProvider {
       extra = extra || {};
       const requiredFields = extra?.requiredFields || [];
 
-      requiredFields.forEach((field) => {
+      for (const field of requiredFields) {
         if (!(field in weboSectionConf)) {
-          throw `missing required field '${field}'`;
+          const msg = `missing required field '${field}'`;
+          logger.logError(msg);
+          return false;
         }
-      });
+      }
 
       if (
         isPlainObject(extra?.userConsent?.gdpr) &&
         !this.#checkTCFv2(extra.userConsent.gdpr)
       ) {
-        throw 'gdpr consent not ok';
+        const msg = 'gdpr consent not ok';
+        logger.logError(msg);
+        return false;
       }
     } catch (e) {
       logger.logError(
@@ -474,11 +478,15 @@ class WeboramaRtdProvider {
     this.#coerceSendToBidders(submoduleParams);
 
     if (!isFn(submoduleParams.onData)) {
-      throw 'onData parameter should be a callback';
+      const msg = 'onData parameter should be a callback';
+      logger.logError(msg);
+      return false;
     }
 
     if (!isValidProfile(submoduleParams.defaultProfile)) {
-      throw 'defaultProfile is not valid';
+      const msg = 'defaultProfile is not valid';
+      logger.logError(msg);
+      return false;
     }
   }
 
@@ -497,7 +505,9 @@ class WeboramaRtdProvider {
         submoduleParams.setPrebidTargeting
       );
     } catch (e) {
-      throw `invalid setPrebidTargeting: ${e}`;
+      const msg = `invalid setPrebidTargeting: ${e}`;
+      logger.logError(msg);
+      return false;
     }
   }
 
@@ -511,7 +521,7 @@ class WeboramaRtdProvider {
    */
 
   #coerceSendToBidders(submoduleParams) {
-    let sendToBidders = submoduleParams.sendToBidders;
+    const sendToBidders = submoduleParams.sendToBidders;
 
     if (isPlainObject(sendToBidders)) {
       const sendToBiddersMap = Object.entries(sendToBidders).reduce(
@@ -533,7 +543,9 @@ class WeboramaRtdProvider {
         try {
           return validatorCallback(adUnitCode);
         } catch (e) {
-          throw `invalid sendToBidders[${bidder}]: ${e}`;
+          const msg = `invalid sendToBidders[${bidder}]: ${e}`;
+          logger.logError(msg);
+          return false;
         }
       };
 
@@ -546,7 +558,9 @@ class WeboramaRtdProvider {
         (bid) => bid.bidder
       );
     } catch (e) {
-      throw `invalid sendToBidders: ${e}`;
+      const msg = `invalid sendToBidders: ${e}`;
+      logger.logError(msg);
+      return false;
     }
   }
 
@@ -680,7 +694,10 @@ class WeboramaRtdProvider {
         const data = JSON.parse(response);
         onSuccess(data);
       } else {
-        throw `unexpected http status response ${req.status} with response ${response}`;
+        const msg = `unexpected http status response ${req.status} with response ${response}`;
+        logger.logError(msg);
+        onDone();
+        return;
       }
 
       onDone();
@@ -841,7 +858,7 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = this.#getAdapterNameForAlias(bid.bidder);
 
-    if (bidder == 'appnexus') {
+    if (bidder === 'appnexus') {
       this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
   }
@@ -987,7 +1004,7 @@ class WeboramaRtdProvider {
 
     if (isStr(value)) {
       return (target) => {
-        return value == coerce(target);
+        return value === coerce(target);
       };
     }
 
@@ -997,7 +1014,9 @@ class WeboramaRtdProvider {
       };
     }
 
-    throw `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
+    const msg = `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
+    logger.logError(msg);
+    return () => false;
   }
 }
 

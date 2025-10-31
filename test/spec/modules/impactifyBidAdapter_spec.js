@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -25,7 +26,7 @@ describe('ImpactifyAdapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       impactify: {
         storageAllowed: true
       }
@@ -37,13 +38,13 @@ describe('ImpactifyAdapter', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     document.body.appendChild.restore();
     sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
-    let validBids = [
+    const validBids = [
       {
         bidder: 'impactify',
         params: {
@@ -62,7 +63,7 @@ describe('ImpactifyAdapter', function () {
       }
     ];
 
-    let videoBidRequests = [
+    const videoBidRequests = [
       {
         bidder: 'impactify',
         params: {
@@ -97,7 +98,7 @@ describe('ImpactifyAdapter', function () {
         ]
       }
     ];
-    let videoBidderRequest = {
+    const videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -117,12 +118,12 @@ describe('ImpactifyAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, validBids[0]);
+      const bid = Object.assign({}, validBids[0]);
       delete bid.params;
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
 
-      let bid2 = Object.assign({}, validBids[1]);
+      const bid2 = Object.assign({}, validBids[1]);
       delete bid2.params;
       bid2.params = {};
       expect(spec.isBidRequestValid(bid2)).to.equal(false);
@@ -197,12 +198,12 @@ describe('ImpactifyAdapter', function () {
 
     it('should return false when format is not equals to screen or display', () => {
       const bid = utils.deepClone(validBids[0]);
-      if (bid.params.format != 'screen' && bid.params.format != 'display') {
+      if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       }
 
       const bid2 = utils.deepClone(validBids[1]);
-      if (bid2.params.format != 'screen' && bid2.params.format != 'display') {
+      if (bid2.params.format !== 'screen' && bid2.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid2)).to.equal(false);
       }
     });
@@ -231,7 +232,7 @@ describe('ImpactifyAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    let videoBidRequests = [
+    const videoBidRequests = [
       {
         bidder: 'impactify',
         params: {
@@ -266,7 +267,7 @@ describe('ImpactifyAdapter', function () {
         ]
       }
     ];
-    let videoBidderRequest = {
+    const videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -323,7 +324,7 @@ describe('ImpactifyAdapter', function () {
   });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
-      let response = {
+      const response = {
         id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
         seatbid: [
           {
@@ -357,7 +358,7 @@ describe('ImpactifyAdapter', function () {
                     bidder: {
                       appnexus: {
                         brand_id: 182979,
-                        auction_id: 8657683934873599656,
+                        auction_id: '8657683934873599656',
                         bidder_id: 2,
                         bid_ad_type: 1,
                         creative_info: {
@@ -389,7 +390,7 @@ describe('ImpactifyAdapter', function () {
           }
         }
       };
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [
           {
             bidId: '462c08f20d428',
@@ -405,7 +406,7 @@ describe('ImpactifyAdapter', function () {
           },
         ]
       }
-      let expectedResponse = [
+      const expectedResponse = [
         {
           id: '65820304700829014',
           requestId: '462c08f20d428',
@@ -422,12 +423,12 @@ describe('ImpactifyAdapter', function () {
           creativeId: '97517771'
         }
       ];
-      let result = spec.interpretResponse({ body: response }, bidderRequest);
+      const result = spec.interpretResponse({ body: response }, bidderRequest);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
   });
   describe('getUserSyncs', function () {
-    let videoBidRequests = [
+    const videoBidRequests = [
       {
         bidder: 'impactify',
         params: {
@@ -448,7 +449,7 @@ describe('ImpactifyAdapter', function () {
         transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
       }
     ];
-    let videoBidderRequest = {
+    const videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -461,7 +462,7 @@ describe('ImpactifyAdapter', function () {
         referer: 'https://impactify.io'
       }
     };
-    let validResponse = {
+    const validResponse = {
       id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
       seatbid: [
         {
@@ -495,7 +496,7 @@ describe('ImpactifyAdapter', function () {
                   bidder: {
                     appnexus: {
                       brand_id: 182979,
-                      auction_id: 8657683934873599656,
+                      auction_id: '8657683934873599656',
                       bidder_id: 2,
                       bid_ad_type: 1,
                       creative_info: {

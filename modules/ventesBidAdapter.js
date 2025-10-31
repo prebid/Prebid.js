@@ -102,13 +102,13 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
 
 function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
   const userObjBid = ((bidRequests) || []).find(hasUserInfo);
-  let userObj = {};
+  const userObj = {};
   if (userObjBid) {
     Object.keys(userObjBid.params.user)
       .forEach((param) => {
-        let uparam = convertCamelToUnderscore(param);
+        const uparam = convertCamelToUnderscore(param);
         if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-          let segs = [];
+          const segs = [];
           userObjBid.params.user[param].forEach(val => {
             if (isNumber(val)) {
               segs.push({
@@ -130,7 +130,9 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   if (deviceObjBid && deviceObjBid.params && deviceObjBid.params.device) {
     deviceObj = {};
     Object.keys(deviceObjBid.params.device)
-      .forEach(param => deviceObj[param] = deviceObjBid.params.device[param]);
+      .forEach(param => {
+        deviceObj[param] = deviceObjBid.params.device[param];
+      });
     if (!deviceObjBid.hasOwnProperty('ua')) {
       deviceObj.ua = navigator.userAgent;
     }
@@ -156,7 +158,9 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .forEach(param => appIdObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appIdObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
     payload.app = appIdObj;
   }
@@ -185,6 +189,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
       const impId = `${bidId}`;
 
       if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
+      return acc;
     }, []);
 
   return acc.concat(imps);

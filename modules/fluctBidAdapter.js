@@ -1,4 +1,4 @@
-import { _each, deepSetValue, isEmpty } from '../src/utils.js';
+import { _each, deepAccess, deepSetValue, isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -56,7 +56,7 @@ export const spec = {
 
       if (impExt) {
         data.transactionId = impExt.tid;
-        data.gpid = impExt.gpid ?? impExt.data?.pbadslot ?? impExt.data?.adserver?.adslot;
+        data.gpid = impExt.gpid ?? impExt.data?.adserver?.adslot;
       }
       if (bidderRequest.gdprConsent) {
         deepSetValue(data, 'regs.gdpr', {
@@ -83,6 +83,9 @@ export const spec = {
           sid: bidderRequest.ortb2.regs.gpp_sid
         });
       }
+      if (bidderRequest.ortb2?.user?.ext?.data?.im_segments) {
+        deepSetValue(data, 'params.kv.imsids', bidderRequest.ortb2.user.ext.data.im_segments);
+      }
       data.sizes = [];
       _each(request.sizes, (size) => {
         data.sizes.push({
@@ -93,9 +96,12 @@ export const spec = {
 
       data.params = request.params;
 
-      if (request.schain) {
-        data.schain = request.schain;
+      const schain = request?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        data.schain = schain;
       }
+
+      data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
@@ -139,7 +145,7 @@ export const spec = {
       const callImpBeacon = `<script type="application/javascript">` +
         `(function() { var img = new Image(); img.src = "${beaconUrl}"})()` +
         `</script>`;
-      let data = {
+      const data = {
         requestId: res.id,
         currency: res.cur,
         cpm: parseFloat(bid.price) || 0,

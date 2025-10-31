@@ -9,7 +9,6 @@ const VERSION = '1.1';
 const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: VENDOR_ID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(
@@ -24,17 +23,17 @@ export const spec = {
       return;
     }
     return validBidRequests.map(function (bid) {
-      let adSlot = {
+      const adSlot = {
         bidId: bid.bidId,
         zoneId: bid.params.zoneid || ''
       };
 
       if (typeof bid.getFloor === 'function') {
-        const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
+        const mediaType = (Object.keys(bid.mediaTypes).length === 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
-          let floor = parseFloat(floorInfo.floor)
+          const floor = parseFloat(floorInfo.floor)
           if (!isNaN(floor) && floor > 0) {
             adSlot.floor = parseFloat(floorInfo.floor);
           }
@@ -49,11 +48,12 @@ export const spec = {
         adSlot.video = bid.mediaTypes.video;
       }
 
-      if (bid.schain) {
-        adSlot.schain = bid.schain;
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        adSlot.schain = schain;
       }
 
-      let data = {
+      const data = {
         v: VERSION,
         requestId: bid.bidderRequestId,
         adSlots: [adSlot],
@@ -87,9 +87,9 @@ export const spec = {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.seatbid) {
       return [];
     }
-    let bidResponses = [];
+    const bidResponses = [];
     serverResponse.body.seatbid.forEach(seatbid => {
-      let bids = seatbid.bid || [];
+      const bids = seatbid.bid || [];
       bids.forEach(bid => {
         const bidResponse = {
           requestId: bid.bidId,
@@ -116,13 +116,13 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    let kubientSync = kubientGetSyncInclude(config);
+    const kubientSync = kubientGetSyncInclude(config);
 
     if (!syncOptions.pixelEnabled || kubientSync.image === 'exclude') {
       return [];
     }
 
-    let values = {};
+    const values = {};
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         values['gdpr'] = Number(gdprConsent.gdprApplies);
@@ -159,9 +159,9 @@ function kubientGetConsentGiven(gdprConsent) {
 
 function kubientGetSyncInclude(config) {
   try {
-    let kubientSync = {};
-    if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
-      let filterSettings = config.getConfig('userSync').filterSettings
+    const kubientSync = {};
+    if (config.getConfig('userSync').filterSettings !== null && config.getConfig('userSync').filterSettings !== undefined) {
+      const filterSettings = config.getConfig('userSync').filterSettings
       if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
         kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';
       }
