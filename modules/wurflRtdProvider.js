@@ -172,6 +172,20 @@ function enrichDeviceFPD(reqBidsConfigObj, deviceData) {
 }
 
 /**
+ * enrichDeviceExt enriches the global device.ext.wurfl object with extension data
+ * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {Object} extData Extension data in format { device: { ext: { wurfl: {...} } } }
+ */
+function enrichDeviceExt(reqBidsConfigObj, extData) {
+  if (!extData || !reqBidsConfigObj?.ortb2Fragments?.global) {
+    return;
+  }
+
+  // Use mergeDeep to properly merge ext.wurfl data into global device
+  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, extData);
+}
+
+/**
  * enrichDeviceBidder enriches bidder-specific device data with WURFL data
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Set} bidders Set of bidder codes
@@ -527,8 +541,11 @@ const WurflDebugger = {
     window.WurflRtdDebug.data.pbjsData = pbjsData;
   },
 
-  setLceData(lceDevice) {
-    window.WurflRtdDebug.data.lceDevice = lceDevice;
+  setLceData(lceDevice, extWurfl) {
+    window.WurflRtdDebug.data.lceDevice = {
+      ...lceDevice,
+      ext: extWurfl?.device?.ext
+    };
   },
 
   setCacheExpired(expired) {
@@ -943,6 +960,16 @@ const WurflLCEDevice = {
     return undefined;
   },
 
+  _isRobot(useragent) {
+    const botTokens = ['+http', 'Googlebot', 'BingPreview', 'Yahoo! Slurp'];
+    for (const botToken of botTokens) {
+      if (useragent.includes(botToken)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
   // Public API - returns device object for First Party Data (global)
   FPD() {
     // Early exit - check window exists
@@ -1012,6 +1039,20 @@ const WurflLCEDevice = {
     const hasError = this._expectedFields.some(field => device[field] === undefined);
 
     return { device, hasError };
+  },
+
+  // Public API - returns device.ext.wurfl object with LCE-detected capabilities
+  // Returns: { device: { ext: { wurfl: { is_robot: boolean } } } }
+  Ext() {
+    return {
+      device: {
+        ext: {
+          wurfl: {
+            is_robot: this._isRobot(navigator.userAgent)
+          }
+        }
+      }
+    };
   }
 };
 // ==================== END WURFL LCE DEVICE MODULE ====================
@@ -1127,9 +1168,11 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   WurflDebugger.setDataSource('lce');
   WurflDebugger.lceDetectionStart();
   const lceResult = WurflLCEDevice.FPD();
+  const extWurfl = WurflLCEDevice.Ext();
   WurflDebugger.lceDetectionStop();
-  WurflDebugger.setLceData(lceResult.device);
+  WurflDebugger.setLceData(lceResult.device, extWurfl);
   enrichDeviceFPD(reqBidsConfigObj, lceResult.device);
+  enrichDeviceExt(reqBidsConfigObj, extWurfl);
 
   // Set enrichment type based on error status
   enrichmentType = ENRICHMENT_TYPE.LCE;

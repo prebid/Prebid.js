@@ -533,6 +533,11 @@ describe('wurflRtdProvider', function () {
         expect(reqBidsConfigObj.ortb2Fragments.global.device).to.exist;
         expect(reqBidsConfigObj.ortb2Fragments.global.device.js).to.equal(1);
 
+        // Verify ext.wurfl.is_robot is set
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ext).to.exist;
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl).to.exist;
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.false;
+
         // No bidder enrichment should occur without cached WURFL data
         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({});
 
@@ -554,6 +559,124 @@ describe('wurflRtdProvider', function () {
       const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
       expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
       expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
+    });
+
+    describe('LCE bot detection', () => {
+      let originalUserAgent;
+
+      beforeEach(() => {
+        // Setup empty cache to trigger LCE
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        // Save original userAgent
+        originalUserAgent = navigator.userAgent;
+      });
+
+      afterEach(() => {
+        // Restore original userAgent
+        Object.defineProperty(navigator, 'userAgent', {
+          value: originalUserAgent,
+          configurable: true,
+          writable: true
+        });
+      });
+
+      it('should detect Googlebot and set is_robot to true', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext).to.exist;
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl).to.exist;
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.true;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should detect BingPreview and set is_robot to true', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.true;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should detect Yahoo! Slurp and set is_robot to true', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.true;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should detect +http bot token and set is_robot to true', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'SomeBot/1.0 (+http://example.com/bot)',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.true;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set is_robot to false for regular Chrome user agent', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.false;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set is_robot to false for regular mobile Safari user agent', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.false;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
     });
 
     it('should enrich only bidders when over quota', (done) => {
