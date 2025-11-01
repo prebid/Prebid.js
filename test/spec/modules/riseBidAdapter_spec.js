@@ -543,6 +543,29 @@ describe('riseAdapter', function () {
         expect(request.data.bids[0].coppa).to.be.equal(1);
       });
     });
+
+    describe('User Eids', function() {
+      it('should get the Eids from the userIdAsEids object and set them in the request', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        const userIds = [
+          {
+            sourcer: 'pubcid.org',
+            uids: [{
+              id: '12345678',
+              atype: 1,
+            }]
+          }];
+        bid.userIdAsEids = userIds;
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.params.userIds).to.be.equal(JSON.stringify(userIds));
+      });
+
+      it('should not set the userIds request param if no userIdAsEids are set', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.params.userIds).to.be.undefined;
+      });
+    });
   });
 
   describe('interpretResponse', function () {
