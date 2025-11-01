@@ -1028,7 +1028,7 @@ describe('Unit: Prebid Module', function () {
 
       slots.forEach(function(slot) {
         targeting = {};
-        slot.getTargetingKeys().map(function (key) {
+        slot.getTargetingKeys().forEach(function (key) {
           const value = slot.getTargeting(key);
           targeting[key] = value[0]
         });
@@ -1048,7 +1048,7 @@ describe('Unit: Prebid Module', function () {
 
       slots.forEach(function(slot) {
         targeting = {};
-        slot.getTargetingKeys().map(function (key) {
+        slot.getTargetingKeys().forEach(function (key) {
           const value = slot.getTargeting(key);
           targeting[key] = value[0]
         });
