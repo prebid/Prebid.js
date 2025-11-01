@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import * as navigatorDnt from 'libraries/navigatorData/dnt.js';
+import * as navigatorDnt from 'libraries/dnt/index.js';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
 import {parseDomain} from '../../../src/refererDetection.js';
