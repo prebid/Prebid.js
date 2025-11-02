@@ -125,6 +125,7 @@ export const KeysMap = {
       'floorData.floorRule as flrrule',
       'floorRuleValue as flrRulePrice',
       'serverLatencyMillis as rtime',
+      'pbsExt',
       'creativeId as pcrid',
       'dbf',
       'latestTargetedAuctionId as lacid',
