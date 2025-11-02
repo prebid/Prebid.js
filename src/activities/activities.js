@@ -60,3 +60,8 @@ export const LOAD_EXTERNAL_SCRIPT = 'loadExternalScript';
  * accessRequestCredentials: setting withCredentials flag in ajax request config
  */
 export const ACTIVITY_ACCESS_REQUEST_CREDENTIALS = 'accessRequestCredentials';
+
+/**
+ * fetchBid: a bidder wants to bid.
+ */
+export const ACTIVITY_ADD_BID_RESPONSE = 'acceptBid';
