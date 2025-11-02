@@ -7,10 +7,10 @@ import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
-import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter.js';
-import {FIRST_PARTY_KEY, PREBID, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import { REPORTER_ID, preparePayload, restoreReportList } from '../../../modules/intentIqAnalyticsAdapter.js';
+import { FIRST_PARTY_KEY, PREBID, VERSION } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
-import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
+import { getReferrer, appendVrrefAndFui } from '../../../libraries/intentIqUtils/getRefferer.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
 
 const partner = 10;
@@ -21,6 +21,8 @@ const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 const REPORT_SERVER_ADDRESS = 'https://test-reports.intentiq.com/report';
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
+
+const randomVal = () => Math.floor(Math.random() * 100000) + 1
 
 const getUserConfig = () => [
   {
@@ -45,8 +47,6 @@ const getUserConfigWithReportingServerAddress = () => [
     'params': {
       'partner': partner,
       'unpack': null,
-      'manualWinReportEnabled': false,
-      'reportingServerAddress': REPORT_SERVER_ADDRESS
     },
     'storage': {
       'type': 'html5',
@@ -57,7 +57,7 @@ const getUserConfigWithReportingServerAddress = () => [
   }
 ];
 
-const wonRequest = {
+const getWonRequest = () => ({
   'bidderCode': 'pubmatic',
   'width': 728,
   'height': 90,
@@ -65,7 +65,7 @@ const wonRequest = {
   'adId': '23caeb34c55da51',
   'requestId': '87615b45ca4973',
   'transactionId': '5e69fd76-8c86-496a-85ce-41ae55787a50',
-  'auctionId': '0cbd3a43-ff45-47b8-b002-16d3946b23bf',
+  'auctionId': '0cbd3a43-ff45-47b8-b002-16d3946b23bf-' + randomVal(),
   'mediaType': 'banner',
   'source': 'client',
   'cpm': 5,
@@ -87,7 +87,15 @@ const wonRequest = {
   'pbCg': '',
   'size': '728x90',
   'status': 'rendered'
-};
+});
+
+const enableAnalyticWithSpecialOptions = (options) => {
+  iiqAnalyticsAnalyticsAdapter.disableAnalytics()
+  iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+    provider: 'iiqAnalytics',
+    options
+  })
+}
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
@@ -138,8 +146,11 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should send POST request with payload in request body if reportMethod is POST', function () {
+    enableAnalyticWithSpecialOptions({
+      reportMethod: 'POST'
+    })
     const [userConfig] = getUserConfig();
-    userConfig.params.reportMethod = 'POST';
+    const wonRequest = getWonRequest();
 
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
@@ -149,6 +160,7 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
 
     const request = server.requests[0];
+    restoreReportList();
 
     const expectedData = preparePayload(wonRequest);
     const expectedPayload = `["${btoa(JSON.stringify(expectedData))}"]`;
@@ -159,6 +171,7 @@ describe('IntentIQ tests all', function () {
 
   it('should send GET request with payload in query string if reportMethod is NOT provided', function () {
     const [userConfig] = getUserConfig();
+    const wonRequest = getWonRequest();
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
 
@@ -173,6 +186,7 @@ describe('IntentIQ tests all', function () {
     const payloadEncoded = url.searchParams.get('payload');
     const decoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
 
+    restoreReportList();
     const expected = preparePayload(wonRequest);
 
     expect(decoded.partnerId).to.equal(expected.partnerId);
@@ -182,9 +196,9 @@ describe('IntentIQ tests all', function () {
 
   it('IIQ Analytical Adapter bid win report', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876'});
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876' });
     const expectedVrref = getWindowLocationStub().href;
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -200,7 +214,7 @@ describe('IntentIQ tests all', function () {
   it('should include adType in payload when present in BID_WON event', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
-    const bidWonEvent = { ...wonRequest, mediaType: 'video' };
+    const bidWonEvent = { ...getWonRequest(), mediaType: 'video' };
 
     events.emit(EVENTS.BID_WON, bidWonEvent);
 
@@ -214,10 +228,10 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should include adType in payload when present in reportExternalWin event', function () {
+    enableAnalyticWithSpecialOptions({ manualWinReportEnabled: true })
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
     const externalWinEvent = { cpm: 1, currency: 'USD', adType: 'banner' };
     const [userConfig] = getUserConfig();
-    userConfig.params.manualWinReportEnabled = true;
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
 
@@ -241,7 +255,7 @@ describe('IntentIQ tests all', function () {
     const uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns('1NYN');
     const gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns({ consentString: 'gdprConsent' });
 
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -260,7 +274,7 @@ describe('IntentIQ tests all', function () {
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     const expectedVrref = encodeURIComponent('http://localhost:9876/');
 
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -273,11 +287,13 @@ describe('IntentIQ tests all', function () {
   it('should handle BID_WON event with default group configuration', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     const defaultDataObj = JSON.parse(defaultData)
+    const wonRequest = getWonRequest();
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
+    restoreReportList()
     const dataToSend = preparePayload(wonRequest);
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = encodeURIComponent(JSON.stringify([base64String]));
@@ -301,7 +317,7 @@ describe('IntentIQ tests all', function () {
 
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -317,14 +333,14 @@ describe('IntentIQ tests all', function () {
 
   it('should not send request if manualWinReportEnabled is true', function () {
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
     expect(server.requests.length).to.equal(1);
   });
 
   it('should read data from local storage', function () {
     localStorage.setItem(FIRST_PARTY_KEY, '{"group": "A"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid", "eidl": 10}');
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs).to.equal('testpcid');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.eidl).to.equal(10);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('A');
@@ -333,18 +349,18 @@ describe('IntentIQ tests all', function () {
   it('should handle initialization values from local storage', function () {
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
   });
 
   it('should handle reportExternalWin', function () {
     events.emit(EVENTS.BID_REQUESTED);
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = false;
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
     expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin).to.be.a('function');
-    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(false);
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({ cpm: 1, currency: 'USD' })).to.equal(false);
   });
 
   it('should return window.location.href when window.self === window.top', function () {
@@ -387,7 +403,7 @@ describe('IntentIQ tests all', function () {
     detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('chrome');
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.equal(0);
   });
@@ -401,7 +417,7 @@ describe('IntentIQ tests all', function () {
     detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -419,9 +435,10 @@ describe('IntentIQ tests all', function () {
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
     detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
+    enableAnalyticWithSpecialOptions({ reportingServerAddress: REPORT_SERVER_ADDRESS })
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -431,7 +448,7 @@ describe('IntentIQ tests all', function () {
   it('should include source parameter in report URL', function () {
     localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(defaultData));
 
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
     const request = server.requests[0];
 
     expect(server.requests.length).to.be.above(0);
@@ -447,7 +464,7 @@ describe('IntentIQ tests all', function () {
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
 
     localStorage.setItem(FIRST_PARTY_KEY, `${FIRST_PARTY_KEY}${siloEnabled ? '_p_' + partner : ''}`);
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
@@ -466,7 +483,7 @@ describe('IntentIQ tests all', function () {
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(userConfig);
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     const request = server.requests[0];
     expect(request.url).to.include('general=Lee');
@@ -485,7 +502,7 @@ describe('IntentIQ tests all', function () {
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(userConfig);
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     const request = server.requests[0];
     expect(request.url).not.to.include('general');
@@ -494,10 +511,10 @@ describe('IntentIQ tests all', function () {
     const spdObject = { foo: 'bar', value: 42 };
     const expectedSpdEncoded = encodeURIComponent(JSON.stringify(spdObject));
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ ...defaultData, spd: spdObject }));
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     const request = server.requests[0];
 
@@ -509,15 +526,108 @@ describe('IntentIQ tests all', function () {
     const spdObject = 'server provided data';
     const expectedSpdEncoded = encodeURIComponent(spdObject);
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ ...defaultData, spd: spdObject }));
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
-    events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, getWonRequest());
 
     const request = server.requests[0];
 
     expect(server.requests.length).to.be.above(0);
     expect(request.url).to.include(`&spd=${expectedSpdEncoded}`);
+  });
+
+  describe('GAM prediction reporting', function () {
+    function createMockGAM() {
+      const listeners = {};
+      return {
+        cmd: [],
+        pubads: () => ({
+          addEventListener: (name, cb) => {
+            listeners[name] = cb;
+          }
+        }),
+        _listeners: listeners
+      };
+    }
+
+    function withConfigGamPredict(gamObj) {
+      const [userConfig] = getUserConfig();
+      userConfig.params.gamObjectReference = gamObj;
+      userConfig.params.gamPredictReporting = true;
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+    }
+
+    it('should subscribe to GAM and send report on slotRenderEnded without prior bidWon', function () {
+      const gam = createMockGAM();
+      withConfigGamPredict(gam);
+
+      // enable subscription by LS flag
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({ gpr: true }));
+      localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+
+      // provide recent auctionEnd with matching bid to enrich payload
+      events.getEvents.restore();
+      sinon.stub(events, 'getEvents').returns([
+        {
+          eventType: 'auctionEnd', args: {
+            auctionId: 'auc-1',
+            adUnitCodes: ['ad-unit-1'],
+            bidsReceived: [{ bidder: 'pubmatic', adUnitCode: 'ad-unit-1', cpm: 1, currency: 'USD', originalCpm: 1, originalCurrency: 'USD', status: 'rendered' }]
+          }
+        }
+      ]);
+
+      // trigger adapter to subscribe
+      events.emit(EVENTS.BID_REQUESTED);
+
+      // execute GAM cmd to register listener
+      gam.cmd.forEach(fn => fn());
+
+      // simulate slotRenderEnded
+      const slot = {
+        getSlotElementId: () => 'ad-unit-1',
+        getAdUnitPath: () => '/123/foo',
+        getTargetingKeys: () => ['hb_bidder', 'hb_adid'],
+        getTargeting: (k) => k === 'hb_bidder' ? ['pubmatic'] : k === 'hb_adid' ? ['ad123'] : []
+      };
+      if (gam._listeners['slotRenderEnded']) {
+        gam._listeners['slotRenderEnded']({ isEmpty: false, slot });
+      }
+
+      expect(server.requests.length).to.be.above(0);
+    });
+
+    it('should NOT send report if a matching bidWon already exists', function () {
+      const gam = createMockGAM();
+      withConfigGamPredict(gam);
+
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({ gpr: true }));
+      localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+
+      // provide prior bidWon matching placementId and hb_adid
+      events.getEvents.restore();
+      sinon.stub(events, 'getEvents').returns([
+        { eventType: 'bidWon', args: { adId: 'ad123' }, id: 'ad-unit-1' }
+      ]);
+
+      events.emit(EVENTS.BID_REQUESTED);
+      gam.cmd.forEach(fn => fn());
+
+      const slot = {
+        getSlotElementId: () => 'ad-unit-1',
+        getAdUnitPath: () => '/123/foo',
+        getTargetingKeys: () => ['hb_bidder', 'hb_adid'],
+        getTargeting: (k) => k === 'hb_bidder' ? ['pubmatic'] : k === 'hb_adid' ? ['ad123'] : []
+      };
+
+      const initialRequests = server.requests.length;
+      if (gam._listeners['slotRenderEnded']) {
+        gam._listeners['slotRenderEnded']({ isEmpty: false, slot });
+      }
+      expect(server.requests.length).to.equal(initialRequests);
+    });
   });
 
   const testCasesVrref = [
@@ -636,12 +746,12 @@ describe('IntentIQ tests all', function () {
   adUnitConfigTests.forEach(({ adUnitConfig, description, event, expectedPlacementId }) => {
     it(description, function () {
       const [userConfig] = getUserConfig();
-      userConfig.params.adUnitConfig = adUnitConfig;
+      enableAnalyticWithSpecialOptions({ adUnitConfig })
 
       config.getConfig.restore();
       sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
 
-      const testEvent = { ...wonRequest, ...event };
+      const testEvent = { ...getWonRequest(), ...event };
       events.emit(EVENTS.BID_WON, testEvent);
 
       const request = server.requests[0];
