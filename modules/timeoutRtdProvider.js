@@ -2,6 +2,7 @@ import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -44,8 +45,8 @@ function checkVideo(adUnits) {
 }
 
 function getConnectionSpeed() {
-  const connection = window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection || {}
-  const connectionType = connection.type || connection.effectiveType;
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type || connection?.effectiveType;
 
   switch (connectionType) {
     case 'slow-2g':
@@ -61,6 +62,7 @@ function getConnectionSpeed() {
     case 'wifi':
     case 'wimax':
     case '4g':
+    case '5g':
       return 'fast';
   }
 
