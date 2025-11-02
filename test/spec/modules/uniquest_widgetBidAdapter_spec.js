@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/uniquestWidgetBidAdapter.js';
+import { spec } from 'modules/uniquest_widgetBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://adpb.ust-ad.com/hb/prebid/widgets';
 
-describe('UniquestWidgetAdapter', function () {
+describe('uniquest_widgetBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
