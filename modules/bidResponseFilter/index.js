@@ -6,6 +6,7 @@ export const MODULE_NAME = 'bidResponseFilter';
 export const BID_CATEGORY_REJECTION_REASON = 'Category is not allowed';
 export const BID_ADV_DOMAINS_REJECTION_REASON = 'Adv domain is not allowed';
 export const BID_ATTR_REJECTION_REASON = 'Attr is not allowed';
+export const BID_MEDIA_TYPE_REJECTION_REASON = `Media type is not allowed`;
 
 let moduleConfig;
 let enabled = false;
@@ -29,13 +30,20 @@ export function reset() {
 
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
   const {bcat = [], badv = []} = index.getOrtb2(bid) || {};
-  const battr = index.getBidRequest(bid)?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
+  const bidRequest = index.getBidRequest(bid);
+  const battr = bidRequest?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
 
   const catConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {})};
   const advConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {})};
   const attrConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.attr || {})};
+  const mediaTypesConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.mediaTypes || {})};
 
-  const { primaryCatId, secondaryCatIds = [], advertiserDomains = [], attr: metaAttr } = bid.meta || {};
+  const {
+    primaryCatId, secondaryCatIds = [],
+    advertiserDomains = [],
+    attr: metaAttr,
+    mediaType: metaMediaType,
+  } = bid.meta || {};
 
   // checking if bid fulfills ortb2 fields rules
   if ((catConfig.enforce && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
@@ -47,6 +55,9 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } else if ((attrConfig.enforce && battr.includes(metaAttr)) ||
     (attrConfig.blockUnknown && !metaAttr)) {
     reject(BID_ATTR_REJECTION_REASON);
+  } else if ((mediaTypesConfig.enforce && !Object.keys(bidRequest?.mediaTypes || {}).includes(metaMediaType)) ||
+    (mediaTypesConfig.blockUnknown && !metaMediaType)) {
+    reject(BID_MEDIA_TYPE_REJECTION_REASON);
   } else {
     return next(adUnitCode, bid, reject);
   }
