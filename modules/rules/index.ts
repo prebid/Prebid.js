@@ -1,5 +1,6 @@
 import { setLabels } from "../../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { timeoutQueue } from "../../libraries/timeoutQueue/timeoutQueue.ts";
+import { storeSplitsMethod, getStoredConfig, storeConfig, type StoreSplitsMethod } from "../../libraries/storage/storeSplits.ts";
 import { ACTIVITY_ADD_BID_RESPONSE, ACTIVITY_FETCH_BIDS } from "../../src/activities/activities.js";
 import { MODULE_TYPE_BIDDER } from "../../src/activities/modules.ts";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
@@ -34,6 +35,7 @@ interface ModuleConfig {
     method: string;
   };
   auctionDelay?: number;
+  storeSplits?: StoreSplitsMethod;
 }
 
 interface ModelGroupSchema {
@@ -70,13 +72,14 @@ interface RulesConfig {
 
 export function evaluateConfig(context, rulesJson) {
   const storageManager = newStorageManager();
-  const oldConfig: RulesConfig = getStoredRulesConfig(storageManager);
+  const storeSplits = rulesConfig.storeSplits || storeSplitsMethod.LOCAL_STORAGE;
+  const oldConfig: RulesConfig = getStoredRulesConfig(storeSplits, storageManager);
   let config: RulesConfig = oldConfig;
   const newConfig = rulesJson.hooks?.modules?.["pb-rules-engine"];
   if (!compareConfigs(oldConfig, newConfig)) {
     logWarn(`${MODULE_NAME}: New rules configuration detected, updating stored config.`);
     assignModelGroups(rulesJson.hooks?.modules?.["pb-rules-engine"]?.ruleSets || []);
-    storageManager.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(newConfig));
+    storeRulesConfig(newConfig, storeSplits, storageManager);
     config = newConfig;
   }
   if (!config || !config.ruleSets) {
@@ -272,14 +275,13 @@ function evaluateCondition(condition, func) {
   }
 }
 
-export function getStoredRulesConfig(storageManager = newStorageManager()) {
-  try {
-    // @todo: handle different methods of storage (cookies, session, etc.)
-    return JSON.parse(storageManager.getDataFromLocalStorage(STORAGE_KEY));
-  } catch {
-    return null;
-  }
-};
+export function getStoredRulesConfig(storeSplits, storageManager = newStorageManager()) {
+  return getStoredConfig<RulesConfig>(storeSplits, STORAGE_KEY, storageManager, MODULE_NAME);
+}
+
+function storeRulesConfig(config: RulesConfig, storeSplits: StoreSplitsMethod, storageManager) {
+  storeConfig(config, storeSplits, STORAGE_KEY, storageManager, MODULE_NAME);
+}
 
 export function fetchRules(endpoint = rulesConfig.endpoint) {
   if (fetching) {

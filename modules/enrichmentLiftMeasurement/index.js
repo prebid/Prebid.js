@@ -1,4 +1,5 @@
 import { setLabels as setAnalyticLabels } from "../../libraries/analyticsAdapter/AnalyticsAdapter.js";
+import { storeSplitsMethod, getStoredConfig, storeConfig } from "../../libraries/storage/storeSplits.ts";
 import { ACTIVITY_ENRICH_EIDS } from "../../src/activities/activities.js";
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_UID } from "../../src/activities/modules.js";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
@@ -17,11 +18,8 @@ export const suppressionMethod = {
   EIDS: 'eids'
 };
 
-export const storeSplitsMethod = {
-  MEMORY: 'memory',
-  SESSION_STORAGE: 'sessionStorage',
-  LOCAL_STORAGE: 'localStorage'
-};
+// Re-export for backward compatibility
+export { storeSplitsMethod };
 
 let moduleConfig;
 let rules = [];
@@ -92,37 +90,12 @@ export function getCalculatedSubmodules(modules = moduleConfig.modules) {
 };
 
 export function getStoredTestConfig(storeSplits, storageManager) {
-  const [checkMethod, getMethod] = {
-    [storeSplitsMethod.SESSION_STORAGE]: [storageManager.sessionStorageIsEnabled, storageManager.getDataFromSessionStorage],
-    [storeSplitsMethod.LOCAL_STORAGE]: [storageManager.localStorageIsEnabled, storageManager.getDataFromLocalStorage],
-  }[storeSplits];
-
-  if (!checkMethod()) {
-    logError(`${MODULE_NAME} Unable to save testing module config - storage is not enabled`);
-    return null;
-  }
-
-  try {
-    return JSON.parse(getMethod(STORAGE_KEY));
-  } catch {
-    return null;
-  }
-};
+  return getStoredConfig(storeSplits, STORAGE_KEY, storageManager, MODULE_NAME);
+}
 
 export function storeTestConfig(testRun, modules, storeSplits, storageManager) {
-  const [checkMethod, storeMethod] = {
-    [storeSplitsMethod.SESSION_STORAGE]: [storageManager.sessionStorageIsEnabled, storageManager.setDataInSessionStorage],
-    [storeSplitsMethod.LOCAL_STORAGE]: [storageManager.localStorageIsEnabled, storageManager.setDataInLocalStorage],
-  }[storeSplits];
-
-  if (!checkMethod()) {
-    logError(`${MODULE_NAME} Unable to save testing module config - storage is not enabled`);
-    return;
-  }
-
   const configToStore = {testRun, modules};
-  storeMethod(STORAGE_KEY, JSON.stringify(configToStore));
-  logInfo(`${MODULE_NAME}: AB test config successfully saved to ${storeSplits} storage`);
+  storeConfig(configToStore, storeSplits, STORAGE_KEY, storageManager, MODULE_NAME);
 };
 
 export const internals = {
