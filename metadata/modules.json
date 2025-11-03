@@ -675,6 +675,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adocean",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adot",
       "aliasOf": null,
       "gvlid": 272,
