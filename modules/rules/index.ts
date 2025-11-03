@@ -15,6 +15,8 @@ import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 const MODULE_NAME = 'shapingRulesModule';
 const STORAGE_KEY = 'rules_module_config';
 
+let unregisterFunctions: Array<() => void> = [];
+
 let rulesConfig: ModuleConfig = {
   endpoint: {
     method: 'GET',
@@ -101,7 +103,7 @@ export function evaluateConfig(context, rulesJson) {
   }
 }
 
-function assignModelGroups(rulesets: RuleSet[]) {
+export function assignModelGroups(rulesets: RuleSet[]) {
   for (const ruleset of rulesets) {
     const { modelGroups } = ruleset;
     if (!modelGroups?.length) continue;
@@ -149,7 +151,7 @@ function evaluateRules(rules, schema, stage, analyticsKey) {
   }
 }
 
-function evaluateSchema(func, args, context) {
+export function evaluateSchema(func, args, context) {
   switch (func) {
     case 'percent':
       return () => Math.random() * 100 < args[0];
@@ -231,9 +233,18 @@ function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
   switch (func) {
     case 'excludeBidders':
       return () => {
-        const activity = stage === 'processed-auction-request' ? ACTIVITY_FETCH_BIDS : ACTIVITY_ADD_BID_RESPONSE;
+        let activity;
+        switch (stage) {
+          case 'processed-auction-request':
+            activity = ACTIVITY_FETCH_BIDS;
+            break;
+          case 'processed-auction':
+          default:
+            activity = ACTIVITY_ADD_BID_RESPONSE;
+            break;
+        }
         args.forEach(({bidders, analyticsValue, seatnonbid}) => {
-          registerActivityControl(activity, MODULE_NAME, (params) => {
+          const unregister = registerActivityControl(activity, MODULE_NAME, (params) => {
             let conditionMet = true;
             for (const [index, schemaEntry] of schema.entries()) {
               const func = evaluateSchema(schemaEntry.function, schemaEntry.args || [], params);
@@ -249,10 +260,11 @@ function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
               setLabels({ [analyticsKey]: analyticsValue });
             }
             return { allow: finalCondition, reason: `Bidder ${params.bidder} excluded by rules module` };
-          })
+          });
+          unregisterFunctions.push(unregister);
         });
       }
-    case 'logATag':
+    case 'logAtag':
       return () => {
         // @todo: is that enough?
         setLabels({ [analyticsKey]: args.analyticsValue });
@@ -324,6 +336,20 @@ function init(rules: ModuleConfig) {
   rulesConfig = rules;
   fetchRules();
   getHook('requestBids').before(requestBidsHook, 50);
+}
+
+export function reset() {
+  unregisterFunctions.forEach(unregister => {
+    if (unregister && typeof unregister === 'function') {
+      unregister();
+    }
+  });
+  unregisterFunctions = [];
+  try {
+    getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
+  } catch (e) {
+  }
+  setLabels({});
 }
 
 config.getConfig('rules', config => init(config.rules));

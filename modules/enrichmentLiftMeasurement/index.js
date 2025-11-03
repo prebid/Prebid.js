@@ -7,7 +7,7 @@ import { registerActivityControl } from "../../src/activities/rules.js";
 import { config } from "../../src/config.js";
 import { GDPR_GVLIDS, VENDORLESS_GVLID } from "../../src/consentHandler.js";
 import { getStorageManager } from "../../src/storageManager.js";
-import { deepEqual, logError, logInfo } from "../../src/utils.js";
+import { deepEqual } from "../../src/utils.js";
 
 const MODULE_NAME = 'enrichmentLiftMeasurement';
 const MODULE_TYPE = MODULE_TYPE_ANALYTICS;
