@@ -231,7 +231,7 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
-    bidReturned.meta = { advertiserDomains: request.bids?.adomain };
+    bidReturned.meta = { advertiserDomains: bidReturned?.adomain };
   }
 
   return bidReturned;
