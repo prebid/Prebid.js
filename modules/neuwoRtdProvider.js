@@ -58,15 +58,32 @@ function init(config, userConsent) {
  * @param {Object} reqBidsConfigObj The bid request configuration object.
  * @param {function} callback The callback function to continue the auction.
  * @param {Object} config The module configuration.
+ * @param {Object} config.params Configuration parameters.
+ * @param {string} config.params.neuwoApiUrl The Neuwo API endpoint URL.
+ * @param {string} config.params.neuwoApiToken The Neuwo API authentication token.
+ * @param {string} [config.params.websiteToAnalyseUrl] Optional URL to analyze instead of current page.
+ * @param {string} [config.params.iabContentTaxonomyVersion] IAB content taxonomy version (default: "3.0").
+ * @param {boolean} [config.params.stripAllQueryParams] If true, strips all query parameters from the URL.
+ * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
+ * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
+ * @param {boolean} [config.params.stripFragments] If true, strips URL fragments (hash).
  * @param {Object} userConsent The user consent object.
  */
 export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   logInfo(MODULE_NAME, "getBidRequestData:", "starting getBidRequestData", config);
 
-  const { websiteToAnalyseUrl, neuwoApiUrl, neuwoApiToken, iabContentTaxonomyVersion } =
+  const { websiteToAnalyseUrl, neuwoApiUrl, neuwoApiToken, iabContentTaxonomyVersion,
+    stripAllQueryParams, stripQueryParamsForDomains, stripQueryParams, stripFragments } =
     config.params;
 
-  const pageUrl = encodeURIComponent(websiteToAnalyseUrl || getRefererInfo().page);
+  const rawUrl = websiteToAnalyseUrl || getRefererInfo().page;
+  const processedUrl = cleanUrl(rawUrl, {
+    stripAllQueryParams,
+    stripQueryParamsForDomains,
+    stripQueryParams,
+    stripFragments
+  });
+  const pageUrl = encodeURIComponent(processedUrl);
   // Adjusted for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?')
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
   const neuwoApiUrlFull =
@@ -94,6 +111,84 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
 //
 // HELPER FUNCTIONS
 //
+
+/**
+ * Cleans a URL by stripping query parameters and/or fragments based on the provided configuration.
+ * @param {string} url The URL to clean.
+ * @param {Object} options Cleaning options.
+ * @param {boolean} [options.stripAllQueryParams] If true, strips all query parameters.
+ * @param {string[]} [options.stripQueryParamsForDomains] List of domains for which to strip all query params.
+ * @param {string[]} [options.stripQueryParams] List of specific query parameter names to strip.
+ * @param {boolean} [options.stripFragments] If true, strips URL fragments (hash).
+ * @returns {string} The cleaned URL.
+ */
+export function cleanUrl(url, options = {}) {
+  const { stripAllQueryParams, stripQueryParamsForDomains, stripQueryParams, stripFragments } = options;
+
+  if (!url) {
+    logInfo(MODULE_NAME, "cleanUrl:", "Empty or null URL provided, returning as-is");
+    return url;
+  }
+
+  logInfo(MODULE_NAME, "cleanUrl:", "Input URL:", url, "Options:", options);
+
+  try {
+    const urlObj = new URL(url);
+
+    // Strip fragments if requested
+    if (stripFragments === true) {
+      urlObj.hash = "";
+      logInfo(MODULE_NAME, "cleanUrl:", "Stripped fragment from URL");
+    }
+
+    // Option 1: Strip all query params unconditionally
+    if (stripAllQueryParams === true) {
+      urlObj.search = "";
+      const cleanedUrl = urlObj.toString();
+      logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+      return cleanedUrl;
+    }
+
+    // Option 2: Strip all query params for specific domains
+    if (Array.isArray(stripQueryParamsForDomains) && stripQueryParamsForDomains.length > 0) {
+      const hostname = urlObj.hostname;
+      const shouldStripForDomain = stripQueryParamsForDomains.some(domain => {
+        // Support exact match or subdomain match
+        return hostname === domain || hostname.endsWith("." + domain);
+      });
+
+      if (shouldStripForDomain) {
+        urlObj.search = "";
+        const cleanedUrl = urlObj.toString();
+        logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+        return cleanedUrl;
+      }
+    }
+
+    // Option 3: Strip specific query parameters
+    // Caveats:
+    // - "?=value" is treated as query parameter with key "" and value "value"
+    // - "??" is treated as query parameter with key "?" and value ""
+    if (Array.isArray(stripQueryParams) && stripQueryParams.length > 0) {
+      const queryParams = urlObj.searchParams;
+      logInfo(MODULE_NAME, "cleanUrl:", `Query parameters to strip: ${stripQueryParams}`);
+      stripQueryParams.forEach(param => {
+        queryParams.delete(param);
+      });
+      urlObj.search = queryParams.toString();
+      const cleanedUrl = urlObj.toString();
+      logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+      return cleanedUrl;
+    }
+
+    const finalUrl = urlObj.toString();
+    logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", finalUrl);
+    return finalUrl;
+  } catch (e) {
+    logError(MODULE_NAME, "cleanUrl:", "Error cleaning URL:", e);
+    return url;
+  }
+}
 
 /**
  * Injects data into the OpenRTB 2.x global fragments of the bid request object.
