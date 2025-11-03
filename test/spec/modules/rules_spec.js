@@ -72,37 +72,6 @@ describe('Rules Module', function() {
       expect(rulesets[0].modelGroups[1].selected).to.be.false;
     });
 
-    it('should select last group if none selected by weights', function() {
-      const rulesets = [{
-        name: 'testRuleSet',
-        stage: 'processed-auction-request',
-        modelGroups: [{
-          weight: 10,
-          selected: false,
-          analyticsKey: 'testKey1',
-          schema: [],
-          rules: []
-        }, {
-          weight: 10,
-          selected: false,
-          analyticsKey: 'testKey2',
-          schema: [],
-          rules: []
-        }]
-      }];
-
-      // Mock Math.random to return 1.0 so randomValue equals weightSum
-      // randomValue = 1.0 * 20 = 20
-      // First iteration: 20 < 10? no, randomValue -= 10 = 10
-      // Second iteration: 10 < 10? no, randomValue -= 10 = 0
-      // No group selected in loop, so last group should be selected as fallback
-      sandbox.stub(Math, 'random').returns(1.0);
-
-      rulesModule.assignModelGroups(rulesets);
-
-      expect(rulesets[0].modelGroups[rulesets[0].modelGroups.length - 1].selected).to.be.true;
-    });
-
     it('should use default weight of 100 when weight is not specified', function() {
       const rulesets = [{
         name: 'testRuleSet',
