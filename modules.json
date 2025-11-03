@@ -16,6 +16,7 @@
   "mediasquareBidAdapter",
   "nexx360BidAdapter",
   "openxBidAdapter",
+  "onetagBidAdapter",
   "outbrainBidAdapter",
   "pubmaticBidAdapter",
   "richaudienceBidAdapter",
@@ -29,7 +30,6 @@
   "ttdBidAdapter",
   "viouslyBidAdapter",
   "yahooAdsBidAdapter",
-
   "adlooxRtdProvider",
   "greenbidsRtdProvider",
   "iasRtdProvider",
@@ -37,7 +37,6 @@
   "nodalsAiRtdProvider",
   "sirdataRtdProvider",
   "weboramaRtdProvider",
-
   "amxIdSystem",
   "consentManagementTcf",
   "currency",
