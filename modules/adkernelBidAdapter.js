@@ -106,7 +106,8 @@ export const spec = {
     {code: 'urekamedia'},
     {code: 'smartyexchange'},
     {code: 'infinety'},
-    {code: 'qohere'}
+    {code: 'qohere'},
+    {code: 'blutonic'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
