@@ -40,7 +40,7 @@ export const spec = {
 
     const imps = validBidRequests.map(bid => {
       const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
-      const tagid = bid.params.tagid || bid.ortb2Imp?.tagid || bid.ortb2Imp?.ext?.gpid;
+      const tagid = bid.params.tagid || bid.ortb2Imp?.tagid || bid.ortb2Imp?.ext?.gpid || bid.adUnitCode;
       return {
         id: bid.bidId,
         tagid: tagid,
@@ -129,8 +129,15 @@ export const spec = {
   getUserSyncs() { return []; },
 
   onBidWon(bid) {
-    const url = (bid.burl || bid.nurl || '').replace(/\$\{AUCTION_PRICE\}/g, String(bid.cpm));
-    if (url) { new Image().src = url; }
+    let url = bid.burl || bid.nurl || '';
+    if (!url) return;
+
+    try {
+      url = decodeURIComponent(url);
+    } catch { /* ignore malformed encodings */ }
+
+    url = url.replace(/\$\{AUCTION_PRICE\}/g, String(bid.cpm));
+    new Image().src = url;
   }
 };
 

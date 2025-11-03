@@ -6,7 +6,6 @@ var adUnits = [{
   bids: [{
     bidder: 'teza',
     params: {
-      tagid: 'atagid',
       token: '76iagB4iWzsyJqKP5dIOHRj_U6Q9knJdUCYexUEqHNk',
       test: true
     }
