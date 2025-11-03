@@ -23,7 +23,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid(bid) {
-    return !!(bid?.params?.tagid && bid?.params?.account);
+    return !!(bid?.params?.account);
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -31,7 +31,7 @@ export const spec = {
 
     const b0 = validBidRequests[0];
     const account = b0.params.account;
-    const test = b0.params.test ? 1 : 1;
+    const test = b0.params.test ? 1 : 0;
 
     const ortb2 = bidderRequest?.ortb2 || config.getConfig('ortb2') || {};
     const eids = b0.userIdAsEids || [];
@@ -40,9 +40,10 @@ export const spec = {
 
     const imps = validBidRequests.map(bid => {
       const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
+      const tagid = bid.params.tagid || bid.ortb2Imp?.tagid || bid.ortb2Imp?.ext?.gpid;
       return {
         id: bid.bidId,
-        tagid: bid.params.tagid,
+        tagid: tagid,
         secure: 1,
         banner: { format: sizesToFormat(sizes) },
         bidfloor: bid.params.bidfloor || 0.01,
@@ -128,7 +129,7 @@ export const spec = {
   getUserSyncs() { return []; },
 
   onBidWon(bid) {
-    const url = (bid.burl || bid.nurl || '').replace(/\$\{AUCTION_PRICE\}/g, String(bid.cpm));
+    const url = (bid.burl || bid.nurl || '').replace(/\{AUCTION_PRICE\}/g, String(bid.cpm));
     if (url) { new Image().src = url; }
   }
 };
