@@ -123,7 +123,7 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
 
   serverResponses.forEach(resp => {
     if (resp.body) {
-      Object.keys(resp.body).map(key => {
+      Object.keys(resp.body).forEach(key => {
         const respObject = resp.body[key];
         if (
           respObject['syncs'] !== undefined &&

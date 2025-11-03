@@ -1,5 +1,6 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
 
@@ -397,7 +398,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('dnt is correctly set to 1', function () {
-      var dntStub = sinon.stub(utils, 'getDNT').returns(1);
+      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
 
       var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
 
