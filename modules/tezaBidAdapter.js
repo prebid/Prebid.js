@@ -129,7 +129,7 @@ export const spec = {
   getUserSyncs() { return []; },
 
   onBidWon(bid) {
-    const url = (bid.burl || bid.nurl || '').replace(/\{AUCTION_PRICE\}/g, String(bid.cpm));
+    const url = (bid.burl || bid.nurl || '').replace(/\$\{AUCTION_PRICE\}/g, String(bid.cpm));
     if (url) { new Image().src = url; }
   }
 };
