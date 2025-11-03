@@ -1,12 +1,12 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
-import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { parseDomain } from '../src/refererDetection.js';
+import { Renderer } from '../src/Renderer.js';
+import { deepAccess, isArray, isBoolean, isFn, isNumber, isPlainObject, isStr, logWarn } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -231,7 +231,7 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
-    bidReturned.meta = { advertiserDomains: bidReturned?.adomain };
+    bidReturned.meta = { advertiserDomains: serverBid?.adomain };
   }
 
   return bidReturned;
