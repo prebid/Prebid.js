@@ -8,7 +8,7 @@
 import * as utils from '../src/utils.js'
 import { submodule } from '../src/hook.js'
 import { loadExternalScript } from '../src/adloader.js'
-import {includes} from '../src/polyfill.js';
+
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
@@ -80,7 +80,7 @@ export const justIdSubmodule = {
           utils.logInfo(LOG_PREFIX, 'fetching uid...');
 
           var uidProvider = configWrapper.isCombinedMode()
-            ? new CombinedUidProvider(configWrapper, consentData, cacheIdObj)
+            ? new CombinedUidProvider(configWrapper, consentData?.gdpr, cacheIdObj)
             : new BasicUidProvider(configWrapper);
 
           uidProvider.getUid(justId => {
@@ -141,7 +141,7 @@ export const ConfigWrapper = function(config) {
   }
 
   // validation
-  if (!includes([MODE_BASIC, MODE_COMBINED], this.getMode())) {
+  if (![MODE_BASIC, MODE_COMBINED].includes(this.getMode())) {
     throw EX_INVALID_MODE;
   }
 

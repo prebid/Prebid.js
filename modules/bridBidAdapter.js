@@ -99,8 +99,11 @@ export const spec = {
         };
       };
 
-      if (bidRequests[0].schain) {
-        postBody.schain = bidRequests[0].schain;
+      const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        postBody.source = {
+          ext: { schain: schain }
+        };
       }
 
       const params = bid.params;

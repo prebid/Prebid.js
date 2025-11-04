@@ -7,6 +7,7 @@ import adapterManager from '../src/adapterManager.js';
 
 import { deepClone, hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
@@ -38,14 +39,9 @@ let _bidRequestTimeout = 0;
 let flushInterval;
 let invisiblyAnalyticsEnabled = false;
 
-const w = window;
-const d = document;
-let e = d.documentElement;
-let g = d.getElementsByTagName('body')[0];
-let x = w.innerWidth || e.clientWidth || g.clientWidth;
-let y = w.innerHeight || e.clientHeight || g.clientHeight;
+const { width: x, height: y } = getViewportSize();
 
-let _pageView = {
+const _pageView = {
   eventType: 'pageView',
   userAgent: window.navigator.userAgent,
   timestamp: Date.now(),
@@ -57,11 +53,11 @@ let _pageView = {
 };
 
 // pass only 1% of events & fail the rest 99%
-let weightedFilter = { filter: Math.random() > 0.99 };
+const weightedFilter = { filter: Math.random() > 0.99 };
 
-let _eventQueue = [_pageView];
+const _eventQueue = [_pageView];
 
-let invisiblyAdapter = Object.assign(
+const invisiblyAdapter = Object.assign(
   adapter({ url: DEFAULT_EVENT_URL, analyticsType }),
   {
     track({ eventType, args }) {
@@ -103,18 +99,18 @@ function flush() {
 
   if (_eventQueue.length > 0) {
     while (_eventQueue.length) {
-      let eventFromQue = _eventQueue.shift();
-      let eventtype = 'PREBID_' + eventFromQue.eventType;
+      const eventFromQue = _eventQueue.shift();
+      const eventtype = 'PREBID_' + eventFromQue.eventType;
       delete eventFromQue.eventType;
 
-      let data = {
+      const data = {
         pageViewId: _pageViewId,
         ver: _VERSION,
         bundleId: initOptions.bundleId,
         ...eventFromQue,
       };
 
-      let payload = {
+      const payload = {
         event_type: eventtype,
         event_data: { ...data },
       };

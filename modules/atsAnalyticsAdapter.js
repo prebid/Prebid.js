@@ -21,11 +21,11 @@ const preflightUrl = 'https://check.analytics.rlcdn.com/check/';
 export const analyticsUrl = 'https://analytics.rlcdn.com';
 
 let handlerRequest = [];
-let handlerResponse = [];
+const handlerResponse = [];
 
-let atsAnalyticsAdapterVersion = 3;
+const atsAnalyticsAdapterVersion = 3;
 
-let browsersList = [
+const browsersList = [
   /* Googlebot */
   {
     test: /googlebot/i,
@@ -207,16 +207,33 @@ let browsersList = [
   },
 ];
 
-let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
+const listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
-function bidRequestedHandler(args) {
-  let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
-  let envelopeSource = envelopeSourceCookieValue === 'true';
+export function bidRequestedHandler(args) {
+  const envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
+  const envelopeSource = envelopeSourceCookieValue === 'true';
   let requests;
   requests = args.bids.map(function(bid) {
     return {
       envelope_source: envelopeSource,
-      has_envelope: bid.userId ? !!bid.userId.idl_env : false,
+      has_envelope: (function() {
+        // Check userIdAsEids for Prebid v10.0+ compatibility
+        if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
+          const liverampEid = bid.userIdAsEids.find(eid =>
+            eid.source === 'liveramp.com'
+          );
+          if (liverampEid && liverampEid.uids && liverampEid.uids.length > 0) {
+            return true;
+          }
+        }
+
+        // Fallback for older versions (backward compatibility)
+        if (bid.userId && bid.userId.idl_env) {
+          return true;
+        }
+
+        return false;
+      })(),
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auction_id: args.auctionId,
@@ -243,12 +260,12 @@ function bidResponseHandler(args) {
 }
 
 export function parseBrowser() {
-  let ua = atsAnalyticsAdapter.getUserAgent();
+  const ua = atsAnalyticsAdapter.getUserAgent();
   try {
-    let result = browsersList.filter(function(obj) {
+    const result = browsersList.filter(function(obj) {
       return obj.test.test(ua);
     });
-    let browserName = result && result.length ? result[0].name : '';
+    const browserName = result && result.length ? result[0].name : '';
     return (listOfSupportedBrowsers.indexOf(browserName) >= 0) ? browserName : 'Unknown';
   } catch (err) {
     logError('ATS Analytics - Error while checking user browser!', err);
@@ -258,8 +275,8 @@ export function parseBrowser() {
 function sendDataToAnalytic (events) {
   // send data to ats analytic endpoint
   try {
-    let dataToSend = {'Data': events};
-    let strJSON = JSON.stringify(dataToSend);
+    const dataToSend = {'Data': events};
+    const strJSON = JSON.stringify(dataToSend);
     logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
       logInfo('ATS Analytics - events sent successfully!');
@@ -275,11 +292,11 @@ function preflightRequest (events) {
   ajax(preflightUrl + atsAnalyticsAdapter.context.pid,
     {
       success: function (data) {
-        let samplingRateObject = JSON.parse(data);
+        const samplingRateObject = JSON.parse(data);
         logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
-        let samplingRate = samplingRateObject.samplingRate;
+        const samplingRate = samplingRateObject.samplingRate;
         atsAnalyticsAdapter.setSamplingCookie(samplingRate);
-        let samplingRateNumber = Number(samplingRate);
+        const samplingRateNumber = Number(samplingRate);
         if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber)) {
           logInfo('ATS Analytics - events to send: ', events);
           sendDataToAnalytic(events);
@@ -292,7 +309,7 @@ function preflightRequest (events) {
     }, undefined, {method: 'GET', crossOrigin: true});
 }
 
-let atsAnalyticsAdapter = Object.assign(adapter(
+const atsAnalyticsAdapter = Object.assign(adapter(
   {
     analyticsType
   }),
@@ -310,7 +327,7 @@ atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 // add check to not fire request every time, but instead to send 1/100
 atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
   if (samplingRate !== 0) {
-    let shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
+    const shouldFireRequestValue = (Math.floor((Math.random() * 100 + 1)) === 100);
     logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
     return shouldFireRequestValue;
   } else {
@@ -340,9 +357,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
     pid: config.options.pid,
     bidWonTimeout: config.options.bidWonTimeout
   };
-  let initOptions = config.options;
   logInfo('ATS Analytics - adapter enabled! ');
-  atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
+  atsAnalyticsAdapter.originEnableAnalytics(config);
 };
 
 atsAnalyticsAdapter.callHandler = function (evtype, args) {
@@ -352,35 +368,42 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
     handlerResponse.push(bidResponseHandler(args));
   }
   if (evtype === EVENTS.AUCTION_END) {
-    let bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
+    const bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
     let events = [];
     setTimeout(() => {
-      let winningBids = getGlobal().getAllWinningBids();
+      const winningBids = getGlobal().getAllWinningBids();
       logInfo('ATS Analytics - winning bids: ', winningBids)
       // prepare format data for sending to analytics endpoint
       if (handlerRequest.length) {
-        let wonEvent = {};
+        const wonEvent = {};
         if (handlerResponse.length) {
-          events = handlerRequest.filter(request => handlerResponse.filter(function (response) {
-            if (request.bid_id === response.bid_id) {
-              Object.assign(request, response);
-            }
-          }));
-          if (winningBids.length) {
-            events = events.filter(event => winningBids.filter(function (won) {
-              wonEvent.bid_id = won.requestId;
-              wonEvent.bid_won = true;
-              if (event.bid_id === wonEvent.bid_id) {
-                Object.assign(event, wonEvent);
+          events = [];
+          handlerRequest.forEach(request => {
+            handlerResponse.forEach(function (response) {
+              if (request.bid_id === response.bid_id) {
+                Object.assign(request, response);
               }
-            }))
+            });
+            events.push(request);
+          });
+          if (winningBids.length) {
+            events = events.map(event => {
+              winningBids.forEach(function (won) {
+                wonEvent.bid_id = won.requestId;
+                wonEvent.bid_won = true;
+                if (event.bid_id === wonEvent.bid_id) {
+                  Object.assign(event, wonEvent);
+                }
+              });
+              return event;
+            })
           }
         } else {
           events = handlerRequest;
         }
         // check should we send data to analytics or not, check first cookie value _lr_sampling_rate
         try {
-          let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
+          const samplingRateCookie = storage.getCookie('_lr_sampling_rate');
           if (!samplingRateCookie) {
             preflightRequest(events);
           } else {

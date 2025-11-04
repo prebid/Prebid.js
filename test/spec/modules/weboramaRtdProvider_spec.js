@@ -72,7 +72,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should initialize if gdpr applies and consent is ok', function() {
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -89,7 +89,14 @@ describe('weboramaRtdProvider', function() {
                   4: true,
                   5: true,
                   6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
                   9: true,
+                  10: true,
+                  11: true,
                 },
               },
               specialFeatureOptins: {
@@ -99,11 +106,100 @@ describe('weboramaRtdProvider', function() {
                 consents: {
                   284: true,
                 },
+                legitimateInterests: {
+                  284: true,
+                },
               }
             },
           },
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
+      });
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: true,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: false,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
+      });
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: false,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: true,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
         const moduleConfig = {
@@ -168,7 +264,7 @@ describe('weboramaRtdProvider', function() {
     let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
 
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
 
@@ -227,7 +323,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -314,7 +410,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=datasource%3AdocId&url=https%3A%2F%2Fprebid.org&');
@@ -401,7 +497,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/document-profile?token=foo&assetId=datasource%3AdocId&url=https%3A%2F%2Fprebid.org&');
@@ -565,7 +661,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder == 'appnexus'
+            return bid.bidder === 'appnexus'
           },
         };
 
@@ -634,7 +730,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -659,7 +755,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   site: {
                     ext: {
@@ -691,7 +787,7 @@ describe('weboramaRtdProvider', function() {
             'appnexus': ['adunit1']
           },
           'callback': (bid, adUnitCode) => {
-            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
+            return bid.bidder === 'appnexus' && adUnitCode === 'adunit1';
           },
         };
 
@@ -760,7 +856,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -904,7 +1000,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -948,7 +1044,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-            return adUnitCode == 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 
@@ -1047,7 +1143,7 @@ describe('weboramaRtdProvider', function() {
             expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
             weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-            let request = server.requests[0];
+            const request = server.requests[0];
 
             expect(request.method).to.equal('GET');
             expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1130,7 +1226,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1217,7 +1313,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1308,7 +1404,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1356,13 +1452,13 @@ describe('weboramaRtdProvider', function() {
               token: 'foo',
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
-                if (adUnitCode == 'adunit1') {
+                if (adUnitCode === 'adunit1') {
                   data['webo_foo'] = ['bar'];
                 }
                 return true;
               },
               sendToBidders: (bid, adUnitCode, data, meta) => {
-                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
+                if (bid.bidder === 'appnexus' && adUnitCode === 'adunit1') {
                   data['webo_bar'] = ['baz'];
                 }
                 return true;
@@ -1422,7 +1518,7 @@ describe('weboramaRtdProvider', function() {
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
         weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
 
-        let request = server.requests[0];
+        const request = server.requests[0];
 
         expect(request.method).to.equal('GET');
         expect(request.url).to.equal('https://ctx.test.weborama.com/api/profile?token=foo&url=https%3A%2F%2Fprebid.org&');
@@ -1450,7 +1546,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.be.undefined;
         });
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
+          if (v === 'appnexus') {
             expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
               site: {
                 ext: {
@@ -1596,7 +1692,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder == 'appnexus'
+            return bid.bidder === 'appnexus'
           },
         };
 
@@ -1690,7 +1786,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   user: {
                     ext: {
@@ -1722,7 +1818,7 @@ describe('weboramaRtdProvider', function() {
             'appnexus': ['adunit1']
           },
           'callback': (bid, adUnitCode) => {
-            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
+            return bid.bidder === 'appnexus' && adUnitCode === 'adunit1';
           },
         };
 
@@ -1815,7 +1911,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   user: {
                     ext: {
@@ -1995,7 +2091,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-            return adUnitCode == 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 
@@ -2543,13 +2639,13 @@ describe('weboramaRtdProvider', function() {
               accoundId: 12345,
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
-                if (adUnitCode == 'adunit1') {
+                if (adUnitCode === 'adunit1') {
                   data['webo_foo'] = ['bar'];
                 }
                 return true;
               },
               sendToBidders: (bid, adUnitCode, data, meta) => {
-                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
+                if (bid.bidder === 'appnexus' && adUnitCode === 'adunit1') {
                   data['webo_bar'] = ['baz'];
                 }
                 return true;
@@ -2639,7 +2735,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.be.undefined;
         });
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
+          if (v === 'appnexus') {
             expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
               user: {
                 ext: {
@@ -2778,7 +2874,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder == 'appnexus'
+            return bid.bidder === 'appnexus'
           },
         };
 
@@ -2871,7 +2967,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   site: {
                     ext: {
@@ -2904,7 +3000,7 @@ describe('weboramaRtdProvider', function() {
             'appnexus': ['adunit1']
           },
           'callback': (bid, adUnitCode) => {
-            return bid.bidder == 'appnexus' && adUnitCode == 'adunit1';
+            return bid.bidder === 'appnexus' && adUnitCode === 'adunit1';
           },
         };
 
@@ -3000,7 +3096,7 @@ describe('weboramaRtdProvider', function() {
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
 
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
+              if (v === 'appnexus') {
                 expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
                   site: {
                     ext: {
@@ -3176,7 +3272,7 @@ describe('weboramaRtdProvider', function() {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
-            return adUnitCode == 'adunit1';
+            return adUnitCode === 'adunit1';
           },
         };
 
@@ -3732,13 +3828,13 @@ describe('weboramaRtdProvider', function() {
             sfbxLiteDataConf: {
               targetURL: 'https://prebid.org',
               setPrebidTargeting: (adUnitCode, data, meta) => {
-                if (adUnitCode == 'adunit1') {
+                if (adUnitCode === 'adunit1') {
                   data['lito_foo'] = ['bar'];
                 }
                 return true;
               },
               sendToBidders: (bid, adUnitCode, data, meta) => {
-                if (bid.bidder == 'appnexus' && adUnitCode == 'adunit1') {
+                if (bid.bidder === 'appnexus' && adUnitCode === 'adunit1') {
                   data['lito_bar'] = ['baz'];
                 }
                 return true;
@@ -3828,7 +3924,7 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[3].params).to.be.undefined;
         });
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
+          if (v === 'appnexus') {
             expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
               site: {
                 ext: {

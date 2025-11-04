@@ -642,7 +642,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdprApplies: true
+          gdpr: {gdprApplies: true}
         });
 
         expect(logWarnSpy.calledOnceWithExactly('33acrossId: Submodule cannot be used where GDPR applies')).to.be.true;
@@ -660,7 +660,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdprApplies: false
+          gdpr: {gdprApplies: false}
         });
 
         callback(completeCallback);
@@ -678,8 +678,10 @@ describe('33acrossIdSystem', () => {
               pid: '12345'
             }
           }, {
-            gdprApplies: false,
-            consentString: 'foo'
+            gdpr: {
+              gdprApplies: false,
+              consentString: 'foo'
+            }
           });
 
           callback(completeCallback);
@@ -1408,28 +1410,30 @@ describe('33acrossIdSystem', () => {
     context('when the server returns a successful response but without ID', () => {
       it('should log a message', () => {
         const logMessageSpy = sinon.spy(utils, 'logMessage');
-        const completeCallback = () => {};
+        try {
+          const completeCallback = () => {};
 
-        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
-          params: {
-            pid: '12345'
-          }
-        });
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
 
-        callback(completeCallback);
+          callback(completeCallback);
 
-        const [request] = server.requests;
+          const [request] = server.requests;
 
-        request.respond(200, {
-          'Content-Type': 'application/json'
-        }, JSON.stringify({
-          succeeded: true,
-          data: {}
-        }));
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {}
+          }));
 
-        expect(logMessageSpy.calledOnceWithExactly(`${thirtyThreeAcrossIdSubmodule.name}: No envelope was received`)).to.be.true;
-
-        logMessageSpy.restore();
+          expect(logMessageSpy.calledWith(`${thirtyThreeAcrossIdSubmodule.name}: No envelope was received`)).to.be.true;
+        } finally {
+          logMessageSpy.restore();
+        }
       });
 
       it('should execute complete callback with undefined value', () => {

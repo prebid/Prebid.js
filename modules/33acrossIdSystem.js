@@ -39,7 +39,7 @@ export const domainUtils = {
 
 function calculateResponseObj(response) {
   if (!response.succeeded) {
-    if (response.error == 'Cookied User') {
+    if (response.error === 'Cookied User') {
       logMessage(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
     } else {
       logError(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
@@ -222,7 +222,7 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 

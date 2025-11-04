@@ -1,9 +1,9 @@
 import {getUniqueIdentifierStr} from '../../src/utils.js';
-import {GreedyPromise} from '../../src/utils/promise.js';
+import {GreedyPromise} from 'libraries/greedy/greedyPromise.js';
 import {fakeXhr} from 'nise';
 import {dep} from 'src/ajax.js';
 
-export const xhr = sinon.useFakeXMLHttpRequest();
+export const xhr = fakeXhr.useFakeXMLHttpRequest();
 export const server = mockFetchServer();
 
 /**

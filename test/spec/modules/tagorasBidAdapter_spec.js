@@ -7,8 +7,8 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {config} from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -19,6 +19,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -190,6 +191,13 @@ const VIDEO_SERVER_RESPONSE = {
   }
 };
 
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {"content": {"language": "en"}
+  }
+};
+
 const REQUEST = {
   data: {
     width: 300,
@@ -208,6 +216,9 @@ function getTopWindowQueryParams() {
 }
 
 describe('TagorasBidAdapter', function () {
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
+
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -268,12 +279,12 @@ describe('TagorasBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
@@ -353,6 +364,8 @@ describe('TagorasBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: VIDEO_BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           userData: [],
           coppa: 0
         }
@@ -421,6 +434,8 @@ describe('TagorasBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           userData: [],
           coppa: 0
         }
@@ -428,7 +443,7 @@ describe('TagorasBidAdapter', function () {
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -438,7 +453,7 @@ describe('TagorasBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -446,7 +461,7 @@ describe('TagorasBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -454,8 +469,19 @@ describe('TagorasBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
+      }]);
+    });
+
+    it('should have valid user sync with coppa 1 on response', function () {
+      config.setConfig({
+        coppa: 1
+      });
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
       }]);
     });
 
@@ -473,7 +499,7 @@ describe('TagorasBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
         'type': 'image'
       }]);
     });
@@ -581,6 +607,70 @@ describe('TagorasBidAdapter', function () {
         expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
       });
     });
+    // testing bid.userIdAsEids handling
+    it("should include user ids from bid.userIdAsEids (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+    })
+    it("should include user ids from bid.userIdAsEids (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        },
+        {
+          "source": "rwdcntrl.net",
+          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
+    })
+    // testing user.ext.eid handling
+    it("should include user ids from user.ext.eid (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+    })
+    it("should include user ids from user.ext.eid (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            },
+            {
+              "source": "adserver.org",
+              "uids": [{"id": "fakeid495ff1"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
+    })
   });
 
   describe('alternate param names extractors', function () {
@@ -605,14 +695,14 @@ describe('TagorasBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -640,14 +730,14 @@ describe('TagorasBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();

@@ -57,6 +57,9 @@ export const spec = {
       return bidResponses
     }
     const firstSeat = firstBid.ads[0]
+    if (!firstSeat) {
+      return bidResponses
+    }
     const bidResponse = {
       requestId: firstSeat.requestId,
       cpm: firstSeat.cpm,

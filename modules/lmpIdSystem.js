@@ -9,6 +9,11 @@ import { submodule } from '../src/hook.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
+
 const MODULE_NAME = 'lmpid';
 const STORAGE_KEY = '__lmpid';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });

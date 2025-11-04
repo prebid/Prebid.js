@@ -1,9 +1,10 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import {deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -31,6 +32,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+    const { width: w, height: h } = getViewportSize();
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     return {
       method: 'POST',
@@ -57,12 +59,12 @@ export const spec = {
         uspConsent: deepAccess(bidderRequest, 'uspConsent'),
         coppa: getConfig('coppa'),
         eids: deepAccess(bidRequests, '0.userIdAsEids'),
-        schain: deepAccess(bidRequests, '0.schain'),
+        schain: deepAccess(bidRequests, '0.ortb2.source.ext.schain'),
         page: getPage(bidderRequest),
         topframe: inIframe() === true ? 0 : 1,
         device: {
-          w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-          h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
+          w,
+          h,
           dnt: getDNT() ? 1 : 0,
           language: getLanguage(),
         },
@@ -71,7 +73,6 @@ export const spec = {
             id: r.adUnitCode,
             tid: r.transactionId,
             gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
-            pbadslot: deepAccess(r, 'ortb2Imp.ext.data.pbadslot') || deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
             counter: getPlacementCounter(r.params.placement),
             sizes: r.sizes,
@@ -108,8 +109,8 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncUrl = getSyncUrl(responses || []);
-    if (syncUrl && syncOptions.iframeEnabled && hasSyncConsent(gdprConsent, uspConsent, gppConsent)) {
-      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent)}];
+    if (syncUrl && syncOptions.iframeEnabled) {
+      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent)}];
     }
   },
 };
@@ -130,7 +131,7 @@ function getTestFlag() {
 
 function getLanguage() {
   return navigator && navigator.language
-    ? navigator.language.indexOf('-') != -1
+    ? navigator.language.indexOf('-') !== -1
       ? navigator.language.split('-')[0]
       : navigator.language
     : undefined;
@@ -200,21 +201,6 @@ function mapIdToRequestId(id, bidRequest) {
   return bidRequest.bidderRequest.bids.filter((bid) => bid.adUnitCode === id)[0].bidId;
 }
 
-function hasUspConsent(uspConsent) {
-  return typeof uspConsent !== 'string' || !(uspConsent[0] === '1' && uspConsent[2] === 'Y');
-}
-
-function hasGppConsent(gppConsent) {
-  return (
-    !(gppConsent && Array.isArray(gppConsent.applicableSections)) ||
-    gppConsent.applicableSections.every((section) => typeof section === 'number' && section <= 5)
-  );
-}
-
-function hasSyncConsent(gdprConsent, uspConsent, gppConsent) {
-  return hasPurpose1Consent(gdprConsent) && hasUspConsent(uspConsent) && hasGppConsent(gppConsent);
-}
-
 function hasFullGdprConsent(gdprConsent) {
   try {
     const purposeConsents = Object.values(gdprConsent.vendorData.purpose.consents);
@@ -232,10 +218,12 @@ function getSyncUrl(responses) {
   return getConfig(`${BIDDER_CODE}.syncUrl`) || deepAccess(responses[0], 'body.syncUrl');
 }
 
-function getSyncEndpoint(url, gdprConsent) {
+function getSyncEndpoint(url, gdprConsent, uspConsent, gppConsent) {
   return `${url}?gdpr=${gdprConsent?.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(
     gdprConsent?.consentString || ''
-  )}`;
+  )}&gpp_sid=${gppConsent?.applicableSections?.join(',') || ''}&gpp=${encodeURIComponent(
+    gppConsent?.gppString || ''
+  )}&us_privacy=${uspConsent || ''}`;
 }
 
 function getSessionId() {

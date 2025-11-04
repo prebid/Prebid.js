@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js'
 describe('automatadBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  let bidRequestRequiredParams = {
+  const bidRequestRequiredParams = {
     bidder: 'automatad',
     params: {siteId: '123ad'},
     mediaTypes: {
@@ -23,7 +23,7 @@ describe('automatadBidAdapter', function () {
     bidRequestsCount: 1
   }
 
-  let bidRequestAllParams = {
+  const bidRequestAllParams = {
     bidder: 'automatad',
     params: {siteId: '123ad', placementId: '123abc345'},
     mediaTypes: {
@@ -41,7 +41,7 @@ describe('automatadBidAdapter', function () {
     bidRequestsCount: 1
   }
 
-  let expectedResponse = [{
+  const expectedResponse = [{
     'body': {
       'id': 'abc-123',
       'seatbid': [
@@ -77,7 +77,7 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('isBidRequestValid', function () {
-    let inValidBid = Object.assign({}, bidRequestRequiredParams)
+    const inValidBid = Object.assign({}, bidRequestRequiredParams)
     delete inValidBid.params
     it('should return true if all params present', function () {
       expect(spec.isBidRequestValid(bidRequestAllParams)).to.equal(true)
@@ -93,7 +93,7 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequestRequiredParams ], { refererInfo: { } })
+    const req = spec.buildRequests([ bidRequestRequiredParams ], { refererInfo: { } })
     let rdata
 
     it('should have withCredentials option as true', function() {
@@ -114,30 +114,30 @@ describe('automatadBidAdapter', function () {
     })
 
     it('should include siteId', function () {
-      let r = rdata.imp[0]
+      const r = rdata.imp[0]
       expect(r.siteId !== null).to.be.true
     })
 
     it('should include media types', function () {
-      let r = rdata.imp[0]
+      const r = rdata.imp[0]
       expect(r.media_types !== null).to.be.true
     })
 
     it('should include adunit code', function () {
-      let r = rdata.imp[0]
+      const r = rdata.imp[0]
       expect(r.adUnitCode !== null).to.be.true
     })
   })
 
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(expectedResponse[0])
+      const result = spec.interpretResponse(expectedResponse[0])
       expect(result).to.be.an('array').that.is.not.empty
       expect(result[0].meta.advertiserDomains[0]).to.equal('someAdDomain');
     })
 
     it('should interpret multiple bids in seatbid', function () {
-      let multipleBidResponse = [{
+      const multipleBidResponse = [{
         'body': {
           'id': 'abc-321',
           'seatbid': [
@@ -177,7 +177,7 @@ describe('automatadBidAdapter', function () {
           ]
         }
       }]
-      let result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
+      const result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
         const {requestId} = bid;
         return [ requestId ];
       });
@@ -187,10 +187,10 @@ describe('automatadBidAdapter', function () {
     })
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: ''
       }
-      let result = spec.interpretResponse(response)
+      const result = spec.interpretResponse(response)
       expect(result.length).to.equal(0)
     })
   })
@@ -220,8 +220,8 @@ describe('automatadBidAdapter', function () {
   });
 
   describe('onBidWon', function () {
-    let serverResponses = spec.interpretResponse(expectedResponse[0])
-    let wonbid = serverResponses[0]
+    const serverResponses = spec.interpretResponse(expectedResponse[0])
+    const wonbid = serverResponses[0]
     let ajaxStub
 
     beforeEach(() => {

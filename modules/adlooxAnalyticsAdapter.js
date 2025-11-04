@@ -10,7 +10,6 @@ import {loadExternalScript} from '../src/adloader.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {AUCTION_COMPLETED} from '../src/auction.js';
 import {EVENTS} from '../src/constants.js';
-import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {
   deepAccess,
@@ -58,15 +57,15 @@ MACRO['targetelt'] = function(b, c) {
   return c.toselector(b);
 };
 MACRO['creatype'] = function(b, c) {
-  return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
+  return b.mediaType === 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
 };
 MACRO['pageurl'] = function(b, c) {
   const refererInfo = getRefererInfo();
   return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
 MACRO['gpid'] = function(b, c) {
-  const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
-  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+  const adUnit = ((auctionManager.getAdUnits()) || []).find(a => b.adUnitCode === a.code);
+  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
@@ -81,7 +80,7 @@ const PARAMS_DEFAULT = {
   'id11': '$ADLOOX_WEBSITE'
 };
 
-let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+const analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
     if (!analyticsAdapter[`handle_${eventType}`]) return;
 
@@ -225,7 +224,7 @@ analyticsAdapter.url = function(url, args, bid) {
 
 const preloaded = {};
 analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
-  if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
+  if (!(auctionDetails.auctionStatus === AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
 
   const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
   const href = `${uri.protocol}://${uri.host}${uri.pathname}`;

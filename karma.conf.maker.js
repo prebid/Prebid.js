@@ -2,10 +2,12 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
-const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
+const path = require('path');
+const helpers = require('./gulpHelpers.js');
+const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 
 function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
@@ -14,16 +16,24 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
   Object.assign(webpackConfig, {
     mode: 'development',
     devtool: 'inline-source-map',
+    cache: {
+      type: 'filesystem',
+      cacheDirectory: path.resolve(__dirname, '.cache/webpack-test')
+    },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
-
-  webpackConfig.module.rules
-    .flatMap((r) => r.use)
-    .filter((use) => use.loader === 'babel-loader')
-    .forEach((use) => {
-      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
-    });
-
+  webpackConfig.module = webpackConfig.module || {};
+  webpackConfig.module.rules = webpackConfig.module.rules || [];
+  webpackConfig.module.rules.push({
+    test: /\.js$/,
+    exclude: path.resolve('./node_modules'),
+    loader: 'babel-loader',
+    options: {
+      cacheDirectory: cacheDir, cacheCompression: false,
+      presets: [['@babel/preset-env', {modules: 'commonjs'}]],
+      plugins: codeCoverage ? ['babel-plugin-istanbul'] : []
+    }
+  })
   return webpackConfig;
 }
 
@@ -31,7 +41,6 @@ function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
     'karma-coverage',
-    'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
     'karma-sinon',
@@ -47,11 +56,10 @@ function newPluginsArray(browserstack) {
   plugins.push('karma-opera-launcher');
   plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
-  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
-function setReporters(karmaConf, codeCoverage, browserstack) {
+function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
   // In browserstack, the default 'progress' reporter floods the logs.
   // The karma-spec-reporter reports failures more concisely
   if (browserstack) {
@@ -67,7 +75,7 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
   if (codeCoverage) {
     karmaConf.reporters.push('coverage');
     karmaConf.coverageReporter = {
-      dir: 'build/coverage',
+      dir: `build/coverage/chunks/${chunkNo}`,
       reporters: [
         { type: 'lcov', subdir: '.' }
       ]
@@ -105,7 +113,7 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures, chunkNo) {
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
   if (file) {
@@ -113,6 +121,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
   }
 
   var files = file ? ['test/test_deps.js', ...file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
+  files = files.map(helpers.getPrecompiledPath);
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -125,7 +134,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon', 'webpack'],
+    frameworks: ['mocha', 'chai', 'sinon', 'webpack'],
 
     // test files should not be watched or they'll run twice after an update
     // (they are still, in fact, watched through autoWatch: true)
@@ -147,6 +156,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: watchMode,
+    autoWatchBatchDelay: 2000,
 
     reporters: ['mocha'],
 
@@ -164,8 +174,8 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 3e5, // default 2000
-    browserNoActivityTimeout: 3e5, // default 10000
+    browserDisconnectTimeout: 1e5, // default 2000
+    browserNoActivityTimeout: 1e5, // default 10000
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
@@ -173,7 +183,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     plugins: plugins
   };
 
-  setReporters(config, codeCoverage, browserstack);
+  setReporters(config, codeCoverage, browserstack, chunkNo);
   setBrowsers(config, browserstack);
   return config;
 }

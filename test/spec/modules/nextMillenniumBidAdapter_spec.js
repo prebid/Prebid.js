@@ -3,11 +3,13 @@ import {
   getImp,
   setImpPos,
   getSourceObj,
+  getExtNextMilImp,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
   setEids,
   spec,
+  ALLOWED_ORTB2_PARAMETERS,
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
@@ -168,16 +170,13 @@ describe('nextMillenniumBidAdapterTests', () => {
           id: 'e36ea395f67a',
           ext: {
             prebid: {storedrequest: {id: '123'}},
-            data: {
-              pbadslot: 'slot-123'
-            }
           },
           banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {bid, id, mediaTypes, postBody} = data;
         const imp = getImp(bid, id, mediaTypes, postBody);
@@ -228,12 +227,18 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'schain is validBidReequest',
         bidderRequest: {},
         validBidRequests: [{
-          schain: {
-            validation: 'strict',
-            config: {
-              ver: '1.0',
-              complete: 1,
-              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
             },
           },
         }],
@@ -313,7 +318,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, validBidRequests, bidderRequest, expected} of dataTests) {
+    for (const {title, validBidRequests, bidderRequest, expected} of dataTests) {
       it(title, () => {
         const source = getSourceObj(validBidRequests, bidderRequest);
         expect(source).to.deep.equal(expected);
@@ -391,7 +396,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {postBody, bidderRequest} = data;
         setConsentStrings(postBody, bidderRequest);
@@ -451,7 +456,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {url, gdprConsent, uspConsent, gppConsent, type} = data;
         const newUrl = replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type);
@@ -615,7 +620,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {syncOptions, responses, gdprConsent, uspConsent, gppConsent} = data;
         const pixels = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent);
@@ -702,10 +707,10 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {postBody, ortb2} = data;
-        setOrtb2Parameters(postBody, ortb2);
+        setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2);
         expect(postBody).to.deep.equal(expected);
       });
     };
@@ -789,7 +794,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let { title, data, expected } of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
         const { postBody, bids } = data;
         setEids(postBody, bids);
@@ -864,7 +869,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
   describe('check parameters group_id or placement_id', function() {
     let numberTest = 0
-    for (let test of bidRequestDataGI) {
+    for (const test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
         const request = spec.buildRequests([test]);
         const requestData = JSON.parse(request[0].data);
@@ -877,7 +882,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           expect(srId.length).to.be.equal(3);
           expect((/^g[1-9]\d*/).test(srId[0])).to.be.true;
           const sizes = srId[1].split('|');
-          for (let size of sizes) {
+          for (const size of sizes) {
             if (!(/^[1-9]\d*[xX,][1-9]\d*$/).test(size)) {
               expect(storeRequestId).to.be.equal('');
             }
@@ -956,7 +961,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bids: [{bidder: 'nextMillennium', params: {placement_id: '807'}}],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -970,7 +975,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           ],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
       },
 
       {
@@ -981,7 +986,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bids: [{bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}}],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
       },
 
       {
@@ -996,7 +1001,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           ],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
       },
 
       {
@@ -1017,7 +1022,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -1038,7 +1043,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -1059,7 +1064,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -1086,11 +1091,11 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         ],
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
       },
     ];
 
-    for (let {title, eventName, bids, expected} of dataForTests) {
+    for (const {title, eventName, bids, expected} of dataForTests) {
       it(title, () => {
         const url = spec._getUrlPixelMetric(eventName, bids);
         expect(url).to.equal(expected);
@@ -1169,7 +1174,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, bidRequests, bidderRequest, expected} of tests) {
+    for (const {title, bidRequests, bidderRequest, expected} of tests) {
       it(title, () => {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.length).to.equal(expected.requestSize);
@@ -1276,7 +1281,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, serverResponse, bidRequest, expected} of tests) {
+    for (const {title, serverResponse, bidRequest, expected} of tests) {
       describe(title, () => {
         const bids = spec.interpretResponse(serverResponse, bidRequest);
         for (let i = 0; i < bids.length; i++) {
@@ -1295,6 +1300,42 @@ describe('nextMillenniumBidAdapterTests', () => {
             expect(bid.currency).to.equal(expected[i].currency);
           });
         };
+      });
+    };
+  });
+
+  describe('getExtNextMilImp parameters adSlots and allowedAds', () => {
+    const tests = [
+      {
+        title: 'parameters adSlots and allowedAds are empty',
+        bid: {
+          params: {},
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'parameters adSlots and allowedAds',
+        bid: {
+          params: {
+            adSlots: ['test1'],
+            allowedAds: ['test2'],
+          },
+        },
+
+        expected: {
+          adSlots: ['test1'],
+          allowedAds: ['test2'],
+        },
+      },
+    ];
+
+    for (const {title, bid, expected} of tests) {
+      it(title, () => {
+        const extNextMilImp = getExtNextMilImp(bid);
+        expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
+        expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
   });
