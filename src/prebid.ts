@@ -850,7 +850,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
     // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder).filter(Boolean);
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));

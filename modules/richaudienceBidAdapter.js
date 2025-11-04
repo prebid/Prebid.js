@@ -291,8 +291,8 @@ function raiGetResolution() {
 
 function raiSetPbAdSlot(bid) {
   let pbAdSlot = '';
-  if (deepAccess(bid, 'ortb2Imp.ext.data.gpid') != null) {
-    pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.data.gpid')
+  if (deepAccess(bid, 'ortb2Imp.ext.gpid') != null) {
+    pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.gpid')
   } else if (deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') != null) {
     pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot')
   }
