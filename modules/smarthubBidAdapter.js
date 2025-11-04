@@ -25,7 +25,7 @@ const ALIASES = {
   'addigi': {area: '1', pid: '425'},
   'jambojar': {area: '1', pid: '426'},
   'anzu': {area: '1', pid: '445'},
-  'marlinads': {area: '1', pid: '445'},
+  'marlinads': {area: '1', pid: '397'},
 };
 
 const BASE_URLS = {
