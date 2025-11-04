@@ -74,4 +74,3 @@ export const shouldThrottle = (skipRate, maxRandomValue = 100) => {
   const rate = skipRate ?? maxRandomValue;
   return Math.floor(Math.random() * maxRandomValue) < rate;
 };
-
