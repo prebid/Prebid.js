@@ -92,9 +92,15 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
   try {
     // Extract the bundle URL from the module configuration
     const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
-
-    const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
+
+    // Listen to window.optable.rtd.handleRtd, fallback to config.params.handleRtd
+    const handleRtdFn = window?.optable?.rtd?.handleRtd || handleRtd;
+    if (!handleRtdFn) {
+      logError('Rtd not found');
+      callback();
+      return;
+    }
 
     if (bundleUrl) {
       // If bundleUrl is present, load the Optable JS bundle
