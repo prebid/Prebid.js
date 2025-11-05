@@ -286,7 +286,9 @@ export function logWarn() {
     // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
+  if (debugTurnedOn()) {
+    emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
+  }
 }
 
 export function logError() {
@@ -294,7 +296,9 @@ export function logError() {
     // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
+  if (debugTurnedOn()) {
+    emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
+  }
 }
 
 export function prefixLog(prefix) {

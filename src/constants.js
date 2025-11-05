@@ -9,7 +9,7 @@ export const JSON_MAPPING = {
   BD_SETTING_STANDARD: 'standard'
 };
 
-export const DEBUG_MODE = 'pbjs_debug';
+export const DEBUG_MODE = 'fspb_debug';
 
 export const STATUS = {
   GOOD: 1
