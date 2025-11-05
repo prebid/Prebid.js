@@ -548,6 +548,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {
+        addCommonResponseProperties(bid, bid.adUnitCode);
         auctionInstance.addNoBid(bid);
         events.emit(EVENTS.NO_BID, bid);
       }
