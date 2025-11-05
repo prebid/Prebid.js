@@ -53,7 +53,7 @@ export function sspInterpretResponse(ttl, adomain) {
       [width, height] = sizes;
     }
 
-    if (body.type.format != '') {
+    if (body.type.format !== '') {
       // banner
       ad = body.content.data;
       if (body.content.imps?.length) {

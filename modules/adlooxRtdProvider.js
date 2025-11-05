@@ -101,7 +101,7 @@ function init(config, userConsent) {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits0 = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   // adUnits must be ordered according to adUnitCodes for stable 's' param usage and handling the response below
-  const adUnits = reqBidsConfigObj.adUnitCodes.map(code => adUnits0.find(unit => unit.code == code));
+  const adUnits = reqBidsConfigObj.adUnitCodes.map(code => adUnits0.find(unit => unit.code === code));
 
   // buildUrl creates PHP style multi-parameters and includes undefined... (╯°□°)╯ ┻━┻
   const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), { search: {
@@ -139,10 +139,10 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
       const { site: ortb2site, user: ortb2user } = reqBidsConfigObj.ortb2Fragments.global;
       _each(response, function(v0, k0) {
-        if (k0 == '_') return;
+        if (k0 === '_') return;
         const k = SEGMENT_HISTORIC[k0] || k0;
         const v = val(v0, k0);
-        deepSetValue(k == k0 ? ortb2user : ortb2site, `ext.data.${MODULE_NAME}_rtd.${k}`, v);
+        deepSetValue(k === k0 ? ortb2user : ortb2site, `ext.data.${MODULE_NAME}_rtd.${k}`, v);
       });
 
       _each(response._, function(segments, i) {
@@ -162,7 +162,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
 function getTargetingData(adUnitArray, config, userConsent, auction) {
   function val(v) {
-    if (isArray(v) && v.length == 0) return undefined;
+    if (isArray(v) && v.length === 0) return undefined;
     if (isBoolean(v)) v = ~~v;
     if (!v) return undefined; // empty string and zero
     return v;

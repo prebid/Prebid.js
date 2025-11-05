@@ -176,7 +176,7 @@ export const spec = {
   buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     const imps = [];
     adSizes.forEach((size, i) => {
-      if (!size || size.length != 2) {
+      if (!size || size.length !== 2) {
         return;
       }
       const size0 = size[0];
@@ -226,7 +226,7 @@ export const spec = {
       return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
     };
 
-    if (!serverResponse.body || typeof serverResponse.body != 'object') {
+    if (!serverResponse.body || typeof serverResponse.body !== 'object') {
       return;
     }
     const {id, seatbid: seatbids} = serverResponse.body;
@@ -236,7 +236,7 @@ export const spec = {
         seatbid.bid.forEach(bid => {
           const creative = updateMacros(bid, bid.adm);
           const nurl = updateMacros(bid, bid.nurl);
-          const [, impType, impid] = bid.impid.match(/^([vb])([\w\d]+)/);
+          const [, impType, impid] = bid.impid.match(/^([vb])(.*)$/);
           let height = bid.h;
           let width = bid.w;
           const isVideo = impType === 'v';
@@ -289,7 +289,7 @@ export const spec = {
             ttl,
           };
 
-          if (bid.adomain != undefined || bid.adomain != null) {
+          if (bid.adomain !== undefined && bid.adomain !== null) {
             bidObj.meta = { advertiserDomains: bid.adomain };
           }
 

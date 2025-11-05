@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions } from '../src/utils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
@@ -10,13 +10,11 @@ import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLin
  */
 
 const BIDDER_CODE = 'greenbids';
-const GVL_ID = 1232;
 const ENDPOINT_URL = 'https://hb.greenbids.ai';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -52,6 +50,7 @@ export const spec = {
       reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
       reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
       if (gpid) { reqObj.gpid = gpid; }
+      return reqObj;
     });
     const topWindow = window.top;
 
@@ -67,7 +66,7 @@ export const spec = {
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
-      screenOrientation: screen.orientation?.type,
+      screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,

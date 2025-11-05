@@ -96,7 +96,7 @@ describe('Pubmatic RTD Provider', () => {
       expect(logErrorStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.LOG_PRE_FIX} Missing publisher Id.`);
     });
 
-    it('should return false if publisherId is not a string', () => {
+    it('should accept numeric publisherId by converting to string', () => {
       const config = {
         params: {
           publisherId: 123,
@@ -121,7 +121,7 @@ describe('Pubmatic RTD Provider', () => {
       expect(logErrorStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.LOG_PRE_FIX} Missing profile Id.`);
     });
 
-    it('should return false if profileId is not a string', () => {
+    it('should accept numeric profileId by converting to string', () => {
       const config = {
         params: {
           publisherId: 'test-publisher-id',

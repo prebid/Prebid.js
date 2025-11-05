@@ -108,14 +108,8 @@ pluginManager.register('dynamicTimeout', DynamicTimeout);
 const init = (config, _userConsent) => {
   const { publisherId, profileId } = config?.params || {};
 
-  if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
-    logError(
-      `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
-        : !isStr(publisherId) ? 'Publisher Id should be a string.'
-          : !profileId ? 'Missing profile Id.'
-            : 'Profile Id should be a string.'
-      }`
-    );
+  if (!publisherId || !profileId) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`);
     return false;
   }
 

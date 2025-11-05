@@ -30,15 +30,15 @@ const TIMEOUT_ERROR = 'timeout-error';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
 const EMPTY_STRING = '';
-// todo: input profileId and profileVersionId ; defaults to zero or one
-const DEFAULT_PUBLISHER_ID = 0;
-const DEFAULT_PROFILE_ID = 0;
-const DEFAULT_PROFILE_VERSION_ID = 0;
+// Default values for IDs - standardized as strings
+const DEFAULT_PUBLISHER_ID = null; // null since publisherId is mandatory
+const DEFAULT_PROFILE_ID = '0';
+const DEFAULT_PROFILE_VERSION_ID = '0';
 
 /// /////////// VARIABLES //////////////
-let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
-let profileId = DEFAULT_PROFILE_ID; // int: optional
-let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
+let publisherId = DEFAULT_PUBLISHER_ID; // string: mandatory
+let profileId = DEFAULT_PROFILE_ID; // string: optional
+let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // string: optional
 let s2sBidders = [];
 let _country = '';
 
@@ -93,7 +93,8 @@ function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
   return ajax(url, null, body, { method });
 };
 
-function copyRequiredBidDetails(bid) {
+function copyRequiredBidDetails(bid, bidRequest) {
+  // First check if bid has mediaTypes/sizes, otherwise fallback to bidRequest
   return pick(bid, [
     'bidder',
     'bidderCode',
@@ -191,11 +192,12 @@ function isOWPubmaticBid(adapterName) {
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
       return true;
     }
+    return false;
   })
 }
 
 function getAdUnit(adUnits, adUnitId) {
-  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
+  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID === adUnitId) || (adUnit.code === adUnitId))[0];
 }
 
 function getTgId() {
@@ -424,6 +426,15 @@ const eventHandlers = {
       if (bid.params) {
         args.params = bid.params;
       }
+      if (bid.adUnit) {
+        // Specifically check for mediaTypes and dimensions
+        if (!args.mediaTypes && bid.adUnit.mediaTypes) {
+          args.mediaTypes = bid.adUnit.mediaTypes;
+        }
+        if (!args.sizes && bid.adUnit.dimensions) {
+          args.sizes = bid.adUnit.dimensions;
+        }
+      }
       bid = copyRequiredBidDetails(args);
       cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);
     } else if (args.originalRequestId) {
@@ -519,18 +530,16 @@ const pubmaticAdapter = Object.assign({}, baseAdapter, {
     let error = false;
 
     if (typeof conf.options === 'object') {
-      if (conf.options.publisherId) {
-        publisherId = Number(conf.options.publisherId);
-      }
-      profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
-      profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
+      publisherId = String(conf.options.publisherId || '').trim();
+      profileId = String(conf.options.profileId || '').trim() || DEFAULT_PROFILE_ID;
+      profileVersionId = String(conf.options.profileVersionId || '').trim() || DEFAULT_PROFILE_VERSION_ID;
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
       error = true;
     }
 
     if (!publisherId) {
-      logError(LOG_PRE_FIX + 'Missing publisherId(Number).');
+      logError(LOG_PRE_FIX + 'Missing publisherId.');
       error = true;
     }
 

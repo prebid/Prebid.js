@@ -16,7 +16,7 @@ import * as auctionModule from 'src/auction.js';
 import {resetAuctionState} from 'src/auction.js';
 import {registerBidder} from 'src/adapters/bidderFactory.js';
 import * as pbjsModule from 'src/prebid.js';
-import pbjs, {startAuction} from 'src/prebid.js';
+import pbjs, {resetQueSetup, startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
@@ -246,19 +246,33 @@ describe('Unit: Prebid Module', function () {
         beforeEach(() => {
           ran = false;
           queue = pbjs[prop] = [];
+          resetQueSetup();
         });
         after(() => {
           pbjs.processQueue();
         })
 
-        function pushToQueue() {
-          queue.push(() => { ran = true });
+        function pushToQueue(fn = () => { ran = true }) {
+          return new Promise((resolve) => {
+            queue.push(() => {
+              fn();
+              resolve();
+            });
+          })
         }
 
-        it(`should patch .push`, () => {
+        it(`should patch .push`, async () => {
           pbjs.processQueue();
-          pushToQueue();
+          await pushToQueue();
           expect(ran).to.be.true;
+        });
+
+        it('should respect insertion order', async () => {
+          const log = [];
+          pushToQueue(() => log.push(1));
+          pbjs.processQueue();
+          await pushToQueue(() => log.push(2));
+          expect(log).to.eql([1, 2]);
         });
       })
     });
@@ -340,8 +354,7 @@ describe('Unit: Prebid Module', function () {
       pbjs.setConfig({ enableSendAllBids: true });
       var result = pbjs.getAdserverTargetingForAdUnitCode(adUnitCode);
       const expected = getAdServerTargeting()[adUnitCode];
-      assert.deepEqual(result, expected, 'returns expected' +
-        ' targeting info object');
+      sinon.assert.match(result, expected);
     });
   });
 
@@ -358,7 +371,7 @@ describe('Unit: Prebid Module', function () {
       pbjs.setConfig({ enableSendAllBids: true });
       const targeting = pbjs.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       const expected = getAdServerTargeting(['/19968336/header-bid-tag-0, /19968336/header-bid-tag1']);
-      assert.deepEqual(targeting, expected, 'targeting ok');
+      sinon.assert.match(targeting, expected);
     });
 
     it('should return correct targeting with default settings', function () {
@@ -379,14 +392,14 @@ describe('Unit: Prebid Module', function () {
           [TARGETING_KEYS.BIDDER]: 'appnexus'
         }
       };
-      assert.deepEqual(targeting, expected);
+      sinon.assert.match(targeting, expected);
     });
 
     it('should return correct targeting with bid landscape targeting on', function () {
       pbjs.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       var targeting = pbjs.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       var expected = getAdServerTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
-      assert.deepEqual(targeting, expected);
+      sinon.assert.match(targeting, expected);
     });
 
     it("should include a losing bid's custom ad targeting key", function () {
@@ -427,7 +440,7 @@ describe('Unit: Prebid Module', function () {
           [TARGETING_KEYS.BIDDER]: 'appnexus'
         }
       };
-      assert.deepEqual(targeting, expected);
+      sinon.assert.match(targeting, expected);
     });
 
     it('should not overwrite winning bids custom keys targeting key', function () {
@@ -486,7 +499,7 @@ describe('Unit: Prebid Module', function () {
           custom_ad_id: '24bd938435ec3fc'
         }
       };
-      assert.deepEqual(targeting, expected);
+      sinon.assert.match(targeting, expected);
       pbjs.bidderSettings = {};
     });
 
@@ -511,7 +524,10 @@ describe('Unit: Prebid Module', function () {
           custom_ad_id: '24bd938435ec3fc'
         }
       };
-      assert.deepEqual(targeting, expected);
+      sinon.assert.match(targeting, expected);
+      Object.values(targeting).forEach(targetingMap => {
+        expect(targetingMap).to.have.keys(['foobar', 'custom_ad_id', 'hb_ver']);
+      })
     });
   });
 
@@ -1026,7 +1042,7 @@ describe('Unit: Prebid Module', function () {
 
       slots.forEach(function(slot) {
         targeting = {};
-        slot.getTargetingKeys().map(function (key) {
+        slot.getTargetingKeys().forEach(function (key) {
           const value = slot.getTargeting(key);
           targeting[key] = value[0]
         });
@@ -1046,7 +1062,7 @@ describe('Unit: Prebid Module', function () {
 
       slots.forEach(function(slot) {
         targeting = {};
-        slot.getTargetingKeys().map(function (key) {
+        slot.getTargetingKeys().forEach(function (key) {
           const value = slot.getTargeting(key);
           targeting[key] = value[0]
         });
@@ -1281,13 +1297,14 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should write the ad to the doc', function () {
+      const ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       pushBidResponseToAuction({
-        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+        ad
       });
-      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+      const iframe = {};
+      doc.createElement.returns(iframe);
       return renderAd(doc, bidId).then(() => {
-        assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
-        assert.ok(doc.close.called, 'close method called');
+        expect(iframe.srcdoc).to.eql(ad);
       })
     });
 
@@ -1333,7 +1350,7 @@ describe('Unit: Prebid Module', function () {
         mediatype: 'video'
       });
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.notCalled(doc.write);
+        sinon.assert.notCalled(doc.createElement);
       });
     });
 
@@ -1343,7 +1360,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       var error = { message: 'doc write error' };
-      doc.write = sinon.stub().throws(error);
+      doc.createElement.throws(error);
 
       return renderAd(doc, bidId).then(() => {
         var errorMessage = `Error rendering ad (id: ${bidId}): doc write error`
@@ -1423,13 +1440,13 @@ describe('Unit: Prebid Module', function () {
         spyAddWinningBid.resetHistory();
         onWonEvent.resetHistory();
         onStaleEvent.resetHistory();
-        doc.write.resetHistory();
+        doc.createElement.resetHistory();
         return renderAd(doc, bidId);
       }).then(() => {
         // Second render should have a warning but still be rendered
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.calledWith(onStaleEvent, adResponse);
-        sinon.assert.called(doc.write);
+        sinon.assert.called(doc.createElement);
 
         // Clean up
         pbjs.offEvent(EVENTS.BID_WON, onWonEvent);
@@ -2229,7 +2246,7 @@ describe('Unit: Prebid Module', function () {
             }
           })
         });
-        it('should be copied to ortb2Imp.ext.tid, if not specified', async () => {
+        it('should NOT be copied to ortb2Imp.ext.tid, if not specified', async () => {
           await runAuction({
             adUnits: [
               adUnit
@@ -2237,11 +2254,11 @@ describe('Unit: Prebid Module', function () {
           });
           const tid = auctionArgs.adUnits[0].transactionId;
           expect(tid).to.exist;
-          expect(auctionArgs.adUnits[0].ortb2Imp.ext.tid).to.eql(tid);
+          expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
         });
       });
 
-      it('should always set ortb2.ext.tid same as transactionId in adUnits', async function () {
+      it('should NOT set ortb2.ext.tid same as transactionId in adUnits', async function () {
         await runAuction({
           adUnits: [
             {
@@ -2257,11 +2274,9 @@ describe('Unit: Prebid Module', function () {
         });
 
         expect(auctionArgs.adUnits[0]).to.have.property('transactionId');
-        expect(auctionArgs.adUnits[0]).to.have.property('ortb2Imp');
-        expect(auctionArgs.adUnits[0].transactionId).to.equal(auctionArgs.adUnits[0].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId');
-        expect(auctionArgs.adUnits[1]).to.have.property('ortb2Imp');
-        expect(auctionArgs.adUnits[1].transactionId).to.equal(auctionArgs.adUnits[1].ortb2Imp.ext.tid);
+        expect(auctionArgs.adUnits[0].ortb2Imp?.ext?.tid).to.not.exist;
       });
 
       it('should notify targeting of the latest auction for each adUnit', async function () {
@@ -2834,6 +2849,18 @@ describe('Unit: Prebid Module', function () {
         // only appnexus supports native
         expect(biddersCalled.length).to.equal(1);
       });
+
+      it('module bids should not be filtered out', async () => {
+        delete adUnits[0].mediaTypes.banner;
+        adUnits[0].bids.push({
+          module: 'pbsBidAdapter',
+          ortb2Imp: {}
+        });
+
+        pbjs.requestBids({adUnits});
+        await auctionStarted;
+        expect(adapterManager.callBids.getCall(0).args[0][0].bids.length).to.eql(2);
+      })
     });
 
     describe('part 2', function () {
@@ -2966,7 +2993,7 @@ describe('Unit: Prebid Module', function () {
           });
           return (req.bids.length > 0) ? req : undefined;
         }).filter((item) => {
-          return item != undefined;
+          return item !== undefined;
         });
       };
       auction1.getBidsReceived = function() {
@@ -2982,7 +3009,7 @@ describe('Unit: Prebid Module', function () {
           });
           return (req.bids.length > 0) ? req : undefined;
         }).filter((item) => {
-          return item != undefined;
+          return item !== undefined;
         });
       };
       auction2.getBidsReceived = function() {
@@ -3052,7 +3079,7 @@ describe('Unit: Prebid Module', function () {
             'foobar': '728x90'
           }
         }
-        assert.deepEqual(result, expected, 'targeting info returned for current placements');
+        sinon.assert.match(result, expected)
       });
     });
   });
@@ -3816,7 +3843,7 @@ describe('Unit: Prebid Module', function () {
         }
       }
       targeting.setTargetingForAst();
-      expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+      sinon.assert.match(window.apntag.tags[adUnitCode].keywords, newAdserverTargeting);
     });
 
     it('should reset targeting for appnexus apntag object', function () {
@@ -3835,7 +3862,7 @@ describe('Unit: Prebid Module', function () {
         }
       }
       targeting.setTargetingForAst();
-      expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+      sinon.assert.match(window.apntag.tags[adUnitCode].keywords, newAdserverTargeting)
       targeting.resetPresetTargetingAST();
       expect(window.apntag.tags[adUnitCode].keywords).to.deep.equal({});
     });
@@ -3858,19 +3885,32 @@ describe('Unit: Prebid Module', function () {
       utils.logError.restore();
     });
 
-    it('should run commands which are pushed into it', function() {
+    function push(cmd) {
+      return new Promise((resolve) => {
+        pbjs.cmd.push(() => {
+          try {
+            cmd();
+          } finally {
+            resolve();
+          }
+        })
+      })
+    }
+
+    it('should run commands which are pushed into it', async function () {
       const cmd = sinon.spy();
-      pbjs.cmd.push(cmd);
+      await push(cmd);
       assert.isTrue(cmd.called);
     });
 
-    it('should log an error when given non-functions', function() {
+    it('should log an error when given non-functions', async function () {
       pbjs.cmd.push(5);
+      await push(() => null);
       assert.isTrue(utils.logError.calledOnce);
     });
 
-    it('should log an error if the command passed into it fails', function() {
-      pbjs.cmd.push(function() {
+    it('should log an error if the command passed into it fails', async function () {
+      await push(function () {
         throw new Error('Failed function.');
       });
       assert.isTrue(utils.logError.calledOnce);
