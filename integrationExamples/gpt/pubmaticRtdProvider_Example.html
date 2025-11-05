@@ -1,11 +1,11 @@
 <html>
-
-<head>Add commentMore actions
-  <script async src="../../build/dev/prebid.js"></script>
+<head>
+    <title>PubMatic RTD Provider Example</title>
+    <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
-        //var PREBID_TIMEOUT = 1000;
+        var PREBID_TIMEOUT = 1000;
 
         var adUnits = [{
                 code: 'div-gpt-ad-1460505748561-0',
@@ -15,7 +15,6 @@
                         pos: 7,
                     }
                 },  
-                // Replace this object to test a new Adapter!
                 bids: [
                     {
                         bidder: 'appnexus',
@@ -29,13 +28,6 @@
                             adUnit: 'dcomHomeTop-728x90',
                         }
                     },
-                    {
-                        bidder: 'foobar',
-                        params: {
-                            publisherId: '103207',
-                            adUnit: 'dcomHomeTop-728x90'
-                         }
-                     },
                 ]
             }
             ,
@@ -46,7 +38,6 @@
                         sizes: [[728, 90]],
                     }
                 },  
-                // Replace this object to test a new Adapter!
                 bids: [
                     {
                         bidder: 'appnexus',
@@ -59,14 +50,7 @@
                             publisherId: '103207',
                             adUnit: 'dcomHomeTop-728x90',
                         }
-                    },
-                    {
-                        bidder: 'foobar',
-                        params: {
-                            publisherId: '103207',
-                            adUnit: 'dcomHomeTop-728x90'
-                         }
-                     },
+                    }
                 ]
             }
         ];
@@ -85,11 +69,9 @@
         });
 
         pbjs.que.push(function () {
-            pbjs.aliasBidder('pubmatic', 'foobar')
             pbjs.setConfig({
                 enableSendAllBids : true,
                 enableTIDs: true,
-                bidderTimeout: 3000,
                 realTimeData: {
                     auctionDelay: 500, 
                     dataProviders: [
@@ -97,27 +79,11 @@
                         name: 'pubmatic',
                         waitForIt: true,
                         params:{
-                            publisherId: '103207',
-                            profileId: '12',
+                            publisherId: '103207', // please contact PubMatic to get a publisherId for yourself
+                            profileId: '12', // please contact PubMatic to get a profileId for yourself
                         }
                     }
                 ]
-                },
-                floors:{
-                    enforcement: {
-                        enforceJS: false
-                    },
-                    data: {   
-                        currency: 'USD',
-                        skipRate: 0,
-                        modelVersion: 'some setconfig model version',
-                        schema: {
-                            fields: ['mediaType']
-                        },
-                        values: {
-                            'banner' : 2,
-                        }
-                    }
                 }
             })
 
@@ -131,9 +97,10 @@
 
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
             });
             
-        }); //pbjs que push fn ends
+        }); 
 
 
         function sendAdserverRequest() {

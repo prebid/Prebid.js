@@ -125,28 +125,6 @@ export const getBidder = (request) => request?.bidder;
 export const getUtm = () => getUtmValue();
 
 export const prepareFloorsConfig = () => {
-  // TODO: This can be removed as it is beimg used for UTR only and handled for multipliers in name: 'floor.json', for UPR it is handled in
-  // Extract multipliers from floors.json if available
-  // if (floorConfig?.data?.multiplier) {
-  //   // Map of source keys to destination keys
-  //   const multiplierKeys = {
-  //     'win': 'WIN',
-  //     'floored': 'FLOORED',
-  //     'nobid': 'NOBID'
-  //   };
-
-  //   // Initialize _multipliers and only add keys that exist in data.multiplier
-  //   const _multipliers = Object.entries(multiplierKeys)
-  //     .reduce((acc, [srcKey, destKey]) => {
-  //       if (srcKey in floorConfig.data.multiplier) {
-  //         acc[destKey] = floorConfig.data.multiplier[srcKey];
-  //       }
-  //       return acc;
-  //     }, {});
-
-  //   logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
-  // }
-
   if (!getFloorConfig()?.enabled || !getFloorConfig()?.config) {
     return undefined;
   }
