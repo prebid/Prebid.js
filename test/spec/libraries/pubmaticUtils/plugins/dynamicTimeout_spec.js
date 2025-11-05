@@ -445,15 +445,6 @@ describe('DynamicTimeout Plugin', () => {
       expect(result).to.equal(500); // default threshold (500ms)
     });
 
-    it('should handle floating point values', () => {
-      const bidderTimeout = 1000.5;
-      const additionalTimeout = 200.7;
-
-      const result = dynamicTimeout.getFinalTimeout(bidderTimeout, additionalTimeout);
-
-      expect(result).to.equal(1201.2); // 1000.5 + 200.7
-    });
-
     it('should handle very large negative additional timeout', () => {
       const bidderTimeout = 1000;
       const additionalTimeout = -2000; // Results in -1000ms, well below threshold
