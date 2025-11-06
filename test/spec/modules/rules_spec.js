@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as rulesModule from 'modules/rules/index.ts';
 import * as utils from 'src/utils.js';
 import * as storageManager from 'src/storageManager.js';
+import * as analyticsAdapter from 'libraries/analyticsAdapter/AnalyticsAdapter.ts';
 import { isActivityAllowed } from 'src/activities/rules.js';
 import { activityParams } from 'src/activities/activityParams.js';
 import { ACTIVITY_FETCH_BIDS, ACTIVITY_ADD_BID_RESPONSE } from 'src/activities/activities.js';
@@ -207,6 +208,46 @@ describe('Rules Module', function() {
       expect(isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, 'bidder3', {}))).to.eql(false);
       // Verify that non-excluded bidder is allowed for processed-auction
       expect(isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, 'bidder4', {}))).to.eql(true);
+    });
+
+    it('should execute default rules when provided', function() {
+      const setLabelsStub = sandbox.stub(analyticsAdapter, 'setLabels');
+      const rulesJson = {
+        enabled: true,
+        timestamp: '1234567890',
+        ruleSets: [{
+          name: 'testRuleSet',
+          stage: 'processed-auction-request',
+          version: '1.0',
+          modelGroups: [{
+            weight: 100,
+            selected: true,
+            analyticsKey: 'testAnalyticsKey',
+            schema: [],
+            default: [{
+              function: 'logAtag',
+              args: { analyticsValue: 'default-allow' }
+            }],
+            rules: [{
+              conditions: ['*'],
+              results: [{
+                function: 'excludeBidders',
+                args: [{
+                  bidders: ['bidder1'],
+                  analyticsValue: 'excluded'
+                }]
+              }]
+            }]
+          }]
+        }]
+      };
+
+      sandbox.stub(Math, 'random').returns(0.5);
+      rulesModule.evaluateConfig(rulesJson);
+
+      expect(setLabelsStub.calledWith({ testAnalyticsKey: 'default-allow' })).to.be.true;
+      
+      setLabelsStub.resetHistory();
     });
   });
 

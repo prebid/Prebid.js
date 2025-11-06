@@ -52,7 +52,11 @@ interface ModelGroup {
     results: [
       { args: any[]; function: string }
     ];
-  }]
+  }];
+  default?: Array<{
+    function: string;
+    args: any;
+  }>;
 }
 interface RuleSet {
   name: string;
@@ -86,7 +90,7 @@ export function evaluateConfig(config: RulesConfig) {
   for (const ruleSet of stageRules) {
     const modelGroup = ruleSet.modelGroups?.find(group => group.selected);
     if (!modelGroup) continue;
-    evaluateRules(modelGroup.rules || [], modelGroup.schema || [], ruleSet.stage, modelGroup.analyticsKey);
+    evaluateRules(modelGroup.rules || [], modelGroup.schema || [], ruleSet.stage, modelGroup.analyticsKey, modelGroup.default);
   }
 }
 
@@ -118,8 +122,17 @@ export function assignModelGroups(rulesets: RuleSet[]) {
   }
 }
 
-function evaluateRules(rules, schema, stage, analyticsKey) {
-  // @todo: handle default case when no rules matched
+function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
+  if (defaultRules) {
+    for (const result of defaultRules) {
+      const registerResult = evaluateFunction(result.function, result.args || [], [], [], stage, analyticsKey);
+      if (!registerResult) {
+        logError(`${MODULE_NAME}: Unknown result function ${result.function}`);
+        continue;
+      }
+      registerResult();
+    }
+  }
   for (const rule of rules) {
     for (const result of rule.results) {
       const registerResult = evaluateFunction(result.function, result.args || [], schema, rule.conditions, stage, analyticsKey);
