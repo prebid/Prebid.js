@@ -2,8 +2,6 @@ import { expect } from 'chai';
 import * as rulesModule from 'modules/rules/index.ts';
 import * as utils from 'src/utils.js';
 import * as storageManager from 'src/storageManager.js';
-import * as storeSplitsLib from 'libraries/storage/storeSplits.ts';
-import { storeSplitsMethod } from 'libraries/storage/storeSplits.ts';
 import { isActivityAllowed } from 'src/activities/rules.js';
 import { activityParams } from 'src/activities/activityParams.js';
 import { ACTIVITY_FETCH_BIDS, ACTIVITY_ADD_BID_RESPONSE } from 'src/activities/activities.js';
@@ -15,8 +13,6 @@ describe('Rules Module', function() {
   let logWarnStub;
   let logInfoStub;
   let newStorageManagerStub;
-  let getStoredConfigStub;
-  let storeConfigStub;
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
@@ -30,9 +26,6 @@ describe('Rules Module', function() {
       setDataInLocalStorage: sandbox.stub()
     };
     newStorageManagerStub = sandbox.stub(storageManager, 'newStorageManager').returns(mockStorageManager);
-
-    getStoredConfigStub = sandbox.stub(storeSplitsLib, 'getStoredConfig').returns(null);
-    storeConfigStub = sandbox.stub(storeSplitsLib, 'storeConfig');
   });
 
   afterEach(function() {
@@ -116,117 +109,99 @@ describe('Rules Module', function() {
 
     it('should exclude bidder when it matches bidders list for processed-auction-request stage', function() {
       const rulesJson = {
-        hooks: {
-          modules: {
-            'pb-rules-engine': {
-              version: '1.0',
-              ruleSets: [{
-                name: 'testRuleSet',
-                stage: 'processed-auction-request',
-                modelGroups: [{
-                  weight: 100,
-                  selected: true,
-                  analyticsKey: 'testAnalyticsKey',
-                  schema: [],
-                  rules: [{
-                    condition: ['*'],
-                    results: [{
-                      function: 'excludeBidders',
-                      args: [{
-                        bidders: ['bidder1'],
-                        analyticsValue: 'excluded'
-                      }]
-                    }]
-                  }]
+        enabled: true,
+        timestamp: '1234567890',
+        ruleSets: [{
+          name: 'testRuleSet',
+          stage: 'processed-auction-request',
+          version: '1.0',
+          modelGroups: [{
+            weight: 100,
+            selected: true,
+            analyticsKey: 'testAnalyticsKey',
+            schema: [],
+            rules: [{
+              conditions: ['*'],
+              results: [{
+                function: 'excludeBidders',
+                args: [{
+                  bidders: ['bidder1'],
+                  analyticsValue: 'excluded'
                 }]
-              }],
-              timestamp: '1234567890',
-              enabled: true
-            }
-          }
-        }
+              }]
+            }]
+          }]
+        }]
       };
 
       sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(null, rulesJson);
+      rulesModule.evaluateConfig(rulesJson);
 
       expect(isActivityAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, 'bidder1', {}))).to.eql(false);
     });
 
     it('should allow bidder when it does not match bidders list for processed-auction-request stage', function() {
       const rulesJson = {
-        hooks: {
-          modules: {
-            'pb-rules-engine': {
-              version: '1.0',
-              ruleSets: [{
-                name: 'testRuleSet',
-                stage: 'processed-auction-request',
-                modelGroups: [{
-                  weight: 100,
-                  selected: true,
-                  analyticsKey: 'testAnalyticsKey',
-                  schema: [],
-                  rules: [{
-                    condition: ['*'],
-                    results: [{
-                      function: 'excludeBidders',
-                      args: [{
-                        bidders: ['bidder1'],
-                        analyticsValue: 'excluded'
-                      }]
-                    }]
-                  }]
+        enabled: true,
+        timestamp: '1234567890',
+        ruleSets: [{
+          name: 'testRuleSet',
+          stage: 'processed-auction-request',
+          version: '1.0',
+          modelGroups: [{
+            weight: 100,
+            selected: true,
+            analyticsKey: 'testAnalyticsKey',
+            schema: [],
+            rules: [{
+              conditions: ['*'],
+              results: [{
+                function: 'excludeBidders',
+                args: [{
+                  bidders: ['bidder1'],
+                  analyticsValue: 'excluded'
                 }]
-              }],
-              timestamp: '1234567890',
-              enabled: true
-            }
-          }
-        }
+              }]
+            }]
+          }]
+        }]
       };
 
       sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(null, rulesJson);
+      rulesModule.evaluateConfig(rulesJson);
 
       expect(isActivityAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, 'bidder2', {}))).to.eql(true);
     });
 
     it('should exclude bidder when it matches bidders list for processed-auction stage', function() {
       const rulesJson = {
-        hooks: {
-          modules: {
-            'pb-rules-engine': {
-              version: '1.0',
-              ruleSets: [{
-                name: 'testRuleSet',
-                stage: 'processed-auction',
-                modelGroups: [{
-                  weight: 100,
-                  selected: true,
-                  analyticsKey: 'testAnalyticsKey',
-                  schema: [],
-                  rules: [{
-                    condition: ['*'],
-                    results: [{
-                      function: 'excludeBidders',
-                      args: [{
-                        bidders: ['bidder3'],
-                        analyticsValue: 'excluded'
-                      }]
-                    }]
-                  }]
+        enabled: true,
+        timestamp: '1234567890',
+        ruleSets: [{
+          name: 'testRuleSet',
+          stage: 'processed-auction',
+          version: '1.0',
+          modelGroups: [{
+            weight: 100,
+            selected: true,
+            analyticsKey: 'testAnalyticsKey',
+            schema: [],
+            rules: [{
+              conditions: ['*'],
+              results: [{
+                function: 'excludeBidders',
+                args: [{
+                  bidders: ['bidder3'],
+                  analyticsValue: 'excluded'
                 }]
-              }],
-              timestamp: '1234567890',
-              enabled: true
-            }
-          }
-        }
+              }]
+            }]
+          }]
+        }]
       };
 
       sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(null, rulesJson);
+      rulesModule.evaluateConfig(rulesJson);
 
       // Verify that excluded bidder is not allowed for processed-auction
       expect(isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, 'bidder3', {}))).to.eql(false);

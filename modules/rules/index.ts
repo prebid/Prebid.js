@@ -1,6 +1,5 @@
 import { setLabels } from "../../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { timeoutQueue } from "../../libraries/timeoutQueue/timeoutQueue.ts";
-import { storeSplitsMethod, getStoredConfig, storeConfig, type StoreSplitsMethod } from "../../libraries/storage/storeSplits.ts";
 import { ACTIVITY_ADD_BID_RESPONSE, ACTIVITY_FETCH_BIDS } from "../../src/activities/activities.js";
 import { MODULE_TYPE_BIDDER } from "../../src/activities/modules.ts";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
@@ -8,12 +7,10 @@ import { registerActivityControl } from "../../src/activities/rules.js";
 import { ajax } from "../../src/ajax.ts";
 import { config } from "../../src/config.ts";
 import { getHook } from "../../src/hook.ts";
-import { newStorageManager } from "../../src/storageManager.ts";
 import { logError, logInfo, logWarn } from "../../src/utils.ts";
 import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
 const MODULE_NAME = 'shapingRulesModule';
-const STORAGE_KEY = 'rules_module_config';
 
 let unregisterFunctions: Array<() => void> = [];
 
@@ -30,6 +27,8 @@ let fetching = false;
 let rulesLoaded = false;
 
 const delayedAuctions = timeoutQueue();
+
+type StoreSplitsMethod = 'memory' | 'sessionStorage' | 'localStorage';
 
 interface ModuleConfig {
   endpoint?: {
@@ -72,18 +71,7 @@ interface RulesConfig {
   enabled: boolean;
 }
 
-export function evaluateConfig(context, rulesJson) {
-  const storageManager = newStorageManager();
-  const storeSplits = rulesConfig.storeSplits || storeSplitsMethod.LOCAL_STORAGE;
-  const oldConfig: RulesConfig = getStoredRulesConfig(storeSplits, storageManager);
-  let config: RulesConfig = oldConfig;
-  const newConfig = rulesJson.hooks?.modules?.["pb-rules-engine"];
-  if (!compareConfigs(oldConfig, newConfig)) {
-    logWarn(`${MODULE_NAME}: New rules configuration detected, updating stored config.`);
-    assignModelGroups(rulesJson.hooks?.modules?.["pb-rules-engine"]?.ruleSets || []);
-    storeRulesConfig(newConfig, storeSplits, storageManager);
-    config = newConfig;
-  }
+export function evaluateConfig(config: RulesConfig) {
   if (!config || !config.ruleSets) {
     logWarn(`${MODULE_NAME}: Invalid structure for rules engine`);
     return;
@@ -95,6 +83,8 @@ export function evaluateConfig(context, rulesJson) {
   }
 
   const stageRules = config.ruleSets;
+
+  assignModelGroups(stageRules || []);
 
   for (const ruleSet of stageRules) {
     const modelGroup = ruleSet.modelGroups?.find(group => group.selected);
@@ -131,14 +121,8 @@ export function assignModelGroups(rulesets: RuleSet[]) {
   }
 }
 
-function compareConfigs(oldConfig: RulesConfig, newConfig: RulesConfig) {
-  if (!oldConfig || !newConfig) return false;
-  return oldConfig.timestamp === newConfig.timestamp
-}
-
 function evaluateRules(rules, schema, stage, analyticsKey) {
   // @todo: handle default case when no rules matched
-
   for (const rule of rules) {
     for (const result of rule.results) {
       const registerResult = evaluateFunction(result.function, result.args || [], schema, rule.conditions, stage, analyticsKey);
@@ -255,7 +239,6 @@ function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
             }
             if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return { allow: true };
             const finalCondition = conditionMet && !bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
-            // @todo - make sure if it's proper way to do it and handle seatnonbid logic
             if (finalCondition === false && analyticsKey && analyticsValue) {
               setLabels({ [analyticsKey]: analyticsValue });
             }
@@ -287,14 +270,6 @@ function evaluateCondition(condition, func) {
   }
 }
 
-export function getStoredRulesConfig(storeSplits, storageManager = newStorageManager()) {
-  return getStoredConfig<RulesConfig>(storeSplits, STORAGE_KEY, storageManager, MODULE_NAME);
-}
-
-function storeRulesConfig(config: RulesConfig, storeSplits: StoreSplitsMethod, storageManager) {
-  storeConfig(config, storeSplits, STORAGE_KEY, storageManager, MODULE_NAME);
-}
-
 export function fetchRules(endpoint = rulesConfig.endpoint) {
   if (fetching) {
     logWarn(`${MODULE_NAME}: A fetch is already occurring. Skipping.`);
@@ -310,7 +285,7 @@ export function fetchRules(endpoint = rulesConfig.endpoint) {
       rulesLoaded = true;
       delayedAuctions.resume();
       logInfo(`${MODULE_NAME}: Rules configuration fetched successfully.`);
-      evaluateConfig(null, JSON.parse(response));
+      evaluateConfig(JSON.parse(response));
     },
     error: () => {
       fetching = false;
