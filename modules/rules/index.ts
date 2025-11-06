@@ -28,15 +28,12 @@ let rulesLoaded = false;
 
 const delayedAuctions = timeoutQueue();
 
-type StoreSplitsMethod = 'memory' | 'sessionStorage' | 'localStorage';
-
 interface ModuleConfig {
   endpoint?: {
     url: string;
     method: string;
   };
   auctionDelay?: number;
-  storeSplits?: StoreSplitsMethod;
 }
 
 interface ModelGroupSchema {
