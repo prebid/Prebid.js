@@ -443,7 +443,7 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(interpretedBids).to.deep.equal([]);
     })
-});
+  });
 
   describe('getUserSyncs', function() {
     function getGdprConsent() {
