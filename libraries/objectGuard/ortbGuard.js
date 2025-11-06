@@ -7,11 +7,7 @@ import {
   ORTB_UFPD_PATHS
 } from '../../src/activities/redactor.js';
 import {objectGuard, writeProtectRule} from './objectGuard.js';
-import {mergeDeep} from '../../src/utils.js';
-
-/**
- * @typedef {import('./objectGuard.js').ObjectGuard} ObjectGuard
- */
+import {logError} from '../../src/utils.js';
 
 function ortb2EnrichRules(isAllowed = isActivityAllowed) {
   return [
@@ -32,20 +28,10 @@ export function ortb2GuardFactory(isAllowed = isActivityAllowed) {
   return objectGuard(ortb2TransmitRules(isAllowed).concat(ortb2EnrichRules(isAllowed)));
 }
 
-/**
- *
- *
- * @typedef {Function} ortb2Guard
- * @param {{}} ortb2 ORTB object to guard
- * @param {{}} params activity params to use for activity checks
- * @returns {ObjectGuard}
- */
-
 /*
  * Get a guard for an ORTB object. Read access is restricted in the same way it'd be redacted (see activites/redactor.js);
  * and writes are checked against the enrich* activites.
  *
- * @type ortb2Guard
  */
 export const ortb2Guard = ortb2GuardFactory();
 
@@ -53,40 +39,44 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
   return function guardOrtb2Fragments(fragments, params) {
     fragments.global = fragments.global || {};
     fragments.bidder = fragments.bidder || {};
-    const bidders = new Set(Object.keys(fragments.bidder));
-    const verifiers = [];
-
-    function makeGuard(ortb2) {
-      const guard = guardOrtb2(ortb2, params);
-      verifiers.push(guard.verify);
-      return guard.obj;
-    }
-
-    const obj = {
-      global: makeGuard(fragments.global),
-      bidder: Object.fromEntries(Object.entries(fragments.bidder).map(([bidder, ortb2]) => [bidder, makeGuard(ortb2)]))
+    const guard = {
+      global: guardOrtb2(fragments.global, params),
+      bidder: new Proxy(fragments.bidder, {
+        get(target, prop, receiver) {
+          let bidderData = Reflect.get(target, prop, receiver);
+          if (bidderData != null) {
+            bidderData = guardOrtb2(bidderData, params)
+          }
+          return bidderData;
+        },
+        set(target, prop, newValue, receiver) {
+          if (newValue == null || typeof newValue !== 'object') {
+            logError(`ortb2Fragments.bidder[bidderCode] must be an object`);
+          }
+          let bidderData = Reflect.get(target, prop, receiver);
+          if (bidderData == null) {
+            bidderData = target[prop] = {};
+          }
+          bidderData = guardOrtb2(bidderData, params);
+          Object.entries(newValue).forEach(([prop, value]) => {
+            bidderData[prop] = value;
+          })
+          return true;
+        }
+      })
     };
 
-    return {
-      obj,
-      verify() {
-        Object.entries(obj.bidder)
-          .filter(([bidder]) => !bidders.has(bidder))
-          .forEach(([bidder, ortb2]) => {
-            const repl = {};
-            const guard = guardOrtb2(repl, params);
-            mergeDeep(guard.obj, ortb2);
-            guard.verify();
-            fragments.bidder[bidder] = repl;
-          })
-        verifiers.forEach(fn => fn());
-      }
-    }
+    return Object.defineProperties(
+      {},
+      Object.fromEntries(
+        // disallow overwriting of the top level `global` / `bidder`
+        Object.entries(guard).map(([prop, obj]) => [prop, {get: () => obj}])
+      )
+    )
   }
 }
 
 /**
  * Get a guard for an ortb2Fragments object.
- * @type {function(*, *): ObjectGuard}
  */
 export const guardOrtb2Fragments = ortb2FragmentsGuardFactory();
