@@ -210,7 +210,7 @@ export const spec = {
   },
 
   interpretResponse: function (response, serverRequest) {
-    if (isEmpty(response.body)) {
+    if (isEmpty(response.body.seatbid)) {
       return [];
     }
     deepSetValue(response, 'body.seatbid.0.bid.0.impid', deepAccess(serverRequest, 'data.imp.0.id'))
