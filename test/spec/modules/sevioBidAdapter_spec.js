@@ -205,5 +205,73 @@ describe('sevioBidAdapter', function () {
       let result = spec.interpretResponse(serverResponseNative);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponseNative));
     })
+
+    it('should use bidRequest.params.keywords when provided', function () {
+      const singleBidRequest = [
+        {
+          bidder: 'sevio',
+          params: {
+            zone: 'zoneId',
+            keywords: ['play', 'games']
+          },
+          mediaTypes: {
+            banner: { sizes: [[728, 90]] }
+          },
+          bidId: 'bid-kw',
+          bidderRequestId: 'br-kw',
+          auctionId: 'auc-kw'
+        }
+      ];
+      const bidderRequest = {
+        refererInfo: {
+          numIframes: 0,
+          reachedTop: true,
+          referer: 'https://example.com',
+          stack: ['https://example.com']
+        }
+      };
+
+      const requests = spec.buildRequests(singleBidRequest, bidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+      expect(requests[0].data).to.have.property('keywords');
+      expect(requests[0].data.keywords).to.have.property('tokens');
+      expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games']);
+    });
+  });
+
+  it('should prefer ortb2.site.keywords when present on bidderRequest', function () {
+    const singleBidRequest = [
+      {
+        bidder: 'sevio',
+        params: {
+          zone: 'zoneId'
+        },
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] }
+        },
+        bidId: 'bid-kw-ortb',
+        bidderRequestId: 'br-kw-ortb',
+        auctionId: 'auc-kw-ortb'
+      }
+    ];
+    const bidderRequestWithOrtb = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'https://example.com',
+        stack: ['https://example.com']
+      },
+      ortb2: {
+        site: {
+          keywords: ['keyword1', 'keyword2']
+        }
+      }
+    };
+
+    const requests = spec.buildRequests(singleBidRequest, bidderRequestWithOrtb);
+    expect(requests).to.be.an('array').that.is.not.empty;
+    expect(requests[0].data).to.have.property('keywords');
+    expect(requests[0].data.keywords).to.have.property('tokens');
+    expect(requests[0].data.keywords.tokens).to.deep.equal(['keyword1', 'keyword2']);
   });
 });
