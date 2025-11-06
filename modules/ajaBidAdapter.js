@@ -38,7 +38,6 @@ const DEFAULT_NET_REVENUE = true;
 
 /**
  * @typedef {object} AJABidResponse
- * @inner
  *
  * @property {boolean} is_ad_return - Whether an ad was returned
  * @property {AJAAd} ad - The ad object
@@ -48,7 +47,6 @@ const DEFAULT_NET_REVENUE = true;
 
 /**
  * @typedef {object} AJAAd
- * @inner
  *
  * @property {number} ad_type - Type of ad (1=Banner, 2=Native, 3=Video)
  * @property {string} prebid_id - Prebid bid ID
@@ -61,7 +59,6 @@ const DEFAULT_NET_REVENUE = true;
 
 /**
  * @typedef {object} AJABannerAd
- * @inner
  *
  * @property {string} tag - HTML tag for the ad
  * @property {number} w - Width of the ad
@@ -175,7 +172,7 @@ export const spec = {
     };
 
     try {
-      if (bannerAd.imps && Array.isArray(bannerAd.imps)) {
+      if (Array.isArray(bannerAd.imps)) {
         bannerAd.imps.forEach(impTracker => {
           const tracker = createTrackPixelHtml(impTracker);
           bid.ad += tracker;
