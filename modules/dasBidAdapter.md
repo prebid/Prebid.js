@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: Ringier Axel Springer Bidder Adapter
+Module Name: DAS Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: support@ringpublishing.com
 ```
 
 # Description
 
-Module that connects to Ringer Axel Springer demand sources.
+Module that connects to DAS demand sources.
 Only banner and native format is supported.
 
 # Test Parameters
@@ -21,7 +21,7 @@ var adUnits = [{
     }
   },
   bids: [{
-    bidder: 'ringieraxelspringer',
+    bidder: 'das',
     params: {
       network: '4178463',
       site: 'test',
@@ -36,11 +36,11 @@ var adUnits = [{
 
 | Name                         | Scope    | Type     | Description                                                                                                                                                                                                                                                                | Example                                                                                     |
 |------------------------------|----------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| network                      | required | String   | Specific identifier provided by Ringier Axel Springer                                                                                                                                                                                                                                        | `"4178463"`                                                                                 |
-| site                         | required | String   | Specific identifier name (case-insensitive) that is associated with this ad unit and provided by Ringier Axel Springer                                                                                                                                                                       | `"example_com"`                                                                             |
-| area                         | required | String   | Ad unit category name; only case-insensitive alphanumeric with underscores and hyphens are allowed                                                                                                                                                                         | `"sport"`                                                                                   |
-| slot                         | required | String   | Ad unit placement name (case-insensitive) provided by Ringier Axel Springer                                                                                                                                                                                                                  | `"slot"`                                                                                    |
-| slotSequence                 | optional | Number   | Ad unit sequence position provided by Ringier Axel Springer                                                                                                                                                                                                                                  | `1`                                                                                         |
+| network                      | required | String   | Specific identifier provided by DAS                                                                                                                                                                                                                                        | `"4178463"`                                                                                 |
+| site                         | required | String   | Specific identifier name (case-insensitive) that is associated with this ad unit. Represents the website/domain in the ad unit hierarchy                                                                                                                                   | `"example_com"`                                                                             |
+| area                         | required | String   | Ad unit category name; only case-insensitive alphanumeric with underscores and hyphens are allowed. Represents the content section or category (e.g., sport, news, lifestyle)                                                                                              | `"sport"`                                                                                   |
+| slot                         | required | String   | Ad unit placement name (case-insensitive)                                                                                                                                                                                                                                  | `"slot"`                                                                                    |
+| slotSequence                 | optional | Number   | Ad unit sequence position provided by DAS                                                                                                                                                                                                                                  | `1`                                                                                         |
 | pageContext                  | optional | Object   | Web page context data                                                                                                                                                                                                                                                      | `{}`                                                                                        |
 | pageContext.dr               | optional | String   | Document referrer URL address                                                                                                                                                                                                                                              | `"https://example.com/"`                                                                    |
 | pageContext.du               | optional | String   | Document URL address                                                                                                                                                                                                                                                       | `"https://example.com/sport/football/article.html?id=932016a5-02fc-4d5c-b643-fafc2f270f06"` |
