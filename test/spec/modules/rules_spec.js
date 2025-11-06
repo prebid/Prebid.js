@@ -107,7 +107,6 @@ describe('Rules Module', function() {
   });
 
   describe('evaluateConfig', function() {
-
     it('should exclude bidder when it matches bidders list for processed-auction-request stage', function() {
       const rulesJson = {
         enabled: true,
@@ -246,7 +245,7 @@ describe('Rules Module', function() {
       rulesModule.evaluateConfig(rulesJson);
 
       expect(setLabelsStub.calledWith({ testAnalyticsKey: 'default-allow' })).to.be.true;
-      
+
       setLabelsStub.resetHistory();
     });
   });

@@ -561,7 +561,7 @@ const adapterManager = {
     }
     const refererInfo = getRefererInfo();
 
-    const bidRequests: BidderRequest<any>[] = [];    
+    const bidRequests: BidderRequest<any>[] = [];
 
     function addOrtb2<T extends BidderRequest<any>>(bidderRequest: Partial<T>, s2sActivityParams?): T {
       const [fpd, redact] = mergeBidderFpd(bidderRequest.auctionId, bidderRequest.bidderCode, s2sActivityParams);
