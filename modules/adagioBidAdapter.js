@@ -715,11 +715,9 @@ export const spec = {
 
     // Build one request per organizationId
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
-      const url = `${ENDPOINT}?orgid=${organizationId}`;
-
       return {
         method: 'POST',
-        url: url,
+        url: `${ENDPOINT}?orgid=${organizationId}`,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,
@@ -746,7 +744,9 @@ export const spec = {
           prebidVersion: '$prebid.version$',
           usIfr: canSyncWithIframe
         },
-        options: {}
+        options: {
+          endpointCompression: true
+        }
       };
     });
 

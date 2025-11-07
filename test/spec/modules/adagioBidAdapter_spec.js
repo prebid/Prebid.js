@@ -1137,6 +1137,16 @@ describe('Adagio bid adapter', () => {
         });
       })
     })
+
+    describe('with endpoint compression', function() {
+      it('should always use the endpoint compression option', function() {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].options).to.exist;
+        expect(requests[0].options.endpointCompression).to.equal(true);
+      });
+    });
   });
 
   describe('interpretResponse()', function() {
