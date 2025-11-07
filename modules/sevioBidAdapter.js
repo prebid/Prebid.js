@@ -3,7 +3,10 @@ import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
-
+import * as converter from '../libraries/ortbConverter/converter.js';
+const ORTB = converter.ortbConverter({
+  context: { ttl: 300 }
+});
 const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
@@ -120,6 +123,7 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const userSyncEnabled = config.getConfig("userSync.syncEnabled");
+    const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
 
     if (bidRequests.length === 0) {
       return [];
@@ -150,6 +154,7 @@ export const spec = {
         }
         return asset;
       });
+
       const payload = {
         userLanguage: navigator.language,
         pageUrl: bidRequest?.refererInfo?.page,
@@ -171,7 +176,7 @@ export const spec = {
             ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
           },
         ],
-        keywords: { tokens: bidRequest.params?.keywords || [] },
+        keywords: { tokens: ortbRequest?.site?.keywords || bidRequest.params?.keywords || [] },
         privacy: {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
@@ -183,9 +188,15 @@ export const spec = {
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
       };
 
+      const wrapperOn =
+        typeof window !== "undefined" && window.sevio_wrapper === true;
+
+      const url = wrapperOn
+        ? `${ENDPOINT_URL}?wrapper=true`
+        : ENDPOINT_URL;
       return {
         method: ACTION_METHOD,
-        url: ENDPOINT_URL,
+        url,
         data: payload,
         bidRequest: bidRequests[0],
       };
