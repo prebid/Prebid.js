@@ -1,5 +1,5 @@
 import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
-import { getDNT as getNavigatorDNT } from '../navigatorData/dnt.js';
+import { getDNT as getNavigatorDNT } from '../dnt/index.js';
 import { config } from '../../src/config.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
