@@ -12,8 +12,8 @@ const CONSTANTS = Object.freeze({
   },
   MULTIPLIERS: {
     WIN: 1.0,
-    FLOORED: 0.8,
-    NOBID: 1.2
+    FLOORED: 1.0,
+    NOBID: 1.0
   },
   TARGETING_KEYS: {
     PM_YM_FLRS: 'pm_ym_flrs', // Whether RTD floor was applied
