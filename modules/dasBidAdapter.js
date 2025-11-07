@@ -1,6 +1,6 @@
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
-import { parseNativeResponse } from '../libraries/raspUtils/raspUtils.js';
+import { parseNativeResponse } from '../libraries/dasUtils/dasUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { deepAccess, safeJSONParse } from '../src/utils.js';
