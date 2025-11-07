@@ -12,7 +12,6 @@ describe('dasBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    // Istniejące testy
     const validBid = {
       params: {
         site: 'site1',
@@ -34,7 +33,6 @@ describe('dasBidAdapter', function () {
       expect(spec.isBidRequestValid({ params: { slot: 'slot1' } })).to.be.false;
     });
 
-    // Nowe testy
     it('should return true with additional optional params', function () {
       const bidWithOptional = {
         params: {
