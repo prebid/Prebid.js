@@ -92,6 +92,9 @@ let wurflId;
 // samplingRate tracks the beacon sampling rate (0-100)
 let samplingRate;
 
+// tier stores the WURFL tier from wurfl_pbjs data
+let tier;
+
 // abTest stores A/B test configuration and variant (set by init)
 let abTest;
 
@@ -1002,6 +1005,7 @@ const init = (config, userConsent) => {
   enrichmentType = ENRICHMENT_TYPE.NONE;
   wurflId = '';
   samplingRate = DEFAULT_SAMPLING_RATE;
+  tier = '';
   abTest = null;
 
   // A/B testing: set if enabled
@@ -1074,6 +1078,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     // Store sampling rate for beacon
     samplingRate = cachedWurflData.wurfl_pbjs?.sampling_rate ?? DEFAULT_SAMPLING_RATE;
 
+    // Store tier for beacon
+    tier = cachedWurflData.wurfl_pbjs?.tier ?? '';
+
     // If expired, refresh cache async
     if (isExpired) {
       loadWurflJsAsync(config, bidders);
@@ -1099,6 +1106,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
 
   // Set default sampling rate for LCE
   samplingRate = DEFAULT_SAMPLING_RATE;
+
+  // Set default tier for LCE
+  tier = '';
 
   // Load WURFL.js async for future requests
   loadWurflJsAsync(config, bidders);
@@ -1221,6 +1231,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     sampling_rate: samplingRate,
     enrichment: enrichmentType,
     wurfl_id: wurflId,
+    tier: tier,
     consent_class: consentClass,
     ad_units: adUnits
   };
