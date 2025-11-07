@@ -12,7 +12,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.0.0-beta4';
+const MODULE_VERSION = '2.0.0-beta6';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -775,7 +775,6 @@ const WurflLCEDevice = {
 
   // Private helper methods
   _parseOsVersion(ua, osName) {
-    let osv = "";
     switch (osName) {
       case "Windows": {
         const matches = ua.match(/Windows NT ([\d.]+)/);
@@ -787,35 +786,44 @@ const WurflLCEDevice = {
       case "macOS": {
         const matches = ua.match(/Mac OS X ([\d_]+)/);
         if (matches) {
-          osv = matches[1].replaceAll('_', '.');
-          return osv;
+          return matches[1].replaceAll('_', '.');
         }
         return "";
       }
       case "iOS": {
-        const matches = ua.match(/iPhone; CPU iPhone OS ([\d_]+) like Mac OS X/);
-        if (matches) {
-          osv = matches[1].replaceAll('_', '.');
-          return osv;
+        // iOS 26 specific logic
+        const matches1 = ua.match(/iPhone; CPU iPhone OS 18[\d_]+ like Mac OS X\).+(?:Version|FBSV)\/(26[\d.]+)/);
+        if (matches1) {
+          return matches1[1];
+        }
+        // iOS 18.x and lower
+        const matches2 = ua.match(/iPhone; CPU iPhone OS ([\d_]+) like Mac OS X/);
+        if (matches2) {
+          return matches2[1].replaceAll('_', '.');
         }
         return "";
       }
       case "iPadOS": {
-        const matches = ua.match(/iPad; CPU OS ([\d_]+) like Mac OS X/);
-        if (matches) {
-          osv = matches[1].replaceAll('_', '.');
-          return osv;
+        // iOS 26 specific logic
+        const matches1 = ua.match(/iPad; CPU OS 18[\d_]+ like Mac OS X\).+(?:Version|FBSV)\/(26[\d.]+)/);
+        if (matches1) {
+          return matches1[1];
+        }
+        // iOS 18.x and lower
+        const matches2 = ua.match(/iPad; CPU OS ([\d_]+) like Mac OS X/);
+        if (matches2) {
+          return matches2[1].replaceAll('_', '.');
         }
         return "";
       }
       case "Android": {
         // For Android UAs with a decimal
         const matches1 = ua.match(/Android ([\d.]+)/);
-        // For Android UAs without a decimal
-        const matches2 = ua.match(/Android ([\d]+)/);
         if (matches1) {
           return matches1[1];
         }
+        // For Android UAs without a decimal
+        const matches2 = ua.match(/Android ([\d]+)/);
         if (matches2) {
           return matches2[1];
         }
@@ -845,11 +853,11 @@ const WurflLCEDevice = {
       case "PlayStation OS": {
         // PS4
         const matches1 = ua.match(/PlayStation \d\/([\d.]+)/);
-        // PS3
-        const matches2 = ua.match(/PLAYSTATION \d ([\d.]+)/);
         if (matches1) {
           return matches1[1];
         }
+        // PS3
+        const matches2 = ua.match(/PLAYSTATION \d ([\d.]+)/);
         if (matches2) {
           return matches2[1];
         }
