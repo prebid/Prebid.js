@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/allegroBidAdapter.js';
 import {config} from 'src/config.js';
 import sinon from 'sinon';
+import * as utils from 'src/utils.js';
 
 function buildBidRequest({bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes} = {}) {
   return {
@@ -197,10 +198,6 @@ describe('Allegro Bid Adapter', () => {
         if (key === 'allegro.triggerImpressionPixel') return true;
         return undefined;
       });
-      // We cannot directly replace triggerPixel imported in the module here; instead simulate by temporarily wrapping global function
-      // Access the utils through require cache
-      const utils = require('src/utils.js');
-      const originalTrigger = utils.triggerPixel;
       sinon.stub(utils, 'triggerPixel').callsFake(pixelSpy);
       const bid = {
         burl: 'https://example.com/win?aid=auction_id&bid=bid_id&imp=imp_id&price=0.91&cur=USD',
@@ -214,9 +211,6 @@ describe('Allegro Bid Adapter', () => {
       expect(pixelSpy.calledOnce).to.equal(true);
       const calledWith = pixelSpy.getCall(0).args[0];
       expect(calledWith).to.equal(bid.burl);
-      // restore original triggerPixel
-      utils.triggerPixel.restore();
-      utils.triggerPixel = originalTrigger;
     });
   });
 });
