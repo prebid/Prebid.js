@@ -20,6 +20,11 @@ describe('bidmaticBidAdapter', function () {
       }
     },
     'adUnitCode': 'test-div',
+    "ortb2Imp": {
+      "ext": {
+        "gpid": "123456/test-div"
+      }
+    },
     'bidId': 'bid123456',
     'bidderRequestId': 'req123456',
     'auctionId': 'auct123456',
@@ -31,6 +36,11 @@ describe('bidmaticBidAdapter', function () {
     'bidder': 'bidmatic',
     'params': {
       'source': 123456
+    },
+    "ortb2Imp": {
+      "ext": {
+        "gpid": "123456/test-div-video"
+      }
     },
     'mediaTypes': {
       'video': {
@@ -144,6 +154,7 @@ describe('bidmaticBidAdapter', function () {
         'AdType': 'display',
         'PlacementId': 'test-div',
         'Sizes': '300x250,300x600',
+        'GPID': '123456/test-div',
       });
     });
 
@@ -156,6 +167,7 @@ describe('bidmaticBidAdapter', function () {
         'AdType': 'video',
         'PlacementId': 'test-div-video',
         'Sizes': '640x480',
+        'GPID': '123456/test-div-video',
       });
     });
   });
@@ -202,6 +214,7 @@ describe('bidmaticBidAdapter', function () {
         'AdType': 'display',
         'PlacementId': 'test-div',
         'Sizes': '300x250,300x600',
+        'GPID': '123456/test-div',
       });
     });
   });

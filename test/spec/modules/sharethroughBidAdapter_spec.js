@@ -6,6 +6,7 @@ import { config } from 'src/config';
 import * as utils from 'src/utils';
 import { deepSetValue } from '../../../src/utils.js';
 import { getImpIdMap, setIsEqtvTest } from '../../../modules/sharethroughBidAdapter.js';
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
@@ -443,7 +444,7 @@ describe('sharethrough adapter spec', function () {
             },
           ];
 
-          builtRequests.map((builtRequest, rIndex) => {
+          builtRequests.forEach((builtRequest, rIndex) => {
             expect(builtRequest.method).to.equal('POST');
             expect(builtRequest.url).not.to.be.undefined;
             expect(builtRequest.options).to.be.undefined;
@@ -1440,6 +1441,76 @@ describe('sharethrough adapter spec', function () {
     describe('getUserSyncs', function () {
       const cookieSyncs = ['cookieUrl1', 'cookieUrl2', 'cookieUrl3'];
       const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
+      let handleCookieSyncStub;
+
+      const SAMPLE_RESPONSE = {
+        body: {
+          id: '12h712u7-k22g-8124-ab7a-h268s22dy271',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1bh7jku7-ko2g-8654-ab72-h268shvwy271',
+                  impid: 'r12gwgf231',
+                  price: 0.6565,
+                  adm: '<h1>AD</h1>',
+                  adomain: ['abc.com'],
+                  cid: '1242512',
+                  crid: '535231',
+                  w: 300,
+                  h: 600,
+                  mtype: 1,
+                  cat: ['IAB19', 'IAB19-1'],
+                  cattax: 1,
+                },
+              ],
+              seat: '4212',
+            },
+          ],
+          cur: 'USD',
+          statuscode: 0,
+        },
+      };
+
+      beforeEach(() => {
+        handleCookieSyncStub = sinon.stub(equativUtils, 'handleCookieSync');
+      });
+      afterEach(() => {
+        handleCookieSyncStub.restore();
+      });
+
+      it('should call handleCookieSync with correct parameters and return its result', () => {
+        setIsEqtvTest(true);
+
+        const expectedResult = [
+          { type: 'iframe', url: 'https://sync.example.com' },
+        ];
+
+        handleCookieSyncStub.returns(expectedResult)
+
+        const result = spec.getUserSyncs({ iframeEnabled: true },
+          SAMPLE_RESPONSE,
+          { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+
+        sinon.assert.calledWithMatch(
+          handleCookieSyncStub,
+          { iframeEnabled: true },
+          SAMPLE_RESPONSE,
+          { gdprApplies: true, vendorData: { vendor: { consents: {} } } },
+          sinon.match.number,
+          sinon.match.object
+        );
+
+        expect(result).to.deep.equal(expectedResult);
+      });
+
+      it('should not call handleCookieSync and return undefined when isEqtvTest is false', () => {
+        setIsEqtvTest(false);
+
+        spec.getUserSyncs({}, {}, {});
+
+        sinon.assert.notCalled(handleCookieSyncStub);
+      });
 
       it('returns an array of correctly formatted user syncs', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);

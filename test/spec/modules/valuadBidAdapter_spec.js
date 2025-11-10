@@ -6,6 +6,7 @@ import { BANNER } from 'src/mediaTypes.js';
 import { deepClone, generateUUID } from 'src/utils.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import * as BoundingClientRect from 'libraries/boundingClientRect/boundingClientRect.js';
@@ -121,7 +122,7 @@ describe('ValuadAdapter', function () {
     });
 
     sandbox.stub(utils, 'canAccessWindowTop').returns(true);
-    sandbox.stub(utils, 'getDNT').returns(false);
+    sandbox.stub(dnt, 'getDNT').returns(false);
     sandbox.stub(utils, 'generateUUID').returns('test-uuid');
 
     sandbox.stub(refererDetection, 'parseDomain').returns('test.com');
@@ -238,9 +239,9 @@ describe('ValuadAdapter', function () {
       expect(payload.regs.gdpr).to.equal(1);
       expect(payload.regs.coppa).to.equal(0);
       expect(payload.regs.us_privacy).to.equal(bidderRequest.uspConsent);
-      expect(payload.regs.ext.gdpr_conset).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(payload.regs.ext.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
       expect(payload.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
-      expect(payload.regs.ext.gppSid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
+      expect(payload.regs.ext.gpp_sid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
       expect(payload.regs.ext.dsa).to.deep.equal(bidderRequest.ortb2.regs.ext.dsa);
 
       expect(payload.ext.params).to.deep.equal(validBidRequests[0].params);
@@ -361,10 +362,15 @@ describe('ValuadAdapter', function () {
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
-    it('should throw error if response body is missing', function () {
-      const responseNoBody = { body: null };
-      const fn = () => spec.interpretResponse(responseNoBody, requestToServer);
-      expect(fn).to.throw();
+    it('should return empty array when response is null or undefined', function () {
+      expect(spec.interpretResponse(null, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse(undefined, requestToServer)).to.deep.equal([]);
+    });
+
+    it('should return empty array when response body is missing or invalid', function () {
+      expect(spec.interpretResponse({}, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: null }, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: undefined }, requestToServer)).to.deep.equal([]);
     });
   });
 

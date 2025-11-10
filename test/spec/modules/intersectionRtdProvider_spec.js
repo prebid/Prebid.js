@@ -152,9 +152,13 @@ describe('Intersection RTD Provider', function () {
     return div;
   }
   function append() {
-    placeholder && document.body.appendChild(placeholder);
+    if (placeholder) {
+      document.body.appendChild(placeholder);
+    }
   }
   function remove() {
-    placeholder && placeholder.parentElement && placeholder.parentElement.removeChild(placeholder);
+    if (placeholder && placeholder.parentElement) {
+      placeholder.parentElement.removeChild(placeholder);
+    }
   }
 });

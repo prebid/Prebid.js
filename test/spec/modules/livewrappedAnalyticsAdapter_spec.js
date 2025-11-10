@@ -1,4 +1,4 @@
-import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter.js';
+import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT, getAuctionCache, CACHE_CLEANUP_DELAY } from 'modules/livewrappedAnalyticsAdapter.js';
 import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
@@ -339,6 +339,8 @@ describe('Livewrapped analytics adapter', function () {
   afterEach(function () {
     sandbox.restore();
     config.resetConfig();
+    clock.runAll();
+    clock.restore();
   });
 
   describe('when handling events', function () {
@@ -373,6 +375,14 @@ describe('Livewrapped analytics adapter', function () {
       const message = JSON.parse(request.requestBody);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
+    });
+
+    it('should clear auction cache after sending events', function () {
+      performStandardAuction();
+
+      clock.tick(BID_WON_TIMEOUT + CACHE_CLEANUP_DELAY + 100);
+
+      expect(Object.keys(getAuctionCache()).length).to.equal(0);
     });
 
     it('should send batched message without BID_WON AND AD_RENDER_FAILED if necessary and further BID_WON and AD_RENDER_FAILED events individually', function () {

@@ -11,7 +11,8 @@ import {
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
-  syncDelay, COOKIE_SUFFIXES, HTML5_SUFFIXES,
+  COOKIE_SUFFIXES, HTML5_SUFFIXES,
+  syncDelay, adUnitEidsHook,
 } from 'modules/userId/index.js';
 import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG, getEids} from 'modules/userId/eids.js';
@@ -422,6 +423,34 @@ describe('User ID', function () {
             id: 'id1'
           }
         ]);
+      });
+
+      it('should not alter values returned by adapters', () => {
+        let eid = {
+          source: 'someid.org',
+          uids: [{id: 'id-1'}]
+        };
+        const config = new Map([
+          ['someId', function () {
+            return eid;
+          }]
+        ]);
+        const userid = {
+          someId: 'id-1',
+          pubProvidedId: [{
+            source: 'someid.org',
+            uids: [{id: 'id-2'}]
+          }],
+        }
+        createEidsArray(userid, config);
+        const allEids = createEidsArray(userid, config);
+        expect(allEids).to.eql([
+          {
+            source: 'someid.org',
+            uids: [{id: 'id-1'}, {id: 'id-2'}]
+          }
+        ])
+        expect(eid.uids).to.eql([{'id': 'id-1'}])
       });
 
       it('should filter out entire EID if none of the uids are strings', () => {
@@ -2451,15 +2480,26 @@ describe('User ID', function () {
   });
 
   describe('handles config with ESP configuration in user sync object', function() {
+    before(() => {
+      mockGpt.reset();
+    })
+    beforeEach(() => {
+      window.googletag.secureSignalProviders = {
+        push: sinon.stub()
+      };
+    });
+
+    afterEach(() => {
+      mockGpt.reset();
+    })
+
     describe('Call registerSignalSources to register signal sources with gtag', function () {
       it('pbjs.registerSignalSources should be defined', () => {
         expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
       });
 
-      it('does not add duplicate secureSignalProviders', function () {
-        const clock = sinon.useFakeTimers();
-        mockGpt.reset();
-        window.googletag.secureSignalProviders = [];
+      it('passes encrypted signal sources to GPT', function () {
+        const clock = sandbox.useFakeTimers();
         init(config);
         config.setConfig({
           userSync: {
@@ -2470,11 +2510,10 @@ describe('User ID', function () {
           }
         });
         getGlobal().registerSignalSources();
-        clock.tick(0);
-        getGlobal().registerSignalSources();
-        clock.tick(0);
-        expect(window.googletag.secureSignalProviders.length).to.equal(1);
-        clock.restore();
+        clock.tick(1);
+        sinon.assert.calledWith(window.googletag.secureSignalProviders.push, sinon.match({
+          id: 'pubcid.org'
+        }))
       });
     })
 
@@ -3092,6 +3131,92 @@ describe('User ID', function () {
 
         unregisterRule();
       });
+    })
+  });
+  describe('adUnitEidsHook', () => {
+    let next, auction, adUnits, ortb2Fragments;
+    beforeEach(() => {
+      next = sinon.stub();
+      adUnits = [
+        {
+          code: 'au1',
+          bids: [
+            {
+              bidder: 'bidderA'
+            },
+            {
+              bidder: 'bidderB'
+            }
+          ]
+        },
+        {
+          code: 'au2',
+          bids: [
+            {
+              bidder: 'bidderC'
+            }
+          ]
+        }
+      ]
+      ortb2Fragments = {}
+      auction = {
+        getAdUnits: () => adUnits,
+        getFPD: () => ortb2Fragments
+      }
+    });
+    it('should not set userIdAsEids when no eids are provided', () => {
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        expect(bid.userIdAsEids).to.not.exist;
+      })
+    });
+    it('should add global eids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['some-eid']
+          }
+        }
+      };
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        expect(bid.userIdAsEids).to.eql(['some-eid']);
+      })
+    })
+    it('should add bidder-specific eids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['global']
+          }
+        }
+      };
+      ortb2Fragments.bidder = {
+        bidderA: {
+          user: {
+            ext: {
+              eids: ['bidder']
+            }
+          }
+        }
+      }
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        const expected = bid.bidder === 'bidderA' ? ['global', 'bidder'] : ['global'];
+        expect(bid.userIdAsEids).to.eql(expected);
+      })
+    });
+    it('should add global eids to bidderless bids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['global']
+          }
+        }
+      }
+      delete adUnits[0].bids[0].bidder;
+      adUnitEidsHook(next, auction);
+      expect(adUnits[0].bids[0].userIdAsEids).to.eql(['global']);
     })
   });
 

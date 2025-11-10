@@ -161,7 +161,9 @@ var sizeMap = {
   712: '340x430'
 };
 
-_each(sizeMap, (item, key) => sizeMap[item] = key);
+_each(sizeMap, (item, key) => {
+  sizeMap[item] = key;
+});
 
 export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
@@ -207,7 +209,7 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     // skip banner-only requests
     const bidRequestType = bidType(bidRequest);
-    if (bidRequestType.includes(BANNER) && bidRequestType.length == 1) return;
+    if (bidRequestType.includes(BANNER) && bidRequestType.length === 1) return;
 
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
@@ -769,12 +771,11 @@ export const spec = {
     }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    if (!hasSynced && syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
-      hasSynced = true;
       return {
         type: 'iframe',
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
@@ -935,16 +936,17 @@ function applyFPD(bidRequest, mediaType, data) {
           result.push(obj.id);
           return result;
         }, []);
-        if (segments.length > 0) return segments.toString();
+        return segments.length > 0 ? segments.toString() : '';
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
       return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
-        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+        if (typeof value !== 'object' && typeof value !== 'undefined') return true;
 
         logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
-      }).toString() : prop.toString();
+        return false;
+      }).map(value => value.toString()).toString() : prop.toString();
     }
   };
   const addBannerData = function(obj, name, key, isParent = true) {
@@ -983,10 +985,10 @@ function applyFPD(bidRequest, mediaType, data) {
     // add dsa signals
     if (dsa && Object.keys(dsa).length) {
       pick(dsa, [
-        'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
-        'dsarequired', (required) => data['dsarequired'] = required,
-        'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
-        'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
+        'dsainfo', (dsainfo) => { data['dsainfo'] = dsainfo; },
+        'dsarequired', (required) => { data['dsarequired'] = required; },
+        'pubrender', (pubrender) => { data['dsapubrender'] = pubrender; },
+        'datatopub', (datatopub) => { data['dsadatatopubs'] = datatopub; },
         'transparency', (transparency) => {
           if (Array.isArray(transparency) && transparency.length) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
@@ -1007,7 +1009,8 @@ function applyFPD(bidRequest, mediaType, data) {
                 param += '~~'
               }
 
-              return param += `${domain}~${dsaParamArray.join('_')}`;
+              param += `${domain}~${dsaParamArray.join('_')}`;
+              return param;
             }, '');
           }
         }
@@ -1024,8 +1027,8 @@ function applyFPD(bidRequest, mediaType, data) {
     if (clientHints && rubiConf.chEnabled !== false) {
       // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
       pick(clientHints, [
-        'architecture', arch => data.m_ch_arch = arch,
-        'bitness', bitness => data.m_ch_bitness = bitness,
+        'architecture', arch => { data.m_ch_arch = arch; },
+        'bitness', bitness => { data.m_ch_bitness = bitness; },
         'browsers', browsers => {
           if (!Array.isArray(browsers)) return;
           // reduce down into ua and full version list attributes
@@ -1040,8 +1043,8 @@ function applyFPD(bidRequest, mediaType, data) {
           data.m_ch_ua = ua?.join?.(',');
           data.m_ch_full_ver = fullVer?.join?.(',');
         },
-        'mobile', isMobile => data.m_ch_mobile = `?${isMobile}`,
-        'model', model => data.m_ch_model = model,
+        'mobile', isMobile => { data.m_ch_mobile = `?${isMobile}`; },
+        'model', model => { data.m_ch_model = model; },
         'platform', platform => {
           data.m_ch_platform = platform?.brand;
           data.m_ch_platform_ver = platform?.version?.join?.('.');
@@ -1180,8 +1183,12 @@ function bidType(bid, log = false) {
   return bidTypes;
 }
 
-export const resetRubiConf = () => rubiConf = {};
-export const resetImpIdMap = () => impIdMap = {};
+export const resetRubiConf = () => {
+  rubiConf = {};
+};
+export const resetImpIdMap = () => {
+  impIdMap = {};
+};
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
@@ -1304,12 +1311,6 @@ function partitionArray(array, size) {
   return result;
 }
 
-var hasSynced = false;
-
-export function resetUserSync() {
-  hasSynced = false;
-}
-
 /**
  * Sets the floor on the bidRequest. imp.bidfloor and imp.bidfloorcur
  * should be already set by the conversion library. if they're not,
@@ -1318,7 +1319,7 @@ export function resetUserSync() {
  * @param {*} imp
  */
 function setBidFloors(bidRequest, imp) {
-  if (imp.bidfloorcur != 'USD') {
+  if (imp.bidfloorcur !== 'USD') {
     delete imp.bidfloor;
     delete imp.bidfloorcur;
   }

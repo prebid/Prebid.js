@@ -1,4 +1,4 @@
-import { _each, deepSetValue, isEmpty } from '../src/utils.js';
+import { _each, deepAccess, deepSetValue, isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -83,6 +83,9 @@ export const spec = {
           sid: bidderRequest.ortb2.regs.gpp_sid
         });
       }
+      if (bidderRequest.ortb2?.user?.ext?.data?.im_segments) {
+        deepSetValue(data, 'params.kv.imsids', bidderRequest.ortb2.user.ext.data.im_segments);
+      }
       data.sizes = [];
       _each(request.sizes, (size) => {
         data.sizes.push({
@@ -97,6 +100,8 @@ export const spec = {
       if (schain) {
         data.schain = schain;
       }
+
+      data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,

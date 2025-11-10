@@ -21,7 +21,7 @@ describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
   const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
   const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
-  const PB_ENDPOINT = 'pb'; []
+  const PB_ENDPOINT = 'pb';
   const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
   const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
@@ -801,7 +801,7 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
       try {
-        spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[0];
+        spec.buildRequests([bidRequest, bidRequest2], bidderRequest);
       } catch (e) {
         expect(e.name).to.exist.equal('Error')
         expect(e.message).to.exist.equal(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`)

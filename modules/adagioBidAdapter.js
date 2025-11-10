@@ -16,7 +16,7 @@ import {
   mergeDeep,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
-import { OUTSTREAM, validateOrtbVideoFields } from '../src/video.js';
+import { OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
@@ -24,6 +24,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
+import { validateOrtbFields } from '../src/prebid.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -194,7 +195,7 @@ function _buildVideoBidRequest(bidRequest) {
   }
 
   bidRequest.mediaTypes.video = videoParams;
-  validateOrtbVideoFields(bidRequest);
+  validateOrtbFields(bidRequest, 'video');
 }
 
 function _parseNativeBidResponse(bid) {
@@ -277,7 +278,7 @@ function _parseNativeBidResponse(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          const script = `<script async src=\"${tracker.url}\"></script>`;
+          const script = `<script async src="${tracker.url}"></script>`;
           if (!native.javascriptTrackers) {
             native.javascriptTrackers = script;
           } else {
@@ -399,11 +400,18 @@ function autoFillParams(bid) {
     bid.params.site = adgGlobalConf.siteId.split(':')[1];
   }
 
-  // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
-  // In Prebid.js 9, `placement` should be defined in ortb2Imp and the `useAdUnitCodeAsPlacement` param should be removed
-  bid.params.placement = deepAccess(bid, 'ortb2Imp.ext.data.placement', bid.params.placement);
-  if (!bid.params.placement && (adgGlobalConf.useAdUnitCodeAsPlacement === true || bid.params.useAdUnitCodeAsPlacement === true)) {
-    bid.params.placement = bid.adUnitCode;
+  if (!bid.params.placement) {
+    let p = deepAccess(bid, 'ortb2Imp.ext.data.adg_rtd.placement', '');
+    if (!p) {
+      // Use ortb2Imp.ext.data.placement for backward compatibility.
+      p = deepAccess(bid, 'ortb2Imp.ext.data.placement', '');
+    }
+
+    // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
+    if (!p && bid.params.useAdUnitCodeAsPlacement === true) {
+      p = bid.adUnitCode;
+    }
+    bid.params.placement = p;
   }
 
   bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.divId', bid.params.adUnitElementId);
@@ -658,7 +666,12 @@ export const spec = {
         adunit_position: deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position', null)
       }
       // Clean the features object from null or undefined values.
-      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => (v == null ? a : (a[k] = v, a)), {})
+      bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
+        if (v != null) {
+          a[k] = v;
+        }
+        return a;
+      }, {})
 
       // Remove some params that are not needed on the server side.
       delete bidRequest.params.siteId;
@@ -704,7 +717,7 @@ export const spec = {
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
       return {
         method: 'POST',
-        url: ENDPOINT,
+        url: `${ENDPOINT}?orgid=${organizationId}`,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,
@@ -732,7 +745,7 @@ export const spec = {
           usIfr: canSyncWithIframe
         },
         options: {
-          contentType: 'text/plain'
+          endpointCompression: true
         }
       };
     });

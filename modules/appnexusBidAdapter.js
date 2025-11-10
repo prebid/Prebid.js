@@ -98,9 +98,6 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
-const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 // ORTB2 device types according to the OpenRTB specification
@@ -187,7 +184,9 @@ export const spec = {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
@@ -369,9 +368,9 @@ export const spec = {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
           const tmp = {'source': eid.source, 'id': uid.id};
-          if (eid.source == 'adserver.org') {
+          if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
-          } else if (eid.source == 'uidapi.com') {
+          } else if (eid.source === 'uidapi.com') {
             tmp.rti_partner = 'UID2';
           }
           eids.push(tmp);
@@ -395,7 +394,7 @@ export const spec = {
       if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
         const tpData = [];
         pubDsaObj.transparency.forEach((tpObj) => {
-          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+          if (isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
             tpData.push(tpObj);
           }
         });
@@ -481,18 +480,6 @@ export const spec = {
     }
   }
 };
-
-function strIsAppnexusViewabilityScript(str) {
-  if (!str || str === '') return false;
-
-  const regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
-  const viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
-
-  const regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
-  const fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
-
-  return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
-}
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
@@ -669,13 +656,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const nativeAd = rtbBid.rtb[NATIVE];
     let viewScript;
 
-    if (strIsAppnexusViewabilityScript(rtbBid.viewability.config)) {
+    if (rtbBid.viewability?.config.includes('dom_id=%native_dom_id%')) {
       const prebidParams = 'pbjs_adid=' + adId + ';pbjs_auc=' + bidRequest.adUnitCode;
       viewScript = rtbBid.viewability.config.replace('dom_id=%native_dom_id%', prebidParams);
     }
 
     let jsTrackers = nativeAd.javascript_trackers;
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined || jsTrackers === null) {
       jsTrackers = viewScript;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, viewScript];
@@ -1024,6 +1011,7 @@ function bidToTag(bid) {
                   if (v >= 1 && v <= 5) {
                     return v;
                   }
+                  return undefined;
                 }).filter(v => v);
                 tag['video_frameworks'] = apiTmp;
               }
@@ -1207,14 +1195,14 @@ function createAdPodRequest(tags, adPodBid) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(tag => {
+      chunked[index].forEach(tag => {
         setVideoProperty(tag, 'minduration', duration);
         setVideoProperty(tag, 'maxduration', duration);
       });
     });
   } else {
     // all maxdurations should be the same
-    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+    request.forEach(tag => setVideoProperty(tag, 'maxduration', maxDuration));
   }
 
   return request;

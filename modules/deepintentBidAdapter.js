@@ -1,7 +1,11 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
+import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
+
+const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
@@ -155,6 +159,12 @@ function buildImpression(bid) {
   if (deepAccess(bid, 'mediaTypes.video')) {
     impression['video'] = _buildVideo(bid);
   }
+  if (deepAccess(bid, 'params.deals')) {
+    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX);
+  }
+  if (deepAccess(bid, 'params.dctr')) {
+    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX);
+  }
   return impression;
 }
 
@@ -219,12 +229,12 @@ function buildCustomParams(bid) {
 function buildUser(bid) {
   if (bid && bid.params && bid.params.user) {
     return {
-      id: bid.params.user.id && typeof bid.params.user.id == 'string' ? bid.params.user.id : undefined,
-      buyeruid: bid.params.user.buyeruid && typeof bid.params.user.buyeruid == 'string' ? bid.params.user.buyeruid : undefined,
-      yob: bid.params.user.yob && typeof bid.params.user.yob == 'number' ? bid.params.user.yob : null,
-      gender: bid.params.user.gender && typeof bid.params.user.gender == 'string' ? bid.params.user.gender : undefined,
-      keywords: bid.params.user.keywords && typeof bid.params.user.keywords == 'string' ? bid.params.user.keywords : undefined,
-      customdata: bid.params.user.customdata && typeof bid.params.user.customdata == 'string' ? bid.params.user.customdata : undefined
+      id: bid.params.user.id && typeof bid.params.user.id === 'string' ? bid.params.user.id : undefined,
+      buyeruid: bid.params.user.buyeruid && typeof bid.params.user.buyeruid === 'string' ? bid.params.user.buyeruid : undefined,
+      yob: bid.params.user.yob && typeof bid.params.user.yob === 'number' ? bid.params.user.yob : null,
+      gender: bid.params.user.gender && typeof bid.params.user.gender === 'string' ? bid.params.user.gender : undefined,
+      keywords: bid.params.user.keywords && typeof bid.params.user.keywords === 'string' ? bid.params.user.keywords : undefined,
+      customdata: bid.params.user.customdata && typeof bid.params.user.customdata === 'string' ? bid.params.user.customdata : undefined
     }
   }
 }
@@ -272,7 +282,7 @@ function buildDevice() {
   return {
     ua: navigator.userAgent,
     js: 1,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack === '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     h: screen.height,
     w: screen.width,
     language: navigator.language

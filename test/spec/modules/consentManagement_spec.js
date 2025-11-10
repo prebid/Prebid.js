@@ -1,4 +1,4 @@
-import {consentConfig, gdprScope, resetConsentData, setConsentConfig, } from 'modules/consentManagementTcf.js';
+import {consentConfig, gdprScope, resetConsentData, setConsentConfig, tcfCmpEventManager} from 'modules/consentManagementTcf.js';
 import {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
@@ -735,6 +735,125 @@ describe('consentManagement', function () {
           expect(consent.consentString).to.equal(testConsentData.tcString);
           expect(consent.gdprApplies).to.be.true;
           expect(consent.apiVersion).to.equal(2);
+        });
+
+        it('should set CMP listener ID when listenerId is provided in tcfData', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: 123
+          };
+
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.calledOnce(setCmpListenerIdSpy);
+          sinon.assert.calledWith(setCmpListenerIdSpy, 123);
+
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should not set CMP listener ID when listenerId is null', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: null
+          };
+
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.notCalled(setCmpListenerIdSpy);
+
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should not set CMP listener ID when listenerId is undefined', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: undefined
+          };
+
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.notCalled(setCmpListenerIdSpy);
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should set CMP listener ID when listenerId is 0 (valid listener ID)', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            listenerId: 0
+          };
+
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpListenerIdSpy = sinon.spy(tcfCmpEventManager, 'setCmpListenerId');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.calledOnce(setCmpListenerIdSpy);
+          sinon.assert.calledWith(setCmpListenerIdSpy, 0);
+          setCmpListenerIdSpy.restore();
+        });
+
+        it('should set CMP API reference when CMP is found', async function () {
+          const testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+
+          // Create a spy that will be applied when tcfCmpEventManager is created
+          let setCmpApiSpy = sinon.spy(tcfCmpEventManager, 'setCmpApi');
+
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          await setConsentConfig(goodConfig);
+          expect(await runHook()).to.be.true;
+
+          sinon.assert.calledOnce(setCmpApiSpy);
+          expect(setCmpApiSpy.getCall(0).args[0]).to.be.a('function');
+          setCmpApiSpy.restore();
         });
       });
     });

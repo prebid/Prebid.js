@@ -156,6 +156,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: watchMode,
+    autoWatchBatchDelay: 2000,
 
     reporters: ['mocha'],
 
@@ -176,7 +177,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     browserDisconnectTimeout: 1e5, // default 2000
     browserNoActivityTimeout: 1e5, // default 10000
     captureTimeout: 3e5, // default 60000,
-    browserDisconnectTolerance: 1,
+    browserDisconnectTolerance: 3,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins

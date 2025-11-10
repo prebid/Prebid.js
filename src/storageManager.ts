@@ -39,13 +39,13 @@ export type StorageManager = {
 } & {
   [M in BrowserStorage as `${M}IsEnabled`]: AcceptsCallback<() => boolean>;
 } & {
-  // eslint-disable-next-line no-restricted-globals
+
   [M in BrowserStorage as `setDataIn${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.setItem>;
 } & {
-  // eslint-disable-next-line no-restricted-globals
+
   [M in BrowserStorage as `getDataFrom${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.getItem>;
 } & {
-  // eslint-disable-next-line no-restricted-globals
+
   [M in BrowserStorage as `removeDataFrom${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.removeItem>
 } & {
   setCookie: AcceptsCallback<(name: string, value: string, expires?: string, sameSite?: string, domain?: string) => void>;
@@ -112,7 +112,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
       if (result && result.valid) {
         const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
-        const isNone = (sameSite != null && sameSite.toLowerCase() == 'none')
+        const isNone = (sameSite?.toLowerCase() === 'none')
         const secure = (isNone) ? '; Secure' : '';
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }

@@ -30,7 +30,7 @@ export const spec = {
     const refererParams = (refererInfo && refererInfo.page) ? { xf: [base64urlEncode(refererInfo.page)] } : {};
     const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
     const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
-    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);
+    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl === false);
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),

@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { spec, getSDKVersion, formatAdHTML } = require('modules/fwsspBidAdapter');
+const { spec, getSDKVersion, formatAdHTML, getBidFloor } = require('modules/fwsspBidAdapter');
 
 describe('fwsspBidAdapter', () => {
   describe('isBidRequestValid', () => {
@@ -106,6 +106,7 @@ describe('fwsspBidAdapter', () => {
         },
         'params': {
           'bidfloor': 2.00,
+          'bidfloorcur': 'EUR',
           'serverUrl': 'https://example.com/ad/g/1',
           'networkId': '42015',
           'profile': '42015:js_allinone_profile',
@@ -153,7 +154,7 @@ describe('fwsspBidAdapter', () => {
       expect(actualDataString).to.include('vprn=');
       expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
       expect(actualDataString).to.include('mode=on-demand');
-      expect(actualDataString).to.include(`vclr=js-7.10.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include(`vclr=js-7.11.0-prebid-${pbjs.version};`);
       expect(actualDataString).to.include('_fw_player_width=1920');
       expect(actualDataString).to.include('_fw_player_height=1080');
       expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
@@ -176,7 +177,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -212,31 +213,6 @@ describe('fwsspBidAdapter', () => {
       expect(payload).to.include('_fw_player_height=600');
     });
 
-    it('should get bidfloor value from params if no getFloor method', () => {
-      const request = spec.buildRequests(getBidRequests());
-      const payload = request[0].data;
-      expect(payload).to.include('_fw_bidfloor=2');
-      expect(payload).to.include('_fw_bidfloorcur=USD');
-    });
-
-    it('should get bidfloor value from getFloor method if available', () => {
-      const bidRequests = getBidRequests();
-      bidRequests[0].getFloor = () => ({ currency: 'USD', floor: 1.16 });
-      const request = spec.buildRequests(bidRequests);
-      const payload = request[0].data;
-      expect(payload).to.include('_fw_bidfloor=1.16');
-      expect(payload).to.include('_fw_bidfloorcur=USD');
-    });
-
-    it('should return empty bidFloorCurrency when bidfloor <= 0', () => {
-      const bidRequests = getBidRequests();
-      bidRequests[0].getFloor = () => ({ currency: 'USD', floor: -1 });
-      const request = spec.buildRequests(bidRequests);
-      const payload = request[0].data;
-      expect(payload).to.include('_fw_bidfloor=0');
-      expect(payload).to.include('_fw_bidfloorcur=');
-    });
-
     it('should return image type userSyncs with gdprConsent', () => {
       const syncOptions = {
         'pixelEnabled': true
@@ -244,7 +220,7 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString'
       }]);
     });
 
@@ -255,8 +231,139 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid[]=8'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
       }]);
+    });
+
+    it('should add privacy values to ad request and user sync url when present in keyValues', () => {
+      const bidRequests = getBidRequests();
+
+      bidRequests[0].params.adRequestKeyValues._fw_coppa = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_atts = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_is_lat = 1;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const request = requests[0];
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=1&_fw_atts=1&_fw_is_lat=1&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const actualUrl = `${request.url}?${request.data}`;
+      // Remove pvrn and vprn from both URLs before comparing
+      const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
+      expect(cleanUrl(actualUrl)).to.equal(cleanUrl(expectedUrl));
+
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&_fw_coppa=1&_fw_atts=1&_fw_is_lat=1&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
+      }]);
+    });
+
+    it('ortb2 values should take precedence over keyValues when present and be added to ad request and user sync url', () => {
+      const bidRequests = getBidRequests();
+      bidRequests[0].params.adRequestKeyValues._fw_coppa = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_atts = 1;
+      bidRequests[0].params.adRequestKeyValues._fw_is_lat = 1;
+
+      const bidderRequest2 = { ...bidderRequest }
+      bidderRequest2.ortb2 = {
+        regs: { coppa: 0 },
+        device: {
+          lmt: 0,
+          ext: { atts: 0 }
+        }
+      }
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest2);
+      const request = requests[0];
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=0&_fw_atts=0&_fw_is_lat=0&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const actualUrl = `${request.url}?${request.data}`;
+      // Remove pvrn and vprn from both URLs before comparing
+      const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
+      expect(cleanUrl(actualUrl)).to.equal(cleanUrl(expectedUrl));
+
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest2.gdprConsent, bidderRequest2.uspConsent, bidderRequest2.gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&_fw_coppa=0&_fw_atts=0&_fw_is_lat=0&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
+      }]);
+    });
+
+    it('should use schain from ortb2, prioritizing source.schain', () => {
+      const bidRequests = getBidRequests();
+      const bidderRequest2 = { ...bidderRequest }
+      const schain1 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'test1.com',
+          sid: '0',
+          hp: 1,
+          rid: 'bidrequestid1',
+          domain: 'test1.com'
+        }]
+      };
+      const schain2 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'test2.com',
+          sid: '0',
+          hp: 2,
+          rid: 'bidrequestid2',
+          domain: 'test2.com'
+        }]
+      };
+
+      bidderRequest2.ortb2 = {
+        source: {
+          schain: schain1,
+          ext: {
+            schain: schain2
+          }
+        }
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest2);
+      const request = requests[0];
+
+      // schain check
+      const expectedEncodedSchainString = encodeURIComponent(JSON.stringify(schain1));
+      expect(request.data).to.include(expectedEncodedSchainString);
+    });
+
+    it('should use schain from ortb2.source.ext, if source.schain is not available', () => {
+      const bidRequests = getBidRequests();
+      const bidderRequest2 = { ...bidderRequest }
+      const schain2 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'test2.com',
+          sid: '0',
+          hp: 2,
+          rid: 'bidrequestid2',
+          domain: 'test2.com'
+        }]
+      };
+
+      bidderRequest2.ortb2 = {
+        source: {
+          ext: {
+            schain: schain2
+          }
+        }
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest2);
+      const request = requests[0];
+
+      // schain check
+      const expectedEncodedSchainString = encodeURIComponent(JSON.stringify(schain2));
+      expect(request.data).to.include(expectedEncodedSchainString);
     });
   });
 
@@ -268,6 +375,8 @@ describe('fwsspBidAdapter', () => {
         'mediaTypes': {
           'video': {
             'playerSize': [300, 600],
+            'minduration': 30,
+            'maxduration': 60,
           }
         },
         'sizes': [[300, 250], [300, 600]],
@@ -298,8 +407,6 @@ describe('fwsspBidAdapter', () => {
           'tpos': 300,
           'slid': 'Midroll',
           'slau': 'midroll',
-          'minD': 30,
-          'maxD': 60,
           'adRequestKeyValues': {
             '_fw_player_width': '1920',
             '_fw_player_height': '1080'
@@ -373,7 +480,7 @@ describe('fwsspBidAdapter', () => {
       expect(actualDataString).to.include('vprn=');
       expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
       expect(actualDataString).to.include('mode=live');
-      expect(actualDataString).to.include(`vclr=js-7.10.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include(`vclr=js-7.11.0-prebid-${pbjs.version};`);
       expect(actualDataString).to.include('_fw_player_width=1920');
       expect(actualDataString).to.include('_fw_player_height=1080');
       expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
@@ -399,7 +506,7 @@ describe('fwsspBidAdapter', () => {
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
 
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -425,7 +532,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest2);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -446,7 +553,7 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString'
       }]);
     });
 
@@ -457,7 +564,7 @@ describe('fwsspBidAdapter', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid[]=8'
+        url: 'https://user-sync.fwmrm.net/ad/u?mode=auto-user-sync&gdpr=1&gdpr_consent=consentString&us_privacy=uspConsentString&gpp=gppString&gpp_sid=8'
       }]);
     });
   });
@@ -473,6 +580,8 @@ describe('fwsspBidAdapter', () => {
             'placement': 2,
             'plcmt': 3,
             'playerSize': [300, 600],
+            'minduration': 30,
+            'maxduration': 60,
           }
         },
         'sizes': [[300, 250], [300, 600]],
@@ -488,10 +597,8 @@ describe('fwsspBidAdapter', () => {
           'flags': '+play',
           'videoAssetId': '0',
           'mode': 'live',
-          'vclr': 'js-7.10.0-prebid-',
+          'vclr': 'js-7.11.0-prebid-',
           'timePosition': 120,
-          'minD': 30,
-          'maxD': 60,
         }
       }];
       const request = spec.buildRequests(bidRequests);
@@ -509,7 +616,7 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: ''
         }
       };
-      expect(getSDKVersion(bid)).to.equal('7.10.0');
+      expect(getSDKVersion(bid)).to.equal('7.11.0');
     });
 
     it('should return the correct sdk version when sdkVersion is higher than the default', () => {
@@ -527,7 +634,7 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: '7.9.0'
         }
       };
-      expect(getSDKVersion(bid)).to.equal('7.10.0');
+      expect(getSDKVersion(bid)).to.equal('7.11.0');
     });
 
     it('should return the default sdk version when sdkVersion is an invalid string', () => {
@@ -536,7 +643,7 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: 'abcdef'
         }
       };
-      expect(getSDKVersion(bid)).to.equal('7.10.0');
+      expect(getSDKVersion(bid)).to.equal('7.11.0');
     });
 
     it('should return the correct sdk version when sdkVersion starts with v', () => {
@@ -555,7 +662,7 @@ describe('fwsspBidAdapter', () => {
 `<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
   <script type='text/javascript'>
     const script = document.createElement('script');
-    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.0/AdManager-prebid.js';
+    script.src = 'https://mssl.fwmrm.net/libs/adm/7.11.0/AdManager-prebid.js';
     script.async = true;
 
     const topWindow = function() {
@@ -624,7 +731,7 @@ describe('fwsspBidAdapter', () => {
 `<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
   <script type='text/javascript'>
     const script = document.createElement('script');
-    script.src = 'https://mssl.fwmrm.net/libs/adm/7.10.0/AdManager-prebid.js';
+    script.src = 'https://mssl.fwmrm.net/libs/adm/7.11.0/AdManager-prebid.js';
     script.async = true;
 
     const topWindow = function() {
@@ -697,7 +804,7 @@ describe('fwsspBidAdapter', () => {
 `<div id='fwssp_display_base' class='ad-container' style='width:640px;height:480px;'>
   <script type='text/javascript'>
     const script = document.createElement('script');
-    script.src = 'https://adm.stg.fwmrm.net/libs/adm/7.10.0/AdManager-prebid.js';
+    script.src = 'https://adm.stg.fwmrm.net/libs/adm/7.11.0/AdManager-prebid.js';
     script.async = true;
 
     const topWindow = function() {
@@ -908,6 +1015,243 @@ describe('fwsspBidAdapter', () => {
       const response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
       const result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
+    });
+  });
+
+  describe('getBidFloor function tests', () => {
+    const mockConfig = {
+      getConfig: (key) => {
+        if (key === 'floors.data.currency') return 'EUR';
+        return null;
+      }
+    };
+
+    it('should use params.bidfloor and params.bidfloorcur when getFloor method is not available', () => {
+      const bidRequest = {
+        params: {
+          bidfloor: 1.5,
+          bidfloorcur: 'GBP'
+        }
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(1.5);
+      expect(result.currency).to.equal('GBP');
+    });
+
+    it('should use default values when params are missing and no getFloor method', () => {
+      const bidRequest = {
+        params: {}
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(0);
+      expect(result.currency).to.equal('USD');
+    });
+
+    it('should use getFloor method when available for banner mediaType', () => {
+      const bidRequest = {
+        params: {
+          bidfloor: 1.0,
+          bidfloorcur: 'USD'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        getFloor: () => ({
+          floor: 2.5,
+          currency: 'EUR'
+        })
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(2.5);
+      expect(result.currency).to.equal('EUR');
+    });
+
+    it('should use getFloor method when available for video mediaType', () => {
+      const bidRequest = {
+        params: {
+          bidfloor: 1.0,
+          bidfloorcur: 'USD'
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480]
+          }
+        },
+        getFloor: () => ({
+          floor: 3.0,
+          currency: 'JPY'
+        })
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(3.0);
+      expect(result.currency).to.equal('JPY');
+    });
+
+    it('should fallback to params when getFloor throws an error', () => {
+      const bidRequest = {
+        params: {
+          bidfloor: 1.75,
+          bidfloorcur: 'CAD'
+        },
+        getFloor: () => {
+          throw new Error('getFloor error');
+        }
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(1.75);
+      expect(result.currency).to.equal('CAD');
+    });
+
+    it('should fallback to params when getFloor returns invalid floor value', () => {
+      const bidRequest = {
+        params: {
+          bidfloor: 2.0,
+          bidfloorcur: 'AUD'
+        },
+        getFloor: () => ({
+          floor: 'invalid',
+          currency: 'EUR'
+        })
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(2.0);
+      expect(result.currency).to.equal('AUD');
+    });
+
+    it('should use getFloor currency when floor is valid but currency is from getFloor', () => {
+      const bidRequest = {
+        params: {
+          bidfloor: 1.0
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        getFloor: () => ({
+          floor: 2.25,
+          currency: 'CHF'
+        })
+      };
+      const result = getBidFloor(bidRequest, mockConfig);
+      expect(result.floor).to.equal(2.25);
+      expect(result.currency).to.equal('CHF');
+    });
+  });
+
+  describe('bidfloor integration in buildRequests', () => {
+    it('should include bidfloor values from getBidFloor in banner requests', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250]]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:js_allinone_profile',
+          'siteSectionId': 'js_allinone_demo_site_section',
+          'videoAssetId': '0',
+          'bidfloor': 1.25,
+          'bidfloorcur': 'GBP'
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_bidfloor=1.25');
+      expect(payload).to.include('_fw_bidfloorcur=GBP');
+    });
+
+    it('should include bidfloor values from getFloor method when available', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:js_allinone_profile',
+          'siteSectionId': 'js_allinone_demo_site_section',
+          'videoAssetId': '0',
+          'bidfloor': 1.0,
+          'bidfloorcur': 'USD'
+        },
+        getFloor: () => ({
+          floor: 2.75,
+          currency: 'EUR'
+        })
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_bidfloor=2.75');
+      expect(payload).to.include('_fw_bidfloorcur=EUR');
+    });
+
+    it('should handle zero bidfloor values correctly', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250]]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:js_allinone_profile',
+          'siteSectionId': 'js_allinone_demo_site_section',
+          'videoAssetId': '0'
+        },
+        getFloor: () => ({
+          floor: 0,
+          currency: 'USD'
+        })
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_bidfloor=0');
+      expect(payload).to.include('_fw_bidfloorcur=USD');
+    });
+
+    it('should include default bidfloor values when no floor configuration exists', () => {
+      const bidRequests = [{
+        'bidder': 'fwssp',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250]]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'params': {
+          'serverUrl': 'https://example.com/ad/g/1',
+          'networkId': '42015',
+          'profile': '42015:js_allinone_profile',
+          'siteSectionId': 'js_allinone_demo_site_section',
+          'videoAssetId': '0'
+        }
+      }];
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload).to.include('_fw_bidfloor=0');
+      expect(payload).to.include('_fw_bidfloorcur=USD');
     });
   });
 });

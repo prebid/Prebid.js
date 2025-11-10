@@ -3,11 +3,13 @@ import {
   getImp,
   setImpPos,
   getSourceObj,
+  getExtNextMilImp,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
   setEids,
   spec,
+  ALLOWED_ORTB2_PARAMETERS,
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
@@ -708,7 +710,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {postBody, ortb2} = data;
-        setOrtb2Parameters(postBody, ortb2);
+        setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2);
         expect(postBody).to.deep.equal(expected);
       });
     };
@@ -959,7 +961,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bids: [{bidder: 'nextMillennium', params: {placement_id: '807'}}],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -973,7 +975,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           ],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
       },
 
       {
@@ -984,7 +986,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bids: [{bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}}],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
       },
 
       {
@@ -999,7 +1001,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           ],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
       },
 
       {
@@ -1020,7 +1022,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -1041,7 +1043,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -1062,7 +1064,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -1089,7 +1091,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         ],
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
       },
     ];
 
@@ -1298,6 +1300,42 @@ describe('nextMillenniumBidAdapterTests', () => {
             expect(bid.currency).to.equal(expected[i].currency);
           });
         };
+      });
+    };
+  });
+
+  describe('getExtNextMilImp parameters adSlots and allowedAds', () => {
+    const tests = [
+      {
+        title: 'parameters adSlots and allowedAds are empty',
+        bid: {
+          params: {},
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'parameters adSlots and allowedAds',
+        bid: {
+          params: {
+            adSlots: ['test1'],
+            allowedAds: ['test2'],
+          },
+        },
+
+        expected: {
+          adSlots: ['test1'],
+          allowedAds: ['test2'],
+        },
+      },
+    ];
+
+    for (const {title, bid, expected} of tests) {
+      it(title, () => {
+        const extNextMilImp = getExtNextMilImp(bid);
+        expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
+        expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
   });

@@ -12,7 +12,10 @@ import {
 } from '../../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
+import { getDNT } from '../dnt/index.js';
 import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
+
+import {getGlobalVarName} from '../../src/buildOptions.js';
 
 export const makeBaseSpec = (baseUrl, modes) => {
   return {
@@ -367,14 +370,14 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
 
   const generalParams = {
     wrapper_type: 'prebidjs',
-    wrapper_vendor: '$$PREBID_GLOBAL$$',
+    wrapper_vendor: getGlobalVarName(),
     wrapper_version: '$prebid.version$',
     adapter_version: adapVer,
     auction_start: bidderRequest.auctionStart,
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
@@ -382,7 +385,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     tmax: timeout
   };
 
-  const userIdsParam = getBidIdParameter('userId', generalObject);
+  const userIdsParam = getBidIdParameter('userIdAsEids', generalObject);
   if (userIdsParam) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }

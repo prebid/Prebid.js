@@ -22,6 +22,7 @@ import {errorLogger} from '../libraries/medianetUtils/logger.js';
 import {GLOBAL_VENDOR_ID, MEDIANET} from '../libraries/medianetUtils/constants.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -191,12 +192,16 @@ function extParams(bidRequest, bidderRequests) {
 
 function slotParams(bidRequest, bidderRequests) {
   // check with Media.net Account manager for  bid floor and crid parameters
+  const slotInfo = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
   const params = {
     id: bidRequest.bidId,
     transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
-      display_count: bidRequest.auctionsCount
+      display_count: bidRequest.auctionsCount,
+      adUnitCode: bidRequest.adUnitCode,
+      divId: slotInfo.divId,
+      adUnitPath: slotInfo.gptSlot
     },
     all: bidRequest.params
   };
@@ -281,9 +286,6 @@ function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);
-}
-function getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
 function getSlotVisibility(topLeft, size) {

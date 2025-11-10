@@ -759,7 +759,7 @@ describe('RequestData', () => {
 
       requestData.addBidRequestDataSource(testBidRequestDataSource)
 
-      expect(requestData.bidRequestDataSources.length == 1)
+      expect(requestData.bidRequestDataSources.length === 1)
     })
 
     it("Doeasn't add a non BidRequestDataSource", () => {
@@ -770,7 +770,7 @@ describe('RequestData', () => {
       requestData.addBidRequestDataSource(1)
       requestData.addBidRequestDataSource(true)
 
-      expect(requestData.bidRequestDataSources.length == 0)
+      expect(requestData.bidRequestDataSources.length === 0)
     })
   })
 
