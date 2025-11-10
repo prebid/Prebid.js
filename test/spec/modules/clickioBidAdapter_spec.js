@@ -79,7 +79,7 @@ describe('clickioBidAdapter', function () {
         {
           ...DEFAULT_BANNER_BID_REQUESTS[0],
           params: {
-            placementId: '123',
+            said: '123',
             someParam: 'value'
           }
         }
@@ -89,7 +89,7 @@ describe('clickioBidAdapter', function () {
 
       expect(request.data.imp).to.be.an('array');
       expect(request.data.imp[0].ext.params).to.deep.equal({
-        placementId: '123',
+        said: '123',
         someParam: 'value'
       });
     });
