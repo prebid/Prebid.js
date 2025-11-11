@@ -7,6 +7,7 @@ import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
 import {addEventTrackers} from './eventTrackers.js';
+import {setRequestExtPrebidPageViewIds} from './pageViewIds.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -21,7 +22,11 @@ export const PBS_PROCESSORS = {
     extPrebidAliases: {
       // sets ext.prebid.aliases
       fn: setRequestExtPrebidAliases
-    }
+    },
+    extPrebidPageViewIds: {
+      // sets ext.prebid.page_view_ids
+      fn: setRequestExtPrebidPageViewIds
+    },
   },
   [IMP]: {
     params: {
