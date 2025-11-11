@@ -8,7 +8,7 @@ import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
 import { REPORTER_ID, preparePayload, restoreReportList } from '../../../modules/intentIqAnalyticsAdapter.js';
-import { FIRST_PARTY_KEY, PREBID, VERSION } from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import { FIRST_PARTY_KEY, PREBID, VERSION, WITHOUT_IIQ, WITH_IIQ } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { getReferrer, appendVrrefAndFui } from '../../../libraries/intentIqUtils/getRefferer.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
@@ -338,26 +338,25 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should read data from local storage', function () {
-    localStorage.setItem(FIRST_PARTY_KEY, '{"group": "A"}');
-    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid", "eidl": 10}');
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid", "eidl": 10, "terminationCause": 20}');
     events.emit(EVENTS.BID_WON, getWonRequest());
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs).to.equal('testpcid');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.eidl).to.equal(10);
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('A');
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal(WITH_IIQ);
   });
 
   it('should handle initialization values from local storage', function () {
-    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
-    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
+    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid"}');
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid", "terminationCause": 41}');
     events.emit(EVENTS.BID_WON, getWonRequest());
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal(WITHOUT_IIQ);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
   });
 
   it('should handle reportExternalWin', function () {
     events.emit(EVENTS.BID_REQUESTED);
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = false;
-    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
     expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin).to.be.a('function');
     expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({ cpm: 1, currency: 'USD' })).to.equal(false);

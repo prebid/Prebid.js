@@ -14,12 +14,14 @@ import {
   CLIENT_HINTS_KEY,
   FIRST_PARTY_KEY,
   VERSION,
-  PREBID
+  PREBID,
+  WITH_IIQ
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import { readData, defineStorageType } from '../libraries/intentIqUtils/storageUtils.js';
 import { reportingServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { gamPredictionReport } from '../libraries/intentIqUtils/gamPredictionReport.js';
+import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
 
 const MODULE_NAME = 'iiqAnalytics';
 const analyticsType = 'endpoint';
@@ -70,7 +72,8 @@ const PARAMS_NAMES = {
   partnerId: 'partnerId',
   firstPartyId: 'pcid',
   placementId: 'placementId',
-  adType: 'adType'
+  adType: 'adType',
+  abTestUuid: 'abTestUuid'
 };
 
 function getIntentIqConfig() {
@@ -99,6 +102,8 @@ const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, a
     domainName: null,
     siloEnabled: false,
     reportMethod: null,
+    abPercentage: null,
+    abTestUuid: null,
     additionalParams: null,
     reportingServerAddress: ''
   },
@@ -134,7 +139,7 @@ function initAdapterConfig(config) {
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
     iiqAnalyticsAnalyticsAdapter.initOptions.partner =
             iiqIdSystemConfig.params?.partner && !isNaN(iiqIdSystemConfig.params.partner) ? iiqIdSystemConfig.params.partner : -1;
-
+    iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage = iiqIdSystemConfig.params?.abPercentage;
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList =
             typeof iiqIdSystemConfig.params?.browserBlackList === 'string'
               ? iiqIdSystemConfig.params.browserBlackList.toLowerCase()
@@ -171,9 +176,6 @@ function initReadLsIds() {
                 storage
       )
     );
-    if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
-    }
     const partnerData = readData(
       FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner,
       allowedStorage,
@@ -185,6 +187,8 @@ function initReadLsIds() {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
       const pData = JSON.parse(partnerData);
       iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause;
+      iiqAnalyticsAnalyticsAdapter.initOptions.abTestUuid = pData.abTestUuid;
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = defineABTestingGroup(pData.terminationCause, iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage);
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
       iiqAnalyticsAnalyticsAdapter.initOptions.clientType = pData.clientType || null;
@@ -256,7 +260,7 @@ function bidWon(args, isReportExternal) {
     initReadLsIds();
   }
   if (shouldSendReport(isReportExternal)) {
-    const preparedPayload = preparePayload(args, true);
+    const preparedPayload = preparePayload(args);
     if (!preparedPayload) return false;
     const { url, method, payload } = constructFullUrl(preparedPayload);
     if (method === 'POST') {
@@ -310,15 +314,19 @@ export function preparePayload(data) {
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.referrer] = getReferrer();
   result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
-  result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
   result[PARAMS_NAMES.clientType] = iiqAnalyticsAnalyticsAdapter.initOptions.clientType;
   result[PARAMS_NAMES.siteId] = iiqAnalyticsAnalyticsAdapter.initOptions.siteId;
   result[PARAMS_NAMES.wasServerCalled] = iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll;
   result[PARAMS_NAMES.requestRtt] = iiqAnalyticsAnalyticsAdapter.initOptions.rrtt;
+  result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup === WITH_IIQ;
 
-  result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup === 'A';
-
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup) {
+    result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
+  }
   result[PARAMS_NAMES.agentId] = REPORTER_ID;
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.abTestUuid) {
+    result[PARAMS_NAMES.abTestUuid] = iiqAnalyticsAnalyticsAdapter.initOptions.abTestUuid;
+  }
   if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid?.pcid) {
     result[PARAMS_NAMES.firstPartyId] = encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid);
   }
@@ -427,7 +435,6 @@ function getDefaultDataObject() {
     pbjsver: prebidVersion,
     partnerAuctionId: 'BW',
     reportSource: 'pbjs',
-    abGroup: 'U',
     jsversion: VERSION,
     partnerId: -1,
     biddingPlatformId: 1,

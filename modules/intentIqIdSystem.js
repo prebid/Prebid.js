@@ -16,8 +16,6 @@ import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {readData, storeData, defineStorageType, removeDataByKey, tryParse} from '../libraries/intentIqUtils/storageUtils.js';
 import {
   FIRST_PARTY_KEY,
-  WITH_IIQ, WITHOUT_IIQ,
-  NOT_YET_DEFINED,
   CLIENT_HINTS_KEY,
   EMPTY,
   GVLID,
@@ -28,6 +26,7 @@ import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
 import {iiqPixelServerAddress, iiqServerAddress} from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
+import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -198,7 +197,7 @@ export function setGamReporting(gamObjectReference, gamParameterName, userGroup,
     gamObjectReference.cmd.push(() => {
       gamObjectReference
         .pubads()
-        .setTargeting(gamParameterName, userGroup || NOT_YET_DEFINED);
+        .setTargeting(gamParameterName, userGroup);
     });
   }
 }
@@ -289,7 +288,7 @@ export const intentIqIdSubmodule = {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
-        if (isGroupB) runtimeEids = { eids: [] };
+
         configParams.callback(runtimeEids);
       }
     }
@@ -315,23 +314,23 @@ export const intentIqIdSubmodule = {
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
+    const partnerData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage)) || {};
 
     let rrttStrtTime = 0;
-    let partnerData = {};
     let shouldCallServer = false;
     FIRST_PARTY_KEY_FINAL = `${FIRST_PARTY_KEY}${siloEnabled ? '_p_' + configParams.partner : ''}`;
     const cmpData = getCmpData();
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
-    const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
+    let actualABGroup = defineABTestingGroup(partnerData?.terminationCause, configParams.abPercentage);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
     let newUser = false;
 
-    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group, isBlacklisted);
+    setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
 
-    if (groupChanged) groupChanged(firstPartyData?.group || NOT_YET_DEFINED);
+    if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
 
     callbackTimeoutID = setTimeout(() => {
       firePartnerCallback();
@@ -343,7 +342,6 @@ export const intentIqIdSubmodule = {
       firstPartyData = {
         pcid: firstPartyId,
         pcidDate: Date.now(),
-        group: NOT_YET_DEFINED,
         uspString: EMPTY,
         gppString: EMPTY,
         gdprString: EMPTY,
@@ -401,18 +399,12 @@ export const intentIqIdSubmodule = {
       return Promise.race([chPromise, timeout]);
     }
 
-    const savedData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage))
-    if (savedData) {
-      partnerData = savedData;
-
-      if (typeof partnerData.callCount === 'number') callCount = partnerData.callCount;
-      if (typeof partnerData.failCount === 'number') failCount = partnerData.failCount;
-      if (typeof partnerData.noDataCounter === 'number') noDataCount = partnerData.noDataCounter;
-
-      if (partnerData.wsrvcll) {
-        partnerData.wsrvcll = false;
-        storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
-      }
+    if (typeof partnerData.callCount === 'number') callCount = partnerData.callCount;
+    if (typeof partnerData.failCount === 'number') failCount = partnerData.failCount;
+    if (typeof partnerData.noDataCounter === 'number') noDataCount = partnerData.noDataCounter;
+    if (partnerData.wsrvcll) {
+      partnerData.wsrvcll = false;
+      storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
     }
 
     if (partnerData.data) {
@@ -422,9 +414,10 @@ export const intentIqIdSubmodule = {
       }
     }
 
+    let hasPartnerData = !!Object.keys(partnerData).length;
     if (!isCMPStringTheSame(firstPartyData, cmpData) ||
           !firstPartyData.sCal ||
-          (savedData && (!partnerData.cttl || !partnerData.date || Date.now() - partnerData.date > partnerData.cttl))) {
+          (hasPartnerData && (!partnerData.cttl || !partnerData.date || Date.now() - partnerData.date > partnerData.cttl))) {
       firstPartyData.uspString = cmpData.uspString;
       firstPartyData.gppString = cmpData.gppString;
       firstPartyData.gdprString = cmpData.gdprString;
@@ -433,7 +426,7 @@ export const intentIqIdSubmodule = {
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
     }
     if (!shouldCallServer) {
-      if (!savedData && !firstPartyData.isOptedOut) {
+      if (!hasPartnerData && !firstPartyData.isOptedOut) {
         shouldCallServer = true;
       } else shouldCallServer = Date.now() > firstPartyData.sCal + HOURS_24;
     }
@@ -443,7 +436,7 @@ export const intentIqIdSubmodule = {
       firePartnerCallback()
     }
 
-    if (firstPartyData.group === WITHOUT_IIQ || (firstPartyData.group !== WITHOUT_IIQ && runtimeEids?.eids?.length)) {
+    if (runtimeEids?.eids?.length) {
       firePartnerCallback()
     }
 
@@ -471,7 +464,6 @@ export const intentIqIdSubmodule = {
     }
 
     if (!shouldCallServer) {
-      if (isGroupB) runtimeEids = { eids: [] };
       firePartnerCallback();
       updateCountersAndStore(runtimeEids, allowedStorage, partnerData);
       return { id: runtimeEids.eids };
@@ -488,7 +480,7 @@ export const intentIqIdSubmodule = {
     url += '&japs=' + encodeURIComponent(configParams.siloEnabled === true);
     url = appendCounters(url);
     url += VERSION ? '&jsver=' + VERSION : '';
-    url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
+    url += actualABGroup ? '&testGroup=' + encodeURIComponent(actualABGroup) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
     url = handleAdditionalParams(currentBrowserLowerCase, url, 1, additionalParams);
     url = appendSPData(url, firstPartyData)
@@ -524,18 +516,10 @@ export const intentIqIdSubmodule = {
 
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
-              if (Number(respJson.tc) === 41) {
-                firstPartyData.group = WITHOUT_IIQ;
-                storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
-                if (groupChanged) groupChanged(firstPartyData.group);
-                defineEmptyDataAndFireCallback();
-                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
-                return
-              } else {
-                firstPartyData.group = WITH_IIQ;
-                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
-                if (groupChanged) groupChanged(firstPartyData.group);
-              }
+              actualABGroup = defineABTestingGroup(respJson.tc, configParams.abPercentage);
+
+              if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, actualABGroup);
+              if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
             }
             if ('isOptedOut' in respJson) {
               if (respJson.isOptedOut !== firstPartyData.isOptedOut) {
@@ -592,6 +576,13 @@ export const intentIqIdSubmodule = {
               // server provided data
               firstPartyData.spd = respJson.spd;
             }
+
+            if ('abTestUuid' in respJson) {
+              if ('ls' in respJson && respJson.ls === true) {
+                partnerData.abTestUuid = respJson.abTestUuid;
+              }
+            }
+
             if ('gpr' in respJson) {
               // GAM prediction reporting
               partnerData.gpr = respJson.gpr;
