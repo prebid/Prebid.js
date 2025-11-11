@@ -288,8 +288,10 @@ export const intentIqIdSubmodule = {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
-
-        configParams.callback(runtimeEids);
+        if (isGroupB) runtimeEids = { eids: [] };
+        let data = runtimeEids;
+        if (data?.eids?.length === 1 && typeof data.eids[0] === 'string') data = data.eids[0];
+        configParams.callback(data);
       }
     }
 
