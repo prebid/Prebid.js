@@ -1,8 +1,10 @@
+import { EVENTS } from "../src/constants.js";
 import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingClientRect.js";
 import { getWinDimensions } from "../src/utils.js";
+import * as events from "../src/events.js";
 
 export const DEFAULT_MARGINS = "16px";
-export const EVENTS = [
+export const SEENTHIS_EVENTS = [
   "@seenthis_storylines/ready",
   "@seenthis_enabled",
   "@seenthis_disabled",
@@ -127,6 +129,11 @@ window.addEventListener("message", (event) => {
 
       containerElements[storyKey]?.classList.add(classNames.container);
       calculateMargins(containerElements[storyKey]);
+
+      events.emit(EVENTS.BILLABLE_EVENT, {
+        vendor: "seenthis",
+        type: "storylines_init",
+      });
       break;
     }
     case "@seenthis_modal/beforeopen": {
@@ -143,8 +150,8 @@ window.addEventListener("message", (event) => {
     }
   }
 
-  // dispatch events to parent window
-  if (EVENTS.includes(data.type)) {
+  // dispatch SEENTHIS_EVENTS to parent window
+  if (SEENTHIS_EVENTS.includes(data.type)) {
     window.dispatchEvent(new CustomEvent(data.type, { detail: data }));
   }
 });

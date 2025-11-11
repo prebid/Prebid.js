@@ -1,13 +1,13 @@
 import { expect } from "chai";
 import {
-  calculateMargins,
-  getFrameByEvent,
   addStyleToSingleChildAncestors,
-  findAdWrapper,
-  applyFullWidth,
   applyAutoHeight,
+  applyFullWidth,
+  calculateMargins,
   DEFAULT_MARGINS,
-  EVENTS,
+  findAdWrapper,
+  getFrameByEvent,
+  SEENTHIS_EVENTS,
 } from "modules/seenthisBrandStories.ts";
 import * as boundingClientRect from "../../../libraries/boundingClientRect/boundingClientRect.js";
 import * as utils from "../../../src/utils.js";
@@ -19,11 +19,11 @@ describe("seenthisBrandStories", function () {
       expect(DEFAULT_MARGINS).to.equal("16px");
     });
 
-    it("should have correct EVENTS array", function () {
-      expect(EVENTS).to.be.an("array").with.length(9);
-      expect(EVENTS).to.include("@seenthis_storylines/ready");
-      expect(EVENTS).to.include("@seenthis_enabled");
-      expect(EVENTS).to.include("@seenthis_modal/opened");
+    it("should have correct SEENTHIS_EVENTS array", function () {
+      expect(SEENTHIS_EVENTS).to.be.an("array").with.length(9);
+      expect(SEENTHIS_EVENTS).to.include("@seenthis_storylines/ready");
+      expect(SEENTHIS_EVENTS).to.include("@seenthis_enabled");
+      expect(SEENTHIS_EVENTS).to.include("@seenthis_modal/opened");
     });
   });
 
