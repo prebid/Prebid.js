@@ -7,7 +7,6 @@ on:
       - master
       - '*.x-legacy'
 
-
 permissions:
   contents: read
 
