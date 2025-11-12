@@ -9,7 +9,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 
 import {getRefererInfo} from '../src/refererDetection.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE} from '../src/storageManager.js';
 import {formatQS, isNumber, isPlainObject, logError, parseUrl} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
@@ -45,15 +45,23 @@ const O_AND_O_DOMAINS = [
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
+ * Stores the ConnectID object in browser storage according to storage configuration
  * @function
- * @param {Object} obj
+ * @param {Object} obj - The ID object to store
+ * @param {Object} [storageConfig={}] - Storage configuration
+ * @param {string} [storageConfig.type] - Storage type: 'cookie', 'html5', or 'cookie&html5'
  */
-function storeObject(obj) {
+function storeObject(obj, storageConfig = {}) {
   const expires = Date.now() + STORAGE_DURATION;
-  if (storage.cookiesAreEnabled()) {
+  const storageType = storageConfig.type || '';
+
+  const useCookie = !storageType || storageType.includes(STORAGE_TYPE_COOKIES);
+  const useLocalStorage = !storageType || storageType.includes(STORAGE_TYPE_LOCALSTORAGE);
+
+  if (useCookie && storage.cookiesAreEnabled()) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
   }
-  if (storage.localStorageIsEnabled()) {
+  if (useLocalStorage && storage.localStorageIsEnabled()) {
     storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
   }
 }
@@ -110,8 +118,17 @@ function getIdFromLocalStorage() {
   return null;
 }
 
-function syncLocalStorageToCookie() {
-  if (!storage.cookiesAreEnabled()) {
+/**
+ * Syncs ID from localStorage to cookie if storage configuration allows
+ * @function
+ * @param {Object} [storageConfig={}] - Storage configuration
+ * @param {string} [storageConfig.type] - Storage type: 'cookie', 'html5', or 'cookie&html5'
+ */
+function syncLocalStorageToCookie(storageConfig = {}) {
+  const storageType = storageConfig.type || '';
+  const useCookie = !storageType || storageType.includes(STORAGE_TYPE_COOKIES);
+
+  if (!useCookie || !storage.cookiesAreEnabled()) {
     return;
   }
   const value = getIdFromLocalStorage();
@@ -129,12 +146,19 @@ function isStale(storedIdData) {
   return false;
 }
 
-function getStoredId() {
+/**
+ * Retrieves stored ConnectID from cookie or localStorage
+ * @function
+ * @param {Object} [storageConfig={}] - Storage configuration
+ * @param {string} [storageConfig.type] - Storage type: 'cookie', 'html5', or 'cookie&html5'
+ * @returns {Object|null} The stored ID object or null if not found
+ */
+function getStoredId(storageConfig = {}) {
   let storedId = getIdFromCookie();
   if (!storedId) {
     storedId = getIdFromLocalStorage();
     if (storedId && !isStale(storedId)) {
-      syncLocalStorageToCookie();
+      syncLocalStorageToCookie(storageConfig);
     }
   }
   return storedId;
@@ -191,13 +215,14 @@ export const connectIdSubmodule = {
       return;
     }
     const params = config.params || {};
+    const storageConfig = config.storage || {};
     if (!params ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
       logError(`${MODULE_NAME} module: configuration requires the 'pixelId'.`);
       return;
     }
 
-    const storedId = getStoredId();
+    const storedId = getStoredId(storageConfig);
 
     let shouldResync = isStale(storedId);
 
@@ -213,7 +238,7 @@ export const connectIdSubmodule = {
       }
       if (!shouldResync) {
         storedId.lastUsed = Date.now();
-        storeObject(storedId);
+        storeObject(storedId, storageConfig);
         return {id: storedId};
       }
     }
@@ -274,7 +299,7 @@ export const connectIdSubmodule = {
                   }
                   responseObj.ttl = validTTLMiliseconds;
                 }
-                storeObject(responseObj);
+                storeObject(responseObj, storageConfig);
               } else {
                 logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
               }
