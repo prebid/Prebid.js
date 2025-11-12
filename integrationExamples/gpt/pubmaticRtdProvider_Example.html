@@ -1,0 +1,161 @@
+<html>
+<head>
+    <title>PubMatic RTD Provider Example</title>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 1000;
+
+        var adUnits = [{
+                code: 'div-gpt-ad-1460505748561-0',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250], [300,600]],
+                        pos: 7,
+                    }
+                },  
+                bids: [
+                    {
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13144370
+                        }
+                    }, {
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: '103207',
+                            adUnit: 'dcomHomeTop-728x90',
+                        }
+                    },
+                ]
+            }
+            ,
+            {
+                code: 'div-gpt-ad-1460505748561-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[728, 90]],
+                    }
+                },  
+                bids: [
+                    {
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13144370
+                        }
+                    }, {
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: '103207',
+                            adUnit: 'dcomHomeTop-728x90',
+                        }
+                    }
+                ]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        var s1;
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                enableSendAllBids : true,
+                enableTIDs: true,
+                realTimeData: {
+                    auctionDelay: 500, 
+                    dataProviders: [
+                        {
+                        name: 'pubmatic',
+                        waitForIt: true,
+                        params:{
+                            publisherId: '103207', // please contact PubMatic to get a publisherId for yourself
+                            profileId: '12', // please contact PubMatic to get a profileId for yourself
+                        }
+                    }
+                ]
+                }
+            })
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.enableAnalytics({
+                    provider: 'pubmatic',
+                    options: {
+                        "publisherId": 5890 // please contact PubMatic to get a publisherId for yourself
+                    }
+            });
+
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+            
+        }); 
+
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                    
+                });
+            });
+        }
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            s1 = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            s2 = googletag.defineSlot('/19968336/header-bid-tag-1', [[728, 90]], 'div-gpt-ad-1460505748561-1').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                    
+                });
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <h2>Prebid.js Test</h2>
+    <h5>Div-1111</h5>
+    <div id='div-gpt-ad-1460505748561-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+        </script>
+    </div>
+    <br>
+
+    <h5>Div 2</h5>
+    <div id='div-gpt-ad-1460505748561-1'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-1'); });
+        </script>
+    </div>
+</body>
+</html>
