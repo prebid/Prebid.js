@@ -191,7 +191,7 @@ describe('Allegro Bid Adapter', () => {
       expect(spec.onBidWon({})).to.equal(undefined);
     });
 
-    it('fires impression pixel with provided burl when enabled', () => {
+    it('fires impression pixel with provided burl when enabled ', () => {
       const pixelSpy = sinon.spy();
       // stub config and utils.triggerPixel; need to stub imported triggerPixel via utils module
       configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
