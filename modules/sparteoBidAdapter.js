@@ -156,9 +156,9 @@ function replaceMacros(payload, endpoint) {
 
   const macroMap = {
     NETWORK_ID: networkId ?? '',
-    BUNDLE_QUERY: payload?.app ? (bundle ? `&bundle=${bundle}` : '') : '',
-    SITE_DOMAIN_QUERY: siteDomain ? `&site_domain=${siteDomain}` : '',
-    APP_DOMAIN_QUERY: appDomain ? `&app_domain=${appDomain}` : ''
+    BUNDLE_QUERY: payload?.app ? (bundle ? `&bundle=${encodeURIComponent(bundle)}` : '') : '',
+    SITE_DOMAIN_QUERY: siteDomain ? `&site_domain=${encodeURIComponent(siteDomain)}` : '',
+    APP_DOMAIN_QUERY: appDomain ? `&app_domain=${encodeURIComponent(appDomain)}` : ''
   };
 
   return endpoint.replace(

@@ -262,6 +262,12 @@ describe('SparteoAdapter', function () {
 
   describe('buildRequests', function () {
     describe('Check method return', function () {
+      it('should return the right formatted banner requests', function () {
+        const request = adapter.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
+        delete request.data.id;
+
+        expect(request).to.deep.equal(VALID_REQUEST_BANNER);
+      });
       if (FEATURES.VIDEO) {
         it('should return the right formatted requests', function () {
           const request = adapter.buildRequests([VALID_BID_BANNER, VALID_BID_VIDEO], BIDDER_REQUEST);
@@ -269,41 +275,30 @@ describe('SparteoAdapter', function () {
 
           expect(request).to.deep.equal(VALID_REQUEST);
         });
-      }
 
-      it('should return the right formatted banner requests', function () {
-        const request = adapter.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
-        delete request.data.id;
-
-        expect(request).to.deep.equal(VALID_REQUEST_BANNER);
-      });
-
-      if (FEATURES.VIDEO) {
         it('should return the right formatted video requests', function () {
           const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
           delete request.data.id;
 
           expect(request).to.deep.equal(VALID_REQUEST_VIDEO);
         });
-      }
 
-      it('should return the right formatted request with endpoint test', function () {
-        const endpoint = 'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&site_domain=dev.sparteo.com';
+        it('should return the right formatted request with endpoint test', function () {
+          const endpoint = 'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&site_domain=dev.sparteo.com';
 
-        const bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
-          params: {
-            endpoint: endpoint
-          }
+          const bids = deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]);
+          bids[0].params.endpoint = endpoint;
+
+          const expectedRequest = deepClone(VALID_REQUEST);
+          expectedRequest.url = endpoint;
+          expectedRequest.data.imp[0].ext.sparteo.params.endpoint = endpoint;
+
+          const request = adapter.buildRequests(bids, BIDDER_REQUEST);
+          delete request.data.id;
+
+          expect(request).to.deep.equal(expectedRequest);
         });
-
-        const requests = mergeDeep(deepClone(VALID_REQUEST));
-
-        const request = adapter.buildRequests(bids, BIDDER_REQUEST);
-        requests.url = endpoint;
-        delete request.data.id;
-
-        expect(requests).to.deep.equal(requests);
-      });
+      }
     });
   });
 
