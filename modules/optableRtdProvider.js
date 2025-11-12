@@ -17,7 +17,7 @@ export const parseConfig = (moduleConfig) => {
   let bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
   const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
   const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
-  const instance = deepAccess(moduleConfig, 'params.instance', null) ?? window?.optable?.rtd?.instance;
+  const instance = deepAccess(moduleConfig, 'params.instance', null);
 
   // If present, trim the bundle URL
   if (typeof bundleUrl === 'string') {
