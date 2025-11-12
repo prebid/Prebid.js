@@ -12,7 +12,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  */
 
 const BIDDER_CODE = 'cointraffic';
-const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps.adsgravity.io/v1/request/prebid';
 const DEFAULT_CURRENCY = 'EUR';
 const ALLOWED_CURRENCIES = [
   'EUR', 'USD', 'JPY', 'BGN', 'CZK', 'DKK', 'GBP', 'HUF', 'PLN', 'RON', 'SEK', 'CHF', 'ISK', 'NOK', 'HRK', 'RUB', 'TRY',

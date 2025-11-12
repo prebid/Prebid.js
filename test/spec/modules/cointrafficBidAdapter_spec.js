@@ -9,7 +9,7 @@ import * as utils from 'src/utils.js'
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
-const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps.adsgravity.io/v1/request/prebid';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {
