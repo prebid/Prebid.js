@@ -14,7 +14,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import {parseUrl, deepClone} from 'src/utils.js';
+import {parseUrl, deepClone, getWinDimensions} from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
@@ -428,7 +428,7 @@ describe('ShinezRtbBidAdapter', function () {
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWinDimensions().screen.width}x${getWinDimensions().screen.height}`,
           mediaTypes: [BANNER],
           gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
