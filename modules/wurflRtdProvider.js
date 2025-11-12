@@ -47,8 +47,10 @@ const ORTB2_DEVICE_FIELDS = [
 
 // Enrichment type constants
 const ENRICHMENT_TYPE = {
+  UNKNOWN: 'unknown',
   NONE: 'none',
   LCE: 'lce',
+  LCE_ERROR: 'lce_error',
   WURFL_PUB: 'wurfl_pub',
   WURFL_SSP: 'wurfl_ssp',
   WURFL_PUB_SSP: 'wurfl_pub_ssp'
@@ -182,6 +184,7 @@ function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
 
     // Skip if no data to inject (over quota + unauthorized)
     if (Object.keys(bidderDevice).length === 0) {
+      bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.NONE);
       return;
     }
 
@@ -726,6 +729,9 @@ const WurflJSDevice = {
 
 // ==================== WURFL LCE DEVICE MODULE ====================
 const WurflLCEDevice = {
+  // Expected fields that LCE can provide (excludes 'ppi' which requires physical screen dimensions)
+  _expectedFields: ['devicetype', 'make', 'model', 'os', 'osv', 'hwv', 'h', 'w', 'pxratio', 'js'],
+
   // Private mappings for device detection
   _desktopMapping: new Map([
     ["Windows NT", "Windows"],
@@ -781,17 +787,11 @@ const WurflLCEDevice = {
     switch (osName) {
       case "Windows": {
         const matches = ua.match(/Windows NT ([\d.]+)/);
-        if (matches) {
-          return matches[1];
-        }
-        return "";
+        return matches ? matches[1] : undefined;
       }
       case "macOS": {
         const matches = ua.match(/Mac OS X ([\d_]+)/);
-        if (matches) {
-          return matches[1].replaceAll('_', '.');
-        }
-        return "";
+        return matches ? matches[1].replace(/_/g, '.') : undefined;
       }
       case "iOS": {
         // iOS 26 specific logic
@@ -801,10 +801,7 @@ const WurflLCEDevice = {
         }
         // iOS 18.x and lower
         const matches2 = ua.match(/iPhone; CPU iPhone OS ([\d_]+) like Mac OS X/);
-        if (matches2) {
-          return matches2[1].replaceAll('_', '.');
-        }
-        return "";
+        return matches2 ? matches2[1].replace(/_/g, '.') : undefined;
       }
       case "iPadOS": {
         // iOS 26 specific logic
@@ -814,10 +811,7 @@ const WurflLCEDevice = {
         }
         // iOS 18.x and lower
         const matches2 = ua.match(/iPad; CPU OS ([\d_]+) like Mac OS X/);
-        if (matches2) {
-          return matches2[1].replaceAll('_', '.');
-        }
-        return "";
+        return matches2 ? matches2[1].replace(/_/g, '.') : undefined;
       }
       case "Android": {
         // For Android UAs with a decimal
@@ -827,31 +821,19 @@ const WurflLCEDevice = {
         }
         // For Android UAs without a decimal
         const matches2 = ua.match(/Android ([\d]+)/);
-        if (matches2) {
-          return matches2[1];
-        }
-        return "";
+        return matches2 ? matches2[1] : undefined;
       }
       case "ChromeOS": {
         const matches = ua.match(/CrOS x86_64 ([\d.]+)/);
-        if (matches) {
-          return matches[1];
-        }
-        return "";
+        return matches ? matches[1] : undefined;
       }
       case "Tizen": {
         const matches = ua.match(/Tizen ([\d.]+)/);
-        if (matches) {
-          return matches[1];
-        }
-        return "";
+        return matches ? matches[1] : undefined;
       }
       case "Roku OS": {
         const matches = ua.match(/Roku\/DVP [\dA-Z]+ [\d.]+\/([\d.]+)/);
-        if (matches) {
-          return matches[1];
-        }
-        return "";
+        return matches ? matches[1] : undefined;
       }
       case "PlayStation OS": {
         // PS4
@@ -861,15 +843,12 @@ const WurflLCEDevice = {
         }
         // PS3
         const matches2 = ua.match(/PLAYSTATION \d ([\d.]+)/);
-        if (matches2) {
-          return matches2[1];
-        }
-        return "";
+        return matches2 ? matches2[1] : undefined;
       }
       case "Linux":
       case "LG webOS":
       default:
-        return "";
+        return undefined;
     }
   },
 
@@ -916,29 +895,34 @@ const WurflLCEDevice = {
     return { deviceType: "", osName: "", osVersion: "" };
   },
 
-  _getDevicePixelRatioValue(win = (typeof window !== "undefined" ? window : undefined)) {
-    if (!win) {
-      return 1;
+  _getDevicePixelRatioValue() {
+    if (window.devicePixelRatio) {
+      return window.devicePixelRatio;
     }
-    return (
-      win.devicePixelRatio ||
-      (win.screen.deviceXDPI / win.screen.logicalXDPI) ||
-      Math.round(win.screen.availWidth / win.document.documentElement.clientWidth)
-    );
+
+    // Assumes window.screen exists (caller checked)
+    if (window.screen.deviceXDPI && window.screen.logicalXDPI && window.screen.logicalXDPI > 0) {
+      return window.screen.deviceXDPI / window.screen.logicalXDPI;
+    }
+
+    const screenWidth = window.screen.availWidth;
+    const docWidth = window.document?.documentElement?.clientWidth;
+
+    if (screenWidth && docWidth && docWidth > 0) {
+      return Math.round(screenWidth / docWidth);
+    }
+
+    return undefined;
   },
 
-  _getScreenWidth(win = (typeof window !== "undefined" ? window : undefined)) {
-    if (!win) {
-      return 0;
-    }
-    return Math.round(win.screen.width * this._getDevicePixelRatioValue(win));
+  _getScreenWidth(pixelRatio) {
+    // Assumes window.screen exists (caller checked)
+    return Math.round(window.screen.width * pixelRatio);
   },
 
-  _getScreenHeight(win = (typeof window !== "undefined" ? window : undefined)) {
-    if (!win) {
-      return 0;
-    }
-    return Math.round(win.screen.height * this._getDevicePixelRatioValue(win));
+  _getScreenHeight(pixelRatio) {
+    // Assumes window.screen exists (caller checked)
+    return Math.round(window.screen.height * pixelRatio);
   },
 
   _getMake(ua) {
@@ -947,7 +931,7 @@ const WurflLCEDevice = {
         return brandName;
       }
     }
-    return 'Generic';
+    return undefined;
   },
 
   _getModel(ua) {
@@ -956,34 +940,78 @@ const WurflLCEDevice = {
         return modelName;
       }
     }
-    return '';
+    return undefined;
   },
 
   // Public API - returns device object for First Party Data (global)
   FPD() {
-    const useragent = typeof window !== "undefined" ? window.navigator.userAgent : "";
-    const deviceInfo = this._getDeviceInfo(useragent);
+    // Early exit - check window exists
+    if (typeof window === 'undefined') {
+      return { device: { js: 1 }, hasError: true };
+    }
 
-    const win = typeof window !== "undefined" ? window : undefined;
-    const pixelRatio = this._getDevicePixelRatioValue(win);
-    const screenWidth = this._getScreenWidth(win);
-    const screenHeight = this._getScreenHeight(win);
+    // Check what globals are available upfront
+    const hasScreen = !!window.screen;
+    const hasNavigator = !!window.navigator;
 
-    const brand = this._getMake(useragent);
-    const model = this._getModel(useragent);
+    const device = { js: 1 };
 
-    return {
-      devicetype: deviceInfo.deviceType,
-      make: brand,
-      model: model,
-      os: deviceInfo.osName,
-      osv: deviceInfo.osVersion,
-      hwv: model,
-      h: screenHeight,
-      w: screenWidth,
-      pxratio: pixelRatio,
-      js: 1
-    };
+    try {
+      const useragent = hasNavigator ? (window.navigator.userAgent || '') : '';
+
+      // Only process UA-dependent properties if we have a UA
+      if (useragent) {
+        // Get device info
+        const deviceInfo = this._getDeviceInfo(useragent);
+        if (deviceInfo.deviceType !== undefined) {
+          device.devicetype = deviceInfo.deviceType;
+        }
+        if (deviceInfo.osName !== undefined) {
+          device.os = deviceInfo.osName;
+        }
+        if (deviceInfo.osVersion !== undefined) {
+          device.osv = deviceInfo.osVersion;
+        }
+
+        // Make/model
+        const make = this._getMake(useragent);
+        if (make !== undefined) {
+          device.make = make;
+        }
+
+        const model = this._getModel(useragent);
+        if (model !== undefined) {
+          device.model = model;
+          device.hwv = model;
+        }
+      }
+
+      // Screen-dependent properties (independent of UA)
+      if (hasScreen) {
+        const pixelRatio = this._getDevicePixelRatioValue();
+        if (pixelRatio !== undefined) {
+          device.pxratio = pixelRatio;
+
+          const width = this._getScreenWidth(pixelRatio);
+          if (width !== undefined) {
+            device.w = width;
+          }
+
+          const height = this._getScreenHeight(pixelRatio);
+          if (height !== undefined) {
+            device.h = height;
+          }
+        }
+      }
+    } catch (e) {
+      logger.logError('Error generating LCE device data:', e);
+      return { device, hasError: true };
+    }
+
+    // Check if any expected field is missing
+    const hasError = this._expectedFields.some(field => device[field] === undefined);
+
+    return { device, hasError };
   }
 };
 // ==================== END WURFL LCE DEVICE MODULE ====================
@@ -1002,7 +1030,7 @@ const init = (config, userConsent) => {
 
   // Initialize module state
   bidderEnrichment = new Map();
-  enrichmentType = ENRICHMENT_TYPE.NONE;
+  enrichmentType = ENRICHMENT_TYPE.UNKNOWN;
   wurflId = '';
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
@@ -1038,7 +1066,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   reqBidsConfigObj.adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
       bidders.add(bid.bidder);
-      bidderEnrichment.set(bid.bidder, ENRICHMENT_TYPE.NONE);
+      bidderEnrichment.set(bid.bidder, ENRICHMENT_TYPE.UNKNOWN);
     });
   });
 
@@ -1046,6 +1074,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   if (abTest && abTest.ab_variant === AB_TEST.CONTROL_GROUP) {
     logger.logMessage('A/B test control group: skipping enrichment');
     enrichmentType = ENRICHMENT_TYPE.NONE;
+    bidders.forEach(bidder => bidderEnrichment.set(bidder, ENRICHMENT_TYPE.NONE));
     WurflDebugger.moduleExecutionStop();
     callback();
     return;
@@ -1069,6 +1098,8 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     if (!wjsDevice._isOverQuota()) {
       enrichDeviceFPD(reqBidsConfigObj, wjsDevice.FPD());
       enrichmentType = ENRICHMENT_TYPE.WURFL_PUB;
+    } else {
+      enrichmentType = ENRICHMENT_TYPE.NONE;
     }
     enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice);
 
@@ -1095,14 +1126,17 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   logger.logMessage('generating fresh LCE data');
   WurflDebugger.setDataSource('lce');
   WurflDebugger.lceDetectionStart();
-  const fpdDevice = WurflLCEDevice.FPD();
+  const lceResult = WurflLCEDevice.FPD();
   WurflDebugger.lceDetectionStop();
-  WurflDebugger.setLceData(fpdDevice);
-  enrichDeviceFPD(reqBidsConfigObj, fpdDevice);
+  WurflDebugger.setLceData(lceResult.device);
+  enrichDeviceFPD(reqBidsConfigObj, lceResult.device);
 
-  // Set enrichment type to LCE
+  // Set enrichment type based on error status
   enrichmentType = ENRICHMENT_TYPE.LCE;
-  bidders.forEach(bidder => bidderEnrichment.set(bidder, ENRICHMENT_TYPE.LCE));
+  if (lceResult.hasError) {
+    enrichmentType = ENRICHMENT_TYPE.LCE_ERROR;
+  }
+  bidders.forEach(bidder => bidderEnrichment.set(bidder, enrichmentType));
 
   // Set default sampling rate for LCE
   samplingRate = DEFAULT_SAMPLING_RATE;

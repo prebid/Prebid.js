@@ -1131,7 +1131,8 @@ describe('wurflRtdProvider', function () {
           const beaconCall = sendBeaconStub.getCall(0);
           const payload = JSON.parse(beaconCall.args[1]);
           expect(payload).to.have.property('sampling_rate', 100);
-          expect(payload).to.have.property('enrichment', 'lce');
+          // Enrichment type can be 'lce' or 'lce_error' depending on what data is available
+          expect(payload.enrichment).to.be.oneOf(['lce', 'lce_error']);
           done();
         };
 
@@ -1497,6 +1498,75 @@ describe('wurflRtdProvider', function () {
         };
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+    });
+
+    describe('LCE Error Handling', function() {
+      beforeEach(function() {
+        // Setup empty cache to force LCE
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+      });
+
+      it('should set LCE_ERROR enrichment type when empty user agent triggers error', (done) => {
+        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+
+        sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
+          getHighestCpmBids: () => []
+        });
+
+        const callback = () => {
+          const device = reqBidsConfigObj.ortb2Fragments.global.device;
+
+          // Should have minimal data
+          expect(device.js).to.equal(1);
+
+          // UA-dependent fields should not be set when UA is empty
+          expect(device.devicetype).to.be.undefined;
+          expect(device.os).to.be.undefined;
+
+          // Trigger auction to verify enrichment type in beacon
+          const auctionDetails = {
+            bidsReceived: [
+              { requestId: 'req1', bidderCode: 'bidder1', adUnitCode: 'ad1', cpm: 1.5, currency: 'USD' }
+            ],
+            adUnits: [
+              {
+                code: 'ad1',
+                bids: [{ bidder: 'bidder1' }]
+              }
+            ]
+          };
+
+          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, null);
+
+          // Check beacon was sent with lce_error enrichment type
+          expect(sendBeaconStub.calledOnce).to.be.true;
+          const beaconCall = sendBeaconStub.getCall(0);
+          const payload = JSON.parse(beaconCall.args[1]);
+          expect(payload).to.have.property('enrichment', 'lce_error');
+
+          done();
+        };
+
+        // Mock empty UA to trigger error
+        const originalUA = window.navigator.userAgent;
+        Object.defineProperty(window.navigator, 'userAgent', {
+          value: '',
+          configurable: true
+        });
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+
+        // Restore
+        Object.defineProperty(window.navigator, 'userAgent', {
+          value: originalUA,
+          configurable: true
+        });
       });
     });
   });
