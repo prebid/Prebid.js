@@ -16,6 +16,8 @@ const events = {
   bids: []
 };
 
+let adUnits = [];
+
 var terceptAnalyticsAdapter = Object.assign(adapter(
   {
     emptyUrl,
@@ -29,21 +31,26 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         Object.assign(events, {bids: []});
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
+        adUnits = args.adUnits;
       } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(item => { events.bids.push(item) });
       } else if (eventType === EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
       } else if (eventType === EVENTS.NO_BID) {
         mapBidResponse(args, 'no_bid');
+      } else if (eventType === EVENTS.BIDDER_ERROR) {
+        send({
+          bidderError: mapBidResponse(args, 'bidder_error')
+        });
       } else if (eventType === EVENTS.BID_WON) {
         send({
           bidWon: mapBidResponse(args, 'win')
-        }, 'won');
+        });
       }
     }
 
     if (eventType === EVENTS.AUCTION_END) {
-      send(events, 'auctionEnd');
+      send(events);
     }
   }
 });
@@ -68,13 +75,47 @@ function mapBidRequests(params) {
   return arr;
 }
 
+function getAdSlotData(adUnitCode) {
+  let adserverAdSlot, pbAdSlot;
+
+  if (adUnitCode && adUnits && adUnits.length) {
+    const matchingAdUnit = adUnits.find(au => au.code === adUnitCode);
+
+    if (matchingAdUnit && matchingAdUnit.ortb2Imp &&
+        matchingAdUnit.ortb2Imp.ext &&
+        matchingAdUnit.ortb2Imp.ext.data) {
+      // Get GAM ad slot
+      if (matchingAdUnit.ortb2Imp.ext.data.adserver) {
+        adserverAdSlot = matchingAdUnit.ortb2Imp.ext.data.adserver.adslot;
+      }
+
+      // Get Prebid ad slot
+      pbAdSlot = matchingAdUnit.ortb2Imp.ext.data.pbadslot;
+    }
+  }
+
+  return { adserverAdSlot, pbAdSlot };
+}
+
 function mapBidResponse(bidResponse, status) {
-  if (status !== 'win') {
+  const { adserverAdSlot, pbAdSlot } = getAdSlotData(bidResponse.adUnitCode);
+
+  if (status === 'bidder_error') {
+    return {
+      ...bidResponse,
+      adserverAdSlot: adserverAdSlot,
+      pbAdSlot: pbAdSlot,
+      status: 6,
+      host: window.location.hostname,
+      path: window.location.pathname,
+      search: window.location.search
+    }
+  } else if (status !== 'win') {
     const bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
     const responseTimestamp = Date.now();
     Object.assign(bid, {
       bidderCode: bidResponse.bidder,
-      bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
+      bidId: (status === 'timeout' || status === 'no_bid') ? bidResponse.bidId : bidResponse.requestId,
       adUnitCode: bidResponse.adUnitCode,
       auctionId: bidResponse.auctionId,
       creativeId: bidResponse.creativeId,
@@ -82,13 +123,27 @@ function mapBidResponse(bidResponse, status) {
       currency: bidResponse.currency,
       cpm: bidResponse.cpm,
       netRevenue: bidResponse.netRevenue,
+      width: bidResponse.width,
+      height: bidResponse.height,
       mediaType: bidResponse.mediaType,
       statusMessage: bidResponse.statusMessage,
       status: bidResponse.status,
       renderStatus: status === 'timeout' ? 3 : (status === 'no_bid' ? 5 : 2),
       timeToRespond: bidResponse.timeToRespond,
       requestTimestamp: bidResponse.requestTimestamp,
-      responseTimestamp: bidResponse.responseTimestamp ? bidResponse.responseTimestamp : responseTimestamp
+      responseTimestamp: bidResponse.responseTimestamp ? bidResponse.responseTimestamp : responseTimestamp,
+      adserverAdSlot: adserverAdSlot,
+      pbAdSlot: pbAdSlot,
+      ttl: bidResponse.ttl,
+      dealId: bidResponse.dealId,
+      ad: bidResponse.ad,
+      adUrl: bidResponse.adUrl,
+      adId: bidResponse.adId,
+      size: bidResponse.size,
+      adserverTargeting: bidResponse.adserverTargeting,
+      videoCacheKey: bidResponse.videoCacheKey,
+      native: bidResponse.native,
+      meta: bidResponse.meta || {}
     });
   } else {
     return {
@@ -102,6 +157,8 @@ function mapBidResponse(bidResponse, status) {
       cpm: bidResponse.cpm,
       netRevenue: bidResponse.netRevenue,
       renderedSize: bidResponse.size,
+      width: bidResponse.width,
+      height: bidResponse.height,
       mediaType: bidResponse.mediaType,
       statusMessage: bidResponse.statusMessage,
       status: bidResponse.status,
@@ -111,12 +168,23 @@ function mapBidResponse(bidResponse, status) {
       responseTimestamp: bidResponse.responseTimestamp,
       host: window.location.hostname,
       path: window.location.pathname,
-      search: window.location.search
+      search: window.location.search,
+      adserverAdSlot: adserverAdSlot,
+      pbAdSlot: pbAdSlot,
+      ttl: bidResponse.ttl,
+      dealId: bidResponse.dealId,
+      ad: bidResponse.ad,
+      adUrl: bidResponse.adUrl,
+      adId: bidResponse.adId,
+      adserverTargeting: bidResponse.adserverTargeting,
+      videoCacheKey: bidResponse.videoCacheKey,
+      native: bidResponse.native,
+      meta: bidResponse.meta || {}
     }
   }
 }
 
-function send(data, status) {
+function send(data) {
   const location = getWindowLocation();
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
     Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });
