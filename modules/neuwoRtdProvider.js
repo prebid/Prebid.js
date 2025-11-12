@@ -23,6 +23,17 @@ import { deepSetValue, logError, logInfo, mergeDeep } from "../src/utils.js";
 const MODULE_NAME = "NeuwoRTDModule";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
+// Cached API response to avoid redundant requests.
+let globalCachedResponse;
+
+/**
+ * Clears the cached API response. Primarily used for testing.
+ * @private
+ */
+export function clearCache() {
+  globalCachedResponse = undefined;
+}
+
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
 // Based on https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--category-taxonomies-
 const IAB_CONTENT_TAXONOMY_MAP = {
@@ -36,11 +47,13 @@ const IAB_CONTENT_TAXONOMY_MAP = {
 
 /**
  * Validates the configuration and initialises the module.
+ *
  * @param {Object} config The module configuration.
  * @param {Object} userConsent The user consent object.
  * @returns {boolean} `true` if the module is configured correctly, otherwise `false`.
  */
 function init(config, userConsent) {
+  logInfo(MODULE_NAME, "init:", config, userConsent);
   const params = config?.params || {};
   if (!params.neuwoApiUrl) {
     logError(MODULE_NAME, "init:", "Missing Neuwo Edge API Endpoint URL");
@@ -55,6 +68,8 @@ function init(config, userConsent) {
 
 /**
  * Fetches contextual data from the Neuwo API and enriches the bid request object with IAB categories.
+ * Uses cached response if available to avoid redundant API calls.
+ *
  * @param {Object} reqBidsConfigObj The bid request configuration object.
  * @param {function} callback The callback function to continue the auction.
  * @param {Object} config The module configuration.
@@ -63,6 +78,7 @@ function init(config, userConsent) {
  * @param {string} config.params.neuwoApiToken The Neuwo API authentication token.
  * @param {string} [config.params.websiteToAnalyseUrl] Optional URL to analyze instead of current page.
  * @param {string} [config.params.iabContentTaxonomyVersion] IAB content taxonomy version (default: "3.0").
+ * @param {boolean} [config.params.enableCache=true] If true, caches API responses to avoid redundant requests (default: true).
  * @param {boolean} [config.params.stripAllQueryParams] If true, strips all query parameters from the URL.
  * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
  * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
@@ -72,9 +88,17 @@ function init(config, userConsent) {
 export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   logInfo(MODULE_NAME, "getBidRequestData:", "starting getBidRequestData", config);
 
-  const { websiteToAnalyseUrl, neuwoApiUrl, neuwoApiToken, iabContentTaxonomyVersion,
-    stripAllQueryParams, stripQueryParamsForDomains, stripQueryParams, stripFragments } =
-    config.params;
+  const {
+    websiteToAnalyseUrl,
+    neuwoApiUrl,
+    neuwoApiToken,
+    iabContentTaxonomyVersion,
+    enableCache = true,
+    stripAllQueryParams,
+    stripQueryParamsForDomains,
+    stripQueryParams,
+    stripFragments,
+  } = config.params;
 
   const rawUrl = websiteToAnalyseUrl || getRefererInfo().page;
   const processedUrl = cleanUrl(rawUrl, {
@@ -92,8 +116,13 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   const success = (response) => {
     logInfo(MODULE_NAME, "getBidRequestData:", "Neuwo API raw response:", response);
     try {
-      const responseJson = JSON.parse(response);
-      injectIabCategories(responseJson, reqBidsConfigObj, iabContentTaxonomyVersion);
+      const responseParsed = JSON.parse(response);
+
+      if (enableCache) {
+        globalCachedResponse = responseParsed;
+      }
+
+      injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
     } catch (ex) {
       logError(MODULE_NAME, "getBidRequestData:", "Error while processing Neuwo API response", ex);
     }
@@ -105,7 +134,14 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     callback();
   };
 
-  ajax(neuwoApiUrlFull, { success, error }, null);
+  if (enableCache && globalCachedResponse) {
+    logInfo(MODULE_NAME, "getBidRequestData:", "Using cached response:", globalCachedResponse);
+    injectIabCategories(globalCachedResponse, reqBidsConfigObj, iabContentTaxonomyVersion);
+    callback();
+  } else {
+    logInfo(MODULE_NAME, "getBidRequestData:", "Calling Neuwo API Endpoint: ", neuwoApiUrlFull);
+    ajax(neuwoApiUrlFull, { success, error }, null);
+  }
 }
 
 //
@@ -114,6 +150,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
 
 /**
  * Cleans a URL by stripping query parameters and/or fragments based on the provided configuration.
+ *
  * @param {string} url The URL to clean.
  * @param {Object} options Cleaning options.
  * @param {boolean} [options.stripAllQueryParams] If true, strips all query parameters.
@@ -192,6 +229,7 @@ export function cleanUrl(url, options = {}) {
 
 /**
  * Injects data into the OpenRTB 2.x global fragments of the bid request object.
+ *
  * @param {Object} reqBidsConfigObj The main bid request configuration object.
  * @param {string} path The dot-notation path where the data should be injected (e.g., 'site.content.data').
  * @param {*} data The data to inject at the specified path.
@@ -204,6 +242,7 @@ export function injectOrtbData(reqBidsConfigObj, path, data) {
 
 /**
  * Builds an IAB category data object for use in OpenRTB.
+ *
  * @param {Object} marketingCategories Marketing Categories returned by Neuwo API.
  * @param {string[]} tiers The tier keys to extract from marketingCategories.
  * @param {number} segtax The IAB taxonomy version Id.
@@ -236,12 +275,13 @@ export function buildIabData(marketingCategories, tiers, segtax) {
 /**
  * Processes the Neuwo API response to build and inject IAB content and audience categories
  * into the bid request object.
- * @param {Object} responseJson The parsed JSON response from the Neuwo API.
+ *
+ * @param {Object} responseParsed The parsed JSON response from the Neuwo API.
  * @param {Object} reqBidsConfigObj The bid request configuration object to be modified.
  * @param {string} iabContentTaxonomyVersion The version of the IAB content taxonomy to use for segtax mapping.
  */
-function injectIabCategories(responseJson, reqBidsConfigObj, iabContentTaxonomyVersion) {
-  const marketingCategories = responseJson.marketing_categories;
+function injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion) {
+  const marketingCategories = responseParsed.marketing_categories;
 
   if (!marketingCategories) {
     logError(MODULE_NAME, "injectIabCategories:", "No Marketing Categories in Neuwo API response.");

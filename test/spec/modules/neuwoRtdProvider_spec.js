@@ -82,6 +82,11 @@ function bidsConfiglike() {
 }
 
 describe("neuwoRtdModule", function () {
+  beforeEach(function () {
+    // Clear the global cache before each test to ensure test isolation
+    neuwo.clearCache();
+  });
+
   describe("init", function () {
     it("should return true when all required parameters are provided", function () {
       expect(
@@ -1015,6 +1020,142 @@ describe("neuwoRtdModule", function () {
       expect(userData[1].name, "The appended user data should be from Neuwo").to.equal(
         neuwo.DATA_PROVIDER
       );
+    });
+  });
+
+  describe("getBidRequestData with caching", function () {
+    describe("when enableCache is true (default)", function () {
+      it("should cache the API response and reuse it on subsequent calls", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=1";
+
+        // First call should make an API request
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        const request1 = server.requests[0];
+        request1.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call should use cached response (no new API request)
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Second call should not make a new API request").to.equal(1);
+
+        // Both configs should have the same data
+        const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
+        const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
+        expect(contentData1, "First config should have Neuwo data").to.exist;
+        expect(contentData2, "Second config should have Neuwo data from cache").to.exist;
+        expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+        expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+      });
+
+      it("should cache when enableCache is explicitly set to true", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=2";
+        conf.params.enableCache = true;
+
+        // First call
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        const request1 = server.requests[0];
+        request1.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Second call should use cached response").to.equal(1);
+      });
+    });
+
+    describe("when enableCache is false", function () {
+      it("should not cache the API response and make a new request each time", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=3";
+        conf.params.enableCache = false;
+
+        // First call should make an API request
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        const request1 = server.requests[0];
+        request1.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call should make a new API request (not use cache)
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Second call should make a new API request").to.equal(2);
+
+        const request2 = server.requests[1];
+        request2.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Both configs should have the same data structure
+        const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
+        const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
+        expect(contentData1, "First config should have Neuwo data").to.exist;
+        expect(contentData2, "Second config should have Neuwo data from new request").to.exist;
+        expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+        expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+      });
+
+      it("should bypass existing cache when enableCache is false", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=4";
+
+        // First call with caching enabled (default)
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        const request1 = server.requests[0];
+        request1.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with caching enabled should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Second call should use cache").to.equal(1);
+
+        // Third call with caching disabled should bypass cache
+        conf.params.enableCache = false;
+        neuwo.getBidRequestData(bidsConfig3, () => {}, conf, "consent data");
+        expect(server.requests.length, "Third call should bypass cache and make new request").to.equal(2);
+
+        const request2 = server.requests[1];
+        request2.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+      });
     });
   });
 

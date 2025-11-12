@@ -83,6 +83,7 @@ pbjs.setConfig({
           neuwoApiUrl: "<Your Neuwo Edge API Endpoint URL>",
           neuwoApiToken: "<Your Neuwo API Token>",
           iabContentTaxonomyVersion: "3.0",
+          enableCache: true, // Default: true. Caches API responses to avoid redundant requests
         },
       },
     ],
@@ -99,14 +100,19 @@ pbjs.setConfig({
 | `params.neuwoApiUrl`                | String   | Yes      |         | The endpoint URL for the Neuwo Edge API.                                                                                                                                                                                                                                                                                   |
 | `params.neuwoApiToken`              | String   | Yes      |         | Your unique API token provided by Neuwo.                                                                                                                                                                                                                                                                                   |
 | `params.iabContentTaxonomyVersion`  | String   | No       | `'3.0'` | Specifies the version of the IAB Content Taxonomy to be used. Supported values: `'2.2'`, `'3.0'`.                                                                                                                                                                                                                          |
+| `params.enableCache`                | Boolean  | No       | `true`  | If `true`, caches API responses to avoid redundant requests for the same page during the session. Set to `false` to disable caching and make a fresh API call on every bid request.                                                                                                                                        |
 | `params.stripAllQueryParams`        | Boolean  | No       | `false` | If `true`, strips all query parameters from the URL before analysis. Takes precedence over other stripping options.                                                                                                                                                                                                        |
 | `params.stripQueryParamsForDomains` | String[] | No       | `[]`    | List of domains for which to strip **all** query parameters. When a domain matches, all query params are removed for that domain and all its subdomains (e.g., `'example.com'` strips params for both `'example.com'` and `'sub.example.com'`). This option takes precedence over `stripQueryParams` for matching domains. |
 | `params.stripQueryParams`           | String[] | No       | `[]`    | List of specific query parameter names to strip from the URL (e.g., `['utm_source', 'fbclid']`). Other parameters are preserved. Only applies when the domain does not match `stripQueryParamsForDomains`.                                                                                                                 |
 | `params.stripFragments`             | Boolean  | No       | `false` | If `true`, strips URL fragments (hash, e.g., `#section`) from the URL before analysis.                                                                                                                                                                                                                                     |
 
+### API Response Caching
+
+By default, the module caches API responses during the page session to optimise performance and reduce redundant API calls. This behaviour can be disabled by setting `enableCache: false` if needed for dynamic content scenarios.
+
 ### URL Cleaning Options
 
-The module provides optional URL cleaning capabilities to strip query parameters and/or fragments from the analyzed URL before sending it to the Neuwo API. This can be useful for privacy, caching, or analytics purposes.
+The module provides optional URL cleaning capabilities to strip query parameters and/or fragments from the analysed URL before sending it to the Neuwo API. This can be useful for privacy, caching, or analytics purposes.
 
 **Example with URL cleaning:**
 

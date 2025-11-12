@@ -121,6 +121,10 @@
             const inputIabContentTaxonomyVersion = document.getElementById('iab-content-taxonomy-version');
             const iabContentTaxonomyVersion = inputIabContentTaxonomyVersion ? inputIabContentTaxonomyVersion.value : undefined;
 
+            // Cache Option
+            const inputEnableCache = document.getElementById('enable-cache');
+            const enableCache = inputEnableCache ? inputEnableCache.checked : undefined;
+
             // URL Stripping Options
             const inputStripAllQueryParams = document.getElementById('strip-all-query-params');
             const stripAllQueryParams = inputStripAllQueryParams ? inputStripAllQueryParams.checked : undefined;
@@ -150,6 +154,7 @@
                                     neuwoApiToken,
                                     websiteToAnalyseUrl,
                                     iabContentTaxonomyVersion,
+                                    enableCache,
                                     stripAllQueryParams,
                                     stripQueryParamsForDomains,
                                     stripQueryParams,
@@ -216,6 +221,14 @@
         <h3>IAB Content Taxonomy Options</h3>
         <div style="margin-bottom: 10px;">
             <input type="text" placeholder="IAB Content Taxonomy Version (default 3.0)" id="iab-content-taxonomy-version" style="width: 400px;" />
+        </div>
+
+        <h3>Cache Options</h3>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="enable-cache" checked />
+                Enable API response caching (default: enabled)
+            </label>
         </div>
 
         <h3>URL Cleaning Options</h3>
@@ -294,6 +307,7 @@
             neuwoApiUrl: document.getElementById('neuwo-api-url')?.value || '',
             websiteToAnalyseUrl: document.getElementById('website-to-analyse-url')?.value || '',
             iabContentTaxonomyVersion: document.getElementById('iab-content-taxonomy-version')?.value || '',
+            enableCache: document.getElementById('enable-cache')?.checked !== false,
             stripAllQueryParams: document.getElementById('strip-all-query-params')?.checked || false,
             stripQueryParamsForDomains: document.getElementById('strip-query-params-for-domains')?.value || '',
             stripQueryParams: document.getElementById('strip-query-params')?.value || '',
@@ -318,6 +332,7 @@
             if (config.stripQueryParams) document.getElementById('strip-query-params').value = config.stripQueryParams;
 
             // Restore checkboxes
+            document.getElementById('enable-cache').checked = config.enableCache !== false;
             document.getElementById('strip-all-query-params').checked = config.stripAllQueryParams;
             document.getElementById('strip-fragments').checked = config.stripFragments;
         } catch (e) {
@@ -337,6 +352,7 @@
         ];
 
         const checkboxIds = [
+            'enable-cache',
             'strip-all-query-params',
             'strip-fragments'
         ];
