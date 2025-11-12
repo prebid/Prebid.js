@@ -319,7 +319,7 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [{ code: 'oftmsft', gvlid: 32 }], // TODO fill in after full transition or as seperately requested
+  aliases: [{ code: 'oftmsft', gvlid: 32 }], // TODO fill in after full transition or as separately requested
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: (bid) => {
