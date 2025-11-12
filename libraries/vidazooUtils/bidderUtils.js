@@ -379,42 +379,9 @@ function getScreenResolution() {
   const dimensions = getWinDimensions();
   const width = dimensions?.screen?.width;
   const height = dimensions?.screen?.height;
-
-  if (isFiniteNumber(width) && isFiniteNumber(height)) {
-    return `${width}x${height}`;
+  if (width != null && height != null) {
+    return `${width}x${height}`
   }
-
-  const fallback = getFallbackScreen();
-  return `${fallback.width}x${fallback.height}`;
-}
-
-function isFiniteNumber(value) {
-  return typeof value === 'number' && Number.isFinite(value);
-}
-
-function getFallbackScreen() {
-  if (typeof window === 'undefined') {
-    return {width: 0, height: 0};
-  }
-
-  try {
-    const topScreen = window.top?.screen;
-    const width = topScreen?.width;
-    const height = topScreen?.height;
-
-    if (isFiniteNumber(width) && isFiniteNumber(height)) {
-      return {width, height};
-    }
-  } catch (e) {}
-
-  const width = window?.screen?.width;
-  const height = window?.screen?.height;
-
-  if (isFiniteNumber(width) && isFiniteNumber(height)) {
-    return {width, height};
-  }
-
-  return {width: 0, height: 0};
 }
 
 export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
