@@ -717,7 +717,7 @@ export const spec = {
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
       return {
         method: 'POST',
-        url: ENDPOINT,
+        url: `${ENDPOINT}?orgid=${organizationId}`,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,
@@ -745,7 +745,7 @@ export const spec = {
           usIfr: canSyncWithIframe
         },
         options: {
-          contentType: 'text/plain'
+          endpointCompression: true
         }
       };
     });
