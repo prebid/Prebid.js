@@ -513,13 +513,14 @@ const adapterManager = {
     const mergeBidderFpd = (() => {
       const fpdCache: Record<BidderCode, any> = {};
       return function(auctionId: string, bidderCode: BidderCode, s2sActivityParams?) {
+        const cacheKey = bidderCode + (s2sActivityParams != null ? s2sActivityParams[ACTIVITY_PARAM_S2S_NAME] : '');
         const redact = dep.redact(
           s2sActivityParams != null
             ? s2sActivityParams
             : activityParams(MODULE_TYPE_BIDDER, bidderCode)
         );
-        if (fpdCache[bidderCode] !== undefined) {
-          return [fpdCache[bidderCode], redact];
+        if (fpdCache[cacheKey] !== undefined) {
+          return [fpdCache[cacheKey], redact];
         }
         const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
         const fpd = Object.freeze(redact.ortb2(mergeDeep(
