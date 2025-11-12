@@ -6,7 +6,8 @@ import {
   parseSizesInput,
   parseUrl,
   triggerPixel,
-  uniques
+  uniques,
+  getWinDimensions
 } from '../../src/utils.js';
 import {chunk} from '../chunk/chunk.js';
 import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
@@ -280,7 +281,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     uniqueDealId: uniqueDealId,
     bidderVersion: bidderVersion,
     prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`,
+    res: getScreenResolution(),
     schain: schain,
     mediaTypes: mediaTypes,
     isStorageAllowed: isStorageAllowed,
@@ -372,6 +373,48 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
 
   return data;
+}
+
+function getScreenResolution() {
+  const dimensions = getWinDimensions();
+  const width = dimensions?.screen?.width;
+  const height = dimensions?.screen?.height;
+
+  if (isFiniteNumber(width) && isFiniteNumber(height)) {
+    return `${width}x${height}`;
+  }
+
+  const fallback = getFallbackScreen();
+  return `${fallback.width}x${fallback.height}`;
+}
+
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function getFallbackScreen() {
+  if (typeof window === 'undefined') {
+    return {width: 0, height: 0};
+  }
+
+  try {
+    const topScreen = window.top?.screen;
+    const width = topScreen?.width;
+    const height = topScreen?.height;
+
+    if (isFiniteNumber(width) && isFiniteNumber(height)) {
+      return {width, height};
+    }
+  } catch (e) {}
+
+  const width = window?.screen?.width;
+  const height = window?.screen?.height;
+
+  if (isFiniteNumber(width) && isFiniteNumber(height)) {
+    return {width, height};
+  }
+
+  return {width: 0, height: 0};
 }
 
 export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
