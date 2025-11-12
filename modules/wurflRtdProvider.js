@@ -50,7 +50,7 @@ const ENRICHMENT_TYPE = {
   UNKNOWN: 'unknown',
   NONE: 'none',
   LCE: 'lce',
-  LCE_ERROR: 'lce_error',
+  LCE_ERROR: 'lcefailed',
   WURFL_PUB: 'wurfl_pub',
   WURFL_SSP: 'wurfl_ssp',
   WURFL_PUB_SSP: 'wurfl_pub_ssp'

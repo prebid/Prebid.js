@@ -1131,8 +1131,8 @@ describe('wurflRtdProvider', function () {
           const beaconCall = sendBeaconStub.getCall(0);
           const payload = JSON.parse(beaconCall.args[1]);
           expect(payload).to.have.property('sampling_rate', 100);
-          // Enrichment type can be 'lce' or 'lce_error' depending on what data is available
-          expect(payload.enrichment).to.be.oneOf(['lce', 'lce_error']);
+          // Enrichment type can be 'lce' or 'lcefailed' depending on what data is available
+          expect(payload.enrichment).to.be.oneOf(['lce', 'lcefailed']);
           done();
         };
 
@@ -1501,8 +1501,8 @@ describe('wurflRtdProvider', function () {
       });
     });
 
-    describe('LCE Error Handling', function() {
-      beforeEach(function() {
+    describe('LCE Error Handling', function () {
+      beforeEach(function () {
         // Setup empty cache to force LCE
         sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
@@ -1544,11 +1544,11 @@ describe('wurflRtdProvider', function () {
 
           wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, null);
 
-          // Check beacon was sent with lce_error enrichment type
+          // Check beacon was sent with lcefailed enrichment type
           expect(sendBeaconStub.calledOnce).to.be.true;
           const beaconCall = sendBeaconStub.getCall(0);
           const payload = JSON.parse(beaconCall.args[1]);
-          expect(payload).to.have.property('enrichment', 'lce_error');
+          expect(payload).to.have.property('enrichment', 'lcefailed');
 
           done();
         };
