@@ -7,6 +7,7 @@ import {generateUUID} from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {enrichEidsRule} from "../../../modules/tcfControl.ts";
+import * as utils from '../../../src/utils.js';
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
@@ -145,9 +146,15 @@ describe('ID5 analytics adapter', () => {
 
       // Wait as gzip stream is async, we need to wait until it is processed.  3 requests: config, tcf2Enforcement, auctionEnd
       await waitForRequests(3);
-      const gzReq = server.requests[2];
-      expect(gzReq.requestHeaders['Content-Encoding']).to.equal('gzip');
-      expect(gzReq.requestBody).to.be.instanceof(Uint8Array);
+      const eventReq = server.requests[2];
+      if (utils.isGzipCompressionSupported()) {
+        expect(eventReq.requestHeaders['Content-Encoding']).to.equal('gzip');
+        expect(eventReq.requestBody).to.be.instanceof(Uint8Array);
+      } else {    // compression is not supported in some test browsers, so we expect the event to be uncompressed.
+        expect(eventReq.requestHeaders['Content-Encoding']).to.be.undefined;
+        const body = JSON.parse(eventReq.requestBody);
+        expect(body.event).to.equal(EVENTS.AUCTION_END);
+      }
     });
 
     it('does not repeat already sent events on new events', () => {
