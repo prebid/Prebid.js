@@ -8,15 +8,15 @@ on:
       cmd:
         required: true
         type: string
-      chunk-no:
+      chunks:
         required: true
         type: number
       wdir:
         required: true
         type: string
     outputs:
-      wdir:
-        description: "Cache key for the working directory after running tests"
+      coverage:
+        description: "Cache key for coverage results"
         value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
     secrets:
       BROWSERSTACK_USER_NAME:
@@ -33,13 +33,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  define-chunks:
+    runs-on: ubuntu-latest
+
+    outputs:
+      chunks: ${{ steps.chunks.outputs.chunks }}
+
+    steps:
+      - name: Define chunks
+        id: colors
+        run: |
+          echo 'chunks=[ $(seq --separator=, 1 1 ${{ inputs.chunks }} ]' >> "$GITHUB_OUTPUT"
   test:
-    name: "Test chunk ${{ inputs.chunk-no }}"
+    needs: define-chunks
+    strategy:
+      matrix:
+       chunk: ${{ fromJSON(needs.define-chunks.output.chunks) }}
+    name: "Test chunk ${{ matrix.chunk }}"
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-      TEST_CHUNKS: 8
-      TEST_CHUNK: ${{ inputs.chunk-no }}
+      TEST_CHUNKS: ${{ inputs.chunks }}
+      TEST_CHUNK: ${{ matrix.chunk-no }}
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -86,7 +101,8 @@ jobs:
         with:
           local-testing: stop
 
-      - name: 'Save working directory'
-        uses: ./.github/actions/save-wdir
+      - name: 'Save coverage result'
+        uses: ./.github/actions/cache
         with:
-          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
+          key: test-${{ inputs.cmd }}-${{ matrix.chunk }}-${{ github.run_id }}
+          path: './build/coverage'

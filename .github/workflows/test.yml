@@ -56,7 +56,7 @@ jobs:
         run: npm ci
 
       - name: 'Save working directory'
-        uses: ./.github/actions/save-wdir
+        uses: ./.github/actions/cache
         with:
           key: source-${{ github.run_id }}
 
