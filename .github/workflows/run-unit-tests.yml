@@ -147,7 +147,7 @@ jobs:
         if: ${{ steps.coverage.outputs.coverage }}
         uses: ./.github/actions/cache
         with:
-          key: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
+          key: test-${{ inputs.test-cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
           path: './build/coverage'
 
   collect-coverage:
@@ -158,6 +158,10 @@ jobs:
     outputs:
       coverage: ${{ steps.set-coverage.outputs.key }}
     steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
       - name: Restore working directory
         uses: actions/cache/restore@v4
         with:
@@ -181,7 +185,7 @@ jobs:
               if (
                 await cache.restoreCache(
                     ['build/coverage'],
-                    'test-${{ inputs.cmd }}-' + chunk + '-${{ github.run_id }}'
+                    'test-${{ inputs.test-cmd }}-' + chunk + '-${{ github.run_id }}'
                 ) == null
               ) {
                  console.error('Coverage result not found for chunk' + chunk);
@@ -195,7 +199,7 @@ jobs:
           find coverage
           rm -r build
           mv ${{runner.temp}}/coverage .
-          echo 'key=coverage-${{ inputs.build-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUT"
+          echo 'key=coverage-${{ inputs.test-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUT"
 
       - name: Save coverage results
         uses: ./.github/actions/cache
