@@ -81,7 +81,7 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}-${{ github.run_id }}
+      group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}${{ inputs.serialize && '' || matrix.chunk-no }}-${{ github.run_id }}
       cancel-in-progress: false
 
     runs-on: ubuntu-latest
@@ -96,7 +96,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: ${{ needs.build.wdir }}
+          key: ${{ needs.build.outputs.wdir }}
           fail-on-cache-miss: true
 
       - name: 'BrowserStack Env Setup'
