@@ -60,14 +60,14 @@ jobs:
       - name: Define chunks
         id: chunks
         run: |
-          echo 'chunks=[ $(seq --separator=, 1 1 ${{ inputs.chunks }} ]' >> "$GITHUB_OUTPUT"
+          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
         
 
   run-tests:
     needs: build
     strategy:
       matrix:
-        chunk-no: ${{ fromJSON(needs.build.output.chunks) }}
+        chunk-no: ${{ fromJSON(needs.build.outputs.chunks) }}
     name: "Test chunk ${{ matrix.chunk }}"
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -76,6 +76,14 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
     outputs:
       coverage: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
+    concurrency:
+      # The following generates 'browserstack-<run_id>' when inputs.serialize is true, and a hopefully unique ID otherwise
+      # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
+      # (cfr. https://github.com/orgs/community/discussions/12835)
+      # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
+      group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}-${{ github.run_id }}
+      cancel-in-progress: false
+
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
