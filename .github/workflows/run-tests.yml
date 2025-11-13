@@ -59,6 +59,7 @@ jobs:
           path: .
           name: build-${{ inputs.build-cmd }}
           include-hidden-files: true
+          overwrite: true
 
       - name: Define chunks
         id: chunks
@@ -150,6 +151,7 @@ jobs:
         with:
           name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
           path: ./build/coverage
+          overwrite: true
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
@@ -171,4 +173,5 @@ jobs:
         with:
           name: coverage-complete-${{ inputs.test-cmd }}
           path: ./coverage
+          overwrite: true
 

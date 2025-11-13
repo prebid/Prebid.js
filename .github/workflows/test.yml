@@ -61,6 +61,7 @@ jobs:
           path: .
           name: source
           include-hidden-files: true
+          overwrite: true
 
   lint:
     name: "Run linter"
