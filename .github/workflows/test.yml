@@ -56,9 +56,9 @@ jobs:
         run: npm ci
 
       - name: 'Save working directory'
-        uses: ./.github/actions/cache
+        uses: actions/upload-artifact@v4
         with:
-          key: source-${{ github.run_id }}
+          name: source
 
   lint:
     name: "Run linter"
@@ -70,11 +70,9 @@ jobs:
         with:
           node-version: '20'
       - name: Restore source
-        uses: actions/cache/restore@v4
+        uses: actions/download-artifact@v5
         with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: source
       - name: lint
         run: |
           npx eslint
@@ -123,11 +121,9 @@ jobs:
           node-version: '20'
 
       - name: Restore source
-        uses: actions/cache/restore@v4
+        uses: actions/download-artifact@v5
         with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: source
 
       - name: 'BrowserStack Env Setup'
         uses: 'browserstack/github-actions/setup-env@master'
@@ -165,11 +161,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore working directory
-        uses: actions/cache/restore@v4
+        uses: actions/download-artifact@v5
         with:
-          path: .
-          key: ${{ needs.test.outputs.coverage }}
-          fail-on-cache-miss: true
+          path: ./coverage
+          name: ${{ needs.test.outputs.coverage }}
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:

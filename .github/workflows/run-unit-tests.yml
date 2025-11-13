@@ -20,7 +20,7 @@ on:
         type: boolean
     outputs:
       coverage:
-        description: Cache key for coverage results
+        description: Artifact name for coverage results
         value: ${{ jobs.collect-coverage.outputs.coverage }}
     secrets:
       BROWSERSTACK_USER_NAME:
@@ -43,19 +43,17 @@ jobs:
           node-version: '20'
 
       - name: Fetch source
-        uses: actions/cache/restore@v4
+        uses: actions/download-artifact@v5
         with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: source
 
       - name: Build
         run: ${{ inputs.build-cmd }}
 
       - name: Save working directory
-        uses: ./.github/actions/cache
+        uses: actions/upload-artifact@v4
         with:
-          key: build-${{ inputs.build-cmd }}-${{ github.run_id }}
+          name: build-${{ inputs.build-cmd }}
 
       - name: Define chunks
         id: chunks
@@ -96,11 +94,9 @@ jobs:
 
       - name: Restore working directory
         id: restore-dir
-        uses: actions/cache/restore@v4
+        uses: actions/download-artifact@v5
         with:
-          path: .
-          key: ${{ needs.build.outputs.wdir }}
-          fail-on-cache-miss: true
+          name: build-${{ inputs.build-cmd }}
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
@@ -147,7 +143,7 @@ jobs:
         if: ${{ steps.coverage.outputs.coverage }}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.chunk-no }}
+          name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
           path: ./build/coverage
 
   collect-coverage:
@@ -156,33 +152,18 @@ jobs:
     name: 'Collect coverage results'
     runs-on: ubuntu-latest
     outputs:
-      coverage: ${{ steps.set-coverage.outputs.key }}
+      coverage: coverage-complete-${{ inputs.test-cmd }}
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-
-      - name: Restore working directory
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: ${{ needs.build.outputs.wdir }}
-          fail-on-cache-miss: true
-
       - name: Download coverage results
         uses: actions/download-artifact@v5
         with:
           path: ./coverage
-          pattern: coverage-*
+          pattern: coverage-partial-${{test-cmd}}-*
           merge-multiple: true
 
-      - run: |
-          find ./coverage
-
       - name: Save coverage results
-        uses: ./.github/actions/cache
+        uses: actions/upload-artifact@v4
         with:
+          name: coverage-complete-${{ inputs.test-cmd }}
           path: ./coverage
-          key: ${{ steps.set-coverage.outputs.key }}
 
