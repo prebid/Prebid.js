@@ -31,7 +31,6 @@ on:
 
 jobs:
   build:
-    if: ${{ inputs.build-cmd }}
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -51,6 +50,7 @@ jobs:
           name: source
 
       - name: Build
+        if: ${{ inputs.build-cmd }}
         run: ${{ inputs.build-cmd }}
 
       - name: Save working directory
@@ -97,18 +97,10 @@ jobs:
           node-version: '20'
 
       - name: Restore working directory
-        if: ${{ inputs.build-cmd }}
         uses: actions/download-artifact@v5
         with:
           path: .
           name: build-${{ inputs.build-cmd }}
-
-      - name: Restore source
-        if: ${{ !(inputs.build-cmd) }}
-        uses: actions/download-artifact@v5
-        with:
-          path: .
-          name: source
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
