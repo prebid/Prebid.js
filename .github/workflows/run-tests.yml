@@ -145,7 +145,7 @@ jobs:
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
-    needs: [build, run-tests]
+    needs: run-tests
     name: 'Collect coverage results'
     runs-on: ubuntu-latest
     outputs:
