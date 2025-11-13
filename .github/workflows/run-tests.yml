@@ -58,6 +58,7 @@ jobs:
         with:
           path: .
           name: build-${{ inputs.build-cmd }}
+          include-hidden-files: true
 
       - name: Define chunks
         id: chunks

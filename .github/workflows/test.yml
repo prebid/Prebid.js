@@ -60,6 +60,7 @@ jobs:
         with:
           path: .
           name: source
+          include-hidden-files: true
 
   lint:
     name: "Run linter"
@@ -77,8 +78,6 @@ jobs:
           name: source
       - name: lint
         run: |
-          ls -la .
-          ls -la ..
           npx eslint
       
   test-no-features:
