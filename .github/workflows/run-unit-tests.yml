@@ -157,6 +157,7 @@ jobs:
           path: './build/coverage'
 
       - uses: cloudposse/github-action-matrix-outputs-write@v1
+        if: ${{ steps.coverage.outputs.coverage }}
         id: out
         with:
           matrix-step-name: coverage
@@ -221,9 +222,9 @@ jobs:
             }
       - id: set-coverage
         run: |
-          find coverage
           rm -r build
           mv ${{runner.temp}}/coverage .
+          find coverage          
           echo 'key=coverage-${{ inputs.test-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUT"
 
       - name: Save coverage results
