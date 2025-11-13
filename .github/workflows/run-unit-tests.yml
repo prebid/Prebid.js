@@ -79,7 +79,6 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
-      coverage-keys: ${{ steps.out.outputs.key }}
     concurrency:
       # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
@@ -179,8 +178,8 @@ jobs:
           merge-multiple: true
 
       - run: |
-          find .coverage
-          
+          find ./coverage
+
       - name: Save coverage results
         uses: ./.github/actions/cache
         with:
