@@ -45,19 +45,10 @@ jobs:
       - name: Build
         run: ${{ inputs.build-cmd }}
 
-      - name: Cache build output
-        uses: actions/cache/save@v4
+      - name: 'Save working directory'
+        uses: ./.github/actions/save-wdir
         with:
-          path: .
           key: build-${{ inputs.build-cmd }}-${{ github.run_id }}
-
-      - name: Verify cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: build-${{ inputs.build-cmd }}-${{ github.run_id }}
-          lookup-only: true
-          fail-on-cache-miss: true
 
   chunk-1:
     needs: build

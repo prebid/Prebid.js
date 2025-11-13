@@ -1,0 +1,25 @@
+name: Save working directory
+description: Save working directory to GH cache and verify it
+inputs:
+  key:
+    description: "Cache key"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Save working directory
+      uses: actions/cache/save@v4
+      with:
+        path: .
+        key: ${{ inputs.key }}
+    - name: Wait before verification
+      shell: bash
+      run: |
+        sleep 2
+    - name: Verify cache
+      uses: actions/cache/restore@v4
+      with:
+        path: .
+        key: ${{ inputs.key }}
+        lookup-only: true
+        fail-on-cache-miss: true
