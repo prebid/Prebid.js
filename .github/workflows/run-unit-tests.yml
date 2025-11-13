@@ -144,7 +144,7 @@ jobs:
           fi
 
       - name: 'Save coverage result'
-        if: ${{steps.coverage.outputs.coverage}}
+        if: ${{ steps.coverage.outputs.coverage }}
         uses: ./.github/actions/cache
         with:
           key: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
@@ -158,9 +158,12 @@ jobs:
     outputs:
       coverage: ${{ steps.set-coverage.outputs.key }}
     steps:
-      - uses: actions/setup-node@v4
+      - name: Restore working directory
+        uses: actions/cache/restore@v4
         with:
-          node-version: '20.x'
+          path: .
+          key: ${{ needs.build.outputs.wdir }}
+          fail-on-cache-miss: true
       - run: |
           npm install @actions/cache
           mkdir ${{ runner.temp }}/coverage
@@ -189,6 +192,7 @@ jobs:
             }
       - id: set-coverage
         run: |
+          ls -la coverage
           rm -r build
           mv ${{runner.temp}}/coverage .
           echo 'key=coverage-${{ inputs.build-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUTS"
