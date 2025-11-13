@@ -47,6 +47,7 @@ jobs:
       - name: Fetch source
         uses: actions/download-artifact@v5
         with:
+          path: .
           name: source
 
       - name: Build
@@ -55,6 +56,7 @@ jobs:
       - name: Save working directory
         uses: actions/upload-artifact@v4
         with:
+          path: .
           name: build-${{ inputs.build-cmd }}
 
       - name: Define chunks
@@ -98,12 +100,14 @@ jobs:
         if: ${{ inputs.build-cmd }}
         uses: actions/download-artifact@v5
         with:
+          path: .
           name: build-${{ inputs.build-cmd }}
 
       - name: Restore source
         if: ${{ !(inputs.build-cmd) }}
         uses: actions/download-artifact@v5
         with:
+          path: .
           name: source
 
       - name: 'BrowserStack Env Setup'

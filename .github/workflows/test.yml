@@ -58,6 +58,7 @@ jobs:
       - name: 'Save working directory'
         uses: actions/upload-artifact@v4
         with:
+          path: .
           name: source
 
   lint:
@@ -72,6 +73,7 @@ jobs:
       - name: Restore source
         uses: actions/download-artifact@v5
         with:
+          path: .
           name: source
       - name: lint
         run: |
