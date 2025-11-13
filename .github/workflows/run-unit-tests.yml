@@ -146,11 +146,9 @@ jobs:
           key_prefix="coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-";
           echo 'key_prefix='"$key_prefix" >> out;
           echo 'key='${key_prefix}'${{ matrix.chunk-no }}' >> out;
-          echo "out:";
+          echo "outputs:";
           cat out;
           cat out >> "$GITHUB_OUTPUT";
-          echo "out:";          
-          cat $GITHUB_OUTPUT;
 
       - name: 'Save coverage result'
         if: ${{ steps.coverage.outputs.coverage }}
