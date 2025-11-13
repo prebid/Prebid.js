@@ -196,7 +196,7 @@ jobs:
           script: |
             const cache = require('@actions/cache');
             const chunks = ${{ needs.build.outputs.chunks }};
-            const keys = ${{ steps.read-keys.outputs.result }};
+            const keys = (${{ steps.read-keys.outputs.result }}).key;
             const os = require('os');
             const path = require('path');
             const process = require('process');
