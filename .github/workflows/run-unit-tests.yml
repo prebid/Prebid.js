@@ -86,6 +86,10 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
+      - name: Env
+        run: |
+          echo concurrency: '${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.test-cmd }}${{ inputs.serialize && '' || matrix.chunk-no }}-${{ github.run_id }}'
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
