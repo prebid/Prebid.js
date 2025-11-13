@@ -107,6 +107,7 @@ jobs:
     with:
       test-cmd: npx gulp e2e-test
       browserstack: true
+      timeout: 15
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -116,7 +117,7 @@ jobs:
     needs: [checkout, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Restore working directory
+      - name: Download coverage results
         uses: actions/download-artifact@v5
         with:
           path: ./coverage

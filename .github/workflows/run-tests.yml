@@ -19,6 +19,11 @@ on:
         description: If true, set up browserstack environment and adjust concurrency
         required: false
         type: boolean
+      timeout:
+        description: Timeout on test run
+        required: false
+        type: number
+        default: 8
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -118,8 +123,8 @@ jobs:
       - name: Run tests
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 8
-          max_attempts: 3
+          timeout_minutes: ${{ inputs.timeout }}
+          max_attempts: 2
           command: ${{ inputs.test-cmd }}
 
       - name: 'BrowserStackLocal Stop'
