@@ -746,71 +746,68 @@ const WurflJSDevice = {
 
 // ==================== WURFL LCE DEVICE MODULE ====================
 const WurflLCEDevice = {
-  // Expected fields that LCE can provide (excludes 'ppi' which requires physical screen dimensions)
-  _expectedFields: ['devicetype', 'make', 'model', 'os', 'osv', 'hwv', 'h', 'w', 'pxratio', 'js'],
-
   // Private mappings for device detection
   _desktopMapping: new Map([
-    ["Windows NT", "Windows"],
-    ["Macintosh; Intel Mac OS X", "macOS"],
-    ["Mozilla/5.0 (X11; Linux", "Linux"],
-    ["X11; Ubuntu; Linux x86_64", "Linux"],
-    ["Mozilla/5.0 (X11; CrOS", "ChromeOS"],
+    ['Windows NT', 'Windows'],
+    ['Macintosh; Intel Mac OS X', 'macOS'],
+    ['Mozilla/5.0 (X11; Linux', 'Linux'],
+    ['X11; Ubuntu; Linux x86_64', 'Linux'],
+    ['Mozilla/5.0 (X11; CrOS', 'ChromeOS'],
   ]),
 
   _tabletMapping: new Map([
-    ["iPad; CPU OS ", "iPadOS"],
+    ['iPad; CPU OS ', 'iPadOS'],
   ]),
 
   _smartphoneMapping: new Map([
-    ["Android", "Android"],
-    ["iPhone; CPU iPhone OS", "iOS"],
+    ['Android', 'Android'],
+    ['iPhone; CPU iPhone OS', 'iOS'],
   ]),
 
   _smarttvMapping: new Map([
-    ["Web0S", "LG webOS"],
-    ["SMART-TV; Linux; Tizen", "Tizen"],
+    ['Web0S', 'LG webOS'],
+    ['SMART-TV; Linux; Tizen', 'Tizen'],
   ]),
 
   _ottMapping: new Map([
-    ["Roku", "Roku OS"],
-    ["Xbox", "Windows"],
-    ["PLAYSTATION", "PlayStation OS"],
-    ["PlayStation", "PlayStation OS"],
+    ['Roku', 'Roku OS'],
+    ['Xbox', 'Windows'],
+    ['PLAYSTATION', 'PlayStation OS'],
+    ['PlayStation', 'PlayStation OS'],
   ]),
 
   _makeMapping: new Map([
-    ["motorola", "Motorola"],
-    [" moto ", "Motorola"],
-    ["Android", "Generic"],
-    ["iPad", "Apple"],
-    ["iPhone", "Apple"],
-    ["Firefox", "Mozilla"],
-    ["Edge", "Microsoft"],
-    ["Chrome", "Google"],
+    ['motorola', 'Motorola'],
+    [' moto ', 'Motorola'],
+    ['Android', 'Generic'],
+    ['iPad', 'Apple'],
+    ['iPhone', 'Apple'],
+    ['Firefox', 'Mozilla'],
+    ['Edge', 'Microsoft'],
+    ['Chrome', 'Google'],
   ]),
 
   _modelMapping: new Map([
-    ["Android", "Android"],
-    ["iPad", "iPad"],
-    ["iPhone", "iPhone"],
-    ["Firefox", "Firefox"],
-    ["Edge", "Edge"],
-    ["Chrome", "Chrome"],
+    ['Android', 'Android'],
+    ['iPad', 'iPad'],
+    ['iPhone', 'iPhone'],
+    ['Firefox', 'Firefox'],
+    ['Edge', 'Edge'],
+    ['Chrome', 'Chrome'],
   ]),
 
   // Private helper methods
   _parseOsVersion(ua, osName) {
     switch (osName) {
-      case "Windows": {
+      case 'Windows': {
         const matches = ua.match(/Windows NT ([\d.]+)/);
-        return matches ? matches[1] : undefined;
+        return matches ? matches[1] : '';
       }
-      case "macOS": {
+      case 'macOS': {
         const matches = ua.match(/Mac OS X ([\d_]+)/);
-        return matches ? matches[1].replace(/_/g, '.') : undefined;
+        return matches ? matches[1].replace(/_/g, '.') : '';
       }
-      case "iOS": {
+      case 'iOS': {
         // iOS 26 specific logic
         const matches1 = ua.match(/iPhone; CPU iPhone OS 18[\d_]+ like Mac OS X\).+(?:Version|FBSV)\/(26[\d.]+)/);
         if (matches1) {
@@ -818,9 +815,9 @@ const WurflLCEDevice = {
         }
         // iOS 18.x and lower
         const matches2 = ua.match(/iPhone; CPU iPhone OS ([\d_]+) like Mac OS X/);
-        return matches2 ? matches2[1].replace(/_/g, '.') : undefined;
+        return matches2 ? matches2[1].replace(/_/g, '.') : '';
       }
-      case "iPadOS": {
+      case 'iPadOS': {
         // iOS 26 specific logic
         const matches1 = ua.match(/iPad; CPU OS 18[\d_]+ like Mac OS X\).+(?:Version|FBSV)\/(26[\d.]+)/);
         if (matches1) {
@@ -828,9 +825,9 @@ const WurflLCEDevice = {
         }
         // iOS 18.x and lower
         const matches2 = ua.match(/iPad; CPU OS ([\d_]+) like Mac OS X/);
-        return matches2 ? matches2[1].replace(/_/g, '.') : undefined;
+        return matches2 ? matches2[1].replace(/_/g, '.') : '';
       }
-      case "Android": {
+      case 'Android': {
         // For Android UAs with a decimal
         const matches1 = ua.match(/Android ([\d.]+)/);
         if (matches1) {
@@ -838,21 +835,21 @@ const WurflLCEDevice = {
         }
         // For Android UAs without a decimal
         const matches2 = ua.match(/Android ([\d]+)/);
-        return matches2 ? matches2[1] : undefined;
+        return matches2 ? matches2[1] : '';
       }
-      case "ChromeOS": {
+      case 'ChromeOS': {
         const matches = ua.match(/CrOS x86_64 ([\d.]+)/);
-        return matches ? matches[1] : undefined;
+        return matches ? matches[1] : '';
       }
-      case "Tizen": {
+      case 'Tizen': {
         const matches = ua.match(/Tizen ([\d.]+)/);
-        return matches ? matches[1] : undefined;
+        return matches ? matches[1] : '';
       }
-      case "Roku OS": {
+      case 'Roku OS': {
         const matches = ua.match(/Roku\/DVP [\dA-Z]+ [\d.]+\/([\d.]+)/);
-        return matches ? matches[1] : undefined;
+        return matches ? matches[1] : '';
       }
-      case "PlayStation OS": {
+      case 'PlayStation OS': {
         // PS4
         const matches1 = ua.match(/PlayStation \d\/([\d.]+)/);
         if (matches1) {
@@ -860,12 +857,12 @@ const WurflLCEDevice = {
         }
         // PS3
         const matches2 = ua.match(/PLAYSTATION \d ([\d.]+)/);
-        return matches2 ? matches2[1] : undefined;
+        return matches2 ? matches2[1] : '';
       }
-      case "Linux":
-      case "LG webOS":
+      case 'Linux':
+      case 'LG webOS':
       default:
-        return undefined;
+        return '';
     }
   },
 
@@ -894,7 +891,7 @@ const WurflLCEDevice = {
       }
     }
     // Android Tablets
-    if (ua.includes("Android") && !ua.includes("Mobile Safari") && ua.includes("Safari")) {
+    if (ua.includes('Android') && !ua.includes('Mobile Safari') && ua.includes('Safari')) {
       return this._makeDeviceInfo(ORTB2_DEVICE_TYPE.TABLET, 'Android', ua);
     }
     // Iterate over smartphoneMapping
@@ -909,7 +906,7 @@ const WurflLCEDevice = {
         return this._makeDeviceInfo(ORTB2_DEVICE_TYPE.CONNECTED_TV, osName, ua);
       }
     }
-    return { deviceType: "", osName: "", osVersion: "" };
+    return { deviceType: '', osName: '', osVersion: '' };
   },
 
   _getDevicePixelRatioValue() {
@@ -948,7 +945,7 @@ const WurflLCEDevice = {
         return brandName;
       }
     }
-    return undefined;
+    return 'Generic';
   },
 
   _getModel(ua) {
@@ -957,7 +954,11 @@ const WurflLCEDevice = {
         return modelName;
       }
     }
-    return undefined;
+    return '';
+  },
+
+  _getUserAgent() {
+    return window.navigator?.userAgent || '';
   },
 
   _isRobot(useragent) {
@@ -974,81 +975,81 @@ const WurflLCEDevice = {
   FPD() {
     // Early exit - check window exists
     if (typeof window === 'undefined') {
-      return { device: { js: 1 }, hasError: true };
+      return { js: 1 };
     }
 
     // Check what globals are available upfront
     const hasScreen = !!window.screen;
-    const hasNavigator = !!window.navigator;
 
     const device = { js: 1 };
+    const useragent = this._getUserAgent();
 
-    try {
-      const useragent = hasNavigator ? (window.navigator.userAgent || '') : '';
-
-      // Only process UA-dependent properties if we have a UA
-      if (useragent) {
-        // Get device info
-        const deviceInfo = this._getDeviceInfo(useragent);
-        if (deviceInfo.deviceType !== undefined) {
-          device.devicetype = deviceInfo.deviceType;
-        }
-        if (deviceInfo.osName !== undefined) {
-          device.os = deviceInfo.osName;
-        }
-        if (deviceInfo.osVersion !== undefined) {
-          device.osv = deviceInfo.osVersion;
-        }
-
-        // Make/model
-        const make = this._getMake(useragent);
-        if (make !== undefined) {
-          device.make = make;
-        }
-
-        const model = this._getModel(useragent);
-        if (model !== undefined) {
-          device.model = model;
-          device.hwv = model;
-        }
+    // Only process UA-dependent properties if we have a UA
+    if (useragent) {
+      // Get device info
+      const deviceInfo = this._getDeviceInfo(useragent);
+      if (deviceInfo.deviceType !== undefined) {
+        device.devicetype = deviceInfo.deviceType;
+      }
+      if (deviceInfo.osName !== undefined) {
+        device.os = deviceInfo.osName;
+      }
+      if (deviceInfo.osVersion !== undefined) {
+        device.osv = deviceInfo.osVersion;
       }
 
-      // Screen-dependent properties (independent of UA)
-      if (hasScreen) {
-        const pixelRatio = this._getDevicePixelRatioValue();
-        if (pixelRatio !== undefined) {
-          device.pxratio = pixelRatio;
-
-          const width = this._getScreenWidth(pixelRatio);
-          if (width !== undefined) {
-            device.w = width;
-          }
-
-          const height = this._getScreenHeight(pixelRatio);
-          if (height !== undefined) {
-            device.h = height;
-          }
-        }
+      // Make/model
+      const make = this._getMake(useragent);
+      if (make !== undefined) {
+        device.make = make;
       }
-    } catch (e) {
-      logger.logError('Error generating LCE device data:', e);
-      return { device, hasError: true };
+
+      const model = this._getModel(useragent);
+      if (model !== undefined) {
+        device.model = model;
+        device.hwv = model;
+      }
     }
 
-    // Check if any expected field is missing
-    const hasError = this._expectedFields.some(field => device[field] === undefined);
+    // Screen-dependent properties (independent of UA)
+    if (hasScreen) {
+      const pixelRatio = this._getDevicePixelRatioValue();
+      if (pixelRatio !== undefined) {
+        device.pxratio = pixelRatio;
 
-    return { device, hasError };
+        const width = this._getScreenWidth(pixelRatio);
+        if (width !== undefined) {
+          device.w = width;
+        }
+
+        const height = this._getScreenHeight(pixelRatio);
+        if (height !== undefined) {
+          device.h = height;
+        }
+      }
+    }
+
+    return device;
   },
 
   // Public API - returns device.ext.wurfl object with LCE-detected capabilities
   // Returns: { device: { ext: { wurfl: { is_robot: boolean } } } }
   Ext() {
+    // Early exit - check window exists
+    if (typeof window === 'undefined') {
+      return { device: { ext: { wurfl: {} } } };
+    }
+
+    const useragent = this._getUserAgent();
+    if (!useragent) {
+      return { device: { ext: { wurfl: {} } } };
+    }
+
     return {
       device: {
         ext: {
           wurfl: {
-            is_robot: this._isRobot(navigator.userAgent)
+            is_robot: this._isRobot(useragent)
           }
         }
       }
@@ -1167,18 +1168,26 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   logger.logMessage('generating fresh LCE data');
   WurflDebugger.setDataSource('lce');
   WurflDebugger.lceDetectionStart();
-  const lceResult = WurflLCEDevice.FPD();
-  const extWurfl = WurflLCEDevice.Ext();
-  WurflDebugger.lceDetectionStop();
-  WurflDebugger.setLceData(lceResult.device, extWurfl);
-  enrichDeviceFPD(reqBidsConfigObj, lceResult.device);
-  enrichDeviceExt(reqBidsConfigObj, extWurfl);
 
-  // Set enrichment type based on error status
-  enrichmentType = ENRICHMENT_TYPE.LCE;
-  if (lceResult.hasError) {
+  let lceDevice;
+  let extWurfl;
+  try {
+    lceDevice = WurflLCEDevice.FPD();
+    extWurfl = WurflLCEDevice.Ext();
+    enrichmentType = ENRICHMENT_TYPE.LCE;
+  } catch (e) {
+    logger.logError('Error generating LCE device data:', e);
+    lceDevice = { js: 1 };
+    extWurfl = { device: { ext: { wurfl: {} } } };
     enrichmentType = ENRICHMENT_TYPE.LCE_ERROR;
   }
+
+  WurflDebugger.lceDetectionStop();
+  WurflDebugger.setLceData(lceDevice, extWurfl);
+  enrichDeviceFPD(reqBidsConfigObj, lceDevice);
+  enrichDeviceExt(reqBidsConfigObj, extWurfl);
+
+  // Set enrichment type for all bidders
   bidders.forEach(bidder => bidderEnrichment.set(bidder, enrichmentType));
 
   // Set default sampling rate for LCE

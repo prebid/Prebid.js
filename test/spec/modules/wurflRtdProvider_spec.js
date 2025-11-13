@@ -1635,20 +1635,23 @@ describe('wurflRtdProvider', function () {
         reqBidsConfigObj.ortb2Fragments.bidder = {};
       });
 
-      it('should set LCE_ERROR enrichment type when empty user agent triggers error', (done) => {
+      it('should set LCE_ERROR enrichment type when LCE device detection throws error', (done) => {
         const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
         });
 
+        // Import the WurflLCEDevice to stub it
+        const wurflRtdProvider = require('modules/wurflRtdProvider.js');
+
         const callback = () => {
           const device = reqBidsConfigObj.ortb2Fragments.global.device;
 
-          // Should have minimal data
+          // Should have minimal fallback data
           expect(device.js).to.equal(1);
 
-          // UA-dependent fields should not be set when UA is empty
+          // UA-dependent fields should not be set when error occurs
           expect(device.devicetype).to.be.undefined;
           expect(device.os).to.be.undefined;
 
@@ -1676,10 +1679,12 @@ describe('wurflRtdProvider', function () {
           done();
         };
 
-        // Mock empty UA to trigger error
-        const originalUA = window.navigator.userAgent;
+        // Stub _getDeviceInfo to throw an error
+        const originalGetDeviceInfo = window.navigator.userAgent;
         Object.defineProperty(window.navigator, 'userAgent', {
-          value: '',
+          get: () => {
+            throw new Error('User agent access failed');
+          },
           configurable: true
         });
 
@@ -1687,7 +1692,7 @@ describe('wurflRtdProvider', function () {
 
         // Restore
         Object.defineProperty(window.navigator, 'userAgent', {
-          value: originalUA,
+          value: originalGetDeviceInfo,
           configurable: true
         });
       });
