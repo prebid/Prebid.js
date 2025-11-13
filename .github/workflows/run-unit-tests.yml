@@ -19,9 +19,9 @@ on:
         required: false
         type: boolean
     outputs:
-      wdir:
-        description: Cache key for the working directory after running tests
-        value: 'temp'
+      coverage:
+        description: Cache key for coverage results
+        value: ${{ jobs.collect-coverage.outputs.coverage }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -78,7 +78,8 @@ jobs:
       TEST_CHUNKS: ${{ inputs.chunks }}
       TEST_CHUNK: ${{ matrix.chunk-no }}
     outputs:
-      coverage: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
+      coverage: ${{ steps.coverage.outputs.coverage }}
+      coverage-id: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
     concurrency:
       # The following generates 'browserstack-<run_id>' when inputs.serialize is true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
@@ -137,7 +138,7 @@ jobs:
         id: 'coverage'
         run: |
           if [ -d "./build/coverage" ]; then 
-            echo coverage=true >> "$GITHUB_OUTPUTS";
+            echo 'coverage=true' >> "$GITHUB_OUTPUTS";
           fi
 
       - name: 'Save coverage result'
@@ -146,3 +147,53 @@ jobs:
         with:
           key: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
           path: './build/coverage'
+
+  collect-coverage:
+    if: ${{ needs.run-tests.outputs.coverage }}
+    needs: [build, run-tests]
+    name: 'Collect coverage results'
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.set-coverage.outputs.key }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - run: |
+          npm install @actions/cache
+          mkdir ${{ runner.temp }}/coverage
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const cache = require('@actions/cache');
+            const chunks = ${{ needs.build.outputs.chunks }};
+            const os = require('os');
+            const path = require('path');
+            const process = require('process');
+            const fs = require('node:fs/promises');
+            
+            for (const chunk of chunks) {
+              if (
+                await cache.restoreCache(
+                    ['build/coverage'],
+                    'test-${{ inputs.cmd }}-' + chunk + '-${{ github.run_id }}'
+                ) == null
+              ) {
+                 console.error('Coverage result not found for chunk' + chunk);
+                 process.exit(1);
+              } else {
+                await fs.cp('./build/coverage', '${{ runner.temp }}/coverage', {recursive: true});
+              }
+            }
+      - id: set-coverage
+        run: |
+          rm -r build
+          mv ${{runner.temp}}/coverage .
+          echo 'key=coverage-${{ inputs.build-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUTS"
+
+      - name: Save coverage results
+        uses: ./.github/actions/cache
+        with:
+          path: ./coverage
+          key: ${{ steps.set-coverage.outputs.key }}
+
