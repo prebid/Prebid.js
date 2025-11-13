@@ -79,6 +79,7 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
+      coverage-key-prefix:  ${{ steps.coverage.outputs.key_prefix }}
     concurrency:
       # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
@@ -141,13 +142,16 @@ jobs:
         run: |
           if [ -d "./build/coverage" ]; then 
             echo 'coverage=true' >> "$GITHUB_OUTPUT";
+            key_prefix="coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-"
+            echo key_prefix="$key_prefix" >> "GITHUB_OUTPUT";
+            echo key="$key_prefix${{ matrix.chunk-no }}" >> "GITHUB_OUTPUT"
           fi
 
       - name: 'Save coverage result'
         if: ${{ steps.coverage.outputs.coverage }}
         uses: ./.github/actions/cache
         with:
-          key: test-${{ inputs.test-cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
+          key: ${{ steps.coverage.outputs.key }}
           path: './build/coverage'
 
   collect-coverage:
@@ -183,12 +187,13 @@ jobs:
             
             const src = './build/coverage';
             const dest = path.join('${{ runner.temp }}', 'coverage');
+            const prefix = '${{ needs.run-tests.outputs.coverage-key-prefix }}';
             
             for (const chunk of chunks) {
               if (
                 await cache.restoreCache(
                     ['build/coverage'],
-                    'test-${{ inputs.test-cmd }}-' + chunk + '-${{ github.run_id }}'
+                    prefix + chunk;
                 ) == null
               ) {
                  console.error('Coverage result not found for chunk' + chunk);
