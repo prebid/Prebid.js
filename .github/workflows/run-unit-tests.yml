@@ -146,6 +146,7 @@ jobs:
             echo key_prefix="$key_prefix" >> "GITHUB_OUTPUT";
             echo key="$key_prefix${{ matrix.chunk-no }}" >> "GITHUB_OUTPUT"
           fi
+          cat $GITHUB_OUTPUT;
 
       - name: 'Save coverage result'
         if: ${{ steps.coverage.outputs.coverage }}
