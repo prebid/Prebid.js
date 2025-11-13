@@ -181,6 +181,9 @@ jobs:
             const process = require('process');
             const fs = require('node:fs/promises');
             
+            const src = './build/coverage';
+            const dest = path.join('${{ runner.temp }}', 'coverage');
+            
             for (const chunk of chunks) {
               if (
                 await cache.restoreCache(
@@ -191,7 +194,8 @@ jobs:
                  console.error('Coverage result not found for chunk' + chunk);
                  process.exit(1);
               } else {
-                await fs.cp('./build/coverage', '${{ runner.temp }}/coverage', {recursive: true});
+                await fs.cp(src, dest, {recursive: true});
+                await fs.rm(src, {recursive: true, force: true});
               }
             }
       - id: set-coverage
