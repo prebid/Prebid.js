@@ -26,6 +26,5 @@ runs:
     - name: 'Untar working directory'
       shell: bash
       run: |
-        find ${{ runner.temp }}
         tar -xf '${{ runner.temp }}/${{ inputs.name }}.tar' .
         
