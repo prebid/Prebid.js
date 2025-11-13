@@ -28,6 +28,8 @@ var adUnits = [
                     tagId: '25405:1000192893',
                     groupId: '1000105712',
                     dfpUnitCode: '/62532913/s_fluct.test_hb_prebid_11940', // Optional
+                    bidfloor: 100, // Optional - floor price in JPY (used if Price Floors Module is not available)
+                    currency: 'JPY' // Optional - currency for bidfloor parameter (only JPY is supported)
                 }
             }
         ]
