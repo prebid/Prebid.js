@@ -79,7 +79,6 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
-      coverage-id: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
     concurrency:
       # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
@@ -104,6 +103,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: 'BrowserStack Env Setup'
+        if: ${{ inputs.browserstack }}
         uses: 'browserstack/github-actions/setup-env@master'
         with:
           username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
