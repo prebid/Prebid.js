@@ -67,9 +67,11 @@ jobs:
     needs: build
     strategy:
       fail-fast: false
+      max-parallel: ${{ inputs.serialize && 1 || inputs.chunks }}
       matrix:
         chunk-no: ${{ fromJSON(needs.build.outputs.chunks) }}
-    name: "Test chunk ${{ matrix.chunk }}"
+
+    name: "Test chunk ${{ matrix.chunk-no }}"
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -87,10 +89,6 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Env
-        run: |
-          echo concurrency: '${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.test-cmd }}${{ inputs.serialize && '' || matrix.chunk-no }}-${{ github.run_id }}'
-
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
