@@ -81,7 +81,7 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}${{ inputs.serialize && '' || matrix.chunk-no }}-${{ github.run_id }}
+      group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.test-cmd }}${{ inputs.serialize && '' || matrix.chunk-no }}-${{ github.run_id }}
       cancel-in-progress: false
 
     runs-on: ubuntu-latest
@@ -121,9 +121,9 @@ jobs:
       - name: Run tests
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 20
+          timeout_minutes: 8
           max_attempts: 3
-          command: ${{ inputs.cmd }}
+          command: ${{ inputs.test-cmd }}
 
       - name: 'BrowserStackLocal Stop'
         uses: 'browserstack/github-actions/setup-local@master'
