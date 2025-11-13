@@ -5248,7 +5248,7 @@
     {
       "componentType": "rtd",
       "componentName": "permutive",
-      "gvlid": null,
+      "gvlid": 361,
       "disclosureURL": null
     },
     {
@@ -5653,7 +5653,7 @@
     {
       "componentType": "userId",
       "componentName": "permutiveIdentityManagerId",
-      "gvlid": null,
+      "gvlid": 361,
       "disclosureURL": null,
       "aliasOf": null
     },
