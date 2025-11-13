@@ -174,9 +174,9 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 1e4, // default 2000
-    browserNoActivityTimeout: 1e4, // default 10000
-    captureTimeout: 1e4, // default 60000,
+    browserDisconnectTimeout: 1e4,
+    browserNoActivityTimeout: 3e4,
+    captureTimeout: 1e4,
     browserDisconnectTolerance: 3,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
