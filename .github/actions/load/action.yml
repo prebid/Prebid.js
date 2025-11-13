@@ -11,19 +11,14 @@ runs:
       uses: actions/setup-node@v6
       with:
         node-version: '20'
-        
-    - name: Download artifact
-      uses: actions/download-artifact@v5
-      with:
-        path: '${{ runner.temp }}/${{ inputs.name }}.tar'
-        name: ${{ inputs.name }}
 
     - name: 'Clear working directory'
       shell: bash
       run: |
         rm -r *
 
-    - name: Untar working directory
-      shell: bash
-      run: |
-        tar -xvf "${{ runner.temp }}/${{inputs.name}}.tar" .
+    - name: Download artifact
+      uses: actions/download-artifact@v5
+      with:
+        path: .
+        name: ${{ inputs.name }}
