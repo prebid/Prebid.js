@@ -1,4 +1,4 @@
-import { _each, deepAccess, deepSetValue, isEmpty } from '../src/utils.js';
+import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -13,6 +13,37 @@ const END_POINT = 'https://hb.adingo.jp/prebid';
 const VERSION = '1.2';
 const NET_REVENUE = true;
 const TTL = 300;
+const DEFAULT_CURRENCY = 'JPY';
+
+/**
+ * Get bid floor price from the bid request
+ * @param {BidRequest} bid
+ * @returns {number|null} floor price
+ */
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    if (bid.params.bidfloor) {
+      // Check currency if specified - only JPY is supported
+      if (bid.params.currency && bid.params.currency !== DEFAULT_CURRENCY) {
+        return null;
+      }
+      return parseFloat(bid.params.bidfloor);
+    }
+    return null;
+  }
+
+  const floor = bid.getFloor({
+    currency: DEFAULT_CURRENCY,
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) {
+    return floor.floor;
+  }
+
+  return null;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -99,6 +130,12 @@ export const spec = {
       }
 
       data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
+
+      const bidFloor = getBidFloor(request);
+      if (bidFloor) {
+        data.bidfloor = bidFloor;
+        data.bidfloorcur = DEFAULT_CURRENCY;
+      }
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
