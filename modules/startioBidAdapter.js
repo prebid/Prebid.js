@@ -119,7 +119,7 @@ export const spec = {
         method: METHOD,
         url: ENDPOINT_URL,
         options: {
-          contentType: 'text/plain',
+          contentType: 'application/json',
           withCredentials: false,
           crossOrigin: true
         },
