@@ -80,7 +80,7 @@ jobs:
   test-no-features:
     name: "Unit tests (all features disabled)"
     needs: checkout
-    uses: ./.github/workflows/run-unit-tests.yml
+    uses: ./.github/workflows/run-tests.yml
     with:
       chunks: 8
       build-cmd: npx gulp precompile-all-features-disabled
@@ -92,7 +92,7 @@ jobs:
   test:
     name: "Unit tests (all features enabled + coverage)"
     needs: checkout
-    uses: ./.github/workflows/run-unit-tests.yml
+    uses: ./.github/workflows/run-tests.yml
     with:
       chunks: 8
       build-cmd: npx gulp precompile
@@ -103,57 +103,14 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   test-e2e:
-    if: false
-    name: "End-to-end tests"
     needs: checkout
-    runs-on: ubuntu-latest
-    concurrency:
-      # see test-chunk.yml for notes on concurrency groups
-      group: browserstack-${{ github.run_id }}
-      cancel-in-progress: false
-    env:
-      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      test-cmd: npx gulp e2e-test
+      browserstack: true
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-    steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-
-      - name: Restore source
-        uses: actions/download-artifact@v5
-        with:
-          name: source
-
-      - name: 'BrowserStack Env Setup'
-        uses: 'browserstack/github-actions/setup-env@master'
-        with:
-          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
-          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-      - name: 'BrowserStackLocal Setup'
-        uses: 'browserstack/github-actions/setup-local@master'
-        with:
-          local-testing: start
-          local-identifier: random
-
-      - name: 'Wait for browserstack'
-        uses: ./.github/actions/wait-for-browserstack
-        with:
-          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-      - name: Run tests
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 20
-          max_attempts: 3
-          command: npx gulp e2e-test
-
-      - name: 'BrowserStackLocal Stop'
-        uses: 'browserstack/github-actions/setup-local@master'
-        with:
-          local-testing: stop
 
   coveralls:
     name: Update coveralls

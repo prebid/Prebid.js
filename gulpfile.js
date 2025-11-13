@@ -524,7 +524,7 @@ gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'))
 gulp.task('test-only-nobuild', gulp.series('test-build-logic', testTaskMaker({coverage: true})))
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
-gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false, coverage: true}));
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
 
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));

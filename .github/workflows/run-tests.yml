@@ -4,11 +4,12 @@ on:
     inputs:
       chunks:
         description: Number of chunks to split tests into
-        required: true
+        required: false
         type: number
+        default: 1
       build-cmd:
         description: Build command, run once
-        required: true
+        required: false
         type: string
       test-cmd:
         description: Test command, run once per chunk
@@ -30,6 +31,7 @@ on:
 
 jobs:
   build:
+    if: ${{ inputs.build-cmd }}
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -93,10 +95,16 @@ jobs:
           node-version: '20'
 
       - name: Restore working directory
-        id: restore-dir
+        if: ${{ inputs.build-cmd }}
         uses: actions/download-artifact@v5
         with:
           name: build-${{ inputs.build-cmd }}
+
+      - name: Restore source
+        if: ${{ !(inputs.build-cmd) }}
+        uses: actions/download-artifact@v5
+        with:
+          name: source
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
@@ -158,7 +166,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           path: ./coverage
-          pattern: coverage-partial-${{test-cmd}}-*
+          pattern: coverage-partial-${{ inputs.test-cmd }}-*
           merge-multiple: true
 
       - name: Save coverage results
