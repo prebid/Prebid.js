@@ -51,17 +51,20 @@ function buildRequests(bidReqs, bidderRequest) {
 
       const imp = {
         id: bid.bidId,
-        banner: {
-          format: processedSizes,
-          ext: {
-            viewability: viewabilityAmountRounded,
-          }
-        },
         ext: {
           ...gpidData
         },
         tagid: String(bid.adUnitCode)
       };
+
+      if (bid?.mediaTypes?.banner) {
+        imp.banner = {
+          format: processedSizes,
+          ext: {
+            viewability: viewabilityAmountRounded,
+          }
+        }
+      }
 
       if (bid?.mediaTypes?.video) {
         imp.video = {

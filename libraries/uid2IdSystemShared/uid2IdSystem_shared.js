@@ -44,6 +44,7 @@ export class Uid2ApiClient {
   ResponseToRefreshResult(response) {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
+      if (response.status === 'optout') { return { status: response.status, identity: 'optout' }; }
       return response;
     } else { return prependMessage(`Response didn't contain a valid status`); }
   }
