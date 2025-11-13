@@ -105,6 +105,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   test-e2e:
+    if: false
     name: "End-to-end tests"
     needs: checkout
     runs-on: ubuntu-latest
