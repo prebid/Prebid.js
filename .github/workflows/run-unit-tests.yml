@@ -2,6 +2,10 @@ name: Run unit tests
 on:
   workflow_call:
     inputs:
+      chunks:
+        description: Number of chunks to split tests into
+        required: true
+        type: number
       build-cmd:
         description: Build command, run once
         required: true
@@ -17,7 +21,7 @@ on:
     outputs:
       wdir:
         description: Cache key for the working directory after running tests
-        value: ${{ jobs.chunk-8.outputs.wdir }}
+        value: 'temp'
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -29,6 +33,9 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      chunks: ${{ steps.chunks.outputs.chunks }}
+      wdir: build-${{ inputs.build-cmd }}-${{ github.run_id }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -50,11 +57,73 @@ jobs:
         with:
           key: build-${{ inputs.build-cmd }}-${{ github.run_id }}
 
+      - name: Define chunks
+        id: chunks
+        run: |
+          echo 'chunks=[ $(seq --separator=, 1 1 ${{ inputs.chunks }} ]' >> "$GITHUB_OUTPUT"
+        
+
   run-tests:
     needs: build
-    uses: ./.github/workflows/test-chunks.yml
-    with:
-      chunks: 8
-      wdir: build-${{ inputs.build-cmd }}-${{ github.run_id }}
-      cmd: ${{ inputs.test-cmd }}
-      serialize: ${{ inputs.serialize }}
+    strategy:
+      matrix:
+        chunk-no: ${{ fromJSON(needs.build.output.chunks) }}
+    name: "Test chunk ${{ matrix.chunk }}"
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      TEST_CHUNKS: ${{ inputs.chunks }}
+      TEST_CHUNK: ${{ matrix.chunk-no }}
+    outputs:
+      coverage: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Restore working directory
+        id: restore-dir
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: ${{ needs.build.wdir }}
+          fail-on-cache-miss: true
+
+      - name: 'BrowserStack Env Setup'
+        uses: 'browserstack/github-actions/setup-env@master'
+        with:
+          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+      - name: 'BrowserStackLocal Setup'
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: start
+          local-identifier: random
+
+      - name: 'Wait for browserstack'
+        if: ${{ inputs.serialize }}
+        uses: ./.github/actions/wait-for-browserstack
+        with:
+          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: ${{ inputs.cmd }}
+
+      - name: 'BrowserStackLocal Stop'
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: stop
+
+      - name: 'Save coverage result'
+        uses: ./.github/actions/cache
+        with:
+          key: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
+          path: './build/coverage'

@@ -84,6 +84,7 @@ jobs:
     needs: checkout
     uses: ./.github/workflows/run-unit-tests.yml
     with:
+      chunks: 8
       build-cmd: npx gulp precompile-all-features-disabled
       test-cmd: npx gulp test-all-features-disabled-nobuild
       serialize: false
@@ -95,6 +96,7 @@ jobs:
     needs: checkout
     uses: ./.github/workflows/run-unit-tests.yml
     with:
+      chunks: 8
       build-cmd: npx gulp precompile
       test-cmd: npx gulp test-only-nobuild --browserstack
       serialize: true
