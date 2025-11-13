@@ -141,29 +141,15 @@ jobs:
         id: 'coverage'
         run: |
           if [ -d "./build/coverage" ]; then 
-            echo 'coverage=true' >> out;
+            echo 'coverage=true' >> "$GITHUB_OUTPUT";
           fi
-          key_prefix="";
-          echo "key=coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-${{ matrix.chunk-no }}" >> out;
-          echo "outputs:";
-          cat out;
-          cat out >> "$GITHUB_OUTPUT";
 
       - name: 'Save coverage result'
         if: ${{ steps.coverage.outputs.coverage }}
-        uses: ./.github/actions/cache
+        uses: actions/upload-artifact@v4
         with:
-          key: ${{ steps.coverage.outputs.key }}
-          path: './build/coverage'
-
-      - uses: cloudposse/github-action-matrix-outputs-write@v1
-        if: ${{ steps.coverage.outputs.coverage }}
-        id: out
-        with:
-          matrix-step-name: coverage
-          matrix-key: ${{ matrix.chunk-no }}
-          outputs: |-
-            key: ${{ steps.coverage.outputs.key }}
+          name: coverage-${{ matrix.chunk-no }}
+          path: ./build/coverage
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
@@ -177,56 +163,24 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '20'
+
       - name: Restore working directory
         uses: actions/cache/restore@v4
         with:
           path: .
           key: ${{ needs.build.outputs.wdir }}
           fail-on-cache-miss: true
+
+      - name: Download coverage results
+        uses: actions/download-artifact@v5
+        with:
+          path: ./coverage
+          pattern: coverage-*
+          merge-multiple: true
+
       - run: |
-          npm install @actions/cache
-          mkdir ${{ runner.temp }}/coverage
-
-      - uses: cloudposse/github-action-matrix-outputs-read@v1
-        id: read-keys
-        with:
-          matrix-step-name: coverage
-
-      - uses: actions/github-script@v8
-        with:
-          script: |
-            const cache = require('@actions/cache');
-            const chunks = ${{ needs.build.outputs.chunks }};
-            const keys = (${{ steps.read-keys.outputs.result }}).key;
-            const os = require('os');
-            const path = require('path');
-            const process = require('process');
-            const fs = require('node:fs/promises');
-            
-            const src = './build/coverage';
-            const dest = path.join('${{ runner.temp }}', 'coverage');
-            
-            for (const chunk of chunks) {
-              if (
-                await cache.restoreCache(
-                  [src],
-                  keys[chunk]
-                ) == null
-              ) {
-                console.error('Coverage result not found for chunk', chunk);
-                process.exit(1);
-              } else {
-                await fs.cp(src, dest, {recursive: true});
-                await fs.rm(src, {recursive: true, force: true});
-              }
-            }
-      - id: set-coverage
-        run: |
-          rm -r build
-          mv ${{runner.temp}}/coverage .
-          find coverage          
-          echo 'key=coverage-${{ inputs.test-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUT"
-
+          find .coverage
+          
       - name: Save coverage results
         uses: ./.github/actions/cache
         with:
