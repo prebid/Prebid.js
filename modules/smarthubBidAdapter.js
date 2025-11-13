@@ -25,6 +25,7 @@ const ALIASES = {
   'addigi': {area: '1', pid: '425'},
   'jambojar': {area: '1', pid: '426'},
   'anzu': {area: '1', pid: '445'},
+  'marlinads': {area: '1', pid: '397'},
 };
 
 const BASE_URLS = {
@@ -40,6 +41,7 @@ const BASE_URLS = {
   'jambojar': 'https://jambojar-prebid.attekmi.co/pbjs',
   'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.co/pbjs',
   'anzu': 'https://anzu-prebid.attekmi.co/pbjs',
+  'marlinads': 'https://marlinads-prebid.attekmi.co/pbjs',
 };
 
 const adapterState = {};
