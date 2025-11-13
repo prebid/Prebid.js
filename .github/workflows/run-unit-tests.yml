@@ -135,7 +135,15 @@ jobs:
         with:
           local-testing: stop
 
+      - name: 'Check for coverage'
+        id: 'coverage'
+        run: |
+          if [ -d "./build/coverage" ]; then 
+            echo coverage=true >> "$GITHUB_OUTPUTS";
+          fi
+
       - name: 'Save coverage result'
+        if: ${{steps.coverage.outputs.coverage}}
         uses: ./.github/actions/cache
         with:
           key: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
