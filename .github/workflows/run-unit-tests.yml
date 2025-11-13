@@ -14,8 +14,8 @@ on:
         description: Test command, run once per chunk
         required: true
         type: string
-      serialize:
-        description: If true, allow only one concurrent chunk (see note on concurrency below)
+      browserstack:
+        description: If true, set up browserstack environment and adjust concurrency
         required: false
         type: boolean
     outputs:
@@ -67,7 +67,7 @@ jobs:
     needs: build
     strategy:
       fail-fast: false
-      max-parallel: ${{ inputs.serialize && 1 || inputs.chunks }}
+      max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
       matrix:
         chunk-no: ${{ fromJSON(needs.build.outputs.chunks) }}
 
@@ -81,11 +81,11 @@ jobs:
       coverage: ${{ steps.coverage.outputs.coverage }}
       coverage-id: test-${{ inputs.cmd }}-${{ matrix.chunk-no }}-${{ github.run_id }}
     concurrency:
-      # The following generates 'browserstack-<run_id>' when inputs.serialize is true, and a hopefully unique ID otherwise
+      # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stac' || inputs.test-cmd }}${{ inputs.serialize && 'k' || matrix.chunk-no }}-${{ github.run_id }}
+      group: ${{ inputs.browserstack && 'browser' || github.run_id }}${{ inputs.browserstack && 'stac' || inputs.test-cmd }}${{ inputs.browserstack && 'k' || matrix.chunk-no }}-${{ github.run_id }}
       cancel-in-progress: false
 
     runs-on: ubuntu-latest
@@ -110,13 +110,14 @@ jobs:
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
       - name: 'BrowserStackLocal Setup'
+        if: ${{ inputs.browserstack }}
         uses: 'browserstack/github-actions/setup-local@master'
         with:
           local-testing: start
           local-identifier: random
 
       - name: 'Wait for browserstack'
-        if: ${{ inputs.serialize }}
+        if: ${{ inputs.browserstack }}
         uses: ./.github/actions/wait-for-browserstack
         with:
           BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -130,6 +131,7 @@ jobs:
           command: ${{ inputs.test-cmd }}
 
       - name: 'BrowserStackLocal Stop'
+        if: ${{ inputs.browserstack }}
         uses: 'browserstack/github-actions/setup-local@master'
         with:
           local-testing: stop
