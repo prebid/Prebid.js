@@ -15,10 +15,17 @@ runs:
     - name: 'Clear working directory'
       shell: bash
       run: |
-        rm -r *
+        rm -r ./*
 
     - name: Download artifact
       uses: actions/download-artifact@v5
       with:
-        path: .
-        name: ${{ inputs.name }}
+        path: '${{ runner.temp }}'
+        name: '${{ inputs.name }}'
+
+    - name: 'Untar working directory'
+      shell: bash
+      run: |
+        find ${{ runner.temp }}
+        tar -xf '${{ runner.temp }}/${{ inputs.name }}.tar' .
+        
