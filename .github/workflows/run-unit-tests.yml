@@ -141,11 +141,15 @@ jobs:
         id: 'coverage'
         run: |
           if [ -d "./build/coverage" ]; then 
-            echo 'coverage=true' >> "$GITHUB_OUTPUT";
-            key_prefix="coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-"
-            echo key_prefix="$key_prefix" >> "GITHUB_OUTPUT";
-            echo key="$key_prefix${{ matrix.chunk-no }}" >> "GITHUB_OUTPUT"
+            echo 'coverage=true' >> out;
           fi
+          key_prefix="coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-";
+          echo 'key_prefix='"$key_prefix" >> out;
+          echo 'key='${key_prefix}'${{ matrix.chunk-no }}' >> out;
+          echo "out:";
+          cat out;
+          cat out >> "$GITHUB_OUTPUT";
+          echo "out:";          
           cat $GITHUB_OUTPUT;
 
       - name: 'Save coverage result'
