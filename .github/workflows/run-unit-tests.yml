@@ -79,7 +79,7 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
-      coverage-key-prefix:  ${{ steps.coverage.outputs.key_prefix }}
+      coverage-keys: ${{ steps.out.outputs.key }}
     concurrency:
       # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
@@ -143,9 +143,8 @@ jobs:
           if [ -d "./build/coverage" ]; then 
             echo 'coverage=true' >> out;
           fi
-          key_prefix="coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-";
-          echo 'key_prefix='"$key_prefix" >> out;
-          echo 'key='${key_prefix}'${{ matrix.chunk-no }}' >> out;
+          key_prefix="";
+          echo "key=coverage-${{ inputs.test-cmd }}-${{ github.run_id }}-${{github.run_attempt}}-${{ matrix.chunk-no }}" >> out;
           echo "outputs:";
           cat out;
           cat out >> "$GITHUB_OUTPUT";
@@ -156,6 +155,14 @@ jobs:
         with:
           key: ${{ steps.coverage.outputs.key }}
           path: './build/coverage'
+
+      - uses: cloudposse/github-action-matrix-outputs-write@v1
+        id: out
+        with:
+          matrix-step-name: coverage
+          matrix-key: ${{ matrix.chunk-no }}
+          outputs: |-
+            key: ${{ steps.coverage.outputs.key }}
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
@@ -178,11 +185,18 @@ jobs:
       - run: |
           npm install @actions/cache
           mkdir ${{ runner.temp }}/coverage
+
+      - uses: cloudposse/github-action-matrix-outputs-read@v1
+        id: read-keys
+        with:
+          matrix-step-name: coverage
+
       - uses: actions/github-script@v8
         with:
           script: |
             const cache = require('@actions/cache');
             const chunks = ${{ needs.build.outputs.chunks }};
+            const keys = ${{ steps.read-keys.outputs.result }};
             const os = require('os');
             const path = require('path');
             const process = require('process');
@@ -190,12 +204,12 @@ jobs:
             
             const src = './build/coverage';
             const dest = path.join('${{ runner.temp }}', 'coverage');
-            const prefix = '${{ needs.run-tests.outputs.coverage-key-prefix }}';
+            
             for (const chunk of chunks) {
               if (
                 await cache.restoreCache(
                   [src],
-                  prefix + chunk
+                  keys[chunk]
                 ) == null
               ) {
                 console.error('Coverage result not found for chunk', chunk);
