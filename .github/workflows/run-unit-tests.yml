@@ -61,7 +61,7 @@ jobs:
 
   chunk-1:
     needs: build
-    name: Run tests (chunk 1 of 4)
+    name: Run tests (chunk 1 of 8)
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
@@ -72,7 +72,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-2:
-    name: Run tests (chunk 2 of 4)
+    name: Run tests (chunk 2 of 8)
     needs: chunk-1
     uses: ./.github/workflows/test-chunk.yml
     with:
@@ -84,7 +84,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-3:
-    name: Run tests (chunk 3 of 4)
+    name: Run tests (chunk 3 of 8)
     needs: chunk-2
     uses: ./.github/workflows/test-chunk.yml
     with:
@@ -96,12 +96,60 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-4:
-    name: Run tests (chunk 4 of 4)
+    name: Run tests (chunk 4 of 8)
     needs: chunk-3
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
       wdir: ${{ needs.chunk-3.outputs.wdir }}
+      cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  chunk-5:
+    name: Run tests (chunk 5 of 8)
+    needs: chunk-4
+    uses: ./.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 5
+      wdir: ${{ needs.chunk-4.outputs.wdir }}
+      cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  chunk-6:
+    name: Run tests (chunk 6 of 8)
+    needs: chunk-5
+    uses: ./.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 6
+      wdir: ${{ needs.chunk-5.outputs.wdir }}
+      cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  chunk-7:
+    name: Run tests (chunk 7 of 8)
+    needs: chunk-6
+    uses: ./.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 7
+      wdir: ${{ needs.chunk-6.outputs.wdir }}
+      cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  chunk-8:
+    name: Run tests (chunk 8 of 8)
+    needs: chunk-7
+    uses: ./.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 8
+      wdir: ${{ needs.chunk-7.outputs.wdir }}
       cmd: ${{ inputs.test-cmd }}
       serialize: ${{ inputs.serialize }}
     secrets:
