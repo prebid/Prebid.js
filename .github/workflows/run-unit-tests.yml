@@ -61,7 +61,7 @@ jobs:
         id: chunks
         run: |
           echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
-        
+          
 
   run-tests:
     needs: build
@@ -140,7 +140,7 @@ jobs:
         id: 'coverage'
         run: |
           if [ -d "./build/coverage" ]; then 
-            echo 'coverage=true' >> "$GITHUB_OUTPUTS";
+            echo 'coverage=true' >> "$GITHUB_OUTPUT";
           fi
 
       - name: 'Save coverage result'
@@ -192,10 +192,10 @@ jobs:
             }
       - id: set-coverage
         run: |
-          ls -la coverage
+          find coverage
           rm -r build
           mv ${{runner.temp}}/coverage .
-          echo 'key=coverage-${{ inputs.build-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUTS"
+          echo 'key=coverage-${{ inputs.build-cmd }}-${{ github.run_id }}' >> "$GITHUB_OUTPUT"
 
       - name: Save coverage results
         uses: ./.github/actions/cache
