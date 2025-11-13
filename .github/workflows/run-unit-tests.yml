@@ -191,16 +191,15 @@ jobs:
             const src = './build/coverage';
             const dest = path.join('${{ runner.temp }}', 'coverage');
             const prefix = '${{ needs.run-tests.outputs.coverage-key-prefix }}';
-            
             for (const chunk of chunks) {
               if (
                 await cache.restoreCache(
-                    ['build/coverage'],
-                    prefix + chunk;
+                  [src],
+                  prefix + chunk
                 ) == null
               ) {
-                 console.error('Coverage result not found for chunk' + chunk);
-                 process.exit(1);
+                console.error('Coverage result not found for chunk', chunk);
+                process.exit(1);
               } else {
                 await fs.cp(src, dest, {recursive: true});
                 await fs.rm(src, {recursive: true, force: true});
