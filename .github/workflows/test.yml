@@ -56,26 +56,18 @@ jobs:
         run: npm ci
 
       - name: 'Save working directory'
-        uses: actions/upload-artifact@v4
+        uses: ./.github/actions/save
         with:
-          path: .
           name: source
-          include-hidden-files: true
-          overwrite: true
 
   lint:
     name: "Run linter"
     needs: checkout
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
       - name: Restore source
-        uses: actions/download-artifact@v5
+        uses: ./.github/actions/load
         with:
-          path: .
           name: source
       - name: lint
         run: |
@@ -107,6 +99,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   test-e2e:
+    name: End-to-end tests
     needs: checkout
     uses: ./.github/workflows/run-tests.yml
     with:

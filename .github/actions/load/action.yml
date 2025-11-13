@@ -1,0 +1,22 @@
+name: Load working directory
+description: Load working directory saved with "actions/save"
+inputs:
+  name:
+    description: The name used with actions/save
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+    - name: Download artifact
+      uses: actions/download-artifact@v5
+      with:
+        path: '${{ runner.temp }}/${{ inputs.name }}.tar'
+        name: ${{ inputs.name }}
+    - name: Untar working directory
+      shell: bash
+      run: |
+        tar -xvf "${{ runner.temp }}/${{inputs.name}}.tar" .
