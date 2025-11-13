@@ -38,7 +38,7 @@ jobs:
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-      TEST_CHUNKS: 4
+      TEST_CHUNKS: 8
       TEST_CHUNK: ${{ inputs.chunk-no }}
     runs-on: ubuntu-latest
     steps:
