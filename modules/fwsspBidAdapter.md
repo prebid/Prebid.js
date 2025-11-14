@@ -8,6 +8,37 @@ Maintainer:  vis@freewheel.com
 
 Module that connects to Freewheel MRM's demand sources
 
+# Basic Test Request
+```
+const adUnits = [{
+    code: 'adunit-code',
+    mediaTypes: {
+        video: {
+            playerSize: [640, 480],
+            minduration: 30,
+            maxduration: 60
+        }
+    },
+    bids: [{
+        bidder: 'fwssp',  // or use alias 'freewheel-mrm'
+        params: {
+            serverUrl: 'https://example.com/ad/g/1',
+            networkId: '42015',
+            profile: '42015:js_allinone_profile',
+            siteSectionId: 'js_allinone_demo_site_section',
+            videoAssetId: '1',  // optional: default value of 0 will used if not included
+            flags: '+play-uapl'  // optional: users may include capability if needed
+            mode: 'live',
+            adRequestKeyValues: {  // optional: users may include adRequestKeyValues if needed
+                _fw_player_width: '1920',
+                _fw_player_height: '1080'
+            },
+            format: 'inbanner'
+        }
+    }]
+}];
+```
+
 # Example Inbanner Ad Request
 ```
 {
@@ -19,6 +50,17 @@ Module that connects to Freewheel MRM's demand sources
     },
     bids: [{
         bidder: 'fwssp',
+        schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [{
+                asi: 'example.com',
+                sid: '0',
+                hp: 1,
+                rid: 'bidrequestid',
+                domain: 'example.com'
+            }]
+        },
         params: {
             bidfloor: 2.00,
             serverUrl: 'https://example.com/ad/g/1',
@@ -26,7 +68,7 @@ Module that connects to Freewheel MRM's demand sources
             profile: '42015:js_allinone_profile',
             siteSectionId: 'js_allinone_demo_site_section',
             flags: '+play',
-            videoAssetId: '0',
+            videoAssetId: '1`,  // optional: default value of 0 will used if not included
             timePosition: 120,
             adRequestKeyValues: {
                 _fw_player_width: '1920',
@@ -51,6 +93,17 @@ Module that connects to Freewheel MRM's demand sources
     },
     bids: [{
         bidder: 'fwssp',
+        schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [{
+                asi: 'example.com',
+                sid: '0',
+                hp: 1,
+                rid: 'bidrequestid',
+                domain: 'example.com'
+            }]
+        },
         params: {
             bidfloor: 2.00,
             serverUrl: 'https://example.com/ad/g/1',
@@ -58,7 +111,7 @@ Module that connects to Freewheel MRM's demand sources
             profile: '42015:js_allinone_profile',
             siteSectionId: 'js_allinone_demo_site_section',
             flags: '+play',
-            videoAssetId: '0',
+            videoAssetId: '1',  // optional: default value of 0 will used if not included
             mode: 'live',
             timePosition: 120,
             tpos: 300,
