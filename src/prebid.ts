@@ -825,7 +825,7 @@ export const requestBids = (function() {
 
 addApiMethod('requestBids', requestBids as unknown as RequestBids, false);
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
+export const startAuction = hook('async', async function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   fillAdUnitDefaults(adUnitDefs);
   const adUnits: AdUnit[] = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnitDefs));
@@ -848,6 +848,34 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
    * a bidder is eligible to participate on the adunit
    * if it supports at least one of the mediaTypes on the adunit
    */
+
+  // Lazy loading bid adapters from dynamic/ folder (only if folder exists)
+  const allBidders = adUnits.map(adUnit => adUnit.bids.map(bid => bid.bidder)).flat().filter(uniques);
+
+  // Try to load adapters from dynamic/ folder only if folder exists
+  // (i.e. when --dynamic-modules flag was used during build)
+  // If module doesn't exist, import will return undefined instead of error
+  for (let bidder of allBidders) {
+    // Check if adapter is already registered (may be in main bundle)
+    if (!adapterManager.getBidAdapter(bidder as any)) {
+      try {
+        const module = await import(
+          /* webpackChunkName: "[request]" */
+          /* webpackMode: "lazy" */
+          `../dynamic/${bidder}BidAdapter.js`
+        );
+        if (!module || !module.default) {
+          // Module doesn't exist in dynamic/ folder - this is OK
+          // Adapter may be already loaded in main bundle or not available for dynamic loading
+          logMessage(`Adapter ${bidder}BidAdapter is not available in dynamic/ folder - will use from main bundle or not available`);
+        }
+      } catch (error) {
+        // Ignore errors - adapter may be already in main bundle
+        logMessage(`Cannot load ${bidder}BidAdapter from dynamic/ folder - will use from main bundle`);
+      }
+    }
+  }
+
   adUnits.forEach(adUnit => {
     // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });

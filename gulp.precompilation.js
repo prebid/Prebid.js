@@ -83,6 +83,51 @@ function copyVerbatim() {
 }
 
 /**
+ * Copies modules from --dynamic-modules list to dist/src/dynamic/ folder
+ * This allows Webpack to automatically limit chunks only to files in this folder
+ * 
+ * Note: This function must be called AFTER babelPrecomp to copy already transpiled files
+ */
+function copyDynamicModules() {
+  const dynamicModules = helpers.getDynamicModules();
+  const dynamicPath = path.join(helpers.getPrecompiledPath(), 'dynamic');
+  
+  if (dynamicModules.length === 0) {
+    // If there are no modules for dynamic loading, create empty dynamic/ folder
+    // so Webpack can resolve imports (even if they will be empty)
+    if (!fs.existsSync(dynamicPath)) {
+      fs.mkdirSync(dynamicPath, {recursive: true});
+    }
+    // Create empty .gitkeep file to preserve the folder
+    const gitkeepPath = path.join(dynamicPath, '.gitkeep');
+    if (!fs.existsSync(gitkeepPath)) {
+      fs.writeFileSync(gitkeepPath, '');
+    }
+    return Promise.resolve();
+  }
+
+  // Use already transpiled files from dist/src/modules/
+  const precompiledPath = helpers.getPrecompiledPath();
+  const moduleFiles = dynamicModules.map(mod => {
+    // Check if module exists in dist/src/modules/ (already transpiled)
+    const possiblePaths = [
+      path.join(precompiledPath, 'modules', `${mod}.js`),
+      path.join(precompiledPath, 'modules', mod, 'index.js'),
+    ];
+    const foundPath = possiblePaths.find(p => fs.existsSync(p));
+    if (!foundPath) {
+      throw new Error(`Precompiled module ${mod} not found. Make sure babelPrecomp runs before copyDynamicModules.`);
+    }
+    return foundPath;
+  });
+
+  const dynamicDest = path.join(precompiledPath, 'dynamic');
+  // Use base: precompiledPath to preserve structure (dynamic/modules/... -> dynamic/...)
+  return gulp.src(moduleFiles, {base: path.join(precompiledPath, 'modules')})
+    .pipe(gulp.dest(dynamicDest));
+}
+
+/**
  * Generate "public" versions of module files (used in  package.json "exports") that
  * just import the "real" module
  *
@@ -214,6 +259,7 @@ function precompile(options = {}) {
   return gulp.series([
     gulp.parallel([options.dev ? 'ts-dev' : 'ts', generateMetadataModules, generateBuildOptions(options)]),
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
+    copyDynamicModules, // Copy modules to dynamic/ AFTER transpilation
     gulp.parallel([
       gulp.series([buildCreative(options), generateCreativeRenderers]),
       publicModules,
