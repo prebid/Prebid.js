@@ -109,7 +109,7 @@ jobs:
         with:
           username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-          build-name: Run ${{github.run_id}}, attempt ${{ github.run_attempt }}, ref ${{ github.event_name == 'pull_request_target' && format('PR {0}', github.event.pull_request.number) || github.ref }}, ${{ inputs.test-cmd }}
+          build-name: Run ${{github.run_id}}, attempt ${{ github.run_attempt }}, chunk ${{ matrix.chunk-no }}, ref ${{ github.event_name == 'pull_request_target' && format('PR {0}', github.event.pull_request.number) || github.ref }}, ${{ inputs.test-cmd }}
 
       - name: 'BrowserStackLocal Setup'
         if: ${{ inputs.browserstack }}
