@@ -88,7 +88,7 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
+      build: process.env.BROWSERSTACK_BUILD_NAME
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
