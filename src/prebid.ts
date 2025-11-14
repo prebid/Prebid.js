@@ -864,11 +864,6 @@ export const startAuction = hook('async', async function ({ bidsBackHandler, tim
           /* webpackMode: "lazy" */
           `../dynamic/${bidder}BidAdapter.js`
         );
-        if (!module || !module.default) {
-          // Module doesn't exist in dynamic/ folder - this is OK
-          // Adapter may be already loaded in main bundle or not available for dynamic loading
-          logMessage(`Adapter ${bidder}BidAdapter is not available in dynamic/ folder - will use from main bundle or not available`);
-        }
       } catch (error) {
         // Ignore errors - adapter may be already in main bundle
         logMessage(`Cannot load ${bidder}BidAdapter from dynamic/ folder - will use from main bundle`);
