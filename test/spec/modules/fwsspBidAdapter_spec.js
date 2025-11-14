@@ -259,10 +259,10 @@ describe('fwsspBidAdapter', () => {
 
       const bidderRequest2 = { ...bidderRequest }
       bidderRequest2.ortb2 = {
-          regs: { coppa: 0 },
-          device: {
-            lmt: 0,
-            ext: { atts: 0 }
+        regs: { coppa: 0 },
+        device: {
+          lmt: 0,
+          ext: { atts: 0 }
         }
       }
 
