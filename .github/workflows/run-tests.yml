@@ -41,11 +41,13 @@ jobs:
     timeout-minutes: 5
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
-      wdir: build-${{ inputs.build-cmd }}-${{ github.run_id }}
+      wdir: ${{ inputs.build-cmd && format('build-{0}', inputs.build-cmd) || 'source' }}
     steps:
       - name: Checkout
+        if: ${{ inputs.build-cmd }}
         uses: actions/checkout@v5
       - name: Restore source
+        if: ${{ inputs.build-cmd }}
         uses: ./.github/actions/load
         with:
           name: source
@@ -55,6 +57,7 @@ jobs:
         run: ${{ inputs.build-cmd }}
 
       - name: 'Save working directory'
+        if: ${{ inputs.build-cmd }}
         uses: ./.github/actions/save
         with:
           name: build-${{ inputs.build-cmd }}
@@ -63,6 +66,7 @@ jobs:
         id: chunks
         run: |
           echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
+          
           
 
   run-tests:
@@ -97,7 +101,7 @@ jobs:
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: build-${{ inputs.build-cmd }}
+          name: ${{ needs.build.outputs.wdir }}
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
