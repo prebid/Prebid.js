@@ -741,6 +741,67 @@ describe('wurflRtdProvider', function () {
       wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
     });
 
+    it('should initialize ortb2Fragments.bidder when undefined and enrich authorized bidders (over quota)', (done) => {
+      // Test the fix for ortb2Fragments.bidder being undefined
+      reqBidsConfigObj.ortb2Fragments.global.device = {};
+      // Explicitly set bidder to undefined to simulate the race condition
+      reqBidsConfigObj.ortb2Fragments.bidder = undefined;
+
+      // Setup localStorage with cached WURFL data (over quota)
+      const wurfl_pbjs_over_quota = {
+        ...wurfl_pbjs,
+        over_quota: 1
+      };
+      const cachedData = { WURFL, wurfl_pbjs: wurfl_pbjs_over_quota };
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+      const callback = () => {
+        // Verify ortb2Fragments.bidder was properly initialized
+        expect(reqBidsConfigObj.ortb2Fragments.bidder).to.exist;
+        expect(reqBidsConfigObj.ortb2Fragments.bidder).to.be.an('object');
+
+        // Verify global FPD does NOT have device data (over quota)
+        expect(reqBidsConfigObj.ortb2Fragments.global.device).to.deep.equal({});
+
+        // bidder1 and bidder2 are authorized, should get full device + ext.wurfl
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1).to.exist;
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device).to.deep.include({
+          make: 'Google',
+          model: 'Nexus 5',
+          devicetype: 4,
+          os: 'Android',
+          osv: '6.0',
+          hwv: 'Nexus 5',
+          h: 1920,
+          w: 1080,
+          ppi: 443,
+          pxratio: 3.0,
+          js: 1
+        });
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device.ext.wurfl).to.deep.equal(WURFL);
+
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder2).to.exist;
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder2.device).to.deep.include({
+          make: 'Google',
+          model: 'Nexus 5',
+          devicetype: 4
+        });
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder2.device.ext.wurfl).to.deep.equal(WURFL);
+
+        // bidder3 is NOT authorized, should get nothing
+        expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder3).to.be.undefined;
+
+        done();
+      };
+
+      const config = { params: {} };
+      const userConsent = {};
+
+      wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+    });
+
     it('should pass basic+pub caps to unauthorized bidders when under quota', (done) => {
       // Reset reqBidsConfigObj to clean state
       reqBidsConfigObj.ortb2Fragments.global.device = {};

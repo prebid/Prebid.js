@@ -12,7 +12,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.0.1';
+const MODULE_VERSION = '2.0.2';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -192,6 +192,9 @@ function enrichDeviceExt(reqBidsConfigObj, extData) {
  * @param {WurflJSDevice} wjsDevice WURFL.js device data with permissions and caps
  */
 function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
+  // Initialize bidder fragments if not already present
+  reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {};
+
   bidders.forEach((bidderCode) => {
     // Get bidder data (handles both authorized and unauthorized bidders)
     const bidderDevice = wjsDevice.Bidder(bidderCode);
