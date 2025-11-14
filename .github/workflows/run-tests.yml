@@ -105,6 +105,7 @@ jobs:
         with:
           username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          build-name: ${{ github.event_name == 'pull_request_target' && format('PR {0}', github.event.pull_request.number) || github.ref }} ${{ inputs.test-cmd }}
 
       - name: 'BrowserStackLocal Setup'
         if: ${{ inputs.browserstack }}
@@ -116,9 +117,6 @@ jobs:
       - name: 'Wait for browserstack'
         if: ${{ inputs.browserstack }}
         uses: ./.github/actions/wait-for-browserstack
-        with:
-          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
       - name: Run tests
         uses: nick-fields/retry@v3
@@ -132,6 +130,10 @@ jobs:
         uses: 'browserstack/github-actions/setup-local@master'
         with:
           local-testing: stop
+
+      - name: 'Clear browserstack sessions'
+        if: ${{ inputs.browserstack }}
+        uses: ./.github/actions/clear-browserstack-sessions
 
       - name: 'Check for coverage'
         id: 'coverage'
