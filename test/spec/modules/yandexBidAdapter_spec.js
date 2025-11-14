@@ -193,6 +193,34 @@ describe('Yandex adapter', function () {
       },
     };
 
+    it('create a valid banner request with custom domain', function () {
+      config.setConfig({
+        yandex: {
+          domain: 'yandex.tr',
+        },
+      });
+
+      const bannerRequest = getBidRequest();
+      bannerRequest.getFloor = () => ({
+        currency: 'EUR',
+        // floor: 0.5
+      });
+
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
+
+      expect(request).to.exist;
+      const { method, url } = request;
+
+      expect(method).to.equal('POST');
+
+      const parsedRequestUrl = utils.parseUrl(url);
+
+      expect(parsedRequestUrl.hostname).to.equal('yandex.tr');
+    })
+
     it('creates a valid banner request', function () {
       const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
@@ -213,7 +241,7 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('yandex.ru');
+      expect(parsedRequestUrl.hostname).to.equal('yandex.com');
       expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
       expect(query['imp-id']).to.equal('1');
