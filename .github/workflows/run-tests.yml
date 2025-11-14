@@ -23,7 +23,7 @@ on:
         description: Timeout on test run
         required: false
         type: number
-        default: 8
+        default: 15
     outputs:
       coverage:
         description: Artifact name for coverage results
