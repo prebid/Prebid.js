@@ -117,11 +117,14 @@ jobs:
     needs: [checkout, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Download coverage results
-        uses: actions/download-artifact@v5
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
         with:
-          path: ./coverage
           name: ${{ needs.test.outputs.coverage }}
+
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:

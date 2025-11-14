@@ -152,23 +152,29 @@ jobs:
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
-    needs: run-tests
+    needs: [build, run-tests]
     name: 'Collect coverage results'
     runs-on: ubuntu-latest
     outputs:
       coverage: coverage-complete-${{ inputs.test-cmd }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.wdir }}
+
       - name: Download coverage results
         uses: actions/download-artifact@v5
         with:
-          path: ./coverage
+          path: ./build/coverage
           pattern: coverage-partial-${{ inputs.test-cmd }}-*
           merge-multiple: true
 
-      - name: Save coverage results
-        uses: actions/upload-artifact@v4
+      - name: 'Save working directory'
+        uses: ./.github/actions/save
         with:
           name: coverage-complete-${{ inputs.test-cmd }}
-          path: ./coverage
-          overwrite: true
 
