@@ -131,10 +131,6 @@ jobs:
         with:
           local-testing: stop
 
-      - name: 'Clear browserstack sessions'
-        if: ${{ always() }}
-        uses: ./.github/actions/clear-browserstack-sessions
-
       - name: 'Check for coverage'
         id: 'coverage'
         run: |
