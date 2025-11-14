@@ -176,7 +176,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     singleRun: !watchMode,
     browserDisconnectTimeout: 1e4,
     browserNoActivityTimeout: 1e4,
-    captureTimeout: 1e4,
+    captureTimeout: 2e4,
     browserDisconnectTolerance: 5,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
