@@ -23,7 +23,7 @@ on:
         description: Timeout on test run
         required: false
         type: number
-        default: 15
+        default: 10
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -126,7 +126,7 @@ jobs:
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: ${{ inputs.timeout }}
-          max_attempts: 2
+          max_attempts: 3
           command: ${{ inputs.test-cmd }}
 
       - name: 'BrowserStackLocal Stop'
