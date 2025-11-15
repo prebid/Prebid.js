@@ -39,7 +39,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile, babelPrecomp} = require('./gulp.precompilation.js');
 
-const TEST_CHUNKS = 4;
+const TEST_CHUNKS = 8;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [

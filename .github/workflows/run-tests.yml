@@ -1,0 +1,180 @@
+name: Run unit tests
+on:
+  workflow_call:
+    inputs:
+      chunks:
+        description: Number of chunks to split tests into
+        required: false
+        type: number
+        default: 1
+      build-cmd:
+        description: Build command, run once
+        required: false
+        type: string
+      test-cmd:
+        description: Test command, run once per chunk
+        required: true
+        type: string
+      browserstack:
+        description: If true, set up browserstack environment and adjust concurrency
+        required: false
+        type: boolean
+      timeout:
+        description: Timeout on test run
+        required: false
+        type: number
+        default: 10
+    outputs:
+      coverage:
+        description: Artifact name for coverage results
+        value: ${{ jobs.collect-coverage.outputs.coverage }}
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      chunks: ${{ steps.chunks.outputs.chunks }}
+      wdir: ${{ inputs.build-cmd && format('build-{0}', inputs.build-cmd) || 'source' }}
+    steps:
+      - name: Checkout
+        if: ${{ inputs.build-cmd }}
+        uses: actions/checkout@v5
+      - name: Restore source
+        if: ${{ inputs.build-cmd }}
+        uses: ./.github/actions/load
+        with:
+          name: source
+
+      - name: Build
+        if: ${{ inputs.build-cmd }}
+        run: ${{ inputs.build-cmd }}
+
+      - name: 'Save working directory'
+        if: ${{ inputs.build-cmd }}
+        uses: ./.github/actions/save
+        with:
+          name: build-${{ inputs.build-cmd }}
+
+      - name: Define chunks
+        id: chunks
+        run: |
+          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
+          
+          
+
+  run-tests:
+    needs: build
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
+      matrix:
+        chunk-no: ${{ fromJSON(needs.build.outputs.chunks) }}
+
+    name: "Test chunk ${{ matrix.chunk-no }}"
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      TEST_CHUNKS: ${{ inputs.chunks }}
+      TEST_CHUNK: ${{ matrix.chunk-no }}
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+    concurrency:
+      # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
+      # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
+      # (cfr. https://github.com/orgs/community/discussions/12835)
+      # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
+      group: ${{ inputs.browserstack && 'browser' || github.run_id }}${{ inputs.browserstack && 'stac' || inputs.test-cmd }}${{ inputs.browserstack && 'k' || matrix.chunk-no }}-${{ github.run_id }}
+      cancel-in-progress: false
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.wdir }}
+
+      - name: 'BrowserStack Env Setup'
+        if: ${{ inputs.browserstack }}
+        uses: 'browserstack/github-actions/setup-env@master'
+        with:
+          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          build-name: Run ${{github.run_id}}, attempt ${{ github.run_attempt }}, chunk ${{ matrix.chunk-no }}, ref ${{ github.event_name == 'pull_request_target' && format('PR {0}', github.event.pull_request.number) || github.ref }}, ${{ inputs.test-cmd }}
+
+      - name: 'BrowserStackLocal Setup'
+        if: ${{ inputs.browserstack }}
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: start
+          local-identifier: random
+
+      - name: 'Wait for browserstack'
+        if: ${{ inputs.browserstack }}
+        uses: ./.github/actions/wait-for-browserstack
+
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: ${{ inputs.timeout }}
+          max_attempts: 3
+          command: ${{ inputs.test-cmd }}
+
+      - name: 'BrowserStackLocal Stop'
+        if: ${{ inputs.browserstack }}
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: stop
+
+      - name: 'Check for coverage'
+        id: 'coverage'
+        run: |
+          if [ -d "./build/coverage" ]; then 
+            echo 'coverage=true' >> "$GITHUB_OUTPUT";
+          fi
+
+      - name: 'Save coverage result'
+        if: ${{ steps.coverage.outputs.coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
+          path: ./build/coverage
+          overwrite: true
+
+  collect-coverage:
+    if: ${{ needs.run-tests.outputs.coverage }}
+    needs: [build, run-tests]
+    name: 'Collect coverage results'
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: coverage-complete-${{ inputs.test-cmd }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.wdir }}
+
+      - name: Download coverage results
+        uses: actions/download-artifact@v5
+        with:
+          path: ./build/coverage
+          pattern: coverage-partial-${{ inputs.test-cmd }}-*
+          merge-multiple: true
+
+      - name: 'Save working directory'
+        uses: ./.github/actions/save
+        with:
+          name: coverage-complete-${{ inputs.test-cmd }}
+

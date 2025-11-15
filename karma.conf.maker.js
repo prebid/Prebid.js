@@ -88,7 +88,7 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
+      build: process.env.BROWSERSTACK_BUILD_NAME
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -174,10 +174,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 1e5, // default 2000
-    browserNoActivityTimeout: 1e5, // default 10000
-    captureTimeout: 3e5, // default 60000,
-    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout: 1e4,
+    browserNoActivityTimeout: 3e4,
+    captureTimeout: 2e4,
+    browserDisconnectTolerance: 5,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins
