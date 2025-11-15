@@ -87,7 +87,6 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-      
   test:
     name: "Unit tests (all features enabled + coverage)"
     needs: checkout
@@ -95,21 +94,8 @@ jobs:
     with:
       chunks: 8
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --coverage
-      browserstack: false
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-  test-browserstack:
-    name: "Unit tests (all browsers)"
-    needs: checkout
-    uses: ./.github/workflows/run-tests.yml
-    with:
-      chunks: 8
-      build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage
-      browserstack: false
+      test-cmd: npx gulp test-only-nobuild --browserstack
+      browserstack: true
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
