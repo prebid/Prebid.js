@@ -7,7 +7,7 @@ import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 const BIDDER_CODE = 'startio';
 const METHOD = 'POST';
 const GVLID = 1216;
-const ENDPOINT_URL = `http://pbc-rtb.startappnetwork.com/1.3/2.5/getbid?account=pbc`;
+const ENDPOINT_URL = `https://pbc-rtb.startappnetwork.com/1.3/2.5/getbid?account=pbc`;
 
 const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
