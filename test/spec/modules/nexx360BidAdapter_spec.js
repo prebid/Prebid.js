@@ -308,6 +308,9 @@ describe('Nexx360 bid adapter tests', () => {
                 },
                 nexx360: {
                   tagId: 'luvxjvgn',
+                  adUnitName: 'header-ad',
+                  adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
+                  divId: 'div-1',
                 },
                 adUnitName: 'header-ad',
                 adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
