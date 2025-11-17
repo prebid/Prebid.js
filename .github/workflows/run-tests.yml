@@ -24,6 +24,11 @@ on:
         required: false
         type: number
         default: 10
+      runs-on:
+        description: Runner image
+        required: false
+        default: ubuntu-latest
+        type: string
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -93,7 +98,7 @@ jobs:
       group: ${{ inputs.browserstack && 'browser' || github.run_id }}${{ inputs.browserstack && 'stac' || inputs.test-cmd }}${{ inputs.browserstack && 'k' || matrix.chunk-no }}-${{ github.run_id }}
       cancel-in-progress: false
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
