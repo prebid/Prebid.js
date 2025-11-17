@@ -49,6 +49,7 @@ const encoderCH = {
 };
 let sourceMetaData;
 let sourceMetaDataExternal;
+let globalName = ''
 
 let FIRST_PARTY_KEY_FINAL = FIRST_PARTY_KEY;
 let PARTNER_DATA_KEY;
@@ -57,6 +58,8 @@ let failCount = 0;
 let noDataCount = 0;
 
 export let firstPartyData;
+let partnerData;
+let clientHints;
 
 /**
  * Generate standard UUID string
@@ -140,6 +143,15 @@ function addMetaData(url, data) {
     return url;
   }
   return url + '&fbp=' + data;
+}
+
+export function initializeGlobalIIQ (partnerId) {
+  if (!globalName || !window[globalName]) {
+    globalName = `iiq_identity_${partnerId}`
+    window[globalName] = {}
+    return true
+  }
+  return false
 }
 
 export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
@@ -288,11 +300,11 @@ export const intentIqIdSubmodule = {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
-        if (isGroupB) runtimeEids = { eids: [] };
         let data = runtimeEids;
         if (data?.eids?.length === 1 && typeof data.eids[0] === 'string') data = data.eids[0];
         configParams.callback(data);
       }
+      updateGlobalObj()
     }
 
     if (typeof configParams.partner !== 'number') {
@@ -300,6 +312,8 @@ export const intentIqIdSubmodule = {
       firePartnerCallback()
       return;
     }
+
+    initializeGlobalIIQ(configParams.partner)
 
     let decryptedData, callbackTimeoutID;
     let callbackFired = false;
@@ -316,7 +330,7 @@ export const intentIqIdSubmodule = {
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
-    const partnerData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage)) || {};
+    partnerData = tryParse(readData(PARTNER_DATA_KEY, allowedStorage)) || {};
 
     let rrttStrtTime = 0;
     let shouldCallServer = false;
@@ -361,7 +375,7 @@ export const intentIqIdSubmodule = {
     }
 
     // Read client hints from storage
-    let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
+    clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
     const chSupported = isCHSupported();
     let chPromise = null;
 
@@ -413,6 +427,14 @@ export const intentIqIdSubmodule = {
       if (partnerData.data.length) { // encrypted data
         decryptedData = tryParse(decryptData(partnerData.data));
         runtimeEids = decryptedData;
+      }
+    }
+
+    function updateGlobalObj () {
+      if (globalName) {
+        window[globalName].partnerData = partnerData
+        window[globalName].firstPartyData = firstPartyData
+        window[globalName].clientHints = clientHints
       }
     }
 

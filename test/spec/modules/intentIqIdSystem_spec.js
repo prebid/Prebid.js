@@ -6,7 +6,8 @@ import {
   intentIqIdSubmodule,
   handleClientHints,
   firstPartyData as moduleFPD,
-  isCMPStringTheSame, createPixelUrl, translateMetadata
+  isCMPStringTheSame, createPixelUrl, translateMetadata,
+  initializeGlobalIIQ
 } from '../../../modules/intentIqIdSystem.js';
 import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
@@ -177,6 +178,23 @@ describe('IntentIQ tests', function () {
     clearAllCookies();
     localStorage.clear();
   });
+
+  it('should create global IIQ identity object', async () => {
+    const globalName = `iiq_identity_${partner}`
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = intentIqIdSubmodule.getId({ params: { partner }}).callback;
+    submoduleCallback(callBackSpy);
+    await waitForClientHints()
+    expect(window[globalName]).to.be.not.undefined
+    expect(window[globalName].partnerData).to.be.not.undefined
+    expect(window[globalName].firstPartyData).to.be.not.undefined
+  })
+
+  it('should not create a global IIQ identity object in case it was already created', () => {
+    intentIqIdSubmodule.getId({ params: { partner }})
+    const secondTimeCalling = initializeGlobalIIQ(partner)
+    expect(secondTimeCalling).to.be.false
+  })
 
   it('should log an error if no configParams were passed when getId', function () {
     const submodule = intentIqIdSubmodule.getId({ params: {} });

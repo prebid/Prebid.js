@@ -2,22 +2,17 @@ import { isPlainObject, logError, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { appendVrrefAndFui, getReferrer } from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {
-  CLIENT_HINTS_KEY,
-  FIRST_PARTY_KEY,
   VERSION,
   PREBID,
   WITH_IIQ
 } from '../libraries/intentIqConstants/intentIqConstants.js';
-import { readData, defineStorageType } from '../libraries/intentIqUtils/storageUtils.js';
 import { reportingServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { gamPredictionReport } from '../libraries/intentIqUtils/gamPredictionReport.js';
@@ -25,14 +20,10 @@ import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTesting
 
 const MODULE_NAME = 'iiqAnalytics';
 const analyticsType = 'endpoint';
-const storage = getStorageManager({
-  moduleType: MODULE_TYPE_ANALYTICS,
-  moduleName: MODULE_NAME
-});
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
-const allowedStorage = defineStorageType(config.enabledStorageTypes);
 let globalName;
+let identityGlobalName;
 let alreadySubscribedOnGAM = false;
 let reportList = {};
 let cleanReportsID;
@@ -97,7 +88,7 @@ const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, a
     currentGroup: null,
     dataInLs: null,
     eidl: null,
-    lsIdsInitialized: false,
+    dataIdsInitialized: false,
     manualWinReportEnabled: false,
     domainName: null,
     siloEnabled: false,
@@ -114,7 +105,6 @@ const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, a
         break;
       case BID_REQUESTED:
         checkAndInitConfig();
-        defineGlobalVariableName();
         if (!alreadySubscribedOnGAM && shouldSubscribeOnGAM()) {
           alreadySubscribedOnGAM = true;
           const iiqConfig = getIntentIqConfig();
@@ -132,6 +122,7 @@ const { BID_WON, BID_REQUESTED } = EVENTS;
 
 function initAdapterConfig(config) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
+  defineGlobalVariableName();
   const iiqIdSystemConfig = getIntentIqConfig();
 
   if (iiqIdSystemConfig) {
@@ -162,39 +153,28 @@ function initAdapterConfig(config) {
   }
 }
 
-function initReadLsIds() {
+function receivePartnerData() {
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
-    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(
-      readData(
-                `${FIRST_PARTY_KEY}${
-                    iiqAnalyticsAnalyticsAdapter.initOptions.siloEnabled
-                        ? '_p_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner
-                        : ''
-                }`,
-                allowedStorage,
-                storage
-      )
-    );
-    const partnerData = readData(
-      FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner,
-      allowedStorage,
-      storage
-    );
-    const clientsHints = readData(CLIENT_HINTS_KEY, allowedStorage, storage) || '';
+    const FPD = window[identityGlobalName]?.firstPartyData
+    if (!FPD) {
+      return false
+    }
+    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = FPD
+    const partnerData = window[identityGlobalName]?.partnerData
+    const clientsHints = window[identityGlobalName]?.clientsHints || '';
 
     if (partnerData) {
-      iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
-      const pData = JSON.parse(partnerData);
-      iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause;
-      iiqAnalyticsAnalyticsAdapter.initOptions.abTestUuid = pData.abTestUuid;
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = defineABTestingGroup(pData.terminationCause, iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage);
-      iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
-      iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
-      iiqAnalyticsAnalyticsAdapter.initOptions.clientType = pData.clientType || null;
-      iiqAnalyticsAnalyticsAdapter.initOptions.siteId = pData.siteId || null;
-      iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll = pData.wsrvcll || false;
-      iiqAnalyticsAnalyticsAdapter.initOptions.rrtt = pData.rrtt || null;
+      iiqAnalyticsAnalyticsAdapter.initOptions.dataIdsInitialized = true;
+      iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = partnerData.terminationCause;
+      iiqAnalyticsAnalyticsAdapter.initOptions.abTestUuid = partnerData.abTestUuid;
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = defineABTestingGroup(partnerData.terminationCause, iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage);
+      iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = partnerData.data;
+      iiqAnalyticsAnalyticsAdapter.initOptions.eidl = partnerData.eidl || -1;
+      iiqAnalyticsAnalyticsAdapter.initOptions.clientType = partnerData.clientType || null;
+      iiqAnalyticsAnalyticsAdapter.initOptions.siteId = partnerData.siteId || null;
+      iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll = partnerData.wsrvcll || false;
+      iiqAnalyticsAnalyticsAdapter.initOptions.rrtt = partnerData.rrtt || null;
     }
 
     iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints;
@@ -206,14 +186,9 @@ function initReadLsIds() {
 function shouldSubscribeOnGAM() {
   const iiqConfig = getIntentIqConfig();
   if (!iiqConfig?.params?.gamObjectReference || !isPlainObject(iiqConfig.params.gamObjectReference)) return false;
-  const partnerDataFromLS = readData(
-    FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner,
-    allowedStorage,
-    storage
-  );
+  const partnerData = window[identityGlobalName]?.partnerData
 
-  if (partnerDataFromLS) {
-    const partnerData = JSON.parse(partnerDataFromLS);
+  if (partnerData) {
     return partnerData.gpr || (!('gpr' in partnerData) && iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting);
   }
   return false;
@@ -253,11 +228,11 @@ function bidWon(args, isReportExternal) {
     return;
   }
 
-  if (
-    iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized &&
-            !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized
-  ) {
-    initReadLsIds();
+  const success = receivePartnerData();
+  if (success) {
+    // in fact analytical adapter could not exist without intentIqIdSystem, and first party data is generated there
+    logError('IIQ ANALYTICS → required data missing. Skipping initialization')
+    return;
   }
   if (shouldSendReport(isReportExternal)) {
     const preparedPayload = preparePayload(args);
@@ -299,6 +274,7 @@ function defineGlobalVariableName() {
   const iiqConfig = getIntentIqConfig();
   const partnerId = iiqConfig?.params?.partner || 0;
   globalName = `intentIqAnalyticsAdapter_${partnerId}`;
+  identityGlobalName = `iiq_identity_${partnerId}`
 
   window[globalName] = { reportExternalWin };
 }
@@ -309,7 +285,6 @@ function getRandom(start, end) {
 
 export function preparePayload(data) {
   const result = getDefaultDataObject();
-
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.referrer] = getReferrer();
@@ -354,7 +329,7 @@ export function preparePayload(data) {
 }
 
 function fillEidsData(result) {
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) {
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.dataIdsInitialized) {
     result[PARAMS_NAMES.hadEidsInLocalStorage] =
             iiqAnalyticsAnalyticsAdapter.initOptions.eidl && iiqAnalyticsAnalyticsAdapter.initOptions.eidl > 0;
     result[PARAMS_NAMES.auctionEidsLength] = iiqAnalyticsAnalyticsAdapter.initOptions.eidl || -1;
