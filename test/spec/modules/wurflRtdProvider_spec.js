@@ -978,6 +978,7 @@ describe('wurflRtdProvider', function () {
         expect(payload).to.have.property('sampling_rate', 100);
         expect(payload).to.have.property('enrichment', 'wurfl_pub');
         expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+        expect(payload).to.have.property('over_quota', 0);
         expect(payload).to.have.property('consent_class', 0);
         expect(payload).to.have.property('ad_units');
         expect(payload.ad_units).to.be.an('array').with.lengthOf(1);
@@ -985,14 +986,14 @@ describe('wurflRtdProvider', function () {
         expect(payload.ad_units[0].bidders).to.be.an('array').with.lengthOf(2);
         expect(payload.ad_units[0].bidders[0]).to.deep.include({
           bidder: 'bidder1',
-          enrichment: 'wurfl_ssp',
+          bdr_enrich: 'wurfl_ssp',
           cpm: 1.5,
           currency: 'USD',
           won: true
         });
         expect(payload.ad_units[0].bidders[1]).to.deep.include({
           bidder: 'bidder2',
-          enrichment: 'wurfl_ssp',
+          bdr_enrich: 'wurfl_ssp',
           cpm: 1.2,
           currency: 'USD',
           won: false
@@ -1068,6 +1069,7 @@ describe('wurflRtdProvider', function () {
         expect(payload).to.have.property('sampling_rate', 100);
         expect(payload).to.have.property('enrichment', 'wurfl_pub');
         expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+        expect(payload).to.have.property('over_quota', 0);
         expect(payload).to.have.property('consent_class', 0);
         expect(payload).to.have.property('ad_units');
         expect(payload.ad_units).to.be.an('array').with.lengthOf(1);
@@ -1439,6 +1441,7 @@ describe('wurflRtdProvider', function () {
 
           // Verify overall enrichment is none when overquota (publisher not enriched)
           expect(payload).to.have.property('enrichment', 'none');
+          expect(payload).to.have.property('over_quota', 1);
 
           // Verify per-bidder enrichment
           expect(payload.ad_units).to.be.an('array').with.lengthOf(1);
@@ -1447,14 +1450,14 @@ describe('wurflRtdProvider', function () {
           // bidder1 and bidder2 are authorized - should report wurfl_ssp
           expect(payload.ad_units[0].bidders[0]).to.deep.include({
             bidder: 'bidder1',
-            enrichment: 'wurfl_ssp',
+            bdr_enrich: 'wurfl_ssp',
             cpm: 1.5,
             currency: 'USD',
             won: false
           });
           expect(payload.ad_units[0].bidders[1]).to.deep.include({
             bidder: 'bidder2',
-            enrichment: 'wurfl_ssp',
+            bdr_enrich: 'wurfl_ssp',
             cpm: 1.2,
             currency: 'USD',
             won: false
@@ -1463,7 +1466,7 @@ describe('wurflRtdProvider', function () {
           // bidder3 is NOT authorized and overquota - should report none
           expect(payload.ad_units[0].bidders[2]).to.deep.include({
             bidder: 'bidder3',
-            enrichment: 'none',
+            bdr_enrich: 'none',
             won: false
           });
 
@@ -1512,6 +1515,7 @@ describe('wurflRtdProvider', function () {
 
           // Verify overall enrichment is wurfl_pub when not overquota
           expect(payload).to.have.property('enrichment', 'wurfl_pub');
+          expect(payload).to.have.property('over_quota', 0);
 
           // Verify per-bidder enrichment
           expect(payload.ad_units).to.be.an('array').with.lengthOf(1);
@@ -1520,7 +1524,7 @@ describe('wurflRtdProvider', function () {
           // bidder1 is authorized - should always report wurfl_ssp
           expect(payload.ad_units[0].bidders[0]).to.deep.include({
             bidder: 'bidder1',
-            enrichment: 'wurfl_ssp',
+            bdr_enrich: 'wurfl_ssp',
             cpm: 1.5,
             currency: 'USD',
             won: false
@@ -1529,7 +1533,7 @@ describe('wurflRtdProvider', function () {
           // bidder3 is NOT authorized but not overquota - should report wurfl_pub
           expect(payload.ad_units[0].bidders[1]).to.deep.include({
             bidder: 'bidder3',
-            enrichment: 'wurfl_pub',
+            bdr_enrich: 'wurfl_pub',
             cpm: 1.0,
             currency: 'USD',
             won: false

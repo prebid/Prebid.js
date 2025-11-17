@@ -12,7 +12,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.0.3';
+const MODULE_VERSION = '2.0.4';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -66,6 +66,9 @@ const CONSENT_CLASS = {
 // Default sampling rate constant
 const DEFAULT_SAMPLING_RATE = 100;
 
+// Default over quota constant
+const DEFAULT_OVER_QUOTA = 0;
+
 // A/B test constants
 const AB_TEST = {
   CONTROL_GROUP: 'control',
@@ -96,6 +99,9 @@ let samplingRate;
 
 // tier stores the WURFL tier from wurfl_pbjs data
 let tier;
+
+// overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
+let overQuota;
 
 // abTest stores A/B test configuration and variant (set by init)
 let abTest;
@@ -1083,6 +1089,7 @@ const init = (config, userConsent) => {
   wurflId = '';
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
+  overQuota = DEFAULT_OVER_QUOTA;
   abTest = null;
 
   // A/B testing: set if enabled
@@ -1161,6 +1168,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     // Store tier for beacon
     tier = cachedWurflData.wurfl_pbjs?.tier ?? '';
 
+    // Store over_quota for beacon
+    overQuota = cachedWurflData.wurfl_pbjs?.over_quota ?? DEFAULT_OVER_QUOTA;
+
     // If expired, refresh cache async
     if (isExpired) {
       loadWurflJsAsync(config, bidders);
@@ -1202,6 +1212,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
 
   // Set default tier for LCE
   tier = '';
+
+  // Set default over_quota for LCE
+  overQuota = DEFAULT_OVER_QUOTA;
 
   // Load WURFL.js async for future requests
   loadWurflJsAsync(config, bidders);
@@ -1281,7 +1294,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
           const isWinner = winningBidIds[bidResponse.requestId] === true;
           bidders.push({
             bidder: bidderCode,
-            enrichment: bidderEnrichment.get(bidderCode),
+            bdr_enrich: bidderEnrichment.get(bidderCode),
             cpm: bidResponse.cpm,
             currency: bidResponse.currency,
             won: isWinner
@@ -1290,7 +1303,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
           // Bidder didn't respond - include without cpm/currency
           bidders.push({
             bidder: bidderCode,
-            enrichment: bidderEnrichment.get(bidderCode),
+            bdr_enrich: bidderEnrichment.get(bidderCode),
             won: false
           });
         }
@@ -1325,6 +1338,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     enrichment: enrichmentType,
     wurfl_id: wurflId,
     tier: tier,
+    over_quota: overQuota,
     consent_class: consentClass,
     ad_units: adUnits
   };
