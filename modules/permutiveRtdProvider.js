@@ -17,6 +17,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
  */
 
 const MODULE_NAME = 'permutive'
+const PERMUTIVE_GVLID = 361
 
 const logger = prefixLog('[PermutiveRTD]')
 
@@ -466,6 +467,7 @@ let permutiveSDKInRealTime = false
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
+  gvlid: PERMUTIVE_GVLID,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     const completeBidRequestData = () => {
       logger.logInfo(`Request data updated`)

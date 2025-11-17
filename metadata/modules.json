@@ -507,6 +507,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "blutonic",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -935,6 +942,13 @@
     {
       "componentType": "bidder",
       "componentName": "bidsmind",
+      "aliasOf": "adverxo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "harrenmedia",
       "aliasOf": "adverxo",
       "gvlid": null,
       "disclosureURL": null
