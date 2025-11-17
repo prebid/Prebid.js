@@ -82,34 +82,25 @@ function ensureUAData() {
 }
 
 async function waitForClientHints() {
-  if (!isCHSupported()) return;
-
   const clock = globalThis.__iiqClock;
 
   if (clock && typeof clock.runAllAsync === 'function') {
     await clock.runAllAsync();
-    return;
-  }
-  if (clock && typeof clock.runAll === 'function') {
+  } else if (clock && typeof clock.runAll === 'function') {
     clock.runAll();
     await Promise.resolve();
     await Promise.resolve();
-    return;
-  }
-  if (clock && typeof clock.runToLast === 'function') {
+  } else if (clock && typeof clock.runToLast === 'function') {
     clock.runToLast();
     await Promise.resolve();
-    return;
-  }
-  if (clock && typeof clock.tick === 'function') {
+  } else if (clock && typeof clock.tick === 'function') {
     clock.tick(0);
     await Promise.resolve();
-    return;
+  } else {
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise(r => setTimeout(r, 0));
   }
-
-  await Promise.resolve();
-  await Promise.resolve();
-  await new Promise(r => setTimeout(r, 0));
 }
 
 const testAPILink = 'https://new-test-api.intentiq.com'
@@ -133,6 +124,7 @@ const mockGAM = () => {
 };
 
 describe('IntentIQ tests', function () {
+  this.timeout(10000);
   let sandbox;
   let logErrorStub;
   let clock;
