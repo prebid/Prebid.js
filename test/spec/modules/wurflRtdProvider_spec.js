@@ -5,6 +5,7 @@ import {
 import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as prebidGlobalModule from 'src/prebidGlobal.js';
+import { guardOrtb2Fragments } from 'libraries/objectGuard/ortbGuard.js';
 
 describe('wurflRtdProvider', function () {
   describe('wurflSubmodule', function () {
@@ -800,6 +801,66 @@ describe('wurflRtdProvider', function () {
       const userConsent = {};
 
       wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+    });
+
+    it('should work with guardOrtb2Fragments Proxy (Prebid 10.x compatibility)', (done) => {
+      // Simulate Prebid 10.x where rtdModule wraps ortb2Fragments with guardOrtb2Fragments
+      const plainFragments = {
+        global: { device: {} },
+        bidder: {}
+      };
+
+      const plainReqBidsConfigObj = {
+        adUnits: [{
+          bids: [
+            { bidder: 'bidder1' },
+            { bidder: 'bidder2' }
+          ]
+        }],
+        ortb2Fragments: plainFragments
+      };
+
+      // Setup localStorage with cached WURFL data (over quota)
+      const wurfl_pbjs_over_quota = {
+        ...wurfl_pbjs,
+        over_quota: 1
+      };
+      const cachedData = { WURFL, wurfl_pbjs: wurfl_pbjs_over_quota };
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+      // Wrap with guard (like rtdModule does in production)
+      const guardedFragments = guardOrtb2Fragments(plainFragments, {});
+      const guardedReqBidsConfigObj = { ...plainReqBidsConfigObj, ortb2Fragments: guardedFragments };
+
+      const callback = () => {
+        // Verify bidder1 (authorized) got enriched data
+        expect(plainFragments.bidder.bidder1).to.exist;
+        expect(plainFragments.bidder.bidder1.device).to.exist;
+        expect(plainFragments.bidder.bidder1.device.ext).to.exist;
+        expect(plainFragments.bidder.bidder1.device.ext.wurfl).to.deep.equal(WURFL);
+
+        // Verify FPD is present
+        expect(plainFragments.bidder.bidder1.device).to.deep.include({
+          make: 'Google',
+          model: 'Nexus 5',
+          devicetype: 4,
+          os: 'Android',
+          osv: '6.0'
+        });
+
+        // Verify bidder2 (authorized) also got enriched
+        expect(plainFragments.bidder.bidder2).to.exist;
+        expect(plainFragments.bidder.bidder2.device.ext.wurfl).to.deep.equal(WURFL);
+
+        done();
+      };
+
+      const config = { params: {} };
+      const userConsent = {};
+
+      wurflSubmodule.getBidRequestData(guardedReqBidsConfigObj, callback, config, userConsent);
     });
 
     it('should pass basic+pub caps to unauthorized bidders when under quota', (done) => {

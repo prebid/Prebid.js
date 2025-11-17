@@ -192,8 +192,10 @@ function enrichDeviceExt(reqBidsConfigObj, extData) {
  * @param {WurflJSDevice} wjsDevice WURFL.js device data with permissions and caps
  */
 function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
-  // Initialize bidder fragments if not already present
-  reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {};
+  // Initialize bidder fragments if not present
+  if (!reqBidsConfigObj.ortb2Fragments.bidder) {
+    reqBidsConfigObj.ortb2Fragments.bidder = {};
+  }
 
   bidders.forEach((bidderCode) => {
     // Get bidder data (handles both authorized and unauthorized bidders)
@@ -213,7 +215,9 @@ function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
     }
 
     // Inject WURFL data
-    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: bidderDevice });
+    const bd = reqBidsConfigObj.ortb2Fragments.bidder[bidderCode] || {};
+    mergeDeep(bd, bidderDevice);
+    reqBidsConfigObj.ortb2Fragments.bidder[bidderCode] = bd;
   });
 }
 
