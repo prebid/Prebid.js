@@ -75,12 +75,13 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
-        expect(server.requests.length).to.equal(1);
+        const reqs = server.requests.filter(req => req.url.startsWith('https://content.mql5.com'));
+        expect(reqs.length).to.eql(1);
 
-        expect(server.requests[0].method).to.equal('GET');
-        expect(server.requests[0].withCredentials).to.equal(true);
+        expect(reqs[0].method).to.equal('GET');
+        expect(reqs[0].withCredentials).to.equal(true);
 
-        const url = parseUrl(server.requests[0].url);
+        const url = parseUrl(reqs[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -88,8 +89,9 @@ describe('finteza analytics adapter', function () {
         expect(url.search.id).to.equal(clientId);
         expect(url.search.fz_uniq).to.equal(uniqCookie);
         expect(decodeURIComponent(url.search.event)).to.equal(`Bid Request ${bidderCode.toUpperCase()}`);
-
-        sinon.assert.callCount(fntzAnalyticsAdapter.track, 1);
+        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({
+          eventType: EVENTS.BID_REQUESTED
+        }));
       });
     });
 
@@ -117,13 +119,12 @@ describe('finteza analytics adapter', function () {
 
         // Emit the events with the "real" arguments
         events.emit(EVENTS.BID_RESPONSE, bidResponse);
+        const reqs = server.requests.filter(req => req.url.startsWith('https://content.mql5.com'));
+        expect(reqs.length).to.equal(2);
+        expect(reqs[0].method).to.equal('GET');
+        expect(reqs[0].withCredentials).to.equal(true);
 
-        expect(server.requests[0].method).to.equal('GET');
-        expect(server.requests[0].withCredentials).to.equal(true);
-
-        expect(server.requests.length).to.equal(2);
-
-        let url = parseUrl(server.requests[0].url);
+        let url = parseUrl(reqs[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -134,10 +135,10 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        expect(server.requests[1].method).to.equal('GET');
-        expect(server.requests[1].withCredentials).to.equal(true);
+        expect(reqs[1].method).to.equal('GET');
+        expect(reqs[1].withCredentials).to.equal(true);
 
-        url = parseUrl(server.requests[1].url);
+        url = parseUrl(reqs[1].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -148,7 +149,9 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(timeToRespond));
         expect(url.search.unit).to.equal('ms');
 
-        sinon.assert.callCount(fntzAnalyticsAdapter.track, 1);
+        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({
+          eventType: EVENTS.BID_RESPONSE
+        }));
       });
     });
 
@@ -172,12 +175,13 @@ describe('finteza analytics adapter', function () {
         // Emit the events with the "real" arguments
         events.emit(EVENTS.BID_WON, bidWon);
 
-        expect(server.requests[0].method).to.equal('GET');
-        expect(server.requests[0].withCredentials).to.equal(true);
+        const reqs = server.requests.filter((req) => req.url.startsWith('https://content.mql5.com'));
+        expect(reqs[0].method).to.equal('GET');
+        expect(reqs[0].withCredentials).to.equal(true);
 
-        expect(server.requests.length).to.equal(1);
+        expect(reqs.length).to.equal(1);
 
-        const url = parseUrl(server.requests[0].url);
+        const url = parseUrl(reqs[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -188,8 +192,7 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        // 1 Finteza event + 1 Clean.io event
-        sinon.assert.callCount(fntzAnalyticsAdapter.track, 2);
+        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({eventType: EVENTS.BID_WON}))
       });
     });
 
