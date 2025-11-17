@@ -10,6 +10,7 @@ import {prefixLog, safeJSONParse} from '../src/utils.js'
  */
 
 const MODULE_NAME = 'permutiveIdentityManagerId'
+const PERMUTIVE_GVLID = 361
 const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
 
 const ID5_DOMAIN = 'id5-sync.com'
@@ -80,6 +81,7 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: PERMUTIVE_GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
