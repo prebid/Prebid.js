@@ -308,6 +308,9 @@ describe('Nexx360 bid adapter tests', () => {
                 },
                 nexx360: {
                   tagId: 'luvxjvgn',
+                  adUnitName: 'header-ad',
+                  adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
+                  divId: 'div-1',
                 },
                 adUnitName: 'header-ad',
                 adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
@@ -329,6 +332,7 @@ describe('Nexx360 bid adapter tests', () => {
                 divId: 'div-2-abcd',
                 nexx360: {
                   placement: 'testPlacement',
+                  divId: 'div-2-abcd',
                   allBids: true,
                 },
               },
@@ -340,7 +344,7 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '7.0',
+            bidderVersion: '7.1',
             localStorage: { amxId: 'abcdef'},
             sessionId: requestContent.ext.sessionId,
             requestCounter: 0,
