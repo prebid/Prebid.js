@@ -38,6 +38,10 @@ on:
         type: boolean
         required: false
         default: false
+      setup-edge:
+        description: Set up Edge
+        type: boolean
+        default: false
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -97,6 +101,10 @@ jobs:
 
     runs-on: ${{ inputs.runs-on }}
     steps:
+      - name: Set up Edge
+        if: ${{ inputs.setup-edge }}
+        uses: browser-actions/setup-edge@v1
+        
       - name: Checkout
         uses: actions/checkout@v5
 

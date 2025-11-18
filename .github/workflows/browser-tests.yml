@@ -69,5 +69,4 @@ jobs:
       test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ contains(fromJSON(needs.setup.outputs.coverage), matrix.browser) && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
       runs-on: ${{ contains(fromJSON(needs.setup.outputs.macos), matrix.browser) && 'macos-latest' || contains(fromJSON(needs.setup.outputs.win), matrix.browser) && 'windows-latest' || 'ubuntu-latest' }}
-      # on Windows, another npm install is required to set up edge
-      run-npm-install: ${{ contains(fromJSON(needs.setup.outputs.win), matrix.browser) }}
+      setup-edge: ${{ contains(fromJSON(needs.setup.outputs.win), matrix.browser) }}
