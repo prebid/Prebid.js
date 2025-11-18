@@ -817,7 +817,7 @@ describe('limelightDigitalAdapter', function () {
       expect(serverRequests).to.have.lengthOf(1);
       expect(serverRequests[0].data.adUnits[0].sizes[0].floorInfo).to.deep.equal({});
     });
-    it('should handle getFloor errors gracefully and set floorInfo to null', function() {
+    it('should handle getFloor errors and set floorInfo to null', function() {
       const bidWithErrorFloor = {
         ...bid1,
         getFloor: function() {
@@ -827,7 +827,6 @@ describe('limelightDigitalAdapter', function () {
 
       const serverRequests = spec.buildRequests([bidWithErrorFloor], bidderRequest);
       expect(serverRequests).to.have.lengthOf(1);
-
       const adUnit = serverRequests[0].data.adUnits[0];
       expect(adUnit.sizes[0].floorInfo).to.be.null;
     });
