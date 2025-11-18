@@ -30,33 +30,34 @@ on:
       BROWSERSTACK_ACCESS_KEY:
         description: "Browserstack access key"
 jobs:
-  setup:
-    name: "Setup environment"
-    runs-on: ubuntu-latest
-    outputs:
-      browsers: ${{ steps.define.outputs.browsers }}
-      macos: ${{ steps.define.outputs.macos }}
-      win: ${{ steps.define.outputs.win }}
-      coverage: ${{ steps.define.outputs.coverage }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Define browsers
-        id: define
-        run: |
-          echo 'browsers=["ChromeHeadless", "SafariNative", "FirefoxHeadless", "EdgeHeadless"]' >> out;
-          echo 'macos=["SafariNative"]' >> out;
-          echo 'win=["EdgeHeadless"]' >> out;
-          echo 'coverage=["ChromeHeadless"]' >> out;
-          cat out >> "$GITHUB_OUTPUT";
-
   build:
     uses: ./.github/workflows/build.yml
     with:
       build-cmd: ${{ inputs.build-cmd }}
 
+  setup:
+    needs: build
+    name: "Setup environment"
+    runs-on: ubuntu-latest
+    outputs:
+      browsers: ${{ steps.define.outputs.result }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name:  Restore working directory
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.built-key }}
+      - name: "Define testing strategy"
+        uses: actions/github-script@v8
+        id: define
+        with:
+          script: |
+            const browsers = require('./.github/workflows/browser_testing.json');
+            return Object.entries(browsers).map(([name, def]) => Object.assign({name}, def))
+
   test-build-logic:
-    needs: [setup, build]
+    needs: build
     name: "Test build logic"
     uses:
       ./.github/workflows/run-tests.yml
@@ -66,7 +67,7 @@ jobs:
 
   browser-tests:
     needs: [setup, build]
-    name: "Browser: ${{ matrix.browser }}"
+    name: "Browser: ${{ matrix.browser.name }}"
     strategy:
       fail-fast: false
       matrix:
@@ -75,6 +76,6 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ contains(fromJSON(needs.setup.outputs.coverage), matrix.browser) && '--coverage' || '--no-coverage' }}
+      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
-      runs-on: ${{ contains(fromJSON(needs.setup.outputs.macos), matrix.browser) && 'macos-latest' || contains(fromJSON(needs.setup.outputs.win), matrix.browser) && 'windows-latest' || 'ubuntu-latest' }}
+      runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
