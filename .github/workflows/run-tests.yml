@@ -33,11 +33,6 @@ on:
         required: false
         default: ubuntu-latest
         type: string
-      run-npm-install:
-        description: Run npm install as part of build
-        type: boolean
-        required: false
-        default: false
       setup-edge:
         description: Set up Edge
         type: boolean
@@ -72,8 +67,6 @@ jobs:
     with:
       build-cmd: ${{ !inputs.built-key && inputs.build-cmd || '' }}
       source-key: ${{ inputs.built-key || 'source' }}
-      run-npm-install: ${{ inputs.run-npm-install }}
-      runs-on: ${{ inputs.runs-on }}
 
   run-tests:
     needs: [checkout, build]
@@ -104,7 +97,7 @@ jobs:
       - name: Set up Edge
         if: ${{ inputs.setup-edge }}
         uses: browser-actions/setup-edge@v1
-        
+
       - name: Checkout
         uses: actions/checkout@v5
 
