@@ -94,7 +94,7 @@ jobs:
     with:
       chunks: 8
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack --browsers Safari
+      test-cmd: npx gulp test-only-nobuild --browserstack --browsers SafariNative
       browserstack: false
       runs-on: macos-latest
     secrets:
