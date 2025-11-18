@@ -137,6 +137,7 @@ jobs:
 
       - name: 'Check for coverage'
         id: 'coverage'
+        shell: bash
         run: |
           if [ -d "./build/coverage" ]; then 
             echo 'coverage=true' >> "$GITHUB_OUTPUT";
