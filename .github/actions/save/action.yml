@@ -13,7 +13,6 @@ runs:
         wdir="$(pwd)"
         parent="$(dirname "$wdir")"
         target="$(basename "$wdir")"
-        echo "parent $parent, target $target"
         tar -C "$parent" -cf "${{ runner.temp }}/${{ inputs.name }}.tar" "$target"
     - name: Upload artifact
       uses: actions/upload-artifact@v4

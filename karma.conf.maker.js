@@ -40,6 +40,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
+    'karma-safarinative-launcher',
     'karma-coverage',
     'karma-mocha',
     'karma-chai',
@@ -54,7 +55,6 @@ function newPluginsArray(browserstack) {
   }
   plugins.push('karma-firefox-launcher');
   plugins.push('karma-opera-launcher');
-  plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
   return plugins;
 }
