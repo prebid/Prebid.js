@@ -11,6 +11,10 @@ on:
         description: Build command, run once
         required: false
         type: string
+      built-key:
+        description: Artifact name for built source
+        required: false
+        type: string
       test-cmd:
         description: Test command, run once per chunk
         required: true
@@ -57,7 +61,8 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
     with:
-      build-cmd: ${{ inputs.build-cmd }}
+      build-cmd: ${{ !inputs.built-key && inputs.build-cmd || '' }}
+      source-key: ${{ inputs.built-key || 'source' }}
 
   run-tests:
     needs: [checkout, build]

@@ -1,0 +1,59 @@
+name: Run unit tests on all browsers
+on:
+  workflow_call:
+    inputs:
+      chunks:
+        description: Number of chunks to split tests into
+        required: false
+        type: number
+        default: 1
+      build-cmd:
+        description: Build command, run once
+        required: false
+        type: string
+      test-cmd:
+        description: Test command, run once per chunk
+        required: true
+        type: string
+      timeout:
+        description: Timeout on test run
+        required: false
+        type: number
+        default: 10
+    outputs:
+      coverage:
+        description: Artifact name for coverage results
+        value: ${{ jobs.collect-coverage.outputs.coverage }}
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+
+jobs:
+  checkout:
+    name: "Checkout"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: ${{ inputs.build-cmd }}
+
+  browser-tests:
+    needs: [checkout, build]
+    name: "Browser: ${{ matrix.browser }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - ChromeHeadless
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }}
+      chunks: ${{ inputs.chunks }}
