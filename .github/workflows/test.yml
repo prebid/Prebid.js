@@ -94,7 +94,7 @@ jobs:
     with:
       chunks: 8
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack
+      test-cmd: npx gulp test-only-nobuild
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

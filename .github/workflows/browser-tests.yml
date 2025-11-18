@@ -29,7 +29,10 @@ on:
         description: "Browserstack user name"
       BROWSERSTACK_ACCESS_KEY:
         description: "Browserstack access key"
-
+env:
+  ctx-browsers: '["ChromeHeadless", "SafariNative"]'
+  ctx-macos: '["SafariNative"]'
+  ctx-coverage: '["ChromeHeadless"]'
 jobs:
   checkout:
     name: "Checkout"
@@ -49,13 +52,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser:
-          - ChromeHeadless
-          - SafariNative
+        browser: ${{ fromJSON(env.ctx-browsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ matrix.browser == 'ChromeHeadless' && '--coverage' || '--no-coverage' }}
+      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ contains(fromJSON(env.ctx-coverage), matrix.browser) && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
-      runs-on: ${{ matrix.browser == 'SafariNative' && 'macos-latest' || 'ubuntu-latest' }}
+      runs-on: ${{ contains(fromJSON(env.ctx-macos), matrix.browser) && 'macos-latest' || 'ubuntu-latest' }}
