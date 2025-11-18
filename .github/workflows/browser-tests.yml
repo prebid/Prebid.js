@@ -40,6 +40,7 @@ jobs:
     outputs:
       browsers: ${{ steps.define.outputs.browsers }}
       macos: ${{ steps.define.outputs.macos }}
+      win: ${{ steps.define.outputs.win }}
       coverage: ${{ steps.define.outputs.coverage }}
     steps:
       - name: Checkout
@@ -47,8 +48,9 @@ jobs:
       - name: Define browsers
         id: define
         run: |
-          echo 'browsers=["ChromeHeadless", "SafariNative", "FirefoxHeadless"]' >> out;
+          echo 'browsers=["ChromeHeadless", "SafariNative", "FirefoxHeadless", "Edge"]' >> out;
           echo 'macos=["SafariNative"]' >> out;
+          echo 'win=["Edge"]' >> out;
           echo 'coverage=["ChromeHeadless"]' >> out;
           cat out >> "$GITHUB_OUTPUT";
 
@@ -70,4 +72,4 @@ jobs:
       built-key: ${{ needs.build.outputs.built-key }}
       test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ contains(fromJSON(needs.setup.outputs.coverage), matrix.browser) && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
-      runs-on: ${{ contains(fromJSON(needs.setup.outputs.macos), matrix.browser) && 'macos-latest' || 'ubuntu-latest' }}
+      runs-on: ${{ contains(fromJSON(needs.setup.outputs.macos), matrix.browser) && 'macos-latest' || contains(fromJSON(needs.setup.outputs.win), matrix.browser) && 'windows-latest' || 'ubuntu-latest' }}
