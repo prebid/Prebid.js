@@ -40,7 +40,8 @@ jobs:
     name: "Setup environment"
     runs-on: ubuntu-latest
     outputs:
-      browsers: ${{ steps.define.outputs.result }}
+      browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
+      bstack-key: ${{ steps.bstack-save.outputs.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -53,8 +54,27 @@ jobs:
         id: define
         with:
           script: |
+            const fs = require('node:fs/promises');
             const browsers = require('./.github/workflows/browser_testing.json');
-            return Object.entries(browsers).map(([name, def]) => Object.assign({name}, def))
+            const excludeFromBstack = Object.values(browsers).map(browser => browser.bsName);
+            const bstackBrowsers = Object.fromEntries(
+              // exlude "latest" version of browsers that we can test on GH actions
+              Object.entries(require('./browsers.json'))
+              .filter(([name, def]) => !excludeFromBstack.includes(def.browser) || def.browser_version !== 'latest')
+            )
+            const updatedBrowsersJson = JSON.stringify(bstackBrowsers, null,  2);
+            console.log("Using browsers.json:", updatedBrowsersJson);
+            await fs.writeFile('./browsers.json', updatedBrowsersJson);
+            return {
+              hasBSBrowsers: Object.keys(bstackBrowsers).length > 0,
+              browsers: Object.entries(browsers).map(([name, def]) => Object.assign({name}, def))
+            }
+      - name: "Save working directory"
+        id: bstack-save
+        if: ${{ fromJSON(steps.define.outputs.result).hasBSBrowsers }}
+        uses: ./.github/actions/save
+        with:
+          prefix: browserstack-
 
   test-build-logic:
     needs: build
@@ -79,3 +99,15 @@ jobs:
       test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
+
+  browserstack-tests:
+    needs: setup
+    if: ${{ needs.setup.outputs.bstack-key }}
+    name: "Browserstack tests"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.setup.outputs.bstack-key }}
+      test-cmd: ${{ inputs.test-cmd }} --browserstack --no-coverage
+      chunks: ${{ inputs.chunks }}
+      browserstack: true
