@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import {spec} from 'modules/talkadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config';
-import {server} from '../../mocks/xhr';
+import {config} from '../../../src/config.js';
+import {server} from '../../mocks/xhr.js';
 
 describe('TalkAds adapter', function () {
   const commonBidderRequest = {

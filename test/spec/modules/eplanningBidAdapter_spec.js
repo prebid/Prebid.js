@@ -641,7 +641,7 @@ describe('E-Planning Adapter', function () {
     let getWindowTopStub;
     let innerWidth;
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         eplanning: {
           storageAllowed: true
         }
@@ -653,7 +653,7 @@ describe('E-Planning Adapter', function () {
     });
 
     afterEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
 
@@ -807,7 +807,7 @@ describe('E-Planning Adapter', function () {
       expect(data.vv).to.equal(3);
     });
     it('should return sch parameter', function () {
-      let bidRequests = [validBidWithSchain], schainExpected, schain;
+      let bidRequests = [validBidWithSchain]; let schainExpected; let schain;
       schain = validBidWithSchain.ortb2.source.ext.schain;
       schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
       const data = spec.buildRequests(bidRequests, bidderRequest).data;
@@ -1224,7 +1224,7 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         eplanning: {
           storageAllowed: true
         }
@@ -1238,7 +1238,7 @@ describe('E-Planning Adapter', function () {
       clock = sandbox.useFakeTimers();
     });
     afterEach(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);

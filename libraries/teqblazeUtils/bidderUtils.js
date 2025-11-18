@@ -36,7 +36,7 @@ const getBidFloor = (bid) => {
 };
 
 const createBasePlacement = (bid, bidderRequest) => {
-  const { bidId, mediaTypes, transactionId, userIdAsEids } = bid;
+  const { bidId, mediaTypes, transactionId, userIdAsEids, ortb2Imp } = bid;
   const schain = bidderRequest?.ortb2?.source?.ext?.schain || {};
   const bidfloor = getBidFloor(bid);
 
@@ -79,6 +79,10 @@ const createBasePlacement = (bid, bidderRequest) => {
 
   if (userIdAsEids && userIdAsEids.length) {
     placement.eids = userIdAsEids;
+  }
+
+  if (ortb2Imp?.ext?.gpid) {
+    placement.gpid = ortb2Imp.ext.gpid;
   }
 
   return placement;

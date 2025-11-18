@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {addFPDToBidderRequest} from '../../helpers/fpd';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import { spec } from 'modules/ccxBidAdapter.js';
 import * as utils from 'src/utils.js';
 

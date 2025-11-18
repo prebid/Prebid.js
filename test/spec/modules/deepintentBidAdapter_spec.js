@@ -131,79 +131,79 @@ describe('Deepintent adapter', function () {
   describe('validations', function () {
     it('validBid : tagId is passed', function () {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: '1232'
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          tagId: '1232'
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('invalidBid : tagId is not passed', function () {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            h: 200,
-            w: 300
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          h: 200,
+          w: 300
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('invalidBid : tagId is not a string', function () {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: 12345
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        bidder: 'deepintent',
+        params: {
+          tagId: 12345
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
     it('should check for context if video is present', function() {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: '12345',
-            video: {
-              mimes: ['video/mp4', 'video/x-flv'],
-              skippable: true,
-            }
-          },
-          mediaTypes: {
-            video: {
-              playerSize: [640, 480],
-              context: 'instream'
-            }
-          },
+        bidder: 'deepintent',
+        params: {
+          tagId: '12345',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+          }
         },
-        isValid = spec.isBidRequestValid(bid);
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+            context: 'instream'
+          }
+        },
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
     });
     it('should error out if context is not present and is Video', function() {
       const bid = {
-          bidder: 'deepintent',
-          params: {
-            tagId: '12345',
-            video: {
-              mimes: ['video/mp4', 'video/x-flv'],
-              skippable: true,
-            }
-          },
-          mediaTypes: {
-            video: {
-              playerSize: [640, 480]
-            }
-          },
+        bidder: 'deepintent',
+        params: {
+          tagId: '12345',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+          }
         },
-        isValid = spec.isBidRequestValid(bid);
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480]
+          }
+        },
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     })
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {
-      const oRequest = utils.deepClone(request),
-        bidRequest = spec.buildRequests(request);
+      const oRequest = utils.deepClone(request);
+      const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {
@@ -401,6 +401,119 @@ describe('Deepintent adapter', function () {
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.regs.coppa).to.equal(1);
+    });
+  });
+  describe('deals functionality', function() {
+    it('should add PMP deals when valid deals array is provided', function() {
+      const requestWithDeals = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: ['deal1234', 'deal5678']
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithDeals);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp).to.be.an('object');
+      expect(data.imp[0].pmp.private_auction).to.equal(0);
+      expect(data.imp[0].pmp.deals).to.be.an('array').with.length(2);
+      expect(data.imp[0].pmp.deals[0].id).to.equal('deal1234');
+      expect(data.imp[0].pmp.deals[1].id).to.equal('deal5678');
+    });
+
+    it('should filter out invalid deal IDs and handle edge cases', function() {
+      const requestWithMixedDeals = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: ['abc', 'valid_deal', 12345, null, 'xy']
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithMixedDeals);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp.deals).to.be.an('array').with.length(1);
+      expect(data.imp[0].pmp.deals[0].id).to.equal('valid_deal');
+    });
+
+    it('should not add pmp when deals is not a valid array', function() {
+      const requestWithInvalidDeals = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: 'not-an-array'
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithInvalidDeals);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp).to.be.undefined;
+    });
+
+    it('should add and clean deal custom targeting', function() {
+      const requestWithDctr = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          dctr: '  key1=val1  |  key2=val2  |  |  key3=val3  '
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithDctr);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].ext.key_val).to.equal('key1=val1|key2=val2|key3=val3');
+    });
+
+    it('should handle both deals and dctr together', function() {
+      const requestWithBoth = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: ['deal1234'],
+          dctr: 'key1=val1|key2=val2'
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithBoth);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp.deals[0].id).to.equal('deal1234');
+      expect(data.imp[0].ext.key_val).to.equal('key1=val1|key2=val2');
     });
   });
 });

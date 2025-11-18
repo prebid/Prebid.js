@@ -5,116 +5,116 @@ import type {MediaTypes} from "./mediaTypes.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 
 export interface RendererConfig {
-    /**
-     * URL to the renderer script that will be loaded before invoking `render`.
-     */
-    url?: string
+  /**
+   * URL to the renderer script that will be loaded before invoking `render`.
+   */
+  url?: string
 
-    /**
-     * Function that tells Prebid.js how to invoke the renderer script to render a bid.
-     */
-    render(bid: Bid): void;
+  /**
+   * Function that tells Prebid.js how to invoke the renderer script to render a bid.
+   */
+  render(bid: Bid): void;
 
-    /**
-     * if set to true, this renderer config will be used only when the bid adapter doesn't provide its own renderer.
-     */
-    backupOnly?: boolean;
+  /**
+   * if set to true, this renderer config will be used only when the bid adapter doesn't provide its own renderer.
+   */
+  backupOnly?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface BidderParams {
-    /**
-     * Adapter-specific parameters - to be extended in the adapters
-     */
+  /**
+   * Adapter-specific parameters - to be extended in the adapters
+   */
 }
 
 export interface BaseAdUnitBidDefinition {
-    /**
-     * Used for conditional ads (sizeMapping or sizeMappingV2 modules).
-     */
-    labelAny?: string[];
-    /**
-     * Used for conditional ads (sizeMapping or sizeMappingV2 modules).
-     */
-    labelAll?: string[];
-    /**
-     * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this bidder or module.
-     */
-    renderer?: RendererConfig;
-    /**
-     * OpenRTB first-party data specific to this bidder or module. This is merged with, and takes precedence over, adUnit.ortb2Imp.
-     */
-    ortb2Imp?: DeepPartial<ORTBImp>;
+  /**
+   * Used for conditional ads (sizeMapping or sizeMappingV2 modules).
+   */
+  labelAny?: string[];
+  /**
+   * Used for conditional ads (sizeMapping or sizeMappingV2 modules).
+   */
+  labelAll?: string[];
+  /**
+   * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this bidder or module.
+   */
+  renderer?: RendererConfig;
+  /**
+   * OpenRTB first-party data specific to this bidder or module. This is merged with, and takes precedence over, adUnit.ortb2Imp.
+   */
+  ortb2Imp?: DeepPartial<ORTBImp>;
 }
 
 export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBidDefinition {
-    /**
-     * Unique code identifying the bidder.
-     */
-    bidder: BIDDER;
-    module?: undefined | null;
-    /**
-     * Bid request parameters for a given bidder.
-     */
-    params: BIDDER extends keyof BidderParams ? BidderParams[BIDDER] : Record<string, unknown>;
-    /**
-     * One or more s2sConfig.name. If provided, this bid will be requested only from the given S2S instance(s).
-     */
-    s2sConfigName?: string | string[]
+  /**
+   * Unique code identifying the bidder.
+   */
+  bidder: BIDDER;
+  module?: undefined | null;
+  /**
+   * Bid request parameters for a given bidder.
+   */
+  params: BIDDER extends keyof BidderParams ? BidderParams[BIDDER] : Record<string, unknown>;
+  /**
+   * One or more s2sConfig.name. If provided, this bid will be requested only from the given S2S instance(s).
+   */
+  s2sConfigName?: string | string[]
 }
 
 export type AdUnitModuleBidder = 'pbsBidAdapter';
 
 export interface AdUnitModuleBid extends BaseAdUnitBidDefinition {
+  /**
+   * Module code - for requesting bids from modules that are not bid adapters
+   */
+  module: AdUnitModuleBidder;
+  bidder?: never;
+  params?: {
     /**
-     * Module code - for requesting bids from modules that are not bid adapters
+     * Name given to a PBS configuration. Used to identify specific PBS instances when multiple are in use.
      */
-    module: AdUnitModuleBidder;
-    bidder?: never;
-    params?: {
-        /**
-         * Name given to a PBS configuration. Used to identify specific PBS instances when multiple are in use.
-         */
-        configName?: string;
-    }
+    configName?: string;
+  }
 }
 
 export type AdUnitBidDefinition = AdUnitModuleBid | AdUnitBidderBid<keyof BidderParams> | AdUnitBidderBid<BidderCode>;
 
 export interface AdUnitDefinition {
-    /**
-     * An identifier you create and assign to this ad unit.
-     * Generally this is set to the ad slot name or the div element ID.
-     * Used by setTargetingForGPTAsync() to match which auction is for which ad slot.
-     */
-    code: AdUnitCode;
-    /**
-     * Bid requests representing demand partners and associated parameters.
-     */
-    bids?: AdUnitBidDefinition[];
-    mediaTypes?: MediaTypes;
-    /**
-     * TTL buffer override for this adUnit.
-     */
-    ttlBuffer?: number;
-    /**
-     * Used to signal OpenRTB Imp objects at the adUnit grain.
-     * Similar to the global ortb2 field used for global first party data configuration, but specific to this adunit.
-     */
-    ortb2Imp?: DeepPartial<ORTBImp>;
-    /**
-     * Custom renderer, typically used for outstream video
-     */
-    renderer?: RendererConfig;
+  /**
+   * An identifier you create and assign to this ad unit.
+   * Generally this is set to the ad slot name or the div element ID.
+   * Used by setTargetingForGPTAsync() to match which auction is for which ad slot.
+   */
+  code: AdUnitCode;
+  /**
+   * Bid requests representing demand partners and associated parameters.
+   */
+  bids?: AdUnitBidDefinition[];
+  mediaTypes?: MediaTypes;
+  /**
+   * TTL buffer override for this adUnit.
+   */
+  ttlBuffer?: number;
+  /**
+   * Used to signal OpenRTB Imp objects at the adUnit grain.
+   * Similar to the global ortb2 field used for global first party data configuration, but specific to this adunit.
+   */
+  ortb2Imp?: DeepPartial<ORTBImp>;
+  /**
+   * Custom renderer, typically used for outstream video
+   */
+  renderer?: RendererConfig;
 
-    /**
-     * Used to flag adUnits as being separately billable. This allows for a publisher to trigger billing manually for winning bids. See pbjs.triggerBilling and onBidBillable for more info.
-     */
-    deferBilling?: boolean;
-    /**
-     * @deprecated - use mediaType specific size parameters instead.
-     */
-    sizes?: Size | Size[];
+  /**
+   * Used to flag adUnits as being separately billable. This allows for a publisher to trigger billing manually for winning bids. See pbjs.triggerBilling and onBidBillable for more info.
+   */
+  deferBilling?: boolean;
+  /**
+   * @deprecated - use mediaType specific size parameters instead.
+   */
+  sizes?: Size | Size[];
 }
 
 /**
@@ -122,15 +122,15 @@ export interface AdUnitDefinition {
  * can have a placeholder "null" bidder to represent s2s-only stored requests.
  */
 interface NullBid extends BaseAdUnitBidDefinition {
-    bidder: null
-    module?: undefined | null;
-    params?: undefined | null;
+  bidder: null
+  module?: undefined | null;
+  params?: undefined | null;
 }
 
 export type AdUnitBid = AdUnitBidDefinition | NullBid;
 
 export interface AdUnit extends ContextIdentifiers, Omit<AdUnitDefinition, 'bids'> {
-    bids: AdUnitBid[]
+  bids: AdUnitBid[]
 }
 
 const REQUESTS = 'requests';
@@ -145,7 +145,8 @@ export function reset() {
 function ensureAdUnit(adunit, bidderCode?) {
   const adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
   if (bidderCode) {
-    return adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
+    adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
+    return adUnit.bidders[bidderCode]
   }
   return adUnit;
 }
@@ -155,17 +156,17 @@ type BidderCounter = (adUnit: AdUnitCode, bidderCode: BidderCode) => number;
 type Counter<BY_BIDDER extends boolean> = BY_BIDDER extends true ? BidderCounter : AdUnitCounter;
 
 function incrementer<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): Counter<BY_BIDDER> {
-    return function (adUnit, bidder?) {
-        const counters = ensureAdUnit(adUnit, byBidder && bidder);
-        counters[counter] = (counters[counter] ?? 0) + 1;
-        return counters[counter];
-    }
+  return function (adUnit, bidder?) {
+    const counters = ensureAdUnit(adUnit, byBidder && bidder);
+    counters[counter] = (counters[counter] ?? 0) + 1;
+    return counters[counter];
+  }
 }
 
 function getter<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): Counter<BY_BIDDER> {
-    return function (adUnit, bidder?) {
-        return ensureAdUnit(adUnit, byBidder && bidder)[counter] ?? 0;
-    }
+  return function (adUnit, bidder?) {
+    return ensureAdUnit(adUnit, byBidder && bidder)[counter] ?? 0;
+  }
 }
 
 /**

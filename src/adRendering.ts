@@ -1,12 +1,12 @@
 import {
-    createIframe,
-    createInvisibleIframe,
-    inIframe,
-    insertElement,
-    logError,
-    logWarn,
-    replaceMacros,
-    triggerPixel
+  createIframe,
+  createInvisibleIframe,
+  inIframe,
+  insertElement,
+  logError,
+  logWarn,
+  replaceMacros,
+  triggerPixel
 } from './utils.js';
 import * as events from './events.js';
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
@@ -28,29 +28,31 @@ const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RE
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 declare module './events' {
-    interface Events {
-        /**
-         * Fired when a bid is rendered (successfully or not).
-         */
-        [EVENTS.BID_WON]: [Bid];
-        /**
-         * Fired when a bid failed to render.
-         */
-        [EVENTS.AD_RENDER_FAILED]: [AdRenderFailedData];
-        /**
-         * Fired when a bid was rendered successfully.
-         */
-        [EVENTS.AD_RENDER_SUCCEEDED]: [AdRenderSucceededData];
-        /**
-         * Fired when a bid that was previously rendered is rendered again.
-         */
-        [EVENTS.STALE_RENDER]: [Bid];
-        /**
-         * Fired when an expired bid is rendered. A bid expires after `.ttl` seconds from
-         * the time it was received.
-         */
-        [EVENTS.EXPIRED_RENDER]: [Bid];
-    }
+  interface Events {
+    /**
+     * Fired when a bid is rendered (successfully or not).
+     */
+    [EVENTS.BID_WON]: [Bid];
+    /**
+     * Fired when a bid failed to render.
+     */
+    [EVENTS.AD_RENDER_FAILED]: [AdRenderFailedData];
+    /**
+     * Fired when a bid was rendered successfully.
+     */
+    [EVENTS.AD_RENDER_SUCCEEDED]: [AdRenderSucceededData];
+    /**
+     * Fired when a bid that was previously rendered is rendered again.
+     */
+    [EVENTS.STALE_RENDER]: [Bid];
+    /**
+     * Fired when an expired bid is rendered. A bid expires after `.ttl` seconds from
+     * the time it was received.
+     */
+    [EVENTS.EXPIRED_RENDER]: [Bid];
+
+    [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
+  }
 }
 
 export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
@@ -67,22 +69,22 @@ export const markWinningBid = hook('sync', function (bid) {
 })
 
 type AdRenderFailedData = {
-    /**
-     * Failure reason.
-     */
-    reason: (typeof AD_RENDER_FAILED_REASON)[keyof typeof AD_RENDER_FAILED_REASON];
-    /**
-     * failure description
-     */
-    message: string;
-    /**
-     * The bid that failed to render.
-     */
-    bid?: Bid;
-    /**
-     * Ad ID of the bid that failed to render.
-     */
-    adId?: string;
+  /**
+   * Failure reason.
+   */
+  reason: (typeof AD_RENDER_FAILED_REASON)[keyof typeof AD_RENDER_FAILED_REASON];
+  /**
+   * failure description
+   */
+  message: string;
+  /**
+   * The bid that failed to render.
+   */
+  bid?: Bid;
+  /**
+   * Ad ID of the bid that failed to render.
+   */
+  adId?: string;
 }
 
 /**
@@ -101,19 +103,19 @@ export function emitAdRenderFail({ reason, message, bid, id }: Omit<AdRenderFail
 }
 
 type AdRenderSucceededData = {
-    /**
-     * document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
-     * a cross-origin frame).
-     */
-    doc: Document | null;
-    /**
-     * The bid that was rendered.
-     */
-    bid: Bid;
-    /**
-     * Ad ID of the bid that was rendered.
-     */
-    adId: string;
+  /**
+   * document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
+   * a cross-origin frame).
+   */
+  doc: Document | null;
+  /**
+   * The bid that was rendered.
+   */
+  bid: Bid;
+  /**
+   * Ad ID of the bid that was rendered.
+   */
+  adId: string;
 }
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
@@ -125,6 +127,24 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
   events.emit(AD_RENDER_SUCCEEDED, data);
+}
+
+/**
+ * Data for the BROWSER_INTERVENTION event.
+ */
+type BrowserInterventionData = {
+  bid: Bid;
+  adId: string;
+  intervention: any;
+}
+/**
+ * Emit the BROWSER_INTERVENTION event.
+ * This event is fired when the browser blocks an ad from rendering, typically due to ad blocking software or browser security features.
+ */
+export function emitBrowserIntervention(data: BrowserInterventionData) {
+  const { bid, intervention } = data;
+  adapterManager.callOnInterventionBidder(bid.adapterCode || bid.bidder, bid, intervention);
+  events.emit(EVENTS.BROWSER_INTERVENTION, data);
 }
 
 export function handleCreativeEvent(data, bidResponse) {
@@ -142,6 +162,13 @@ export function handleCreativeEvent(data, bidResponse) {
         doc: null,
         bid: bidResponse,
         id: bidResponse.adId
+      });
+      break;
+    case EVENTS.BROWSER_INTERVENTION:
+      emitBrowserIntervention({
+        bid: bidResponse,
+        adId: bidResponse.adId,
+        intervention: data.intervention
       });
       break;
     default:
@@ -176,7 +203,7 @@ function creativeMessageHandler(deps) {
 }
 
 type RenderOptions = {
-    clickUrl?: string;
+  clickUrl?: string;
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
@@ -323,25 +350,32 @@ export function renderAdDirect(doc, adId, options) {
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
+
+  function waitForDocumentReady(doc) {
+    return new PbPromise<void>((resolve) => {
+      if (doc.readyState === 'loading') {
+        doc.addEventListener('DOMContentLoaded', resolve);
+      } else {
+        resolve();
+      }
+    })
+  }
+
   function renderFn(adData) {
-    if (adData.ad) {
-      doc.write(adData.ad);
-      doc.close();
-      emitAdRenderSucceeded({doc, bid, id: bid.adId});
-    } else {
-      getCreativeRenderer(bid)
-        .then(render => render(adData, {
-          sendMessage: (type, data) => messageHandler(type, data, bid),
-          mkFrame: createIframe,
-        }, doc.defaultView))
-        .then(
-          () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
-          (e) => {
-            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
-            e?.stack && logError(e);
-          }
-        );
-    }
+    PbPromise.all([
+      getCreativeRenderer(bid),
+      waitForDocumentReady(doc)
+    ]).then(([render]) => render(adData, {
+      sendMessage: (type, data) => messageHandler(type, data, bid),
+      mkFrame: createIframe,
+    }, doc.defaultView))
+      .then(
+        () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
+        (e) => {
+          fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
+          e?.stack && logError(e);
+        }
+      );
     // TODO: this is almost certainly the wrong way to do this
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
     insertElement(creativeComment, doc, 'html');

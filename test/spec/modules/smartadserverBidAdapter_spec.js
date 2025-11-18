@@ -4,8 +4,8 @@ import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
 import { spec } from 'modules/smartadserverBidAdapter.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {

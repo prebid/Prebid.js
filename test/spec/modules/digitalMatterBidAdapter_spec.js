@@ -1,7 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/digitalMatterBidAdapter';
-import {config} from '../../../src/config';
-import {deepClone} from '../../../src/utils';
+import {config} from '../../../src/config.js';
+import {deepClone} from '../../../src/utils.js';
 
 const bid = {
   'adUnitCode': 'adUnitCode',

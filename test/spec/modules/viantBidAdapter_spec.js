@@ -1,8 +1,8 @@
 import {spec, converter} from 'modules/viantBidAdapter.js';
 import {assert, expect} from 'chai';
-import {deepClone} from '../../../src/utils';
-import {buildWindowTree} from '../../helpers/refererDetectionHelper';
-import {detectReferer} from '../../../src/refererDetection';
+import {deepClone} from '../../../src/utils.js';
+import {buildWindowTree} from '../../helpers/refererDetectionHelper.js';
+import {detectReferer} from '../../../src/refererDetection.js';
 
 describe('viantOrtbBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {

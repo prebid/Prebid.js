@@ -68,11 +68,13 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
       eids = deepClone(values);
     } else if (typeof eidConf === 'function') {
       try {
-        eids = eidConf(values);
+        eids = deepClone(eidConf(values));
         if (!Array.isArray(eids)) {
           eids = [eids];
         }
-        eids.forEach(eid => eid.uids = eid.uids.filter(({id}) => isStr(id)))
+        eids.forEach(eid => {
+          eid.uids = eid.uids.filter(({id}) => isStr(id))
+        })
         eids = eids.filter(({uids}) => uids?.length > 0);
       } catch (e) {
         logError(`Could not generate EID for "${name}"`, e);

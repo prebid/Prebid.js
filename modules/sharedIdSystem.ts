@@ -21,39 +21,39 @@ const OPTOUT_NAME = '_pubcid_optout';
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 type SharedIdParams = {
-    /**
-     * If true, then an id is created automatically if it’s missing.
-     * Default is true. If your server has a component that generates the id instead, then this should be set to false
-     */
-    create?: boolean;
-    /**
-     * If true, the the expiration time is automatically extended whenever the script is executed even if the id exists already.
-     * Default is true. If false, then the id expires from the time it was initially created.
-     */
-    extend?: boolean;
-    /**
-     * For publisher server support only. Where to call out to for a server cookie.
-     */
-    pixelUrl?: string;
-    /**
-     * The value to use for `inserter` in EIDs.
-     */
-    inserter?: string;
+  /**
+   * If true, then an id is created automatically if it’s missing.
+   * Default is true. If your server has a component that generates the id instead, then this should be set to false
+   */
+  create?: boolean;
+  /**
+   * If true, the the expiration time is automatically extended whenever the script is executed even if the id exists already.
+   * Default is true. If false, then the id expires from the time it was initially created.
+   */
+  extend?: boolean;
+  /**
+   * For publisher server support only. Where to call out to for a server cookie.
+   */
+  pixelUrl?: string;
+  /**
+   * The value to use for `inserter` in EIDs.
+   */
+  inserter?: string;
 }
 
 declare module './userId/spec' {
-    interface UserId {
-        pubcid: string;
-    }
-    interface ProvidersToId {
-        sharedId: 'pubcid';
-        pubCommonId: 'pubcid';
-    }
+  interface UserId {
+    pubcid: string;
+  }
+  interface ProvidersToId {
+    sharedId: 'pubcid';
+    pubCommonId: 'pubcid';
+  }
 
-    interface ProviderParams {
-        sharedId: SharedIdParams;
-        pubCommonId: SharedIdParams;
-    }
+  interface ProviderParams {
+    sharedId: SharedIdParams;
+    pubCommonId: SharedIdParams;
+  }
 
 }
 

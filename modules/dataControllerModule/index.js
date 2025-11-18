@@ -36,36 +36,23 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
     return true;
   }
   const bidderEIDs = eidSourcesMap.get(bidderCode);
-  if (bidderEIDs == undefined) {
+  if (bidderEIDs === undefined) {
     return false;
   }
-  let containsEIDs = false;
-  _dataControllerConfig.filterSDAwhenEID.some(source => {
-    if (bidderEIDs.has(source)) {
-      containsEIDs = true;
-    }
-  });
-  return containsEIDs;
+  return _dataControllerConfig.filterSDAwhenEID.some((source) => bidderEIDs.has(source));
 }
 
-function containsConfiguredSDA(segementMap, bidderCode) {
+function containsConfiguredSDA(segmentMap, bidderCode) {
   if (_dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
     return true;
   }
-  return hasValue(segementMap.get(bidderCode)) || hasValue(segementMap.get(GLOBAL))
+  return hasValue(segmentMap.get(bidderCode)) || hasValue(segmentMap.get(GLOBAL))
 }
 
-function hasValue(bidderSegement) {
-  let containsSDA = false;
-  if (bidderSegement == undefined) {
-    return false;
-  }
-  _dataControllerConfig.filterEIDwhenSDA.some(segment => {
-    if (bidderSegement.has(segment)) {
-      containsSDA = true;
-    }
-  });
-  return containsSDA;
+function hasValue(bidderSegment) {
+  return bidderSegment === undefined
+    ? false
+    : _dataControllerConfig.filterEIDwhenSDA.some((segment) => bidderSegment.has(segment));
 }
 
 function getSegmentConfig(ortb2Fragments) {

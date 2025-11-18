@@ -4,7 +4,7 @@ import { deepClone } from 'src/utils.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
-import { buildWindowTree } from '../../helpers/refererDetectionHelper';
+import { buildWindowTree } from '../../helpers/refererDetectionHelper.js';
 
 describe('ttdBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
@@ -97,6 +97,24 @@ describe('ttdBidAdapter', function () {
       it('should return true if bidfloor is passed correctly as a float', function () {
         const bid = makeBid();
         bid.params.bidfloor = 3.01;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
+      it('should return false if customBidderEndpoint is provided and does not start with https://', function () {
+        const bid = makeBid();
+        bid.params.customBidderEndpoint = 'customBidderEndpoint/bid/bidder/';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false if customBidderEndpoint is provided and does not end with /bid/bidder/', function () {
+        const bid = makeBid();
+        bid.params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return true if customBidderEndpoint is provided that starts with https:// and ends with /bid/bidder/', function () {
+        const bid = makeBid();
+        bid.params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder/';
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
     });
@@ -306,11 +324,18 @@ describe('ttdBidAdapter', function () {
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
     });
 
+    it('sends bid requests to the correct http2 endpoint', function () {
+      const bannerBidRequestsWithHttp2Endpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithHttp2Endpoint[0].params.useHttp2 = true;
+      const url = testBuildRequests(bannerBidRequestsWithHttp2Endpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
+    });
+
     it('sends bid requests to the correct custom endpoint', function () {
       const bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
-      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
+      bannerBidRequestsWithCustomEndpoint[0].params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder/';
       const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
-      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
+      expect(url).to.equal('https://customBidderEndpoint/bid/bidder/supplier');
     });
 
     it('sends publisher id', function () {
@@ -559,17 +584,6 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.source.ext.schain).to.deep.equal(schain);
     });
 
-    it('no longer uses userId', function () {
-      const TDID = '00000000-0000-0000-0000-000000000000';
-      const clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
-        tdid: TDID
-      };
-
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.user.buyeruid).to.be.undefined;
-    });
-
     it('adds unified ID and UID2 info to user.ext.eids in the request', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
@@ -601,28 +615,6 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
-      expect(requestBody.user.buyeruid).to.equal(TDID);
-    });
-
-    it('has an empty buyeruid if tdid not found in userIdAsEids', function () {
-      const UID2 = '99999999-9999-9999-9999-999999999999';
-      const clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userIdAsEids = [
-        {
-          source: 'uidapi.com',
-          uids: [
-            {
-              atype: 3,
-              id: UID2
-            }
-          ]
-        }
-      ];
-      const expectedEids = clonedBannerRequests[0].userIdAsEids;
-
-      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
-      expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
-      expect(requestBody.user.buyeruid).to.be.undefined;
     });
 
     it('adds first party site data to the request', function () {

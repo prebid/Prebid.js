@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 import { isEmpty, logWarn } from './utils.js';
 import { config } from './config.js';
 
@@ -115,13 +116,13 @@ function isValidPriceConfig(config) {
 }
 
 declare module './config' {
-    interface Config {
-        /**
-         * CPM rounding function. Default is Math.floor.
-         * @param cpm
-         */
-        cpmRoundingFunction?: (cpm: number) => number;
-    }
+  interface Config {
+    /**
+     * CPM rounding function. Default is Math.floor.
+     * @param cpm
+     */
+    cpmRoundingFunction?: (cpm: number) => number;
+  }
 }
 
 function getCpmTarget(cpm, bucket, granularityMultiplier) {

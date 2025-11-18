@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
-import {decorateAdUnitsWithNativeParams} from '../../../src/native';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-multi-test';
@@ -541,6 +541,29 @@ describe('riseAdapter', function () {
         };
         const request = spec.buildRequests([bid], bidderRequest);
         expect(request.data.bids[0].coppa).to.be.equal(1);
+      });
+    });
+
+    describe('User Eids', function() {
+      it('should get the Eids from the userIdAsEids object and set them in the request', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        const userIds = [
+          {
+            sourcer: 'pubcid.org',
+            uids: [{
+              id: '12345678',
+              atype: 1,
+            }]
+          }];
+        bid.userIdAsEids = userIds;
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.params.userIds).to.be.equal(JSON.stringify(userIds));
+      });
+
+      it('should not set the userIds request param if no userIdAsEids are set', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.params.userIds).to.be.undefined;
       });
     });
   });

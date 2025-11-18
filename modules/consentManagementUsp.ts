@@ -24,27 +24,27 @@ export let staticConsentData;
 
 type USPConsentData = string;
 type BaseUSPConfig = {
-    /**
-     * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
-     * Default is 50.
-     */
-    timeout?: number;
+  /**
+   * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
+   * Default is 50.
+   */
+  timeout?: number;
 }
 
 type StaticUSPData = {
-    getUSPData: {
-        uspString: USPConsentData;
-    }
+  getUSPData: {
+    uspString: USPConsentData;
+  }
 }
 type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
 
 declare module '../src/consentHandler' {
-    interface ConsentData {
-        [CONSENT_USP]: USPConsentData;
-    }
-    interface ConsentManagementConfig {
-        [CONSENT_USP]?: USPCMConfig;
-    }
+  interface ConsentData {
+    [CONSENT_USP]: USPConsentData;
+  }
+  interface ConsentManagementConfig {
+    [CONSENT_USP]?: USPCMConfig;
+  }
 }
 
 let consentData;

@@ -1,7 +1,6 @@
 import {
   deepAccess,
   flatten,
-  getWindowSelf,
   getWindowTop,
   isGptPubadsDefined,
   logInfo,
@@ -13,6 +12,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import {isIframe} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -174,15 +174,14 @@ export const spec = {
       USER_SYNCED = true;
       const userSyncs = serverResponses[0].body.userSyncs;
       const syncs = userSyncs.filter(sync => {
-        const {
-          type
-        } = sync;
+        const { type } = sync;
         if (syncOptions.iframeEnabled && type === 'iframe') {
           return true
         }
         if (syncOptions.pixelEnabled && type === 'image') {
           return true
         }
+        return false;
       })
       return syncs;
     }
@@ -193,9 +192,7 @@ export const spec = {
     const mids = serverResponse.body.mids
     mids.forEach(mid => {
       const bidParam = bidRequest.bidParams.find((bidParam) => {
-        if (mid.ad_unit_code === bidParam.adUnitCode) {
-          return true
-        }
+        return mid.ad_unit_code === bidParam.adUnitCode;
       })
 
       if (!bidParam) {
@@ -265,15 +262,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
+  return !isIframe() && element !== null
 }
 
 function _getViewability(element, topWin, {

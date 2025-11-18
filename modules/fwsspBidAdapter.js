@@ -1,4 +1,4 @@
-import { logInfo, logError, logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
+import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -6,7 +6,8 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'fwssp';
 const GVL_ID = 285;
-const USER_SYNC_URL = 'https://ads.stickyadstv.com/auto-user-sync';
+const USER_SYNC_URL = 'https://user-sync.fwmrm.net/ad/u?';
+let PRIVACY_VALUES = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -88,9 +89,9 @@ export const spec = {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
 
       // Add bidfloor to keyValues
-      const bidfloor = getBidFloor(currentBidRequest, config);
-      keyValues._fw_bidfloor = (bidfloor > 0) ? bidfloor : 0;
-      keyValues._fw_bidfloorcur = (bidfloor > 0) ? getFloorCurrency(config) : '';
+      const { floor, currency } = getBidFloor(currentBidRequest, config);
+      keyValues._fw_bidfloor = floor;
+      keyValues._fw_bidfloorcur = currency;
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -128,7 +129,14 @@ export const spec = {
       }
 
       // Add schain object
-      const schain = currentBidRequest.schain;
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
+      if (!schain) {
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+      }
+      if (!schain) {
+        schain = currentBidRequest.schain;
+      }
+
       if (schain) {
         try {
           keyValues.schain = JSON.stringify(schain);
@@ -179,7 +187,7 @@ export const spec = {
         let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
         const videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
 
-        if (currentBidRequest.params.format == 'inbanner') {
+        if (currentBidRequest.params.format === 'inbanner') {
           videoContext = 'In-Banner';
           videoPlacement = 2;
         }
@@ -188,6 +196,34 @@ export const spec = {
         keyValues._fw_placement_type = videoPlacement;
         keyValues._fw_plcmt_type = videoPlcmt;
       }
+
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (typeof coppa === 'number') {
+        keyValues._fw_coppa = coppa;
+      }
+
+      const atts = deepAccess(bidderRequest, 'ortb2.device.ext.atts');
+      if (typeof atts === 'number') {
+        keyValues._fw_atts = atts;
+      }
+
+      const lmt = deepAccess(bidderRequest, 'ortb2.device.lmt');
+      if (typeof lmt === 'number') {
+        keyValues._fw_is_lat = lmt;
+      }
+
+      PRIVACY_VALUES = {}
+      if (keyValues._fw_coppa != null) {
+        PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
+      }
+
+      if (keyValues._fw_atts != null) {
+        PRIVACY_VALUES._fw_atts = keyValues._fw_atts;
+      }
+      if (keyValues._fw_is_lat != null) {
+        PRIVACY_VALUES._fw_is_lat = keyValues._fw_is_lat;
+      }
+
       return keyValues;
     }
 
@@ -212,26 +248,20 @@ export const spec = {
         slid: currentBidRequest.params.slid ? currentBidRequest.params.slid : 'Preroll_1',
         slau: currentBidRequest.params.slau ? currentBidRequest.params.slau : 'preroll',
       }
-      if (currentBidRequest.params.minD) {
-        slotParams.mind = currentBidRequest.params.minD;
+      const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {};
+      const mind = video.minduration || currentBidRequest.params.minD;
+      const maxd = video.maxduration || currentBidRequest.params.maxD;
+
+      if (mind) {
+        slotParams.mind = mind;
       }
-      if (currentBidRequest.params.maxD) {
-        slotParams.maxd = currentBidRequest.params.maxD
+      if (maxd) {
+        slotParams.maxd = maxd;
       }
       return slotParams
     }
 
     const constructDataString = (globalParams, keyValues, slotParams) => {
-      // Helper function to append parameters to the data string and to not include the last '&' param before ';
-      const appendParams = (params) => {
-        const keys = Object.keys(params);
-        return keys.map((key, index) => {
-          const encodedKey = encodeURIComponent(key);
-          const encodedValue = encodeURIComponent(params[key]);
-          return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
-        }).join('');
-      };
-
       const globalParamsString = appendParams(globalParams) + ';';
       const keyValuesString = appendParams(keyValues) + ';';
       const slotParamsString = appendParams(slotParams) + ';';
@@ -269,7 +299,7 @@ export const spec = {
       playerSize = getBiggerSize(bidrequest.sizes);
     }
 
-    if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
+    if (typeof serverResponse === 'object' && typeof serverResponse.body === 'string') {
       serverResponse = serverResponse.body;
     }
 
@@ -323,7 +353,10 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    const params = {};
+    const params = {
+      mode: 'auto-user-sync',
+      ...PRIVACY_VALUES
+    };
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -347,21 +380,19 @@ export const spec = {
       }
     }
 
-    let queryString = '';
-    if (params) {
-      queryString = '?' + `${formatQS(params)}`;
-    }
+    const url = USER_SYNC_URL + appendParams(params);
 
     const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: USER_SYNC_URL + queryString
+        url: url
       });
-    } else if (syncOptions.iframeEnabled) {
+    }
+    if (syncOptions && syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL + queryString
+        url: url
       });
     }
 
@@ -379,8 +410,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted == 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton == 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
 
   let playerParams = null;
   try {
@@ -450,7 +481,7 @@ export function formatAdHTML(bidrequest, size) {
 }
 
 function getSdkUrl(bidrequest) {
-  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() == 'stg';
+  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
   return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
@@ -463,7 +494,7 @@ function getSdkUrl(bidrequest) {
  * @returns {string} The SDK version to use, defaults to '7.10.0' if version parsing fails
  */
 export function getSDKVersion(bidRequest) {
-  const DEFAULT = '7.10.0';
+  const DEFAULT = '7.11.0';
 
   try {
     const paramVersion = getSdkVersionFromBidRequest(bidRequest);
@@ -519,25 +550,37 @@ function compareVersions(versionA, versionB) {
   return 0;
 };
 
-function getBidFloor(bid, config) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
+export function getBidFloor(bid, config) {
+  logInfo('PREBID -: getBidFloor called with:', bid);
+  let floor = deepAccess(bid, 'params.bidfloor', 0); // fallback bid params
+  let currency = deepAccess(bid, 'params.bidfloorcur', 'USD'); // fallback bid params
 
-  try {
-    const bidFloor = bid.getFloor({
-      currency: getFloorCurrency(config),
-      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (e) {
-    return -1;
-  }
-}
+  if (isFn(bid.getFloor)) {
+    logInfo('PREBID - : getFloor() present and use it to retrieve floor and currency.');
+    try {
+      const floorInfo = bid.getFloor({
+        currency: config.getConfig('floors.data.currency') || 'USD',
+        mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
+        size: '*',
+      }) || {};
 
-function getFloorCurrency(config) {
-  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+      // Use getFloor's results if valid
+      if (typeof floorInfo.floor === 'number') {
+        floor = floorInfo.floor;
+      }
+
+      if (floorInfo.currency) {
+        currency = floorInfo.currency;
+      }
+      logInfo('PREBID - : getFloor() returned floor:', floor, 'currency:', currency);
+    } catch (e) {
+      // fallback to static bid.params.bidfloor
+      floor = deepAccess(bid, 'params.bidfloor', 0);
+      currency = deepAccess(bid, 'params.bidfloorcur', 'USD');
+      logInfo('PREBID - : getFloor() exception, fallback to static bid.params.bidfloor:', floor, 'currency:', currency);
+    }
+  }
+  return { floor, currency };
 }
 
 function isValidUrl(str) {
@@ -658,13 +701,13 @@ function getValueFromKeyInImpressionNode(xmlNode, key) {
     let tempValue = '';
     queries.forEach(item => {
       const split = item.split('=');
-      if (split[0] == key) {
+      if (split[0] === key) {
         tempValue = split[1];
       }
-      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+      if (split[0] === 'reqType' && split[1] === 'AdsDisplayStarted') {
         isAdsDisplayStartedPresent = true;
       }
-      if (split[0] == 'rootViewKey') {
+      if (split[0] === 'rootViewKey') {
         isRootViewKeyPresent = true;
       }
     });
@@ -703,6 +746,16 @@ function getTopMostWindow() {
   } catch (e) {}
 
   return res;
+}
+
+// Helper function to append parameters to the data string and to not include the last '&' param before ';
+function appendParams(params) {
+  const keys = Object.keys(params);
+  return keys.map((key, index) => {
+    const encodedKey = encodeURIComponent(key);
+    const encodedValue = encodeURIComponent(params[key]);
+    return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
+  }).join('');
 }
 
 registerBidder(spec);

@@ -1,6 +1,5 @@
 import * as utils from '../../src/utils.js';
-import { syncOrtb2 } from '../../src/prebid.js';
-import { validateOrtbBannerFields } from '../../src/banner.ts';
+import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
 
 describe('banner', () => {
   describe('validateOrtbBannerFields', () => {
@@ -31,7 +30,7 @@ describe('banner', () => {
         code: 'adUnitCode',
         mediaTypes: { banner: mt }
       };
-      validateOrtbBannerFields(adUnit);
+      validateOrtbFields(adUnit, 'banner');
 
       expect(adUnit.mediaTypes.banner).to.eql(expected);
     });
@@ -39,11 +38,11 @@ describe('banner', () => {
     it('Early return when 1st param is not a plain object', () => {
       sandbox.spy(utils, 'logWarn');
 
-      validateOrtbBannerFields();
-      validateOrtbBannerFields([]);
-      validateOrtbBannerFields(null);
-      validateOrtbBannerFields('hello');
-      validateOrtbBannerFields(() => {});
+      validateOrtbFields(undefined, 'banner');
+      validateOrtbFields([], 'banner');
+      validateOrtbFields(null, 'banner');
+      validateOrtbFields('hello', 'banner');
+      validateOrtbFields(() => {}, 'banner');
 
       sinon.assert.callCount(utils.logWarn, 5);
     });
@@ -59,7 +58,7 @@ describe('banner', () => {
           }
         }
       };
-      validateOrtbBannerFields(adUnit, onInvalidParam);
+      validateOrtbFields(adUnit, 'banner', onInvalidParam);
 
       sinon.assert.calledOnce(onInvalidParam);
       sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
@@ -127,6 +126,23 @@ describe('banner', () => {
 
       assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting btype');
     });
+
+    it('should not warn if fields match', () => {
+      const adUnit = {
+        mediaTypes: {
+          banner: {
+            format: [{wratio: 1, hratio: 1}]
+          }
+        },
+        ortb2Imp: {
+          banner: {
+            format: [{wratio: 1, hratio: 1}]
+          }
+        }
+      }
+      syncOrtb2(adUnit, 'banner');
+      sinon.assert.notCalled(logWarnSpy);
+    })
 
     it('should omit sync if mediaType not present on adUnit', () => {
       const adUnit = {

@@ -117,7 +117,9 @@ export const spec = {
         const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
           .filter(key => VIDEO_ORTB_PARAMS.includes(key))
-          .forEach(key => payload.vpl[key] = videoParams[key]);
+          .forEach(key => {
+            payload.vpl[key] = videoParams[key];
+          });
       }
 
       // iab content
@@ -144,14 +146,14 @@ export const spec = {
       if (schain && schain.ver && schain.complete && schain.nodes) {
         let schainString = schain.ver + "," + schain.complete;
         for (const node of schain.nodes) {
-            schainString += '!' + [
-              node.asi ?? '',
-              node.sid ?? '',
-              node.hp ?? '',
-              node.rid ?? '',
-              node.name ?? '',
-              node.domain ?? '',
-            ].join(",");
+          schainString += '!' + [
+            node.asi ?? '',
+            node.sid ?? '',
+            node.hp ?? '',
+            node.rid ?? '',
+            node.name ?? '',
+            node.domain ?? '',
+          ].join(",");
         }
         payload.schain = schainString;
       }

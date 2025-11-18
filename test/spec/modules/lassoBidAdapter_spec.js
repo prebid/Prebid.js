@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/lassoBidAdapter.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
 const GET_IUD_URL = 'https://secure.adnxs.com/getuid?';
@@ -134,6 +134,73 @@ describe('lassoBidAdapter', function () {
 
     it('should send request to trc via get request with dgid', () => {
       expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with aimOnly', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          aimOnly: true
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with aimOnly true', () => {
+      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with test dk', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          testDk: '123'
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with testDk and test param', () => {
+      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.data.testDk).to.equal('123')
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });

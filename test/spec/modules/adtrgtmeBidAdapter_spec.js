@@ -29,7 +29,7 @@ const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
   };
   bR.sizes = [[300, 250]];
 
-  if (typeof zid == 'string') {
+  if (typeof zid === 'string') {
     bR.params.zid = zid;
   }
   return bR;
@@ -75,7 +75,9 @@ const createAdm = (type) => {
       ADM = `<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
       <img src="${DEFAULT_BANNER_URL}" />`;
       break;
-    default: '<span>Ad is here</span>'; break;
+    default:
+      ADM = '<span>Ad is here</span>';
+      break;
   };
   return ADM;
 };
@@ -566,8 +568,8 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
 
       expect(data.regs).to.deep.equal({
-          'us_privacy': '',
-          gdpr: 1
+        'us_privacy': '',
+        gdpr: 1
       });
 
       expect(data.cur).to.deep.equal(['USD']);
@@ -589,8 +591,8 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('should use placementId value as imp.tagid when using "zid"', () => {
-      const { validBR, bidderRequest } = createRequestMock({}),
-        TEST_ZID = '54321';
+      const { validBR, bidderRequest } = createRequestMock({});
+      const TEST_ZID = '54321';
       validBR[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.imp[0].tagid).to.deep.equal(TEST_ZID);

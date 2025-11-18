@@ -1,7 +1,8 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, deepAccess, getDefinedParams, getDNT, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, deepAccess, getDefinedParams, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import { getDNT } from '../../libraries/dnt/index.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {PbPromise} from '../utils/promise.js';
@@ -25,17 +26,17 @@ export const dep = {
 const oneClient = clientSectionChecker('FPD')
 
 export interface FirstPartyDataConfig {
-    /**
-     * High entropy UA client hints to request.
-     * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
-     */
-    uaHints?: string[]
+  /**
+   * High entropy UA client hints to request.
+   * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
+   */
+  uaHints?: string[]
 }
 
 declare module '../config' {
-    interface Config {
-        firstPartyData?: FirstPartyDataConfig;
-    }
+  interface Config {
+    firstPartyData?: FirstPartyDataConfig;
+  }
 }
 
 /**
@@ -142,10 +143,6 @@ const ENRICHMENTS = {
           vph,
         },
       };
-
-      if (win.navigator?.webdriver) {
-        deepSetValue(device, 'ext.webdriver', true);
-      }
 
       return device;
     })

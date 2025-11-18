@@ -1,14 +1,14 @@
 import {
-    generateUUID,
-    isEmpty,
-    isEmptyStr,
-    isFn,
-    logError,
-    logInfo,
-    logMessage,
-    logWarn,
-    parseUrl,
-    timestamp
+  generateUUID,
+  isEmpty,
+  isEmptyStr,
+  isFn,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  parseUrl,
+  timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {isNativeResponse, setNativeResponseProperties} from './native.js';
@@ -18,7 +18,7 @@ import {config} from './config.js';
 import {userSync} from './userSync.js';
 import {hook, ignoreCallbackArg} from './hook.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO} from './mediaTypes.js';
+import {AUDIO, VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
@@ -66,99 +66,101 @@ export function resetAuctionState() {
 }
 
 type AuctionOptions = {
-    adUnits: AdUnit[],
-    adUnitCodes: AdUnitCode[],
-    callback: () => void;
-    cbTimeout: number;
-    labels: string[];
-    auctionId: Identifier;
-    ortb2Fragments: ORTBFragments;
-    metrics: Metrics;
+  adUnits: AdUnit[],
+  adUnitCodes: AdUnitCode[],
+  callback: () => void;
+  cbTimeout: number;
+  labels: string[];
+  auctionId: Identifier;
+  ortb2Fragments: ORTBFragments;
+  metrics: Metrics;
 }
 
 export type AuctionProperties = ReturnType<ReturnType<typeof newAuction>['getProperties']>;
 
 declare module './events' {
-    interface Events {
-        /**
-         * Fired when an auction starts.
-         */
-        [EVENTS.AUCTION_INIT]: [AuctionProperties];
-        /**
-         * Fired when an auction ends.
-         */
-        [EVENTS.AUCTION_END]: [AuctionProperties];
-        /**
-         * Fired when an auction times out (at least some of the bid adapters
-         * did not reply before the timeout.
-         */
-        [EVENTS.AUCTION_TIMEOUT]: [AuctionProperties];
-        /**
-         * Fired when an auction times out.
-         */
-        [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
-        /**
-         * Fired when a bid is received.
-         */
-        [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
-        /**
-         * Fired when a bid is rejected.
-         */
-        [EVENTS.BID_REJECTED]: [Partial<Bid>];
-        /**
-         * Fired once for each bid request (unique combination of auction, ad unit and bidder)
-         * that produced no bid.
-         */
-        [EVENTS.NO_BID]: [BidRequest<BidderCode>];
-        /**
-         * Fired when a bid is received.
-         */
-        [EVENTS.BID_RESPONSE]: [Bid];
-        /**
-         * Fired once for each bid, immediately after its adjustment (see bidCpmAdjustment).
-         */
-        [EVENTS.BID_ADJUSTMENT]: [Partial<Bid>];
-    }
+  interface Events {
+    /**
+     * Fired when an auction starts.
+     */
+    [EVENTS.AUCTION_INIT]: [AuctionProperties];
+    /**
+     * Fired when an auction ends.
+     */
+    [EVENTS.AUCTION_END]: [AuctionProperties];
+    /**
+     * Fired when an auction times out (at least some of the bid adapters
+     * did not reply before the timeout.
+     */
+    [EVENTS.AUCTION_TIMEOUT]: [AuctionProperties];
+    /**
+     * Fired when an auction times out.
+     */
+    [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
+    /**
+     * Fired when a bid is received.
+     */
+    [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
+    /**
+     * Fired when a bid is rejected.
+     */
+    [EVENTS.BID_REJECTED]: [Partial<Bid>];
+    /**
+     * Fired once for each bid request (unique combination of auction, ad unit and bidder)
+     * that produced no bid.
+     */
+    [EVENTS.NO_BID]: [BidRequest<BidderCode>];
+    /**
+     * Fired when a bid is received.
+     */
+    [EVENTS.BID_RESPONSE]: [Bid];
+    /**
+     * Fired once for each bid, immediately after its adjustment (see bidCpmAdjustment).
+     */
+    [EVENTS.BID_ADJUSTMENT]: [Partial<Bid>];
+  }
 }
 
 export interface AuctionOptionsConfig {
-    /**
-     * Specifies bidders that the Prebid auction will no longer wait for before determining the auction has completed.
-     * This may be helpful if you find there are a number of low performing and/or high timeout bidders in your page’s rotation.
-     */
-    secondaryBidders?: BidderCode[]
-    /**
-     * When true, prevents banner bids from being rendered more than once. It should only be enabled after auto-refreshing is implemented correctly. Default is false.
-     */
-    suppressStaleRender?: boolean;
-    /**
-     * When true, prevent bids from being rendered if TTL is reached. Default is false.
-     */
-    suppressExpiredRender?: boolean;
+  /**
+   * Specifies bidders that the Prebid auction will no longer wait for before determining the auction has completed.
+   * This may be helpful if you find there are a number of low performing and/or high timeout bidders in your page’s rotation.
+   */
+  secondaryBidders?: BidderCode[]
+  /**
+   * When true, prevents banner bids from being rendered more than once. It should only be enabled after auto-refreshing is implemented correctly. Default is false.
+   */
+  suppressStaleRender?: boolean;
+  /**
+   * When true, prevent bids from being rendered if TTL is reached. Default is false.
+   */
+  suppressExpiredRender?: boolean;
 }
 
 export interface PriceBucketConfig {
-    buckets: {
-        precision?: number;
-        max: number;
-        increment: number;
-    }[];
+  buckets: {
+    precision?: number;
+    max: number;
+    increment: number;
+  }[];
 }
 
 declare module './config' {
-    interface Config {
-        /**
-         * Since browsers have a limit of how many requests they will allow to a specific domain before they block,
-         * Prebid.js will queue auctions that would cause requests to a specific origin to exceed that limit.
-         * The limit is different for each browser. Prebid.js defaults to a max of 4 requests per origin.
-         */
-        maxRequestsPerOrigin?: number;
-        auctionOptions?: AuctionOptionsConfig;
-        priceGranularity?: (typeof GRANULARITY_OPTIONS)[keyof typeof GRANULARITY_OPTIONS];
-        customPriceBucket?: PriceBucketConfig;
-        mediaTypePriceGranularity?: {[K in MediaType]?: PriceBucketConfig} & {[K in VideoContext as `${typeof VIDEO}-${K}`]?: PriceBucketConfig};
-    }
+  interface Config {
+    /**
+     * Since browsers have a limit of how many requests they will allow to a specific domain before they block,
+     * Prebid.js will queue auctions that would cause requests to a specific origin to exceed that limit.
+     * The limit is different for each browser. Prebid.js defaults to a max of 4 requests per origin.
+     */
+    maxRequestsPerOrigin?: number;
+    auctionOptions?: AuctionOptionsConfig;
+    priceGranularity?: (typeof GRANULARITY_OPTIONS)[keyof typeof GRANULARITY_OPTIONS];
+    customPriceBucket?: PriceBucketConfig;
+    mediaTypePriceGranularity?: {[K in MediaType]?: PriceBucketConfig} & {[K in VideoContext as `${typeof VIDEO}-${K}`]?: PriceBucketConfig};
+  }
 }
+
+export const beforeInitAuction = hook('sync', (auction) => {})
 
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}: AuctionOptions) {
   metrics = useMetrics(metrics);
@@ -314,6 +316,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     const call = {
       bidRequests,
       run: () => {
+        beforeInitAuction(this);
         startAuctionTimer();
 
         _auctionStatus = AUCTION_IN_PROGRESS;
@@ -441,9 +444,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 }
 
 declare module './hook' {
-    interface NamedHooks {
-        addBidResponse: typeof addBidResponse
-    }
+  interface NamedHooks {
+    addBidResponse: typeof addBidResponse
+  }
 }
 
 /**
@@ -476,8 +479,8 @@ export const bidsBackCallback = hook('async', function (adUnits, callback) {
 }, 'bidsBackCallback');
 
 export type AddBidResponse = {
-    (adUnitCode: AdUnitCode, bid: BidResponse): void;
-    reject(adUnitCode: AdUnitCode, bid: BidResponse, reason: typeof REJECTION_REASON[keyof typeof REJECTION_REASON]) : void;
+  (adUnitCode: AdUnitCode, bid: BidResponse): void;
+  reject(adUnitCode: AdUnitCode, bid: BidResponse, reason: typeof REJECTION_REASON[keyof typeof REJECTION_REASON]) : void;
 }
 
 export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionManager.index} = {}) {
@@ -504,8 +507,8 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       const bidResponse = getPreparedBidForAuction(bid);
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
-      if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
-        tryAddVideoBid(auctionInstance, bidResponse, done);
+      if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
+        tryAddVideoAudioBid(auctionInstance, bidResponse, done);
       } else {
         if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
@@ -527,7 +530,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }
 
   function adapterDone() {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const bidderRequest = this;
     let bidderRequests = auctionInstance.getBidRequests();
     const auctionOptionsConfig = config.getConfig('auctionOptions');
@@ -589,7 +592,7 @@ export function addBidToAuction(auctionInstance, bidResponse: Bid) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
+function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
   let addBid = true;
 
   const videoMediaType = index.getMediaTypes({
@@ -605,7 +608,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   } = config.getConfig('cache') || {};
 
   if (useLocal) {
-    // stores video bid vast as local blob in the browser
+    // stores video/audio bid vast as local blob in the browser
     storeLocally(bidResponse);
   } else if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
@@ -624,82 +627,82 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
 }
 
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO || FEATURES.AUDIO) {
     batchAndStore(auctionInstance, bidResponse, afterBidAdded);
   }
 }, 'callPrebidCache');
 
 declare module './bidfactory' {
-    interface BaseBidResponse {
-        /**
-         * Targeting custom key-value pairs for this bid.
-         */
-        adserverTargeting?: TargetingMap<unknown>;
-    }
+  interface BaseBidResponse {
+    /**
+     * Targeting custom key-value pairs for this bid.
+     */
+    adserverTargeting?: TargetingMap<unknown>;
+  }
 
-    interface BaseBid {
-        /**
-         * true if this bid is for an interstitial slot.
-         */
-        instl: boolean;
-        /**
-         * Timestamp of when the request for this bid was generated.
-         */
-        requestTimestamp: number;
-        /**
-         * Timestamp of when the response for this bid was received.
-         */
-        responseTimestamp: number;
-        /**
-         * responseTimestamp - requestTimestamp
-         */
-        timeToRespond: number;
-        /**
-         * alias of `bidderCode`.
-         */
-        bidder: BidderCode;
-        /**
-         * Code of the ad unit this bid is for.
-         */
-        adUnitCode: string;
-        /**
-         * TTL buffer for this bid; it will expire after `.ttl` - `.ttlBuffer` seconds have elapsed.
-         */
-        ttlBuffer?: number;
-        /**
-         * Low granularity price bucket for this bid.
-         */
-        pbLg: string;
-        /**
-         * Medium granularity price bucket for this bid.
-         */
-        pbMg: string;
-        /**
-         * High granularity price bucket for this bid.
-         */
-        pbHg: string;
-        /**
-         * Auto granularity price bucket for this bid.
-         */
-        pbAg: string;
-        /**
-         * Dense granularity price bucket for this bid.
-         */
-        pbDg: string;
-        /**
-         * Custom granularity price bucket for this bid.
-         */
-        pbCg: string;
-        /**
-         * This bid's creative size, expressed as width x height.
-         */
-        size: ReturnType<BaseBid['getSize']>
-        /**
-         * If custom targeting was defined, whether standard targeting should also be used for this bid.
-         */
-        sendStandardTargeting?: boolean;
-        adserverTargeting: BaseBidResponse['adserverTargeting'];
-    }
+  interface BaseBid {
+    /**
+     * true if this bid is for an interstitial slot.
+     */
+    instl: boolean;
+    /**
+     * Timestamp of when the request for this bid was generated.
+     */
+    requestTimestamp: number;
+    /**
+     * Timestamp of when the response for this bid was received.
+     */
+    responseTimestamp: number;
+    /**
+     * responseTimestamp - requestTimestamp
+     */
+    timeToRespond: number;
+    /**
+     * alias of `bidderCode`.
+     */
+    bidder: BidderCode;
+    /**
+     * Code of the ad unit this bid is for.
+     */
+    adUnitCode: string;
+    /**
+     * TTL buffer for this bid; it will expire after `.ttl` - `.ttlBuffer` seconds have elapsed.
+     */
+    ttlBuffer?: number;
+    /**
+     * Low granularity price bucket for this bid.
+     */
+    pbLg: string;
+    /**
+     * Medium granularity price bucket for this bid.
+     */
+    pbMg: string;
+    /**
+     * High granularity price bucket for this bid.
+     */
+    pbHg: string;
+    /**
+     * Auto granularity price bucket for this bid.
+     */
+    pbAg: string;
+    /**
+     * Dense granularity price bucket for this bid.
+     */
+    pbDg: string;
+    /**
+     * Custom granularity price bucket for this bid.
+     */
+    pbCg: string;
+    /**
+     * This bid's creative size, expressed as width x height.
+     */
+    size: ReturnType<BaseBid['getSize']>
+    /**
+     * If custom targeting was defined, whether standard targeting should also be used for this bid.
+     */
+    sendStandardTargeting?: boolean;
+    adserverTargeting: BaseBidResponse['adserverTargeting'];
+  }
 }
 /**
  * Augment `bidResponse` with properties that are common across all bids - including rejected bids.
@@ -885,67 +888,67 @@ export const getPrimaryCatId = () => {
 }
 
 export interface DefaultTargeting {
-    /**
-     * Bidder code.
-     */
-    [TARGETING_KEYS.BIDDER]: Bid['bidderCode'];
-    /**
-     * Ad ID.
-     */
-    [TARGETING_KEYS.AD_ID]: Bid['adId'];
-    /**
-     * Price bucket.
-     */
-    [TARGETING_KEYS.PRICE_BUCKET]: string;
-    /**
-     * Size, expressed as ${width}x${height}.
-     */
-    [TARGETING_KEYS.SIZE]: Bid['size'];
-    /**
-     * Deal ID.
-     */
-    [TARGETING_KEYS.DEAL]: Bid['dealId'];
-    /**
-     * Bid source - either client or s2s.
-     */
-    [TARGETING_KEYS.SOURCE]: Bid['source'];
-    /**
-     * Media type.
-     */
-    [TARGETING_KEYS.FORMAT]: Bid['mediaType'];
-    /**
-     * Advertiser domain.
-     */
-    [TARGETING_KEYS.ADOMAIN]: Bid['meta']['advertiserDomains'][0];
-    /**
-     * Primary category ID.
-     */
-    [TARGETING_KEYS.ACAT]: Bid['meta']['primaryCatId'];
-    /**
-     * DSP network name.
-     */
-    [TARGETING_KEYS.DSP]: Bid['meta']['networkName'];
-    /**
-     * Creative ID.
-     */
-    [TARGETING_KEYS.CRID]: Bid['creativeId'];
-    /**
-     * Video cache key.
-     */
-    [TARGETING_KEYS.UUID]: Bid['videoCacheKey'];
-    /**
-     * Video cache key.
-     */
-    [TARGETING_KEYS.CACHE_ID]: Bid['videoCacheKey'];
-    /**
-     * Video cache host.
-     */
-    [TARGETING_KEYS.CACHE_HOST]: string;
+  /**
+   * Bidder code.
+   */
+  [TARGETING_KEYS.BIDDER]: Bid['bidderCode'];
+  /**
+   * Ad ID.
+   */
+  [TARGETING_KEYS.AD_ID]: Bid['adId'];
+  /**
+   * Price bucket.
+   */
+  [TARGETING_KEYS.PRICE_BUCKET]: string;
+  /**
+   * Size, expressed as ${width}x${height}.
+   */
+  [TARGETING_KEYS.SIZE]: Bid['size'];
+  /**
+   * Deal ID.
+   */
+  [TARGETING_KEYS.DEAL]: Bid['dealId'];
+  /**
+   * Bid source - either client or s2s.
+   */
+  [TARGETING_KEYS.SOURCE]: Bid['source'];
+  /**
+   * Media type.
+   */
+  [TARGETING_KEYS.FORMAT]: Bid['mediaType'];
+  /**
+   * Advertiser domain.
+   */
+  [TARGETING_KEYS.ADOMAIN]: Bid['meta']['advertiserDomains'][0];
+  /**
+   * Primary category ID.
+   */
+  [TARGETING_KEYS.ACAT]: Bid['meta']['primaryCatId'];
+  /**
+   * DSP network name.
+   */
+  [TARGETING_KEYS.DSP]: Bid['meta']['networkName'];
+  /**
+   * Creative ID.
+   */
+  [TARGETING_KEYS.CRID]: Bid['creativeId'];
+  /**
+   * Video cache key.
+   */
+  [TARGETING_KEYS.UUID]: Bid['videoCacheKey'];
+  /**
+   * Video cache key.
+   */
+  [TARGETING_KEYS.CACHE_ID]: Bid['videoCacheKey'];
+  /**
+   * Video cache host.
+   */
+  [TARGETING_KEYS.CACHE_HOST]: string;
 }
 
 type KeyValFn<K extends keyof DefaultTargeting> = (bidResponse: Bid, bidRequest: BidRequest<BidderCode>) => DefaultTargeting[K];
 type KeyValProp<K extends keyof DefaultTargeting> = {
-    [P in keyof Bid]: Bid[P] extends DefaultTargeting[K] ? P : never
+  [P in keyof Bid]: Bid[P] extends DefaultTargeting[K] ? P : never
 }[keyof Bid];
 
 function createKeyVal<K extends keyof DefaultTargeting>(key: K, value: KeyValFn<K> | KeyValProp<K>) {

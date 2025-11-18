@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/yahooAdsBidAdapter.js';
-import {createEidsArray} from '../../../modules/userId/eids';
-import {deepAccess} from '../../../src/utils';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {deepAccess} from '../../../src/utils.js';
 
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
@@ -270,9 +270,9 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       let iframeCount = 0;
       let imageCount = 0;
       pixelObjects.forEach(pixelObject => {
-        if (pixelObject.type == 'iframe') {
+        if (pixelObject.type === 'iframe') {
           iframeCount++;
-        } else if (pixelObject.type == 'image') {
+        } else if (pixelObject.type === 'image') {
           imageCount++;
         }
       });

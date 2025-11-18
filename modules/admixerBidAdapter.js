@@ -13,7 +13,12 @@ const ALIASES = [
   {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
   {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
   {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
-  'rtbstack'
+  'rtbstack',
+  'theads',
+];
+const RTB_RELATED_ALIASES = [
+  'rtbstack',
+  'theads',
 ];
 export const spec = {
   code: BIDDER_CODE,
@@ -24,7 +29,7 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return bid.bidder === 'rtbstack'
+    return RTB_RELATED_ALIASES.includes(bid.bidder)
       ? !!bid.params.tagId
       : !!bid.params.zone;
   },
@@ -53,8 +58,8 @@ export const spec = {
     if (bidderRequest) {
       // checks if there is specified any endpointUrl in bidder config
       endpointUrl = config.getConfig('bidderURL');
-      if (!endpointUrl && bidderRequest.bidderCode === 'rtbstack') {
-        logError('The bidderUrl config is required for RTB Stack bids. Please set it with setBidderConfig() for "rtbstack".');
+      if (!endpointUrl && RTB_RELATED_ALIASES.includes(bidderRequest.bidderCode)) {
+        logError(`The bidderUrl config is required for ${bidderRequest.bidderCode} bids. Please set it with setBidderConfig() for "${bidderRequest.bidderCode}".`);
         return;
       }
       // TODO: is 'page' the right value here?
@@ -74,7 +79,9 @@ export const spec = {
     }
     validRequest.forEach((bid) => {
       const imp = {};
-      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      Object.keys(bid).forEach(key => {
+        imp[key] = bid[key];
+      });
       imp.ortb2 && delete imp.ortb2;
       const bidFloor = getBidFloor(bid);
       if (bidFloor) {
