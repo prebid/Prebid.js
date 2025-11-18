@@ -2,6 +2,11 @@ name: Run unit tests
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: Runner image
+        required: false
+        default: ubuntu-latest
+        type: string
       source-key:
         description: Artifact name for source directory
         type: string
@@ -24,7 +29,7 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     timeout-minutes: 5
     outputs:
       built-key: ${{ (inputs.build-cmd || inputs.run-npm-install) && format('build-{0}', steps.build-id.outputs.id) || inputs.source-key }}
