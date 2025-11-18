@@ -1,4 +1,4 @@
-import { _each, deepAccess, deepSetValue, isEmpty } from '../src/utils.js';
+import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -13,6 +13,90 @@ const END_POINT = 'https://hb.adingo.jp/prebid';
 const VERSION = '1.2';
 const NET_REVENUE = true;
 const TTL = 300;
+const DEFAULT_CURRENCY = 'JPY';
+
+/**
+ * Get bid floor price for a specific size
+ * @param {BidRequest} bid
+ * @param {Array} size - [width, height]
+ * @returns {{floor: number, currency: string}|null} floor price data
+ */
+function getBidFloorForSize(bid, size) {
+  if (!isFn(bid.getFloor)) {
+    if (bid.params.bidfloor) {
+      // Check currency if specified - only JPY is supported
+      if (bid.params.currency && bid.params.currency !== DEFAULT_CURRENCY) {
+        return null;
+      }
+      return {
+        floor: parseFloat(bid.params.bidfloor),
+        currency: DEFAULT_CURRENCY
+      };
+    }
+    return null;
+  }
+
+  const floorInfo = bid.getFloor({
+    currency: DEFAULT_CURRENCY,
+    mediaType: '*',
+    size: size
+  });
+
+  if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === DEFAULT_CURRENCY) {
+    return {
+      floor: floorInfo.floor,
+      currency: floorInfo.currency
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Get the highest bid floor price across all sizes
+ * @param {BidRequest} bid
+ * @returns {{floor: number, currency: string}|null} floor price data
+ */
+function getHighestBidFloor(bid) {
+  const sizes = bid.sizes || [];
+  let highestFloor = 0;
+  let floorCurrency = DEFAULT_CURRENCY;
+
+  if (sizes.length > 0) {
+    sizes.forEach(size => {
+      const floorData = getBidFloorForSize(bid, size);
+      if (floorData && floorData.floor > highestFloor) {
+        highestFloor = floorData.floor;
+        floorCurrency = floorData.currency;
+      }
+    });
+
+    if (highestFloor > 0) {
+      return {
+        floor: highestFloor,
+        currency: floorCurrency
+      };
+    }
+  }
+
+  // Fallback: use wildcard size
+  if (isFn(bid.getFloor)) {
+    const floor = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) {
+      return {
+        floor: floor.floor,
+        currency: floor.currency
+      };
+    }
+  }
+
+  return null;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -88,10 +172,20 @@ export const spec = {
       }
       data.sizes = [];
       _each(request.sizes, (size) => {
-        data.sizes.push({
+        const sizeObj = {
           w: size[0],
           h: size[1]
-        });
+        };
+
+        // Get floor price for this specific size
+        const floorData = getBidFloorForSize(request, size);
+        if (floorData) {
+          sizeObj.ext = {
+            floor: floorData.floor
+          };
+        }
+
+        data.sizes.push(sizeObj);
       });
 
       data.params = request.params;
@@ -102,6 +196,13 @@ export const spec = {
       }
 
       data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
+
+      // Set top-level bidfloor to the highest floor across all sizes
+      const highestFloorData = getHighestBidFloor(request);
+      if (highestFloorData) {
+        data.bidfloor = highestFloorData.floor;
+        data.bidfloorcur = highestFloorData.currency;
+      }
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
