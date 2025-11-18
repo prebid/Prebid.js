@@ -408,5 +408,42 @@ describe('sevioBidAdapter', function () {
         Object.defineProperty(perfTop, 'timing', { configurable: true, value: undefined });
       }
     });
+
+    it('handles multiple sizes correctly', function () {
+      const multiSizeBidRequests = [
+        {
+          bidder: 'sevio',
+          params: { zone: 'zoneId' },
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [728, 90],
+                [160, 600],
+              ]
+            }
+          },
+          bidId: 'multi123',
+        }
+      ];
+
+      const bidderRequests = {
+        refererInfo: {
+          numIframes: 0,
+          reachedTop: true,
+          referer: 'https://example.com',
+          stack: ['https://example.com']
+        }
+      };
+
+      const request = spec.buildRequests(multiSizeBidRequests, bidderRequests);
+      const sizes = request[0].data.ads[0].sizes;
+
+      expect(sizes).to.deep.equal([
+        { width: 300, height: 250 },
+        { width: 728, height: 90 },
+        { width: 160, height: 600 },
+      ]);
+    });
   });
 });
