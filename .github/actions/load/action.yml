@@ -26,5 +26,9 @@ runs:
     - name: 'Untar working directory'
       shell: bash
       run: |
-        tar -xvf '${{ runner.temp }}/${{ inputs.name }}.tar' "$(pwd)"
+        wdir="$(pwd)"
+        parent="$(dirname "$wdir")"
+        target="$(basename "$wdir")"
+        echo "parent $parent, target $target"
+        tar -C "$parent" -xf '${{ runner.temp }}/${{ inputs.name }}.tar' "$target"
         
