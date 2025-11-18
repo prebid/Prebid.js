@@ -19,5 +19,10 @@ Enable the adapter using:
 
 ```js
 pbjs.enableAnalytics({
-  provider: 'datawrkzanalytics'
+  provider: 'datawrkzanalytics',
+  options: {
+    publisherId: 'YOUR_PUBLISHER_ID',
+    apiKey: 'YOUR_API_KEY'
+  }
 });
+```

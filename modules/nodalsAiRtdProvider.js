@@ -55,7 +55,7 @@ class NodalsAiRtdProvider {
     const params = config?.params || {};
     if (
       this.#isValidConfig(params) &&
-      this.#hasRequiredUserConsent(userConsent)
+      this.#hasRequiredUserConsent(userConsent, config)
     ) {
       this.#propertyId = params.propertyId;
       this.#userConsent = userConsent;
@@ -82,7 +82,7 @@ class NodalsAiRtdProvider {
    */
   getTargetingData(adUnitArray, config, userConsent) {
     let targetingData = {};
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return targetingData;
     }
     this.#userConsent = userConsent;
@@ -104,7 +104,7 @@ class NodalsAiRtdProvider {
   }
 
   getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       callback();
       return;
     }
@@ -133,7 +133,7 @@ class NodalsAiRtdProvider {
   }
 
   onBidResponseEvent(bidResponse, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return;
     }
     this.#userConsent = userConsent;
@@ -154,7 +154,7 @@ class NodalsAiRtdProvider {
   }
 
   onAuctionEndEvent(auctionDetails, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return;
     }
     this.#userConsent = userConsent;
@@ -240,11 +240,12 @@ class NodalsAiRtdProvider {
   /**
    * Checks if the user has provided the required consent.
    * @param {Object} userConsent - User consent object.
+   * @param {Object} config - Configuration object for the module.
    * @returns {boolean} - True if the user consent is valid, false otherwise.
    */
 
-  #hasRequiredUserConsent(userConsent) {
-    if (!userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
+  #hasRequiredUserConsent(userConsent, config) {
+    if (config?.params?.publisherProvidedConsent === true || !userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
     if (

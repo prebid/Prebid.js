@@ -1,52 +1,11 @@
-function isDoNotTrackActive(value) {
-  if (value == null) {
-    return false;
-  }
-
-  if (typeof value === 'string') {
-    const normalizedValue = value.toLowerCase();
-    return normalizedValue === '1' || normalizedValue === 'yes';
-  }
-
-  return value === 1;
-}
-
-function getTopWindow(win) {
-  try {
-    return win.top;
-  } catch (error) {
-    return win;
-  }
+function _getDNT(win) {
+  return win.navigator.doNotTrack === '1' || win.doNotTrack === '1' || win.navigator.msDoNotTrack === '1' || win.navigator.doNotTrack?.toLowerCase?.() === 'yes';
 }
 
 export function getDNT(win = window) {
-  const valuesToInspect = [];
-
-  if (!win) {
+  try {
+    return _getDNT(win) || (win !== win.top && _getDNT(win.top));
+  } catch (e) {
     return false;
   }
-
-  const topWindow = getTopWindow(win);
-
-  valuesToInspect.push(win.doNotTrack);
-
-  if (topWindow && topWindow !== win) {
-    valuesToInspect.push(topWindow.doNotTrack);
-  }
-
-  const navigatorInstances = new Set();
-
-  if (win.navigator) {
-    navigatorInstances.add(win.navigator);
-  }
-
-  if (topWindow && topWindow.navigator) {
-    navigatorInstances.add(topWindow.navigator);
-  }
-
-  navigatorInstances.forEach(navigatorInstance => {
-    valuesToInspect.push(navigatorInstance.doNotTrack, navigatorInstance.msDoNotTrack);
-  });
-
-  return valuesToInspect.some(isDoNotTrackActive);
 }

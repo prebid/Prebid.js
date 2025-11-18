@@ -1,0 +1,19 @@
+name: Save working directory
+description: Save working directory, preserving permissions
+inputs:
+  name:
+    description: a name to reference with actions/load
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Tar working directory
+      shell: bash
+      run: |
+        tar -cf "${{ runner.temp }}/${{ inputs.name }}.tar" .
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        path: '${{ runner.temp }}/${{ inputs.name }}.tar'
+        name: ${{ inputs.name }}
+        overwrite: true

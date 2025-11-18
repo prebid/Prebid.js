@@ -8,9 +8,10 @@ import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import * as webdriver from '../../../libraries/webdriver/webdriver.js';
 
-describe('Yandex adapter', function () {
-  let sandbox;
+const adUnitCode = 'adUnit-123';
+let sandbox;
 
+describe('Yandex adapter', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
 
@@ -65,12 +66,7 @@ describe('Yandex adapter', function () {
     let mockBidderRequest;
 
     beforeEach(function () {
-      mockBidRequests = [{
-        bidId: 'bid123',
-        params: {
-          placementId: 'R-I-123456-2',
-        }
-      }];
+      mockBidRequests = [getBidRequest()];
       mockBidderRequest = {
         ortb2: {
           device: {
@@ -85,6 +81,15 @@ describe('Yandex adapter', function () {
           }
         }
       };
+
+      sandbox.stub(frameElement, 'getBoundingClientRect').returns({
+        left: 123,
+        top: 234,
+      });
+    });
+
+    afterEach(function () {
+      removeElement(adUnitCode);
     });
 
     it('should set site.content.language from document language if it is not set', function () {
@@ -108,6 +113,37 @@ describe('Yandex adapter', function () {
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js');
       expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined;
+    });
+
+    it('should return banner coordinates', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].ext.coords.x).to.equal(123);
+      expect(requests[0].data.imp[0].ext.coords.y).to.equal(234);
+    });
+
+    it('should return page scroll coordinates', function () {
+      createElementVisible(adUnitCode);
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.device.ext.scroll.top).to.equal(0);
+      expect(requests[0].data.device.ext.scroll.left).to.equal(0);
+    });
+
+    it('should return correct visible', function () {
+      createElementVisible(adUnitCode);
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(true);
+    });
+
+    it('should return correct visible for hidden element', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      createElementHidden(adUnitCode);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false);
+    });
+
+    it('should return correct visible for invisible element', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      createElementInvisible(adUnitCode);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false);
     });
 
     /** @type {import('../../../src/auction').BidderRequest} */
@@ -157,6 +193,34 @@ describe('Yandex adapter', function () {
       },
     };
 
+    it('create a valid banner request with custom domain', function () {
+      config.setConfig({
+        yandex: {
+          domain: 'yandex.tr',
+        },
+      });
+
+      const bannerRequest = getBidRequest();
+      bannerRequest.getFloor = () => ({
+        currency: 'EUR',
+        // floor: 0.5
+      });
+
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
+
+      expect(request).to.exist;
+      const { method, url } = request;
+
+      expect(method).to.equal('POST');
+
+      const parsedRequestUrl = utils.parseUrl(url);
+
+      expect(parsedRequestUrl.hostname).to.equal('yandex.tr');
+    })
+
     it('creates a valid banner request', function () {
       const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
@@ -177,7 +241,7 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('yandex.ru');
+      expect(parsedRequestUrl.hostname).to.equal('yandex.com');
       expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
       expect(query['imp-id']).to.equal('1');
@@ -957,7 +1021,87 @@ function getBidRequest(extra = {}) {
   return {
     ...getBidConfig(),
     bidId: 'bidid-1',
-    adUnitCode: 'adUnit-123',
+    adUnitCode,
     ...extra,
   };
+}
+
+/**
+ * Creates a basic div element with specified ID and appends it to document body
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created div element
+ */
+function createElement(id) {
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.width = '50px';
+  div.style.height = '50px';
+  div.style.background = 'black';
+
+  // Adjust frame dimensions if running within an iframe
+  if (frameElement) {
+    frameElement.style.width = '100px';
+    frameElement.style.height = '100px';
+  }
+
+  window.document.body.appendChild(div);
+
+  return div;
+}
+
+/**
+ * Creates a visible element with mocked bounding client rect for testing
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created div with mocked geometry
+ */
+function createElementVisible(id) {
+  const element = createElement(id);
+  // Mock client rect to simulate visible position in viewport
+  sandbox.stub(element, 'getBoundingClientRect').returns({
+    x: 10,
+    y: 10,
+  });
+  return element;
+}
+
+/**
+ * Creates a completely hidden element (not rendered) using display: none
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created hidden div element
+ */
+function createElementInvisible(id) {
+  const element = document.createElement('div');
+  element.id = id;
+  element.style.display = 'none';
+
+  window.document.body.appendChild(element);
+  return element;
+}
+
+/**
+ * Creates an invisible but space-reserved element using visibility: hidden
+ * with mocked bounding client rect for testing
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created hidden div with mocked geometry
+ */
+function createElementHidden(id) {
+  const element = createElement(id);
+  element.style.visibility = 'hidden';
+  // Mock client rect to simulate hidden element's geometry
+  sandbox.stub(element, 'getBoundingClientRect').returns({
+    x: 100,
+    y: 100,
+  });
+  return element;
+}
+
+/**
+ * Removes an element from the DOM by its ID if it exists
+ * @param {string} id - The ID of the element to remove
+ */
+function removeElement(id) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.remove();
+  }
 }
