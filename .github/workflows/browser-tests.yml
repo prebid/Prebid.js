@@ -55,6 +55,16 @@ jobs:
     with:
       build-cmd: ${{ inputs.build-cmd }}
 
+  test-build-logic:
+    needs: [setup, build]
+    name: "Test build logic"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: gulp test-build-logic
+      chunks: 1
+
   browser-tests:
     needs: [setup, build]
     name: "Browser: ${{ matrix.browser }}"

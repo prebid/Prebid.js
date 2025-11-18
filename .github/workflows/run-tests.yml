@@ -23,6 +23,7 @@ on:
         description: If true, set up browserstack environment and adjust concurrency
         required: false
         type: boolean
+        default: false
       timeout:
         description: Timeout on test run
         required: false
