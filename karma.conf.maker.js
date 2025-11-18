@@ -85,6 +85,15 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
 }
 
 function setBrowsers(karmaConf, browserstack) {
+  karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+  Object.assign(karmaConf.customLaunchers, {
+    'EdgeHeadless': {
+      base: 'Edge',
+      flags: [
+        '--headless',
+      ],
+    }
+  });
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
@@ -95,20 +104,7 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = Object.assign({
-      'FirefoxHeadless': {
-        base: 'Firefox',
-        flags: [
-          '-headless',
-        ],
-      },
-      'EdgeHeadless': {
-        base: 'Edge',
-        flags: [
-          '--headless'
-        ]
-      }
-    }, require('./browsers.json'));
+    karmaConf.customLaunchers = require('./browsers.json');
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();
