@@ -1,6 +1,8 @@
 import {expect} from 'chai';
-import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/smartytechBidAdapter';
+import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH, getAliasUserId, storage} from 'modules/smartytechBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
+import sinon from 'sinon';
 
 const BIDDER_CODE = 'smartytech';
 
@@ -497,6 +499,116 @@ describe('SmartyTechDSPAdapter: buildRequests with consent data', () => {
     data.forEach((req) => {
       expect(req).to.not.have.property('gdprConsent');
       expect(req).to.not.have.property('uspConsent');
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: Alias User ID (auId)', () => {
+  let cookiesAreEnabledStub;
+  let getCookieStub;
+  let setCookieStub;
+  let generateUUIDStub;
+
+  beforeEach(() => {
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    setCookieStub = sinon.stub(storage, 'setCookie');
+    generateUUIDStub = sinon.stub(utils, 'generateUUID');
+  });
+
+  afterEach(() => {
+    cookiesAreEnabledStub.restore();
+    getCookieStub.restore();
+    setCookieStub.restore();
+    generateUUIDStub.restore();
+  });
+
+  it('should return null if cookies are not enabled', () => {
+    cookiesAreEnabledStub.returns(false);
+    const auId = getAliasUserId();
+    expect(auId).to.be.null;
+  });
+
+  it('should return existing auId from cookie', () => {
+    const existingAuId = 'existing-uuid-1234';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns(existingAuId);
+
+    const auId = getAliasUserId();
+    expect(auId).to.equal(existingAuId);
+    expect(generateUUIDStub.called).to.be.false;
+  });
+
+  it('should generate and store new auId if cookie does not exist', () => {
+    const newAuId = 'new-uuid-5678';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns(null);
+    generateUUIDStub.returns(newAuId);
+
+    const auId = getAliasUserId();
+    expect(auId).to.equal(newAuId);
+    expect(generateUUIDStub.calledOnce).to.be.true;
+    expect(setCookieStub.calledOnce).to.be.true;
+
+    // Check that setCookie was called with correct parameters
+    const setCookieCall = setCookieStub.getCall(0);
+    expect(setCookieCall.args[0]).to.equal('_smartytech_auid'); // cookie name
+    expect(setCookieCall.args[1]).to.equal(newAuId); // cookie value
+    expect(setCookieCall.args[3]).to.equal('Lax'); // sameSite
+  });
+
+  it('should generate and store new auId if cookie is empty string', () => {
+    const newAuId = 'new-uuid-9999';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns('');
+    generateUUIDStub.returns(newAuId);
+
+    const auId = getAliasUserId();
+    expect(auId).to.equal(newAuId);
+    expect(generateUUIDStub.calledOnce).to.be.true;
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests with auId', () => {
+  let mockBidRequest;
+  let mockReferer;
+  let cookiesAreEnabledStub;
+  let getCookieStub;
+
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestListData('banner', 2, []);
+    mockReferer = mockRefererData();
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+  });
+
+  afterEach(() => {
+    cookiesAreEnabledStub.restore();
+    getCookieStub.restore();
+  });
+
+  it('should include auId in bid request when available', () => {
+    const testAuId = 'test-auid-12345';
+    cookiesAreEnabledStub.returns(true);
+    getCookieStub.returns(testAuId);
+
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.have.property('auId');
+      expect(req.auId).to.equal(testAuId);
+    });
+  });
+
+  it('should not include auId when cookies are disabled', () => {
+    cookiesAreEnabledStub.returns(false);
+
+    const request = spec.buildRequests(mockBidRequest, mockReferer);
+    const data = request.flatMap(resp => resp.data);
+
+    data.forEach((req) => {
+      expect(req).to.not.have.property('auId');
     });
   });
 });
