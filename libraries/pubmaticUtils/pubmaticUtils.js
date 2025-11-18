@@ -62,6 +62,11 @@ export const getUtmValue = () => {
   return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
 }
 
+export const getDayOfWeek = () => {
+  const dayOfWeek = new Date().getDay();
+  return dayOfWeek;
+}
+
 /**
  * Determines whether an action should be throttled based on a given percentage.
  *

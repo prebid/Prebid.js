@@ -180,5 +180,9 @@ describe('FloorProvider', () => {
       expect(floorProvider.getBidder({})).to.equal(undefined);
       expect(floorProvider.getBidder(undefined)).to.equal(undefined);
     });
+    it('getDOW should return result from getDayOfWeek', async () => {
+      const stub = sinon.stub(pubmaticUtils, 'getDayOfWeek').returns(0);
+      expect(floorProvider.getDOW()).to.equal(0);
+    });
   });
 });

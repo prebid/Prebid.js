@@ -1,7 +1,7 @@
 /* globals describe, beforeEach, afterEach, it, sinon */
 import { expect } from 'chai';
 import * as sua from '../../../../src/fpd/sua.js';
-import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../../../../libraries/pubmaticUtils/pubmaticUtils.js';
+import { getBrowserType, getCurrentTimeOfDay, getUtmValue, getDayOfWeek } from '../../../../libraries/pubmaticUtils/pubmaticUtils.js';
 
 describe('pubmaticUtils', () => {
   let sandbox;
@@ -231,6 +231,30 @@ describe('pubmaticUtils', () => {
       mockUrlParams.includes.withArgs('utm_').returns(true);
 
       expect(getUtmValue()).to.equal('1');
+    });
+  });
+
+  describe('getDayOfWeek', () => {
+    let clock;
+
+    afterEach(() => {
+      if (clock) {
+        clock.restore();
+      }
+    });
+
+    it('should return the correct day of the week', () => {
+      // Sunday
+      clock = sinon.useFakeTimers(new Date('2023-01-01T12:00:00Z').getTime());
+      expect(getDayOfWeek()).to.equal(0);
+
+      // Wednesday
+      clock = sinon.useFakeTimers(new Date('2023-01-04T12:00:00Z').getTime());
+      expect(getDayOfWeek()).to.equal(3);
+
+      // Saturday
+      clock = sinon.useFakeTimers(new Date('2023-01-07T12:00:00Z').getTime());
+      expect(getDayOfWeek()).to.equal(6);
     });
   });
 });
