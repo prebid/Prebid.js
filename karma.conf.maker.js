@@ -101,6 +101,12 @@ function setBrowsers(karmaConf, browserstack) {
         flags: [
           '-headless',
         ],
+      },
+      'EdgeHeadless': {
+        base: 'Edge',
+        flags: [
+          '--headless'
+        ]
       }
     }, require('./browsers.json'));
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
