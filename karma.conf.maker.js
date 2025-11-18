@@ -49,7 +49,7 @@ function newPluginsArray(browserstack) {
     'karma-spec-reporter',
     'karma-webpack',
     'karma-mocha-reporter',
-    'karma-edge-launcher',
+    '@chiragrupani/karma-chromium-edge-launcher',
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
@@ -85,15 +85,6 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
 }
 
 function setBrowsers(karmaConf, browserstack) {
-  karmaConf.customLaunchers = karmaConf.customLaunchers || {};
-  Object.assign(karmaConf.customLaunchers, {
-    'EdgeHeadless': {
-      base: 'Edge',
-      flags: [
-        '--headless',
-      ],
-    }
-  });
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
