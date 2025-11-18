@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      built-key: ${{ (inputs.build-cmd || inputs.run-npm-install) && format('build-{0}', steps.build-id.outputs.result) || inputs.source-key }}
+      built-key: ${{ inputs.build-cmd && steps.save.outputs.name || inputs.source-key }}
     steps:
       - name: Checkout
         if: ${{ inputs.build-cmd }}
@@ -35,17 +35,9 @@ jobs:
       - name: Build
         if: ${{ inputs.build-cmd }}
         run: ${{ inputs.build-cmd }}
-      - name: Generate build ID
-        if: ${{ inputs.build-cmd }}
-        id: build-id
-        uses: actions/github-script@v8
-        with:
-          result-encoding: string
-          script: |
-            const crypto = require("crypto");
-            return crypto.randomBytes(16).toString("hex");
       - name: 'Save working directory'
+        id: save
         if: ${{ inputs.build-cmd }}
         uses: ./.github/actions/save
         with:
-          name: build-${{ steps.build-id.outputs.result }}
+          prefix: 'build-'
