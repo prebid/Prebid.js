@@ -10,7 +10,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid';
-const VERSION = '1.2';
+const VERSION = '1.3';
 const NET_REVENUE = true;
 const TTL = 300;
 const DEFAULT_CURRENCY = 'JPY';
