@@ -94,7 +94,14 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json');
+    karmaConf.customLaunchers = Object.assign({
+      'FirefoxHeadless': {
+        base: 'Firefox',
+        flags: [
+          '-headless',
+        ],
+      }
+    }, require('./browsers.json'));
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();

@@ -47,7 +47,7 @@ jobs:
       - name: Define browsers
         id: define
         run: |
-          echo 'browsers=["ChromeHeadless", "SafariNative"]' >> out;
+          echo 'browsers=["ChromeHeadless", "SafariNative", "FirefoxHeadless"]' >> out;
           echo 'macos=["SafariNative"]' >> out;
           echo 'coverage=["ChromeHeadless"]' >> out;
           cat out >> "$GITHUB_OUTPUT";
