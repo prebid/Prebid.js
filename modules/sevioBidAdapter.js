@@ -120,6 +120,11 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const userSyncEnabled = config.getConfig("userSync.syncEnabled");
+    const currencyConfig = config.getConfig('currency');
+    const currency =
+      currencyConfig?.adServerCurrency ||
+      currencyConfig?.defaultCurrency ||
+      null;
 
     if (bidRequests.length === 0) {
       return [];
@@ -159,6 +164,7 @@ export const spec = {
           source: eid.source,
           id: eid.uids?.[0]?.id
         })).filter(eid => eid.source && eid.id),
+        ...(currency ? { currency } : {}),
         ads: [
           {
             maxSize: {
