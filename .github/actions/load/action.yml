@@ -15,7 +15,7 @@ runs:
     - name: 'Clear working directory'
       shell: bash
       run: |
-        rm -r "$HOME"/*
+        rm -r "$(pwd)"/*
 
     - name: Download artifact
       uses: actions/download-artifact@v5
@@ -26,5 +26,5 @@ runs:
     - name: 'Untar working directory'
       shell: bash
       run: |
-        tar -xvf '${{ runner.temp }}/${{ inputs.name }}.tar' "$HOME"
+        tar -xvf '${{ runner.temp }}/${{ inputs.name }}.tar' "$(pwd)"
         
