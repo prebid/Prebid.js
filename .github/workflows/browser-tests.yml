@@ -51,9 +51,11 @@ jobs:
       matrix:
         browser:
           - ChromeHeadless
+          - SafariNative
     uses:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }}
+      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ matrix.browser == 'ChromeHeadless' && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
+      runs-on: ${{ matrix.browser == 'SafariNative' && 'macos-latest' || 'ubuntu-latest' }}
