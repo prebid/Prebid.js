@@ -143,7 +143,7 @@
     "@babel/core": "^7.28.4",
     "@babel/plugin-transform-runtime": "^7.18.9",
     "@babel/preset-env": "^7.27.2",
-    "@babel/preset-typescript": "^7.26.0",
+    "@babel/preset-typescript": "^7.28.5",
     "@babel/runtime": "^7.28.3",
     "core-js": "^3.45.1",
     "crypto-js": "^4.2.0",
