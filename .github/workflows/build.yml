@@ -11,30 +11,45 @@ on:
         description: Build command
         required: false
         type: string
+      run-npm-install:
+        description: Run npm install
+        type: boolean
+        required: false
+        default: false
     outputs:
       built-key:
         description: Artifact name for built directory
-        value: ${{ inputs.build-cmd && format('build-{0}', inputs.build-cmd) || inputs.source-key }}
+        value: ${{ jobs.build.outputs.built-key }}
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      built-key: ${{ (inputs.build-cmd || inputs.run-npm-install) && format('build-{0}', steps.build-id.outputs.id) || inputs.source-key }}
     steps:
       - name: Checkout
-        if: ${{ inputs.build-cmd }}
+        if: ${{ inputs.build-cmd || inputs.run-npm-install }}
         uses: actions/checkout@v5
       - name: Restore source
-        if: ${{ inputs.build-cmd }}
+        if: ${{ inputs.build-cmd || inputs.run-npm-install }}
         uses: ./.github/actions/load
         with:
           name: ${{ inputs.source-key }}
+      - name: Run npm install
+        if: ${{ inputs.run-npm-install }}
+        run: npm install
       - name: Build
         if: ${{ inputs.build-cmd }}
         run: ${{ inputs.build-cmd }}
+      - name: Generate build ID
+        id: build-id
+        if: ${{ inputs.build-cmd || inputs.run-npm-install }}
+        run:
+          echo 'id='"$(uuidgen)" >> "$GITHUB_OUTPUT";
       - name: 'Save working directory'
-        if: ${{ inputs.build-cmd }}
+        if: ${{ inputs.build-cmd  || inputs.run-npm-install }}
         uses: ./.github/actions/save
         with:
-          name: build-${{ inputs.build-cmd }}
+          name: build-${{ steps.build-id.outputs.id }}

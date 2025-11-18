@@ -14,7 +14,7 @@ runs:
     - uses: actions/github-script@v8
       id: platform
       with:
-        result-encoding: string;
+        result-encoding: string
         script: |
           const os = require('os');
           return os.platform();
