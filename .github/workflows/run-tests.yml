@@ -34,10 +34,6 @@ on:
         required: false
         default: ubuntu-latest
         type: string
-      setup-edge:
-        description: Set up Edge
-        type: boolean
-        default: false
     outputs:
       coverage:
         description: Artifact name for coverage results
