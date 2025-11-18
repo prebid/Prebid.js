@@ -332,6 +332,7 @@ describe('Nexx360 bid adapter tests', () => {
                 divId: 'div-2-abcd',
                 nexx360: {
                   placement: 'testPlacement',
+                  divId: 'div-2-abcd',
                   allBids: true,
                 },
               },
