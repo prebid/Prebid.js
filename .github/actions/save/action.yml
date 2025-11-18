@@ -7,13 +7,20 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - uses: actions/github-script@v8
+      id: platform
+      with:
+        result-encoding: string
+        script: |
+          const os = require('os');
+          return os.platform();
     - name: Tar working directory
       shell: bash
       run: |
         wdir="$(pwd)"
         parent="$(dirname "$wdir")"
         target="$(basename "$wdir")"
-        tar -C "$parent" -cf "${{ runner.temp }}/${{ inputs.name }}.tar" "$target"
+        tar ${{ steps.platform.outputs.result == 'win32' && '--force-local' || '' }} -C "$parent" -cf "${{ runner.temp }}/${{ inputs.name }}.tar" "$target"
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
