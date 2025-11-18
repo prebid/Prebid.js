@@ -50,14 +50,11 @@ on:
 
 jobs:
   checkout:
-    name: "Checkout"
+    name: "Set up environment"
     runs-on: ubuntu-latest
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
       - name: Define chunks
         id: chunks
         run: |
