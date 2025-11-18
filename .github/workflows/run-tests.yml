@@ -167,7 +167,7 @@ jobs:
           name: ${{ needs.build.outputs.wdir }}
 
       - name: Download coverage results
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: ./build/coverage
           pattern: coverage-partial-${{ inputs.test-cmd }}-*
