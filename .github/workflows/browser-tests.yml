@@ -34,12 +34,23 @@ env:
   ctx-macos: '["SafariNative"]'
   ctx-coverage: '["ChromeHeadless"]'
 jobs:
-  checkout:
-    name: "Checkout"
+  setup:
+    name: "Setup environment"
     runs-on: ubuntu-latest
+    outputs:
+      browsers: ${{ steps.define.outputs.browsers }}
+      macos: ${{ steps.define.outputs.macos }}
+      coverage: ${{ steps.define.outputs.coverage }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Define browsers
+        id: define
+        run: |
+          echo 'browsers=["ChromeHeadless", "SafariNative"]' >> out;
+          echo 'macos=["SafariNative"]' >> out;
+          echo 'coverage=["ChromeHeadless"]' >> out;
+          cat out >> "$GITHUB_OUTPUT";
 
   build:
     uses: ./.github/workflows/build.yml
@@ -47,16 +58,16 @@ jobs:
       build-cmd: ${{ inputs.build-cmd }}
 
   browser-tests:
-    needs: [checkout, build]
+    needs: [setup, build]
     name: "Browser: ${{ matrix.browser }}"
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(env.ctx-browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ contains(fromJSON(env.ctx-coverage), matrix.browser) && '--coverage' || '--no-coverage' }}
+      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser }} ${{ contains(fromJSON(needs.setup.outputs.coverage), matrix.browser) && '--coverage' || '--no-coverage' }}
       chunks: ${{ inputs.chunks }}
-      runs-on: ${{ contains(fromJSON(env.ctx-macos), matrix.browser) && 'macos-latest' || 'ubuntu-latest' }}
+      runs-on: ${{ contains(fromJSON(needs.setup.outputs.macos), matrix.browser) && 'macos-latest' || 'ubuntu-latest' }}
