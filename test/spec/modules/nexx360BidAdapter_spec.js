@@ -343,7 +343,7 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '7.0',
+            bidderVersion: '7.1',
             localStorage: { amxId: 'abcdef'},
             sessionId: requestContent.ext.sessionId,
             requestCounter: 0,
