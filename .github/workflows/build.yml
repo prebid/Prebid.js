@@ -1,0 +1,40 @@
+name: Run unit tests
+on:
+  workflow_call:
+    inputs:
+      source-key:
+        description: Artifact name for source directory
+        type: string
+        required: false
+        default: source
+      build-cmd:
+        description: Build command
+        required: false
+        type: string
+    outputs:
+      built-key:
+        description: Artifact name for built directory
+        value: ${{ inputs.build-cmd && format('build-{0}', inputs.build-cmd) || inputs.source-key }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        if: ${{ inputs.build-cmd }}
+        uses: actions/checkout@v5
+      - name: Restore source
+        if: ${{ inputs.build-cmd }}
+        uses: ./.github/actions/load
+        with:
+          name: ${{ inputs.source-key }}
+      - name: Build
+        if: ${{ inputs.build-cmd }}
+        run: ${{ inputs.build-cmd }}
+      - name: 'Save working directory'
+        if: ${{ inputs.build-cmd }}
+        uses: ./.github/actions/save
+        with:
+          name: build-${{ inputs.build-cmd }}

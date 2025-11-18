@@ -40,47 +40,32 @@ on:
         description: "Browserstack access key"
 
 jobs:
-  build:
-    name: Build
+  checkout:
+    name: "Checkout"
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
-      wdir: ${{ inputs.build-cmd && format('build-{0}', inputs.build-cmd) || 'source' }}
     steps:
       - name: Checkout
-        if: ${{ inputs.build-cmd }}
         uses: actions/checkout@v5
-      - name: Restore source
-        if: ${{ inputs.build-cmd }}
-        uses: ./.github/actions/load
-        with:
-          name: source
-
-      - name: Build
-        if: ${{ inputs.build-cmd }}
-        run: ${{ inputs.build-cmd }}
-
-      - name: 'Save working directory'
-        if: ${{ inputs.build-cmd }}
-        uses: ./.github/actions/save
-        with:
-          name: build-${{ inputs.build-cmd }}
 
       - name: Define chunks
         id: chunks
         run: |
           echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
-          
-          
+        
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: ${{ inputs.build-cmd }}
 
   run-tests:
-    needs: build
+    needs: [checkout, build]
     strategy:
       fail-fast: false
       max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
       matrix:
-        chunk-no: ${{ fromJSON(needs.build.outputs.chunks) }}
+        chunk-no: ${{ fromJSON(needs.checkout.outputs.chunks) }}
 
     name: "Test chunk ${{ matrix.chunk-no }}"
     env:
@@ -106,7 +91,7 @@ jobs:
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.wdir }}
+          name: ${{ needs.build.outputs.built-key }}
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
@@ -169,7 +154,7 @@ jobs:
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.wdir }}
+          name: ${{ needs.build.outputs.built-key }}
 
       - name: Download coverage results
         uses: actions/download-artifact@v5

@@ -94,9 +94,8 @@ jobs:
     with:
       chunks: 8
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack --browsers SafariNative
-      browserstack: false
-      runs-on: macos-latest
+      test-cmd: npx gulp test-only-nobuild --browserstack
+      browserstack: true
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
