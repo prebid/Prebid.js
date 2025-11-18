@@ -3,14 +3,12 @@ import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'themoneytizer';
-const GVLID = 1265;
 const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 
 export const spec = {
   aliases: [BIDDER_CODE],
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
-  gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
     if (!(bid && bid.params.pid)) {
@@ -80,9 +78,9 @@ export const spec = {
     }
 
     const s = [];
-    serverResponses.map((c) => {
+    serverResponses.forEach((c) => {
       if (c.body.c_sync) {
-        c.body.c_sync.bidder_status.map((p) => {
+        c.body.c_sync.bidder_status.forEach((p) => {
           if (p.usersync.type === 'redirect') {
             p.usersync.type = 'image';
           }

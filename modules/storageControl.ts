@@ -1,17 +1,17 @@
 import {config} from '../src/config.js';
 import {metadata} from '../libraries/metadata/metadata.js';
 import {
-    ACTIVITY_PARAM_COMPONENT,
-    ACTIVITY_PARAM_COMPONENT_NAME,
-    ACTIVITY_PARAM_COMPONENT_TYPE,
-    ACTIVITY_PARAM_STORAGE_KEY,
-    ACTIVITY_PARAM_STORAGE_TYPE
+  ACTIVITY_PARAM_COMPONENT,
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_KEY,
+  ACTIVITY_PARAM_STORAGE_TYPE
 } from '../src/activities/params.js';
 import {
-    discloseStorageUse,
-    STORAGE_TYPE_COOKIES,
-    STORAGE_TYPE_LOCALSTORAGE,
-    type StorageDisclosure as Disclosure
+  discloseStorageUse,
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE,
+  type StorageDisclosure as Disclosure
 } from '../src/storageManager.js';
 import {logWarn, uniques} from '../src/utils.js';
 import {registerActivityControl} from '../src/activities/rules.js';
@@ -128,19 +128,19 @@ export function storageControlRule(getEnforcement = () => enforcement, check = c
 registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'storageControl', storageControlRule());
 
 export type StorageControlConfig = {
-    /**
-     * - 'off': logs a warning when an undisclosed storage key is used
-     * - 'strict': deny access to undisclosed storage keys
-     * - 'allowAliases': deny access to undisclosed storage keys, unless the use is from an alias of a module that does
-     *    disclose them
-     */
-    enforcement?: typeof ENFORCE_OFF | typeof ENFORCE_ALIAS | typeof ENFORCE_STRICT;
+  /**
+   * - 'off': logs a warning when an undisclosed storage key is used
+   * - 'strict': deny access to undisclosed storage keys
+   * - 'allowAliases': deny access to undisclosed storage keys, unless the use is from an alias of a module that does
+   *    disclose them
+   */
+  enforcement?: typeof ENFORCE_OFF | typeof ENFORCE_ALIAS | typeof ENFORCE_STRICT;
 }
 
 declare module '../src/config' {
-    interface Config {
-        storageControl: StorageControlConfig
-    }
+  interface Config {
+    storageControl: StorageControlConfig
+  }
 }
 
 config.getConfig('storageControl', (cfg) => {
@@ -148,75 +148,75 @@ config.getConfig('storageControl', (cfg) => {
 })
 
 export function dynamicDisclosureCollector() {
-    const disclosures = {};
-    function mergeDisclosures(left, right) {
-        const merged = {
-            ...left,
-            purposes: (left.purposes ?? []).concat(right.purposes ?? []).filter(uniques),
+  const disclosures = {};
+  function mergeDisclosures(left, right) {
+    const merged = {
+      ...left,
+      purposes: (left.purposes ?? []).concat(right.purposes ?? []).filter(uniques),
+    };
+    if (left.type === 'cookie') {
+      if (left.maxAgeSeconds != null || right.maxAgeSeconds != null) {
+        merged.maxAgeSeconds = (left.maxAgeSeconds ?? 0) > (right.maxAgeSeconds ?? 0) ? left.maxAgeSeconds : right.maxAgeSeconds;
+      }
+      if (left.cookieRefresh != null || right.cookieRefresh != null) {
+        merged.cookieRefresh = left.cookieRefresh || right.cookieRefresh;
+      }
+    }
+    return merged;
+  }
+  return {
+    hook(next, moduleName, disclosure) {
+      const key = `${disclosure.type}::${disclosure.identifier}`;
+      if (!disclosures.hasOwnProperty(key)) {
+        disclosures[key] = {
+          disclosedBy: [],
+          ...disclosure
         };
-        if (left.type === 'cookie') {
-            if (left.maxAgeSeconds != null || right.maxAgeSeconds != null) {
-                merged.maxAgeSeconds = (left.maxAgeSeconds ?? 0) > (right.maxAgeSeconds ?? 0) ? left.maxAgeSeconds : right.maxAgeSeconds;
-            }
-            if (left.cookieRefresh != null || right.cookieRefresh != null) {
-                merged.cookieRefresh = left.cookieRefresh || right.cookieRefresh;
-            }
-        }
-        return merged;
+      }
+      Object.assign(disclosures[key], mergeDisclosures(disclosures[key], disclosure));
+      if (!disclosures[key].disclosedBy.includes(moduleName)) {
+        disclosures[key].disclosedBy.push(moduleName);
+      }
+      next(moduleName, disclosure);
+    },
+    getDisclosures() {
+      return Object.values(disclosures);
     }
-    return {
-        hook(next, moduleName, disclosure) {
-            const key = `${disclosure.type}::${disclosure.identifier}`;
-            if (!disclosures.hasOwnProperty(key)) {
-                disclosures[key] = {
-                    disclosedBy: [],
-                    ...disclosure
-                };
-            }
-            Object.assign(disclosures[key], mergeDisclosures(disclosures[key], disclosure));
-            if (!disclosures[key].disclosedBy.includes(moduleName)) {
-                disclosures[key].disclosedBy.push(moduleName);
-            }
-            next(moduleName, disclosure);
-        },
-        getDisclosures() {
-            return Object.values(disclosures);
-        }
-    }
+  }
 }
 
 const {hook: discloseStorageHook, getDisclosures: dynamicDisclosures} = dynamicDisclosureCollector();
 discloseStorageUse.before(discloseStorageHook);
 
 export type StorageDisclosure = Disclosure & {
-    /**
-     * URL containing this disclosure, if any.
-     */
-    disclosedIn: string | null;
-    /**
-     * Names of the modules associated with this disclosure.
-     */
-    disclosedBy: string[];
+  /**
+   * URL containing this disclosure, if any.
+   */
+  disclosedIn: string | null;
+  /**
+   * Names of the modules associated with this disclosure.
+   */
+  disclosedBy: string[];
 }
 
 function disclosureSummarizer(getDynamicDisclosures = dynamicDisclosures, getSummary = () => getStorageDisclosureSummary(getGlobal().installedModules, metadata.getModuleMetadata)) {
-    return function() {
-        return [].concat(
-            getDynamicDisclosures().map(disclosure => ({
-                disclosedIn: null,
-                ...(disclosure as any)
-            })),
-            getSummary()
-        );
-    }
+  return function() {
+    return [].concat(
+      getDynamicDisclosures().map(disclosure => ({
+        disclosedIn: null,
+        ...(disclosure as any)
+      })),
+      getSummary()
+    );
+  }
 }
 
 const getStorageUseDisclosures: () => StorageDisclosure[] = disclosureSummarizer();
 
 declare module '../src/prebidGlobal' {
-    interface PrebidJS {
-        getStorageUseDisclosures: typeof getStorageUseDisclosures;
-    }
+  interface PrebidJS {
+    getStorageUseDisclosures: typeof getStorageUseDisclosures;
+  }
 }
 
 addApiMethod('getStorageUseDisclosures', getStorageUseDisclosures);

@@ -2,26 +2,27 @@
 
 import {getGlobal, type PrebidJS} from './prebidGlobal.js';
 import {
-    deepAccess,
-    deepClone,
-    deepEqual,
-    deepSetValue,
-    flatten,
-    generateUUID,
-    isArray,
-    isArrayOfNums,
-    isEmpty,
-    isFn,
-    isGptPubadsDefined,
-    isNumber,
-    logError,
-    logInfo,
-    logMessage,
-    logWarn,
-    mergeDeep,
-    transformAdServerTargetingObj,
-    uniques,
-    unsupportedBidderMessage
+  deepAccess,
+  deepClone,
+  deepEqual,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  transformAdServerTargetingObj,
+  uniques,
+  unsupportedBidderMessage
 } from './utils.js';
 import {listenMessagesFromCreative} from './secureCreatives.js';
 import {userSync} from './userSync.js';
@@ -32,9 +33,9 @@ import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {storageCallbacks} from './storageManager.js';
 import adapterManager, {
-    type AliasBidderOptions,
-    type BidRequest,
-    getS2SBidderSet
+  type AliasBidderOptions,
+  type BidRequest,
+  getS2SBidderSet
 } from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
 import type {EventHandler, EventIDs, Event} from "./events.js";
@@ -45,15 +46,15 @@ import {pbYield} from './utils/yield.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
-    insertLocatorFrame,
-    markBidAsRendered,
-    markWinningBid,
-    renderAdDirect,
-    renderIfDeferred
+  insertLocatorFrame,
+  markBidAsRendered,
+  markWinningBid,
+  renderAdDirect,
+  renderIfDeferred
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults, ORTB_VIDEO_PARAMS, validateOrtbVideoFields} from './video.js';
-import {ORTB_BANNER_PARAMS, validateOrtbBannerFields} from './banner.js';
+import {fillVideoDefaults, ORTB_VIDEO_PARAMS} from './video.js';
+import {ORTB_BANNER_PARAMS} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
@@ -65,6 +66,9 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
+import {ORTB_AUDIO_PARAMS, fillAudioDefaults} from './audio.ts';
+
+import {getGlobalVarName} from "./buildOptions.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -76,29 +80,30 @@ const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = EVENTS;
 loadSession();
 
 declare module './prebidGlobal' {
-    interface PrebidJS {
-        bidderSettings: {
-            standard?: BidderSettings<BidderCode>
-        } & {
-            [B in BidderCode]?: BidderScopedSettings<B>
-        } & {
-            [B in keyof BidderParams]?: BidderScopedSettings<B>
-        };
-        /**
-         * True once Prebid is loaded.
-         */
-        libLoaded?: true;
-        /**
-         * Prebid version.
-         */
-        version: string;
-        /**
-         * Set this to true to delay processing of `que` / `cmd` until prerendering is complete
-         * (applies only when the page is prerendering).
-         */
-        delayPrerendering?: boolean
-        adUnits: AdUnitDefinition[];
-    }
+  interface PrebidJS {
+    bidderSettings: {
+      standard?: BidderSettings<BidderCode>
+    } & {
+      [B in BidderCode]?: BidderScopedSettings<B>
+    } & {
+      [B in keyof BidderParams]?: BidderScopedSettings<B>
+    };
+    /**
+     * True once Prebid is loaded.
+     */
+    libLoaded?: true;
+    /**
+     * Prebid version.
+     */
+    version: string;
+    /**
+     * Set this to true to delay processing of `que` / `cmd` until prerendering is complete
+     * (applies only when the page is prerendering).
+     */
+    delayPrerendering?: boolean
+    adUnits: AdUnitDefinition[];
+    pageViewIdPerBidder: Map<string | null, string>
+  }
 }
 
 pbjsInstance.bidderSettings = pbjsInstance.bidderSettings || {};
@@ -109,6 +114,7 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
+pbjsInstance.pageViewIdPerBidder = pbjsInstance.pageViewIdPerBidder || new Map<string | null, string>();
 
 function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
@@ -146,13 +152,13 @@ export function syncOrtb2(adUnit, mediaType) {
     const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`);
     const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`);
 
-    if (mediaTypesFieldValue == undefined && ortbFieldValue == undefined) {
+    if (mediaTypesFieldValue === undefined && ortbFieldValue === undefined) {
       // omitting the params if it's not defined on either of sides
-    } else if (mediaTypesFieldValue == undefined) {
+    } else if (mediaTypesFieldValue === undefined) {
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
-    } else if (ortbFieldValue == undefined) {
+    } else if (ortbFieldValue === undefined) {
       deepSetValue(adUnit, `ortb2Imp.${mediaType}.${key}`, mediaTypesFieldValue);
-    } else {
+    } else if (!deepEqual(mediaTypesFieldValue, ortbFieldValue)) {
       logWarn(`adUnit ${adUnit.code}: specifies conflicting ortb2Imp.${mediaType}.${key} and mediaTypes.${mediaType}.${key}, the latter will be ignored`, adUnit);
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     }
@@ -199,8 +205,15 @@ function validateBannerMediaType(adUnit: AdUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
-  validateOrtbBannerFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'banner');
   syncOrtb2(validatedAdUnit, 'banner')
+  return validatedAdUnit;
+}
+
+function validateAudioMediaType(adUnit: AdUnit) {
+  const validatedAdUnit = deepClone(adUnit);
+  validateOrtbFields(validatedAdUnit, 'audio');
+  syncOrtb2(validatedAdUnit, 'audio');
   return validatedAdUnit;
 }
 
@@ -223,58 +236,92 @@ function validateVideoMediaType(adUnit: AdUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
-  validateOrtbVideoFields(validatedAdUnit);
+  validateOrtbFields(validatedAdUnit, 'video');
   syncOrtb2(validatedAdUnit, 'video');
   return validatedAdUnit;
 }
 
+export function validateOrtbFields(adUnit, type, onInvalidParam?) {
+  const mediaTypes = adUnit?.mediaTypes || {};
+  const params = mediaTypes[type];
+
+  const ORTB_PARAMS = {
+    banner: ORTB_BANNER_PARAMS,
+    audio: ORTB_AUDIO_PARAMS,
+    video: ORTB_VIDEO_PARAMS
+  }[type]
+
+  if (!isPlainObject(params)) {
+    logWarn(`validateOrtb${type}Fields: ${type}Params must be an object.`);
+    return;
+  }
+
+  if (params != null) {
+    Object.entries(params)
+      .forEach(([key, value]: any) => {
+        if (!ORTB_PARAMS.has(key)) {
+          return
+        }
+        const isValid = ORTB_PARAMS.get(key)(value);
+        if (!isValid) {
+          if (typeof onInvalidParam === 'function') {
+            onInvalidParam(key, value, adUnit);
+          } else {
+            delete params[key];
+            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.${type}.${key} ORTB property. The property has been removed.`);
+          }
+        }
+      });
+  }
+}
+
 function validateNativeMediaType(adUnit: AdUnit) {
-    function err(msg) {
-        logError(`Error in adUnit "${adUnit.code}": ${msg}. Removing native request from ad unit`, adUnit);
-        delete validatedAdUnit.mediaTypes.native;
-        return validatedAdUnit;
-    }
-    function checkDeprecated(onDeprecated) {
-        for (const key of ['types']) {
-            if (native.hasOwnProperty(key)) {
-                const res = onDeprecated(key);
-                if (res) return res;
-            }
-        }
-    }
-    const validatedAdUnit = deepClone(adUnit);
-    const native = validatedAdUnit.mediaTypes.native;
-    // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
-    if (native.ortb) {
-        if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0 || asset.id % 1 !== 0)) {
-            return err('native asset ID must be a nonnegative integer');
-        }
-        if (checkDeprecated(key => err(`ORTB native requests cannot specify "${key}"`))) {
-            return validatedAdUnit;
-        }
-        const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
-        const nativeKeys = Object.keys(native);
-        const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
-        if (intersection.length > 0) {
-            logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
-            intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
-        }
-    } else {
-        checkDeprecated(key => logWarn(`mediaTypes.native.${key} is deprecated, consider using native ORTB instead`, adUnit));
-    }
-    if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
-        logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
-        delete validatedAdUnit.mediaTypes.native.image.sizes;
-    }
-    if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
-        logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
-        delete validatedAdUnit.mediaTypes.native.image.aspect_ratios;
-    }
-    if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
-        logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
-        delete validatedAdUnit.mediaTypes.native.icon.sizes;
-    }
+  function err(msg) {
+    logError(`Error in adUnit "${adUnit.code}": ${msg}. Removing native request from ad unit`, adUnit);
+    delete validatedAdUnit.mediaTypes.native;
     return validatedAdUnit;
+  }
+  function checkDeprecated(onDeprecated) {
+    for (const key of ['types']) {
+      if (native.hasOwnProperty(key)) {
+        const res = onDeprecated(key);
+        if (res) return res;
+      }
+    }
+  }
+  const validatedAdUnit = deepClone(adUnit);
+  const native = validatedAdUnit.mediaTypes.native;
+  // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
+  if (native.ortb) {
+    if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0 || asset.id % 1 !== 0)) {
+      return err('native asset ID must be a nonnegative integer');
+    }
+    if (checkDeprecated(key => err(`ORTB native requests cannot specify "${key}"`))) {
+      return validatedAdUnit;
+    }
+    const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
+    const nativeKeys = Object.keys(native);
+    const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
+    if (intersection.length > 0) {
+      logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
+      intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
+    }
+  } else {
+    checkDeprecated(key => logWarn(`mediaTypes.native.${key} is deprecated, consider using native ORTB instead`, adUnit));
+  }
+  if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
+    logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+    delete validatedAdUnit.mediaTypes.native.image.sizes;
+  }
+  if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
+    logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+    delete validatedAdUnit.mediaTypes.native.image.aspect_ratios;
+  }
+  if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
+    logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+    delete validatedAdUnit.mediaTypes.native.icon.sizes;
+  }
+  return validatedAdUnit;
 }
 
 function validateAdUnitPos(adUnit, mediaType) {
@@ -330,6 +377,10 @@ if (FEATURES.VIDEO) {
   Object.assign(adUnitSetupChecks, { validateVideoMediaType });
 }
 
+if (FEATURES.AUDIO) {
+  Object.assign(adUnitSetupChecks, { validateAudioMediaType });
+}
+
 export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition[]) {
   const validatedAdUnits = [];
 
@@ -338,7 +389,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
     if (adUnit == null) return;
 
     const mediaTypes = adUnit.mediaTypes;
-    let validatedBanner, validatedVideo, validatedNative;
+    let validatedBanner, validatedVideo, validatedNative, validatedAudio;
 
     if (mediaTypes.banner) {
       validatedBanner = validateBannerMediaType(adUnit);
@@ -354,7 +405,11 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
-    const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative);
+    if (FEATURES.AUDIO && mediaTypes.audio) {
+      validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateAudioMediaType(adUnit);
+    }
+
+    const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative, validatedAudio);
 
     validatedAdUnits.push(validatedAdUnit);
   });
@@ -366,17 +421,20 @@ function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
+  if (FEATURES.AUDIO) {
+    adUnits.forEach(au => fillAudioDefaults(au))
+  }
 }
 
 function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
-    return function (...args) {
-        logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
-        return fn.apply(this, args);
-    }
+  return function (...args) {
+    logInfo(`Invoking ${getGlobalVarName()}.${name}`, args);
+    return fn.apply(this, args);
+  }
 }
 
 export function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS[N], log = true) {
-    getGlobal()[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
+  getGlobal()[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
 }
 
 /// ///////////////////////////////
@@ -386,48 +444,49 @@ export function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS
 /// ///////////////////////////////
 
 declare module './prebidGlobal' {
-    interface PrebidJS {
-        /**
-         * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
-         */
-        triggerUserSyncs: typeof triggerUserSyncs;
-        getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
-        getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
-        getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
-        getAdserverTargeting: typeof getAdserverTargeting;
-        getConsentMetadata: typeof getConsentMetadata;
-        getNoBids: typeof getNoBids;
-        getNoBidsForAdUnitCode: typeof getNoBidsForAdUnitCode;
-        getBidResponses: typeof getBidResponses;
-        getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
-        setTargetingForGPTAsync: typeof setTargetingForGPTAsync;
-        setTargetingForAst: typeof setTargetingForAst;
-        renderAd: typeof renderAd;
-        removeAdUnit: typeof removeAdUnit;
-        requestBids: RequestBids;
-        addAdUnits: typeof addAdUnits;
-        onEvent: typeof onEvent;
-        offEvent: typeof offEvent;
-        getEvents: typeof getEvents;
-        registerBidAdapter: typeof registerBidAdapter;
-        registerAnalyticsAdapter: typeof adapterManager.registerAnalyticsAdapter;
-        enableAnalytics: typeof adapterManager.enableAnalytics;
-        aliasBidder: typeof aliasBidder;
-        aliasRegistry: typeof adapterManager.aliasRegistry;
-        getAllWinningBids: typeof getAllWinningBids;
-        getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
-        getHighestCpmBids: typeof getHighestCpmBids;
-        clearAllAuctions: typeof clearAllAuctions;
-        markWinningBidAsUsed: typeof markWinningBidAsUsed;
-        getConfig: typeof config.getConfig;
-        readConfig: typeof config.readConfig;
-        mergeConfig: typeof config.mergeConfig;
-        mergeBidderConfig: typeof config.mergeBidderConfig;
-        setConfig: typeof config.setConfig;
-        setBidderConfig: typeof config.setBidderConfig;
-        processQueue: typeof processQueue;
-        triggerBilling: typeof triggerBilling;
-    }
+  interface PrebidJS {
+    /**
+     * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
+     */
+    triggerUserSyncs: typeof triggerUserSyncs;
+    getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
+    getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
+    getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
+    getAdserverTargeting: typeof getAdserverTargeting;
+    getConsentMetadata: typeof getConsentMetadata;
+    getNoBids: typeof getNoBids;
+    getNoBidsForAdUnitCode: typeof getNoBidsForAdUnitCode;
+    getBidResponses: typeof getBidResponses;
+    getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
+    setTargetingForGPTAsync: typeof setTargetingForGPTAsync;
+    setTargetingForAst: typeof setTargetingForAst;
+    renderAd: typeof renderAd;
+    removeAdUnit: typeof removeAdUnit;
+    requestBids: RequestBids;
+    addAdUnits: typeof addAdUnits;
+    onEvent: typeof onEvent;
+    offEvent: typeof offEvent;
+    getEvents: typeof getEvents;
+    registerBidAdapter: typeof registerBidAdapter;
+    registerAnalyticsAdapter: typeof adapterManager.registerAnalyticsAdapter;
+    enableAnalytics: typeof adapterManager.enableAnalytics;
+    aliasBidder: typeof aliasBidder;
+    aliasRegistry: typeof adapterManager.aliasRegistry;
+    getAllWinningBids: typeof getAllWinningBids;
+    getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
+    getHighestCpmBids: typeof getHighestCpmBids;
+    clearAllAuctions: typeof clearAllAuctions;
+    markWinningBidAsUsed: typeof markWinningBidAsUsed;
+    getConfig: typeof config.getConfig;
+    readConfig: typeof config.readConfig;
+    mergeConfig: typeof config.mergeConfig;
+    mergeBidderConfig: typeof config.mergeBidderConfig;
+    setConfig: typeof config.setConfig;
+    setBidderConfig: typeof config.setBidderConfig;
+    processQueue: typeof processQueue;
+    triggerBilling: typeof triggerBilling;
+    refreshPageViewId: typeof refreshPageViewId;
+  }
 }
 
 // Allow publishers who enable user sync override to trigger their sync
@@ -439,12 +498,12 @@ addApiMethod('triggerUserSyncs', triggerUserSyncs);
  * @param adUnitCode ad unit code to target
  */
 function getAdserverTargetingForAdUnitCodeStr(adUnitCode: AdUnitCode): string {
-    if (adUnitCode) {
-        const res = getAdserverTargetingForAdUnitCode(adUnitCode);
-        return transformAdServerTargetingObj(res);
-    } else {
-        logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
-    }
+  if (adUnitCode) {
+    const res = getAdserverTargetingForAdUnitCode(adUnitCode);
+    return transformAdServerTargetingObj(res);
+  } else {
+    logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
+  }
 }
 addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUnitCodeStr);
 
@@ -453,14 +512,14 @@ addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUn
  * @param adUnitCode
  */
 function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: AdUnitCode): Bid {
-    if (adUnitCode) {
-        const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
-            .filter(isBidUsable)
+  if (adUnitCode) {
+    const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
+      .filter(isBidUsable)
 
-        return bid.length ? bid.reduce(getHighestCpm) : null
-    } else {
-        logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
-    }
+    return bid.length ? bid.reduce(getHighestCpm) : null
+  } else {
+    logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
+  }
 }
 addApiMethod('getHighestUnusedBidResponseForAdUnitCode', getHighestUnusedBidResponseForAdUnitCode);
 
@@ -483,18 +542,18 @@ function getAdserverTargeting(adUnitCode?: AdUnitCode | AdUnitCode[]) {
 addApiMethod('getAdserverTargeting', getAdserverTargeting);
 
 function getConsentMetadata() {
-    return allConsent.getConsentMeta()
+  return allConsent.getConsentMeta()
 }
 addApiMethod('getConsentMetadata', getConsentMetadata);
 
 type WrapsInBids<T> = T[] & {
-    bids: T[]
+  bids: T[]
 }
 
 function wrapInBids(arr) {
-    arr = arr.slice();
-    arr.bids = arr;
-    return arr;
+  arr = arr.slice();
+  arr.bids = arr;
+  return arr;
 }
 
 function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
@@ -521,7 +580,7 @@ function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
  * @returns the bids requests involved in an auction but not bid on
  */
 function getNoBids() {
-    return getBids<BidRequest<BidderCode>>('getNoBids');
+  return getBids<BidRequest<BidderCode>>('getNoBids');
 }
 addApiMethod('getNoBids', getNoBids);
 
@@ -529,8 +588,8 @@ addApiMethod('getNoBids', getNoBids);
  * @returns the bids requests involved in an auction but not bid on or the specified adUnitCode
  */
 function getNoBidsForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<BidRequest<BidderCode>> {
-    const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
-    return wrapInBids(bids);
+  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+  return wrapInBids(bids);
 }
 addApiMethod('getNoBidsForAdUnitCode', getNoBidsForAdUnitCode);
 
@@ -538,7 +597,7 @@ addApiMethod('getNoBidsForAdUnitCode', getNoBidsForAdUnitCode);
  * @return a map from ad unit code to all bids received for that ad unit code.
  */
 function getBidResponses() {
-    return getBids<Bid>('getBidsReceived');
+  return getBids<Bid>('getBidsReceived');
 }
 addApiMethod('getBidResponses', getBidResponses);
 
@@ -547,8 +606,8 @@ addApiMethod('getBidResponses', getBidResponses);
  * @param adUnitCode ad unit code
  */
 function getBidResponsesForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<Bid> {
-    const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-    return wrapInBids(bids);
+  const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
+  return wrapInBids(bids);
 }
 addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode);
 
@@ -558,11 +617,11 @@ addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode);
  * @param customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
  */
 function setTargetingForGPTAsync(adUnit?: AdUnitCode | AdUnitCode[], customSlotMatching?: SlotMatchingFn) {
-    if (!isGptPubadsDefined()) {
-        logError('window.googletag is not defined on the page');
-        return;
-    }
-    targeting.setTargetingForGPT(adUnit, customSlotMatching);
+  if (!isGptPubadsDefined()) {
+    logError('window.googletag is not defined on the page');
+    return;
+  }
+  targeting.setTargetingForGPT(adUnit, customSlotMatching);
 }
 addApiMethod('setTargetingForGPTAsync', setTargetingForGPTAsync);
 
@@ -583,10 +642,10 @@ function setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
 addApiMethod('setTargetingForAst', setTargetingForAst);
 
 type RenderAdOptions = {
-    /**
-     * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
-     */
-    clickThrough?: string;
+  /**
+   * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
+   */
+  clickThrough?: string;
 }
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
@@ -596,8 +655,8 @@ type RenderAdOptions = {
  * @param options
  */
 async function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
-    await pbYield();
-    renderAdDirect(doc, id, options);
+  await pbYield();
+  renderAdDirect(doc, id, options);
 }
 addApiMethod('renderAd', renderAd);
 
@@ -607,114 +666,114 @@ addApiMethod('renderAd', renderAd);
  * @alias module:pbjs.removeAdUnit
  */
 function removeAdUnit(adUnitCode?: AdUnitCode) {
-    if (!adUnitCode) {
-        pbjsInstance.adUnits = [];
-        return;
+  if (!adUnitCode) {
+    pbjsInstance.adUnits = [];
+    return;
+  }
+
+  let adUnitCodes;
+
+  if (isArray(adUnitCode)) {
+    adUnitCodes = adUnitCode;
+  } else {
+    adUnitCodes = [adUnitCode];
+  }
+
+  adUnitCodes.forEach((adUnitCode) => {
+    for (let i = pbjsInstance.adUnits.length - 1; i >= 0; i--) {
+      if (pbjsInstance.adUnits[i].code === adUnitCode) {
+        pbjsInstance.adUnits.splice(i, 1);
+      }
     }
-
-    let adUnitCodes;
-
-    if (isArray(adUnitCode)) {
-        adUnitCodes = adUnitCode;
-    } else {
-        adUnitCodes = [adUnitCode];
-    }
-
-    adUnitCodes.forEach((adUnitCode) => {
-        for (let i = pbjsInstance.adUnits.length - 1; i >= 0; i--) {
-            if (pbjsInstance.adUnits[i].code === adUnitCode) {
-                pbjsInstance.adUnits.splice(i, 1);
-            }
-        }
-    });
+  });
 }
 addApiMethod('removeAdUnit', removeAdUnit);
 
 export type RequestBidsOptions = {
-    /**
-     * Callback to execute when all the bid responses are back or the timeout hits. Parameters may be undefined
-     * in situations where the auction is canceled prematurely (e.g. CMP errors)
-     */
-    bidsBackHandler?: (bids?: RequestBidsResult['bids'], timedOut?: RequestBidsResult['timedOut'], auctionId?: RequestBidsResult['auctionId']) => void;
-    /**
-     * TTL buffer override for this auction.
-     */
-    ttlBuffer?: number;
-    /**
-     * Timeout for requesting the bids specified in milliseconds
-     */
-    timeout?: number;
-    /**
-     * AdUnit definitions to request. Use this or adUnitCodes. Default to all adUnits if empty.
-     */
-    adUnits?: AdUnitDefinition[];
-    /**
-     * adUnit codes to request. Use this or adUnits. Default to all adUnits if empty.
-     */
-    adUnitCodes?: AdUnitCode[];
-    /**
-     * Defines labels that may be matched on ad unit targeting conditions.
-     */
-    labels?: string[];
-    /**
-     * Defines an auction ID to be used rather than having Prebid generate one.
-     * This can be useful if there are multiple wrappers on a page and a single auction ID
-     * is desired to tie them together in analytics.
-     */
-    auctionId?: string;
-    /**
-     * Additional first-party data to use for this auction only
-     */
-    ortb2?: DeepPartial<ORTBRequest>;
+  /**
+   * Callback to execute when all the bid responses are back or the timeout hits. Parameters may be undefined
+   * in situations where the auction is canceled prematurely (e.g. CMP errors)
+   */
+  bidsBackHandler?: (bids?: RequestBidsResult['bids'], timedOut?: RequestBidsResult['timedOut'], auctionId?: RequestBidsResult['auctionId']) => void;
+  /**
+   * TTL buffer override for this auction.
+   */
+  ttlBuffer?: number;
+  /**
+   * Timeout for requesting the bids specified in milliseconds
+   */
+  timeout?: number;
+  /**
+   * AdUnit definitions to request. Use this or adUnitCodes. Default to all adUnits if empty.
+   */
+  adUnits?: AdUnitDefinition[];
+  /**
+   * adUnit codes to request. Use this or adUnits. Default to all adUnits if empty.
+   */
+  adUnitCodes?: AdUnitCode[];
+  /**
+   * Defines labels that may be matched on ad unit targeting conditions.
+   */
+  labels?: string[];
+  /**
+   * Defines an auction ID to be used rather than having Prebid generate one.
+   * This can be useful if there are multiple wrappers on a page and a single auction ID
+   * is desired to tie them together in analytics.
+   */
+  auctionId?: string;
+  /**
+   * Additional first-party data to use for this auction only
+   */
+  ortb2?: DeepPartial<ORTBRequest>;
 }
 
 type RequestBidsResult = {
-    /**
-     * Bids received, grouped by ad unit.
-     */
-    bids?: ByAdUnit<WrapsInBids<Bid>>;
-    /**
-     * True if any bidder timed out.
-     */
-    timedOut?: boolean;
-    /**
-     * The auction's ID
-     */
-    auctionId?: Identifier;
+  /**
+   * Bids received, grouped by ad unit.
+   */
+  bids?: ByAdUnit<WrapsInBids<Bid>>;
+  /**
+   * True if any bidder timed out.
+   */
+  timedOut?: boolean;
+  /**
+   * The auction's ID
+   */
+  auctionId?: Identifier;
 }
 
 export type PrivRequestBidsOptions = RequestBidsOptions & {
-    defer: Defer<RequestBidsResult>;
-    metrics: Metrics;
-    /**
-     * Ad units are always defined and fixed here (as opposed to the public API where we may fall back to
-     * the global array).
-     */
-    adUnits: AdUnitDefinition[];
+  defer: Defer<RequestBidsResult>;
+  metrics: Metrics;
+  /**
+   * Ad units are always defined and fixed here (as opposed to the public API where we may fall back to
+   * the global array).
+   */
+  adUnits: AdUnitDefinition[];
 }
 
 export type StartAuctionOptions = Omit<PrivRequestBidsOptions, 'ortb2'> & {
-    ortb2Fragments: ORTBFragments
+  ortb2Fragments: ORTBFragments
 }
 
 declare module './hook' {
-    interface NamedHooks {
-        requestBids: typeof requestBids;
-        startAuction: typeof startAuction;
-    }
+  interface NamedHooks {
+    requestBids: typeof requestBids;
+    startAuction: typeof startAuction;
+  }
 }
 
 interface RequestBids {
-    (options?: RequestBidsOptions): Promise<RequestBidsResult>;
+  (options?: RequestBidsOptions): Promise<RequestBidsResult>;
 }
 
 declare module './events' {
-    interface Events {
-        /**
-         * Fired when `requestBids` is called.
-         */
-        [REQUEST_BIDS]: [];
-    }
+  interface Events {
+    /**
+     * Fired when `requestBids` is called.
+     */
+    [REQUEST_BIDS]: [];
+  }
 }
 
 export const requestBids = (function() {
@@ -727,7 +786,7 @@ export const requestBids = (function() {
     }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
-        adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
+      adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
     } else {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
@@ -745,7 +804,7 @@ export const requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
+  return wrapHook(delegate, logInvocation('requestBids', delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
@@ -761,10 +820,10 @@ export const requestBids = (function() {
     req.defer = defer({ promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
-  }));
+  })));
 })();
 
-addApiMethod('requestBids', requestBids as unknown as RequestBids);
+addApiMethod('requestBids', requestBids as unknown as RequestBids, false);
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
@@ -794,7 +853,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
     // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder).filter(Boolean);
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
@@ -835,7 +894,6 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         tids[au.code] = tid;
       }
       au.transactionId = tid;
-      deepSetValue(au, 'ortb2Imp.ext.tid', tid);
     });
     const auction = auctionManager.createAuction({
       adUnits,
@@ -875,41 +933,41 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
 requestBids.before(executeCallbacks, 49);
 
 declare module './events' {
-    interface Events {
-        /**
-         * Fired when `.addAdUniuts` is called.
-         */
-        [ADD_AD_UNITS]: [];
-    }
+  interface Events {
+    /**
+     * Fired when `.addAdUniuts` is called.
+     */
+    [ADD_AD_UNITS]: [];
+  }
 }
 /**
  * Add ad unit(s)
  * @param adUnits
  */
 function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
-    pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]))
-    events.emit(ADD_AD_UNITS);
+  pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]))
+  events.emit(ADD_AD_UNITS);
 }
 
 addApiMethod('addAdUnits', addAdUnits);
 
 const eventIdValidators = {
-    bidWon(id) {
-        const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
-            .reduce(flatten)
-            .filter(uniques);
+  bidWon(id) {
+    const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
+      .reduce(flatten)
+      .filter(uniques);
 
-        if (!adUnitCodes.includes(id)) {
-            logError('The "' + id + '" placement is not defined.');
-            return;
-        }
-
-        return true;
+    if (!adUnitCodes.includes(id)) {
+      logError('The "' + id + '" placement is not defined.');
+      return;
     }
+
+    return true;
+  }
 };
 
 function validateEventId(event, id) {
-    return eventIdValidators.hasOwnProperty(event) && eventIdValidators[event](id);
+  return eventIdValidators.hasOwnProperty(event) && eventIdValidators[event](id);
 }
 
 /**
@@ -928,17 +986,17 @@ function validateEventId(event, id) {
  * Currently `bidWon` is the only event that accepts an `id` parameter.
  */
 function onEvent<E extends Event>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
-    if (!isFn(handler)) {
-        logError('The event handler provided is not a function and was not set on event "' + event + '".');
-        return;
-    }
+  if (!isFn(handler)) {
+    logError('The event handler provided is not a function and was not set on event "' + event + '".');
+    return;
+  }
 
-    if (id && !validateEventId(event, id)) {
-        logError('The id provided is not valid for event "' + event + '" and no handler was set.');
-        return;
-    }
+  if (id && !validateEventId(event, id)) {
+    logError('The id provided is not valid for event "' + event + '" and no handler was set.');
+    return;
+  }
 
-    events.on(event, handler, id);
+  events.on(event, handler, id);
 }
 addApiMethod('onEvent', onEvent);
 
@@ -948,10 +1006,10 @@ addApiMethod('onEvent', onEvent);
  * @param id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
  */
 function offEvent<E extends Event>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
-    if (id && !validateEventId(event, id)) {
-        return;
-    }
-    events.off(event, handler, id);
+  if (id && !validateEventId(event, id)) {
+    return;
+  }
+  events.off(event, handler, id);
 }
 addApiMethod('offEvent', offEvent);
 
@@ -959,28 +1017,28 @@ addApiMethod('offEvent', offEvent);
  * Return a copy of all events emitted
  */
 function getEvents() {
-    return events.getEvents();
+  return events.getEvents();
 }
 addApiMethod('getEvents', getEvents);
 
 function registerBidAdapter(adapter: BidAdapter, bidderCode: BidderCode): void;
 function registerBidAdapter<B extends BidderCode>(adapter: void, bidderCode: B, spec: BidderSpec<B>): void;
 function registerBidAdapter(bidderAdaptor, bidderCode, spec?) {
-    try {
-        const bidder = spec ? newBidder(spec) : bidderAdaptor();
-        adapterManager.registerBidAdapter(bidder, bidderCode);
-    } catch (e) {
-        logError('Error registering bidder adapter : ' + e.message);
-    }
+  try {
+    const bidder = spec ? newBidder(spec) : bidderAdaptor();
+    adapterManager.registerBidAdapter(bidder, bidderCode);
+  } catch (e) {
+    logError('Error registering bidder adapter : ' + e.message);
+  }
 }
 addApiMethod('registerBidAdapter', registerBidAdapter);
 
 function registerAnalyticsAdapter(options) {
-    try {
-        adapterManager.registerAnalyticsAdapter(options);
-    } catch (e) {
-        logError('Error registering analytics adapter : ' + e.message);
-    }
+  try {
+    adapterManager.registerAnalyticsAdapter(options);
+  } catch (e) {
+    logError('Error registering analytics adapter : ' + e.message);
+  }
 }
 addApiMethod('registerAnalyticsAdapter', registerAnalyticsAdapter);
 
@@ -990,12 +1048,12 @@ const enableAnalyticsCb = hook('async', function (config) {
   if (config && !isEmpty(config)) {
     adapterManager.enableAnalytics(config);
   } else {
-    logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
+    logError(`${getGlobalVarName()}.enableAnalytics should be called with option {}`);
   }
 }, 'enableAnalyticsCb');
 
 function enableAnalytics(config) {
-    enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
+  enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
 }
 addApiMethod('enableAnalytics', enableAnalytics);
 
@@ -1003,11 +1061,11 @@ addApiMethod('enableAnalytics', enableAnalytics);
  * Define an alias for a bid adapter.
  */
 function aliasBidder(bidderCode: BidderCode, alias: BidderCode, options?: AliasBidderOptions) {
-    if (bidderCode && alias) {
-        adapterManager.aliasBidAdapter(bidderCode, alias, options);
-    } else {
-        logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
-    }
+  if (bidderCode && alias) {
+    adapterManager.aliasBidAdapter(bidderCode, alias, options);
+  } else {
+    logError('bidderCode and alias must be passed as arguments', `${getGlobalVarName()}.aliasBidder`);
+  }
 }
 addApiMethod('aliasBidder', aliasBidder);
 
@@ -1020,7 +1078,7 @@ config.getConfig('aliasRegistry', config => {
  * @return All bids that have been rendered. Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
  */
 function getAllWinningBids(): Bid[] {
-    return auctionManager.getAllWinningBids();
+  return auctionManager.getAllWinningBids();
 }
 
 addApiMethod('getAllWinningBids', getAllWinningBids)
@@ -1029,9 +1087,9 @@ addApiMethod('getAllWinningBids', getAllWinningBids)
  * @return Bids that have won their respective auctions but have not been rendered yet.
  */
 function getAllPrebidWinningBids(): Bid[] {
-    logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
-    return auctionManager.getBidsReceived()
-        .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
+  logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
+  return auctionManager.getBidsReceived()
+    .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 }
 
 addApiMethod('getAllPrebidWinningBids', getAllPrebidWinningBids);
@@ -1041,7 +1099,7 @@ addApiMethod('getAllPrebidWinningBids', getAllPrebidWinningBids);
  * @param adUnitCode - ad unit code
  */
 function getHighestCpmBids(adUnitCode?: string): Bid[] {
-    return targeting.getWinningBids(adUnitCode);
+  return targeting.getWinningBids(adUnitCode);
 }
 
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
@@ -1050,58 +1108,58 @@ addApiMethod('getHighestCpmBids', getHighestCpmBids);
  * Clear all auctions (and their bids) from the bid cache.
  */
 function clearAllAuctions() {
-    auctionManager.clearAllAuctions();
+  auctionManager.clearAllAuctions();
 }
 addApiMethod('clearAllAuctions', clearAllAuctions);
 
 type MarkWinningBidAsUsedOptions = ({
-    /**
-     * The id representing the ad we want to mark
-     */
-    adId: string;
-    adUnitCode?: undefined | null
+  /**
+   * The id representing the ad we want to mark
+   */
+  adId: string;
+  adUnitCode?: undefined | null
 } | {
-    /**
-     * The ad unit code
-     */
-    adUnitCode: AdUnitCode;
-    adId?: undefined | null;
+  /**
+   * The ad unit code
+   */
+  adUnitCode: AdUnitCode;
+  adId?: undefined | null;
 
 }) & {
-    /**
-     * If true, fires tracking pixels and BID_WON handlers
-     */
-    events?: boolean;
-    /**
-     * @deprecated - alias of `events`
-     */
-    analytics?: boolean
+  /**
+   * If true, fires tracking pixels and BID_WON handlers
+   */
+  events?: boolean;
+  /**
+   * @deprecated - alias of `events`
+   */
+  analytics?: boolean
 }
 
 /**
  * Mark the winning bid as used, should only be used in conjunction with video
  */
 function markWinningBidAsUsed({adId, adUnitCode, analytics = false, events = false}: MarkWinningBidAsUsedOptions) {
-    let bids;
-    if (adUnitCode && adId == null) {
-        bids = targeting.getWinningBids(adUnitCode);
-    } else if (adId) {
-        bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+  let bids;
+  if (adUnitCode && adId == null) {
+    bids = targeting.getWinningBids(adUnitCode);
+  } else if (adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+  } else {
+    logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+  }
+  if (bids.length > 0) {
+    if (analytics || events) {
+      markWinningBid(bids[0]);
     } else {
-        logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+      auctionManager.addWinningBid(bids[0]);
     }
-    if (bids.length > 0) {
-        if (analytics || events) {
-            markWinningBid(bids[0]);
-        } else {
-            auctionManager.addWinningBid(bids[0]);
-        }
-        markBidAsRendered(bids[0])
-    }
+    markBidAsRendered(bids[0])
+  }
 }
 
 if (FEATURES.VIDEO) {
-    addApiMethod('markWinningBidAsUsed', markWinningBidAsUsed);
+  addApiMethod('markWinningBidAsUsed', markWinningBidAsUsed);
 }
 
 addApiMethod('getConfig', config.getAnyConfig);
@@ -1112,6 +1170,14 @@ addApiMethod('setConfig', config.setConfig);
 addApiMethod('setBidderConfig', config.setBidderConfig);
 
 pbjsInstance.que.push(() => listenMessagesFromCreative());
+
+let queSetupComplete;
+
+export function resetQueSetup() {
+  queSetupComplete = defer<void>();
+}
+
+resetQueSetup();
 
 /**
  * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
@@ -1134,15 +1200,17 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  * @alias module:pbjs.que.push
  */
 function quePush(command) {
-  if (typeof command === 'function') {
-    try {
-      command.call();
-    } catch (e) {
-      logError('Error processing command :', e.message, e.stack);
+  queSetupComplete.promise.then(() => {
+    if (typeof command === 'function') {
+      try {
+        command.call();
+      } catch (e) {
+        logError('Error processing command :', e.message, e.stack);
+      }
+    } else {
+      logError(`Commands written into ${getGlobalVarName()}.cmd.push must be wrapped in a function`);
     }
-  } else {
-    logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
-  }
+  })
 }
 
 async function _processQueue(queue) {
@@ -1165,11 +1233,15 @@ async function _processQueue(queue) {
  * should call this after loading all modules and before using other APIs.
  */
 const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, async function () {
-    pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
-    insertLocatorFrame();
-    hook.ready();
+  pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
+  insertLocatorFrame();
+  hook.ready();
+  try {
     await _processQueue(pbjsInstance.que);
     await _processQueue(pbjsInstance.cmd);
+  } finally {
+    queSetupComplete.resolve();
+  }
 })
 addApiMethod('processQueue', processQueue, false);
 
@@ -1178,16 +1250,27 @@ addApiMethod('processQueue', processQueue, false);
  * Used in conjunction with `adUnit.deferBilling`.
  */
 function triggerBilling({adId, adUnitCode}: {
-    adId?: string;
-    adUnitCode?: AdUnitCode
+  adId?: string;
+  adUnitCode?: AdUnitCode
 }) {
-    auctionManager.getAllWinningBids()
-        .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
-        .forEach((bid) => {
-            adapterManager.triggerBilling(bid);
-            renderIfDeferred(bid);
-        });
+  auctionManager.getAllWinningBids()
+    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+    .forEach((bid) => {
+      adapterManager.triggerBilling(bid);
+      renderIfDeferred(bid);
+    });
 }
 addApiMethod('triggerBilling', triggerBilling);
+
+/**
+ * Refreshes the previously generated page view ID. Can be used to instruct bidders
+ * that use page view ID to consider future auctions as part of a new page load.
+ */
+function refreshPageViewId() {
+  for (const key of pbjsInstance.pageViewIdPerBidder.keys()) {
+    pbjsInstance.pageViewIdPerBidder.set(key, generateUUID());
+  }
+}
+addApiMethod('refreshPageViewId', refreshPageViewId);
 
 export default pbjsInstance;

@@ -73,17 +73,17 @@ const setEventsListeners = (function () {
 })();
 
 type RealTimeDataConfig = {
-    dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
-    /**
-     * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
-     */
-    auctionDelay?: number;
+  dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
+  /**
+   * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
+   */
+  auctionDelay?: number;
 }
 
 declare module '../../src/config' {
-    interface Config {
-        [MODULE_NAME]?: RealTimeDataConfig;
-    }
+  interface Config {
+    [MODULE_NAME]?: RealTimeDataConfig;
+  }
 }
 
 export function init(config) {
@@ -156,7 +156,6 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
-  const verifiers = [];
 
   if (!relevantSubModules.length) {
     return exitHook();
@@ -167,9 +166,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
 
   relevantSubModules.forEach(sm => {
     const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
-    verifiers.push(fpdGuard.verify);
-    reqBidsConfigObj.ortb2Fragments = fpdGuard.obj;
-    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    sm.getBidRequestData({...reqBidsConfigObj, ortb2Fragments: fpdGuard}, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
   function onGetBidRequestDataCallback() {
@@ -190,7 +187,6 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
     isDone = true;
     clearTimeout(waitTimeout);
-    verifiers.forEach(fn => fn());
     fn.call(this, reqBidsConfigObj);
   }
 });

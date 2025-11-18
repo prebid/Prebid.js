@@ -2,8 +2,9 @@ import {expect} from 'chai';
 import { spec, storage } from 'modules/mgidBidAdapter.js';
 import { version } from 'package.json';
 import * as utils from '../../../src/utils.js';
-import {USERSYNC_DEFAULT_CONFIG} from '../../../src/userSync';
-import {config} from '../../../src/config';
+import { getDNT } from 'libraries/dnt/index.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../../../src/userSync.js';
+import {config} from '../../../src/config.js';
 
 describe('Mgid bid adapter', function () {
   let sandbox;
@@ -22,7 +23,7 @@ describe('Mgid bid adapter', function () {
   });
   const screenHeight = screen.height;
   const screenWidth = screen.width;
-  const dnt = (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0;
+  const dnt = getDNT() ? 1 : 0;
   const language = navigator.language ? 'language' : 'userLanguage';
   let lang = navigator[language].split('-')[0];
   if (lang.length !== 2 && lang.length !== 3) {

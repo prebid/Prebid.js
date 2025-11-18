@@ -22,9 +22,6 @@ const SOURCE_FOLDERS = [
   'test',
   'public'
 ]
-const IGNORE_SOURCES = [
-  'libraries/creative-renderer-*/**/*',
-]
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -43,9 +40,6 @@ module.exports = {
   },
   getSourcePatterns() {
     return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`])
-  },
-  getIgnoreSources() {
-    return IGNORE_SOURCES
   },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
@@ -141,6 +135,14 @@ module.exports = {
     return path.resolve(filePath ? path.join(PRECOMPILED_PATH, filePath) : PRECOMPILED_PATH)
   },
 
+  getCreativeRendererPath(renderer) {
+    let path = 'creative-renderers';
+    if (renderer != null) {
+      path = `${path}/${renderer}.js`;
+    }
+    return this.getPrecompiledPath(path);
+  },
+
   getBuiltModules: function(dev, externalModules) {
     var modules = this.getModuleNames(externalModules);
     if (Array.isArray(externalModules)) {
@@ -219,6 +221,10 @@ module.exports = {
       disabled.push('GREEDY');
     }
     return disabled.filter(feature => !enabled.includes(feature));
+  },
+  getTestDisableFeatures() {
+    // test with all features disabled with exceptions for logging, as tests often assert logs
+    return require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR')
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});

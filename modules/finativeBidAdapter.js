@@ -157,7 +157,7 @@ export const spec = {
 
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = (typeof seatbid != 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+    const bidResponses = (typeof seatbid !== 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
       result[bid.impid - 1] = bid;
       return result;
     }, []) : [];
@@ -181,6 +181,7 @@ export const spec = {
             }
           };
         }
+        return undefined;
       })
       .filter(Boolean);
   }

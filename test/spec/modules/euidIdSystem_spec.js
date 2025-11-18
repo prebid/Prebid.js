@@ -49,7 +49,7 @@ const expectOptout = (bid) => expect(findEuid(bid)).to.be.undefined;
 const expectNoIdentity = (bid) => expect(findEuid(bid)).to.be.undefined;
 
 describe('EUID module', function() {
-  let suiteSandbox, restoreSubtleToUndefined = false;
+  let suiteSandbox; let restoreSubtleToUndefined = false;
 
   const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   const configureEuidCstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));

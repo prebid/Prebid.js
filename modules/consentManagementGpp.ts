@@ -11,36 +11,40 @@ import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
 import {PbPromise, defer} from '../src/utils/promise.js';
 import {type CMConfig, configParser} from '../libraries/consentManagement/cmUtils.js';
+import {createCmpEventManager, type CmpEventManager} from '../libraries/cmp/cmpEventUtils.js';
 import {CONSENT_GPP} from "../src/consentHandler.ts";
 
 export let consentConfig = {} as any;
 
+// CMP event manager instance for GPP
+let gppCmpEventManager: CmpEventManager | null = null;
+
 type RelevantCMPData = {
-    applicableSections: number[]
-    gppString: string;
-    parsedSections: Record<string, unknown>
+  applicableSections: number[]
+  gppString: string;
+  parsedSections: Record<string, unknown>
 }
 
 type CMPData = RelevantCMPData & { [key: string]: unknown };
 
 export type GPPConsentData = RelevantCMPData & {
-    gppData: CMPData;
+  gppData: CMPData;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GPPConfig {
-    // this is here to be extended by the control modules
+  // this is here to be extended by the control modules
 }
 
 export type GPPCMConfig = GPPConfig & CMConfig<RelevantCMPData>;
 
 declare module '../src/consentHandler' {
-    interface ConsentData {
-        [CONSENT_GPP]: GPPConsentData;
-    }
-    interface ConsentManagementConfig {
-        [CONSENT_GPP]?: GPPCMConfig;
-    }
+  interface ConsentData {
+    [CONSENT_GPP]: GPPConsentData;
+  }
+  interface ConsentManagementConfig {
+    [CONSENT_GPP]?: GPPCMConfig;
+  }
 }
 
 class GPPError {
@@ -101,6 +105,13 @@ export class GPPClient {
         logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
       }
       this.initialized = true;
+
+      // Initialize CMP event manager and set CMP API
+      if (!gppCmpEventManager) {
+        gppCmpEventManager = createCmpEventManager('gpp');
+      }
+      gppCmpEventManager.setCmpApi(this.cmp);
+
       this.cmp({
         command: 'addEventListener',
         callback: (event, success) => {
@@ -119,6 +130,10 @@ export class GPPClient {
           // to decide if consent data is likely to change
           if (gppDataHandler.getConsentData() != null && event?.pingData != null && !this.isCMPReady(event.pingData)) {
             gppDataHandler.setConsentData(null);
+          }
+
+          if (event?.listenerId !== null && event?.listenerId !== undefined) {
+            gppCmpEventManager?.setCmpListenerId(event?.listenerId);
           }
         }
       });
@@ -218,13 +233,23 @@ export function resetConsentData() {
   GPPClient.INST = null;
 }
 
+export function removeCmpListener() {
+  // Clean up CMP event listeners before resetting
+  if (gppCmpEventManager) {
+    gppCmpEventManager.removeCmpEventListener();
+    gppCmpEventManager = null;
+  }
+  resetConsentData();
+}
+
 const parseConfig = configParser({
   namespace: 'gpp',
   displayName: 'GPP',
   consentDataHandler: gppDataHandler,
   parseConsentData,
   getNullConsent: () => toConsentData(null),
-  cmpHandlers: cmpCallMap
+  cmpHandlers: cmpCallMap,
+  cmpEventCleanup: removeCmpListener
 });
 
 export function setConsentConfig(config) {

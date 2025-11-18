@@ -1,12 +1,12 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue, getBidIdParameter,
-  getDNT,
   getWindowTop,
   isEmpty,
   logError
@@ -94,7 +94,7 @@ export const spec = {
    * @param {Array} requests
    * @return {Array} An array of bids which were nested inside the server.
    */
- interpretResponse: function (bidderResponse, requests) {
+  interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
     if (isEmpty(res)) {
@@ -167,7 +167,7 @@ function getUrlInfo(refererInfo) {
   if (!canonicalLink) {
     const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }

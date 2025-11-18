@@ -51,64 +51,64 @@ function wrapURI(uri: string, impTrackerURLs: string | string[]) {
 }
 
 declare module './bidfactory' {
-    interface VideoBidResponseProperties {
-        /**
-         *  VAST impression trackers to attach to this bid.
-         */
-        vastImpUrl?: string | string []
-        /**
-         * Cache key to use for caching this bid's VAST.
-         */
-        customCacheKey?: string
-    }
-    interface VideoBidProperties {
-        /**
-         * The cache key that was used for this bid.
-         */
-        videoCacheKey?: string;
-    }
+  interface VideoBidResponseProperties {
+    /**
+     *  VAST impression trackers to attach to this bid.
+     */
+    vastImpUrl?: string | string []
+    /**
+     * Cache key to use for caching this bid's VAST.
+     */
+    customCacheKey?: string
+  }
+  interface VideoBidProperties {
+    /**
+     * The cache key that was used for this bid.
+     */
+    videoCacheKey?: string;
+  }
 }
 
 export interface CacheConfig {
-    /**
-     * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
-     */
-    url: string;
-    /**
-     * Flag determining whether to locally save VAST XML as a blob
-     */
-    useLocal?: boolean;
-    /**
-     * Timeout (in milliseconds) for network requests to the cache
-     */
-    timeout?: number;
-    /**
-     * Passes additional data to the url, used for additional event tracking data. Defaults to false.
-     */
-    vasttrack?: boolean;
-    /**
-     * If the bidder supplied their own cache key, setting this value to true adds a VAST wrapper around that URL,
-     * stores it in the cache defined by the url parameter, and replaces the original video cache key with the new one.
-     * This can dramatically simplify ad server setup because it means all VAST creatives reside behind a single URL.
-     * The tradeoff: this approach requires the video player to unwrap one extra level of VAST. Defaults to false.
-     */
-    ignoreBidderCacheKey?: boolean;
-    /**
-     * Enables video cache requests to be batched by a specified amount (defaults to 1) instead of making a single request per each video.
-     */
-    batchSize?: number;
-    /**
-     * Used in conjunction with batchSize, batchTimeout specifies how long to wait in milliseconds before sending
-     * a batch video cache request based on the value for batchSize (if present). A batch request will be made whether
-     * the batchSize amount was reached or the batchTimeout timer runs out. batchTimeout defaults to 0.
-     */
-    batchTimeout?: number;
+  /**
+   * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
+   */
+  url: string;
+  /**
+   * Flag determining whether to locally save VAST XML as a blob
+   */
+  useLocal?: boolean;
+  /**
+   * Timeout (in milliseconds) for network requests to the cache
+   */
+  timeout?: number;
+  /**
+   * Passes additional data to the url, used for additional event tracking data. Defaults to false.
+   */
+  vasttrack?: boolean;
+  /**
+   * If the bidder supplied their own cache key, setting this value to true adds a VAST wrapper around that URL,
+   * stores it in the cache defined by the url parameter, and replaces the original video cache key with the new one.
+   * This can dramatically simplify ad server setup because it means all VAST creatives reside behind a single URL.
+   * The tradeoff: this approach requires the video player to unwrap one extra level of VAST. Defaults to false.
+   */
+  ignoreBidderCacheKey?: boolean;
+  /**
+   * Enables video cache requests to be batched by a specified amount (defaults to 1) instead of making a single request per each video.
+   */
+  batchSize?: number;
+  /**
+   * Used in conjunction with batchSize, batchTimeout specifies how long to wait in milliseconds before sending
+   * a batch video cache request based on the value for batchSize (if present). A batch request will be made whether
+   * the batchSize amount was reached or the batchTimeout timer runs out. batchTimeout defaults to 0.
+   */
+  batchTimeout?: number;
 }
 
 declare module './config' {
-    interface Config {
-        cache?: CacheConfig;
-    }
+  interface Config {
+    cache?: CacheConfig;
+  }
 }
 /**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
@@ -117,7 +117,7 @@ declare module './config' {
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-const vastValue = getVastXml(bid);
+  const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   const payload: any = {
@@ -144,16 +144,16 @@ const vastValue = getVastXml(bid);
 }
 
 interface VideoCacheStoreCallback {
-    /**
-     * A function which should be called with the results of the storage operation.
-     *
-     * @param error The error, if one occurred.
-     * @param uuids An array of unique IDs. The array will have one element for each bid we were asked
-     *   to store. It may include null elements if some of the bids were malformed, or an error occurred.
-     *   Each non-null element in this array is a valid input into the retrieve function, which will fetch
-     *   some VAST XML which can be used to render this bid's ad.
-     */
-    (error: Error | null, uuids: { uuid: string }[])
+  /**
+   * A function which should be called with the results of the storage operation.
+   *
+   * @param error The error, if one occurred.
+   * @param uuids An array of unique IDs. The array will have one element for each bid we were asked
+   *   to store. It may include null elements if some of the bids were malformed, or an error occurred.
+   *   Each non-null element in this array is a valid input into the retrieve function, which will fetch
+   *   some VAST XML which can be used to render this bid's ad.
+   */
+  (error: Error | null, uuids: { uuid: string }[])
 }
 
 /**
@@ -257,7 +257,7 @@ export function storeBatch(batch) {
 };
 
 let batchSize, batchTimeout, cleanupHandler;
-if (FEATURES.VIDEO) {
+if (FEATURES.VIDEO || FEATURES.AUDIO) {
   config.getConfig('cache', ({cache}) => {
     batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
       ? cache.batchSize

@@ -4,7 +4,7 @@ import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
-import { BID_WON_EVENT, AUCTION_INIT_EVENT, BID_WON_EVENT_UNDEFINED, AUCTION_INIT_EVENT_NOT_LI } from '../../fixtures/liveIntentAuctionEvents';
+import { BID_WON_EVENT, AUCTION_INIT_EVENT, BID_WON_EVENT_UNDEFINED, AUCTION_INIT_EVENT_NOT_LI } from '../../fixtures/liveIntentAuctionEvents.js';
 
 const utils = require('src/utils');
 const refererDetection = require('src/refererDetection');

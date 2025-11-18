@@ -228,11 +228,11 @@ export const detectLanguage = async (text) => {
 };
 
 export const detectSummary = async (text, config) => {
-    const summaryOptions = {
-        type: config.type,
-        format: config.format,
-        length: config.length,
-      };
+  const summaryOptions = {
+    type: config.type,
+    format: config.format,
+    length: config.length,
+  };
   const summarizer = await _createAiApiInstance(Summarizer, summaryOptions);
   if (!summarizer) {
     return null; // Error already logged by _createAiApiInstance

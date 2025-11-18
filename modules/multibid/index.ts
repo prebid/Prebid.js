@@ -22,33 +22,33 @@ let multiConfig = {};
 let multibidUnits = {};
 
 type MultiBidConfig = ({
-    /**
-     * A bidder code.
-     */
-    bidder: BidderCode;
-    bidders?: undefined
+  /**
+   * A bidder code.
+   */
+  bidder: BidderCode;
+  bidders?: undefined
 } | {
-    /**
-     * Multiple bidder codes.
-     */
-    bidders: BidderCode[];
-    bidder?: undefined;
+  /**
+   * Multiple bidder codes.
+   */
+  bidders: BidderCode[];
+  bidder?: undefined;
 }) & {
-    /**
-     * The number of bids the named bidder(s) can supply. Max of 9.
-     */
-    maxBids: number;
-    /**
-     * An alternate (short) bidder code to send to the ad server. A number will be appended, starting from 2, e.g. hb_pb_PREFIX2.
-     * If not provided, the extra bids will not go to the ad server.
-     */
-    targetBiddercodePrefix?: string;
+  /**
+   * The number of bids the named bidder(s) can supply. Max of 9.
+   */
+  maxBids: number;
+  /**
+   * An alternate (short) bidder code to send to the ad server. A number will be appended, starting from 2, e.g. hb_pb_PREFIX2.
+   * If not provided, the extra bids will not go to the ad server.
+   */
+  targetBiddercodePrefix?: string;
 }
 
 declare module '../../src/config' {
-    interface Config {
-        multibid?: MultiBidConfig[];
-    }
+  interface Config {
+    multibid?: MultiBidConfig[];
+  }
 }
 
 // Storing this globally on init for easy reference to configuration
@@ -126,15 +126,15 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
 }
 
 declare module '../../src/bidfactory' {
-    interface BaseBid {
-        // TODO multibid alters bid's `requestId` and `bidderCode`, which is not
-        // necessary if the objective is to just alter targeting.
-        // is it desirable for e.g. analytics to see bogus bidder codes?
-        multibidPrefix?: string;
-        originalBidder?: BaseBid['bidderCode'];
-        originalRequestId?: BaseBid['requestId'];
-        targetingBidder?: string;
-    }
+  interface BaseBid {
+    // TODO multibid alters bid's `requestId` and `bidderCode`, which is not
+    // necessary if the objective is to just alter targeting.
+    // is it desirable for e.g. analytics to see bogus bidder codes?
+    multibidPrefix?: string;
+    originalBidder?: BaseBid['bidderCode'];
+    originalRequestId?: BaseBid['requestId'];
+    targetingBidder?: string;
+  }
 }
 /**
  * @summary addBidResponse before hook
@@ -265,7 +265,9 @@ export const resetMultiConfig = () => { hasMultibid = false; multiConfig = {}; }
 /**
  * Resets globally stored multibid ad unit bids
  */
-export const resetMultibidUnits = () => multibidUnits = {};
+export const resetMultibidUnits = () => {
+  multibidUnits = {};
+};
 
 /**
  * Set up hooks on init

@@ -14,31 +14,31 @@ export function ttlCollection<T>(
     monotonic = false,
     slack = 5000
   }: {
-      /**
-       * A function taking an item added to this collection,
-       *   and returning (a promise to) a timestamp to be used as the starting time for the item
-       *   (the item will be dropped after `ttl(item)` milliseconds have elapsed since this timestamp).
-       *   Defaults to the time the item was added to the collection.
-       */
-      startTime?: (item: T) => number | Promise<number>;
-      /**
-       * A function taking an item added to this collection,
-       *   and returning (a promise to) the duration (in milliseconds) the item should be kept in it.
-       *   May return null to indicate that the item should be persisted indefinitely.
-       */
-      ttl?: (item: T) => number | null | Promise<number | null>;
-      /**
-       * Set to true for better performance, but only if, given any two items A and B in this collection:
-       *   if A was added before B, then:
-       *     - startTime(A) + ttl(A) <= startTime(B) + ttl(B)
-       *     - Promise.all([startTime(A), ttl(A)]) never resolves later than Promise.all([startTime(B), ttl(B)])
-       */
-      monotonic?: boolean
-      /**
-       * Maximum duration (in milliseconds) that an item is allowed to persist
-       *   once past its TTL. This is also roughly the interval between "garbage collection" sweeps.
-       */
-      slack?: number;
+    /**
+     * A function taking an item added to this collection,
+     *   and returning (a promise to) a timestamp to be used as the starting time for the item
+     *   (the item will be dropped after `ttl(item)` milliseconds have elapsed since this timestamp).
+     *   Defaults to the time the item was added to the collection.
+     */
+    startTime?: (item: T) => number | Promise<number>;
+    /**
+     * A function taking an item added to this collection,
+     *   and returning (a promise to) the duration (in milliseconds) the item should be kept in it.
+     *   May return null to indicate that the item should be persisted indefinitely.
+     */
+    ttl?: (item: T) => number | null | Promise<number | null>;
+    /**
+     * Set to true for better performance, but only if, given any two items A and B in this collection:
+     *   if A was added before B, then:
+     *     - startTime(A) + ttl(A) <= startTime(B) + ttl(B)
+     *     - Promise.all([startTime(A), ttl(A)]) never resolves later than Promise.all([startTime(B), ttl(B)])
+     */
+    monotonic?: boolean
+    /**
+     * Maximum duration (in milliseconds) that an item is allowed to persist
+     *   once past its TTL. This is also roughly the interval between "garbage collection" sweeps.
+     */
+    slack?: number;
   } = {}
 ) {
   const items = new Map<T, any>();
@@ -132,6 +132,21 @@ export function ttlCollection<T>(
      */
     add(item: T) {
       !items.has(item) && items.set(item, mkEntry(item));
+    },
+    has(item: T) {
+      return items.has(item);
+    },
+    delete(item: T) {
+      const toBeDeleted = items.get(item);
+      if (toBeDeleted) {
+        for (let i = 0; i < pendingPurge.length && pendingPurge[i].expiry <= toBeDeleted.expiry; i++) {
+          if (pendingPurge[i] === toBeDeleted) {
+            pendingPurge.splice(i, 1);
+            break;
+          }
+        }
+      }
+      return items.delete(item);
     },
     /**
      * Clear this collection.

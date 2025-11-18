@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
 
 /**
@@ -14,7 +15,7 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2025.04.25';
+const BIDADAPTERVERSION = 'TTD-PREBID-2025.07.15';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -92,7 +93,7 @@ function getDevice(firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   const device = {
     ua: navigator.userAgent,
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     language: language,
     connectiontype: getConnectionType()
   };
@@ -111,11 +112,6 @@ function getUser(bidderRequest, firstPartyData) {
   var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
   if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
-
-    const tdid = eids.find(eid => eid.source == 'adserver.org')?.uids?.[0]?.id;
-    if (tdid) {
-      user.buyeruid = tdid
-    }
   }
 
   utils.mergeDeep(user, firstPartyData.user)
@@ -283,6 +279,10 @@ function video(bid) {
 }
 
 function selectEndpoint(params) {
+  if (params.customBidderEndpoint) {
+    return params.customBidderEndpoint
+  }
+
   if (params.useHttp2) {
     return BIDDER_ENDPOINT_HTTP2;
   }
@@ -334,6 +334,12 @@ export const spec = {
     const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
     if (!bid.params.placementId && !gpid) {
       utils.logWarn(BIDDER_CODE + ': one of params.placementId or gpid (via the GPT module https://docs.prebid.org/dev-docs/modules/gpt-pre-auction.html) must be passed');
+      return false;
+    }
+
+    if (bid.params.customBidderEndpoint &&
+        (!bid.params.customBidderEndpoint.startsWith('https://') || !bid.params.customBidderEndpoint.endsWith('/bid/bidder/'))) {
+      utils.logWarn(BIDDER_CODE + ': if params.customBidderEndpoint is provided, it must start with https:// and end with /bid/bidder/');
       return false;
     }
 

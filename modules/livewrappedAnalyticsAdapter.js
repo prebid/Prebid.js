@@ -17,6 +17,7 @@ const ADRENDERFAILEDSENT = 16;
 let initOptions;
 const prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
+const CACHE_CLEANUP_DELAY = BID_WON_TIMEOUT * 3;
 
 const cache = {
   auctions: {}
@@ -125,7 +126,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
         wonBid.rUp = args.rUp;
         wonBid.meta = args.meta;
         wonBid.dealId = args.dealId;
-        if (wonBid.sendStatus != 0) {
+        if (wonBid.sendStatus !== 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
         break;
@@ -135,7 +136,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
         adRenderFailedBid.adRenderFailed = true;
         adRenderFailedBid.reason = args.reason;
         adRenderFailedBid.message = args.message;
-        if (adRenderFailedBid.sendStatus != 0) {
+        if (adRenderFailedBid.sendStatus !== 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
         break;
@@ -180,19 +181,25 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     ext: initOptions.ext
   };
 
-  if (events.requests.length == 0 &&
-      events.responses.length == 0 &&
-      events.wins.length == 0 &&
-      events.timeouts.length == 0 &&
-      events.rf.length == 0) {
+  if (events.requests.length === 0 &&
+      events.responses.length === 0 &&
+      events.wins.length === 0 &&
+      events.timeouts.length === 0 &&
+      events.rf.length === 0) {
     return;
   }
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+
+  setTimeout(() => {
+    sentRequests.auctionIds.forEach(id => {
+      delete cache.auctions[id];
+    });
+  }, CACHE_CLEANUP_DELAY);
 };
 
 function getMediaTypeEnum(mediaType) {
-  return mediaType == 'native' ? 2 : (mediaType == 'video' ? 4 : 1);
+  return mediaType === 'native' ? 2 : (mediaType === 'video' ? 4 : 1);
 }
 
 function getSentRequests() {
@@ -295,13 +302,13 @@ function getWins(gdpr, auctionIds) {
 function getGdprPos(gdpr, auction) {
   var gdprPos = 0;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
-    if (gdpr[gdprPos].gdprApplies == auction.gdprApplies &&
-        gdpr[gdprPos].gdprConsent == auction.gdprConsent) {
+    if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
+        gdpr[gdprPos].gdprConsent === auction.gdprConsent) {
       break;
     }
   }
 
-  if (gdprPos == gdpr.length) {
+  if (gdprPos === gdpr.length) {
     gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
   }
 
@@ -311,12 +318,12 @@ function getGdprPos(gdpr, auction) {
 function getAuctionIdPos(auctionIds, auctionId) {
   var auctionIdPos = 0;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
-    if (auctionIds[auctionIdPos] == auctionId) {
+    if (auctionIds[auctionIdPos] === auctionId) {
       break;
     }
   }
 
-  if (auctionIdPos == auctionIds.length) {
+  if (auctionIdPos === auctionIds.length) {
     auctionIds[auctionIdPos] = auctionId;
   }
 
@@ -426,5 +433,11 @@ adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
 });
+
+export function getAuctionCache() {
+  return cache.auctions;
+}
+
+export { CACHE_CLEANUP_DELAY };
 
 export default livewrappedAnalyticsAdapter;

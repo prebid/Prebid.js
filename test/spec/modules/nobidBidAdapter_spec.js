@@ -251,12 +251,12 @@ describe('Nobid Adapter', function () {
     });
 
     it('sends bid request to site id', function () {
-    const request = spec.buildRequests(bidRequests);
-    const payload = JSON.parse(request.data);
-    expect(payload.a).to.exist;
-    expect(payload.a[0].sid).to.equal(2);
-    expect(payload.a[0].at).to.equal('banner');
-    expect(payload.a[0].params.siteId).to.equal(2);
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.a).to.exist;
+      expect(payload.a[0].sid).to.equal(2);
+      expect(payload.a[0].at).to.equal('banner');
+      expect(payload.a[0].params.siteId).to.equal(2);
     });
 
     it('sends bid request to ad type', function () {
@@ -381,7 +381,7 @@ describe('Nobid Adapter', function () {
         auctionId: '1d1a030790a475',
         mediaTypes: {
           video: {
-          playerSize: [640, 480],
+            playerSize: [640, 480],
             context: 'instream'
           }
         }
@@ -471,7 +471,7 @@ describe('Nobid Adapter', function () {
         auctionId: '1d1a030790a475',
         mediaTypes: {
           video: {
-          playerSize: [640, 480],
+            playerSize: [640, 480],
             context: 'outstream'
           }
         }
@@ -634,12 +634,12 @@ describe('Nobid Adapter', function () {
     });
 
     it('sends bid request to site id', function () {
-    const request = spec.buildRequests(bidRequests);
-    const payload = JSON.parse(request.data);
-    expect(payload.a).to.exist;
-    expect(payload.a[0].sid).to.equal(2);
-    expect(payload.a[0].at).to.equal('banner');
-    expect(payload.a[0].params.siteId).to.equal(2);
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.a).to.exist;
+      expect(payload.a[0].sid).to.equal(2);
+      expect(payload.a[0].at).to.equal('banner');
+      expect(payload.a[0].params.siteId).to.equal(2);
     });
 
     it('sends bid request to ad type', function () {
@@ -1065,8 +1065,8 @@ describe('Nobid Adapter', function () {
     });
 
     it('should get correct user sync when !iframeEnabled', function () {
-    let pixel = spec.getUserSyncs({})
-    expect(pixel.length).to.equal(0);
+      let pixel = spec.getUserSyncs({})
+      expect(pixel.length).to.equal(0);
     });
   });
 

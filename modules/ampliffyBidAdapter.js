@@ -2,7 +2,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logError, logInfo, triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'ampliffy';
-const GVLID = 1258;
 const DEFAULT_ENDPOINT = 'bidder.ampliffy.com';
 const TTL = 600; // Time-to-Live - how long (in seconds) Prebid can use this bid.
 const LOG_PREFIX = 'AmpliffyBidder: ';
@@ -400,7 +399,6 @@ function onTimeOut() {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['ampliffy', 'amp', 'videoffy', 'publiffy'],
   supportedMediaTypes: ['video', 'banner'],
   isBidRequestValid,

@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash';
-import { domainLogger, spec } from '../../../modules/michaoBidAdapter';
+import { domainLogger, spec } from '../../../modules/michaoBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Michao Bid Adapter', () => {

@@ -12,6 +12,7 @@ import { config } from '../../../src/config.js';
 import { executeRenderer } from '../../../src/Renderer.js';
 import { expect } from 'chai';
 import { userSync } from '../../../src/userSync.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -120,7 +121,7 @@ describe('Adagio bid adapter', () => {
 
   afterEach(() => {
     window.ADAGIO = undefined;
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
 
     utilsMock.restore();
 
@@ -282,11 +283,11 @@ describe('Adagio bid adapter', () => {
       const bidderRequest = new BidderRequestBuilder().build();
 
       const requests = spec.buildRequests([bid01], bidderRequest);
+      const expectedUrl = `${ENDPOINT}?orgid=1000`;
 
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(ENDPOINT);
-      expect(requests[0].options.contentType).to.eq('text/plain');
+      expect(requests[0].url).to.equal(expectedUrl);
       expect(requests[0].data).to.have.all.keys(expectedDataKeys);
     });
 
@@ -1136,6 +1137,16 @@ describe('Adagio bid adapter', () => {
         });
       })
     })
+
+    describe('with endpoint compression', function() {
+      it('should always use the endpoint compression option', function() {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].options).to.exist;
+        expect(requests[0].options.endpointCompression).to.equal(true);
+      });
+    });
   });
 
   describe('interpretResponse()', function() {

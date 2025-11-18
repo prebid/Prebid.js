@@ -14,21 +14,22 @@ export const spec = {
   buildRequests(bidRequests, bidderRequest) {
     if (!bidRequests?.length) return [];
 
-    const bid = bidRequests[0];
-    const endpoint = `https://pb.optimizerx.com?placement_id=${bid.params.placement_id}&npi=${bid.params.npi}`;
-
+    const endpoint = `https://pb.optimizerx.com/pb`;
     const converter = converterInstance || defaultConverter;
 
     const requestData = converter.toORTB({
-      bRequests: bidRequests,
-      brRequest: bidderRequest,
+      bidderRequest,
+      bidRequests,
     });
 
     return [{
       method: 'POST',
       url: endpoint,
       data: requestData,
-      options: { contentType: 'application/json;charset=utf-8' }
+      options: {
+        contentType: 'application/json;charset=utf-8',
+        withCredentials: false
+      }
     }];
   },
 
@@ -50,6 +51,7 @@ const defaultConverter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    imp.ext = {bidder: bidRequest.params};
     if (bidRequest.params.bid_floor) {
       imp.bidfloor = bidRequest.params.bid_floor;
     }

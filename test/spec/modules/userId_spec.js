@@ -11,7 +11,8 @@ import {
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
-  syncDelay, COOKIE_SUFFIXES, HTML5_SUFFIXES,
+  COOKIE_SUFFIXES, HTML5_SUFFIXES,
+  syncDelay, adUnitEidsHook,
 } from 'modules/userId/index.js';
 import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG, getEids} from 'modules/userId/eids.js';
@@ -37,8 +38,13 @@ import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../.
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
 import {generateSubmoduleContainers, addIdData } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
-
-import { discloseStorageUse, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, getStorageManager } from '../../../src/storageManager.js';
+import {
+  discloseStorageUse,
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE,
+  getStorageManager,
+  getCoreStorageManager
+} from '../../../src/storageManager.js';
 
 const assert = require('chai').assert;
 const expect = require('chai').expect;
@@ -417,6 +423,34 @@ describe('User ID', function () {
             id: 'id1'
           }
         ]);
+      });
+
+      it('should not alter values returned by adapters', () => {
+        let eid = {
+          source: 'someid.org',
+          uids: [{id: 'id-1'}]
+        };
+        const config = new Map([
+          ['someId', function () {
+            return eid;
+          }]
+        ]);
+        const userid = {
+          someId: 'id-1',
+          pubProvidedId: [{
+            source: 'someid.org',
+            uids: [{id: 'id-2'}]
+          }],
+        }
+        createEidsArray(userid, config);
+        const allEids = createEidsArray(userid, config);
+        expect(allEids).to.eql([
+          {
+            source: 'someid.org',
+            uids: [{id: 'id-1'}, {id: 'id-2'}]
+          }
+        ])
+        expect(eid.uids).to.eql([{'id': 'id-1'}])
       });
 
       it('should filter out entire EID if none of the uids are strings', () => {
@@ -2446,9 +2480,40 @@ describe('User ID', function () {
   });
 
   describe('handles config with ESP configuration in user sync object', function() {
+    before(() => {
+      mockGpt.reset();
+    })
+    beforeEach(() => {
+      window.googletag.secureSignalProviders = {
+        push: sinon.stub()
+      };
+    });
+
+    afterEach(() => {
+      mockGpt.reset();
+    })
+
     describe('Call registerSignalSources to register signal sources with gtag', function () {
       it('pbjs.registerSignalSources should be defined', () => {
         expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
+      });
+
+      it('passes encrypted signal sources to GPT', function () {
+        const clock = sandbox.useFakeTimers();
+        init(config);
+        config.setConfig({
+          userSync: {
+            encryptedSignalSources: {
+              registerDelay: 0,
+              sources: [{source: ['pubcid.org'], encrypt: false}]
+            }
+          }
+        });
+        getGlobal().registerSignalSources();
+        clock.tick(1);
+        sinon.assert.calledWith(window.googletag.secureSignalProviders.push, sinon.match({
+          id: 'pubcid.org'
+        }))
       });
     })
 
@@ -3068,6 +3133,92 @@ describe('User ID', function () {
       });
     })
   });
+  describe('adUnitEidsHook', () => {
+    let next, auction, adUnits, ortb2Fragments;
+    beforeEach(() => {
+      next = sinon.stub();
+      adUnits = [
+        {
+          code: 'au1',
+          bids: [
+            {
+              bidder: 'bidderA'
+            },
+            {
+              bidder: 'bidderB'
+            }
+          ]
+        },
+        {
+          code: 'au2',
+          bids: [
+            {
+              bidder: 'bidderC'
+            }
+          ]
+        }
+      ]
+      ortb2Fragments = {}
+      auction = {
+        getAdUnits: () => adUnits,
+        getFPD: () => ortb2Fragments
+      }
+    });
+    it('should not set userIdAsEids when no eids are provided', () => {
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        expect(bid.userIdAsEids).to.not.exist;
+      })
+    });
+    it('should add global eids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['some-eid']
+          }
+        }
+      };
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        expect(bid.userIdAsEids).to.eql(['some-eid']);
+      })
+    })
+    it('should add bidder-specific eids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['global']
+          }
+        }
+      };
+      ortb2Fragments.bidder = {
+        bidderA: {
+          user: {
+            ext: {
+              eids: ['bidder']
+            }
+          }
+        }
+      }
+      adUnitEidsHook(next, auction);
+      auction.getAdUnits().flatMap(au => au.bids).forEach(bid => {
+        const expected = bid.bidder === 'bidderA' ? ['global', 'bidder'] : ['global'];
+        expect(bid.userIdAsEids).to.eql(expected);
+      })
+    });
+    it('should add global eids to bidderless bids', () => {
+      ortb2Fragments.global = {
+        user: {
+          ext: {
+            eids: ['global']
+          }
+        }
+      }
+      delete adUnits[0].bids[0].bidder;
+      adUnitEidsHook(next, auction);
+      expect(adUnits[0].bids[0].userIdAsEids).to.eql(['global']);
+    })
+  });
 
   describe('generateSubmoduleContainers', () => {
     it('should properly map registry to submodule containers for empty previous submodule containers', () => {
@@ -3139,6 +3290,7 @@ describe('User ID', function () {
   describe('user id modules - enforceStorageType', () => {
     let warnLogSpy;
     const UID_MODULE_NAME = 'userIdModule';
+    const cookieName = 'testCookie';
     const userSync = {
       userIds: [
         {
@@ -3163,15 +3315,22 @@ describe('User ID', function () {
 
     afterEach(() => {
       warnLogSpy.restore();
-      document.cookie = ''
+      getCoreStorageManager('test').setCookie(cookieName, '', EXPIRED_COOKIE_DATE)
     });
+
+    it('should not warn when reading', () => {
+      config.setConfig({userSync});
+      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
+      storage.cookiesAreEnabled();
+      sinon.assert.notCalled(warnLogSpy);
+    })
 
     it('should warn and allow userId module to store data for enforceStorageType unset', () => {
       config.setConfig({userSync});
       const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('cookieName', 'value', 20000);
+      storage.setCookie(cookieName, 'value', 20000);
       sinon.assert.calledWith(warnLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
-      expect(storage.getCookie('cookieName')).to.eql('value');
+      expect(storage.getCookie(cookieName)).to.eql('value');
     });
 
     it('should not allow userId module to store data for enforceStorageType set to true', () => {
@@ -3182,8 +3341,8 @@ describe('User ID', function () {
         }
       })
       const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('data', 'value', 20000);
-      expect(storage.getCookie('data')).to.not.exist;
+      storage.setCookie(cookieName, 'value', 20000);
+      expect(storage.getCookie(cookieName)).to.not.exist;
     });
   });
 });

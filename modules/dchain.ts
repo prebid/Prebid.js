@@ -95,20 +95,20 @@ export function checkDchainSyntax(bid, mode) {
 }
 
 export interface DchainConfig {
-    validation?: typeof MODES[keyof typeof MODES];
+  validation?: typeof MODES[keyof typeof MODES];
 }
 
 declare module '../src/config' {
-    interface Config {
-        dchain?: DchainConfig;
-    }
+  interface Config {
+    dchain?: DchainConfig;
+  }
 }
 
 function isValidDchain(bid) {
   let mode: string = MODE.STRICT;
   const dchainConfig = config.getConfig('dchain');
 
-  if (dchainConfig && isStr(dchainConfig.validation) && MODES.indexOf(dchainConfig.validation) != -1) {
+  if (dchainConfig && isStr(dchainConfig.validation) && MODES.indexOf(dchainConfig.validation) !== -1) {
     mode = dchainConfig.validation;
   }
 

@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/mgidXBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
-import { config } from '../../../src/config';
-import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync';
+import { config } from '../../../src/config.js';
+import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync.js';
 
 const bidder = 'mgidX';
 
@@ -309,7 +309,7 @@ describe('MGIDXBidAdapter', function () {
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
 
-      bidderRequest.ortb2;
+      expect(bidderRequest).to.have.property('ortb2');
     })
   });
 

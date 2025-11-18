@@ -60,6 +60,24 @@ export const allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domai
 type DefaultField = { [K in (typeof allowedFields)[number]]: K extends string ? K : never}[(typeof allowedFields)[number]];
 
 /**
+ * @summary Global set to track valid userId tier fields
+ */
+const validUserIdTierFields = new Set<string>();
+
+/**
+ * @summary Checks if a field is a valid user ID tier field (userId.tierName)
+ * A field is only considered valid if it appears in the validUserIdTierFields set,
+ * which is populated during config validation based on explicitly configured userIds.
+ * Fields will be rejected if they're not in the configured set, even if they follow the userId.tierName format.
+ */
+function isUserIdTierField(field: string): boolean {
+  if (typeof field !== 'string') return false;
+
+  // Simply check if the field exists in our configured userId tier fields set
+  return validUserIdTierFields.has(field);
+}
+
+/**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
  */
 let fetching = false;
@@ -103,7 +121,33 @@ const getHostname = (() => {
   }
 })();
 
-// First look into bidRequest!
+/**
+ * @summary Check if a bidRequest contains any user IDs from the specified tiers
+ * Returns an object with keys like 'userId.tierName' with boolean values (0/1)
+ */
+export function resolveTierUserIds(tiers, bidRequest) {
+  if (!tiers || !bidRequest?.userIdAsEid?.length) {
+    return {};
+  }
+
+  // Get all available EID sources from the bidRequest (single pass)
+  const availableSources = bidRequest.userIdAsEid.reduce((acc: Set<string>, eid: { source?: string }) => {
+    if (eid?.source) {
+      acc.add(eid.source);
+    }
+    return acc;
+  }, new Set());
+
+  // For each tier, check if any of its sources are available
+  return Object.entries(tiers).reduce((result, [tierName, sources]) => {
+    const hasAnyIdFromTier = Array.isArray(sources) &&
+      sources.some(source => availableSources.has(source));
+
+    result[`userId.${tierName}`] = hasAnyIdFromTier ? 1 : 0;
+    return result;
+  }, {});
+}
+
 function getGptSlotFromAdUnit(adUnitId, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit({adUnitId});
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
@@ -133,9 +177,25 @@ export const fieldMatchingFunctions = {
  */
 function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
   if (!floorFields.length) return [];
+
+  // Get userId tier values if needed
+  let userIdTierValues = {};
+  const userIdFields = floorFields.filter(isUserIdTierField);
+  if (userIdFields.length > 0 && _floorsConfig.userIds) {
+    userIdTierValues = resolveTierUserIds(_floorsConfig.userIds, bidObject);
+  }
+
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
-    const exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    let exactMatch: string;
+    // Handle userId tier fields
+    if (isUserIdTierField(field)) {
+      exactMatch = String(userIdTierValues[field] ?? '*');
+    } else {
+      // Standard fields use the field matching functions
+      exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    }
+
     // storing exact matches as lowerCase since we want to compare case insensitively
     accum.push(exactMatch === '*' ? ['*'] : [exactMatch.toLowerCase(), '*']);
     return accum;
@@ -187,8 +247,8 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 function generatePossibleEnumerations(arrayOfFields, delimiter) {
   return arrayOfFields.reduce((accum, currentVal) => {
     const ret = [];
-    accum.map(obj => {
-      currentVal.map(obj1 => {
+    accum.forEach(obj => {
+      currentVal.forEach(obj1 => {
         ret.push(obj + delimiter + obj1)
       });
     });
@@ -240,24 +300,24 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 }
 
 type GetFloorParams = {
-    currency?: Currency | '*';
-    mediaType?: MediaType | '*';
-    size?: Size | '*';
+  currency?: Currency | '*';
+  mediaType?: MediaType | '*';
+  size?: Size | '*';
 }
 
 declare module '../src/adapterManager' {
-    interface BaseBidRequest {
-        getFloor: typeof getFloor;
-    }
+  interface BaseBidRequest {
+    getFloor: typeof getFloor;
+  }
 }
 
 declare module '../src/bidderSettings' {
-    interface BidderSettings<B extends BidderCode> {
-        /**
-         * Inverse of bidCpmAdjustment
-         */
-        inverseBidAdjustment?: (floor: number, bidRequest: BidRequest<B>, params: {[K in keyof GetFloorParams]?: Exclude<GetFloorParams[K], '*'>}) => number;
-    }
+  interface BidderSettings<B extends BidderCode> {
+    /**
+     * Inverse of bidCpmAdjustment
+     */
+    inverseBidAdjustment?: (floor: number, bidRequest: BidRequest<B>, params: {[K in keyof GetFloorParams]?: Exclude<GetFloorParams[K], '*'>}) => number;
+  }
 }
 
 /**
@@ -265,7 +325,7 @@ declare module '../src/bidderSettings' {
  * and matching it to a rule for the current auction
  */
 export function getFloor(requestParams: GetFloorParams = {currency: 'USD', mediaType: '*', size: '*'}) {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const bidRequest = this;
   const floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
@@ -481,7 +541,7 @@ export function continueAuction(hookConfig) {
 
 function validateSchemaFields(fields) {
   if (Array.isArray(fields) && fields.length > 0) {
-    if (fields.every(field => allowedFields.includes(field))) {
+    if (fields.every(field => allowedFields.includes(field) || isUserIdTierField(field))) {
       return true;
     } else {
       logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
@@ -680,143 +740,150 @@ export function generateAndHandleFetch(floorEndpoint) {
  * @summary Updates our allowedFields and fieldMatchingFunctions with the publisher defined new ones
  */
 function addFieldOverrides(overrides) {
-    Object.keys(overrides).forEach((override: any) => {
-        // we only add it if it is not already in the allowed fields and if the passed in value is a function
-        if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
-            (allowedFields as any).push(override);
-            fieldMatchingFunctions[override] = overrides[override];
-        }
-    });
+  Object.keys(overrides).forEach((override: any) => {
+    // we only add it if it is not already in the allowed fields and if the passed in value is a function
+    if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
+      (allowedFields as any).push(override);
+      fieldMatchingFunctions[override] = overrides[override];
+    }
+  });
 }
 
 type FloorsDef = {
+  /**
+   * Optional atribute used to signal to the Floor Provider’s Analytics adapter their floors are being applied.
+   * They can opt to log only floors that are applied when they are the provider. If floorProvider is supplied in
+   * both the top level of the floors object and within the data object, the data object’s configuration shall prevail.
+   */
+  floorProvider?: string;
+  /**
+   * Currency of floor data. Floor Module will convert currency where necessary.
+   */
+  currency?: Currency;
+  /**
+   * Used by floor providers to train on model version performance.
+   * The expectation is a floor provider’s analytics adapter will pass the model verson back for algorithm training.
+   */
+  modelVersion?: string;
+  schema: {
     /**
-     * Optional atribute used to signal to the Floor Provider’s Analytics adapter their floors are being applied.
-     * They can opt to log only floors that are applied when they are the provider. If floorProvider is supplied in
-     * both the top level of the floors object and within the data object, the data object’s configuration shall prevail.
+     * Character separating the floor keys. Default is "|".
      */
-    floorProvider?: string;
-    /**
-     * Currency of floor data. Floor Module will convert currency where necessary.
-     */
-    currency?: Currency;
-    /**
-     * Used by floor providers to train on model version performance.
-     * The expectation is a floor provider’s analytics adapter will pass the model verson back for algorithm training.
-     */
-    modelVersion?: string;
-    schema: {
-        /**
-         * Character separating the floor keys. Default is "|".
-         */
-        delimiter?: string;
-        fields: (DefaultField | string)[]
-    };
-    /**
-     * Floor used if no matching rules are found.
-     */
-    default?: number;
-    /**
-     * Map from delimited field of attribute values to a floor value.
-     */
-    values: {
-        [rule: string]: number;
-    }
+    delimiter?: string;
+    fields: (DefaultField | string)[]
+  };
+  /**
+   * Floor used if no matching rules are found.
+   */
+  default?: number;
+  /**
+   * Map from delimited field of attribute values to a floor value.
+   */
+  values: {
+    [rule: string]: number;
+  }
 }
 
 type BaseFloorData = {
-    /**
-     * Epoch timestamp associated with modelVersion.
-     * Can be used to track model creation of floor file for post auction analysis.
-     */
-    modelTimestamp?: string;
-    /**
-     * skipRate is a number between 0 and 100 to determine when to skip all floor logic, where 0 is always use floor data and 100 is always skip floor data.
-     */
-    skipRate?: number;
+  /**
+   * Epoch timestamp associated with modelVersion.
+   * Can be used to track model creation of floor file for post auction analysis.
+   */
+  modelTimestamp?: string;
+  /**
+   * skipRate is a number between 0 and 100 to determine when to skip all floor logic, where 0 is always use floor data and 100 is always skip floor data.
+   */
+  skipRate?: number;
 }
 
 export type Schema1FloorData = FloorsDef & BaseFloorData & {
-    floorsSchemaVersion?: 1;
+  floorsSchemaVersion?: 1;
 }
 
 export type Schema2FloorData = BaseFloorData & {
-    floorsSchemaVersion: 2;
-    modelGrups: (FloorsDef & {
-        /**
-         * Used by the module to determine when to apply the specific model.
-         */
-        modelWeight: number;
-        /**
-         * This is an array of bidders for which to avoid sending floors.
-         * This is useful for bidders where the publisher has established different floor rules in their systems.
-         */
-        noFloorSignalBidders?: BidderCode[];
-    })[]
+  floorsSchemaVersion: 2;
+  modelGroups: (FloorsDef & {
+    /**
+     * Used by the module to determine when to apply the specific model.
+     */
+    modelWeight: number;
+    /**
+     * This is an array of bidders for which to avoid sending floors.
+     * This is useful for bidders where the publisher has established different floor rules in their systems.
+     */
+    noFloorSignalBidders?: BidderCode[];
+  })[]
 }
 
 declare module '../src/adUnits' {
-    interface AdUnitDefinition {
-        floors?: Partial<Schema1FloorData>;
-    }
+  interface AdUnitDefinition {
+    floors?: Partial<Schema1FloorData>;
+  }
 }
 
 export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> & {
-    enabled?: boolean;
+  enabled?: boolean;
+  /**
+   * The mimimum CPM floor used by the Price Floors Module.
+   * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
+   */
+  floorMin?: number;
+  /**
+   * Configuration for user ID tiers. Each tier is an array of EID sources
+   * that will be matched against available EIDs in the bid request.
+   */
+  userIds?: {
+    [tierName: string]: string[];
+  };
+  enforcement?: Pick<Schema2FloorData['modelGroups'][0], 'noFloorSignalBidders'> & {
     /**
-     * The mimimum CPM floor used by the Price Floors Module.
-     * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
+     * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
+     * matched rules and suppress any bids not exceeding a matching floor.
+     * If set to false, the Price Floors Module will still provide floors for bid adapters, there will be no floor enforcement.
      */
-    floorMin?: number;
-    enforcement?: Pick<Schema2FloorData['modelGrups'][0], 'noFloorSignalBidders'> & {
-        /**
-         * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
-         * matched rules and suppress any bids not exceeding a matching floor.
-         * If set to false, the Price Floors Module will still provide floors for bid adapters, there will be no floor enforcement.
-         */
-        enforceJS?: boolean;
-        /**
-         * If set to true (the default), the Price Floors Module will signal to Prebid Server to pass floors to it’s bid
-         * adapters and enforce floors.
-         * If set to false, the pbjs should still pass matched bid request floor data to PBS, however no enforcement will take place.
-         */
-        enforcePBS?: boolean;
-        /**
-         * Enforce floors for deal bid requests. Default is false.
-         */
-        floorDeals?: boolean;
-        /**
-         * If true (the default), the Price Floors Module will use the bidAdjustment function to adjust the floor
-         * per bidder.
-         * If false (or no bidAdjustment function is provided), floors will not be adjusted.
-         * Note: Setting this parameter to false may have unexpected results, such as signaling a gross floor when
-         * expecting net or vice versa.
-         */
-        bidAdjustment?: boolean;
-    }
+    enforceJS?: boolean;
     /**
-     * Map from custom field name to a function generating that field's value for either a bid or a bid request.
+     * If set to true (the default), the Price Floors Module will signal to Prebid Server to pass floors to it’s bid
+     * adapters and enforce floors.
+     * If set to false, the pbjs should still pass matched bid request floor data to PBS, however no enforcement will take place.
      */
-    additionalSchemaFields?: {
-        [field: string]: (bidRequest?: BidRequest<BidderCode>, bid?: Bid) => string
-    }
+    enforcePBS?: boolean;
     /**
-     * How long (in milliseconds) auctions should be delayed to wait for dynamic floor data.
+     * Enforce floors for deal bid requests. Default is false.
      */
-    auctionDelay?: number;
-    endpoint?: {
-        /**
-         * URL of endpoint to retrieve dynamic floor data.
-         */
-        url: string;
-    };
-    data?: Schema1FloorData | Schema2FloorData;
+    floorDeals?: boolean;
+    /**
+     * If true (the default), the Price Floors Module will use the bidAdjustment function to adjust the floor
+     * per bidder.
+     * If false (or no bidAdjustment function is provided), floors will not be adjusted.
+     * Note: Setting this parameter to false may have unexpected results, such as signaling a gross floor when
+     * expecting net or vice versa.
+     */
+    bidAdjustment?: boolean;
+  }
+  /**
+   * Map from custom field name to a function generating that field's value for either a bid or a bid request.
+   */
+  additionalSchemaFields?: {
+    [field: string]: (bidRequest?: BidRequest<BidderCode>, bid?: Bid) => string
+  }
+  /**
+   * How long (in milliseconds) auctions should be delayed to wait for dynamic floor data.
+   */
+  auctionDelay?: number;
+  endpoint?: {
+    /**
+     * URL of endpoint to retrieve dynamic floor data.
+     */
+    url: string;
+  };
+  data?: Schema1FloorData | Schema2FloorData;
 }
 
 declare module '../src/config' {
-    interface Config {
-        floors?: FloorsConfig;
-    }
+  interface Config {
+    floors?: FloorsConfig;
+  }
 }
 
 /**
@@ -830,6 +897,7 @@ export function handleSetFloorsConfig(config) {
     'floorProvider', floorProvider => deepAccess(config, 'data.floorProvider', floorProvider),
     'endpoint', endpoint => endpoint || {},
     'skipRate', () => !isNaN(deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
+    'userIds', validateUserIdsConfig,
     'enforcement', enforcement => pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
@@ -874,19 +942,19 @@ export function handleSetFloorsConfig(config) {
 }
 
 export type BidFloorData = {
-    floorValue: number;
-    floorRule: string;
-    floorRuleValue: number;
-    floorCurrency: Currency;
-    cpmAfterAdjustments: number;
-    enforcements: FloorsConfig['enforcement'];
-    matchedFields: { [fieldName: string ]: string }
+  floorValue: number;
+  floorRule: string;
+  floorRuleValue: number;
+  floorCurrency: Currency;
+  cpmAfterAdjustments: number;
+  enforcements: FloorsConfig['enforcement'];
+  matchedFields: { [fieldName: string ]: string }
 }
 
 declare module '../src/bidfactory' {
-    interface BaseBid {
-        floorData?: BidFloorData
-    }
+  interface BaseBid {
+    floorData?: BidFloorData
+  }
 }
 
 /**
@@ -1085,3 +1153,31 @@ registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
 registerOrtbProcessor({type: IMP, name: 'extBidfloor', fn: setGranularBidfloors, priority: -10})
 registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
 registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});
+
+/**
+ * Validate userIds config: must be an object with array values
+ * Also populates the validUserIdTierFields set with field names in the format "userId.tierName"
+ */
+function validateUserIdsConfig(userIds: Record<string, unknown>): Record<string, unknown> {
+  if (!userIds || typeof userIds !== 'object') return {};
+
+  // Clear the previous set of valid tier fields
+  validUserIdTierFields.clear();
+
+  // Check if userIds is an object with array values
+  const invalidKey = Object.entries(userIds).some(([tierName, value]) => {
+    if (!Array.isArray(value)) {
+      return true;
+    }
+    // Add the tier field to the validUserIdTierFields set
+    validUserIdTierFields.add(`userId.${tierName}`);
+    return false;
+  });
+
+  if (invalidKey) {
+    validUserIdTierFields.clear();
+    return {};
+  }
+
+  return userIds;
+}

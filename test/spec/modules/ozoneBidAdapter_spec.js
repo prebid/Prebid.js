@@ -3,7 +3,7 @@ import { spec, getWidthAndHeightFromVideoObject, defaultSize } from 'modules/ozo
 import { config } from 'src/config.js';
 import {Renderer} from '../../../src/Renderer.js';
 import * as utils from '../../../src/utils.js';
-import {deepSetValue} from '../../../src/utils.js';
+import {deepSetValue, mergeDeep} from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
 spec.getGetParametersAsObject = function() {
@@ -266,501 +266,501 @@ var valid6BidRequestsWithAuctionIdTransactionId = [{
     }
   }
 },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
           ],
-          [
-            300,
-            600
-          ]
-        ]
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
       }
-    },
-    'adUnitCode': 'mpu2',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
-    ],
-    'bidId': '3da18cc31f1ddb',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
         }
       },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
-      }
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
         ]
-      }
-    },
-    'adUnitCode': 'mpu3',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
       ]
-    ],
-    'bidId': '3da18cc31f1ddc',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
-      }
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
-        ]
-      }
-    },
-    'adUnitCode': 'mpu4',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
+  'adUnitCode': 'mpu2',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
     ],
-    'bidId': '3da18cc31f1ddd',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddb',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
       }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
         ]
-      }
-    },
-    'adUnitCode': 'mpu5',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
       ]
-    ],
-    'bidId': '3da18cc31f1dde',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
-      }
     }
   },
-  {
-    'bidder': 'ozone',
-    'params': {
-      'publisherId': 'OZONENUK0001',
-      'siteId': '4204204201',
-      'placementId': '8000000330',
-      'customData': [
-        {
-          'settings': {},
-          'targeting': {
-            'sens': 'f',
-            'pt1': '/uk',
-            'pt5': [
-              'uk'
-            ],
-            'pt7': 'desktop',
-            'pt9': '|k0xw2vqzp33kklb3j5w4|||'
-          }
-        }
-      ]
-    },
-    'ortb2Imp': {
-      'ext': {
-        'gpid': 'mpu_pbadslot_from_adunit',
-        'data': {
-          'pbadslot': 'mpu_pbadslot_from_adunit',
-          'adserver': {
-            'name': 'gam',
-            'adslot': '/22037345/projectozone'
-          }
-        },
-        'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
-        ]
-      }
-    },
-    'adUnitCode': 'mpu6',
-    'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
-    'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
+  'adUnitCode': 'mpu3',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
     ],
-    'bidId': '3da18cc31f1ddf',
-    'bidderRequestId': '263c3b0d970326',
-    'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0,
-    'ortb2': {
-      'source': {
-        'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
-      },
-      'regs': {
-        'ext': {
-          'gdpr': 1,
-          'us_privacy': '1Y--'
-        }
-      },
-      'user': {
-        'ext': {
-          'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
-        }
-      },
-      'site': {
-        'domain': 'ozoneproject.com',
-        'publisher': {
-          'domain': 'ozoneproject.com'
-        },
-        'page': 'https://www.www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
-      },
-      'device': {
-        'w': 1609,
-        'h': 279,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'language': 'en'
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddc',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
       }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
     }
-  }];
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'mpu4',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddd',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
+      }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'mpu5',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1dde',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
+      }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+},
+{
+  'bidder': 'ozone',
+  'params': {
+    'publisherId': 'OZONENUK0001',
+    'siteId': '4204204201',
+    'placementId': '8000000330',
+    'customData': [
+      {
+        'settings': {},
+        'targeting': {
+          'sens': 'f',
+          'pt1': '/uk',
+          'pt5': [
+            'uk'
+          ],
+          'pt7': 'desktop',
+          'pt9': '|k0xw2vqzp33kklb3j5w4|||'
+        }
+      }
+    ]
+  },
+  'ortb2Imp': {
+    'ext': {
+      'gpid': 'mpu_pbadslot_from_adunit',
+      'data': {
+        'pbadslot': 'mpu_pbadslot_from_adunit',
+        'adserver': {
+          'name': 'gam',
+          'adslot': '/22037345/projectozone'
+        }
+      },
+      'tid': 'f0dac8b5-09df-4da7-9d83-c99786d4517a'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'mpu6',
+  'transactionId': 'f0dac8b5-09df-4da7-9d83-c99786d4517a',
+  'adUnitId': '715b4bdc-515f-488b-8633-333654e72f3f',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '3da18cc31f1ddf',
+  'bidderRequestId': '263c3b0d970326',
+  'auctionId': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0,
+  'ortb2': {
+    'source': {
+      'tid': 'a9c479d0-d9cc-4505-a0a6-5982ce8fb8f0'
+    },
+    'regs': {
+      'ext': {
+        'gdpr': 1,
+        'us_privacy': '1Y--'
+      }
+    },
+    'user': {
+      'ext': {
+        'consent': 'CQAaAwAQAaAwAAKA1AENA5EsAP_gAEPgACiQKRNV_G__bWlr8X73aftkeY1P9_h77sQxBhfJE-4FzLuW_JwXx2ExNA36tqIKmRIEu3bBIQNlHJDUTVCgaogVryDMakWcoTNKJ6BkiFMRO2dYCF5vmwtj-QKY5vr993dx2B-t_dv83dzyz4VHn3a5_2e0WJCdA58tDfv9bROb-9IPd_58v4v8_F_rE2_eT1l_tevp7D9-cts7_XW-9_fff79Ll_-mBwUcALMNCogDLIkJCDQMIIEAKgrCAigQAAAAkDRAQAmDAp2BgEusJEAIAUAAwQAgABRkACAAASABCIAIACgQAAQCBQAAgAACAQAMDAAGACwEAgABAdAhTAggUCwASMyIhTAgCgSCAlsqEEgCBBXCEIs8CCAREwUAAAJABWAAICwWAxJICViQQJcQbQAAEACAQQAVCKTswBBAGbLVXiibRlaQFo-ACjgAAAAA.YAAAAAAAAAAA'
+      }
+    },
+    'site': {
+      'domain': 'ozoneproject.com',
+      'publisher': {
+        'domain': 'ozoneproject.com'
+      },
+      'page': 'https://www.www.ozoneproject.com/ozone/2.9.4/20240715-test-singlereq-optin.html?pbjs_debug=true'
+    },
+    'device': {
+      'w': 1609,
+      'h': 279,
+      'dnt': 0,
+      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'language': 'en'
+    }
+  }
+}];
 var validBidRequestsWithUserIdData = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -2208,6 +2208,44 @@ var multiResponse1 = {
   'headers': {}
 };
 describe('ozone Adapter', function () {
+  describe('internal function test deepSet', function() {
+    it('should check deepSet means "unconditionally set element to this value, optionally building the path" and Object.assign will blend the keys together, neither will deeply merge nested objects successfully.', function () {
+      let xx = {};
+      let yy = {
+        'publisher': {'id': 123},
+        'page': 567,
+        'id': 900
+      };
+      deepSetValue(xx, 'site', yy);
+      expect(xx.site).to.have.all.keys(['publisher', 'page', 'id']);
+      xx = {site: {'name': 'test1'}};
+      deepSetValue(xx, 'site', yy);
+      expect(xx.site).to.have.all.keys([ 'publisher', 'page', 'id']);
+      xx = {site: {'name': 'test1'}};
+      Object.assign(xx.site, yy);
+      expect(xx.site).to.have.all.keys([ 'publisher', 'page', 'id', 'name']);
+      xx = {site: {'name': 'test1'}};
+      deepSetValue(xx, 'site', yy);
+      expect(xx.site).to.have.all.keys([ 'publisher', 'page', 'id']);
+      xx = {regs: {dsa: {'val1:': 1}}};
+      deepSetValue(xx, 'regs.ext.usprivacy', {'usp_key': 'usp_value'});
+      expect(xx.regs).to.have.all.keys(['dsa', 'ext']);
+      xx = {regs: {dsa: {'val1:': 1}}};
+      deepSetValue(xx.regs, 'ext.usprivacy', {'usp_key': 'usp_value'});
+      expect(xx.regs).to.have.all.keys(['dsa', 'ext']);
+      let ozoneRequest = {user: { ext: {'data': 'some data ... '}, keywords: "a,b,c"}};
+      Object.assign(ozoneRequest, {user: {ext: {eids: ['some eid', 'another one']}}});
+      expect(ozoneRequest.user.ext).to.have.all.keys(['eids']);
+    });
+    it('should verify that mergeDeep does what I want it to do', function() {
+      let ozoneRequest = {user: { ext: {'data': 'some data ... '}, keywords: "a,b,c"}};
+      ozoneRequest = mergeDeep(ozoneRequest, {user: {ext: {eids: ['some eid', 'another one']}}});
+      expect(ozoneRequest.user.ext).to.have.all.keys(['eids', 'data']);
+      ozoneRequest = {user: { ext: {'data': 'some data ... '}, keywords: "a,b,c"}};
+      mergeDeep(ozoneRequest, {user: {ext: {eids: ['some eid', 'another one']}}});
+      expect(ozoneRequest.user.ext).to.have.all.keys(['eids', 'data']);
+    });
+  });
   describe('isBidRequestValid', function () {
     const validBidReq = {
       bidder: BIDDER_CODE,
@@ -2991,16 +3029,20 @@ describe('ozone Adapter', function () {
       expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
       expect(payload.imp[0].ext.ozone.customData[0].targeting).to.not.have.property('gender')
     });
-    it('should add ortb2 user data to the user object', function () {
+    it('should add ortb2 user data to the user object ONLY if inside ext/', function () {
       const bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
       bidderRequest.ortb2 = {
         'user': {
-          'gender': 'I identify as a box of rocks'
+          'gender': 'I identify as a box of rocks',
+          'ext': {
+            'gender': 'I identify as a fence panel'
+          }
         }
       };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-      expect(payload.user.gender).to.equal('I identify as a box of rocks');
+      expect(payload.user.ext.gender).to.equal('I identify as a fence panel');
+      expect(payload.user).to.not.have.property('gender');
     });
     it('should not override the user.ext.consent string even if this is set in config ortb2', function () {
       const bidderRequest = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
@@ -3386,12 +3428,12 @@ describe('ozone Adapter', function () {
       const req = spec.buildRequests(validBidRequests, validBidderRequest);
       const objResp = JSON.parse(JSON.stringify(validResponse));
       objResp.body.ext = {igi: [{
-          'impid': '1',
-          'igb': [{
-            'origin': 'https://paapi.dsp.com',
-            'pbs': '{"key": "value"}'
-          }]
-        }]};
+        'impid': '1',
+        'igb': [{
+          'origin': 'https://paapi.dsp.com',
+          'pbs': '{"key": "value"}'
+        }]
+      }]};
       const result = spec.interpretResponse(objResp, req);
       expect(result).to.be.an('object');
       expect(result.fledgeAuctionConfigs[0]['impid']).to.equal('1');
@@ -3406,6 +3448,27 @@ describe('ozone Adapter', function () {
       validres.body.seatbid[1].bid[1].price = 0;
       validres.body.seatbid[0].bid[0].ext.prebid.labels = ['bid1label1', 'bid1label2', 'bid1label3'];
       validres.body.seatbid[0].bid[1].ext.prebid.labels = ['bid2label'];
+      const result = spec.interpretResponse(validres, request);
+      expect(result.length).to.equal(4);
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_winner')).to.equal('marktest');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_labels')).to.equal('b1,b2,b3');
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_labels')).to.equal('bid1label1,bid1label2,bid1label3');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_winner')).to.equal('appnexus');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_appnexus_labels')).to.equal('bid2label');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_labels')).to.equal('bid2label');
+      expect(utils.deepAccess(result[2].adserverTargeting, 'oz_labels')).to.equal('b1,b2,b3');
+      expect(utils.deepAccess(result[3].adserverTargeting, 'oz_labels')).to.equal('bid2label');
+    });
+    it('should add labels in the adserver request if they are present in the alternative auction response location (ext.bidder.prebid.label - singular)', function () {
+      const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);
+      const validres = JSON.parse(JSON.stringify(validResponse2Bids));
+      validres.body.seatbid.push(JSON.parse(JSON.stringify(validres.body.seatbid[0])));
+      validres.body.seatbid[1].seat = 'marktest';
+      validres.body.seatbid[1].bid[0].ext.bidder.prebid = {label: ['b1', 'b2', 'b3']};
+      validres.body.seatbid[1].bid[0].price = 10;
+      validres.body.seatbid[1].bid[1].price = 0;
+      validres.body.seatbid[0].bid[0].ext.bidder.prebid = {label: ['bid1label1', 'bid1label2', 'bid1label3']};
+      validres.body.seatbid[0].bid[1].ext.bidder.prebid = {label: ['bid2label']};
       const result = spec.interpretResponse(validres, request);
       expect(result.length).to.equal(4);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_winner')).to.equal('marktest');
@@ -3665,6 +3728,335 @@ describe('ozone Adapter', function () {
       const ret = spec.getLoggableBidObject(obj);
       expect(ret).to.not.have.own.property('renderer');
       expect(ret.h).to.equal(100);
+    });
+  });
+  describe('getUserIdFromEids', function() {
+    it('should iterate over userIdAsEids when it is an object', function () {
+      let bid = { userIdAsEids:
+            [
+              {
+                source: 'pubcid.org',
+                uids: [{
+                  id: 'some-random-id-value',
+                  atype: 1
+                }]
+              },
+              {
+                source: 'adserver.org',
+                uids: [{
+                  id: 'some-random-id-value',
+                  atype: 1,
+                  ext: {
+                    rtiPartner: 'TDID'
+                  }
+                }]
+              }
+            ]
+      };
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(2);
+    });
+    it('should have no problem with userIdAsEids when it is present but null', function () {
+      let bid = {};
+      Object.defineProperty(bid, 'userIdAsEids', {
+        value: null,
+        writable: false,
+        enumerable: false,
+        configurable: true
+      });
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(0);
+    });
+    it('should have no problem with userIdAsEids when it is present but undefined', function () {
+      let bid = { };
+      Object.defineProperty(bid, 'userIdAsEids', {
+        value: undefined,
+        writable: false,
+        enumerable: false,
+        configurable: true
+      });
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(0);
+    });
+    it('should have no problem with userIdAsEids when it is absent', function () {
+      let bid = {};
+      Object.defineProperty(bid, 'userIdAsEids', {
+        writable: false,
+        enumerable: false,
+        configurable: true
+      });
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(0);
+    });
+    it('find pubcid in the old location when there are eids and when there arent', function () {
+      let bid = {crumbs: {pubcid: 'some-random-id-value' }};
+      Object.defineProperty(bid, 'userIdAsEids', {
+        value: undefined,
+        writable: false,
+        enumerable: false,
+        configurable: true
+      });
+      let response = spec.findAllUserIdsFromEids(bid);
+      expect(Object.keys(response).length).to.equal(1);
+    });
+  });
+  describe('pruneToExtPaths', function() {
+    it('should prune a json object according to my params', function () {
+      const jsonObj = JSON.parse(`{
+          "site": {
+            "name": "example",
+            "domain": "page.example.com",
+            "cat": ["IAB2"],
+            "sectioncat": ["IAB2-2"],
+            "pagecat": ["IAB2-2"],
+            "page": "https://page.example.com/here.html",
+            "ref": "https://ref.example.com",
+            "keywords": "power tools, drills",
+            "search": "drill",
+            "content": {
+              "userrating": "4",
+              "data": [
+                {
+                  "name": "www.dataprovider1.com",
+                  "ext": {
+                    "segtax": "7",
+                    "cids": ["iris_c73g5jq96mwso4d8"]
+                  },
+                  "segment": [
+                    { "id": "687" },
+                    { "id": "123" }
+                  ]
+                }
+              ],
+              "id": "some_id",
+              "episode": "1",
+              "title": "some title",
+              "series": "some series",
+              "season": "s1",
+              "artist": "John Doe",
+              "genre": "some genre",
+              "isrc": "CC-XXX-YY-NNNNN",
+              "url": "http://foo_url.de",
+              "cat": ["IAB1-1", "IAB1-2", "IAB2-10"],
+              "context": "7",
+              "keywords": "k1,k2",
+              "live": "0"
+            },
+            "ext": {
+              "data": {
+                "pageType": "article",
+                "category": "repair"
+              }
+            }
+          },
+          "user": {
+            "keywords": "a,b",
+            "data": [
+              {
+                "name": "dataprovider.com",
+                "ext": {
+                  "segtax": "4"
+                },
+                "segment": [
+                  {
+                    "id": "1"
+                  }
+                ]
+              }
+            ],
+            "ext": {
+              "data": {
+                "registered": "true",
+                "interests": ["cars"]
+              }
+            }
+          },
+          "regs": {
+            "gpp": "abc1234",
+            "gpp_sid": ["7"],
+            "ext": {
+              "dsa": {
+                "dsarequired": "3",
+                "pubrender": "0",
+                "datatopub": "2",
+                "transparency": [
+                  {
+                    "domain": "platform1domain.com",
+                    "dsaparams": ["1"]
+                  },
+                  {
+                    "domain": "platform2domain.com",
+                    "dsaparams": ["1", "2"]
+                  }
+                ]
+              }
+            }
+          },
+          "ext": {
+            "testval1": "value 1",
+            "data": {
+              "testval2": "value 2"
+            }
+          },
+          "test_bad": {
+            "testvalX": "XXXXXXXX",
+            "data": {
+              "testvalY": "YYYYYYYYYYYY"
+            },
+            "not_ext": {
+              "somekey": "someval"
+            }
+          }
+        }
+      `);
+      const parsed = spec.pruneToExtPaths(jsonObj, {maxTestDepth: 2});
+      expect(parsed).to.have.all.keys('site', 'user', 'regs', 'ext');
+      expect(Object.keys(parsed.site).length).to.equal(1);
+      expect(parsed.site).to.have.all.keys('ext');
+    });
+    it('should prune a json object according to my params even when its empty', function () {
+      const jsonObj = {};
+      const parsed = spec.pruneToExtPaths(jsonObj, {maxTestDepth: 2});
+      expect(Object.keys(parsed).length).to.equal(0);
+    });
+    it('should prune a json object using Infinity as max depth', function () {
+      const jsonObj = JSON.parse(`{
+          "site": {
+            "name": "example",
+            "domain": "page.example.com",
+            "cat": ["IAB2"],
+            "sectioncat": ["IAB2-2"],
+            "pagecat": ["IAB2-2"],
+            "page": "https://page.example.com/here.html",
+            "ref": "https://ref.example.com",
+            "keywords": "power tools, drills",
+            "search": "drill",
+            "content": {
+              "userrating": "4",
+              "data": [
+                {
+                  "name": "www.dataprovider1.com",
+                  "ext": {
+                    "segtax": "7",
+                    "cids": ["iris_c73g5jq96mwso4d8"]
+                  },
+                  "segment": [
+                    { "id": "687" },
+                    { "id": "123" }
+                  ]
+                }
+              ],
+              "id": "some_id",
+              "episode": "1",
+              "title": "some title",
+              "series": "some series",
+              "season": "s1",
+              "artist": "John Doe",
+              "genre": "some genre",
+              "isrc": "CC-XXX-YY-NNNNN",
+              "url": "http://foo_url.de",
+              "cat": ["IAB1-1", "IAB1-2", "IAB2-10"],
+              "context": "7",
+              "keywords": "k1,k2",
+              "live": "0"
+            },
+            "ext": {
+              "data": {
+                "pageType": "article",
+                "category": "repair"
+              }
+            }
+          },
+          "user": {
+            "keywords": "a,b",
+            "data": [
+              {
+                "name": "dataprovider.com",
+                "ext": {
+                  "segtax": "4"
+                },
+                "segment": [
+                  {
+                    "id": "1"
+                  }
+                ]
+              }
+            ],
+            "ext": {
+              "data": {
+                "registered": "true",
+                "interests": ["cars"]
+              }
+            }
+          },
+          "regs": {
+            "gpp": "abc1234",
+            "gpp_sid": ["7"],
+            "ext": {
+              "dsa": {
+                "dsarequired": "3",
+                "pubrender": "0",
+                "datatopub": "2",
+                "transparency": [
+                  {
+                    "domain": "platform1domain.com",
+                    "dsaparams": ["1"]
+                  },
+                  {
+                    "domain": "platform2domain.com",
+                    "dsaparams": ["1", "2"]
+                  }
+                ]
+              }
+            }
+          },
+          "ext": {
+            "testval1": "value 1",
+            "data": {
+              "testval2": "value 2"
+            }
+          },
+          "test_bad": {
+            "testvalX": "XXXXXXXX",
+            "data": {
+              "testvalY": "YYYYYYYYYYYY"
+            },
+            "not_ext": {
+              "somekey": "someval"
+            }
+          }
+        }
+      `);
+      const parsed = spec.pruneToExtPaths(jsonObj, {maxTestDepth: Infinity});
+      expect(parsed.site.content.data[0].ext.segtax).to.equal('7');
+    });
+    it('should prune another json object', function () {
+      const jsonObj = JSON.parse(`{
+          "site": {
+            "ext": {
+              "data": {
+                "pageType": "article",
+                "category": "something_easy_to_find"
+              }
+            }
+          },
+          "user": {
+            "ext": {
+              "data": {
+                "registered": true,
+                "interests": ["cars", "trucks", "aligators", "scorpions"]
+              }
+            },
+            "data": {
+              "key1": "This will not be picked up",
+              "reason": "Because its outside of ext"
+            }
+          }
+        }`);
+      const parsed = spec.pruneToExtPaths(jsonObj, {maxTestDepth: 2});
+      expect(Object.keys(parsed.user).length).to.equal(1);
+      expect(Object.keys(parsed)).to.have.members(['site', 'user']);
+      expect(Object.keys(parsed.user)).to.have.members(['ext']);
     });
   });
 });

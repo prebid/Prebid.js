@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/startioBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
-import {deepClone} from '../../../src/utils';
+import {deepClone} from '../../../src/utils.js';
 
 const DEFAULT_REQUEST_DATA = {
   adUnitCode: 'test-div',

@@ -241,7 +241,7 @@ describe('jixie Adapter', function () {
       // get the interceptors ready:
       const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'jixie') {
+        if (prop === 'jixie') {
           return testJixieCfg_;
         }
         return null;
@@ -329,7 +329,7 @@ describe('jixie Adapter', function () {
       };
       const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'priceGranularity') {
+        if (prop === 'priceGranularity') {
           return content;
         }
         return null;
@@ -346,7 +346,7 @@ describe('jixie Adapter', function () {
       const getConfigStub = sinon.stub(config, 'getConfig');
       const content = {w: 500, h: 400};
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'device') {
+        if (prop === 'device') {
           return content;
         }
         return null;
@@ -386,7 +386,7 @@ describe('jixie Adapter', function () {
 
     it('it should populate the floor info when available', function () {
       const oneSpecialBidReq = deepClone(bidRequests_[0]);
-      let request, payload = null;
+      let request; let payload = null;
       // 1 floor is not set
       request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       payload = JSON.parse(request.data);
@@ -410,7 +410,7 @@ describe('jixie Adapter', function () {
       // 2 aid is set in the jixie config
       const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'jixie') {
+        if (prop === 'jixie') {
           return { aid: '11223344556677889900' };
         }
         return null;

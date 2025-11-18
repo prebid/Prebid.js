@@ -2,7 +2,7 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
-import { getWinDimensions } from '../../../../../src/utils';
+import { getWinDimensions } from '../../../../../src/utils.js';
 
 const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modules/videojsVideoProvider');
 
@@ -12,9 +12,9 @@ const {
 const { PLAYBACK_MODE } = require('libraries/video/constants/constants.js');
 
 const videojs = require('video.js').default;
-require('videojs-playlist').default;
-require('videojs-ima').default;
-require('videojs-contrib-ads').default;
+require('videojs-playlist');
+require('videojs-ima');
+require('videojs-contrib-ads');
 
 describe('videojsProvider', function () {
   let config;
