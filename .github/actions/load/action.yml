@@ -29,5 +29,5 @@ runs:
         wdir="$(pwd)"
         parent="$(dirname "$wdir")"
         target="$(basename "$wdir")"
-        tar -C "$parent" -xf '${{ runner.temp }}/${{ inputs.name }}.tar' "$target"
+        tar --force-local -C "$parent" -xf '${{ runner.temp }}/${{ inputs.name }}.tar' "$target"
         
