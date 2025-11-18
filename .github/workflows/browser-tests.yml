@@ -29,10 +29,6 @@ on:
         description: "Browserstack user name"
       BROWSERSTACK_ACCESS_KEY:
         description: "Browserstack access key"
-env:
-  ctx-browsers: '["ChromeHeadless", "SafariNative"]'
-  ctx-macos: '["SafariNative"]'
-  ctx-coverage: '["ChromeHeadless"]'
 jobs:
   setup:
     name: "Setup environment"

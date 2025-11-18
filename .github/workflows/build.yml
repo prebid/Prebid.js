@@ -32,7 +32,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     timeout-minutes: 5
     outputs:
-      built-key: ${{ (inputs.build-cmd || inputs.run-npm-install) && format('build-{0}', steps.build-id.outputs.id) || inputs.source-key }}
+      built-key: ${{ (inputs.build-cmd || inputs.run-npm-install) && format('build-{0}', steps.build-id.outputs.result) || inputs.source-key }}
     steps:
       - name: Checkout
         if: ${{ inputs.build-cmd || inputs.run-npm-install }}
@@ -49,12 +49,16 @@ jobs:
         if: ${{ inputs.build-cmd }}
         run: ${{ inputs.build-cmd }}
       - name: Generate build ID
+        if: ${{ inputs.build-cmd  || inputs.run-npm-install }}
         id: build-id
-        if: ${{ inputs.build-cmd || inputs.run-npm-install }}
-        run:
-          echo 'id='"$(uuidgen)" >> "$GITHUB_OUTPUT";
+        uses: actions/github-script@v8
+        with:
+          result-encoding: string
+          script: |
+            const crypto = require("crypto");
+            return crypto.randomBytes(16).toString("hex");
       - name: 'Save working directory'
         if: ${{ inputs.build-cmd  || inputs.run-npm-install }}
         uses: ./.github/actions/save
         with:
-          name: build-${{ steps.build-id.outputs.id }}
+          name: build-${{ steps.build-id.outputs.result }}
