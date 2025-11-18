@@ -10,7 +10,7 @@ runs:
     - name: Tar working directory
       shell: bash
       run: |
-        tar -cf "${{ runner.temp }}/${{ inputs.name }}.tar" "$(pwd)"
+        tar -cvf "${{ runner.temp }}/${{ inputs.name }}.tar" "$HOME"
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
