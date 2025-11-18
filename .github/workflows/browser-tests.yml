@@ -23,7 +23,7 @@ on:
     outputs:
       coverage:
         description: Artifact name for coverage results
-        value: ${{ jobs.collect-coverage.outputs.coverage }}
+        value: ${{ jobs.browser-tests.outputs.coverage }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
