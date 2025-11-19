@@ -55,6 +55,22 @@ function handleAuctionInitEvent(auctionInitEvent) {
   };
   const filteredData = ignoreUndefined(data);
   sendData('auction-init', filteredData);
+
+  data.aun = auctionInitEvent?.adUnits.map(adUnit => {
+    const aun = {}
+
+    if (adUnit?.mediaTypes?.banner?.sizes) {
+      aun.banner = adUnit.mediaTypes.banner.sizes
+    }
+
+    if (adUnit?.mediaTypes?.video?.playerSize) {
+      aun.video = adUnit.mediaTypes.video.playerSize
+    }
+
+    return aun;
+  })
+
+  sendDataPost('auction-init', ignoreUndefined(data));
 }
 
 function handleBidWonEvent(bidWonEvent) {
@@ -104,6 +120,11 @@ function sendData(path, data) {
     const params = fields.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&');
     ajax(URL + '/' + path + '?' + params, undefined, null, { method: 'GET' });
   }
+}
+
+function sendDataPost(path, data) {
+  const payload = JSON.stringify(data);
+  ajax(URL + '/' + path, undefined, payload, { method: 'POST', contentType: 'application/json' });
 }
 
 function ignoreUndefined(data) {
