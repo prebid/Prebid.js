@@ -108,7 +108,7 @@ jobs:
         if: ${{ inputs.browser == 'safari technology preview' }}
         run: |
           brew install --cask safari-technology-preview
-          safaridriver --enable      
+          sudo safaridriver --enable      
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
