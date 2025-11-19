@@ -1,9 +1,9 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   cleanObj,
   deepAccess,
   deepClone,
   deepSetValue,
-  getDNT,
   inIframe,
   isArray,
   isEmpty,

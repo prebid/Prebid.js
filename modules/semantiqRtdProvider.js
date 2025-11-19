@@ -160,7 +160,7 @@ const dispatchPageImpressionEvent = (companyId) => {
     event_type: 'pageImpression',
     page_impression_id: pageImpressionId,
     source: 'semantiqPrebidModule',
-    url: pageUrl,
+    page_url: pageUrl,
   };
 
   return fetch(EVENT_COLLECTOR_URL, {

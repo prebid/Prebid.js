@@ -1,8 +1,8 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   logError,
   deepAccess,
   isArray,
-  getDNT,
   generateUUID,
   isEmpty,
   _each,

@@ -209,14 +209,31 @@ const browsersList = [
 
 const listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
-function bidRequestedHandler(args) {
+export function bidRequestedHandler(args) {
   const envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
   const envelopeSource = envelopeSourceCookieValue === 'true';
   let requests;
   requests = args.bids.map(function(bid) {
     return {
       envelope_source: envelopeSource,
-      has_envelope: bid.userId ? !!bid.userId.idl_env : false,
+      has_envelope: (function() {
+        // Check userIdAsEids for Prebid v10.0+ compatibility
+        if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
+          const liverampEid = bid.userIdAsEids.find(eid =>
+            eid.source === 'liveramp.com'
+          );
+          if (liverampEid && liverampEid.uids && liverampEid.uids.length > 0) {
+            return true;
+          }
+        }
+
+        // Fallback for older versions (backward compatibility)
+        if (bid.userId && bid.userId.idl_env) {
+          return true;
+        }
+
+        return false;
+      })(),
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auction_id: args.auctionId,
@@ -360,19 +377,26 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
       if (handlerRequest.length) {
         const wonEvent = {};
         if (handlerResponse.length) {
-          events = handlerRequest.filter(request => handlerResponse.filter(function (response) {
-            if (request.bid_id === response.bid_id) {
-              Object.assign(request, response);
-            }
-          }));
-          if (winningBids.length) {
-            events = events.filter(event => winningBids.filter(function (won) {
-              wonEvent.bid_id = won.requestId;
-              wonEvent.bid_won = true;
-              if (event.bid_id === wonEvent.bid_id) {
-                Object.assign(event, wonEvent);
+          events = [];
+          handlerRequest.forEach(request => {
+            handlerResponse.forEach(function (response) {
+              if (request.bid_id === response.bid_id) {
+                Object.assign(request, response);
               }
-            }))
+            });
+            events.push(request);
+          });
+          if (winningBids.length) {
+            events = events.map(event => {
+              winningBids.forEach(function (won) {
+                wonEvent.bid_id = won.requestId;
+                wonEvent.bid_won = true;
+                if (event.bid_id === wonEvent.bid_id) {
+                  Object.assign(event, wonEvent);
+                }
+              });
+              return event;
+            })
           }
         } else {
           events = handlerRequest;
