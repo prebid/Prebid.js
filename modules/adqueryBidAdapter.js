@@ -345,7 +345,6 @@ function buildRequest(validBidRequests, bidderRequest, isVideo = false) {
         // Opcjonalnie: w, h (viewport), ppi, pxratio
         w: getWinDimensions().visualViewport.height,
         h: getWinDimensions().visualViewport.width,
-        pxratio: window.top.devicePixelRatio || 1,
         // Dla mobile:
         ...(isMobile() && {
           os: getOS(),
