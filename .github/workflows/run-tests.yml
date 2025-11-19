@@ -107,7 +107,6 @@ jobs:
       - name: Install safari
         if: ${{ inputs.browser == 'safari technology preview' }}
         run: |
-          brew tap homebrew/cask-versions
           brew install --cask safari-technology-preview
 
       - name: 'BrowserStack Env Setup'
