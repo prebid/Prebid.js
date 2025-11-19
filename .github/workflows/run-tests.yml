@@ -118,9 +118,13 @@ jobs:
         if: ${{ inputs.install-safari }}
         run: |
           brew install --cask safari-technology-preview
+          brew ls safari-technology-preview
           sudo safaridriver --enable
           defaults write com.apple.Safari IncludeDevelopMenu YES
           defaults write com.apple.Safari AllowRemoteAutomation 1
+          sudo defaults write com.apple.Safari IncludeDevelopMenu YES
+          sudo defaults write com.apple.Safari AllowRemoteAutomation 1
+          
 
       - name: Run npm install
         if: ${{ inputs.run-npm-install }}
