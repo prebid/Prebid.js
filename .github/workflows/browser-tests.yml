@@ -81,6 +81,8 @@ jobs:
       test-cmd: npx gulp e2e-test-nobuild --local
       chunks: 1
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
+      install-safari: ${{ matrix.browser.runsOn == 'macos-latest' }}
+      run-npm-install: ${{ matrix.browser.runsOn == 'windows-latest' }}
       browserstack: false
 
   unit-tests:

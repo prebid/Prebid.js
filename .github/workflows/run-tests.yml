@@ -38,6 +38,16 @@ on:
         required: false
         default: ubuntu-latest
         type: string
+      install-safari:
+        description: Install Safari
+        type: boolean
+        required: false
+        default: false
+      run-npm-install:
+        description: Run npm install before tests
+        type: boolean
+        required: false
+        default: false
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -105,10 +115,17 @@ jobs:
           name: ${{ needs.build.outputs.built-key }}
 
       - name: Install safari
-        if: ${{ inputs.browser == 'safari technology preview' }}
+        if: ${{ inputs.install-safari }}
         run: |
           brew install --cask safari-technology-preview
-          sudo safaridriver --enable      
+          sudo safaridriver --enable
+          defaults write com.apple.Safari IncludeDevelopMenu YES
+          defaults write com.apple.Safari AllowRemoteAutomation 1
+
+      - name: Run npm install
+        if: ${{ inputs.run-npm-install }}
+        run: |
+          npm install
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
