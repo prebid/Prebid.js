@@ -41,6 +41,21 @@ function handleAuctionInitEvent(auctionInitEvent) {
   // dependeing on the result of rolling the dice outside of Prebid.
   const partnerIdFromAnalyticsLabels = auctionInitEvent.analyticsLabels?.partnerId;
 
+  const asz = []
+
+  auctionInitEvent?.adUnits.forEach(adUnit => {
+    if (adUnit?.mediaTypes?.banner?.sizes) {
+      for (const [w, h] of adUnit.mediaTypes.banner.sizes) {
+        asz.push(w + 'x' + h);
+      }
+    }
+
+    if (adUnit?.mediaTypes?.video?.playerSize) {
+      const [w, h] = adUnit.mediaTypes.video.playerSize;
+      asz.push(w + 'x' + h);
+    }
+  })
+
   const data = {
     id: generateUUID(),
     aid: auctionInitEvent.auctionId,
@@ -51,26 +66,11 @@ function handleAuctionInitEvent(auctionInitEvent) {
     tr: window.liTreatmentRate,
     me: encodeBoolean(window.liModuleEnabled),
     liip: encodeBoolean(liveIntentIdsPresent),
-    aun: auctionInitEvent?.adUnits?.length || 0
+    aun: auctionInitEvent?.adUnits?.length || 0,
+    asz: asz.join(',')
   };
   const filteredData = ignoreUndefined(data);
   sendData('auction-init', filteredData);
-
-  data.aun = auctionInitEvent?.adUnits.map(adUnit => {
-    const aun = {}
-
-    if (adUnit?.mediaTypes?.banner?.sizes) {
-      aun.banner = adUnit.mediaTypes.banner.sizes
-    }
-
-    if (adUnit?.mediaTypes?.video?.playerSize) {
-      aun.video = adUnit.mediaTypes.video.playerSize
-    }
-
-    return aun;
-  })
-
-  sendDataPost('auction-init', ignoreUndefined(data));
 }
 
 function handleBidWonEvent(bidWonEvent) {
@@ -98,7 +98,8 @@ function handleBidWonEvent(bidWonEvent) {
     rts: bidWonEvent.responseTimestamp,
     tr: window.liTreatmentRate,
     me: encodeBoolean(window.liModuleEnabled),
-    liip: encodeBoolean(liveIntentIdsPresent)
+    liip: encodeBoolean(liveIntentIdsPresent),
+    asz: bidWonEvent.width + 'x' + bidWonEvent.height
   };
 
   const filteredData = ignoreUndefined(data);
@@ -120,11 +121,6 @@ function sendData(path, data) {
     const params = fields.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&');
     ajax(URL + '/' + path + '?' + params, undefined, null, { method: 'GET' });
   }
-}
-
-function sendDataPost(path, data) {
-  const payload = JSON.stringify(data);
-  ajax(URL + '/' + path, undefined, payload, { method: 'POST', contentType: 'application/json' });
 }
 
 function ignoreUndefined(data) {
