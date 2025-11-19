@@ -121,7 +121,7 @@ jobs:
           defaults write com.apple.Safari IncludeDevelopMenu YES
           defaults write com.apple.Safari AllowRemoteAutomation 1
           sudo safaridriver --enable
-          "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
+          sudo "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
           
 
       - name: Run npm install
