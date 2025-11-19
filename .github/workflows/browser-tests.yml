@@ -43,7 +43,7 @@ jobs:
               browser = Object.assign({name, version: 'latest'}, browser);
               const browsers = [browser];
               if (browser.versions) {
-                 browsers.push(...Object.entries(browser.versions).map(([version, deb]) => Object.assign({version, deb}, browser)))
+                 browsers.push(...Object.entries(browser.versions).map(([version, deb]) => Object.assign({}, browser, {version, deb})))
               }
               return browsers;
             })
@@ -54,6 +54,7 @@ jobs:
             )
             const updatedBrowsersJson = JSON.stringify(bstackBrowsers, null,  2);
             console.log("Using browsers.json:", updatedBrowsersJson);
+            console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
               hasBSBrowsers: Object.keys(bstackBrowsers).length > 0,

@@ -130,8 +130,8 @@ jobs:
       - name: Install deb
         if: ${{ inputs.install-deb }}
         run: |
-          wget "${{ inputs.install-deb }}" -O package.deb
-          sudo dpkg -i package.deb
+          wget --no-verbose "${{ inputs.install-deb }}" -O package.deb 
+          sudo apt install ./package.deb
 
       - name: Run npm install
         if: ${{ inputs.run-npm-install }}
