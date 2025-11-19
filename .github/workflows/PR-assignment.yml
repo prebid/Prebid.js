@@ -10,19 +10,6 @@ on:
         description: Artifact name for built source
         required: true
         type: string
-      pr-bot-id:
-        description: "App ID for the PR bot GH app"
-        type: string
-        required: true
-      pr-bot-aws-ak:
-        description: "AWS Access Key ID"
-        type: string
-        required: true
-    secrets:
-      PR_BOT_PEM:
-        description: "PR bot GH app secret key"
-      PR_BOT_AWS_AK:
-        description: "AWS secret access key"
 
 env:
   #REVIEWER_TEAM: /orgs/prebid/teams/pbjs-reviewers/members
@@ -31,13 +18,14 @@ env:
 jobs:
   assign_reviewers:
     runs-on: ubuntu-latest
+    environment: PR-BOT
 
     steps:
       - name: Generate app token
         id: token
         uses: actions/create-github-app-token@v2
         with:
-          app-id: ${{ inputs.pr-bot-id }}
+          app-id: ${{ vars.PR_BOT_ID }}
           private-key: ${{ secrets.PR_BOT_PEM }}
 
       - name: Checkout
