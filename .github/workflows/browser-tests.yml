@@ -50,7 +50,7 @@ jobs:
             const bstackBrowsers = Object.fromEntries(
               // exlude versions of browsers that we can test on GH actions
               Object.entries(require('./browsers.json'))
-              .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) != null)
+              .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) == null)
             )
             const updatedBrowsersJson = JSON.stringify(bstackBrowsers, null,  2);
             console.log("Using browsers.json:", updatedBrowsersJson);

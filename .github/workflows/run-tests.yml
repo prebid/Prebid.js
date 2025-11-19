@@ -147,7 +147,7 @@ jobs:
       - name: Install deb
         if: ${{ inputs.install-deb }}
         run: |
-          sudo apt-get install --y --allow-downgrades "${{ runner.temp }}/package.deb"
+          sudo apt-get install -y --allow-downgrades "${{ runner.temp }}/package.deb"
 
       - name: Run npm install
         if: ${{ inputs.run-npm-install }}
