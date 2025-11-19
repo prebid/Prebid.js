@@ -127,11 +127,27 @@ jobs:
           sudo safaridriver --enable
           sudo "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
 
+      - name: Restore deb
+        if: ${{ inputs.install-deb }}
+        id: deb-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: "${{ runner.temp }}/package.deb"
+          key: ${{ inputs.install-deb }}
+      - name: Download deb
+        if: ${{ inputs.install-deb && (steps.deb-restore.outputs.cache-hit != 'true') }}
+        run: |
+          wget --no-verbose "${{ inputs.install-deb }}" -O "${{ runner.temp }}/package.deb"
+      - name: Cache deb
+        if: ${{ inputs.install-deb && (steps.deb-restore.outputs.cache-hit != 'true') }}
+        uses: actions/cache/save@v4
+        with:
+          path: "${{ runner.temp }}/package.deb"
+          key: ${{ inputs.install-deb }}
       - name: Install deb
         if: ${{ inputs.install-deb }}
         run: |
-          wget --no-verbose "${{ inputs.install-deb }}" -O package.deb 
-          sudo apt install ./package.deb
+          sudo apt-get install --y --allow-downgrades "${{ runner.temp }}/package.deb"
 
       - name: Run npm install
         if: ${{ inputs.run-npm-install }}
