@@ -4,13 +4,14 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   createBuildRequestsFn,
   createInterpretResponseFn,
-  createUserSyncGetter,
+  getUserSyncs,
   isBidRequestValid,
-} from '../libraries/vidazooUtils/bidderUtils.js';
+} from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'screencore';
 const GVLID = 1473;
 const BIDDER_VERSION = '1.0.0';
+const SYNC_URL = 'https://cs.screencore.io/api/sync';
 const REGION_SUBDOMAIN_SUFFIX = {
   EU: 'taqeu',
   US: 'taqus',
@@ -60,11 +61,6 @@ const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_
 
 const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
 
-const getUserSyncs = createUserSyncGetter({
-  iframeSyncUrl: 'https://cs.screencore.io/api/sync/iframe',
-  imageSyncUrl: 'https://cs.screencore.io/api/sync/image',
-});
-
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
@@ -73,7 +69,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
+  getUserSyncs: getUserSyncs(SYNC_URL),
 };
 
 registerBidder(spec);
