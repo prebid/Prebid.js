@@ -6,11 +6,15 @@ on:
         description: PR number
         required: true
         type: number
-      built-key:
-        description: Artifact name for built source
+      source-key:
+        description: Artifact name for the source code
         required: true
         type: string
-
+    secrets:
+      PR_BOT_AWS_SAK:
+        description: "AWS secret access key ID"
+      PR_BOT_PEM:
+        description: "PR Bot app secret key"
 env:
   #REVIEWER_TEAM: /orgs/prebid/teams/pbjs-reviewers/members
   REVIEWER_TEAM: /orgs/dgirardi-org/teams/test-reviewers/members
@@ -34,8 +38,18 @@ jobs:
       - name:  Restore working directory
         uses: ./.github/actions/load
         with:
-          name: ${{ inputs.built-key }}
+          name: ${{ inputs.source-key }}
 
+      - name: Get PR properties
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const script = require('./.github/workflows/scripts/getPRProperties.js')
+            return await script({github, context});
+
+      - name: Build
+        run: |
+          gulp build
 
       - name: Get PR Author and Files Changed
         if: false
@@ -45,7 +59,7 @@ jobs:
           echo "author=${{ github.event.pull_request.user.login }}" >> $GITHUB_ENV
 
           FILES_CHANGED=$(GH_TOKEN="${{ steps.token.outputs.token }}" gh api \
-            repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
+            repos/${{ github.repository }}/pulls/${{ inputs.pr-no }}/files \
             --jq '.[].filename')
 
           CORE_FILES_CHANGED="false"
