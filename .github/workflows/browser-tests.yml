@@ -1,29 +1,10 @@
 name: Run unit tests on all browsers
 on:
   workflow_call:
-    inputs:
-      chunks:
-        description: Number of chunks to split tests into
-        required: false
-        type: number
-        default: 1
-      build-cmd:
-        description: Build command, run once
-        required: false
-        type: string
-      test-cmd:
-        description: Test command, run once per chunk
-        required: true
-        type: string
-      timeout:
-        description: Timeout on test run
-        required: false
-        type: number
-        default: 10
     outputs:
       coverage:
         description: Artifact name for coverage results
-        value: ${{ jobs.browser-tests.outputs.coverage }}
+        value: ${{ jobs.unit-tests.outputs.coverage }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -33,7 +14,7 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
     with:
-      build-cmd: ${{ inputs.build-cmd }}
+      build-cmd: npx gulp precompile
 
   setup:
     needs: build
@@ -102,9 +83,9 @@ jobs:
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
       browserstack: false
 
-  browser-tests:
+  unit-tests:
     needs: [setup, build]
-    name: "Browser: ${{ matrix.browser.name }}"
+    name: "Unit (browser: ${{ matrix.browser.name }})"
     strategy:
       fail-fast: false
       matrix:
@@ -113,8 +94,8 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
-      chunks: ${{ inputs.chunks }}
+      test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
+      chunks: 8
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
 
   browserstack-tests:
@@ -125,8 +106,8 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.setup.outputs.bstack-key }}
-      test-cmd: ${{ inputs.test-cmd }} --browserstack --no-coverage
-      chunks: ${{ inputs.chunks }}
+      test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage
+      chunks: 8
       browserstack: true
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
