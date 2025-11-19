@@ -54,11 +54,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
+      id: ${{ steps.chunks.outputs.id }}
     steps:
       - name: Define chunks
         id: chunks
         run: |
-          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
+          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> out;
+          echo 'id='"$(uuidgen)" >> out;
+          cat out >> "$GITHUB_OUTPUT";
         
   build:
     uses: ./.github/workflows/build.yml
@@ -88,7 +91,7 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.browserstack && 'browser' || github.run_id }}${{ inputs.browserstack && 'stac' || inputs.test-cmd }}${{ inputs.browserstack && 'k' || matrix.chunk-no }}-${{ github.run_id }}
+      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.checkout.outputs.id, matrix.chunk-no) }}
       cancel-in-progress: false
 
     runs-on: ${{ inputs.runs-on }}
