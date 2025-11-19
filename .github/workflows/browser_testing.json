@@ -1,0 +1,17 @@
+{
+  "ChromeHeadless": {
+    "bsName": "chrome",
+    "coverage": true
+  },
+  "EdgeHeadless": {
+    "bsName": "edge",
+    "runsOn": "windows-latest"
+  },
+  "SafariNative": {
+    "bsName": "safari",
+    "runsOn": "macos-latest"
+  },
+  "FirefoxHeadless": {
+    "bsName": "firefox"
+  }
+}
