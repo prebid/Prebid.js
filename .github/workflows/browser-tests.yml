@@ -34,6 +34,15 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       build-cmd: ${{ inputs.build-cmd }}
+
+  assign-reviewers:
+    needs: build
+    if: ${{ github.event_name == 'pull_request_target' }}
+    uses:
+       ./.github/workflows/PR-assignment.yml
+    with:
+      pr-no: ${{ github.event.pull_request.number }}
+      built-key: ${{ needs.build.output.built-key }}
   setup:
     needs: build
     name: "Setup environment"
