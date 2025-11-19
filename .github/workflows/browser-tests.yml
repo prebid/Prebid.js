@@ -77,8 +77,8 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       browser: ${{ matrix.browser.wdioName }}
-      built-key: 'source'
-      test-cmd: npx gulp e2e-test --local
+      build-cmd: npx gulp build
+      test-cmd: npx gulp e2e-test-nobuild --local
       chunks: 1
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
       browserstack: false

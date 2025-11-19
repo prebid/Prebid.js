@@ -225,8 +225,8 @@ function precompile(options = {}) {
 }
 
 
-gulp.task('ts', helpers.execaTask('npx tsc'));
-gulp.task('ts-dev', helpers.execaTask('npx tsc --incremental'))
+gulp.task('ts', helpers.execaTask('tsc'));
+gulp.task('ts-dev', helpers.execaTask('tsc --incremental'))
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
