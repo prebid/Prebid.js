@@ -99,18 +99,6 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
-  test-e2e:
-    name: End-to-end tests
-    needs: checkout
-    uses: ./.github/workflows/run-tests.yml
-    with:
-      test-cmd: npx gulp e2e-test
-      browserstack: true
-      timeout: 15
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
   coveralls:
     name: Update coveralls
     needs: [checkout, test]

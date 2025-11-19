@@ -85,6 +85,22 @@ jobs:
       built-key: ${{ needs.build.outputs.built-key }}
       test-cmd: gulp test-build-logic
 
+  e2e-tests:
+    needs: [setup, build]
+    name: "E2E (browser: ${{ matrix.browser.wdioName }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      browser: ${{ matrix.browser.wdioName }}
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: npx gulp e2e-test --local
+      chunks: 1
+      runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
+
   browser-tests:
     needs: [setup, build]
     name: "Browser: ${{ matrix.browser.name }}"

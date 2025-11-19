@@ -2,6 +2,10 @@ name: Run unit tests
 on:
   workflow_call:
     inputs:
+      browser:
+        description: values to set as the BROWSER env variable
+        required: false
+        type: string
       chunks:
         description: Number of chunks to split tests into
         required: false
@@ -76,6 +80,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
       TEST_CHUNKS: ${{ inputs.chunks }}
       TEST_CHUNK: ${{ matrix.chunk-no }}
+      BROWSER: ${{ inputs.browser }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
     concurrency:
