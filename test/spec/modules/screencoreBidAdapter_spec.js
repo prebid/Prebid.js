@@ -33,7 +33,8 @@ const BID = {
       'param1': 'loremipsum',
       'param2': 'dolorsitamet'
     },
-    'placementId': 'testBanner'
+    'placementId': 'testBanner',
+    'endpointId': 'testEndpoint'
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
   'sizes': [[300, 250], [300, 600]],
@@ -66,7 +67,8 @@ const VIDEO_BID = {
     'cId': '635509f7ff6642d368cb9837',
     'pId': '59ac17c192832d0011283fe3',
     'bidFloor': 0.1,
-    'placementId': 'testBanner'
+    'placementId': 'testBanner',
+    'endpointId': 'testEndpoint'
   },
   'sizes': [[545, 307]],
   'mediaTypes': {
@@ -365,6 +367,7 @@ describe('screencore bid adapter', function () {
           ortb2Imp: VIDEO_BID.ortb2Imp,
           ortb2: ORTB2_OBJ,
           placementId: "testBanner",
+          endpointId: "testEndpoint",
           userData: [],
           coppa: 0
         }
@@ -436,6 +439,7 @@ describe('screencore bid adapter', function () {
           ortb2Imp: BID.ortb2Imp,
           ortb2: ORTB2_OBJ,
           placementId: "testBanner",
+          endpointId: "testEndpoint",
           userData: [],
           coppa: 0
         }
