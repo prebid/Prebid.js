@@ -211,6 +211,7 @@ describe('consentManagementGpp', function () {
         }
       };
       gppClient = mockClient();
+      gppDataHandler.enable();
     });
 
     describe('updateConsent', () => {

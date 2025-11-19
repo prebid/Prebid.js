@@ -12,7 +12,7 @@ import {
 } from '../../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
-import { getDNT } from '../navigatorData/dnt.js';
+import { getDNT } from '../dnt/index.js';
 import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
 
 import {getGlobalVarName} from '../../src/buildOptions.js';
@@ -385,7 +385,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     tmax: timeout
   };
 
-  const userIdsParam = getBidIdParameter('userId', generalObject);
+  const userIdsParam = getBidIdParameter('userIdAsEids', generalObject);
   if (userIdsParam) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }

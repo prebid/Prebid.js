@@ -1,4 +1,4 @@
-import { logInfo, logError, logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
+import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -6,7 +6,8 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'fwssp';
 const GVL_ID = 285;
-const USER_SYNC_URL = 'https://ads.stickyadstv.com/auto-user-sync';
+const USER_SYNC_URL = 'https://user-sync.fwmrm.net/ad/u?';
+let PRIVACY_VALUES = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,7 +22,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId && bid.params.videoAssetId);
+    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId);
   },
 
   /**
@@ -46,15 +47,28 @@ export const spec = {
     const buildRequest = (currentBidRequest, bidderRequest) => {
       const globalParams = constructGlobalParams(currentBidRequest);
       const keyValues = constructKeyValues(currentBidRequest, bidderRequest);
-
       const slotParams = constructSlotParams(currentBidRequest);
-      const dataString = constructDataString(globalParams, keyValues, slotParams);
+      const serializedSChain = constructSupplyChain(currentBidRequest, bidderRequest);
+      const dataString = constructDataString(globalParams, keyValues, serializedSChain, slotParams);
       return {
         method: 'GET',
         url: currentBidRequest.params.serverUrl,
         data: dataString,
         bidRequest: currentBidRequest
       };
+    }
+
+    const constructSupplyChain = (currentBidRequest, bidderRequest) => {
+      // Add schain object
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
+      if (!schain) {
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+      }
+      if (!schain) {
+        schain = currentBidRequest.schain;
+      }
+
+      return this.serializeSupplyChain(schain)
     }
 
     const constructGlobalParams = currentBidRequest => {
@@ -65,7 +79,7 @@ export const spec = {
         resp: 'vast4',
         prof: currentBidRequest.params.profile,
         csid: currentBidRequest.params.siteSectionId,
-        caid: currentBidRequest.params.videoAssetId,
+        caid: currentBidRequest.params.videoAssetId ? currentBidRequest.params.videoAssetId : 0,
         pvrn: getRandomNumber(),
         vprn: getRandomNumber(),
         flag: setFlagParameter(currentBidRequest.params.flags),
@@ -127,23 +141,6 @@ export const spec = {
         }
       }
 
-      // Add schain object
-      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
-      if (!schain) {
-        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
-      }
-      if (!schain) {
-        schain = currentBidRequest.schain;
-      }
-
-      if (schain) {
-        try {
-          keyValues.schain = JSON.stringify(schain);
-        } catch (error) {
-          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
-        }
-      }
-
       // Add 3rd party user ID
       if (currentBidRequest.userIdAsEids && currentBidRequest.userIdAsEids.length > 0) {
         try {
@@ -195,6 +192,34 @@ export const spec = {
         keyValues._fw_placement_type = videoPlacement;
         keyValues._fw_plcmt_type = videoPlcmt;
       }
+
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (typeof coppa === 'number') {
+        keyValues._fw_coppa = coppa;
+      }
+
+      const atts = deepAccess(bidderRequest, 'ortb2.device.ext.atts');
+      if (typeof atts === 'number') {
+        keyValues._fw_atts = atts;
+      }
+
+      const lmt = deepAccess(bidderRequest, 'ortb2.device.lmt');
+      if (typeof lmt === 'number') {
+        keyValues._fw_is_lat = lmt;
+      }
+
+      PRIVACY_VALUES = {}
+      if (keyValues._fw_coppa != null) {
+        PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
+      }
+
+      if (keyValues._fw_atts != null) {
+        PRIVACY_VALUES._fw_atts = keyValues._fw_atts;
+      }
+      if (keyValues._fw_is_lat != null) {
+        PRIVACY_VALUES._fw_is_lat = keyValues._fw_is_lat;
+      }
+
       return keyValues;
     }
 
@@ -232,19 +257,10 @@ export const spec = {
       return slotParams
     }
 
-    const constructDataString = (globalParams, keyValues, slotParams) => {
-      // Helper function to append parameters to the data string and to not include the last '&' param before ';
-      const appendParams = (params) => {
-        const keys = Object.keys(params);
-        return keys.map((key, index) => {
-          const encodedKey = encodeURIComponent(key);
-          const encodedValue = encodeURIComponent(params[key]);
-          return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
-        }).join('');
-      };
-
+    const constructDataString = (globalParams, keyValues, serializedSChain, slotParams) => {
       const globalParamsString = appendParams(globalParams) + ';';
-      const keyValuesString = appendParams(keyValues) + ';';
+      // serializedSChain requires special encoding logic as outlined in the ORTB spec https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/supplychainobject.md
+      const keyValuesString = appendParams(keyValues) + serializedSChain + ';';
       const slotParamsString = appendParams(slotParams) + ';';
 
       return globalParamsString + keyValuesString + slotParamsString;
@@ -253,6 +269,21 @@ export const spec = {
     return bidRequests.map(function(currentBidRequest) {
       return buildRequest(currentBidRequest, bidderRequest);
     });
+  },
+
+  /**
+   * Serialize a supply chain object to a string uri encoded
+   *
+   * @param {*} schain object
+   */
+  serializeSupplyChain: function(schain) {
+    if (!schain || !schain.nodes) return '';
+    const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return `&schain=${schain.ver},${schain.complete}!` +
+      schain.nodes.map(node => nodesProperties.map(prop =>
+        node[prop] ? encodeURIComponent(node[prop]) : '')
+        .join(','))
+        .join('!');
   },
 
   /**
@@ -334,7 +365,10 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    const params = {};
+    const params = {
+      mode: 'auto-user-sync',
+      ...PRIVACY_VALUES
+    };
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -358,21 +392,19 @@ export const spec = {
       }
     }
 
-    let queryString = '';
-    if (params) {
-      queryString = '?' + `${formatQS(params)}`;
-    }
+    const url = USER_SYNC_URL + appendParams(params);
 
     const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: USER_SYNC_URL + queryString
+        url: url
       });
-    } else if (syncOptions.iframeEnabled) {
+    }
+    if (syncOptions && syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL + queryString
+        url: url
       });
     }
 
@@ -726,6 +758,16 @@ function getTopMostWindow() {
   } catch (e) {}
 
   return res;
+}
+
+// Helper function to append parameters to the data string and to not include the last '&' param before ';
+function appendParams(params) {
+  const keys = Object.keys(params);
+  return keys.map((key, index) => {
+    const encodedKey = encodeURIComponent(key);
+    const encodedValue = encodeURIComponent(params[key]);
+    return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
+  }).join('');
 }
 
 registerBidder(spec);
