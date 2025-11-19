@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   contains,
@@ -106,7 +106,8 @@ export const spec = {
     {code: 'urekamedia'},
     {code: 'smartyexchange'},
     {code: 'infinety'},
-    {code: 'qohere'}
+    {code: 'qohere'},
+    {code: 'blutonic'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

@@ -27,5 +27,3 @@ export function getDM(win = window) {
   }
   return dm;
 }
-
-export { getDNT } from './dnt.js';
