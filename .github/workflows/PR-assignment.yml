@@ -18,7 +18,7 @@ env:
 jobs:
   assign_reviewers:
     runs-on: ubuntu-latest
-    environment: PR-BOT
+    environment: PR_BOT
 
     steps:
       - name: Generate app token
