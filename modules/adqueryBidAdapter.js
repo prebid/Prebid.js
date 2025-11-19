@@ -93,19 +93,10 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
 
-    const bidRequest = request.data;
-
     if (response?.body?.seatbid) {
       response.body.seatbid.forEach(seat => {
         seat.bid.forEach(bid => {
           logMessage('bidObj', bid);
-          const imp = bidRequest.imp.find(i => i.id === bid.impid) || bidRequest.imp[0];
-
-          // Only video is the target here
-          if (!imp.video) {
-            logMessage('bidObj NOT VIDEO', bid);
-            return;
-          }
 
           const bidResponse = {
             requestId: bid.impid,
@@ -121,8 +112,8 @@ export const spec = {
             vastXml: bid.adm || null,
             vastUrl: bid.admurl || (bid.adm ? null : bid.nurl) || null,
 
-            width: bid.w || imp.video.w || 640,
-            height: bid.h || imp.video.h || 360,
+            width: bid.w || 640,
+            height: bid.h || 360,
 
             meta: {
               advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : [],
