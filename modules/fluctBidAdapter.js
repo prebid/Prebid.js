@@ -23,16 +23,6 @@ const DEFAULT_CURRENCY = 'JPY';
  */
 function getBidFloorForSize(bid, size) {
   if (!isFn(bid.getFloor)) {
-    if (bid.params.bidfloor) {
-      // Check currency if specified - only JPY is supported
-      if (bid.params.currency && bid.params.currency !== DEFAULT_CURRENCY) {
-        return null;
-      }
-      return {
-        floor: parseFloat(bid.params.bidfloor),
-        currency: DEFAULT_CURRENCY
-      };
-    }
     return null;
   }
 
@@ -79,20 +69,20 @@ function getHighestBidFloor(bid) {
     }
   }
 
-  // Fallback: use wildcard size
-  if (isFn(bid.getFloor)) {
-    const floor = bid.getFloor({
-      currency: DEFAULT_CURRENCY,
-      mediaType: '*',
-      size: '*'
-    });
-
-    if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) {
-      return {
-        floor: floor.floor,
-        currency: floor.currency
-      };
+  // Final fallback: use params.bidfloor if available
+  if (bid.params.bidfloor) {
+    // Check currency if specified - only JPY is supported
+    if (bid.params.currency && bid.params.currency !== DEFAULT_CURRENCY) {
+      return null;
     }
+    const floorValue = parseFloat(bid.params.bidfloor);
+    if (isNaN(floorValue)) {
+      return null;
+    }
+    return {
+      floor: floorValue,
+      currency: DEFAULT_CURRENCY
+    };
   }
 
   return null;
