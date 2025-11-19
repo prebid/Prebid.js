@@ -135,6 +135,7 @@ jobs:
           timeout_minutes: ${{ inputs.timeout }}
           max_attempts: 3
           command: ${{ inputs.test-cmd }}
+          shell: bash
 
       - name: 'BrowserStackLocal Stop'
         if: ${{ inputs.browserstack }}
