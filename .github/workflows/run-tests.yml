@@ -11,6 +11,10 @@ on:
         description: Build command, run once
         required: false
         type: string
+      built-key:
+        description: Artifact name for built source
+        required: false
+        type: string
       test-cmd:
         description: Test command, run once per chunk
         required: true
@@ -19,11 +23,17 @@ on:
         description: If true, set up browserstack environment and adjust concurrency
         required: false
         type: boolean
+        default: false
       timeout:
         description: Timeout on test run
         required: false
         type: number
         default: 10
+      runs-on:
+        description: Runner image
+        required: false
+        default: ubuntu-latest
+        type: string
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -35,47 +45,30 @@ on:
         description: "Browserstack access key"
 
 jobs:
-  build:
-    name: Build
+  checkout:
+    name: "Set up environment"
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
-      wdir: ${{ inputs.build-cmd && format('build-{0}', inputs.build-cmd) || 'source' }}
     steps:
-      - name: Checkout
-        if: ${{ inputs.build-cmd }}
-        uses: actions/checkout@v5
-      - name: Restore source
-        if: ${{ inputs.build-cmd }}
-        uses: ./.github/actions/load
-        with:
-          name: source
-
-      - name: Build
-        if: ${{ inputs.build-cmd }}
-        run: ${{ inputs.build-cmd }}
-
-      - name: 'Save working directory'
-        if: ${{ inputs.build-cmd }}
-        uses: ./.github/actions/save
-        with:
-          name: build-${{ inputs.build-cmd }}
-
       - name: Define chunks
         id: chunks
         run: |
           echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
-          
-          
+        
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: ${{ !inputs.built-key && inputs.build-cmd || '' }}
+      source-key: ${{ inputs.built-key || 'source' }}
 
   run-tests:
-    needs: build
+    needs: [checkout, build]
     strategy:
       fail-fast: false
       max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
       matrix:
-        chunk-no: ${{ fromJSON(needs.build.outputs.chunks) }}
+        chunk-no: ${{ fromJSON(needs.checkout.outputs.chunks) }}
 
     name: "Test chunk ${{ matrix.chunk-no }}"
     env:
@@ -93,7 +86,7 @@ jobs:
       group: ${{ inputs.browserstack && 'browser' || github.run_id }}${{ inputs.browserstack && 'stac' || inputs.test-cmd }}${{ inputs.browserstack && 'k' || matrix.chunk-no }}-${{ github.run_id }}
       cancel-in-progress: false
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -101,7 +94,7 @@ jobs:
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.wdir }}
+          name: ${{ needs.build.outputs.built-key }}
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
@@ -137,6 +130,7 @@ jobs:
 
       - name: 'Check for coverage'
         id: 'coverage'
+        shell: bash
         run: |
           if [ -d "./build/coverage" ]; then 
             echo 'coverage=true' >> "$GITHUB_OUTPUT";
@@ -164,7 +158,7 @@ jobs:
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.wdir }}
+          name: ${{ needs.build.outputs.built-key }}
 
       - name: Download coverage results
         uses: actions/download-artifact@v5
