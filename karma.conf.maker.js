@@ -40,6 +40,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
+    'karma-safarinative-launcher',
     'karma-coverage',
     'karma-mocha',
     'karma-chai',
@@ -47,14 +48,14 @@ function newPluginsArray(browserstack) {
     'karma-sourcemap-loader',
     'karma-spec-reporter',
     'karma-webpack',
-    'karma-mocha-reporter'
+    'karma-mocha-reporter',
+    '@chiragrupani/karma-chromium-edge-launcher',
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
   }
   plugins.push('karma-firefox-launcher');
   plugins.push('karma-opera-launcher');
-  plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
   return plugins;
 }
