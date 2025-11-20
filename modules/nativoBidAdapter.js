@@ -4,6 +4,18 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
+const BIDDER_CODE = 'nativo'
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/esi.json?ntv_epid=39'
+
+const GVLID = 263
+
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
+
+const localPbjsRef = getGlobal()
+
+const adUnitsRequested = {}
+const extData = {}
+
 const converter = ortbConverter({
   context: {
     // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
@@ -41,18 +53,6 @@ const converter = ortbConverter({
     return request
   }
 })
-
-const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/esi.json?ntv_epid=39'
-
-const GVLID = 263
-
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
-
-const localPbjsRef = getGlobal()
-
-const adUnitsRequested = {}
-const extData = {}
 
 // Filtering
 const adsToFilter = new Set()
