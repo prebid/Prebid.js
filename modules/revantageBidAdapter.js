@@ -1,19 +1,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, deepAccess, getWinDimensions, logWarn, logError } from '../src/utils.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getPercentInView } from '../libraries/percentInView/percentInView.js';
+import { deepClone, deepAccess, logWarn, logError } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'revantage';
 const ENDPOINT_URL = 'https://bid.revantage.io/bid';
 const SYNC_URL = 'https://sync.revantage.io/sync';
 
-const CACHE_DURATION = 30000;
-let pageContextCache = null;
-let cacheTimestamp = 0;
-
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner'],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     return !!(bid && bid.params && bid.params.feedId);
@@ -24,11 +19,11 @@ export const spec = {
       const openRtbBidRequest = makeOpenRtbRequest(validBidRequests, bidderRequest);
       return {
         method: 'POST',
-        url: ENDPOINT_URL,
+        url: ENDPOINT_URL + '?feed=' + encodeURIComponent(validBidRequests[0].params.feedId),
         data: JSON.stringify(openRtbBidRequest),
         options: {
           contentType: 'text/plain',
-          withCredentials: true
+          withCredentials: false
         },
         bidRequests: validBidRequests
       };
@@ -45,44 +40,82 @@ export const spec = {
     const bidIdMap = {};
     originalBids.forEach(b => { bidIdMap[b.bidId] = b; });
 
-    if (!resp || !Array.isArray(resp.bids)) return bids;
+    if (!resp || !Array.isArray(resp.seatbid)) return bids;
 
-    resp.bids.forEach((bid) => {
-      if (!bid || bid.error || !bid.raw_response || !bid.price || bid.price <= 0) return;
+    resp.seatbid.forEach(seatbid => {
+      if (Array.isArray(seatbid.bid)) {
+        seatbid.bid.forEach(rtbBid => {
+          const originalBid = bidIdMap[rtbBid.impid];
+          if (!originalBid || !rtbBid.price || rtbBid.price <= 0) return;
 
-      const rawResponse = bid.raw_response;
-      if (rawResponse && Array.isArray(rawResponse.seatbid)) {
-        rawResponse.seatbid.forEach(seatbid => {
-          if (Array.isArray(seatbid.bid)) {
-            seatbid.bid.forEach(rtbBid => {
-              const originalBid = bidIdMap[rtbBid.impid];
-              if (originalBid && rtbBid.price > 0 && rtbBid.adm) {
-                bids.push({
-                  requestId: originalBid.bidId,
-                  cpm: rtbBid.price,
-                  width: rtbBid.w || getFirstSize(originalBid, 0, 300),
-                  height: rtbBid.h || getFirstSize(originalBid, 1, 250),
-                  creativeId: rtbBid.adid || rtbBid.id || bid.adid || 'revantage-' + Date.now(),
-                  currency: rtbBid.cur || 'USD',
-                  netRevenue: true,
-                  ttl: 300,
-                  ad: rtbBid.adm,
-                  meta: {
-                    advertiserDomains: rtbBid.adomain || [],
-                    dsp: bid.dsp,
-                    networkName: 'Revantage'
-                  }
-                });
-              }
-            });
+          // Check for ad markup
+          const hasAdMarkup = !!(rtbBid.adm || rtbBid.vastXml || rtbBid.vastUrl);
+          if (!hasAdMarkup) {
+            logWarn('Revantage: No ad markup in bid');
+            return;
           }
+
+          const bidResponse = {
+            requestId: originalBid.bidId,
+            cpm: rtbBid.price,
+            width: rtbBid.w || getFirstSize(originalBid, 0, 300),
+            height: rtbBid.h || getFirstSize(originalBid, 1, 250),
+            creativeId: rtbBid.crid || rtbBid.id || rtbBid.adid || 'revantage-' + Date.now(),
+            dealId: rtbBid.dealid,
+            currency: resp.cur || 'USD',
+            netRevenue: true,
+            ttl: 300,
+            meta: {
+              advertiserDomains: rtbBid.adomain || [],
+              dsp: seatbid.seat || 'unknown',
+              networkName: 'Revantage'
+            }
+          };
+
+          // Add burl for server-side win notification
+          if (rtbBid.burl) {
+            bidResponse.burl = rtbBid.burl;
+          }
+
+          // Check if this is a video bid
+          const isVideo = (rtbBid.ext && rtbBid.ext.mediaType === 'video') ||
+                         rtbBid.vastXml || rtbBid.vastUrl ||
+                         (originalBid.mediaTypes && originalBid.mediaTypes.video && 
+                          !originalBid.mediaTypes.banner);
+
+          if (isVideo) {
+            bidResponse.mediaType = VIDEO;
+            bidResponse.vastXml = rtbBid.vastXml || rtbBid.adm;
+            bidResponse.vastUrl = rtbBid.vastUrl;
+            
+            if (!bidResponse.vastUrl && !bidResponse.vastXml) {
+              logWarn('Revantage: Video bid missing VAST content');
+              return;
+            }
+          } else {
+            bidResponse.mediaType = BANNER;
+            bidResponse.ad = rtbBid.adm;
+            
+            if (!bidResponse.ad) {
+              logWarn('Revantage: Banner bid missing ad markup');
+              return;
+            }
+          }
+
+          // Add DSP price if available
+          if (rtbBid.ext && rtbBid.ext.dspPrice) {
+            bidResponse.meta.dspPrice = rtbBid.ext.dspPrice;
+          }
+
+          bids.push(bidResponse);
         });
       }
     });
+    
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
     let params = '?cb=' + new Date().getTime();
 
@@ -91,20 +124,66 @@ export const spec = {
         params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       }
       if (typeof gdprConsent.consentString === 'string') {
-        params += '&gdpr_consent=' + gdprConsent.consentString;
+        params += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString);
       }
     }
+    
     if (uspConsent && typeof uspConsent === 'string') {
-      params += '&us_privacy=' + uspConsent;
+      params += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    if (gppConsent) {
+      if (gppConsent.gppString) {
+        params += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      }
+      if (gppConsent.applicableSections) {
+        params += '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
+      }
     }
 
     if (syncOptions.iframeEnabled) {
       syncs.push({ type: 'iframe', url: SYNC_URL + params });
     }
     if (syncOptions.pixelEnabled) {
-      syncs.push({ type: 'image', url: SYNC_URL + '?tag=img&cb=' + new Date().getTime() + params.substring(params.indexOf('&')) });
+      syncs.push({ type: 'image', url: SYNC_URL + params + '&type=img' });
     }
+    
     return syncs;
+  },
+
+  onBidWon: function(bid) {
+    try {
+      // Send server-side win notification using burl
+      if (bid.burl) {
+        if (navigator.sendBeacon) {
+          const success = navigator.sendBeacon(bid.burl);
+          
+          // Fallback to fetch if sendBeacon fails
+          if (!success) {
+            fetch(bid.burl, {
+              method: 'GET',
+              mode: 'no-cors',
+              cache: 'no-cache',
+              keepalive: true
+            }).catch(error => {
+              logError('Revantage: Win notification fetch failed', error);
+            });
+          }
+        } else {
+          // Fallback for browsers without sendBeacon
+          fetch(bid.burl, {
+            method: 'GET',
+            mode: 'no-cors',
+            cache: 'no-cache',
+            keepalive: true
+          }).catch(error => {
+            logError('Revantage: Win notification fetch failed', error);
+          });
+        }
+      }
+    } catch (error) {
+      logError('Revantage: Error in onBidWon', error);
+    }
   }
 };
 
@@ -114,47 +193,52 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
     const sizes = getSizes(bid);
     const floor = getBidFloorEnhanced(bid);
 
-    // Enhanced viewability calculation using library
-    let viewability = {};
-    try {
-      const rect = getBoundingClientRect(bid.adUnitCode) || {};
-      const winDims = getWinDimensions();
-      const percentInView = getPercentInView(rect, winDims) || 0;
-      viewability = {
-        percentInView: percentInView,
-        inViewport: percentInView > 0,
-        rectTop: rect.top,
-        rectLeft: rect.left,
-        rectWidth: rect.width,
-        rectHeight: rect.height,
-        winWidth: winDims.width,
-        winHeight: winDims.height
-      };
-    } catch (e) {
-      logWarn('Revantage: viewability calculation failed', e);
-    }
-
-    return {
+    const impression = {
       id: bid.bidId,
       tagid: bid.adUnitCode,
-      banner: {
-        w: sizes[0][0],
-        h: sizes[0][1],
-        format: sizes.map(size => ({ w: size[0], h: size[1] }))
-      },
       bidfloor: floor,
       ext: {
         feedId: deepAccess(bid, 'params.feedId'),
         bidder: {
           placementId: deepAccess(bid, 'params.placementId'),
           publisherId: deepAccess(bid, 'params.publisherId')
-        },
-        viewability: viewability
+        }
       }
     };
-  });
 
-  const pageContext = getPageContextCached();
+    // Add banner specs
+    if (bid.mediaTypes && bid.mediaTypes.banner) {
+      impression.banner = {
+        w: sizes[0][0],
+        h: sizes[0][1],
+        format: sizes.map(size => ({ w: size[0], h: size[1] }))
+      };
+    }
+
+    // Add video specs
+    if (bid.mediaTypes && bid.mediaTypes.video) {
+      const video = bid.mediaTypes.video;
+      impression.video = {
+        mimes: video.mimes || ['video/mp4', 'video/webm'],
+        minduration: video.minduration || 0,
+        maxduration: video.maxduration || 60,
+        protocols: video.protocols || [2, 3, 5, 6],
+        w: video.playerSize && video.playerSize[0] ? video.playerSize[0][0] : 640,
+        h: video.playerSize && video.playerSize[0] ? video.playerSize[0][1] : 360,
+        placement: video.placement || 1,
+        playbackmethod: video.playbackmethod || [1, 2],
+        api: video.api || [1, 2],
+        skip: video.skip || 0,
+        skipmin: video.skipmin || 0,
+        skipafter: video.skipafter || 0,
+        pos: video.pos || 0,
+        startdelay: video.startdelay || 0,
+        linearity: video.linearity || 1
+      };
+    }
+
+    return impression;
+  });
 
   let user = {};
   if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
@@ -200,6 +284,20 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
     regs.ext.us_privacy = bidderRequest.uspConsent;
   }
 
+  // Add GPP consent
+  if (bidderRequest.gppConsent) {
+    if (bidderRequest.gppConsent.gppString) {
+      regs.ext.gpp = bidderRequest.gppConsent.gppString;
+    }
+    if (bidderRequest.gppConsent.applicableSections) {
+      // Send as array, not comma-separated string
+      regs.ext.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    }
+  }
+
+  // Get supply chain
+  const schain = bidderRequest.schain || (validBidRequests[0] && validBidRequests[0].schain);
+
   return {
     id: bidderRequest.auctionId,
     imp: imp,
@@ -207,14 +305,12 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
     device: device,
     user: user,
     regs: regs,
+    schain: schain,
     tmax: bidderRequest.timeout || 1000,
     cur: ['USD'],
     ext: {
       prebid: {
-        version: (typeof window !== 'undefined' && window.pbjs && window.pbjs.version) ? window.pbjs.version : 'unknown'
-      },
-      revantage: {
-        pageContext: pageContext
+        version: '$prebid.version$'
       }
     }
   };
@@ -224,6 +320,9 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
 function getSizes(bid) {
   if (bid.mediaTypes && bid.mediaTypes.banner && Array.isArray(bid.mediaTypes.banner.sizes)) {
     return bid.mediaTypes.banner.sizes;
+  }
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+    return bid.mediaTypes.video.playerSize;
   }
   return bid.sizes || [[300, 250]];
 }
@@ -236,13 +335,15 @@ function getFirstSize(bid, index, defaultVal) {
 function getBidFloorEnhanced(bid) {
   let floor = 0;
   if (typeof bid.getFloor === 'function') {
+    const mediaType = (bid.mediaTypes && bid.mediaTypes.video) ? 'video' : 'banner';
     const sizes = getSizes(bid);
+    
     // Try size-specific floors first
     for (let i = 0; i < sizes.length; i++) {
       try {
         const floorInfo = bid.getFloor({
           currency: 'USD',
-          mediaType: 'banner',
+          mediaType: mediaType,
           size: sizes[i]
         });
         if (floorInfo && floorInfo.floor > floor && floorInfo.currency === 'USD' && !isNaN(floorInfo.floor)) {
@@ -256,7 +357,7 @@ function getBidFloorEnhanced(bid) {
     // Fallback to general floor
     if (floor === 0) {
       try {
-        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' });
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: mediaType, size: '*' });
         if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(floorInfo.floor)) {
           floor = floorInfo.floor;
         }
@@ -276,177 +377,6 @@ function getDeviceType() {
   if (/iPhone|iPod/i.test(ua) || (width < 768 && /Mobile/i.test(ua))) return 2; // Mobile
   if (/iPad/i.test(ua) || (width >= 768 && width < 1024)) return 5; // Tablet
   return 1; // Desktop/PC
-}
-
-// === CACHED PAGE CONTEXT ===
-function getPageContextCached() {
-  const now = Date.now();
-  if (!pageContextCache || (now - cacheTimestamp) > CACHE_DURATION) {
-    pageContextCache = extractPageContext();
-    cacheTimestamp = now;
-  }
-  return deepClone(pageContextCache);
-}
-
-function extractPageContext() {
-  try {
-    if (typeof document === 'undefined') return {};
-
-    return {
-      // Basic page info
-      title: document.title || '',
-      url: typeof window !== 'undefined' ? window.location.href : '',
-      domain: typeof window !== 'undefined' ? window.location.hostname : '',
-      pathname: typeof window !== 'undefined' ? window.location.pathname : '',
-      referrer: typeof document !== 'undefined' ? document.referrer : '',
-
-      // Meta tags for server processing
-      metaTags: getMetaTags(),
-
-      // Content structure for server analysis
-      contentStructure: getContentStructure(),
-
-      // Client-side only metrics
-      mediaElements: getMediaElements(),
-
-      // Performance data
-      timestamp: Date.now()
-    };
-  } catch (e) {
-    logWarn('Revantage: page context extraction failed', e);
-    return {};
-  }
-}
-
-function getMetaTags() {
-  try {
-    if (typeof document === 'undefined') return {};
-
-    const metaTags = {};
-    const metas = document.querySelectorAll('meta');
-
-    for (let i = 0; i < metas.length; i++) {
-      const meta = metas[i];
-      const name = meta.getAttribute('name') || meta.getAttribute('property');
-      const content = meta.getAttribute('content');
-
-      if (name && content) {
-        metaTags[name] = content;
-      }
-    }
-
-    // Get canonical URL
-    const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) {
-      metaTags.canonical = canonical.href;
-    }
-
-    return metaTags;
-  } catch (e) {
-    return {};
-  }
-}
-
-function getContentStructure() {
-  try {
-    if (typeof document === 'undefined') return {};
-
-    return {
-      // Headings for server-side analysis
-      headings: {
-        h1: getTextFromElements('h1'),
-        h2: getTextFromElements('h2', 5),
-        h3: getTextFromElements('h3', 5)
-      },
-
-      // Sample content for server processing
-      contentSamples: {
-        firstParagraph: getFirstParagraphText(),
-        lastModified: document.lastModified || null
-      },
-
-      // Structured data (raw JSON for server parsing)
-      structuredData: getStructuredDataRaw(),
-
-      // Page elements that affect content type
-      pageElements: {
-        hasArticle: !!document.querySelector('article'),
-        hasVideo: !!document.querySelector('video'),
-        hasForm: !!document.querySelector('form'),
-        hasProduct: !!document.querySelector('[itemtype*="Product"]'),
-        hasBlog: !!document.querySelector('.blog, #blog, [class*="blog"]')
-      }
-    };
-  } catch (e) {
-    return {};
-  }
-}
-
-function getTextFromElements(selector, limit) {
-  limit = limit || 3;
-  try {
-    if (typeof document === 'undefined') return [];
-    const elements = document.querySelectorAll(selector);
-    const texts = [];
-
-    for (let i = 0; i < Math.min(elements.length, limit); i++) {
-      const text = elements[i].textContent;
-      if (text && text.trim().length > 0) {
-        texts.push(text.trim());
-      }
-    }
-    return texts;
-  } catch (e) {
-    return [];
-  }
-}
-
-function getFirstParagraphText() {
-  try {
-    if (typeof document === 'undefined') return '';
-    const firstP = document.querySelector('p');
-    if (firstP && firstP.textContent) {
-      return firstP.textContent.substring(0, 500);
-    }
-    return '';
-  } catch (e) {
-    return '';
-  }
-}
-
-function getStructuredDataRaw() {
-  try {
-    if (typeof document === 'undefined') return [];
-    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-    const structuredData = [];
-
-    for (let i = 0; i < scripts.length; i++) {
-      try {
-        const data = JSON.parse(scripts[i].textContent);
-        structuredData.push(data);
-      } catch (e) {
-        // Invalid JSON, skip
-      }
-    }
-
-    return structuredData;
-  } catch (e) {
-    return [];
-  }
-}
-
-function getMediaElements() {
-  try {
-    if (typeof document === 'undefined') return {};
-
-    return {
-      imageCount: document.querySelectorAll('img').length,
-      videoCount: document.querySelectorAll('video').length,
-      iframeCount: document.querySelectorAll('iframe').length
-    };
-  } catch (e) {
-    return {};
-  }
 }
 
 // === REGISTER ===
