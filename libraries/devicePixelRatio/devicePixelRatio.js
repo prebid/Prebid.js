@@ -22,20 +22,20 @@ function deriveFromScreen(screen) {
 
 function deriveFromDimensions(win, screen) {
   const innerWidth = Number(win?.innerWidth);
-  const outerWidth = Number(win?.outerWidth ?? screen?.width);
+  const screenWidth = Number(screen?.width ?? screen?.availWidth);
 
-  if (isValidDpr(innerWidth) && isValidDpr(outerWidth)) {
-    const widthRatio = outerWidth / innerWidth;
+  if (isValidDpr(innerWidth) && isValidDpr(screenWidth)) {
+    const widthRatio = screenWidth / innerWidth;
     if (isValidDpr(widthRatio)) {
       return widthRatio;
     }
   }
 
   const innerHeight = Number(win?.innerHeight);
-  const outerHeight = Number(win?.outerHeight ?? screen?.height);
+  const screenHeight = Number(screen?.height ?? screen?.availHeight);
 
-  if (isValidDpr(innerHeight) && isValidDpr(outerHeight)) {
-    const heightRatio = outerHeight / innerHeight;
+  if (isValidDpr(innerHeight) && isValidDpr(screenHeight)) {
+    const heightRatio = screenHeight / innerHeight;
     if (isValidDpr(heightRatio)) {
       return heightRatio;
     }

@@ -12,12 +12,12 @@ describe('device utils', () => {
       expect(getDevicePixelRatio(win)).to.equal(2);
     });
 
-    it('derives ratio from window dimensions', () => {
-      const win = {innerWidth: 400, outerWidth: 1000};
+    it('derives ratio from screen width and inner width', () => {
+      const win = {innerWidth: 400, screen: {width: 1000}};
       expect(getDevicePixelRatio(win)).to.equal(2.5);
     });
 
-    it('falls back to screen dimensions when needed', () => {
+    it('falls back to screen height when needed', () => {
       const win = {innerHeight: 300, screen: {height: 750}};
       expect(getDevicePixelRatio(win)).to.equal(2.5);
     });
