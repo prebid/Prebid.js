@@ -42,8 +42,10 @@ jobs:
             ).flatMap(([name, browser]) => {
               browser = Object.assign({name, version: 'latest'}, browser);
               const browsers = [browser];
-              if (browser.versions) {
-                 browsers.push(...Object.entries(browser.versions).map(([version, deb]) => Object.assign({}, browser, {version, deb})))
+              const versions = browser.versions;
+              if (versions) {
+                 delete browser.versions;
+                 browsers.push(...Object.entries(versions).map(([version, def]) => Object.assign({}, browser, {version, ...def})))
               }
               return browsers;
             })
