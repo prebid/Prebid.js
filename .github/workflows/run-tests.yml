@@ -28,6 +28,11 @@ on:
         required: false
         type: boolean
         default: false
+      browserstack-sessions:
+        description: Number of browserstack sessions needed to run tests
+        required: false
+        type: number
+        default: 6
       timeout:
         description: Timeout on test run
         required: false
@@ -169,6 +174,8 @@ jobs:
       - name: 'Wait for browserstack'
         if: ${{ inputs.browserstack }}
         uses: ./.github/actions/wait-for-browserstack
+        with:
+          sessions: ${{ inputs.browserstack-sessions }}
 
       - name: Run tests
         uses: nick-fields/retry@v3

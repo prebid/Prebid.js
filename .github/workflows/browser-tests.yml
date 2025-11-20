@@ -24,6 +24,7 @@ jobs:
       browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
       latestBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).latestBrowsers) }}
       bstack-key: ${{ steps.bstack-save.outputs.name }}
+      bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -59,13 +60,13 @@ jobs:
             console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
-              hasBSBrowsers: Object.keys(bstackBrowsers).length > 0,
+              bsBrowsers: Object.keys(bstackBrowsers).length,
               browsers,
               latestBrowsers: browsers.filter(browser => browser.version === 'latest') 
             }
       - name: "Save working directory"
         id: bstack-save
-        if: ${{ fromJSON(steps.define.outputs.result).hasBSBrowsers }}
+        if: ${{ fromJSON(steps.define.outputs.result).bsBrowsers > 0 }}
         uses: ./.github/actions/save
         with:
           prefix: browserstack-
@@ -126,6 +127,7 @@ jobs:
       test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage
       chunks: 8
       browserstack: true
+      browserstack-sessions: ${{ needs.setup.outputs.bstack-sessions }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
