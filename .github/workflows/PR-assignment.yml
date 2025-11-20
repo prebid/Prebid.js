@@ -23,6 +23,9 @@ jobs:
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
 
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+
       - name: Build
         run: |
           npx gulp build
