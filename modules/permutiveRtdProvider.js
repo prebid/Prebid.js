@@ -9,6 +9,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
@@ -30,7 +31,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleNam
 function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
 
-  return true
+  return hasVendorlessPurposeConsent(userConsent, [1, 4])
 }
 
 function liftIntoParams(params) {
@@ -48,6 +49,18 @@ function readPermutiveModuleConfigFromCache() {
   const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
   cachedPermutiveModuleConfig = liftIntoParams(params)
   return cachedPermutiveModuleConfig
+}
+
+function hasVendorlessPurposeConsent(userConsent, requiredPurposes) {
+  const gdprApplies = deepAccess(userConsent, 'gdpr.gdprApplies')
+  if (!gdprApplies) return true
+
+  const purposeConsents = deepAccess(userConsent, 'gdpr.vendorData.purpose.consents') || {}
+  const purposeLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.purpose.legitimateInterests') || {}
+
+  return requiredPurposes.every((purposeId) =>
+    purposeConsents[purposeId] === true || purposeLegitimateInterests[purposeId] === true
+  )
 }
 
 /**
@@ -466,6 +479,7 @@ let permutiveSDKInRealTime = false
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
+  gvlid: VENDORLESS_GVLID,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     const completeBidRequestData = () => {
       logger.logInfo(`Request data updated`)
