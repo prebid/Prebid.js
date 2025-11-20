@@ -210,7 +210,7 @@ export const spec = {
       'wih': windowDimensions.innerHeight,
       'saw': windowDimensions.screen.availWidth,
       'sah': windowDimensions.screen.availHeight,
-      'scd': windowDimensions.screen.colorDepth,
+      'scd': null,
       'sw': windowDimensions.screen.width,
       'sh': windowDimensions.screen.height,
       'whl': win.history.length,
