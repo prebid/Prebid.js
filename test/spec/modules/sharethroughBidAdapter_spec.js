@@ -4,9 +4,9 @@ import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
-import { deepSetValue } from '../../../src/utils.js';
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js';
 import { getImpIdMap, setIsEqtvTest } from '../../../modules/sharethroughBidAdapter.js';
-import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
+import { deepSetValue } from '../../../src/utils.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
@@ -73,7 +73,7 @@ describe('sharethrough adapter spec', function () {
         bidder: 'sharethrough',
         params: {
           pkey: 111,
-          equativNetworkId: 73
+          equativNetworkId: 73,
         },
         requestId: 'efgh5678',
         ortb2Imp: {
@@ -81,7 +81,7 @@ describe('sharethrough adapter spec', function () {
             tid: 'zsfgzzg',
           },
         },
-      }
+      },
     ];
 
     const videoBidRequests = [
@@ -113,7 +113,7 @@ describe('sharethrough adapter spec', function () {
         bidder: 'sharethrough',
         params: {
           pkey: 111,
-          equativNetworkIdId: 73
+          equativNetworkIdId: 73,
         },
         requestId: 'abcd1234',
         ortb2Imp: {
@@ -121,65 +121,71 @@ describe('sharethrough adapter spec', function () {
             tid: 'zsgzgzz',
           },
         },
-      }
+      },
     ];
 
     const nativeOrtbRequest = {
-      assets: [{
-        id: 0,
-        required: 1,
-        title: {
-          len: 140
-        }
-      },
-      {
-        id: 1,
-        required: 1,
-        img: {
-          type: 3,
-          w: 300,
-          h: 600
-        }
-      },
-      {
-        id: 2,
-        required: 1,
-        data: {
-          type: 1
-        }
-      }],
+      assets: [
+        {
+          id: 0,
+          required: 1,
+          title: {
+            len: 140,
+          },
+        },
+        {
+          id: 1,
+          required: 1,
+          img: {
+            type: 3,
+            w: 300,
+            h: 600,
+          },
+        },
+        {
+          id: 2,
+          required: 1,
+          data: {
+            type: 1,
+          },
+        },
+      ],
       context: 1,
-      eventtrackers: [{
-        event: 1,
-        methods: [1, 2]
-      }],
+      eventtrackers: [
+        {
+          event: 1,
+          methods: [1, 2],
+        },
+      ],
       plcmttype: 1,
       privacy: 1,
       ver: '1.2',
     };
 
-    const nativeBidRequests = [{
-      bidder: 'sharethrough',
-      adUnitCode: 'sharethrough_native_42',
-      bidId: 'bidId3',
-      sizes: [],
-      mediaTypes: {
-        native: {
-          ...nativeOrtbRequest
+    const nativeBidRequests = [
+      {
+        bidder: 'sharethrough',
+        adUnitCode: 'sharethrough_native_42',
+        bidId: 'bidId3',
+        sizes: [],
+        mediaTypes: {
+          native: {
+            ...nativeOrtbRequest,
+          },
+        },
+        nativeOrtbRequest,
+        params: {
+          pkey: 777,
+          equativNetworkId: 73,
+        },
+        requestId: 'sharethrough_native_reqid_42',
+        ortb2Imp: {
+          ext: {
+            tid: 'sharethrough_native_tid_42',
+          },
         },
       },
-      nativeOrtbRequest,
-      params: {
-        pkey: 777,
-        equativNetworkId: 73
-      },
-      requestId: 'sharethrough_native_reqid_42',
-      ortb2Imp: {
-        ext: {
-          tid: 'sharethrough_native_tid_42',
-        },
-      },
-    }]
+    ];
 
     beforeEach(() => {
       config.setConfig({
@@ -334,9 +340,9 @@ describe('sharethrough adapter spec', function () {
                       hp: 1,
                     },
                   ],
-                }
-              }
-            }
+                },
+              },
+            },
           },
           getFloor: () => ({ currency: 'USD', floor: 42 }),
         },
@@ -383,14 +389,14 @@ describe('sharethrough adapter spec', function () {
           mediaTypes: {
             banner: bannerBidRequests[0].mediaTypes.banner,
             video: videoBidRequests[0].mediaTypes.video,
-            native: nativeBidRequests[0].mediaTypes.native
+            native: nativeBidRequests[0].mediaTypes.native,
           },
           sizes: [],
           nativeOrtbRequest,
           bidder: 'sharethrough',
           params: {
             pkey: 111,
-            equativNetworkId: 73
+            equativNetworkId: 73,
           },
           requestId: 'efgh5678',
           ortb2Imp: {
@@ -403,8 +409,8 @@ describe('sharethrough adapter spec', function () {
               return { floor: 1.1 };
             }
             return { floor: 0.9 };
-          }
-        }
+          },
+        },
       ];
 
       bidderRequest = {
@@ -422,7 +428,7 @@ describe('sharethrough adapter spec', function () {
 
     afterEach(() => {
       setIsEqtvTest(null);
-    })
+    });
 
     describe('buildRequests', function () {
       describe('top level object', () => {
@@ -631,32 +637,38 @@ describe('sharethrough adapter spec', function () {
             regs: {
               ext: {
                 dsa: {
-                  'dsarequired': 1,
-                  'pubrender': 0,
-                  'datatopub': 1,
-                  'transparency': [{
-                    'domain': 'good-domain',
-                    'dsaparams': [1, 2]
-                  }, {
-                    'domain': 'bad-setup',
-                    'dsaparams': ['1', 3]
-                  }]
-                }
-              }
-            }
-          }
+                  dsarequired: 1,
+                  pubrender: 0,
+                  datatopub: 1,
+                  transparency: [
+                    {
+                      domain: 'good-domain',
+                      dsaparams: [1, 2],
+                    },
+                    {
+                      domain: 'bad-setup',
+                      dsaparams: ['1', 3],
+                    },
+                  ],
+                },
+              },
+            },
+          };
 
           const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
           expect(openRtbReq.regs.ext.dsa.dsarequired).to.equal(1);
           expect(openRtbReq.regs.ext.dsa.pubrender).to.equal(0);
           expect(openRtbReq.regs.ext.dsa.datatopub).to.equal(1);
-          expect(openRtbReq.regs.ext.dsa.transparency).to.deep.equal([{
-            'domain': 'good-domain',
-            'dsaparams': [1, 2]
-          }, {
-            'domain': 'bad-setup',
-            'dsaparams': ['1', 3]
-          }]);
+          expect(openRtbReq.regs.ext.dsa.transparency).to.deep.equal([
+            {
+              domain: 'good-domain',
+              dsaparams: [1, 2],
+            },
+            {
+              domain: 'bad-setup',
+              dsaparams: ['1', 3],
+            },
+          ]);
         });
       });
 
@@ -723,7 +735,7 @@ describe('sharethrough adapter spec', function () {
 
           // act
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr;
 
           // assert
           expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
@@ -747,7 +759,7 @@ describe('sharethrough adapter spec', function () {
 
           // act
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr;
 
           // assert
           expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
@@ -761,7 +773,7 @@ describe('sharethrough adapter spec', function () {
 
           // act
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr;
 
           // assert
           expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
@@ -838,18 +850,34 @@ describe('sharethrough adapter spec', function () {
         it('should not set a property if no corresponding property is detected on mediaTypes.video', () => {
           // arrange
           const propertiesToConsider = [
-            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
-          ]
+            'api',
+            'battr',
+            'companionad',
+            'companiontype',
+            'delivery',
+            'linearity',
+            'maxduration',
+            'mimes',
+            'minduration',
+            'placement',
+            'playbackmethod',
+            'plcmt',
+            'protocols',
+            'skip',
+            'skipafter',
+            'skipmin',
+            'startdelay',
+          ];
 
           // act
-          propertiesToConsider.forEach(propertyToConsider => {
+          propertiesToConsider.forEach((propertyToConsider) => {
             delete bidRequests[1].mediaTypes.video[propertyToConsider];
           });
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
           const videoImp = builtRequest.data.imp[0].video;
 
           // assert
-          propertiesToConsider.forEach(propertyToConsider => {
+          propertiesToConsider.forEach((propertyToConsider) => {
             expect(videoImp[propertyToConsider]).to.be.undefined;
           });
         });
@@ -990,30 +1018,27 @@ describe('sharethrough adapter spec', function () {
 
       describe('isEqtvTest', () => {
         it('should set publisher id if equativNetworkId param is present', () => {
-          const builtRequest = spec.buildRequests(multiImpBidRequests, bidderRequest)[0]
-          expect(builtRequest.data.site.publisher.id).to.equal(73)
-        })
+          const builtRequest = spec.buildRequests(multiImpBidRequests, bidderRequest)[0];
+          expect(builtRequest.data.site.publisher.id).to.equal(73);
+        });
 
         it('should not set publisher id if equativNetworkId param is not present', () => {
           const bidRequest = {
             ...bidRequests[0],
             params: {
               ...bidRequests[0].params,
-              equativNetworkId: undefined
-            }
-          }
+              equativNetworkId: undefined,
+            },
+          };
 
-          const builtRequest = spec.buildRequests([bidRequest], bidderRequest)[0]
-          expect(builtRequest.data.site.publisher).to.equal(undefined)
-        })
+          const builtRequest = spec.buildRequests([bidRequest], bidderRequest)[0];
+          expect(builtRequest.data.site.publisher).to.equal(undefined);
+        });
 
         it('should generate a 14-char id for each imp object', () => {
-          const request = spec.buildRequests(
-            bannerBidRequests,
-            bidderRequest
-          );
+          const request = spec.buildRequests(bannerBidRequests, bidderRequest);
 
-          request[0].data.imp.forEach(imp => {
+          request[0].data.imp.forEach((imp) => {
             expect(imp.id).to.have.lengthOf(14);
           });
         });
@@ -1022,24 +1047,21 @@ describe('sharethrough adapter spec', function () {
           const bids = [
             {
               ...bannerBidRequests[0],
-              getFloor: ({ size }) => ({ floor: size[0] * size[1] / 100_000 })
-            }
+              getFloor: ({ size }) => ({ floor: (size[0] * size[1]) / 100_000 }),
+            },
           ];
 
-          const request = spec.buildRequests(
-            bids,
-            bidderRequest
-          );
+          const request = spec.buildRequests(bids, bidderRequest);
 
           expect(request[0].data.imp).to.have.lengthOf(2);
 
           const firstImp = request[0].data.imp[0];
-          expect(firstImp.bidfloor).to.equal(300 * 250 / 100_000);
+          expect(firstImp.bidfloor).to.equal((300 * 250) / 100_000);
           expect(firstImp.banner.format).to.have.lengthOf(1);
           expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 });
 
           const secondImp = request[0].data.imp[1];
-          expect(secondImp.bidfloor).to.equal(300 * 600 / 100_000);
+          expect(secondImp.bidfloor).to.equal((300 * 600) / 100_000);
           expect(secondImp.banner.format).to.have.lengthOf(1);
           expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 });
         });
@@ -1064,7 +1086,7 @@ describe('sharethrough adapter spec', function () {
         //     expect(secondImp).to.not.have.property('native');
         //     expect(secondImp).to.have.property('video');
         //   });
-      })
+      });
 
       it('should return correct native properties from ORTB converter', () => {
         if (FEATURES.NATIVE) {
@@ -1074,19 +1096,19 @@ describe('sharethrough adapter spec', function () {
           const asset1 = assets[0];
           expect(asset1.id).to.equal(0);
           expect(asset1.required).to.equal(1);
-          expect(asset1.title).to.deep.equal({ 'len': 140 });
+          expect(asset1.title).to.deep.equal({ len: 140 });
 
           const asset2 = assets[1];
           expect(asset2.id).to.equal(1);
           expect(asset2.required).to.equal(1);
-          expect(asset2.img).to.deep.equal({ 'type': 3, 'w': 300, 'h': 600 });
+          expect(asset2.img).to.deep.equal({ type: 3, w: 300, h: 600 });
 
           const asset3 = assets[2];
           expect(asset3.id).to.equal(2);
           expect(asset3.required).to.equal(1);
-          expect(asset3.data).to.deep.equal({ 'type': 1 })
+          expect(asset3.data).to.deep.equal({ type: 1 });
         }
-      })
+      });
     });
 
     describe('interpretResponse', function () {
@@ -1148,7 +1170,7 @@ describe('sharethrough adapter spec', function () {
 
         it('should set requestId from impIdMap when isEqtvTest is true', () => {
           setIsEqtvTest(true);
-          request = spec.buildRequests(bannerBidRequests, bidderRequest)[0]
+          request = spec.buildRequests(bannerBidRequests, bidderRequest)[0];
           response = {
             body: {
               seatbid: [
@@ -1172,15 +1194,15 @@ describe('sharethrough adapter spec', function () {
           };
 
           const impIdMap = getImpIdMap();
-          impIdMap['aaaabbbbccccdd'] = 'abcd1234'
+          impIdMap['aaaabbbbccccdd'] = 'abcd1234';
 
           const resp = spec.interpretResponse(response, request)[0];
 
-          expect(resp.requestId).to.equal('abcd1234')
-        })
+          expect(resp.requestId).to.equal('abcd1234');
+        });
 
         it('should set ttl when bid.exp is a number > 0', () => {
-          request = spec.buildRequests(bannerBidRequests, bidderRequest)[0]
+          request = spec.buildRequests(bannerBidRequests, bidderRequest)[0];
           response = {
             body: {
               seatbid: [
@@ -1196,7 +1218,7 @@ describe('sharethrough adapter spec', function () {
                       dealid: 'deal',
                       adomain: ['domain.com'],
                       adm: 'markup',
-                      exp: 100
+                      exp: 100,
                     },
                   ],
                 },
@@ -1206,10 +1228,10 @@ describe('sharethrough adapter spec', function () {
 
           const resp = spec.interpretResponse(response, request)[0];
           expect(resp.ttl).to.equal(100);
-        })
+        });
 
         it('should set ttl to 360 when bid.exp is a number <= 0', () => {
-          request = spec.buildRequests(bannerBidRequests, bidderRequest)[0]
+          request = spec.buildRequests(bannerBidRequests, bidderRequest)[0];
           response = {
             body: {
               seatbid: [
@@ -1225,7 +1247,7 @@ describe('sharethrough adapter spec', function () {
                       dealid: 'deal',
                       adomain: ['domain.com'],
                       adm: 'markup',
-                      exp: -1
+                      exp: -1,
                     },
                   ],
                 },
@@ -1235,16 +1257,16 @@ describe('sharethrough adapter spec', function () {
 
           const resp = spec.interpretResponse(response, request)[0];
           expect(resp.ttl).to.equal(360);
-        })
+        });
 
         it('should return correct properties when fledgeAuctionEnabled is true and isEqtvTest is false', () => {
-          request = spec.buildRequests(bidRequests, bidderRequest)[0]
+          request = spec.buildRequests(bidRequests, bidderRequest)[0];
           response = {
             body: {
               ext: {
                 auctionConfigs: {
-                  key: 'value'
-                }
+                  key: 'value',
+                },
               },
               seatbid: [
                 {
@@ -1259,7 +1281,7 @@ describe('sharethrough adapter spec', function () {
                       dealid: 'deal',
                       adomain: ['domain.com'],
                       adm: 'markup',
-                      exp: -1
+                      exp: -1,
                     },
                     {
                       id: 'efgh5678',
@@ -1271,7 +1293,7 @@ describe('sharethrough adapter spec', function () {
                       dealid: 'deal',
                       adomain: ['domain.com'],
                       adm: 'markup',
-                      exp: -1
+                      exp: -1,
                     },
                   ],
                 },
@@ -1281,8 +1303,8 @@ describe('sharethrough adapter spec', function () {
 
           const resp = spec.interpretResponse(response, request);
           expect(resp.bids.length).to.equal(2);
-          expect(resp.paapi).to.deep.equal({ 'key': 'value' })
-        })
+          expect(resp.paapi).to.deep.equal({ key: 'value' });
+        });
       });
 
       describe('video', () => {
@@ -1354,9 +1376,9 @@ describe('sharethrough adapter spec', function () {
         it('should set correct ortb property', () => {
           const resp = spec.interpretResponse(response, request)[0];
 
-          expect(resp.native.ortb).to.deep.equal({ 'ad': 'ad' })
-        })
-      })
+          expect(resp.native.ortb).to.deep.equal({ ad: 'ad' });
+        });
+      });
 
       describe('meta object', () => {
         beforeEach(() => {
@@ -1397,8 +1419,8 @@ describe('sharethrough adapter spec', function () {
           expect(bid.meta.brandName).to.be.null;
           expect(bid.meta.demandSource).to.be.null;
           expect(bid.meta.dchain).to.be.null;
-          expect(bid.meta.primaryCatId).to.be.null;
-          expect(bid.meta.secondaryCatIds).to.be.null;
+          expect(bid.meta.primaryCatId).to.equal('');
+          expect(bid.meta.secondaryCatIds).to.be.an('array').that.is.empty;
           expect(bid.meta.mediaType).to.be.null;
         });
 
@@ -1482,15 +1504,14 @@ describe('sharethrough adapter spec', function () {
       it('should call handleCookieSync with correct parameters and return its result', () => {
         setIsEqtvTest(true);
 
-        const expectedResult = [
-          { type: 'iframe', url: 'https://sync.example.com' },
-        ];
+        const expectedResult = [{ type: 'iframe', url: 'https://sync.example.com' }];
 
-        handleCookieSyncStub.returns(expectedResult)
+        handleCookieSyncStub.returns(expectedResult);
 
-        const result = spec.getUserSyncs({ iframeEnabled: true },
-          SAMPLE_RESPONSE,
-          { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+        const result = spec.getUserSyncs({ iframeEnabled: true }, SAMPLE_RESPONSE, {
+          gdprApplies: true,
+          vendorData: { vendor: { consents: {} } },
+        });
 
         sinon.assert.calledWithMatch(
           handleCookieSyncStub,

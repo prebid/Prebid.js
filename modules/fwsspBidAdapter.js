@@ -22,7 +22,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId && bid.params.videoAssetId);
+    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId);
   },
 
   /**
@@ -47,15 +47,28 @@ export const spec = {
     const buildRequest = (currentBidRequest, bidderRequest) => {
       const globalParams = constructGlobalParams(currentBidRequest);
       const keyValues = constructKeyValues(currentBidRequest, bidderRequest);
-
       const slotParams = constructSlotParams(currentBidRequest);
-      const dataString = constructDataString(globalParams, keyValues, slotParams);
+      const serializedSChain = constructSupplyChain(currentBidRequest, bidderRequest);
+      const dataString = constructDataString(globalParams, keyValues, serializedSChain, slotParams);
       return {
         method: 'GET',
         url: currentBidRequest.params.serverUrl,
         data: dataString,
         bidRequest: currentBidRequest
       };
+    }
+
+    const constructSupplyChain = (currentBidRequest, bidderRequest) => {
+      // Add schain object
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
+      if (!schain) {
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+      }
+      if (!schain) {
+        schain = currentBidRequest.schain;
+      }
+
+      return this.serializeSupplyChain(schain)
     }
 
     const constructGlobalParams = currentBidRequest => {
@@ -66,7 +79,7 @@ export const spec = {
         resp: 'vast4',
         prof: currentBidRequest.params.profile,
         csid: currentBidRequest.params.siteSectionId,
-        caid: currentBidRequest.params.videoAssetId,
+        caid: currentBidRequest.params.videoAssetId ? currentBidRequest.params.videoAssetId : 0,
         pvrn: getRandomNumber(),
         vprn: getRandomNumber(),
         flag: setFlagParameter(currentBidRequest.params.flags),
@@ -125,23 +138,6 @@ export const spec = {
           keyValues._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content);
         } catch (error) {
           logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error);
-        }
-      }
-
-      // Add schain object
-      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
-      if (!schain) {
-        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
-      }
-      if (!schain) {
-        schain = currentBidRequest.schain;
-      }
-
-      if (schain) {
-        try {
-          keyValues.schain = JSON.stringify(schain);
-        } catch (error) {
-          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
         }
       }
 
@@ -261,9 +257,10 @@ export const spec = {
       return slotParams
     }
 
-    const constructDataString = (globalParams, keyValues, slotParams) => {
+    const constructDataString = (globalParams, keyValues, serializedSChain, slotParams) => {
       const globalParamsString = appendParams(globalParams) + ';';
-      const keyValuesString = appendParams(keyValues) + ';';
+      // serializedSChain requires special encoding logic as outlined in the ORTB spec https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/supplychainobject.md
+      const keyValuesString = appendParams(keyValues) + serializedSChain + ';';
       const slotParamsString = appendParams(slotParams) + ';';
 
       return globalParamsString + keyValuesString + slotParamsString;
@@ -272,6 +269,21 @@ export const spec = {
     return bidRequests.map(function(currentBidRequest) {
       return buildRequest(currentBidRequest, bidderRequest);
     });
+  },
+
+  /**
+   * Serialize a supply chain object to a string uri encoded
+   *
+   * @param {*} schain object
+   */
+  serializeSupplyChain: function(schain) {
+    if (!schain || !schain.nodes) return '';
+    const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return `&schain=${schain.ver},${schain.complete}!` +
+      schain.nodes.map(node => nodesProperties.map(prop =>
+        node[prop] ? encodeURIComponent(node[prop]) : '')
+        .join(','))
+        .join('!');
   },
 
   /**
