@@ -1,0 +1,38 @@
+name: Load working directory
+description: Load working directory saved with "actions/save"
+inputs:
+  name:
+    description: The name used with actions/save
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+    - uses: actions/github-script@v8
+      id: platform
+      with:
+        result-encoding: string
+        script: |
+          const os = require('os');
+          return os.platform();
+    - name: 'Clear working directory'
+      shell: bash
+      run: |
+        rm -r "$(pwd)"/*
+
+    - name: Download artifact
+      uses: actions/download-artifact@v5
+      with:
+        path: '${{ runner.temp }}'
+        name: '${{ inputs.name }}'
+
+    - name: 'Untar working directory'
+      shell: bash
+      run: |
+        wdir="$(pwd)"
+        parent="$(dirname "$wdir")"
+        target="$(basename "$wdir")"
+        tar ${{ steps.platform.outputs.result == 'win32' && '--force-local' || '' }} -C "$parent" -xf '${{ runner.temp }}/${{ inputs.name }}.tar' "$target"

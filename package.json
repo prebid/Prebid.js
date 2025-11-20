@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.15.0-pre",
+  "version": "10.18.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -56,6 +56,7 @@
     "@babel/eslint-parser": "^7.16.5",
     "@babel/plugin-transform-runtime": "^7.27.4",
     "@babel/register": "^7.28.3",
+    "@chiragrupani/karma-chromium-edge-launcher": "^2.4.1",
     "@eslint/compat": "^1.3.1",
     "@types/google-publisher-tag": "^1.20250210.0",
     "@wdio/browserstack-service": "^9.19.1",
@@ -156,6 +157,7 @@
     "iab-adcom": "^1.0.6",
     "iab-native": "^1.0.0",
     "iab-openrtb": "^1.0.1",
+    "karma-safarinative-launcher": "^1.1.0",
     "klona": "^2.0.6",
     "live-connect-js": "^7.2.0"
   },

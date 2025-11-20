@@ -393,6 +393,46 @@ describe('IntentIQ tests', function () {
     expect(targetingKeys).to.include(customParamName);
   });
 
+  it('should NOT call GAM setTargeting when current browser is in browserBlackList', function () {
+    const usedBrowser = 'chrome';
+    const gam = mockGAM();
+    const pa = gam.pubads();
+    sinon.stub(gam, 'pubads').returns(pa);
+
+    const originalSetTargeting = pa.setTargeting;
+    let setTargetingCalls = 0;
+    pa.setTargeting = function (...args) {
+      setTargetingCalls++;
+      return originalSetTargeting.apply(this, args);
+    };
+
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({
+      pcid: 'pcid-1',
+      pcidDate: Date.now(),
+      group: 'A',
+      isOptedOut: false,
+      date: Date.now(),
+      sCal: Date.now()
+    }));
+
+    const cfg = {
+      params: {
+        partner,
+        gamObjectReference: gam,
+        gamParameterName: 'custom_gam_param',
+        browserBlackList: usedBrowser
+      }
+    };
+
+    intentIqIdSubmodule.getId(cfg);
+    gam.cmd.forEach(fn => fn());
+    const currentBrowserLowerCase = detectBrowser();
+    if (currentBrowserLowerCase === usedBrowser) {
+      expect(setTargetingCalls).to.equal(0);
+      expect(pa.getTargetingKeys()).to.not.include('custom_gam_param');
+    }
+  });
+
   it('should not throw Uncaught TypeError when IntentIQ endpoint returns empty response', async function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
