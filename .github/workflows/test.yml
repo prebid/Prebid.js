@@ -53,7 +53,7 @@ jobs:
           echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-ci
 
       - name: 'Save working directory'
         uses: ./.github/actions/save
