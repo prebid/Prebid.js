@@ -475,7 +475,7 @@ describe('RevantageBidAdapter', function () {
       const pixelSync = syncs.find(sync => sync.type === 'image');
       expect(pixelSync).to.exist;
       expect(pixelSync.url).to.include(SYNC_URL);
-      expect(pixelSync.url).to.include('type=img');
+      expect(pixelSync.url).to.include('tag=img');
     });
 
     it('should include GPP consent in sync URL', function () {
