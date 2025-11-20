@@ -15,11 +15,20 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    // All bid requests in a batch must have the same feedId
+    // If not, we log a warning and return an empty array
+    const feedId = validBidRequests[0]?.params?.feedId;
+    const allSameFeedId = validBidRequests.every(bid => bid.params.feedId === feedId);
+    if (!allSameFeedId) {
+      logWarn('Revantage: All bid requests in a batch must have the same feedId');
+      return [];
+    }
+
     try {
       const openRtbBidRequest = makeOpenRtbRequest(validBidRequests, bidderRequest);
       return {
         method: 'POST',
-        url: ENDPOINT_URL + '?feed=' + encodeURIComponent(validBidRequests[0].params.feedId),
+        url: ENDPOINT_URL + '?feed=' + encodeURIComponent(feedId),
         data: JSON.stringify(openRtbBidRequest),
         options: {
           contentType: 'text/plain',
