@@ -2,7 +2,7 @@ import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions,
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
-import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+import {getHLen} from '../libraries/navigatorData/navigatorData.js';
 import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 
 /**
@@ -77,8 +77,6 @@ export const spec = {
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,
-      hardwareConcurrency: getHC(),
-      deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       timeout: bidderRequest?.timeout,
       eids: getUserIdAsEids(validBidRequests),
