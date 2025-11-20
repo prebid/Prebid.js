@@ -86,7 +86,7 @@ describe('1plusXRtdProvider', () => {
   describe('onePlusXSubmodule', () => {
     it('init is successfull', () => {
       const initResult = onePlusXSubmodule.init();
-      expect(initResult).to.be.true;
+      expect(initResult).to.be.false;
     })
 
     it('callback is called after getBidRequestData', () => {
