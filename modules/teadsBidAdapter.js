@@ -77,6 +77,8 @@ export const spec = {
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,
+      hardwareConcurrency: null,
+      deviceMemory: null,
       hb_version: '$prebid.version$',
       timeout: bidderRequest?.timeout,
       eids: getUserIdAsEids(validBidRequests),
