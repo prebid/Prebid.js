@@ -9,7 +9,7 @@ Maintainer: prebid@revantage.io
 # Description
 
 Connects to ReVantage exchange for bids.
-ReVantage bid adapter supports Banner only.
+ReVantage bid adapter supports Banner and Video.
 
 # Test Parameters
 ```
