@@ -28,7 +28,6 @@ updates:
     target-branch: "master"
     schedule:
       interval: "daily"
-    security-updates-only: true
     open-pull-requests-limit: 0
     groups:
       all-security:
