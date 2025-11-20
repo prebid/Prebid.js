@@ -6,7 +6,8 @@
     "versions": {
       "113.0": {
         "coverage": false,
-        "chrome": "113.0.5672.0"
+        "chrome": "113.0.5672.0",
+        "name": "ChromeCustom"
       }
     }
   },
