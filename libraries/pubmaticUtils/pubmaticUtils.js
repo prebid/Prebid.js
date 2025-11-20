@@ -64,7 +64,7 @@ export const getUtmValue = () => {
 
 export const getDayOfWeek = () => {
   const dayOfWeek = new Date().getDay();
-  return dayOfWeek;
+  return dayOfWeek.toString();
 }
 
 /**
