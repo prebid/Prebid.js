@@ -11,11 +11,17 @@ runs:
       uses: actions/setup-node@v6
       with:
         node-version: '20'
-
+    - uses: actions/github-script@v8
+      id: platform
+      with:
+        result-encoding: string
+        script: |
+          const os = require('os');
+          return os.platform();
     - name: 'Clear working directory'
       shell: bash
       run: |
-        rm -r ./*
+        rm -r "$(pwd)"/*
 
     - name: Download artifact
       uses: actions/download-artifact@v5
@@ -26,5 +32,7 @@ runs:
     - name: 'Untar working directory'
       shell: bash
       run: |
-        tar -xf '${{ runner.temp }}/${{ inputs.name }}.tar' .
-        
+        wdir="$(pwd)"
+        parent="$(dirname "$wdir")"
+        target="$(basename "$wdir")"
+        tar ${{ steps.platform.outputs.result == 'win32' && '--force-local' || '' }} -C "$parent" -xf '${{ runner.temp }}/${{ inputs.name }}.tar' "$target"

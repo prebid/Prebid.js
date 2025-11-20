@@ -1,0 +1,116 @@
+name: Run unit tests on all browsers
+on:
+  workflow_call:
+    inputs:
+      chunks:
+        description: Number of chunks to split tests into
+        required: false
+        type: number
+        default: 1
+      build-cmd:
+        description: Build command, run once
+        required: false
+        type: string
+      test-cmd:
+        description: Test command, run once per chunk
+        required: true
+        type: string
+      timeout:
+        description: Timeout on test run
+        required: false
+        type: number
+        default: 10
+    outputs:
+      coverage:
+        description: Artifact name for coverage results
+        value: ${{ jobs.browser-tests.outputs.coverage }}
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: ${{ inputs.build-cmd }}
+
+  setup:
+    needs: build
+    name: "Setup environment"
+    runs-on: ubuntu-latest
+    outputs:
+      browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
+      bstack-key: ${{ steps.bstack-save.outputs.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name:  Restore working directory
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.built-key }}
+      - name: "Define testing strategy"
+        uses: actions/github-script@v8
+        id: define
+        with:
+          script: |
+            const fs = require('node:fs/promises');
+            const browsers = require('./.github/workflows/browser_testing.json');
+            const excludeFromBstack = Object.values(browsers).map(browser => browser.bsName);
+            const bstackBrowsers = Object.fromEntries(
+              // exlude "latest" version of browsers that we can test on GH actions
+              Object.entries(require('./browsers.json'))
+              .filter(([name, def]) => !excludeFromBstack.includes(def.browser) || def.browser_version !== 'latest')
+            )
+            const updatedBrowsersJson = JSON.stringify(bstackBrowsers, null,  2);
+            console.log("Using browsers.json:", updatedBrowsersJson);
+            await fs.writeFile('./browsers.json', updatedBrowsersJson);
+            return {
+              hasBSBrowsers: Object.keys(bstackBrowsers).length > 0,
+              browsers: Object.entries(browsers).map(([name, def]) => Object.assign({name}, def))
+            }
+      - name: "Save working directory"
+        id: bstack-save
+        if: ${{ fromJSON(steps.define.outputs.result).hasBSBrowsers }}
+        uses: ./.github/actions/save
+        with:
+          prefix: browserstack-
+
+  test-build-logic:
+    needs: build
+    name: "Test build logic"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: gulp test-build-logic
+
+  browser-tests:
+    needs: [setup, build]
+    name: "Browser: ${{ matrix.browser.name }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: ${{ inputs.test-cmd }} --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
+      chunks: ${{ inputs.chunks }}
+      runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
+
+  browserstack-tests:
+    needs: setup
+    if: ${{ needs.setup.outputs.bstack-key }}
+    name: "Browserstack tests"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.setup.outputs.bstack-key }}
+      test-cmd: ${{ inputs.test-cmd }} --browserstack --no-coverage
+      chunks: ${{ inputs.chunks }}
+      browserstack: true
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
