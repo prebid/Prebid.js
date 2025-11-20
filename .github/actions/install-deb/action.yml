@@ -28,7 +28,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: "${{ runner.temp }}/${{ inputs.name }}"
-        key: ${{ inputs.install-deb }}
+        key: ${{ inputs.url }}
     - name: Install deb
       shell: bash
       run: |
