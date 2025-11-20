@@ -1,20 +1,7 @@
 name: Assign PR reviewers
 on:
-  workflow_call:
-    inputs:
-      pr-no:
-        description: PR number
-        required: true
-        type: number
-      source-key:
-        description: Artifact name for the source code
-        required: true
-        type: string
-    secrets:
-      PR_BOT_AWS_SAK:
-        description: "AWS secret access key ID"
-      PR_BOT_PEM:
-        description: "PR Bot app secret key"
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 env:
   #REVIEWER_TEAM: /orgs/prebid/teams/pbjs-reviewers/members
   REVIEWER_TEAM: /orgs/dgirardi-org/teams/test-reviewers/members
@@ -22,7 +9,6 @@ env:
 jobs:
   assign_reviewers:
     runs-on: ubuntu-latest
-    environment: PR_BOT
 
     steps:
       - name: Generate app token
@@ -33,16 +19,18 @@ jobs:
           private-key: ${{ secrets.PR_BOT_PEM }}
 
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name:  Restore working directory
-        uses: ./.github/actions/load
+        uses: actions/checkout@v5
         with:
-          name: ${{ inputs.source-key }}
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Build
+        run: |
+          npx gulp build
 
       - name: Get PR properties
         uses: actions/github-script@v8
         with:
+          github-token: ${{ steps.token.outputs.token }}
           script: |
             const script = require('./.github/workflows/scripts/getPRProperties.js')
             return await script({github, context});
