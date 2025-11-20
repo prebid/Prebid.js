@@ -16,6 +16,18 @@ jobs:
     with:
       build-cmd: npx gulp build
 
+  assign-reviewers:
+    needs: build
+    if: ${{ github.event_name == 'pull_request_target' }}
+    uses:
+      ./.github/workflows/PR-assignment.yml
+    with:
+      pr-no: ${{ github.event.pull_request.number }}
+      source-key: ${{ needs.build.outputs.built-key }}
+    secrets:
+      PR_BOT_AWS_SAK: ${{ secrets.PR_BOT_AWS_SAK }}
+      PR_BOT_PEM: ${{ secrets.PR_BOT_PEM }}
+
   setup:
     needs: build
     name: "Setup environment"

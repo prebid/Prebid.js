@@ -1,3 +1,9 @@
+const fs = require('node:fs/promises');
+
+async function getCoreLibraries() {
+  const deps = require('./build/dist/dependencies.json');
+}
+
 async function getPRProperties({github, context, prNo}) {
   const files = (await github.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
     owner: context.repo.owner,

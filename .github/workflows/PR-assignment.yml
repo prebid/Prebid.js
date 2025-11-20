@@ -47,10 +47,6 @@ jobs:
             const script = require('./.github/workflows/scripts/getPRProperties.js')
             return await script({github, context});
 
-      - name: Build
-        run: |
-          gulp build
-
       - name: Get PR Author and Files Changed
         if: false
         id: pr-info

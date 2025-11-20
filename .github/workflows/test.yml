@@ -60,18 +60,6 @@ jobs:
         with:
           name: source
 
-  assign-reviewers:
-    needs: checkout
-    if: ${{ github.event_name == 'pull_request_target' }}
-    uses:
-      ./.github/workflows/PR-assignment.yml
-    with:
-      pr-no: ${{ github.event.pull_request.number }}
-      source-key: 'source'
-    secrets:
-      PR_BOT_AWS_SAK: ${{ secrets.PR_BOT_AWS_SAK }}
-      PR_BOT_PEM: ${{ secrets.PR_BOT_PEM }}
-
   lint:
     name: "Run linter"
     needs: checkout
