@@ -44,7 +44,8 @@ jobs:
               context, 
               prNo: ${{ github.event.pull_request.number }},
               reviewerTeam: '${{ vars.REVIEWER_TEAM }}',
-              engTeam: '${{ vars.ENG_TEAM }}'
+              engTeam: '${{ vars.ENG_TEAM }}',
+              authReviewTeam: '${{ vars.AUTH_REVIEWER_TEAM }}'
             });
             console.log('PR properties:', JSON.stringify(props, null, 2));
             return props;
