@@ -127,7 +127,7 @@ jobs:
       test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage
       chunks: 8
       browserstack: true
-      browserstack-sessions: ${{ needs.setup.outputs.bstack-sessions }}
+      browserstack-sessions: ${{ fromJSON(needs.setup.outputs.bstack-sessions) }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
