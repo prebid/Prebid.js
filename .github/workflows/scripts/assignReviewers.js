@@ -14,15 +14,16 @@ function pickFrom(candidates, exclude, no) {
 }
 
 async function assignReviewers({github, context, prData}) {
-  const reviewers = prData.review.reviewers.map(rv => rv.login);
+  const allReviewers = prData.review.reviewers.map(rv => rv.login);
+  const requestedReviewers = prData.review.requestedReviewers;
   const missingPrebidEng = prData.review.requires.prebidEngineers - prData.review.prebidEngineers;
-  const missingPrebidReviewers = prData.review.requires.prebidReviewers - prData.review.prebidReviewers - missingPrebidEng;
+  const missingPrebidReviewers = prData.review.requires.prebidReviewers - prData.review.prebidReviewers - (missingPrebidEng > 0 ? missingPrebidEng : 0);
 
   if (missingPrebidEng > 0) {
-    reviewers.push(...pickFrom(prData.prebidEngineers, [...reviewers, prData.author.login], missingPrebidEng))
+    requestedReviewers.push(...pickFrom(prData.prebidEngineers, [...allReviewers, prData.author.login], missingPrebidEng))
   }
   if (missingPrebidReviewers > 0) {
-    reviewers.push(...pickFrom(prData.prebidReviewers, [...reviewers, prData.author.login], missingPrebidReviewers))
+    requestedReviewers.push(...pickFrom(prData.prebidReviewers, [...allReviewers, prData.author.login], missingPrebidReviewers))
   }
 
   const request = ghRequester(github);
@@ -30,9 +31,9 @@ async function assignReviewers({github, context, prData}) {
     owner: context.repo.owner,
     repo: context.repo.repo,
     prNo: prData.pr,
-    reviewers
+    reviewers: requestedReviewers
   })
-  return reviewers;
+  return requestedReviewers;
 }
 
 module.exports = assignReviewers;
