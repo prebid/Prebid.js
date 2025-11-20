@@ -31,6 +31,20 @@ describe('nativoBidAdapterTests', function () {
       }
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
+
+    it('should return true for valid url parameter', function () {
+      bid.params = {
+        url: 'https://test-sites.internal.nativo.net/testing/prebid_adapter.html',
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+
+    it('should return false for invalid url parameter', function () {
+      bid.params = {
+        url: 12345,
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
   })
 
   describe('buildRequests', function () {
@@ -119,6 +133,35 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.exist
       expect(request.data).to.exist
       expect(request.data.imp[0].tagid).to.equal('adunit-code')
+    })
+
+    it('Request should override site.page when url parameter is provided', function () {
+      bidRequests[0].params = {
+        placementId: '10433394',
+        url: 'https://test-sites.internal.nativo.net/testing/prebid_adapter.html'
+      }
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          referer: 'https://www.different-site.com',
+        },
+      })
+
+      expect(request.data.site).to.exist
+      expect(request.data.site.page).to.equal('https://test-sites.internal.nativo.net/testing/prebid_adapter.html')
+    })
+
+    it('Request should use default site.page when url parameter is not provided', function () {
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.site).to.exist
+      expect(request.data.site.page).to.exist
+      // The ORTB converter should populate this from refererInfo
     })
   })
 })

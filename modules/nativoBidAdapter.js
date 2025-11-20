@@ -23,6 +23,15 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context)
 
+    // Override site.page if url parameter is provided
+    if (bidderRequest.bids && bidderRequest.bids.length > 0) {
+      const urlParam = bidderRequest.bids[0].params.url
+      if (urlParam && typeof urlParam === 'string') {
+        if (!request.site) request.site = {}
+        request.site.page = urlParam
+      }
+    }
+
     // Add Nativo-specific extensions
     if (!request.ext) request.ext = {}
     request.ext.nativo = {
@@ -67,6 +76,7 @@ const validParameter = {
     const isNumber = typeof value === 'number'
     return isString || isNumber
   },
+  url: (value) => typeof value === 'string',
 }
 
 export const spec = {
