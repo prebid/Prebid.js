@@ -66,13 +66,18 @@ async function isPrebidMember(ghHandle) {
 
 async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
   const request = ghRequester(github);
-  let [files, pr, prebidReviewers, prebidEngineers] = await Promise.all([
+  let [files, pr, prReviews, prebidReviewers, prebidEngineers] = await Promise.all([
     request('GET /repos/{owner}/{repo}/pulls/{prNo}/files', {
       owner: context.repo.owner,
       repo: context.repo.repo,
       prNo,
     }),
     request('GET /repos/{owner}/{repo}/pulls/{prNo}', {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      prNo,
+    }),
+    request('GET /repos/{owner}/{repo}/pulls/{prNo}/reviews', {
       owner: context.repo.owner,
       repo: context.repo.repo,
       prNo,
@@ -99,8 +104,13 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
     reviewers: []
   };
   const author = pr.data.user.login;
+  console.log(JSON.stringify(prReviews, null, 2));
+  const allReviewers = new Set();
   pr.data.requested_reviewers
-    .map(rv => rv.login)
+    .forEach(rv => allReviewers.add(rv.login));
+  prReviews.data.forEach(datum => allReviewers.add(datum.user.login));
+
+  allReviewers
     .forEach(reviewer => {
       if (reviewer === author) return;
       const isPrebidEngineer = prebidEngineers.includes(reviewer);

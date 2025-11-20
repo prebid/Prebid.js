@@ -16,7 +16,7 @@ function pickFrom(candidates, exclude, no) {
 async function assignReviewers({github, context, prData}) {
   const reviewers = prData.review.reviewers.map(rv => rv.login);
   const missingPrebidEng = prData.review.requires.prebidEngineers - prData.review.prebidEngineers;
-  const missingPrebidReviewers = prData.review.requires.prebidReviewers - prData.review.prebidReviewers - missingPrebidEng;
+  const missingPrebidReviewers = prData.review.requires.prebidReviewers - prData.review.prebidReviewers - prData.review.prebidEngineers;
 
   if (missingPrebidEng > 0) {
     reviewers.push(...pickFrom(prData.prebidEngineers, [...reviewers, prData.author.login], missingPrebidEng))
