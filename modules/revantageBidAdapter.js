@@ -154,7 +154,7 @@ export const spec = {
       syncs.push({ type: 'iframe', url: SYNC_URL + params });
     }
     if (syncOptions.pixelEnabled) {
-      syncs.push({ type: 'image', url: SYNC_URL + params + '&type=img' });
+      syncs.push({ type: 'image', url: SYNC_URL + params + '&tag=img' });
     }
     
     return syncs;
