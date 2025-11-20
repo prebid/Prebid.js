@@ -36,7 +36,15 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const getProps = require('./.github/workflows/scripts/getPRProperties.js')
-            return await getProps({github, context, prNo: ${{ github.event.pull_request.number }}});
+            const props = await getProps({
+              github, 
+              context, 
+              prNo: ${{ github.event.pull_request.number }},
+              reviewerTeam: '${{ vars.REVIEWER_TEAM }}',
+              engTeam: '${{ vars.ENG_TEAM }}'
+            });
+            console.log('PR properties:', JSON.stringify(props, null, 2);
+            return props;
 
       - name: Get PR Author and Files Changed
         if: false
