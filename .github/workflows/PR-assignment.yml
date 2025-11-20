@@ -5,6 +5,7 @@ on:
 
 jobs:
   assign_reviewers:
+    name: Assign reviewers
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +46,7 @@ jobs:
               reviewerTeam: '${{ vars.REVIEWER_TEAM }}',
               engTeam: '${{ vars.ENG_TEAM }}'
             });
-            console.log('PR properties:', JSON.stringify(props, null, 2);
+            console.log('PR properties:', JSON.stringify(props, null, 2));
             return props;
       - name: Assign reviewers
         if: ${{ !fromJSON(steps.get-props.outputs.result).review.ok }}
