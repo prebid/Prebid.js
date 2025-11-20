@@ -2,6 +2,7 @@
 
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
@@ -25,7 +26,7 @@ export const ortbConverterProps = {
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
-    deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
+    deepSetValue(req, 'device.pxratio', getDevicePixelRatio(getWindowContext()));
     deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
