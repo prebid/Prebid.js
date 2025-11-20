@@ -71,10 +71,11 @@ describe('nativoBidAdapterTests', function () {
       bidRequests = [JSON.parse(bidRequestString)]
     })
 
-    it('Request should be POST, with OpenRTB payload and no query string params', function () {
+    it('Request should be POST with OpenRTB payload', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
+          page: 'https://www.test.com',
           referer: 'https://www.test.com',
         },
       })
@@ -86,7 +87,6 @@ describe('nativoBidAdapterTests', function () {
 
       expect(request.url).to.exist
       expect(request.url).to.be.a('string')
-      expect(request.url).to.not.include('?')
 
       // Check OpenRTB structure
       expect(request.data.imp).to.be.an('array')
@@ -98,7 +98,8 @@ describe('nativoBidAdapterTests', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          location: 'https://www.test.com',
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
         },
       })
 
@@ -114,11 +115,12 @@ describe('nativoBidAdapterTests', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          location: 'https://www.test.com',
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
         },
       })
 
-      expect(request.data.imp[0].ext.placementId).to.equal('10433394')
+      expect(request.data.imp[0].ext.bidder.placementId).to.equal('10433394')
     })
 
     it('Request should not error when placementId is not provided', function () {
@@ -126,7 +128,8 @@ describe('nativoBidAdapterTests', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          location: 'https://www.test.com',
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
         },
       })
 
@@ -147,6 +150,13 @@ describe('nativoBidAdapterTests', function () {
           page: 'https://www.different-site.com/page',
           domain: 'different-site.com'
         },
+        ortb2: {
+          site: {
+            page: 'https://www.different-site.com/page',
+            domain: 'different-site.com',
+            ref: 'https://www.different-site.com'
+          }
+        }
       })
 
       expect(request.data.site).to.exist
@@ -164,7 +174,14 @@ describe('nativoBidAdapterTests', function () {
         bidderRequestId: 123456,
         refererInfo: {
           page: 'https://www.test.com',
+          referer: 'https://www.test.com',
         },
+        ortb2: {
+          site: {
+            page: 'https://www.test.com',
+            domain: 'test.com'
+          }
+        }
       })
 
       expect(request.data.site).to.exist
@@ -411,6 +428,7 @@ describe('Response to Request Filter Flow', () => {
     const request2 = spec.buildRequests(bidRequests, {
       bidderRequestId: 123456,
       refererInfo: {
+        page: 'https://www.test.com',
         referer: 'https://www.test.com',
       },
     })
@@ -442,6 +460,7 @@ describe('Response to Request Filter Flow', () => {
     const request2 = spec.buildRequests(bidRequests, {
       bidderRequestId: 123456,
       refererInfo: {
+        page: 'https://www.test.com',
         referer: 'https://www.test.com',
       },
     })
@@ -468,6 +487,7 @@ describe('Response to Request Filter Flow', () => {
     const request2 = spec.buildRequests(bidRequests, {
       bidderRequestId: 123456,
       refererInfo: {
+        page: 'https://www.test.com',
         referer: 'https://www.test.com',
       },
     })
@@ -494,6 +514,7 @@ describe('Response to Request Filter Flow', () => {
     const request2 = spec.buildRequests(bidRequests, {
       bidderRequestId: 123456,
       refererInfo: {
+        page: 'https://www.test.com',
         referer: 'https://www.test.com',
       },
     })

@@ -15,24 +15,14 @@ const converter = ortbConverter({
     imp.tagid = bidRequest.adUnitCode
     if (!imp.ext) imp.ext = {}
     if (bidRequest.params.placementId) {
-      imp.ext.placementId = bidRequest.params.placementId
+      imp.ext.bidder = imp.ext.bidder || {}
+      imp.ext.bidder.placementId = bidRequest.params.placementId
     }
 
     return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context)
-
-    // Override site data if url parameter is provided
-    if (bidderRequest.bids && bidderRequest.bids.length > 0) {
-      const urlParam = bidderRequest.bids[0].params.url
-      if (urlParam && typeof urlParam === 'string') {
-        const siteData = buildSite(urlParam, request.site)
-        if (siteData) {
-          request.site = siteData
-        }
-      }
-    }
 
     // Add Nativo-specific extensions
     if (!request.ext) request.ext = {}
@@ -128,6 +118,21 @@ export const spec = {
           ? adUnitsRequested[bidRequest.adUnitCode] + 1
           : 0
     })
+
+    // Override site data in ortb2 if url parameter is provided
+    // This ensures the ortbConverter uses the custom URL when building the request
+    const urlParam = validBidRequests[0]?.params?.url
+    if (urlParam && typeof urlParam === 'string') {
+      // Clone bidderRequest to avoid mutating the original
+      bidderRequest = { ...bidderRequest }
+      bidderRequest.ortb2 = { ...(bidderRequest.ortb2 || {}) }
+
+      const existingSite = bidderRequest.ortb2.site || {}
+      const siteData = buildSite(urlParam, existingSite)
+      if (siteData) {
+        bidderRequest.ortb2.site = siteData
+      }
+    }
 
     // Generate OpenRTB request
     const openRTBData = converter.toORTB({
