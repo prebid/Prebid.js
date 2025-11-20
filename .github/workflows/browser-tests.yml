@@ -100,7 +100,7 @@ jobs:
 
   unit-tests:
     needs: [setup, build]
-    name: "Unit (browser: ${{ matrix.browser.name }})"
+    name: "Unit (browser: ${{ matrix.browser.name }} ${{ matrix.browser.version }})"
     strategy:
       fail-fast: false
       matrix:

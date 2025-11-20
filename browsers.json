@@ -38,5 +38,13 @@
     "browser_version": "latest",
     "device": null,
     "os": "OS X"
+  },
+  "bs_safari_15_catalina": {
+    "base": "BrowserStack",
+    "os_version": "Monterey",
+    "browser": "safari",
+    "browser_version": "15.6",
+    "device": null,
+    "os": "OS X"
   }
 }
