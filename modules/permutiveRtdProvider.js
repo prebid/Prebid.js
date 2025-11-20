@@ -55,8 +55,8 @@ function hasVendorlessPurposeConsent(userConsent, requiredPurposes) {
   const gdprApplies = deepAccess(userConsent, 'gdpr.gdprApplies')
   if (!gdprApplies) return true
 
-  const purposeConsents = deepAccess(userConsent, 'gdpr.vendorData.purpose.consents') || {}
-  const purposeLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.purpose.legitimateInterests') || {}
+  const purposeConsents = deepAccess(userConsent, 'gdpr.vendorData.publisher.consents') || {}
+  const purposeLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.publisher.legitimateInterests') || {}
 
   return requiredPurposes.every((purposeId) =>
     purposeConsents[purposeId] === true || purposeLegitimateInterests[purposeId] === true
