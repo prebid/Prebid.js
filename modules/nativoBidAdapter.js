@@ -1,4 +1,4 @@
-import { isEmpty } from '../src/utils.js'
+import { isEmpty, parseUrl, extractDomainFromHost, logWarn } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
@@ -23,12 +23,14 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context)
 
-    // Override site.page if url parameter is provided
+    // Override site data if url parameter is provided
     if (bidderRequest.bids && bidderRequest.bids.length > 0) {
       const urlParam = bidderRequest.bids[0].params.url
       if (urlParam && typeof urlParam === 'string') {
-        if (!request.site) request.site = {}
-        request.site.page = urlParam
+        const siteData = buildSite(urlParam, request.site)
+        if (siteData) {
+          request.site = siteData
+        }
       }
     }
 
@@ -310,5 +312,37 @@ function appendQSParamString(str, key, value) {
 function appendFilterData(filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length) {
     filterData.forEach((ad) => filter.add(ad))
+  }
+}
+
+/**
+ * Build site object from URL parameter
+ * Preserves existing site data while overriding URL-related fields
+ * @param {string} urlParam - URL from params.url
+ * @param {Object} existingSite - Existing site object from ortb2/FPD
+ * @returns {Object|null} Updated site object or null on error
+ */
+function buildSite(urlParam, existingSite = {}) {
+  try {
+    const parsedUrl = parseUrl(urlParam)
+    const rootDomain = extractDomainFromHost(parsedUrl.hostname)
+
+    // Start with existing site data to preserve FPD
+    const site = {...existingSite}
+
+    // Override URL-related fields
+    site.page = urlParam  // Full URL with path
+    site.domain = rootDomain || parsedUrl.hostname  // Root domain
+
+    // Preserve existing publisher object, only override domain
+    site.publisher = {...(site.publisher || {})}
+    site.publisher.domain = site.domain
+
+    // DO NOT override site.ref - preserve referrer from FPD
+
+    return site
+  } catch (err) {
+    logWarn('[Nativo] Failed to parse params.url:', urlParam, err)
+    return null
   }
 }

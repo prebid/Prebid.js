@@ -135,20 +135,28 @@ describe('nativoBidAdapterTests', function () {
       expect(request.data.imp[0].tagid).to.equal('adunit-code')
     })
 
-    it('Request should override site.page when url parameter is provided', function () {
+    it('Request should override site data when url parameter is provided', function () {
       bidRequests[0].params = {
         placementId: '10433394',
-        url: 'https://test-sites.internal.nativo.net/testing/prebid_adapter.html'
+        url: 'https://www.test-sites.internal.nativo.net/testing/prebid_adapter.html?foo=bar'
       }
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
           referer: 'https://www.different-site.com',
+          page: 'https://www.different-site.com/page',
+          domain: 'different-site.com'
         },
       })
 
       expect(request.data.site).to.exist
-      expect(request.data.site.page).to.equal('https://test-sites.internal.nativo.net/testing/prebid_adapter.html')
+      expect(request.data.site.page).to.equal('https://www.test-sites.internal.nativo.net/testing/prebid_adapter.html?foo=bar')
+      expect(request.data.site.domain).to.equal('nativo.net')  // Root domain extracted
+      expect(request.data.site.publisher).to.exist
+      expect(request.data.site.publisher.domain).to.equal('nativo.net')
+
+      // Verify ref is preserved from refererInfo, not overwritten
+      expect(request.data.site.ref).to.equal('https://www.different-site.com')
     })
 
     it('Request should use default site.page when url parameter is not provided', function () {
