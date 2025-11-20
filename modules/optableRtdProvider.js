@@ -44,7 +44,7 @@ export const parseConfig = (moduleConfig) => {
  */
 const waitForOptableEvent = (eventName) => {
   return new Promise((resolve) => {
-    const optableBundle = window.optable;
+    const optableBundle = /** @type {Object} */ (window.optable);
     const cachedData = optableBundle?.instance?.targetingFromCache();
 
     if (cachedData && cachedData.ortb2) {
@@ -74,8 +74,6 @@ const waitForOptableEvent = (eventName) => {
  * @returns {Promise<void>}
  */
 export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
-  const optableBundle = /** @type {Object} */ (window.optable);
-
   // Wait for the Optable SDK to dispatch targeting data via event
   let targetingData = await waitForOptableEvent('optable-targeting:change');
 
