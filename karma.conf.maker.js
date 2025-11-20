@@ -86,7 +86,7 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
 
 function setBrowsers(karmaConf, browserstack) {
   karmaConf.customLaunchers = karmaConf.customLaunchers || {};
-  karmaConf.customLaunchers.ChromeCustom = {
+  karmaConf.customLaunchers.ChromeNoSandbox = {
     base: 'ChromeHeadless',
     // disable sandbox - necessary within Docker and when using versions installed through @puppeteer/browsers
     flags: ['--no-sandbox']
@@ -106,7 +106,7 @@ function setBrowsers(karmaConf, browserstack) {
   } else {
     var isDocker = require('is-docker')();
     if (isDocker) {
-      karmaConf.browsers = ['ChromeCustom'];
+      karmaConf.browsers = ['ChromeNoSandbox'];
     } else {
       karmaConf.browsers = ['ChromeHeadless'];
     }
