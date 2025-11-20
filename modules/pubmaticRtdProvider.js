@@ -52,7 +52,7 @@ export function ConfigJsonManager() {
 
       // Extract country code if available
       const cc = response.headers?.get('country_code');
-      country = cc ? cc.split(',')?.map(code => code.trim())[0] : "IN";
+      country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
 
       // Parse the JSON response
       const ymConfigs = await response.json();
