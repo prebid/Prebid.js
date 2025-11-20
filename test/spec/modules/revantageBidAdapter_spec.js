@@ -239,6 +239,40 @@ describe('RevantageBidAdapter', function () {
       expect(request).to.deep.equal([]);
     });
 
+    it('should reject batch with different feedIds', function () {
+      let mixedFeedBidRequests = [
+        {
+          'bidder': 'revantage',
+          'params': { 'feedId': 'test-feed-1' },
+          'adUnitCode': 'adunit-1',
+          'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
+          'sizes': [[300, 250]],
+          'bidId': 'bid1',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475'
+        },
+        {
+          'bidder': 'revantage',
+          'params': { 'feedId': 'test-feed-2' },  // Different feedId
+          'adUnitCode': 'adunit-2',
+          'mediaTypes': { 'banner': { 'sizes': [[728, 90]] } },
+          'sizes': [[728, 90]],
+          'bidId': 'bid2',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475'
+        }
+      ];
+
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000
+      };
+
+      const request = spec.buildRequests(mixedFeedBidRequests, bidderRequest);
+      expect(request).to.deep.equal([]);
+    });
+
     it('should handle video ad unit', function () {
       let videoBidRequests = deepClone(validBidRequests);
       videoBidRequests[0].mediaTypes = {
