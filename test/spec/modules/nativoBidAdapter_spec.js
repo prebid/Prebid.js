@@ -1,10 +1,5 @@
 import { expect } from 'chai'
 import { spec } from 'modules/nativoBidAdapter.js'
-import {
-  getPageUrlFromBidRequest,
-  hasProtocol,
-  addProtocol,
-} from '../../../modules/nativoBidAdapter.js'
 
 describe('nativoBidAdapterTests', function () {
   describe('isBidRequestValid', function () {
@@ -33,20 +28,6 @@ describe('nativoBidAdapterTests', function () {
     it('should return false for invalid placementId value', function () {
       bid.params = {
         placementId: true,
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-
-    it('should return true for valid placementId value', function () {
-      bid.params = {
-        url: 'www.test.com',
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
-
-    it('should return false for invalid placementId value', function () {
-      bid.params = {
-        url: 4567890,
       }
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
@@ -468,95 +449,6 @@ describe('Response to Request Filter Flow', () => {
     expect(request2.data.ext.nativo.filtering.adFilterIds).to.include('12345')
     expect(request2.data.ext.nativo.filtering.advertiserFilterIds).to.include('1')
     expect(request2.data.ext.nativo.filtering.campaignFilterIds).to.include('234')
-  })
-})
-
-describe('hasProtocol', () => {
-  it('https://www.testpage.com', () => {
-    expect(hasProtocol('https://www.testpage.com')).to.be.true
-  })
-  it('http://www.testpage.com', () => {
-    expect(hasProtocol('http://www.testpage.com')).to.be.true
-  })
-  it('//www.testpage.com', () => {
-    expect(hasProtocol('//www.testpage.com')).to.be.false
-  })
-  it('www.testpage.com', () => {
-    expect(hasProtocol('www.testpage.com')).to.be.false
-  })
-  it('httpsgsjhgflih', () => {
-    expect(hasProtocol('httpsgsjhgflih')).to.be.false
-  })
-})
-
-describe('addProtocol', () => {
-  it('www.testpage.com', () => {
-    expect(addProtocol('www.testpage.com')).to.be.equal(
-      'https://www.testpage.com'
-    )
-  })
-  it('//www.testpage.com', () => {
-    expect(addProtocol('//www.testpage.com')).to.be.equal(
-      'https://www.testpage.com'
-    )
-  })
-  it('http://www.testpage.com', () => {
-    expect(addProtocol('http://www.testpage.com')).to.be.equal(
-      'http://www.testpage.com'
-    )
-  })
-  it('https://www.testpage.com', () => {
-    expect(addProtocol('https://www.testpage.com')).to.be.equal(
-      'https://www.testpage.com'
-    )
-  })
-})
-
-describe('getPageUrlFromBidRequest', () => {
-  const bidRequest = {}
-
-  beforeEach(() => {
-    bidRequest.params = {}
-  })
-
-  it('Returns undefined for no url param', () => {
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).to.be.undefined
-  })
-
-  it('@testUrl', () => {
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).to.be.undefined
-  })
-
-  it('https://www.testpage.com', () => {
-    bidRequest.params.url = 'https://www.testpage.com'
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).not.to.be.undefined
-  })
-
-  it('https://www.testpage.com/test/path', () => {
-    bidRequest.params.url = 'https://www.testpage.com/test/path'
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).not.to.be.undefined
-  })
-
-  it('www.testpage.com', () => {
-    bidRequest.params.url = 'www.testpage.com'
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).not.to.be.undefined
-  })
-
-  it('http://www.testpage.com', () => {
-    bidRequest.params.url = 'http://www.testpage.com'
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).not.to.be.undefined
-  })
-
-  it('//www.testpage.com', () => {
-    bidRequest.params.url = '//www.testpage.com'
-    const url = getPageUrlFromBidRequest(bidRequest)
-    expect(url).not.to.be.undefined
   })
 })
 

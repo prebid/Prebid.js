@@ -1,4 +1,4 @@
-import { deepAccess, isEmpty } from '../src/utils.js'
+import { isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
@@ -42,7 +42,7 @@ const converter = ortbConverter({
 })
 
 const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/esi.json?ntv_epid=39'
 
 const GVLID = 263
 
@@ -62,7 +62,6 @@ const campaignsToFilter = new Set()
 
 // Validity checks for optional parameters
 const validParameter = {
-  url: (value) => typeof value === 'string',
   placementId: (value) => {
     const isString = typeof value === 'string'
     const isNumber = typeof value === 'number'
@@ -302,38 +301,4 @@ function appendFilterData(filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length) {
     filterData.forEach((ad) => filter.add(ad))
   }
-}
-
-export function getPageUrlFromBidRequest(bidRequest) {
-  let paramPageUrl = deepAccess(bidRequest, 'params.url')
-
-  if (paramPageUrl === undefined) return
-
-  if (hasProtocol(paramPageUrl)) return paramPageUrl
-
-  paramPageUrl = addProtocol(paramPageUrl)
-
-  try {
-    const url = new URL(paramPageUrl)
-    return url.href
-  } catch (err) {}
-}
-
-export function hasProtocol(url) {
-  const protocolRegexp = /^http[s]?:/
-  return protocolRegexp.test(url)
-}
-
-export function addProtocol(url) {
-  if (hasProtocol(url)) {
-    return url
-  }
-
-  let protocolPrefix = 'https:'
-
-  if (url.indexOf('//') !== 0) {
-    protocolPrefix += '//'
-  }
-
-  return `${protocolPrefix}${url}`
 }
