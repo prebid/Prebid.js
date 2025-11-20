@@ -53,7 +53,7 @@ jobs:
           echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-ci
 
       - name: 'Save working directory'
         uses: ./.github/actions/save
@@ -88,25 +88,9 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test:
-    name: "Unit tests (all features enabled + coverage)"
+    name: "Browser tests"
     needs: checkout
     uses: ./.github/workflows/browser-tests.yml
-    with:
-      chunks: 8
-      build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-  test-e2e:
-    name: End-to-end tests
-    needs: checkout
-    uses: ./.github/workflows/run-tests.yml
-    with:
-      test-cmd: npx gulp e2e-test
-      browserstack: true
-      timeout: 15
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
