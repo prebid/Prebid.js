@@ -11,7 +11,7 @@ import {
 const BIDDER_CODE = 'screencore';
 const GVLID = 1473;
 const BIDDER_VERSION = '1.0.0';
-const SYNC_URL = 'https://cs.screencore.io/api/sync';
+const SYNC_URL = 'https://cs.screencore.io';
 const REGION_SUBDOMAIN_SUFFIX = {
   EU: 'taqeu',
   US: 'taqus',
