@@ -1,0 +1,60 @@
+name: Assign PR reviewers
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  assign_reviewers:
+    name: Assign reviewers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate app token
+        id: token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.PR_BOT_ID }}
+          private-key: ${{ secrets.PR_BOT_PEM }}
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Build
+        run: |
+          npx gulp build
+      - name: Install s3 client
+        run: |
+          npm install @aws-sdk/client-s3
+      - name: Get PR properties
+        id: get-props
+        uses: actions/github-script@v8
+        env:
+          AWS_ACCESS_KEY_ID: ${{ vars.PR_BOT_AWS_AK }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PR_BOT_AWS_SAK }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const getProps = require('./.github/workflows/scripts/getPRProperties.js')
+            const props = await getProps({
+              github, 
+              context, 
+              prNo: ${{ github.event.pull_request.number }},
+              reviewerTeam: '${{ vars.REVIEWER_TEAM }}',
+              engTeam: '${{ vars.ENG_TEAM }}',
+              authReviewTeam: '${{ vars.AUTH_REVIEWER_TEAM }}'
+            });
+            console.log('PR properties:', JSON.stringify(props, null, 2));
+            return props;
+      - name: Assign reviewers
+        if: ${{ !fromJSON(steps.get-props.outputs.result).review.ok }}
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const assignReviewers = require('./.github/workflows/scripts/assignReviewers.js')
+            const reviewers = await assignReviewers({github, context, prData: ${{ steps.get-props.outputs.result }} });
+            console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
