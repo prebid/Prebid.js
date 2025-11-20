@@ -3,7 +3,7 @@
 ```
 Module Name: ReVantage Bidder Adapter
 Module Type: ReVantage Bidder Adapter
-Maintainer: prebid@revantage.io
+Maintainer: bern@revantage.io
 ```
 
 # Description
