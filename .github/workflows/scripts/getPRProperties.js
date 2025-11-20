@@ -1,6 +1,5 @@
-const fs = require('node:fs/promises');
 const ghRequester = require('./ghRequest.js');
-const {glob} = require('glob');
+const AWS = require("@aws-sdk/client-s3");
 
 const MODULE_PATTERNS = [
   /^modules\/([^\/]+)BidAdapter(\.(\w+)|\/)/,
@@ -9,6 +8,10 @@ const MODULE_PATTERNS = [
   /^modules\/([^\/]+)IdSystem(\.(\w+)|\/)/
 ]
 
+const EXCLUDE_PATTERNS = [
+  /^test\//,
+  /^integrationExamples\//
+]
 const LIBRARY_PATTERN = /^libraries\/([^\/]+)\//;
 
 function extractVendor(chunkName) {
@@ -36,6 +39,9 @@ const getLibraryRefs = (() => {
 })();
 
 function isCoreFile(path) {
+  if (EXCLUDE_PATTERNS.find(pat => pat.test(path))) {
+    return false;
+  }
   if (MODULE_PATTERNS.find(pat => pat.test(path)) ) {
     return false;
   }
@@ -47,21 +53,20 @@ function isCoreFile(path) {
   return true;
 }
 
-function testAllFiles() {
-  const {glob} = require('glob')
-  return glob(['./**/*']).then(res => {
-    res
-      .filter(file => !file.startsWith('node_modules') && !file.startsWith('codeql.db'))
-      .filter(file => file.startsWith('libraries'))
-      .forEach(file => {
-      console.log(`file ${file}, core: ${isCoreFile(file)}`)
-    })
-  })
+async function isPrebidMember(ghHandle) {
+  const client = new AWS.S3({region: 'us-east-2'});
+  const res = await client.getObject({
+    Bucket: 'repo-dashboard-files-891377123989',
+    Key: 'memberMapping.json'
+  });
+  const members = JSON.parse(await res.Body.transformToString());
+  return members.includes(ghHandle);
 }
+
 
 async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
   const request = ghRequester(github);
-  let [files, pr, reviewers, pbEng] = await Promise.all([
+  let [files, pr, prebidReviewers, prebidEngineers] = await Promise.all([
     request('GET /repos/{owner}/{repo}/pulls/{prNo}/files', {
       owner: context.repo.owner,
       repo: context.repo.repo,
@@ -77,8 +82,8 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
       team,
     }))
   ]);
-  reviewers = reviewers.data.map(datum => datum.login);
-  pbEng = pbEng.data.map(datum=> datum.login);
+  prebidReviewers = prebidReviewers.data.map(datum => datum.login);
+  prebidEngineers = prebidEngineers.data.map(datum=> datum.login);
   let isCoreChange = false;
   files = files.data.map(datum => datum.filename).map(file => {
     const core = isCoreFile(file);
@@ -88,15 +93,57 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
       core
     }
   });
-  const assignedReviewers = pr.data.requested_reviewers.map(rv => rv.login);
-  await testAllFiles();
-  return {
+  const review = {
+    prebidEngineers: 0,
+    prebidReviewers: 0,
+    reviewers: []
+  };
+  const author = pr.data.user.login;
+  pr.data.requested_reviewers
+    .map(rv => rv.login)
+    .forEach(reviewer => {
+      if (reviewer === author) return;
+      const isPrebidEngineer = prebidEngineers.includes(reviewer);
+      const isPrebidReviewer = isPrebidEngineer || prebidReviewers.includes(reviewer);
+      if (isPrebidEngineer) {
+        review.prebidEngineers += 1;
+      }
+      if (isPrebidReviewer) {
+        review.prebidReviewers += 1
+      }
+      review.reviewers.push({
+        login: reviewer,
+        isPrebidEngineer,
+        isPrebidReviewer,
+      })
+    });
+  const data = {
+    pr: prNo,
+    author: {
+      login: author,
+      isPrebidMember: await isPrebidMember(author)
+    },
     isCoreChange,
     files,
-    reviewers,
-    pbEng,
-    assignedReviewers
+    prebidReviewers,
+    prebidEngineers,
+    review,
+  }
+  data.review.requires = reviewRequirements(data);
+  data.review.ok = satisfiesReviewRequirements(data.review);
+  return data;
+}
+
+function reviewRequirements(prData) {
+  return {
+    prebidEngineers: prData.author.isPrebidMember ? 1 : 0,
+    prebidReviewers: prData.isCoreChange ? 2 : 1
   }
 }
+
+function satisfiesReviewRequirements({requires, prebidEngineers, prebidReviewers}) {
+  return prebidEngineers >= requires.prebidEngineers && prebidReviewers >= requires.prebidReviewers
+}
+
 
 module.exports = getPRProperties;
