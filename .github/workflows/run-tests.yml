@@ -2,6 +2,10 @@ name: Run unit tests
 on:
   workflow_call:
     inputs:
+      browser:
+        description: values to set as the BROWSER env variable
+        required: false
+        type: string
       chunks:
         description: Number of chunks to split tests into
         required: false
@@ -34,6 +38,16 @@ on:
         required: false
         default: ubuntu-latest
         type: string
+      install-safari:
+        description: Install Safari
+        type: boolean
+        required: false
+        default: false
+      run-npm-install:
+        description: Run npm install before tests
+        type: boolean
+        required: false
+        default: false
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -50,11 +64,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
+      id: ${{ steps.chunks.outputs.id }}
     steps:
       - name: Define chunks
         id: chunks
         run: |
-          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> "$GITHUB_OUTPUT"
+          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> out;
+          echo 'id='"$(uuidgen)" >> out;
+          cat out >> "$GITHUB_OUTPUT";
         
   build:
     uses: ./.github/workflows/build.yml
@@ -76,6 +93,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
       TEST_CHUNKS: ${{ inputs.chunks }}
       TEST_CHUNK: ${{ matrix.chunk-no }}
+      BROWSER: ${{ inputs.browser }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
     concurrency:
@@ -83,7 +101,7 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.browserstack && 'browser' || github.run_id }}${{ inputs.browserstack && 'stac' || inputs.test-cmd }}${{ inputs.browserstack && 'k' || matrix.chunk-no }}-${{ github.run_id }}
+      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.checkout.outputs.id, matrix.chunk-no) }}
       cancel-in-progress: false
 
     runs-on: ${{ inputs.runs-on }}
@@ -95,6 +113,21 @@ jobs:
         uses: ./.github/actions/load
         with:
           name: ${{ needs.build.outputs.built-key }}
+
+      - name: Install safari
+        if: ${{ inputs.install-safari }}
+        run: |
+          brew install --cask safari-technology-preview
+          defaults write com.apple.Safari IncludeDevelopMenu YES
+          defaults write com.apple.Safari AllowRemoteAutomation 1
+          sudo safaridriver --enable
+          sudo "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
+          
+
+      - name: Run npm install
+        if: ${{ inputs.run-npm-install }}
+        run: |
+          npm install
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
@@ -121,6 +154,7 @@ jobs:
           timeout_minutes: ${{ inputs.timeout }}
           max_attempts: 3
           command: ${{ inputs.test-cmd }}
+          shell: bash
 
       - name: 'BrowserStackLocal Stop'
         if: ${{ inputs.browserstack }}
@@ -161,7 +195,7 @@ jobs:
           name: ${{ needs.build.outputs.built-key }}
 
       - name: Download coverage results
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: ./build/coverage
           pattern: coverage-partial-${{ inputs.test-cmd }}-*
