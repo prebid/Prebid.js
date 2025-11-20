@@ -121,7 +121,6 @@ describe('objectGuard', () => {
       expect(obj.foo).to.eql(['value']);
     })
 
-
     it('allows array modification when not applicable', () => {
       applies = false;
       const obj = {foo: ['value']};
