@@ -13,6 +13,11 @@ describe('objectGuard', () => {
         get(val) { return `repl${val}` },
       }
     })
+    it('should preserve object identity', () => {
+      const guard = objectGuard([rule])({outer: {inner: {foo: 'bar'}}});
+      expect(guard.outer).to.equal(guard.outer);
+      expect(guard.outer.inner).to.equal(guard.outer.inner);
+    })
     it('can prevent top level read access', () => {
       const obj = objectGuard([rule])({'foo': 1, 'other': 2});
       expect(obj).to.eql({
@@ -97,6 +102,12 @@ describe('objectGuard', () => {
       });
     });
 
+    it('should preserve object identity', () => {
+      const guard = objectGuard([rule])({outer: {inner: {foo: 'bar'}}});
+      expect(guard.outer).to.equal(guard.outer);
+      expect(guard.outer.inner).to.equal(guard.outer.inner);
+    })
+
     it('does not mess up array reads', () => {
       const guard = objectGuard([rule])({foo: [{bar: 'baz'}]});
       expect(guard.foo).to.eql([{bar: 'baz'}]);
@@ -109,6 +120,7 @@ describe('objectGuard', () => {
       guard.foo.push('test');
       expect(obj.foo).to.eql(['value']);
     })
+
 
     it('allows array modification when not applicable', () => {
       applies = false;
