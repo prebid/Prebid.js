@@ -8,7 +8,6 @@ import {
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
-import {getDevicePixelRatio} from 'libraries/devicePixelRatio/devicePixelRatio.js';
 import {mergeDeep} from '../../../src/utils.js';
 
 const inject51DegreesMeta = () => {
@@ -195,21 +194,14 @@ describe('51DegreesRtdProvider', function() {
       'platform': 'macOS',
       'platformVersion': '14.6.1'
     };
-    let mockWindow;
-    let pixelRatio;
-
-    beforeEach(function() {
-      mockWindow = {
-        ...window,
-        screen: {
-          height: 1117,
-          width: 1728,
-        },
-        devicePixelRatio: 2,
-      };
-
-      pixelRatio = getDevicePixelRatio(mockWindow);
-    });
+    const mockWindow = {
+      ...window,
+      screen: {
+        height: 1117,
+        width: 1728,
+      },
+      devicePixelRatio: 2,
+    };
 
     it('returns the cloud URL if the resourceKey is provided', function() {
       const config = {resourceKey: 'TEST_RESOURCE_KEY'};
@@ -217,7 +209,7 @@ describe('51DegreesRtdProvider', function() {
         'https://cloud.51degrees.com/api/v4/TEST_RESOURCE_KEY.js?' +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
         `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
-        `51D_PixelRatio=${pixelRatio}`
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
       );
     });
 
@@ -227,7 +219,7 @@ describe('51DegreesRtdProvider', function() {
         `https://example.com/51Degrees.core.js?` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
         `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
-        `51D_PixelRatio=${pixelRatio}`
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
       );
     });
 
@@ -237,7 +229,7 @@ describe('51DegreesRtdProvider', function() {
         `https://example.com/51Degrees.core.js?test=1&` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
         `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
-        `51D_PixelRatio=${pixelRatio}`
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
       );
     });
 
@@ -251,7 +243,7 @@ describe('51DegreesRtdProvider', function() {
         `51D_GetHighEntropyValues=${btoa(JSON.stringify(hev))}&` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
         `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
-        `51D_PixelRatio=${pixelRatio}`
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
       );
     });
 
@@ -264,20 +256,18 @@ describe('51DegreesRtdProvider', function() {
         `https://example.com/51Degrees.core.js?` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
         `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
-        `51D_PixelRatio=${pixelRatio}`
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
       );
     });
 
-    it('polyfills the device pixel ratio when it is not directly available', function() {
+    it('keeps the original URL if none of the additional parameters are available', function () {
+      // delete screen and devicePixelRatio properties to test the case when they are not available
+      delete mockWindow.screen;
+      delete mockWindow.devicePixelRatio;
+
       const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'};
-      const windowWithoutDpr = {innerWidth: 1200, outerWidth: 2400};
-
-      const derivedDpr = getDevicePixelRatio(windowWithoutDpr);
-
-      expect(get51DegreesJSURL(config, windowWithoutDpr)).to.equal(
-        `https://example.com/51Degrees.core.js?` +
-        `51D_PixelRatio=${derivedDpr}`
-      );
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal('https://example.com/51Degrees.core.js');
+      expect(get51DegreesJSURL(config, window)).to.not.equal('https://example.com/51Degrees.core.js');
     });
   });
 

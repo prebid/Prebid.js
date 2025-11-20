@@ -8,7 +8,6 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
@@ -127,7 +126,7 @@ export const get51DegreesJSURL = (pathData, win) => {
   );
   deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height);
   deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width);
-  deepSetNotEmptyValue(qs, '51D_PixelRatio', getDevicePixelRatio(_window));
+  deepSetNotEmptyValue(qs, '51D_PixelRatio', _window?.devicePixelRatio);
 
   const _qs = formatQS(qs);
   const _qsString = _qs ? `${queryPrefix}${_qs}` : '';
