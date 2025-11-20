@@ -13,7 +13,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '7.0';
+const BIDDER_VERSION = '7.1';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -35,6 +35,7 @@ type Nexx360BidParams = RequireAtLeastOne<{
   divId?: string;
   allBids?: boolean;
   customId?: string;
+  bidders?: Record<string, unknown>;
 }, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
@@ -87,7 +88,7 @@ const converter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
-  imp(buildImp, bidRequest, context) {
+  imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
     let imp:ORTBImp = buildImp(bidRequest, context);
     imp = enrichImp(imp, bidRequest);
     const divId = bidRequest.params.divId || bidRequest.adUnitCode;
@@ -99,14 +100,10 @@ const converter = ortbConverter({
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }
-    if (bidRequest.params.tagId) deepSetValue(imp, 'ext.nexx360.tagId', bidRequest.params.tagId);
-    if (bidRequest.params.placement) deepSetValue(imp, 'ext.nexx360.placement', bidRequest.params.placement);
-    if (bidRequest.params.videoTagId) deepSetValue(imp, 'ext.nexx360.videoTagId', bidRequest.params.videoTagId);
+    deepSetValue(imp, 'ext.nexx360', bidRequest.params);
+    deepSetValue(imp, 'ext.nexx360.divId', divId);
     if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
     if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName);
-    if (bidRequest.params.allBids) deepSetValue(imp, 'ext.nexx360.allBids', bidRequest.params.allBids);
-    if (bidRequest.params.nativeTagId) deepSetValue(imp, 'ext.nexx360.nativeTagId', bidRequest.params.nativeTagId);
-    if (bidRequest.params.customId) deepSetValue(imp, 'ext.nexx360.customId', bidRequest.params.customId);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
