@@ -19,7 +19,7 @@ export const CONSTANTS = Object.freeze({
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'PubMatic-Rtd-Provider: ',
   ENDPOINTS: {
-    BASEURL: 'http://127.0.0.1:8080/js/pwt',
+    BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     CONFIGS: 'config.json'
   }
 });
