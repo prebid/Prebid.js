@@ -321,6 +321,74 @@ describe('greenbidsBidAdapter', () => {
     });
   });
 
+  it('should add hardwareConcurrency info to payload', function () {
+      const originalHardwareConcurrency = window.top.navigator.hardwareConcurrency;
+
+      const mockHardwareConcurrency = (value) => {
+        Object.defineProperty(window.top.navigator, 'hardwareConcurrency', {
+          value,
+          configurable: true,
+        });
+      };
+
+      try {
+        const mockValue = 8;
+        mockHardwareConcurrency(mockValue);
+
+        const requestWithHardwareConcurrency = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithHardwareConcurrency = JSON.parse(requestWithHardwareConcurrency.data);
+
+        expect(payloadWithHardwareConcurrency.hardwareConcurrency).to.exist;
+        expect(payloadWithHardwareConcurrency.hardwareConcurrency).to.deep.equal(mockValue);
+
+        mockHardwareConcurrency(undefined);
+
+        const requestWithoutHardwareConcurrency = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithoutHardwareConcurrency = JSON.parse(requestWithoutHardwareConcurrency.data);
+
+        expect(payloadWithoutHardwareConcurrency.hardwareConcurrency).to.not.exist;
+      } finally {
+        Object.defineProperty(window.top.navigator, 'hardwareConcurrency', {
+          value: originalHardwareConcurrency,
+          configurable: true,
+        });
+      }
+    });
+
+    it('should add deviceMemory info to payload', function () {
+      const originalDeviceMemory = window.top.navigator.deviceMemory;
+
+      const mockDeviceMemory = (value) => {
+        Object.defineProperty(window.top.navigator, 'deviceMemory', {
+          value,
+          configurable: true,
+        });
+      };
+
+      try {
+        const mockValue = 4;
+        mockDeviceMemory(mockValue);
+
+        const requestWithDeviceMemory = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithDeviceMemory = JSON.parse(requestWithDeviceMemory.data);
+
+        expect(payloadWithDeviceMemory.deviceMemory).to.exist;
+        expect(payloadWithDeviceMemory.deviceMemory).to.deep.equal(mockValue);
+
+        mockDeviceMemory(undefined);
+
+        const requestWithoutDeviceMemory = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithoutDeviceMemory = JSON.parse(requestWithoutDeviceMemory.data);
+
+        expect(payloadWithoutDeviceMemory.deviceMemory).to.not.exist;
+      } finally {
+        Object.defineProperty(window.top.navigator, 'deviceMemory', {
+          value: originalDeviceMemory,
+          configurable: true,
+        });
+      }
+    });
+
   describe('pageTitle', function () {
     it('should add pageTitle info to payload based on document title', function () {
       const testText = 'This is a title';
