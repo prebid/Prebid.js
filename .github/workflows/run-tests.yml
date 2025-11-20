@@ -64,7 +64,7 @@ on:
 
 jobs:
   checkout:
-    name: "Set up environment"
+    name: "Define chunks"
     runs-on: ubuntu-latest
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
@@ -91,7 +91,7 @@ jobs:
       matrix:
         chunk-no: ${{ fromJSON(needs.checkout.outputs.chunks) }}
 
-    name: "Test chunk ${{ matrix.chunk-no }}"
+    name: Test${{ inputs.chunks > 1 && format(' chunk {0}', matrix.chunk-no) || '' }}
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

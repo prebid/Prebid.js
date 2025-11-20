@@ -18,7 +18,7 @@ jobs:
 
   setup:
     needs: build
-    name: "Setup environment"
+    name: "Define testing strategy"
     runs-on: ubuntu-latest
     outputs:
       browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
