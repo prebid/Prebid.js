@@ -44,12 +44,6 @@ function deriveFromDimensions(win, screen) {
 
 export function getDevicePixelRatio(win) {
   const targetWindow = getFallbackWindow(win);
-  const directValue = targetWindow?.devicePixelRatio;
-
-  if (isValidDpr(directValue)) {
-    return directValue;
-  }
-
   const targetScreen = targetWindow?.screen ?? (win ? undefined : utilsInternals.getWindowSelf()?.screen ?? window?.screen);
 
   const derivedValue = deriveFromScreen(targetScreen) ?? deriveFromDimensions(targetWindow, targetScreen);
