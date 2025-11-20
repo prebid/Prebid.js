@@ -319,7 +319,6 @@ describe('greenbidsBidAdapter', () => {
 
       expect(payload.device).to.deep.equal(ortb2DeviceBidderRequest.ortb2.device);
     });
-  });
 
     it('should add hardwareConcurrency info to payload', function () {
       const originalHardwareConcurrency = window.top.navigator.hardwareConcurrency;
@@ -388,6 +387,7 @@ describe('greenbidsBidAdapter', () => {
         });
       }
     });
+  });
 
   describe('pageTitle', function () {
     it('should add pageTitle info to payload based on document title', function () {
