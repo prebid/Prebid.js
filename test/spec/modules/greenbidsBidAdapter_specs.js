@@ -321,7 +321,7 @@ describe('greenbidsBidAdapter', () => {
     });
   });
 
-  it('should add hardwareConcurrency info to payload', function () {
+    it('should add hardwareConcurrency info to payload', function () {
       const originalHardwareConcurrency = window.top.navigator.hardwareConcurrency;
 
       const mockHardwareConcurrency = (value) => {
