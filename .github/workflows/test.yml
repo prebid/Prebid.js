@@ -53,37 +53,24 @@ jobs:
           echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-ci
 
-      - name: Cache source
-        uses: actions/cache/save@v4
+      - name: 'Save working directory'
+        uses: ./.github/actions/save
         with:
-          path: .
-          key: source-${{ github.run_id }}
-
-      - name: Verify cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: source-${{ github.run_id }}
-          lookup-only: true
-          fail-on-cache-miss: true
+          name: source
 
   lint:
     name: "Run linter"
     needs: checkout
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
+      - name: Checkout
+        uses: actions/checkout@v5
       - name: Restore source
-        uses: actions/cache/restore@v4
+        uses: ./.github/actions/load
         with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: source
       - name: lint
         run: |
           npx eslint
@@ -91,90 +78,36 @@ jobs:
   test-no-features:
     name: "Unit tests (all features disabled)"
     needs: checkout
-    uses: ./.github/workflows/run-unit-tests.yml
+    uses: ./.github/workflows/run-tests.yml
     with:
+      chunks: 8
       build-cmd: npx gulp precompile-all-features-disabled
       test-cmd: npx gulp test-all-features-disabled-nobuild
-      serialize: false
+      browserstack: false
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test:
-    name: "Unit tests (all features enabled + coverage)"
+    name: "Browser tests"
     needs: checkout
-    uses: ./.github/workflows/run-unit-tests.yml
-    with:
-      build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack
-      serialize: true
+    uses: ./.github/workflows/browser-tests.yml
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-  test-e2e:
-    name: "End-to-end tests"
-    needs: checkout
-    runs-on: ubuntu-latest
-    concurrency:
-      # see test-chunk.yml for notes on concurrency groups
-      group: browserstack-${{ github.run_id }}
-      cancel-in-progress: false
-    env:
-      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-    steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-      - name: Restore source
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
-
-      - name: 'BrowserStack Env Setup'
-        uses: 'browserstack/github-actions/setup-env@master'
-        with:
-          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
-          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-      - name: 'BrowserStackLocal Setup'
-        uses: 'browserstack/github-actions/setup-local@master'
-        with:
-          local-testing: start
-          local-identifier: random
-
-      - name: 'Wait for browserstack'
-        uses: ./.github/actions/wait-for-browserstack
-        with:
-          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-      - name: Run tests
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 20
-          max_attempts: 3
-          command: npx gulp e2e-test
-
-      - name: 'BrowserStackLocal Stop'
-        uses: 'browserstack/github-actions/setup-local@master'
-        with:
-          local-testing: stop
 
   coveralls:
     name: Update coveralls
     needs: [checkout, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Restore working directory
-        uses: actions/cache/restore@v4
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
         with:
-          path: .
-          key: ${{ needs.test.outputs.wdir }}
-          fail-on-cache-miss: true
+          name: ${{ needs.test.outputs.coverage }}
+
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
