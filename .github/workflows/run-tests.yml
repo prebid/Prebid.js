@@ -43,6 +43,10 @@ on:
         type: boolean
         required: false
         default: false
+      install-chrome:
+        description: Chrome version to install via @puppeteer/browsers
+        type: string
+        required: false
       run-npm-install:
         description: Run npm install before tests
         type: boolean
@@ -126,6 +130,15 @@ jobs:
           defaults write com.apple.Safari AllowRemoteAutomation 1
           sudo safaridriver --enable
           sudo "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
+
+      - name: Install Chrome
+        if: ${{ inputs.install-chrome }}
+        shell: bash
+        run: |
+          out=($(npx @puppeteer/browsers install chrome@${{ inputs.install-chrome }}))
+          echo 'CHROME_BIN='"${out[1]}" >> env;
+          cat env
+          cat env >> "$GITHUB_ENV"
 
       - name: Install deb
         if: ${{ inputs.install-deb }}

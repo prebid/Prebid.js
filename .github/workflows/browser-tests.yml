@@ -50,7 +50,7 @@ jobs:
               return browsers;
             })
             const bstackBrowsers = Object.fromEntries(
-              // exlude versions of browsers that we can test on GH actions
+              // exclude versions of browsers that we can test on GH actions
               Object.entries(require('./browsers.json'))
               .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) == null)
             )
@@ -109,6 +109,7 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       install-deb: ${{ matrix.browser.deb }}
+      install-chrome: ${{ matrix.browser.chrome }}
       built-key: ${{ needs.build.outputs.built-key }}
       test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
       chunks: 8
