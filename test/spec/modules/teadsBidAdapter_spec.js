@@ -910,7 +910,6 @@ describe('teadsBidAdapter', () => {
         id5Id: toEid('id5-sync.com', 'id5Id-id'),
         criteoId: toEid('criteo.com', 'criteoId-id'),
         yahooConnectId: toEid('yahoo.com', 'yahooConnectId-id'),
-        quantcastId: toEid('quantcast.com', 'quantcastId-id'),
         epsilonPublisherLinkId: toEid('epsilon.com', 'epsilonPublisherLinkId-id'),
         publisherFirstPartyViewerId: toEid('pubcid.org', 'publisherFirstPartyViewerId-id'),
         merkleId: toEid('merkleinc.com', 'merkleId-id'),
@@ -978,7 +977,6 @@ describe('teadsBidAdapter', () => {
           expect(payload['id5Id']).to.equal('id5Id-id');
           expect(payload['criteoId']).to.equal('criteoId-id');
           expect(payload['yahooConnectId']).to.equal('yahooConnectId-id');
-          expect(payload['quantcastId']).to.equal('quantcastId-id');
           expect(payload['epsilonPublisherLinkId']).to.equal('epsilonPublisherLinkId-id');
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
           expect(payload['merkleId']).to.equal('merkleId-id');
