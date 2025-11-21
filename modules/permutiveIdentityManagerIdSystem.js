@@ -1,7 +1,7 @@
 import {MODULE_TYPE_UID} from '../src/activities/modules.js'
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js'
-import {prefixLog, safeJSONParse} from '../src/utils.js'
+import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -11,6 +11,7 @@ import {prefixLog, safeJSONParse} from '../src/utils.js'
 
 const MODULE_NAME = 'permutiveIdentityManagerId'
 const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
+const PERMUTIVE_VENDOR_ID = 361
 
 const ID5_DOMAIN = 'id5-sync.com'
 const LIVERAMP_DOMAIN = 'liveramp.com'
@@ -21,6 +22,30 @@ const PRIMARY_IDS = ['id5id', 'idl_env', 'uid2']
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME})
 
 const logger = prefixLog('[PermutiveID]')
+
+function hasPurposeConsent(userConsent, requiredPurposes, enforceVendorConsent) {
+  const gdprApplies = deepAccess(userConsent, 'gdpr.gdprApplies')
+  if (!gdprApplies) return true
+
+  if (enforceVendorConsent) {
+    const vendorConsents = deepAccess(userConsent, 'gdpr.vendorData.vendor.consents') || {}
+    const vendorLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.vendor.legitimateInterests') || {}
+    const purposeConsents = deepAccess(userConsent, 'gdpr.vendorData.purpose.consents') || {}
+    const purposeLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.purpose.legitimateInterests') || {}
+    const hasVendorConsent = vendorConsents[PERMUTIVE_VENDOR_ID] === true || vendorLegitimateInterests[PERMUTIVE_VENDOR_ID] === true
+
+    return hasVendorConsent && requiredPurposes.every((purposeId) =>
+      purposeConsents[purposeId] === true || purposeLegitimateInterests[purposeId] === true
+    )
+  }
+
+  const purposeConsents = deepAccess(userConsent, 'gdpr.vendorData.publisher.consents') || {}
+  const purposeLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.publisher.legitimateInterests') || {}
+
+  return requiredPurposes.every((purposeId) =>
+    purposeConsents[purposeId] === true || purposeLegitimateInterests[purposeId] === true
+  )
+}
 
 const readFromSdkLocalStorage = () => {
   const data = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_ID_DATA_STORAGE_KEY))
@@ -101,6 +126,12 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
+    const enforceVendorConsent = deepAccess(submoduleConfig, 'params.enforceVendorConsent')
+    if (!hasPurposeConsent(consentData, [1], enforceVendorConsent)) {
+      logger.logInfo('GDPR purpose 1 consent not satisfied for Permutive Identity Manager')
+      return
+    }
+
     const id = readFromSdkLocalStorage()
     if (Object.entries(id).length > 0) {
       logger.logInfo('found id in sdk storage')
