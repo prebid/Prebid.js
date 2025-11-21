@@ -74,6 +74,25 @@ module.exports = {
 
     return modules;
   },
+  getDynamicModules() {
+    // Get list of modules for dynamic loading from --dynamic-modules flag
+    var dynamicModules = (argv.dynamicModules || '')
+      .split(',')
+      .filter(module => !!module);
+
+    try {
+      if (dynamicModules.length === 1 && path.extname(dynamicModules[0]).toLowerCase() === '.json') {
+        var moduleFile = dynamicModules[0];
+        dynamicModules = JSON.parse(
+          fs.readFileSync(moduleFile, 'utf8')
+        );
+      }
+    } catch (e) {
+      throw new PluginError('dynamicModules', 'failed reading: ' + argv.dynamicModules + '. Ensure the file exists and contains valid JSON.');
+    }
+
+    return dynamicModules;
+  },
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;
