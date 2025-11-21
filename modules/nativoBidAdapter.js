@@ -16,6 +16,7 @@ const localPbjsRef = getGlobal()
 
 const adUnitsRequested = {}
 const extData = {}
+const responseCache = {}
 
 const converter = ortbConverter({
   context: {
@@ -122,7 +123,7 @@ export const spec = {
 
     // Override site data in ortb2 if url parameter is provided
     // This ensures the ortbConverter uses the custom URL when building the request
-    const urlParam = validBidRequests[0]?.params?.url
+    const urlParam = validBidRequests.length > 0 ? validBidRequests[0]?.params?.url : null
     if (urlParam && typeof urlParam === 'string') {
       // Clone bidderRequest to avoid mutating the original
       bidderRequest = { ...bidderRequest }
@@ -170,13 +171,19 @@ export const spec = {
         ? JSON.parse(response.body)
         : response.body
 
-      // Store extension data for onBidWon filtering BEFORE converting
+      // Cache response data temporarily for onBidWon to retrieve
       // Store by both bid.id and bid.impid to handle different converter mappings
       body.seatbid?.forEach(seatbid => {
         seatbid.bid?.forEach(bid => {
           if (bid.ext) {
-            extData[bid.id] = bid.ext
-            extData[bid.impid] = bid.ext
+            // Store by bid.id (UUID) if present
+            if (bid.id) {
+              responseCache[bid.id] = bid.ext
+            }
+            // Store by bid.impid (maps to Prebid requestId) if present
+            if (bid.impid) {
+              responseCache[bid.impid] = bid.ext
+            }
           }
         })
       })
@@ -190,6 +197,7 @@ export const spec = {
       return bids
     } catch (error) {
       // If there is an error, return []
+      logWarn('[Nativo] Error parsing bid response:', error)
       return []
     }
   },
@@ -202,13 +210,15 @@ export const spec = {
    * @param {Array} serverResponses - Array of server's responses
    * @param {Object} gdprConsent - GDPR consent data
    * @param {Object} uspConsent - USP consent data
+   * @param {Object} gppConsent - GPP consent data
    * @return {Array} The user syncs which should be dropped.
    */
   getUserSyncs: function (
     syncOptions,
     serverResponses,
     gdprConsent,
-    uspConsent
+    uspConsent,
+    gppConsent
   ) {
     // Generate consent qs string
     let params = ''
@@ -232,6 +242,21 @@ export const spec = {
         'us_privacy',
         encodeURIComponent(uspConsent.uspConsent)
       )
+    }
+    // GPP
+    if (gppConsent?.gppString) {
+      params = appendQSParamString(
+        params,
+        'gpp',
+        encodeURIComponent(gppConsent.gppString)
+      )
+      if (gppConsent.applicableSections?.length > 0) {
+        params = appendQSParamString(
+          params,
+          'gpp_sid',
+          encodeURIComponent(gppConsent.applicableSections.join(','))
+        )
+      }
     }
 
     // Get sync urls from the respnse and inject cinbsent params
@@ -261,6 +286,10 @@ export const spec = {
       if (!body || !body.seatbid || body.seatbid.length === 0) return
 
       body.seatbid.forEach((seatbid) => {
+        // Validate seatbid structure
+        if (!seatbid || !Array.isArray(seatbid.syncUrls)) {
+          return
+        }
         // Grab the syncs for each seatbid
         if (seatbid.syncUrls) {
           seatbid.syncUrls.forEach((sync) => {
@@ -285,10 +314,43 @@ export const spec = {
    * @param {Object} bid - The bid that won the auction
    */
   onBidWon: function (bid) {
-    // Try multiple keys to find the ext data
-    const ext = extData[bid.dealId] || extData[bid.requestId] || extData[bid.bidId]
+    // Validate input
+    if (!bid || typeof bid !== 'object') return
 
-    if (!ext) return
+    // Primary key for bid lookup is requestId (mapped from ORTB impid)
+    const bidKey = bid.requestId
+
+    if (!bidKey) {
+      logWarn('[Nativo] onBidWon: bid.requestId is missing', bid)
+      return
+    }
+
+    // ALWAYS check responseCache first for fresh ext data from the latest response
+    let ext = responseCache[bidKey]
+
+    if (ext) {
+      // Move to extData for this winning bid only (selective storage)
+      extData[bidKey] = ext
+
+      // Clean up responseCache: delete by key and by reference
+      delete responseCache[bidKey]
+
+      // Also clean up the ORTB bid.id UUID we might have stored during interpretResponse
+      // Since we store the same ext object by both bid.id and bid.impid, we need to find and delete both
+      Object.keys(responseCache).forEach(key => {
+        if (responseCache[key] === ext) {
+          delete responseCache[key]
+        }
+      })
+    } else {
+      // Fall back to extData for repeat wins with no new response
+      ext = extData[bidKey]
+    }
+
+    if (!ext) {
+      logWarn('[Nativo] onBidWon: ext data not found for requestId:', bidKey)
+      return
+    }
 
     appendFilterData(adsToFilter, ext.adsToFilter)
     appendFilterData(advertisersToFilter, ext.advertisersToFilter)
