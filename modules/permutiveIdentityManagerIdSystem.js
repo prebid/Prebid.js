@@ -11,6 +11,7 @@ import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
  */
 
 const MODULE_NAME = 'permutiveIdentityManagerId'
+const PERMUTIVE_GVLID = 361
 const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
 const PERMUTIVE_VENDOR_ID = 361
 
@@ -106,6 +107,7 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: PERMUTIVE_GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
