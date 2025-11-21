@@ -51,7 +51,7 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 
 #### Consent
 
-While Permutive is listed as a TCF vendor (ID: 361), Permutive does not typically obtain consent directly from the TCF. As we act as a processor on behalf of our publishers consent is given to the Permutive SDK by the publisher, not by the [GDPR Consent Management Module](https://prebid-docs.atre.net/dev-docs/modules/consentManagement.html). Publishers wishing to use TCF can add 361 to their CMP and set  params.enforceVendorConsent to `true`.
+While Permutive is listed as a TCF vendor (ID: 361), Permutive does not typically obtain vendor consent from the TCF, but instead relies on the publisher purpose consents. Publishers wishing to use TCF can add 361 to their CMP and set  params.enforceVendorConsent to `true`.
 
 ## Cohort Activation with Permutive RTD Module
 
