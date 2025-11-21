@@ -131,6 +131,11 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const userSyncEnabled = config.getConfig("userSync.syncEnabled");
+    const currencyConfig = config.getConfig('currency');
+    const currency =
+      currencyConfig?.adServerCurrency ||
+      currencyConfig?.defaultCurrency ||
+      null;
     // (!) that avoids top-level side effects (the thing that can stop registerBidder from running)
     const computeTTFB = (w = (typeof window !== 'undefined' ? window : undefined)) => {
       try {
@@ -179,9 +184,12 @@ export const spec = {
 
     return bidRequests.map((bidRequest) => {
       const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
-      const size = bidRequest.mediaTypes?.banner?.sizes[0] || bidRequest.mediaTypes?.native?.sizes[0] || [];
-      const width = size[0];
-      const height = size[1];
+      const adSizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.mediaTypes?.native?.sizes || [];
+      const formattedSizes = Array.isArray(adSizes)
+        ? adSizes
+          .filter(size => Array.isArray(size) && size.length === 2)
+          .map(([width, height]) => ({ width, height }))
+        : [];
       const originalAssets = bidRequest.mediaTypes?.native?.ortb?.assets || [];
 
       // convert icon to img type 1
@@ -209,12 +217,10 @@ export const spec = {
           source: eid.source,
           id: eid.uids?.[0]?.id
         })).filter(eid => eid.source && eid.id),
+        ...(currency ? { currency } : {}),
         ads: [
           {
-            maxSize: {
-              width: width,
-              height: height,
-            },
+            sizes: formattedSizes,
             referenceId: bidRequest.params.referenceId,
             tagId: bidRequest.params.zone,
             type: detectAdType(bidRequest),
