@@ -5,6 +5,7 @@ import { getGlobal } from '../src/prebidGlobal.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'nativo'
+const BIDDER_ALIASES = ['ntv']
 const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/esi.json?ntv_epid=39'
 
 const GVLID = 263
@@ -74,7 +75,7 @@ const validParameter = {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['ntv'], // short code
+  aliases: BIDDER_ALIASES,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
