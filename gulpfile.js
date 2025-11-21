@@ -521,7 +521,7 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeV
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'))
-gulp.task('test-only-nobuild', gulp.series('test-build-logic', testTaskMaker({coverage: true})))
+gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})))
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
 gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
@@ -554,6 +554,7 @@ gulp.task('default', gulp.series('build'));
 
 gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
 gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
+gulp.task('e2e-test-nobuild', gulp.series(requireNodeVersion(16), e2eTestTaskMaker()))
 
 // other tasks
 gulp.task(bundleToStdout);
