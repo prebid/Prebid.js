@@ -33,6 +33,13 @@ const winDimensions = new CachedApiWrapper(
   }
 );
 
+Object.defineProperty(winDimensions.obj.screen, 'colorDepth', {
+  get() {
+    return null;
+  },
+  enumerable: true
+});
+
 export const internal = {
   reset: winDimensions.reset,
 };
