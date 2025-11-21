@@ -28,6 +28,11 @@ on:
         required: false
         type: boolean
         default: false
+      browserstack-sessions:
+        description: Number of browserstack sessions needed to run tests
+        required: false
+        type: number
+        default: 6
       timeout:
         description: Timeout on test run
         required: false
@@ -43,11 +48,19 @@ on:
         type: boolean
         required: false
         default: false
+      install-chrome:
+        description: Chrome version to install via @puppeteer/browsers
+        type: string
+        required: false
       run-npm-install:
         description: Run npm install before tests
         type: boolean
         required: false
         default: false
+      install-deb:
+        description: URL to deb to install before tests
+        type: string
+        required: false
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -60,7 +73,7 @@ on:
 
 jobs:
   checkout:
-    name: "Set up environment"
+    name: "Define chunks"
     runs-on: ubuntu-latest
     outputs:
       chunks: ${{ steps.chunks.outputs.chunks }}
@@ -87,7 +100,7 @@ jobs:
       matrix:
         chunk-no: ${{ fromJSON(needs.checkout.outputs.chunks) }}
 
-    name: "Test chunk ${{ matrix.chunk-no }}"
+    name: Test${{ inputs.chunks > 1 && format(' chunk {0}', matrix.chunk-no) || '' }}
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -122,7 +135,21 @@ jobs:
           defaults write com.apple.Safari AllowRemoteAutomation 1
           sudo safaridriver --enable
           sudo "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
-          
+
+      - name: Install Chrome
+        if: ${{ inputs.install-chrome }}
+        shell: bash
+        run: |
+          out=($(npx @puppeteer/browsers install chrome@${{ inputs.install-chrome }}))
+          echo 'CHROME_BIN='"${out[1]}" >> env;
+          cat env
+          cat env >> "$GITHUB_ENV"
+
+      - name: Install deb
+        if: ${{ inputs.install-deb }}
+        uses: ./.github/actions/install-deb
+        with:
+          url: ${{ inputs.install-deb }}
 
       - name: Run npm install
         if: ${{ inputs.run-npm-install }}
@@ -147,6 +174,8 @@ jobs:
       - name: 'Wait for browserstack'
         if: ${{ inputs.browserstack }}
         uses: ./.github/actions/wait-for-browserstack
+        with:
+          sessions: ${{ inputs.browserstack-sessions }}
 
       - name: Run tests
         uses: nick-fields/retry@v3
