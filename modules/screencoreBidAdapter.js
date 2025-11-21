@@ -1,11 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
 import {
-  createBuildRequestsFn,
-  createInterpretResponseFn,
-  getUserSyncs,
   isBidRequestValid,
+  buildRequestsBase,
+  interpretResponse,
+  getUserSyncs,
+  buildPlacementProcessingFunction
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'screencore';
@@ -49,24 +49,26 @@ function getRegionSubdomainSuffix() {
   }
 }
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-
 export function createDomain() {
   const subDomain = getRegionSubdomainSuffix();
 
   return `https://${subDomain}.screencore.io`;
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_CODE, BIDDER_VERSION, false);
+const AD_URL = `${createDomain()}/prebid`;
 
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
+const placementProcessingFunction = buildPlacementProcessingFunction();
+
+const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
+  return buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction });
+};
 
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  isBidRequestValid,
+  isBidRequestValid: isBidRequestValid(),
   buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL),
