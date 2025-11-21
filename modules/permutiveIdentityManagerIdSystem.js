@@ -2,6 +2,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js'
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js'
 import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
+import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
