@@ -502,8 +502,6 @@ describe('onetag', function () {
       expect(data.sWidth).to.be.a('number');
       expect(data.wWidth).to.be.a('number');
       expect(data.wHeight).to.be.a('number');
-      expect(data.sLeft).to.be.a('number');
-      expect(data.sTop).to.be.a('number');
       expect(data.hLength).to.be.a('number');
       expect(data.networkConnectionType).to.satisfy(function (value) {
         return value === null || typeof value === 'string'
@@ -1133,8 +1131,8 @@ function getBannerVideoRequest() {
       wHeight: 949,
       sWidth: 1920,
       sHeight: 1080,
-      sLeft: 1987,
-      sTop: 27,
+      sLeft: null,
+      sTop: null,
       xOffset: 0,
       yOffset: 0,
       docHidden: false,
