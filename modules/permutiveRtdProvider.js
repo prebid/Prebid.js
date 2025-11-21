@@ -19,6 +19,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
  */
 
 const MODULE_NAME = 'permutive'
+const PERMUTIVE_VENDOR_ID = 361
 
 const logger = prefixLog('[PermutiveRTD]')
 
