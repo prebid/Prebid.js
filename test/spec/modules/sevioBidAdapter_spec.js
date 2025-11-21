@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sevioBidAdapter.js';
-
+import { config } from 'src/config.js';
 const ENDPOINT_URL = 'https://req.adx.ws/prebid';
 
 describe('sevioBidAdapter', function () {
@@ -444,6 +444,68 @@ describe('sevioBidAdapter', function () {
         { width: 728, height: 90 },
         { width: 160, height: 600 },
       ]);
+    });
+  });
+
+  describe('currency handling', function () {
+    let bidRequests;
+    let bidderRequests;
+
+    beforeEach(function () {
+      bidRequests = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: '123'
+      }];
+
+      bidderRequests = {
+        refererInfo: {
+          referer: 'https://example.com',
+          page: 'https://example.com',
+        }
+      };
+    });
+
+    afterEach(function () {
+      if (typeof config.resetConfig === 'function') {
+        config.resetConfig();
+      } else if (typeof config.setConfig === 'function') {
+        config.setConfig({ currency: null });
+      }
+    });
+
+    it('includes EUR currency when EUR is set in prebid config', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      });
+
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload.currency).to.equal('EUR');
+    });
+
+    it('includes GBP currency when GBP is set in prebid config', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'GBP'
+        }
+      });
+
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload.currency).to.equal('GBP');
+    });
+
+    it('does NOT include currency when no currency config is set', function () {
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload).to.not.have.property('currency');
     });
   });
 });
