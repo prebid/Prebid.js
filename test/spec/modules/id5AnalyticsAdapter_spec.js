@@ -1,12 +1,13 @@
 import adapterManager from '../../../src/adapterManager.js';
 import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
-import { expect } from 'chai';
+import {expect} from 'chai';
 import * as events from '../../../src/events.js';
-import { EVENTS } from '../../../src/constants.js';
-import { generateUUID } from '../../../src/utils.js';
+import {EVENTS} from '../../../src/constants.js';
+import {generateUUID} from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {enrichEidsRule} from "../../../modules/tcfControl.ts";
+import * as utils from '../../../src/utils.js';
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
@@ -20,6 +21,7 @@ describe('ID5 analytics adapter', () => {
     config = {
       options: {
         partnerId: 12349,
+        compressionDisabled: true
       }
     };
   });
@@ -129,6 +131,32 @@ describe('ID5 analytics adapter', () => {
       expect(body2.payload).to.eql(auction);
     });
 
+    it('compresses large events with gzip when enabled', async function() {
+      // turn ON compression
+      config.options.compressionDisabled = false;
+
+      const longCode = 'x'.repeat(2048);
+      auction.adUnits[0].code = longCode;
+      auction.adUnits[0].adUnitCodes = [longCode];
+
+      id5AnalyticsAdapter.enableAnalytics(config);
+      server.respond();
+      events.emit(EVENTS.AUCTION_END, auction);
+      server.respond();
+
+      // Wait as gzip stream is async, we need to wait until it is processed.  3 requests: config, tcf2Enforcement, auctionEnd
+      await waitForRequests(3);
+      const eventReq = server.requests[2];
+      if (utils.isGzipCompressionSupported()) {
+        expect(eventReq.requestHeaders['Content-Encoding']).to.equal('gzip');
+        expect(eventReq.requestBody).to.be.instanceof(Uint8Array);
+      } else {    // compression is not supported in some test browsers, so we expect the event to be uncompressed.
+        expect(eventReq.requestHeaders['Content-Encoding']).to.be.undefined;
+        const body = JSON.parse(eventReq.requestBody);
+        expect(body.event).to.equal(EVENTS.AUCTION_END);
+      }
+    });
+
     it('does not repeat already sent events on new events', () => {
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
@@ -160,7 +188,7 @@ describe('ID5 analytics adapter', () => {
           'criteoId': '_h_y_19IMUhMZG1TOTRReHFNc29TekJ3TzQ3elhnRU81ayUyQjhiRkdJJTJGaTFXJTJCdDRnVmN4S0FETUhQbXdmQWg0M3g1NWtGbGolMkZXalclMkJvWjJDOXFDSk1HU3ZKaVElM0QlM0Q',
           'id5id': {
             'uid': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
-            'ext': { 'linkType': 1 }
+            'ext': {'linkType': 1}
           },
           'tdid': '888a6042-8f99-483b-aa26-23c44bc9166b'
         },
@@ -175,7 +203,7 @@ describe('ID5 analytics adapter', () => {
           'uids': [{
             'id': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
             'atype': 1,
-            'ext': { 'linkType': 1 }
+            'ext': {'linkType': 1}
           }]
         }]
       }];
@@ -489,7 +517,7 @@ describe('ID5 analytics adapter', () => {
         'userId': {
           'id5id': {
             'uid': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
-            'ext': { 'linkType': 1 }
+            'ext': {'linkType': 1}
           }
         }
       }];
@@ -511,5 +539,21 @@ describe('ID5 analytics adapter', () => {
       expect(body.payload.bidsReceived[0].meta).to.equal(undefined);    // new rule
       expect(body.payload.adUnits[0].bids[0].userId.id5id.uid).to.equal(auction.adUnits[0].bids[0].userId.id5id.uid); // old, overridden rule
     });
+
+    // helper to wait until server has received at least `expected` requests
+    async function waitForRequests(expected = 3, timeout = 2000, interval = 10) {
+      return new Promise((resolve, reject) => {
+        const start = Date.now();
+        const timer = setInterval(() => {
+          if (server.requests.length >= expected) {
+            clearInterval(timer);
+            resolve();
+          } else if (Date.now() - start > timeout) {
+            clearInterval(timer);
+            reject(new Error('Timed out waiting for requests: expected ' + expected));
+          }
+        }, interval);
+      });
+    }
   });
 });
