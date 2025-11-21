@@ -38,6 +38,35 @@ export const parseConfig = (moduleConfig) => {
 }
 
 /**
+ * Wait for Optable SDK event to fire with targeting data
+ * @param {string} eventName Name of the event to listen for
+ * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
+ */
+const waitForOptableEvent = (eventName) => {
+  return new Promise((resolve) => {
+    const optableBundle = /** @type {Object} */ (window.optable);
+    const cachedData = optableBundle?.instance?.targetingFromCache();
+
+    if (cachedData && cachedData.ortb2) {
+      logMessage('Optable SDK already has cached data');
+      resolve(cachedData);
+      return;
+    }
+
+    const eventListener = (event) => {
+      logMessage(`Received ${eventName} event`);
+      // Extract targeting data from event detail
+      const targetingData = event.detail;
+      window.removeEventListener(eventName, eventListener);
+      resolve(targetingData);
+    };
+
+    window.addEventListener(eventName, eventListener);
+    logMessage(`Waiting for ${eventName} event`);
+  });
+};
+
+/**
  * Default function to handle/enrich RTD data
  * @param reqBidsConfigObj Bid request configuration object
  * @param optableExtraData Additional data to be used by the Optable SDK
@@ -45,15 +74,8 @@ export const parseConfig = (moduleConfig) => {
  * @returns {Promise<void>}
  */
 export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
-  const optableBundle = /** @type {Object} */ (window.optable);
-  // Get targeting data from cache, if available
-  let targetingData = optableBundle?.instance?.targetingFromCache();
-  // If no targeting data is found in the cache, call the targeting function
-  if (!targetingData) {
-    // Call Optable DCN for targeting data and return the ORTB2 object
-    targetingData = await optableBundle?.instance?.targeting();
-  }
-  logMessage('Original targeting data from targeting(): ', targetingData);
+  // Wait for the Optable SDK to dispatch targeting data via event
+  let targetingData = await waitForOptableEvent('optable-targeting:change');
 
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
@@ -92,7 +114,6 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
   try {
     // Extract the bundle URL from the module configuration
     const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
-
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
