@@ -1,11 +1,46 @@
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec } from 'modules/greenbidsBidAdapter.js';
+import { spec, ENDPOINT_URL } from 'modules/greenbidsBidAdapter.js';
 import { getScreenOrientation } from 'src/utils.js';
-const ENDPOINT = 'https://d.greenbids.ai/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';
 
 describe('greenbidsBidAdapter', () => {
+  const bidderRequestDefault = {
+    'auctionId': '1d1a030790a475',
+    'bidderRequestId': '22edbae2733bf6',
+    'timeout': 3000
+  };
+
+  const bidRequests = [
+    {
+      'bidder': 'greenbids',
+      'params': {
+        'placementId': 4242
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+      'creativeId': 'er2ee',
+      'deviceWidth': 1680
+    }
+  ];
+
+  function checkMediaTypesSizes(mediaTypes, expectedSizes) {
+    const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
+    const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderRequestDefault);
+    const payloadWithBannerSizes = JSON.parse(requestWithBannerSizes.data);
+
+    return payloadWithBannerSizes.data.forEach(bid => {
+      if (Array.isArray(expectedSizes)) {
+        expect(JSON.stringify(bid.sizes)).to.equal(JSON.stringify(expectedSizes));
+      } else {
+        expect(bid.sizes[0]).to.equal(expectedSizes);
+      }
+    });
+  }
+
   const adapter = newBidder(spec);
   let sandbox;
 
@@ -62,7 +97,7 @@ describe('greenbidsBidAdapter', () => {
     it('should send bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
 
-      expect(request.url).to.equal(ENDPOINT);
+      expect(request.url).to.equal(ENDPOINT_URL);
       expect(request.method).to.equal('POST');
     });
 
@@ -622,14 +657,20 @@ describe('greenbidsBidAdapter', () => {
 
     it('should add schain info to payload if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{
-            asi: 'example.com',
-            sid: '00001',
-            hp: 1
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [{
+                  asi: 'example.com',
+                  sid: '00001',
+                  hp: 1
+                }]
+              }
+            }
+          }
         }
       });
 
@@ -836,6 +877,7 @@ describe('greenbidsBidAdapter', () => {
             'cpm': 0.5,
             'currency': 'USD',
             'height': 250,
+            'size': '200x100',
             'bidId': '3ede2a3fa0db94',
             'ttl': 360,
             'width': 300,
@@ -846,6 +888,7 @@ describe('greenbidsBidAdapter', () => {
             'cpm': 0.5,
             'currency': 'USD',
             'height': 200,
+            'size': '300x150',
             'bidId': '4fef3b4gb1ec15',
             'ttl': 360,
             'width': 350,
@@ -871,6 +914,7 @@ describe('greenbidsBidAdapter', () => {
           'cpm': 0.5,
           'width': 300,
           'height': 250,
+          'size': '200x100',
           'currency': 'USD',
           'netRevenue': true,
           'meta': {
@@ -885,6 +929,7 @@ describe('greenbidsBidAdapter', () => {
           'cpm': 0.5,
           'width': 350,
           'height': 200,
+          'size': '300x150',
           'currency': 'USD',
           'netRevenue': true,
           'meta': {
@@ -925,39 +970,3 @@ describe('greenbidsBidAdapter', () => {
     });
   });
 });
-
-const bidderRequestDefault = {
-  'auctionId': '1d1a030790a475',
-  'bidderRequestId': '22edbae2733bf6',
-  'timeout': 3000
-};
-
-const bidRequests = [
-  {
-    'bidder': 'greenbids',
-    'params': {
-      'placementId': 4242
-    },
-    'adUnitCode': 'adunit-code',
-    'sizes': [[300, 250], [300, 600]],
-    'bidId': '30b31c1838de1e',
-    'bidderRequestId': '22edbae2733bf6',
-    'auctionId': '1d1a030790a475',
-    'creativeId': 'er2ee',
-    'deviceWidth': 1680
-  }
-];
-
-function checkMediaTypesSizes(mediaTypes, expectedSizes) {
-  const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
-  const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderRequestDefault);
-  const payloadWithBannerSizes = JSON.parse(requestWithBannerSizes.data);
-
-  return payloadWithBannerSizes.data.forEach(bid => {
-    if (Array.isArray(expectedSizes)) {
-      expect(JSON.stringify(bid.sizes)).to.equal(JSON.stringify(expectedSizes));
-    } else {
-      expect(bid.sizes[0]).to.equal(expectedSizes);
-    }
-  });
-}
