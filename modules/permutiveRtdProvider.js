@@ -10,6 +10,7 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js';
 
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
@@ -31,7 +32,9 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleNam
 function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
 
-  return hasVendorlessPurposeConsent(userConsent, [1, 4])
+  const enforceVendorConsent = deepAccess(moduleConfig, 'params.enforceVendorConsent')
+
+  return hasPurposeConsent(userConsent, [1], enforceVendorConsent)
 }
 
 function liftIntoParams(params) {
@@ -49,18 +52,6 @@ function readPermutiveModuleConfigFromCache() {
   const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
   cachedPermutiveModuleConfig = liftIntoParams(params)
   return cachedPermutiveModuleConfig
-}
-
-function hasVendorlessPurposeConsent(userConsent, requiredPurposes) {
-  const gdprApplies = deepAccess(userConsent, 'gdpr.gdprApplies')
-  if (!gdprApplies) return true
-
-  const purposeConsents = deepAccess(userConsent, 'gdpr.vendorData.publisher.consents') || {}
-  const purposeLegitimateInterests = deepAccess(userConsent, 'gdpr.vendorData.publisher.legitimateInterests') || {}
-
-  return requiredPurposes.every((purposeId) =>
-    purposeConsents[purposeId] === true || purposeLegitimateInterests[purposeId] === true
-  )
 }
 
 /**
@@ -99,6 +90,7 @@ export function getModuleConfig(customModuleConfig) {
       maxSegs: 500,
       acBidders: [],
       overwrites: {},
+      enforceVendorConsent: false,
     },
   },
   permutiveModuleConfig,

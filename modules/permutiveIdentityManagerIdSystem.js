@@ -1,7 +1,8 @@
 import {MODULE_TYPE_UID} from '../src/activities/modules.js'
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js'
-import {prefixLog, safeJSONParse} from '../src/utils.js'
+import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
+import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -101,6 +102,12 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
+    const enforceVendorConsent = deepAccess(submoduleConfig, 'params.enforceVendorConsent')
+    if (!hasPurposeConsent(consentData, [1], enforceVendorConsent)) {
+      logger.logInfo('GDPR purpose 1 consent not satisfied for Permutive Identity Manager')
+      return
+    }
+
     const id = readFromSdkLocalStorage()
     if (Object.entries(id).length > 0) {
       logger.logInfo('found id in sdk storage')
