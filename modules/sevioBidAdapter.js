@@ -1,9 +1,7 @@
 import * as utils from "../src/utils.js";
-import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
-import {getDomComplexity, getPageDescription, getPageTitle} from "../libraries/fpdUtils/pageInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
@@ -15,6 +13,66 @@ const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
 const ACTION_METHOD = "POST";
+
+function detectWalletsPresence() {
+  const _wallets = [
+    "ethereum",
+    "web3",
+    "cardano",
+    "BinanceChain",
+    "solana",
+    "tron",
+    "tronLink",
+    "tronWeb",
+    "tronLink",
+    "starknet_argentX",
+    "walletLinkExtension",
+    "coinbaseWalletExtension",
+    "__venom",
+    "martian",
+    "razor",
+    "razorWallet",
+    "ic", // plug wallet,
+    "cosmos",
+    "ronin",
+    "starknet_braavos",
+    "XverseProviders",
+    "compass",
+    "solflare",
+    "solflareWalletStandardInitialized",
+    "sender",
+    "rainbow",
+  ];
+  return _wallets.some((prop) => typeof window[prop] !== "undefined") ? 1 : 0;
+}
+
+function getPageTitle(win = window) {
+  try {
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]');
+    return win.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+function getPageDescription(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="description"]') ||
+      win.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
+}
+
+function getDomComplexity(document) {
+  return document?.querySelectorAll('*')?.length ?? -1;
+}
 
 const detectAdType = (bid) =>
   (
