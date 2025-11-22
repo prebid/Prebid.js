@@ -1,16 +1,17 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
 import {
-  createBuildRequestsFn,
-  createInterpretResponseFn,
-  createUserSyncGetter,
   isBidRequestValid,
-} from '../libraries/vidazooUtils/bidderUtils.js';
+  buildRequestsBase,
+  interpretResponse,
+  getUserSyncs,
+  buildPlacementProcessingFunction
+} from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'screencore';
 const GVLID = 1473;
 const BIDDER_VERSION = '1.0.0';
+const SYNC_URL = 'https://cs.screencore.io';
 const REGION_SUBDOMAIN_SUFFIX = {
   EU: 'taqeu',
   US: 'taqus',
@@ -48,32 +49,29 @@ function getRegionSubdomainSuffix() {
   }
 }
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-
 export function createDomain() {
   const subDomain = getRegionSubdomainSuffix();
 
   return `https://${subDomain}.screencore.io`;
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_CODE, BIDDER_VERSION, false);
+const AD_URL = `${createDomain()}/prebid`;
 
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
+const placementProcessingFunction = buildPlacementProcessingFunction();
 
-const getUserSyncs = createUserSyncGetter({
-  iframeSyncUrl: 'https://cs.screencore.io/api/sync/iframe',
-  imageSyncUrl: 'https://cs.screencore.io/api/sync/image',
-});
+const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
+  return buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction });
+};
 
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  isBidRequestValid,
+  isBidRequestValid: isBidRequestValid(),
   buildRequests,
   interpretResponse,
-  getUserSyncs,
+  getUserSyncs: getUserSyncs(SYNC_URL),
 };
 
 registerBidder(spec);
