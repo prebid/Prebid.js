@@ -757,7 +757,7 @@ describe('limelightDigitalAdapter', function () {
         ...bid1,
         getFloor: function(params) {
           if (params.size[0] === 300 && params.size[1] === 250) {
-            return { currency: 'USD', floor: 1.5 };
+            return { currency: 'USD', floor: 2.0 };
           }
           return { currency: 'USD', floor: 0 };
         }
@@ -769,7 +769,7 @@ describe('limelightDigitalAdapter', function () {
       expect(adUnit.sizes).to.have.lengthOf(1);
       expect(adUnit.sizes[0].floorInfo).to.exist;
       expect(adUnit.sizes[0].floorInfo.currency).to.equal('USD');
-      expect(adUnit.sizes[0].floorInfo.floor).to.equal(1.5);
+      expect(adUnit.sizes[0].floorInfo.floor).to.equal(2.0);
     });
     it('should set floorInfo to null when getFloor is not available', function() {
       const bidWithoutFloor = { ...bid1 };
