@@ -19,7 +19,6 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
  */
 
 const MODULE_NAME = 'permutive'
-const PERMUTIVE_VENDOR_ID = 361
 
 const logger = prefixLog('[PermutiveRTD]')
 
@@ -472,6 +471,7 @@ let permutiveSDKInRealTime = false
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: "https://assets.permutive.app/tcf/tcf.json",
   gvlid: VENDORLESS_GVLID,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     const completeBidRequestData = () => {
