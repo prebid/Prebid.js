@@ -208,8 +208,8 @@ export const spec = {
     return {
       'wiw': windowDimensions.innerWidth,
       'wih': windowDimensions.innerHeight,
-      'saw': windowDimensions.screen.availWidth,
-      'sah': windowDimensions.screen.availHeight,
+      'saw': null,
+      'sah': null,
       'scd': null,
       'sw': windowDimensions.screen.width,
       'sh': windowDimensions.screen.height,
