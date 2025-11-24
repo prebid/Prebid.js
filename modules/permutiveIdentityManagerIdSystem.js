@@ -84,6 +84,8 @@ export const permutiveIdentityManagerIdSubmodule = {
   name: MODULE_NAME,
   gvlid: VENDORLESS_GVLID,
 
+  disclosureURL: "https://assets.permutive.app/tcf/tcf.json",
+
   /**
    * decode the stored id value for passing to bid requests
    * @function decode

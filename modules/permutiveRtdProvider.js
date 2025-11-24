@@ -471,6 +471,7 @@ let permutiveSDKInRealTime = false
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: "https://assets.permutive.app/tcf/tcf.json",
   gvlid: VENDORLESS_GVLID,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     const completeBidRequestData = () => {
