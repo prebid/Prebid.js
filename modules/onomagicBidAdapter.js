@@ -117,7 +117,7 @@ function interpretResponse(serverResponse) {
       seatbid.length > 0 &&
       seatbid[0].bid &&
       seatbid[0].bid.length > 0) {
-      seatbid[0].bid.map(onomagicBid => {
+      seatbid[0].bid.forEach(onomagicBid => {
         onomagicBidResponses.push({
           requestId: onomagicBid.impid,
           cpm: parseFloat(onomagicBid.price),

@@ -37,6 +37,7 @@ const _approvedLoadExternalJSList = [
   'nodalsAi',
   'anonymised',
   'optable',
+  'oftmedia',
   // UserId Submodules
   'justtag',
   'tncId',

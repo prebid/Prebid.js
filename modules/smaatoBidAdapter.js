@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, deepSetValue, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -449,7 +449,7 @@ function createAdPodImp(imp, videoMediaType) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(imp => {
+      chunked[index].forEach(imp => {
         const sequence = index + 1;
         imp.video.minduration = duration
         imp.video.maxduration = duration
@@ -459,7 +459,7 @@ function createAdPodImp(imp, videoMediaType) {
   } else {
     // all maxdurations should be the same
     const maxDuration = Math.max(...durationRangeSec);
-    imps.map((imp, index) => {
+    imps.forEach((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
       imp.video.sequence = sequence

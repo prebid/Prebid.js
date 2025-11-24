@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
@@ -113,7 +113,7 @@ export const spec = {
     }
     data.tmax = bidderRequest.timeout;
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const placement = Object.assign({
         id: generateUUID(),
         divName: bid.bidId,

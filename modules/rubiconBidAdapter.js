@@ -427,7 +427,6 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
-        'o_ae',
         'o_cdep',
         'rp_floor',
         'rp_secure',
@@ -545,9 +544,6 @@ export const spec = {
       data['ppuid'] = configUserId;
     }
 
-    if (bidRequest?.ortb2Imp?.ext?.ae) {
-      data['o_ae'] = 1;
-    }
     // If the bid request contains a 'mobile' property under 'ortb2.site', add it to 'data' as 'p_site.mobile'.
     if (typeof bidRequest?.ortb2?.site?.mobile === 'number') {
       data['p_site.mobile'] = bidRequest.ortb2.site.mobile
@@ -655,7 +651,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
+   * @return {*} An array of bids
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -760,15 +756,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
 
-    const fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
-      return { config, bidId: config.bidId }
-    });
-
-    if (fledgeAuctionConfigs) {
-      return { bids, paapi: fledgeAuctionConfigs };
-    } else {
-      return bids;
-    }
+    return bids;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (syncOptions.iframeEnabled) {
@@ -936,16 +924,17 @@ function applyFPD(bidRequest, mediaType, data) {
           result.push(obj.id);
           return result;
         }, []);
-        if (segments.length > 0) return segments.toString();
+        return segments.length > 0 ? segments.toString() : '';
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
       return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
-        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+        if (typeof value !== 'object' && typeof value !== 'undefined') return true;
 
         logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
-      }).toString() : prop.toString();
+        return false;
+      }).map(value => value.toString()).toString() : prop.toString();
     }
   };
   const addBannerData = function(obj, name, key, isParent = true) {

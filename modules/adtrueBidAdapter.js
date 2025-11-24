@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -631,6 +631,7 @@ export const spec = {
         });
         return accum.concat(cookieSyncObjects);
       }
+      return accum;
     }, []);
   }
 };

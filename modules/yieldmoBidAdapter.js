@@ -1,4 +1,4 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
@@ -111,7 +111,6 @@ export const spec = {
 
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
-        serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
         serverRequest.w = getWinDimensions().innerWidth;
         serverRequest.h = getWinDimensions().innerHeight;
