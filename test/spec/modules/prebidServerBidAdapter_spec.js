@@ -7,7 +7,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, {PBS_ADAPTER_NAME} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import {deepAccess, deepClone, mergeDeep} from 'src/utils.js';
+import {deepAccess, deepClone, getWinDimensions, mergeDeep} from 'src/utils.js';
 import {ajax} from 'src/ajax.js';
 import {config} from 'src/config.js';
 import * as events from 'src/events.js';
@@ -1195,8 +1195,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.screen.width,
-        h: window.screen.height,
+        w: getWinDimensions().screen.width,
+        h: getWinDimensions().screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1227,8 +1227,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.screen.width,
-        h: window.screen.height,
+        w: getWinDimensions().screen.width,
+        h: getWinDimensions().screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1619,8 +1619,8 @@ describe('S2S Adapter', function () {
           adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
           sinon.assert.match(requestBid.device, {
-            w: window.screen.width,
-            h: window.screen.height,
+            w: getWinDimensions().screen.width,
+            h: getWinDimensions().screen.height,
           })
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
