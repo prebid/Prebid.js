@@ -1,4 +1,4 @@
-import { getTimeZone } from '../../src/utils/timezone.js';
+import { getTimeZone } from '../timezone.js';
 
 const adUrls = {
   US_EAST: 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',

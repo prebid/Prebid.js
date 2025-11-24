@@ -1,7 +1,7 @@
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {buildRequests, getUserSyncs, interpretResponse, isBidRequestValid} from '../libraries/xeUtils/bidderUtils.js';
-import { getTimeZone } from '../src/utils/timezone.js';
+import { getTimeZone } from '../libraries/timezone.js';
 
 const BIDDER_CODE = 'adipolo';
 const GVL_ID = 1456;

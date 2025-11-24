@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
-import { getTimeZone } from '../src/utils/timezone.js';
+import { getTimeZone } from '../libraries/timezone.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

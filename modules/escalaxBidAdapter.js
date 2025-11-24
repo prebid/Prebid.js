@@ -2,7 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getTimeZone } from '../src/utils/timezone.js';
+import { getTimeZone } from '../libraries/timezone.js';
 
 const BIDDER_CODE = 'escalax';
 const ESCALAX_SOURCE_ID_MACRO = '[sourceId]';

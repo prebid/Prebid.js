@@ -11,7 +11,7 @@ import { ajax } from '../src/ajax.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
-import { getTimeZone } from '../src/utils/timezone.js';
+import { getTimeZone } from '../libraries/timezone.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'

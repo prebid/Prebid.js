@@ -2,12 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   isBidRequestValid,
-  buildRequestsBase,
-  interpretResponse,
-  getUserSyncs,
-  buildPlacementProcessingFunction
-} from '../libraries/teqblazeUtils/bidderUtils.js';
-import { getTimeZone } from '../src/utils/timezone.js';
+} from '../libraries/vidazooUtils/bidderUtils.js';
+import { getTimeZone } from '../libraries/timezone.js';
 
 const BIDDER_CODE = 'screencore';
 const GVLID = 1473;

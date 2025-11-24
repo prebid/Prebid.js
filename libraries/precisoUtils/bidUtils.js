@@ -4,7 +4,7 @@ import { ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
-import { getTimeZone } from '../../src/utils/timezone.js';
+import { getTimeZone } from '../timezone.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);

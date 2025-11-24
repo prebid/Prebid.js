@@ -1,4 +1,4 @@
-import { getTimeZone } from '../src/utils/timezone.js';
+import { getTimeZone } from '../libraries/timezone.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
