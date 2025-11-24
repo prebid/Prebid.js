@@ -451,7 +451,7 @@ describe('omsBidAdapter', function () {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'video',
-        'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
+        'vastXml': `<!-- Creative -->`,
         'ttl': 300,
         'meta': {
           'advertiserDomains': ['example.com']
