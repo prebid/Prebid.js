@@ -3,7 +3,7 @@ import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js'
 import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
 import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
-import {VENDORLESS_GVLID} from "../src/consentHandler";
+import {VENDORLESS_GVLID} from "../src/consentHandler.js";
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
