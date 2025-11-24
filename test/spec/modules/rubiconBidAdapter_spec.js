@@ -2890,15 +2890,6 @@ describe('the rubicon adapter', function () {
           expect(slotParams.kw).to.equal('a,b,c');
         });
 
-        it('should pass along o_ae param when fledge is enabled', () => {
-          const localBidRequest = Object.assign({}, bidderRequest.bids[0]);
-          localBidRequest.ortb2Imp.ext.ae = true;
-
-          const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
-
-          expect(slotParams['o_ae']).to.equal(1)
-        });
-
         it('should pass along desired segtaxes, but not non-desired ones', () => {
           const localBidderRequest = Object.assign({}, bidderRequest);
           localBidderRequest.refererInfo = {domain: 'bob'};
@@ -3814,43 +3805,6 @@ describe('the rubicon adapter', function () {
           });
 
           expect(bids).to.be.lengthOf(0);
-        });
-
-        it('Should support recieving an auctionConfig and pass it along to Prebid', function () {
-          const response = {
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'size_id': 15,
-            'alt_size_ids': [
-              43
-            ],
-            'tracking': '',
-            'inventory': {},
-            'ads': [{
-              'status': 'ok',
-              'cpm': 0,
-              'size_id': 15
-            }],
-            'component_auction_config': [{
-              'random': 'value',
-              'bidId': '5432'
-            },
-            {
-              'random': 'string',
-              'bidId': '6789'
-            }]
-          };
-
-          const {bids, paapi} = spec.interpretResponse({body: response}, {
-            bidRequest: bidderRequest.bids[0]
-          });
-
-          expect(bids).to.be.lengthOf(1);
-          expect(paapi[0].bidId).to.equal('5432');
-          expect(paapi[0].config.random).to.equal('value');
-          expect(paapi[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {

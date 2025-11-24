@@ -128,18 +128,23 @@ export function objectGuard(rules) {
     return true;
   }
 
-  function mkGuard(obj, tree, final, applies) {
-    return new Proxy(obj, {
+  function mkGuard(obj, tree, final, applies, cache = new WeakMap()) {
+    // If this object is already proxied, return the cached proxy
+    if (cache.has(obj)) {
+      return cache.get(obj);
+    }
+
+    const proxy = new Proxy(obj, {
       get(target, prop, receiver) {
         const val = Reflect.get(target, prop, receiver);
         if (final && val != null && typeof val === 'object') {
           // a parent property has write protect rules, keep guarding
-          return mkGuard(val, tree, final, applies)
+          return mkGuard(val, tree, final, applies, cache)
         } else if (tree.children?.hasOwnProperty(prop)) {
           const {children, hasWP} = tree.children[prop];
           if ((children || hasWP) && val != null && typeof val === 'object') {
             // some nested properties have rules, return a guard for the branch
-            return mkGuard(val, tree.children?.[prop] || tree, final || children == null, applies);
+            return mkGuard(val, tree.children?.[prop] || tree, final || children == null, applies, cache);
           } else if (isData(val)) {
             // if this property has redact rules, apply them
             const rule = getRedactRule(tree.children[prop]);
@@ -183,6 +188,10 @@ export function objectGuard(rules) {
         return Reflect.deleteProperty(target, prop);
       }
     });
+
+    // Cache the proxy before returning
+    cache.set(obj, proxy);
+    return proxy;
   }
 
   return function guard(obj, ...args) {
