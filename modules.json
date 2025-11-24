@@ -45,6 +45,7 @@
   "seedtagBidAdapter",
   "sovrnBidAdapter",
   "kueezRtbBidAdapter",
+  "adgridBidAdapter",
   "adpod",
   "consentManagementTcf",
   "consentManagementUsp",
