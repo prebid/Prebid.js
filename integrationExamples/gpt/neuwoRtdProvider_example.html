@@ -121,10 +121,30 @@
             const inputIabContentTaxonomyVersion = document.getElementById('iab-content-taxonomy-version');
             const iabContentTaxonomyVersion = inputIabContentTaxonomyVersion ? inputIabContentTaxonomyVersion.value : undefined;
 
+            // Cache Option
+            const inputEnableCache = document.getElementById('enable-cache');
+            const enableCache = inputEnableCache ? inputEnableCache.checked : undefined;
+
+            // URL Stripping Options
+            const inputStripAllQueryParams = document.getElementById('strip-all-query-params');
+            const stripAllQueryParams = inputStripAllQueryParams ? inputStripAllQueryParams.checked : undefined;
+
+            const inputStripQueryParamsForDomains = document.getElementById('strip-query-params-for-domains');
+            const stripQueryParamsForDomainsValue = inputStripQueryParamsForDomains ? inputStripQueryParamsForDomains.value.trim() : '';
+            const stripQueryParamsForDomains = stripQueryParamsForDomainsValue ? stripQueryParamsForDomainsValue.split(',').map(d => d.trim()).filter(d => d) : undefined;
+
+            const inputStripQueryParams = document.getElementById('strip-query-params');
+            const stripQueryParamsValue = inputStripQueryParams ? inputStripQueryParams.value.trim() : '';
+            const stripQueryParams = stripQueryParamsValue ? stripQueryParamsValue.split(',').map(p => p.trim()).filter(p => p) : undefined;
+
+            const inputStripFragments = document.getElementById('strip-fragments');
+            const stripFragments = inputStripFragments ? inputStripFragments.checked : undefined;
+
             pbjs.que.push(function () {
                 pbjs.setConfig({
                     debug: true,
                     realTimeData: {
+                        auctionDelay: 500,
                         dataProviders: [
                             {
                                 name: "NeuwoRTDModule",
@@ -133,7 +153,12 @@
                                     neuwoApiUrl,
                                     neuwoApiToken,
                                     websiteToAnalyseUrl,
-                                    iabContentTaxonomyVersion
+                                    iabContentTaxonomyVersion,
+                                    enableCache,
+                                    stripAllQueryParams,
+                                    stripQueryParamsForDomains,
+                                    stripQueryParams,
+                                    stripFragments
                                 }
                             }
                         ]
@@ -166,11 +191,14 @@
         </a>
         after running commands in the prebid.js source folder that includes libraries/modules/neuwoRtdProvider.js
         <code style="display: block; white-space: pre-line;">
+            // Install dependencies
             npm ci
+
+            // Run a local development server
             npx gulp serve --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter
 
             // No tests
-            npx gulp serve-fast --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter --notests
+            npx gulp serve-fast --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter
 
             // Only tests
             npx gulp test-only --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter --file=test/spec/modules/neuwoRtdProvider_spec.js
@@ -180,10 +208,49 @@
     <div>
         <h2>Neuwo Rtd Provider Configuration</h2>
         <p>Add token and url to use for Neuwo extension configuration</p>
-        <input type="text" placeholder="Neuwo Edge API Endpoint URL" id="neuwo-api-url" />
-        <input type="text" placeholder="Neuwo API Token" id="neuwo-api-token" />
-        <input type="text" placeholder="URL for website to analyse" id="website-to-analyse-url" />
-        <input type="text" placeholder="IAB Content Taxonomy Version (default 3.0)" id="iab-content-taxonomy-version" />
+        <div style="margin-bottom: 10px;">
+            <input type="text" placeholder="Neuwo Edge API Endpoint URL" id="neuwo-api-url" style="width: 400px;" />
+        </div>
+        <div style="margin-bottom: 10px;">
+            <input type="text" placeholder="Neuwo API Token" id="neuwo-api-token" style="width: 400px;" />
+        </div>
+        <div style="margin-bottom: 10px;">
+            <input type="text" placeholder="URL for website to analyse" id="website-to-analyse-url" style="width: 400px;" />
+        </div>
+
+        <h3>IAB Content Taxonomy Options</h3>
+        <div style="margin-bottom: 10px;">
+            <input type="text" placeholder="IAB Content Taxonomy Version (default 3.0)" id="iab-content-taxonomy-version" style="width: 400px;" />
+        </div>
+
+        <h3>Cache Options</h3>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="enable-cache" checked />
+                Enable API response caching (default: enabled)
+            </label>
+        </div>
+
+        <h3>URL Cleaning Options</h3>
+        <div style="margin-bottom: 5px;">
+            <label>
+                <input type="checkbox" id="strip-all-query-params" />
+                Strip all query parameters
+            </label>
+        </div>
+        <div style="margin-bottom: 5px;">
+            <input type="text" placeholder="Strip query params for domains (comma-separated, e.g., example.com, test.com)" id="strip-query-params-for-domains" style="width: 400px;" />
+        </div>
+        <div style="margin-bottom: 5px;">
+            <input type="text" placeholder="Strip specific query params (comma-separated, e.g., utm_source, fbclid)" id="strip-query-params" style="width: 400px;" />
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="strip-fragments" />
+                Strip URL fragments (hash)
+            </label>
+        </div>
+
         <button onClick="onSettingsUpdate()">Update</button>
     </div>
 
@@ -230,6 +297,88 @@
 <script type="text/javascript">
     const helper = document.getElementById('help');
     if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
+</script>
+
+<script type="text/javascript">
+    // LocalStorage persistence for form values
+    function saveConfigToLocalStorage() {
+        const config = {
+            neuwoApiToken: document.getElementById('neuwo-api-token')?.value || '',
+            neuwoApiUrl: document.getElementById('neuwo-api-url')?.value || '',
+            websiteToAnalyseUrl: document.getElementById('website-to-analyse-url')?.value || '',
+            iabContentTaxonomyVersion: document.getElementById('iab-content-taxonomy-version')?.value || '',
+            enableCache: document.getElementById('enable-cache')?.checked !== false,
+            stripAllQueryParams: document.getElementById('strip-all-query-params')?.checked || false,
+            stripQueryParamsForDomains: document.getElementById('strip-query-params-for-domains')?.value || '',
+            stripQueryParams: document.getElementById('strip-query-params')?.value || '',
+            stripFragments: document.getElementById('strip-fragments')?.checked || false
+        };
+        localStorage.setItem('neuwoRtdConfig', JSON.stringify(config));
+    }
+
+    function loadConfigFromLocalStorage() {
+        const savedConfig = localStorage.getItem('neuwoRtdConfig');
+        if (!savedConfig) return;
+
+        try {
+            const config = JSON.parse(savedConfig);
+
+            // Restore text inputs
+            if (config.neuwoApiToken) document.getElementById('neuwo-api-token').value = config.neuwoApiToken;
+            if (config.neuwoApiUrl) document.getElementById('neuwo-api-url').value = config.neuwoApiUrl;
+            if (config.websiteToAnalyseUrl) document.getElementById('website-to-analyse-url').value = config.websiteToAnalyseUrl;
+            if (config.iabContentTaxonomyVersion) document.getElementById('iab-content-taxonomy-version').value = config.iabContentTaxonomyVersion;
+            if (config.stripQueryParamsForDomains) document.getElementById('strip-query-params-for-domains').value = config.stripQueryParamsForDomains;
+            if (config.stripQueryParams) document.getElementById('strip-query-params').value = config.stripQueryParams;
+
+            // Restore checkboxes
+            document.getElementById('enable-cache').checked = config.enableCache !== false;
+            document.getElementById('strip-all-query-params').checked = config.stripAllQueryParams;
+            document.getElementById('strip-fragments').checked = config.stripFragments;
+        } catch (e) {
+            console.error('Error loading saved config:', e);
+        }
+    }
+
+    // Attach event listeners to save on input change
+    function attachInputListeners() {
+        const inputIds = [
+            'neuwo-api-token',
+            'neuwo-api-url',
+            'website-to-analyse-url',
+            'iab-content-taxonomy-version',
+            'strip-query-params-for-domains',
+            'strip-query-params'
+        ];
+
+        const checkboxIds = [
+            'enable-cache',
+            'strip-all-query-params',
+            'strip-fragments'
+        ];
+
+        // Save on text input change
+        inputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', saveConfigToLocalStorage);
+            }
+        });
+
+        // Save on checkbox change
+        checkboxIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', saveConfigToLocalStorage);
+            }
+        });
+    }
+
+    // Load config on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        loadConfigFromLocalStorage();
+        attachInputListeners();
+    });
 </script>
 
 </html>

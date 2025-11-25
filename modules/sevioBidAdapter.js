@@ -3,7 +3,14 @@ import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
+import {getDomComplexity, getPageDescription, getPageTitle} from "../libraries/fpdUtils/pageInfo.js";
+import * as converter from '../libraries/ortbConverter/converter.js';
 
+const PREBID_VERSION = '$prebid.version$';
+const ADAPTER_VERSION = '1.0';
+const ORTB = converter.ortbConverter({
+  context: { ttl: 300 }
+});
 const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
 const ENDPOINT_URL = "https://req.adx.ws/prebid";
@@ -13,6 +20,10 @@ const detectAdType = (bid) =>
   (
     ["native", "banner"].find((t) => bid.mediaTypes?.[t]) || "unknown"
   ).toUpperCase();
+
+const getReferrerInfo = (bidderRequest) => {
+  return bidderRequest?.refererInfo?.page ?? '';
+}
 
 const parseNativeAd = function (bid) {
   try {
@@ -120,21 +131,67 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const userSyncEnabled = config.getConfig("userSync.syncEnabled");
+    const currencyConfig = config.getConfig('currency');
+    const currency =
+      currencyConfig?.adServerCurrency ||
+      currencyConfig?.defaultCurrency ||
+      null;
+    // (!) that avoids top-level side effects (the thing that can stop registerBidder from running)
+    const computeTTFB = (w = (typeof window !== 'undefined' ? window : undefined)) => {
+      try {
+        const wt = (() => { try { return w?.top ?? w; } catch { return w; } })();
+        const p = wt?.performance || wt?.webkitPerformance || wt?.msPerformance || wt?.mozPerformance;
+        if (!p) return '';
+
+        if (typeof p.getEntriesByType === 'function') {
+          const nav = p.getEntriesByType('navigation')?.[0];
+          if (nav?.responseStart > 0 && nav?.requestStart > 0) {
+            return String(Math.round(nav.responseStart - nav.requestStart));
+          }
+        }
+
+        const t = p.timing;
+        if (t?.responseStart > 0 && t?.requestStart > 0) {
+          return String(t.responseStart - t.requestStart);
+        }
+
+        return '';
+      } catch {
+        return '';
+      }
+    };
+
+    // simple caching
+    const getTTFBOnce = (() => {
+      let cached = false;
+      let done = false;
+      return () => {
+        if (done) return cached;
+        done = true;
+        cached = computeTTFB();
+        return cached;
+      };
+    })();
+    const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
 
     if (bidRequests.length === 0) {
       return [];
     }
-    const gdpr = bidderRequest.gdprConsent;
-    const usp = bidderRequest.uspConsent;
-    const gpp = bidderRequest.gppConsent;
+    const gdpr = bidderRequest?.gdprConsent;
+    const usp = bidderRequest?.uspConsent;
+    const gpp = bidderRequest?.gppConsent;
     const hasWallet = detectWalletsPresence();
 
     return bidRequests.map((bidRequest) => {
       const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
-      const size = bidRequest.mediaTypes?.banner?.sizes[0] || bidRequest.mediaTypes?.native?.sizes[0] || [];
-      const width = size[0];
-      const height = size[1];
+      const adSizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.mediaTypes?.native?.sizes || [];
+      const formattedSizes = Array.isArray(adSizes)
+        ? adSizes
+          .filter(size => Array.isArray(size) && size.length === 2)
+          .map(([width, height]) => ({ width, height }))
+        : [];
       const originalAssets = bidRequest.mediaTypes?.native?.ortb?.assets || [];
+
       // convert icon to img type 1
       const processedAssets = originalAssets.map(asset => {
         if (asset.icon) {
@@ -150,6 +207,7 @@ export const spec = {
         }
         return asset;
       });
+
       const payload = {
         userLanguage: navigator.language,
         pageUrl: bidRequest?.refererInfo?.page,
@@ -159,19 +217,17 @@ export const spec = {
           source: eid.source,
           id: eid.uids?.[0]?.id
         })).filter(eid => eid.source && eid.id),
+        ...(currency ? { currency } : {}),
         ads: [
           {
-            maxSize: {
-              width: width,
-              height: height,
-            },
+            sizes: formattedSizes,
             referenceId: bidRequest.params.referenceId,
             tagId: bidRequest.params.zone,
             type: detectAdType(bidRequest),
             ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
           },
         ],
-        keywords: { tokens: bidRequest.params?.keywords || [] },
+        keywords: { tokens: ortbRequest?.site?.keywords || bidRequest.params?.keywords || [] },
         privacy: {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
@@ -181,11 +237,34 @@ export const spec = {
         wdb: hasWallet,
         externalRef: bidRequest.bidId,
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
+        referer: getReferrerInfo(bidderRequest),
+        pageReferer: document.referrer,
+        pageTitle: getPageTitle().slice(0, 300),
+        pageDescription: getPageDescription().slice(0, 300),
+        domComplexity: getDomComplexity(document),
+        device: bidderRequest?.ortb2?.device || {},
+        deviceWidth: screen.width,
+        deviceHeight: screen.height,
+        timeout: bidderRequest?.timeout,
+        viewportHeight: utils.getWinDimensions().visualViewport.height,
+        viewportWidth: utils.getWinDimensions().visualViewport.width,
+        timeToFirstByte: getTTFBOnce(),
+        ext: {
+          ...(bidderRequest?.ortb2?.ext || {}),
+          adapter_version: ADAPTER_VERSION,
+          prebid_version: PREBID_VERSION
+        }
       };
 
+      const wrapperOn =
+        typeof window !== "undefined" && window.sevio_wrapper === true;
+
+      const url = wrapperOn
+        ? `${ENDPOINT_URL}?wrapper=true`
+        : ENDPOINT_URL;
       return {
         method: ACTION_METHOD,
-        url: ENDPOINT_URL,
+        url,
         data: payload,
         bidRequest: bidRequests[0],
       };
