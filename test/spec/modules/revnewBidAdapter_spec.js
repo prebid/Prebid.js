@@ -48,7 +48,7 @@ describe('Revnew bid adapter tests', () => {
       }
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
