@@ -1,7 +1,9 @@
 import {MODULE_TYPE_UID} from '../src/activities/modules.js'
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js'
-import {prefixLog, safeJSONParse} from '../src/utils.js'
+import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
+import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
+import {VENDORLESS_GVLID} from "../src/consentHandler.js";
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -10,7 +12,6 @@ import {prefixLog, safeJSONParse} from '../src/utils.js'
  */
 
 const MODULE_NAME = 'permutiveIdentityManagerId'
-const PERMUTIVE_GVLID = 361
 const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
 
 const ID5_DOMAIN = 'id5-sync.com'
@@ -81,7 +82,9 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
-  gvlid: PERMUTIVE_GVLID,
+  gvlid: VENDORLESS_GVLID,
+
+  disclosureURL: "https://assets.permutive.app/tcf/tcf.json",
 
   /**
    * decode the stored id value for passing to bid requests
@@ -103,6 +106,12 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
+    const enforceVendorConsent = deepAccess(submoduleConfig, 'params.enforceVendorConsent')
+    if (!hasPurposeConsent(consentData, [1], enforceVendorConsent)) {
+      logger.logInfo('GDPR purpose 1 consent not satisfied for Permutive Identity Manager')
+      return
+    }
+
     const id = readFromSdkLocalStorage()
     if (Object.entries(id).length > 0) {
       logger.logInfo('found id in sdk storage')
