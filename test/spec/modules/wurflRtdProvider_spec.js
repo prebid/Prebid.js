@@ -6,10 +6,16 @@ import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as prebidGlobalModule from 'src/prebidGlobal.js';
 import { guardOrtb2Fragments } from 'libraries/objectGuard/ortbGuard.js';
+import { config } from 'src/config.js';
 
 describe('wurflRtdProvider', function () {
   describe('wurflSubmodule', function () {
     const altHost = 'http://example.local/wurfl.js';
+
+    // Global cleanup to ensure debug config doesn't leak between tests
+    afterEach(function () {
+      config.resetConfig();
+    });
 
     const wurfl_pbjs = {
       caps: ['wurfl_id', 'advertised_browser', 'advertised_browser_version', 'advertised_device_os', 'advertised_device_os_version', 'ajax_support_javascript', 'brand_name', 'complete_device_name', 'density_class', 'form_factor', 'is_android', 'is_app_webview', 'is_connected_tv', 'is_full_desktop', 'is_ios', 'is_mobile', 'is_ott', 'is_phone', 'is_robot', 'is_smartphone', 'is_smarttv', 'is_tablet', 'manufacturer_name', 'marketing_name', 'max_image_height', 'max_image_width', 'model_name', 'physical_screen_height', 'physical_screen_width', 'pixel_density', 'pointing_method', 'resolution_height', 'resolution_width'],
@@ -290,23 +296,28 @@ describe('wurflRtdProvider', function () {
       afterEach(() => {
         // Clean up window object after each test
         delete window.WurflRtdDebug;
+        // Reset global config
+        config.resetConfig();
       });
 
-      it('should not create window.WurflRtdDebug when debug=false', () => {
-        const config = { params: { debug: false } };
-        wurflSubmodule.init(config);
+      it('should not create window.WurflRtdDebug when global debug=false', () => {
+        config.setConfig({ debug: false });
+        const moduleConfig = { params: {} };
+        wurflSubmodule.init(moduleConfig);
         expect(window.WurflRtdDebug).to.be.undefined;
       });
 
-      it('should not create window.WurflRtdDebug when debug is not configured', () => {
-        const config = { params: {} };
-        wurflSubmodule.init(config);
+      it('should not create window.WurflRtdDebug when global debug is not configured', () => {
+        config.resetConfig();
+        const moduleConfig = { params: {} };
+        wurflSubmodule.init(moduleConfig);
         expect(window.WurflRtdDebug).to.be.undefined;
       });
 
-      it('should create window.WurflRtdDebug when debug=true', () => {
-        const config = { params: { debug: true } };
-        wurflSubmodule.init(config);
+      it('should create window.WurflRtdDebug when global debug=true', () => {
+        config.setConfig({ debug: true });
+        const moduleConfig = { params: {} };
+        wurflSubmodule.init(moduleConfig);
         expect(window.WurflRtdDebug).to.exist;
         expect(window.WurflRtdDebug.dataSource).to.equal('unknown');
         expect(window.WurflRtdDebug.cacheExpired).to.be.false;
@@ -523,10 +534,12 @@ describe('wurflRtdProvider', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
+      // Set global debug flag
+      config.setConfig({ debug: true });
+
       const expectedURL = new URL(altHost);
       expectedURL.searchParams.set('debug', 'true');
-      expectedURL.searchParams.set('mode', 'prebid');
-      expectedURL.searchParams.set('wurfl_id', 'true');
+      expectedURL.searchParams.set('mode', 'prebid2');
       expectedURL.searchParams.set('bidders', 'bidder1,bidder2,bidder3');
 
       const callback = () => {
@@ -545,15 +558,14 @@ describe('wurflRtdProvider', function () {
         done();
       };
 
-      const config = {
+      const moduleConfig = {
         params: {
           altHost: altHost,
-          debug: true,
         }
       };
       const userConsent = {};
 
-      wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+      wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
 
       // Verify WURFL.js is loaded async for future requests
       expect(loadExternalScriptStub.calledOnce).to.be.true;

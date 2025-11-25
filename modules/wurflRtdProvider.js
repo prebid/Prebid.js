@@ -4,6 +4,7 @@ import { loadExternalScript } from '../src/adloader.js';
 import {
   mergeDeep,
   prefixLog,
+  debugTurnedOn,
 } from '../src/utils.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -12,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.0.5';
+const MODULE_VERSION = '2.0.6';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -235,7 +236,7 @@ function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
  */
 function loadWurflJsAsync(config, bidders) {
   const altHost = config.params?.altHost ?? null;
-  const isDebug = config.params?.debug ?? false;
+  const isDebug = debugTurnedOn();
 
   let host = WURFL_JS_HOST;
   if (altHost) {
@@ -423,8 +424,8 @@ const WurflDebugger = {
   _wurflJsLoadStart: null,
 
   // Initialize WURFL debug tracking
-  init(isDebug) {
-    if (!isDebug) {
+  init() {
+    if (!debugTurnedOn()) {
       // Replace all methods (except init) with no-ops for zero overhead
       Object.keys(this).forEach(key => {
         if (typeof this[key] === 'function' && key !== 'init') {
@@ -1079,9 +1080,8 @@ const WurflLCEDevice = {
  * @param {Object} userConsent User consent data
  */
 const init = (config, userConsent) => {
-  // Initialize debugger based on debug flag
-  const isDebug = config?.params?.debug ?? false;
-  WurflDebugger.init(isDebug);
+  // Initialize debugger based on global debug flag
+  WurflDebugger.init();
 
   // Initialize module state
   bidderEnrichment = new Map();
@@ -1265,6 +1265,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   let consentClass;
   try {
     consentClass = getConsentClass(userConsent);
+    logger.logMessage('consent class', consentClass);
   } catch (e) {
     logger.logError('Error calculating consent class:', e);
     consentClass = CONSENT_CLASS.ERROR;
