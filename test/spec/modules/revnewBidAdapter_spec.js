@@ -318,7 +318,7 @@ describe('Revnew bid adapter tests', () => {
     });
   });
 
-  describe('We test intepretResponse', () => {
+  describe('We test interpretResponse', () => {
     it('empty response', () => {
       const response = {
         body: ''
