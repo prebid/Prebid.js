@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.18.0-pre",
+  "version": "10.19.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -163,6 +163,12 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
+  },
+  "overrides": {
+    "gulp-connect": {
+      "send": "0.19.0"
+    },
+    "send": "0.19.0"
   },
   "peerDependencies": {
     "schema-utils": "^4.3.2"
