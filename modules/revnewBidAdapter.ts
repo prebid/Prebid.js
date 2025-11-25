@@ -82,7 +82,7 @@ const buildRequests = (
     data,
   }
   return adapterRequest;
-}
+};
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
