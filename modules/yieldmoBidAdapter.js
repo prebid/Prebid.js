@@ -654,7 +654,7 @@ function validateVideoParams(bid) {
 
     validate('video.playerSize', val => isArrayOfNums(val, 2) ||
       (isArray(val) && val.every(v => isArrayOfNums(v, 2))),
-      paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
+    paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
 
     validate('video.mimes', val => isDefined(val), paramRequired);
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
