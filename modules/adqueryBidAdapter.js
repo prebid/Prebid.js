@@ -1,6 +1,16 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {buildUrl, logInfo, logMessage, parseSizesInput, triggerPixel, getWinDimensions} from '../src/utils.js';
+import {
+  buildUrl,
+  logInfo,
+  logMessage,
+  parseSizesInput,
+  triggerPixel,
+  getWinDimensions,
+  logError
+} from '../src/utils.js';
+import {buildPlacementProcessingFunction, buildRequestsBase} from "../libraries/teqblazeUtils/bidderUtils";
+import {getAllOrtbKeywords} from "../libraries/keywords/keywords";
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -107,10 +117,11 @@ export const spec = {
             creativeId: bid.crid || bid.id,
             netRevenue: true,
             dealId: bid.dealid || undefined,
+            nurl: bid.nurl || undefined,
 
             // VAST – priority: inline XML > admurl > nurl as a wrapper
             vastXml: bid.adm || null,
-            vastUrl: bid.admurl || (bid.adm ? null : bid.nurl) || null,
+            vastUrl: bid.admurl || null,
 
             width: bid.w || 640,
             height: bid.h || 360,
@@ -186,6 +197,12 @@ export const spec = {
    */
   onBidWon: (bid) => {
     logInfo('onBidWon', bid);
+
+    if (bid.nurl) {
+      triggerPixel(bid.nurl)
+      return
+    }
+
     const copyOfBid = { ...bid }
     delete copyOfBid.ad
     const shortBidString = JSON.stringify(copyOfBid);
@@ -276,8 +293,6 @@ export const spec = {
 
 function buildRequest(validBidRequests, bidderRequest, isVideo = false) {
   const bid = validBidRequests;
-  logInfo('buildRequest: ', bid);
-
   let userId = null;
   if (window.qid) {
     userId = window.qid;
@@ -285,6 +300,10 @@ function buildRequest(validBidRequests, bidderRequest, isVideo = false) {
 
   if (bid.userId && bid.userId.qid) {
     userId = bid.userId.qid
+  }
+
+  if (!userId) {
+    userId = bid.ortb2?.user.ext.eids.find(eid => eid.source === "adquery.io")?.uids[0]?.id;
   }
 
   if (!userId) {
@@ -301,73 +320,40 @@ function buildRequest(validBidRequests, bidderRequest, isVideo = false) {
   }
 
   if (isVideo) {
-    const baseRequest = {
-      id: bid.bidId,
-      cur: ['USD'],
-      site: {
-        page: bidderRequest.refererInfo.page,
-        domain: bidderRequest.refererInfo.domain
-      },
-      tmax: bidderRequest.timeout,
-      // Add GDPR/CCPA consent if applicable
-      regs: bidderRequest.gdprConsent ? {
-        ext: {
-          gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-          consent: bidderRequest.gdprConsent.consentString
-        }
-      } : {},
-      // === USER ===
-      user: {
-        id: bidderRequest.userId ? bidderRequest.userId.uid2?.id : undefined,
-        buyeruid: bidderRequest.userId ? bidderRequest.userId.id5id?.uid : undefined,
-        // Dodaj inne ID: liveramp, criteo, etc.
-        ext: bidderRequest.userId ? {
-          eids: bidderRequest.userIdAsEids // Prebid 7+ format
-        } : undefined
-      },
+    let baseRequest = bid.ortb2
+    let videoRequest = {
+      ...baseRequest,
+      imp: [{
+        id: bid.bidId,
+        video: bid.ortb2Imp?.video || {},
+      }]
+    }
 
-      // === DEVICE ===
-      device: {
-        ua: navigator.userAgent,
-        ip: bidderRequest.ip || undefined, // Jeśli masz IP (np. z serwera)
-        dnt: navigator.doNotTrack === '1' ? 1 : 0,
-        language: navigator.language || navigator.browserLanguage || '',
-        js: 1, // JavaScript enabled
-        // Opcjonalnie: w, h (viewport), ppi, pxratio
-        w: getWinDimensions().visualViewport.height,
-        h: getWinDimensions().visualViewport.width,
-        // Dla mobile:
-        ...(isMobile() && {
-          os: getOS(),
-          osv: getOSVersion(),
-          make: getDeviceMake(),
-          model: getDeviceModel(),
-          connectiontype: getConnectionType()
-        })
-      },
-    };
-    // Video-specific impression object
-    const videoParams = bid.mediaTypes.video;
-    baseRequest.imp = [{
-      bidfloorcur: 'USD',
-      id: bid.bidId,
-      video: {
-        w: videoParams.playerSize[0][0], // Width
-        h: videoParams.playerSize[0][1], // Height
-        mimes: videoParams.mimes || ['video/mp4', 'video/webm'],
-        protocols: videoParams.protocols || [2, 3, 5, 6, 7, 8], // VAST protocols
-        placement: 2, // Outstream
-        startdelay: videoParams.startdelay || 0,
-        skip: videoParams.skip || 0,
-        api: videoParams.api || [2], // VPAID 2.0
-        // Add other video params: minduration, maxduration, etc.
-      },
-      ext: {
-        bidder: bid.params // Pass custom adquery params
-      }
-    }];
+    videoRequest.site.ext.bidder = bid.params
+    videoRequest.id = bid.bidId
 
-    return baseRequest;
+    let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
+    videoRequest.cur = [ currency ]
+
+    let floorInfo;
+    if (typeof bid.getFloor === 'function') {
+      logError('INNER44.2 bid.getFloor: ');
+      floorInfo = bid.getFloor({
+        currency: currency,
+        mediaType: "video",
+        size: "*"
+      });
+      logError('INNER44.3 bid.getFloor: ', floorInfo);
+    }
+    const bidfloor = floorInfo?.floor;
+    const bidfloorcur = floorInfo?.currency;
+
+    if (bidfloor && bidfloorcur) {
+      videoRequest.imp[0].video.bidfloor = bidfloor
+      videoRequest.imp[0].video.bidfloorcur = bidfloorcur
+    }
+
+    return videoRequest
   }
 
   return {
