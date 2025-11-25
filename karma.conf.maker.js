@@ -85,13 +85,19 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
 }
 
 function setBrowsers(karmaConf, browserstack) {
+  karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+  karmaConf.customLaunchers.ChromeNoSandbox = {
+    base: 'ChromeHeadless',
+    // disable sandbox - necessary within Docker and when using versions installed through @puppeteer/browsers
+    flags: ['--no-sandbox']
+  }
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
       build: process.env.BROWSERSTACK_BUILD_NAME
     }
-    if (process.env.TRAVIS) {
+    if (process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
@@ -100,14 +106,7 @@ function setBrowsers(karmaConf, browserstack) {
   } else {
     var isDocker = require('is-docker')();
     if (isDocker) {
-      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
-      karmaConf.customLaunchers.ChromeCustom = {
-        base: 'ChromeHeadless',
-        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
-        // more permissions than Docker allows by default)
-        flags: ['--no-sandbox']
-      }
-      karmaConf.browsers = ['ChromeCustom'];
+      karmaConf.browsers = ['ChromeNoSandbox'];
     } else {
       karmaConf.browsers = ['ChromeHeadless'];
     }
