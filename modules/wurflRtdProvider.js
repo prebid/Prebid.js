@@ -60,7 +60,8 @@ const ENRICHMENT_TYPE = {
 const CONSENT_CLASS = {
   NO: 0,        // No consent/opt-out/COPPA
   PARTIAL: 1,   // Partial or ambiguous
-  FULL: 2       // Full consent or non-GDPR region
+  FULL: 2,      // Full consent or non-GDPR region
+  ERROR: -1     // Error computing consent
 };
 
 // Default sampling rate constant
@@ -262,7 +263,6 @@ function loadWurflJsAsync(config, bidders) {
   const loadWurflJs = (scriptUrl) => {
     try {
       loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
-        logger.logMessage('async WURFL.js script injected');
         window.WURFLPromises.complete.then((res) => {
           logger.logMessage('async WURFL.js data received', res);
           if (res.wurfl_pbjs) {
@@ -1102,7 +1102,10 @@ const init = (config, userConsent) => {
     logger.logMessage(`A/B test "${abName}": user in ${abVariant} group`);
   }
 
-  logger.logMessage('initialized');
+  logger.logMessage('initialized', {
+    version: MODULE_VERSION,
+    abTest: abTest ? `${abTest.ab_name}:${abTest.ab_variant}` : 'disabled'
+  });
   return true;
 }
 
@@ -1148,8 +1151,6 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     WurflDebugger.setCacheExpired(isExpired);
     WurflDebugger.setCacheData(cachedWurflData.WURFL, cachedWurflData.wurfl_pbjs);
 
-    logger.logMessage(isExpired ? 'using expired cached WURFL.js data' : 'using cached WURFL.js data');
-
     const wjsDevice = WurflJSDevice.fromCache(cachedWurflData);
     if (!wjsDevice._isOverQuota()) {
       enrichDeviceFPD(reqBidsConfigObj, wjsDevice.FPD());
@@ -1176,13 +1177,20 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
       loadWurflJsAsync(config, bidders);
     }
 
+    logger.logMessage('enrichment completed', {
+      type: enrichmentType,
+      dataSource: 'cache',
+      cacheExpired: isExpired,
+      bidders: Object.fromEntries(bidderEnrichment),
+      totalBidders: bidderEnrichment.size
+    });
+
     WurflDebugger.moduleExecutionStop();
     callback();
     return;
   }
 
   // Priority 2: return LCE data
-  logger.logMessage('generating fresh LCE data');
   WurflDebugger.setDataSource('lce');
   WurflDebugger.lceDetectionStart();
 
@@ -1219,6 +1227,13 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   // Load WURFL.js async for future requests
   loadWurflJsAsync(config, bidders);
 
+  logger.logMessage('enrichment completed', {
+    type: enrichmentType,
+    dataSource: 'lce',
+    bidders: Object.fromEntries(bidderEnrichment),
+    totalBidders: bidderEnrichment.size
+  });
+
   WurflDebugger.moduleExecutionStop();
   callback();
 }
@@ -1246,12 +1261,20 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   const url = new URL(host);
   url.pathname = STATS_ENDPOINT_PATH;
 
-  // Only send beacon if there are bids to report
-  if (!auctionDetails.bidsReceived || auctionDetails.bidsReceived.length === 0) {
-    return;
+  // Calculate consent class
+  let consentClass;
+  try {
+    consentClass = getConsentClass(userConsent);
+  } catch (e) {
+    logger.logError('Error calculating consent class:', e);
+    consentClass = CONSENT_CLASS.ERROR;
   }
 
-  logger.logMessage(`onAuctionEndEvent: processing ${auctionDetails.bidsReceived.length} bid responses`);
+  // Only send beacon if there are bids to report
+  if (!auctionDetails.bidsReceived || auctionDetails.bidsReceived.length === 0) {
+    logger.logMessage('auction completed - no bids received');
+    return;
+  }
 
   // Build a lookup object for winning bid request IDs
   const winningBids = getGlobal().getHighestCpmBids() || [];
@@ -1260,8 +1283,6 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     const bid = winningBids[i];
     winningBidIds[bid.requestId] = true;
   }
-
-  logger.logMessage(`onAuctionEndEvent: ${winningBids.length} winning bids identified`);
 
   // Build a lookup object for bid responses: "adUnitCode:bidderCode" -> bid
   const bidResponseMap = {};
@@ -1316,18 +1337,11 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     }
   }
 
-  // Count bidders for logging
-  let totalBidderEntries = 0;
-  for (let i = 0; i < adUnits.length; i++) {
-    totalBidderEntries += adUnits[i].bidders.length;
-  }
-  const respondedBidders = auctionDetails.bidsReceived.length;
-  const nonRespondingBidders = totalBidderEntries - respondedBidders;
-
-  logger.logMessage(`onAuctionEndEvent: built ${adUnits.length} ad units with ${totalBidderEntries} total bidder entries (${respondedBidders} responded, ${nonRespondingBidders} non-responding)`);
-
-  // Calculate consent class
-  const consentClass = getConsentClass(userConsent);
+  logger.logMessage('auction completed', {
+    bidsReceived: auctionDetails.bidsReceived.length,
+    bidsWon: winningBids.length,
+    adUnits: adUnits.length
+  });
 
   // Build complete payload
   const payloadData = {
