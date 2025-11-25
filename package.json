@@ -68,7 +68,7 @@
     "assert": "^2.0.0",
     "babel-loader": "^8.4.1",
     "babel-plugin-istanbul": "^6.1.1",
-    "body-parser": "^1.19.0",
+    "body-parser": "^2.2.1",
     "chai": "^4.2.0",
     "deep-equal": "^2.0.3",
     "eslint": "^9.31.0",
