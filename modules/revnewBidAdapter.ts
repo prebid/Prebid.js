@@ -47,7 +47,7 @@ export const getRevnewLocalStorage = getLocalStorageFunctionGenerator<{ revnewId
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 90,
+    ttl: 120,
   },
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
     let imp:ORTBImp = buildImp(bidRequest, context);
