@@ -1,6 +1,6 @@
-import {canAccessWindowTop, internal as utilsInternals} from '../../src/utils.js';
+import {canAccessWindowTop, getWinDimensions, internal as utilsInternals} from '../../src/utils.js';
 
-function isValidDpr(value) {
+function isValidNum(value) {
   return Number.isFinite(value) && value > 0;
 }
 
@@ -15,42 +15,38 @@ function getFallbackWindow(win) {
 function deriveFromScreen(screen) {
   const ratio = screen?.deviceXDPI && screen?.logicalXDPI ? screen.deviceXDPI / screen.logicalXDPI : undefined;
 
-  if (isValidDpr(ratio)) {
+  if (isValidNum(ratio)) {
     return ratio;
   }
 }
 
-function deriveFromDimensions(win, screen) {
-  const innerWidth = Number(win?.innerWidth);
-  const screenWidth = Number(screen?.width);
-
-  if (isValidDpr(innerWidth) && isValidDpr(screenWidth)) {
-    const widthRatio = screenWidth / innerWidth;
-    if (isValidDpr(widthRatio)) {
-      return widthRatio;
-    }
+function deriveFromDimensions(winDimensions) {
+  const innerWidth = Number(winDimensions?.innerWidth);
+  const screenWidth = Number(winDimensions?.screen?.width);
+  const widthRatio = screenWidth / innerWidth;
+  if (isValidNum(widthRatio)) {
+    return widthRatio;
   }
 
-  const innerHeight = Number(win?.innerHeight);
-  const screenHeight = Number(screen?.height);
+  const innerHeight = Number(winDimensions?.innerHeight);
+  const screenHeight = Number(winDimensions?.screen?.height);
 
-  if (isValidDpr(innerHeight) && isValidDpr(screenHeight)) {
-    const heightRatio = screenHeight / innerHeight;
-    if (isValidDpr(heightRatio)) {
-      return heightRatio;
-    }
+  const heightRatio = screenHeight / innerHeight;
+  if (isValidNum(heightRatio)) {
+    return heightRatio;
   }
 }
 
 export function getDevicePixelRatio(win) {
-  const targetWindow = getFallbackWindow(win);
-  const targetScreen = targetWindow?.screen ?? (win ? undefined : utilsInternals.getWindowSelf()?.screen ?? window?.screen);
+  try {
+    const targetWindow = getFallbackWindow(win);
+    const targetScreen = targetWindow?.screen;
+    const derivedValue = deriveFromScreen(targetScreen) ?? deriveFromDimensions(getWinDimensions());
 
-  const derivedValue = deriveFromScreen(targetScreen) ?? deriveFromDimensions(targetWindow, targetScreen);
-
-  if (isValidDpr(derivedValue)) {
-    return derivedValue;
-  }
+    if (isValidNum(derivedValue)) {
+      return derivedValue;
+    }
+  } catch (e) {}
 
   return 1;
 }
