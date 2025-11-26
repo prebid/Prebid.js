@@ -1,11 +1,15 @@
 import { expect } from 'chai';
 import {
   getImp,
+  setImpPos,
+  getSourceObj,
+  getExtNextMilImp,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
   setEids,
   spec,
+  ALLOWED_ORTB2_PARAMETERS,
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
@@ -19,6 +23,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bid: {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-banner-1',
+            bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
@@ -26,16 +31,22 @@ describe('nextMillenniumBidAdapterTests', () => {
               data: {sizes: [[300, 250], [320, 250]]},
               bidfloorcur: 'EUR',
               bidfloor: 1.11,
+              pos: 3,
             },
           },
         },
 
         expected: {
-          id: 'test-banner-1',
+          id: 'e36ea395f67f',
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
-          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: {
+            pos: 3,
+            w: 300,
+            h: 250,
+            format: [{w: 300, h: 250}, {w: 320, h: 250}],
+          },
         },
       },
 
@@ -47,18 +58,20 @@ describe('nextMillenniumBidAdapterTests', () => {
           bid: {
             mediaTypes: {video: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1}},
             adUnitCode: 'test-video-1',
+            bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
             video: {
               data: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1},
               bidfloorcur: 'USD',
+              pos: 0,
             },
           },
         },
 
         expected: {
-          id: 'test-video-1',
+          id: 'e36ea395f67f',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {
@@ -68,6 +81,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             plcmt: 1,
             w: 400,
             h: 300,
+            pos: 0,
           },
         },
       },
@@ -79,7 +93,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {video: {w: 640, h: 480}},
-            adUnitCode: 'test-video-2',
+            bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
@@ -91,19 +105,223 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'test-video-2',
+          id: 'e36ea395f67f',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
         },
       },
+
+      {
+        title: 'imp with gpid',
+        data: {
+          id: '123',
+          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
+          bid: {
+            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            adUnitCode: 'test-gpid-1',
+            bidId: 'e36ea395f67a',
+            ortb2Imp: {ext: {gpid: 'imp-gpid-123'}},
+          },
+
+          mediaTypes: {
+            banner: {
+              data: {sizes: [[300, 250], [320, 250]]},
+            },
+          },
+        },
+
+        expected: {
+          id: 'e36ea395f67a',
+          ext: {
+            prebid: {storedrequest: {id: '123'}},
+            gpid: 'imp-gpid-123'
+          },
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+        },
+      },
+
+      {
+        title: 'imp with pbadslot',
+        data: {
+          id: '123',
+          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
+          bid: {
+            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            adUnitCode: 'test-gpid-1',
+            bidId: 'e36ea395f67a',
+            ortb2Imp: {
+              ext: {
+                data: {
+                  pbadslot: 'slot-123'
+                }
+              }
+            },
+          },
+
+          mediaTypes: {
+            banner: {
+              data: {sizes: [[300, 250], [320, 250]]},
+            },
+          },
+        },
+
+        expected: {
+          id: 'e36ea395f67a',
+          ext: {
+            prebid: {storedrequest: {id: '123'}},
+          },
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+        },
+      },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {bid, id, mediaTypes, postBody} = data;
         const imp = getImp(bid, id, mediaTypes, postBody);
         expect(imp).to.deep.equal(expected);
+      });
+    }
+  });
+
+  describe('function setImpPos', () => {
+    const tests = [
+      {
+        title: 'position is - 1',
+        pos: 0,
+        expected: {pos: 0},
+      },
+
+      {
+        title: 'position is - 2',
+        pos: 7,
+        expected: {pos: 7},
+      },
+
+      {
+        title: 'position is empty',
+        expected: {},
+      },
+    ];
+
+    for (const {title, pos, expected} of tests) {
+      it(title, () => {
+        const obj = {};
+        setImpPos(obj, pos);
+        expect(obj).to.deep.equal(expected);
+      });
+    };
+  });
+
+  describe('function getSourceObj', () => {
+    const dataTests = [
+      {
+        title: 'schain is empty',
+        validBidRequests: [{}],
+        bidderRequest: {},
+        expected: undefined,
+      },
+
+      {
+        title: 'schain is validBidReequest',
+        bidderRequest: {},
+        validBidRequests: [{
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
+            },
+          },
+        }],
+
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.ext.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+    ];
+
+    for (const {title, validBidRequests, bidderRequest, expected} of dataTests) {
+      it(title, () => {
+        const source = getSourceObj(validBidRequests, bidderRequest);
+        expect(source).to.deep.equal(expected);
       });
     }
   });
@@ -118,16 +336,18 @@ describe('nextMillenniumBidAdapterTests', () => {
             uspConsent: '1---',
             gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
             gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10]}},
+            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 1}},
           },
         },
 
         expected: {
-          user: {ext: {consent: 'kjfdniwjnifwenrif3'}},
+          user: {consent: 'kjfdniwjnifwenrif3'},
           regs: {
             gpp: 'DBACNYA~CPXxRfAPXxR',
             gpp_sid: [7],
-            ext: {gdpr: 1, us_privacy: '1---'},
+            gdpr: 1,
+            us_privacy: '1---',
+            coppa: 1
           },
         },
       },
@@ -138,16 +358,17 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {},
           bidderRequest: {
             gdprConsent: {consentString: 'ewtewbefbawyadexv', gdprApplies: false},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10]}},
+            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 0}},
           },
         },
 
         expected: {
-          user: {ext: {consent: 'ewtewbefbawyadexv'}},
+          user: {consent: 'ewtewbefbawyadexv'},
           regs: {
             gpp: 'DSFHFHWEUYVDC',
             gpp_sid: [8, 9, 10],
-            ext: {gdpr: 0},
+            gdpr: 0,
+            coppa: 0,
           },
         },
       },
@@ -160,7 +381,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          regs: {ext: {gdpr: 0}},
+          regs: {gdpr: 0},
         },
       },
 
@@ -175,7 +396,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {postBody, bidderRequest} = data;
         setConsentStrings(postBody, bidderRequest);
@@ -235,7 +456,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {url, gdprConsent, uspConsent, gppConsent, type} = data;
         const newUrl = replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type);
@@ -399,7 +620,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {syncOptions, responses, gdprConsent, uspConsent, gppConsent} = data;
         const pixels = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent);
@@ -414,16 +635,27 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'site.pagecat, site.content.cat and site.content.language',
         data: {
           postBody: {},
-          ortb2: {site: {
-            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
-          }},
+          ortb2: {
+            bcat: ['IAB1-3', 'IAB1-4'],
+            badv: ['domain1.com', 'domain2.com'],
+            wlang: ['en', 'fr', 'de'],
+            wlangb: ['en', 'fr', 'de'],
+            site: {
+              pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+              content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+            }
+          },
         },
 
-        expected: {site: {
-          pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-          content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
-        }},
+        expected: {
+          bcat: ['IAB1-3', 'IAB1-4'],
+          badv: ['domain1.com', 'domain2.com'],
+          wlang: ['en', 'fr', 'de'],
+          site: {
+            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+          }
+        },
       },
 
       {
@@ -431,6 +663,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           postBody: {},
           ortb2: {
+            wlangb: ['en', 'fr', 'de'],
             user: {keywords: 'key7,key8,key9'},
             site: {
               keywords: 'key1,key2,key3',
@@ -440,6 +673,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
+          wlangb: ['en', 'fr', 'de'],
           user: {keywords: 'key7,key8,key9'},
           site: {
             keywords: 'key1,key2,key3',
@@ -473,10 +707,10 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, data, expected} of dataTests) {
+    for (const {title, data, expected} of dataTests) {
       it(title, () => {
         const {postBody, ortb2} = data;
-        setOrtb2Parameters(postBody, ortb2);
+        setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2);
         expect(postBody).to.deep.equal(expected);
       });
     };
@@ -560,7 +794,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let { title, data, expected } of dataTests) {
+    for (const { title, data, expected } of dataTests) {
       it(title, () => {
         const { postBody, bids } = data;
         setEids(postBody, bids);
@@ -635,7 +869,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
   describe('check parameters group_id or placement_id', function() {
     let numberTest = 0
-    for (let test of bidRequestDataGI) {
+    for (const test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
         const request = spec.buildRequests([test]);
         const requestData = JSON.parse(request[0].data);
@@ -648,7 +882,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           expect(srId.length).to.be.equal(3);
           expect((/^g[1-9]\d*/).test(srId[0])).to.be.true;
           const sizes = srId[1].split('|');
-          for (let size of sizes) {
+          for (const size of sizes) {
             if (!(/^[1-9]\d*[xX,][1-9]\d*$/).test(size)) {
               expect(storeRequestId).to.be.equal('');
             }
@@ -666,17 +900,17 @@ describe('nextMillenniumBidAdapterTests', () => {
   describe('Check ext.next_mil_imps', function() {
     const expectedNextMilImps = [
       {
-        impId: 'nmi-test-0',
+        impId: 'bid1234',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'nmi-test-1',
+        impId: 'bid1235',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'nmi-test-2',
+        impId: 'bid1236',
         nextMillennium: {refresh_count: 1},
       },
     ];
@@ -727,7 +961,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bids: [{bidder: 'nextMillennium', params: {placement_id: '807'}}],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -741,7 +975,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           ],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
       },
 
       {
@@ -752,7 +986,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bids: [{bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}}],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
       },
 
       {
@@ -767,7 +1001,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           ],
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
       },
 
       {
@@ -788,7 +1022,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -809,7 +1043,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -830,7 +1064,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           params: {placement_id: '807'},
         },
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
       },
 
       {
@@ -857,11 +1091,11 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         ],
 
-        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
+        expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
       },
     ];
 
-    for (let {title, eventName, bids, expected} of dataForTests) {
+    for (const {title, eventName, bids, expected} of dataForTests) {
       it(title, () => {
         const url = spec._getUrlPixelMetric(eventName, bids);
         expect(url).to.equal(expected);
@@ -873,7 +1107,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     const tests = [
       {
         title: 'test - 1',
-        bidderRequest: {bidderRequestId: 'mock-uuid'},
+        bidderRequest: {bidderRequestId: 'mock-uuid', timeout: 1200},
         bidRequests: [
           {
             adUnitCode: 'test-div',
@@ -932,22 +1166,22 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: {
           id: 'mock-uuid',
-          bidIds: {'test-div': 'bid1234', 'test-div-2': 'bid1235'},
           impSize: 2,
           requestSize: 1,
           domain: 'example.com',
+          tmax: 1200,
         },
       },
     ];
 
-    for (let {title, bidRequests, bidderRequest, expected} of tests) {
+    for (const {title, bidRequests, bidderRequest, expected} of tests) {
       it(title, () => {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.length).to.equal(expected.requestSize);
-        expect(request[0].bidIds).to.deep.equal(expected.bidIds);
 
         const requestData = JSON.parse(request[0].data);
         expect(requestData.id).to.equal(expected.id);
+        expect(requestData.tmax).to.equal(expected.tmax);
         expect(requestData?.imp?.length).to.equal(expected.impSize);
       });
     };
@@ -965,7 +1199,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                 bid: [
                   {
                     id: '7457329903666272789-0',
-                    impid: 'ad-unit-0',
+                    impid: '700ce0a43f72',
                     price: 0.5,
                     adm: 'Hello! It\'s a test ad!',
                     adid: '96846035-0',
@@ -976,7 +1210,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
                   {
                     id: '7457329903666272789-1',
-                    impid: 'ad-unit-1',
+                    impid: '700ce0a43f73',
                     price: 0.7,
                     adm: 'https://some_vast_host.com/vast.xml',
                     adid: '96846035-1',
@@ -988,7 +1222,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
                   {
                     id: '7457329903666272789-2',
-                    impid: 'ad-unit-3',
+                    impid: '700ce0a43f74',
                     price: 1.0,
                     adm: '<vast><ad></ad></vast>',
                     adid: '96846035-3',
@@ -1004,19 +1238,10 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         },
 
-        bidRequest: {
-          bidIds: {
-            'ad-unit-0': 'bid-id-0',
-            'ad-unit-1': 'bid-id-1',
-            'ad-unit-2': 'bid-id-2',
-            'ad-unit-3': 'bid-id-3',
-          },
-        },
-
         expected: [
           {
             title: 'banner',
-            requestId: 'bid-id-0',
+            requestId: '700ce0a43f72',
             creativeId: '96846035-0',
             ad: 'Hello! It\'s a test ad!',
             vastUrl: undefined,
@@ -1029,7 +1254,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
           {
             title: 'video - vastUrl',
-            requestId: 'bid-id-1',
+            requestId: '700ce0a43f73',
             creativeId: '96846035-1',
             ad: undefined,
             vastUrl: 'https://some_vast_host.com/vast.xml',
@@ -1042,7 +1267,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
           {
             title: 'video - vastXml',
-            requestId: 'bid-id-3',
+            requestId: '700ce0a43f74',
             creativeId: '96846035-3',
             ad: undefined,
             vastUrl: undefined,
@@ -1056,7 +1281,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
     ];
 
-    for (let {title, serverResponse, bidRequest, expected} of tests) {
+    for (const {title, serverResponse, bidRequest, expected} of tests) {
       describe(title, () => {
         const bids = spec.interpretResponse(serverResponse, bidRequest);
         for (let i = 0; i < bids.length; i++) {
@@ -1075,6 +1300,42 @@ describe('nextMillenniumBidAdapterTests', () => {
             expect(bid.currency).to.equal(expected[i].currency);
           });
         };
+      });
+    };
+  });
+
+  describe('getExtNextMilImp parameters adSlots and allowedAds', () => {
+    const tests = [
+      {
+        title: 'parameters adSlots and allowedAds are empty',
+        bid: {
+          params: {},
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'parameters adSlots and allowedAds',
+        bid: {
+          params: {
+            adSlots: ['test1'],
+            allowedAds: ['test2'],
+          },
+        },
+
+        expected: {
+          adSlots: ['test1'],
+          allowedAds: ['test2'],
+        },
+      },
+    ];
+
+    for (const {title, bid, expected} of tests) {
+      it(title, () => {
+        const extNextMilImp = getExtNextMilImp(bid);
+        expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
+        expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
   });

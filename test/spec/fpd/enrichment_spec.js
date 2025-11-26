@@ -3,6 +3,7 @@ import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import * as activities from 'src/activities/rules.js'
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
 import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
@@ -14,7 +15,7 @@ describe('FPD enrichment', () => {
     hook.ready();
   });
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();
@@ -151,6 +152,18 @@ describe('FPD enrichment', () => {
         expect(ortb2.site.publisher.domain).to.eql('pub.com');
       });
     });
+
+    it('should pass documentElement.lang into bid request params', function () {
+      sandbox.stub(dep, 'getDocument').returns({
+        documentElement: {
+          lang: 'fr-FR'
+        }
+      });
+      return fpd().then(ortb2 => {
+        expect(ortb2.site.ext.data.documentLang).to.equal('fr-FR');
+        expect(ortb2.site.content.language).to.equal('fr');
+      });
+    });
   });
 
   describe('device', () => {
@@ -160,39 +173,27 @@ describe('FPD enrichment', () => {
     });
     testWindows(() => win, () => {
       it('sets w/h', () => {
-        win.screen.width = 321;
-        win.screen.height = 123;
+        const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions');
+
+        getWinDimensionsStub.returns({screen: {width: 321, height: 123}});
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
             h: 123,
           });
+          getWinDimensionsStub.restore();
         });
       });
 
       it('sets ext.vpw/vph', () => {
-        win.innerWidth = 12;
-        win.innerHeight = 21;
+        const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions');
+        getWinDimensionsStub.returns({innerWidth: 12, innerHeight: 21, screen: {}});
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device.ext, {
             vpw: 12,
             vph: 21,
           });
-        });
-      });
-
-      describe('ext.webdriver', () => {
-        it('when navigator.webdriver is available', () => {
-          win.navigator.webdriver = true;
-          return fpd().then(ortb2 => {
-            expect(ortb2.device.ext?.webdriver).to.eql(true);
-          });
-        });
-
-        it('when navigator.webdriver is not present', () => {
-          return fpd().then(ortb2 => {
-            expect(ortb2.device.ext?.webdriver).to.not.exist;
-          });
+          getWinDimensionsStub.restore();
         });
       });
 
@@ -222,7 +223,7 @@ describe('FPD enrichment', () => {
         it('is set if globalPrivacyControl is set', () => {
           win.navigator.globalPrivacyControl = true;
           return fpd().then(ortb2 => {
-            expect(ortb2.regs.ext.gpc).to.eql(1);
+            expect(ortb2.regs.ext.gpc).to.eql('1');
           });
         });
 
@@ -289,7 +290,7 @@ describe('FPD enrichment', () => {
   });
 
   describe('privacy sandbox cookieDeprecationLabel', () => {
-    let isAllowed, cdep, shouldCleanupNav = false;
+    let isAllowed; let cdep; let shouldCleanupNav = false;
 
     before(() => {
       if (!navigator.cookieDeprecationLabel) {

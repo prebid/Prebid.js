@@ -42,7 +42,7 @@ pbjs.setConfig({
         waitForIt: true,
         params: {
           apiHostname: '<see your Symitri account rep>',
-          apiVersion: "x1",
+          apiVersion: 'x1'|'x2',
           apiAuthToken: '<see your Symitri account rep>',
           domain: 'your-domain.com',
           identityType: 'simpleid'|'compositeid'|'hashedid'|'dap-signature:1.0.0',
@@ -68,7 +68,7 @@ Please reach out to your Symitri account representative(<Prebid@symitri.com>) to
 | name | String | Symitri Dap Rtd module name | 'symitriDap' always|
 | waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
 | apiHostname | String | Hostname provided by Symitri | Please reach out to your Symitri account representative(<Prebid@symitri.com>) for this value|
-| apiVersion | String | This holds the API version | It should be "x1" always |
+| apiVersion | String | This holds the API version | Please reach out to your Symitri account representative(<Prebid@symitri.com>) for this value |
 | apiAuthToken | String | Symitri API AuthToken | Please reach out to your Symitri account representative(<Prebid@symitri.com>) for this value |
 | domain | String | The domain name of your webpage | |
 | identityType | String | 'simpleid' or 'compositeid' or 'hashedid' or 'dap-signature:1.0.0' | Use 'simpleid' to pass email or other plain text ids and SymitriRTD Module will hash it.

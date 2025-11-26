@@ -1,5 +1,5 @@
 import { mygaruIdSubmodule } from 'modules/mygaruIdSystem.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 
 describe('MygaruID module', function () {
   it('should respond with async callback and get valid id', async () => {
@@ -53,8 +53,10 @@ describe('MygaruID module', function () {
   })
   it('should buildUrl with consent data', () => {
     const result = mygaruIdSubmodule.getId({}, {
-      gdprApplies: true,
-      consentString: 'consentString'
+      gdpr: {
+        gdprApplies: true,
+        consentString: 'consentString'
+      }
     });
 
     expect(result.url).to.eq('https://ident.mygaru.com/v2/id?gdprApplies=1&gdprConsentString=consentString');

@@ -1,5 +1,3 @@
-import * as utils from '../../src/utils.js';
-
 /**
  * get page title
  * @returns {string}
@@ -67,7 +65,16 @@ export function getReferrer(bidRequest = {}, bidderRequest = {}) {
   if (bidRequest.params && bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else {
-    pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.page');
+    pageUrl = bidderRequest?.refererInfo?.page;
   }
   return pageUrl;
+}
+
+/**
+ * get the document complexity
+ * @param document
+ * @returns {*|number}
+ */
+export function getDomComplexity(document) {
+  return document?.querySelectorAll('*')?.length ?? -1;
 }

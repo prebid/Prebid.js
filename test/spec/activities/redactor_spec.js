@@ -37,7 +37,8 @@ describe('objectTransformer', () => {
     });
 
     it('does not run rule once it is known that it does not apply', () => {
-      applies.reset();
+      applies.resetHistory();
+      applies.resetBehavior();
       applies.callsFake(() => false);
       run.callsFake((_1, _2, _3, _4, applies) => applies());
       objectTransformer([rule])({}, {});
@@ -275,7 +276,7 @@ describe('redactor', () => {
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
-      testPropertiesAreRemoved(() => redactor.bidRequest, ['ortb2Imp.ext.tid'], allowed);
+      testPropertiesAreRemoved(() => redactor.bidRequest, ['ortb2Imp.ext.tid', 'ortb2Imp.ext.tidSource'], allowed);
     })
   });
 
@@ -289,7 +290,7 @@ describe('redactor', () => {
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
-      testPropertiesAreRemoved(() => redactor.ortb2, ['source.tid'], allowed);
+      testPropertiesAreRemoved(() => redactor.ortb2, ['source.tid', 'source.ext.tidSource'], allowed);
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_PRECISE_GEO, (allowed) => {

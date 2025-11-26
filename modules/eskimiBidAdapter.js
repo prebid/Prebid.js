@@ -80,7 +80,7 @@ const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
       imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
@@ -141,9 +141,9 @@ function isValidVideoRequest(bidRequest) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(validBidRequests, bidderRequest) {
-  let videoBids = validBidRequests.filter(bid => isVideoBid(bid));
-  let bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
-  let requests = [];
+  const videoBids = validBidRequests.filter(bid => isVideoBid(bid));
+  const bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
+  const requests = [];
 
   bannerBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -192,7 +192,7 @@ function buildBannerImp(bidRequest, imp) {
 
   const bannerParams = {...bannerAdUnitParams, ...bannerBidderParams};
 
-  let sizes = bidRequest.mediaTypes.banner.sizes;
+  const sizes = bidRequest.mediaTypes.banner.sizes;
 
   if (sizes) {
     utils.deepSetValue(imp, 'banner.w', sizes[0][0]);
@@ -232,7 +232,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: getBidRequestUrlByRegion(),
     data: data,
-    options: {contentType: 'application/json;charset=UTF-8', withCredentials: false}
+    options: {
+      withCredentials: true,
+      contentType: 'application/json;charset=UTF-8',
+    }
   }
 }
 
@@ -254,9 +257,9 @@ function isBannerBid(bid) {
  */
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let query = [];
-    let syncUrl = getUserSyncUrlByRegion();
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const query = [];
+    const syncUrl = getUserSyncUrlByRegion();
     // GDPR Consent Params in UserSync url
     if (gdprConsent) {
       query.push('gdpr=' + (gdprConsent.gdprApplies & 1));

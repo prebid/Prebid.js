@@ -47,6 +47,8 @@
                 params: {
                   vendorConfig: {
                     file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                    width: 640,
+                    height: 480,
                     advertising: { client: 'vast' }
                   }
                 }
@@ -110,7 +112,7 @@
             }
 
             bidResponse.bids.forEach(bid => {
-              const videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+              const videoUrl = pbjs.adServers.gam.buildVideoUrl({
                 adUnit: videoAdUnit,
                 url: bid.vastUrl,
                 params: {

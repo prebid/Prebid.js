@@ -4,6 +4,7 @@ import {
   deepSetValue,
   getBidIdParameter,
   getDefinedParams,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isStr,
@@ -11,6 +12,7 @@ import {
   parseUrl,
   triggerPixel,
 } from '../src/utils.js';
+
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
@@ -19,21 +21,22 @@ import {config} from '../src/config.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
-const NM_VERSION = '4.0.1';
+const NM_VERSION = '4.5.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
-const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const TEST_ENDPOINT = 'https://dev.pbsa.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
-const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
+const REPORT_ENDPOINT = 'https://hb-analytics.nextmillmedia.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_TMAX = 1500;
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
-  context: undefined,
   delivery: undefined,
   linearity: undefined,
   maxduration: undefined,
@@ -57,14 +60,79 @@ const VIDEO_PARAMS_DEFAULT = {
 };
 
 const VIDEO_PARAMS = Object.keys(VIDEO_PARAMS_DEFAULT);
-const ALLOWED_ORTB2_PARAMETERS = [
+
+export const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
+  'site.keywords',
+  'site.name',
+  'site.cattax',
+  'site.cat',
+  'site.sectioncat',
+  'site.search',
+  'site.mobile',
+  'site.privacypolicy',
+  'site.kwarray',
   'site.content.cat',
   'site.content.language',
-  'device.sua',
-  'site.keywords',
   'site.content.keywords',
+  'site.publisher.id',
+  'site.publisher.name',
+  'site.publisher.cattax',
+  'site.publisher.cat',
+  'site.publisher.domain',
+  'device.sua',
+  'device.ip',
+  'device.ipv6',
+  'device.dnt',
+  'device.lmt',
+  'device.devicetype',
+  'device.make',
+  'device.model',
+  'device.os',
+  'device.osv',
+  'device.hwv',
+  'device.geo.lat',
+  'device.geo.lon',
+  'device.geo.type',
+  'device.geo.accuracy',
+  'device.geo.lastfix',
+  'device.geo.ipservice',
+  'device.geo.country',
+  'device.geo.region',
+  'device.geo.regionfips104',
+  'device.geo.metro',
+  'device.geo.city',
+  'device.geo.zip',
+  'device.geo.utcoffset',
+  'device.language',
+  'device.langb',
   'user.keywords',
+  'bcat',
+  'badv',
+  'wlang',
+  'wlangb',
+  'cattax',
+];
+
+const ALLOWED_ORTB2_IMP_PARAMETERS = [
+  'displaymanager',
+  'displaymanagerver',
+  'instl',
+  'banner.btype',
+  'banner.battr',
+  'banner.mimes',
+  'banner.topframe',
+  'banner.expdir',
+  'banner.api',
+  'banner.format',
+  'video.rqddurs',
+  'video.battr',
+  'video.maxextended',
+  'video.minbitrate',
+  'video.maxbitrate',
+  'video.boxingallowed',
+  'video.api',
+  'video.companiontype',
 ];
 
 export const spec = {
@@ -74,30 +142,34 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      (bid.params.placement_id && isStr(bid.params.placement_id)) || (bid.params.group_id && isStr(bid.params.group_id))
+      (bid.params.placement_id && isStr(bid.params.placement_id)) ||
+      (bid.params.group_id && isStr(bid.params.group_id))
     );
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
-    const bidIds = {};
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
     const device = getDeviceObj();
+    const source = getSourceObj(validBidRequests, bidderRequest);
+    const tmax = deepAccess(bidderRequest, 'timeout') || DEFAULT_TMAX;
 
     const postBody = {
       id: bidderRequest?.bidderRequestId,
+      tmax,
       ext: {
         next_mil_imps: [],
       },
 
       device,
       site,
+      source,
       imp: [],
     };
 
     setConsentStrings(postBody, bidderRequest);
-    setOrtb2Parameters(postBody, bidderRequest?.ortb2);
+    setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, bidderRequest?.ortb2);
 
     const urlParameters = parseUrl(getWindowTop().location.href).search;
     const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -108,10 +180,10 @@ export const spec = {
       const id = getPlacementId(bid);
       const {cur, mediaTypes} = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
-      postBody.imp.push(getImp(bid, id, mediaTypes));
+      const imp = getImp(bid, id, mediaTypes);
+      setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
+      postBody.imp.push(imp);
       postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
-
-      bidIds[bid.adUnitCode] = bid.bidId;
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -124,21 +196,19 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true,
       },
-
-      bidIds,
     });
 
     return requests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bidRequest.bidIds[bid.impid];
+        const requestId = bid.impid;
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
@@ -217,9 +287,9 @@ export const spec = {
     if (!Array.isArray(bids)) bids = [bids];
 
     const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
-    if (bidder != BIDDER_CODE) return;
+    if (bidder !== BIDDER_CODE) return;
 
-    let params = [];
+    const params = [];
     _each(bids, bid => {
       if (bid.params) {
         params.push(bid.params);
@@ -257,17 +327,21 @@ export const spec = {
   },
 };
 
-function getExtNextMilImp(bid) {
+export function getExtNextMilImp(bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
+  const {adSlots, allowedAds} = bid.params
   const nextMilImp = {
-    impId: bid.adUnitCode,
+    impId: bid.bidId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
     },
   };
+
+  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots;
+  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
 
   return nextMilImp;
 }
@@ -275,7 +349,7 @@ function getExtNextMilImp(bid) {
 export function getImp(bid, id, mediaTypes) {
   const {banner, video} = mediaTypes;
   const imp = {
-    id: bid.adUnitCode,
+    id: bid.bidId,
     ext: {
       prebid: {
         storedrequest: {
@@ -284,6 +358,9 @@ export function getImp(bid, id, mediaTypes) {
       },
     },
   };
+
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
+  if (gpid) imp.ext.gpid = gpid;
 
   getImpBanner(imp, banner);
   getImpVideo(imp, video);
@@ -297,13 +374,15 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} });
   const {w, h} = (format[0] || {})
   imp.banner = {
     w,
     h,
     format,
   };
+
+  setImpPos(imp.banner, banner?.pos);
 };
 
 export function getImpVideo(imp, video) {
@@ -325,6 +404,12 @@ export function getImpVideo(imp, video) {
     imp.video.w = video.data.w;
     imp.video.h = video.data.h;
   };
+
+  setImpPos(imp.video, video?.pos);
+};
+
+export function setImpPos(obj, pos) {
+  if (typeof pos === 'number' && pos >= 0 && pos <= 7) obj.pos = pos;
 };
 
 export function setConsentStrings(postBody = {}, bidderRequest) {
@@ -334,10 +419,10 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
   if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) gppConsent = bidderRequest?.ortb2?.regs;
 
   if (gdprConsent || uspConsent || gppConsent) {
-    postBody.regs = { ext: {} };
+    postBody.regs = {};
 
     if (uspConsent) {
-      postBody.regs.ext.us_privacy = uspConsent;
+      postBody.regs.us_privacy = uspConsent;
     };
 
     if (gppConsent) {
@@ -347,23 +432,29 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies !== 'undefined') {
-        postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+        postBody.regs.gdpr = gdprConsent.gdprApplies ? 1 : 0;
       };
 
       if (typeof gdprConsent.consentString !== 'undefined') {
         postBody.user = {
-          ext: { consent: gdprConsent.consentString },
+          consent: gdprConsent.consentString,
         };
       };
+    };
+
+    if (typeof bidderRequest?.ortb2?.regs?.coppa === 'number') {
+      postBody.regs.coppa = bidderRequest?.ortb2?.regs?.coppa;
     };
   };
 };
 
-export function setOrtb2Parameters(postBody, ortb2 = {}) {
-  for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
+export function setOrtb2Parameters(allowedOrtb2Parameters, body, ortb2 = {}) {
+  for (const parameter of allowedOrtb2Parameters) {
     const value = deepAccess(ortb2, parameter);
-    if (value) deepSetValue(postBody, parameter, value);
+    if (value) deepSetValue(body, parameter, value);
   }
+
+  if (body.wlang) delete body.wlangb
 }
 
 export function setEids(postBody = {}, bids = []) {
@@ -406,9 +497,9 @@ function getCurrency(bid = {}) {
     };
 
     if (typeof bid.getFloor === 'function') {
-      let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
-      mediaTypes[mediaType].bidfloorcur = floorInfo.currency;
-      mediaTypes[mediaType].bidfloor = floorInfo.floor;
+      const floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
+      mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
       mediaTypes[mediaType].bidfloorcur = currency;
     };
@@ -426,7 +517,7 @@ export function getPlacementId(bid) {
   const placementId = getBidIdParameter('placement_id', bid.params);
   if (!groupId) return placementId;
 
-  let windowTop = getTopWindow(window);
+  const windowTop = getTopWindow(window);
   let sizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.banner) sizes = [...bid.mediaTypes.banner.sizes];
@@ -473,20 +564,48 @@ function getSiteObj() {
 }
 
 function getDeviceObj() {
+  const { width, height } = getViewportSize();
   return {
-    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
-    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
+    w: width,
+    h: height,
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
+    js: 1,
+    connectiontype: getDeviceConnectionType(),
   };
 }
 
+function getDeviceConnectionType() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection?.type === 'ethernet') return 1;
+  if (connection?.type === 'wifi') return 2;
+
+  if (connection?.effectiveType === 'slow-2g') return 3;
+  if (connection?.effectiveType === '2g') return 4;
+  if (connection?.effectiveType === '3g') return 5;
+  if (connection?.effectiveType === '4g') return 6;
+
+  return undefined;
+}
+
+export function getSourceObj(validBidRequests, bidderRequest) {
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain || bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
+
+  if (!schain) return;
+
+  const source = {
+    schain,
+  };
+
+  return source;
+}
+
 function getSua() {
-  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  const {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {
-    brands,
+    browsers: brands,
     mobile: Number(!!mobile),
     platform: (platform && {brand: platform}) || undefined,
   };

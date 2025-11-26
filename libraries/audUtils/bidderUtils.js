@@ -1,5 +1,4 @@
 import {
-  deepAccess,
   deepSetValue,
   generateUUID,
   logError
@@ -16,10 +15,10 @@ const NATIVE_ASSETS = [
 ];
 // Function to get Request
 export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
-  let request = [];
+  const request = [];
   // Loop for each bid request
   bidRequests.forEach(bidReq => {
-    let guid = generateUUID();
+    const guid = generateUUID();
     const req = {
       id: guid,
       imp: [getImpDetails(bidReq)],
@@ -44,6 +43,10 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
       deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     req.MediaType = getMediaType(bidReq);
+    // Adding eids if passed
+    if (bidReq.userIdAsEids) {
+      req.user.ext.eids = bidReq.userIdAsEids;
+    }
     request.push(req);
   });
   // Return the array of request
@@ -67,13 +70,13 @@ export const getNativeResponse = (bidResponse, bidRequest, mediaType) => {
 }
 // Function to format response
 const formatResponse = (bidResponse, mediaType, assets) => {
-  let responseArray = [];
+  const responseArray = [];
   if (bidResponse) {
     try {
-      let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
+      const bidResp = bidResponse?.body?.seatbid ?? [];
       if (bidResp && bidResp[0] && bidResp[0].bid) {
         bidResp[0].bid.forEach(bidReq => {
-          let response = {};
+          const response = {};
           response.requestId = bidReq.impid;
           response.cpm = bidReq.price;
           response.width = bidReq.w;
@@ -90,14 +93,14 @@ const formatResponse = (bidResponse, mediaType, assets) => {
           response.ttl = 300;
           response.dealId = bidReq.dealId;
           response.mediaType = mediaType;
-          if (mediaType == 'native') {
-            let nativeResp = JSON.parse(bidReq.adm).native;
-            let nativeData = {
+          if (mediaType === 'native') {
+            const nativeResp = JSON.parse(bidReq.adm).native;
+            const nativeData = {
               clickUrl: nativeResp.link.url,
               impressionTrackers: nativeResp.imptrackers
             };
             nativeResp.assets.forEach(asst => {
-              let data = getNativeAssestData(asst, assets);
+              const data = getNativeAssestData(asst, assets);
               nativeData[data.key] = data.value;
             });
             response.native = nativeData;
@@ -113,12 +116,12 @@ const formatResponse = (bidResponse, mediaType, assets) => {
 }
 // Function to get imp based on Media Type
 const getImpDetails = (bidReq) => {
-  let imp = {};
+  const imp = {};
   if (bidReq) {
     imp.id = bidReq.bidId;
     imp.bidfloor = getFloorPrice(bidReq);
     if (bidReq.mediaTypes.native) {
-      let assets = { assets: NATIVE_ASSETS };
+      const assets = { assets: NATIVE_ASSETS };
       imp.native = { request: JSON.stringify(assets) };
     } else if (bidReq.mediaTypes.banner) {
       imp.banner = getBannerDetails(bidReq);
@@ -128,11 +131,11 @@ const getImpDetails = (bidReq) => {
 }
 // Function to get banner object
 const getBannerDetails = (bidReq) => {
-  let response = {};
+  const response = {};
   if (bidReq.mediaTypes.banner) {
     // Fetch width and height from MediaTypes object, if not provided in bidReq params
     if (bidReq.mediaTypes.banner.sizes && !bidReq.params.height && !bidReq.params.width) {
-      let sizes = bidReq.mediaTypes.banner.sizes;
+      const sizes = bidReq.mediaTypes.banner.sizes;
       if (sizes.length > 0) {
         response.h = sizes[0][1];
         response.w = sizes[0][0];
@@ -146,7 +149,7 @@ const getBannerDetails = (bidReq) => {
 }
 // Function to get floor price
 const getFloorPrice = (bidReq) => {
-  let bidfloor = deepAccess(bidReq, 'params.bid_floor', 0);
+  const bidfloor = bidReq?.params?.bid_floor ?? 0;
   return bidfloor;
 }
 // Function to get site object
@@ -161,23 +164,25 @@ const getSiteDetails = (bidderRequest) => {
 }
 // Function to build the user object
 const getUserDetails = (bidReq) => {
-  let user = {};
+  const user = {};
   if (bidReq && bidReq.ortb2 && bidReq.ortb2.user) {
     user.id = bidReq.ortb2.user.id ? bidReq.ortb2.user.id : '';
     user.buyeruid = bidReq.ortb2.user.buyeruid ? bidReq.ortb2.user.buyeruid : '';
     user.keywords = bidReq.ortb2.user.keywords ? bidReq.ortb2.user.keywords : '';
     user.customdata = bidReq.ortb2.user.customdata ? bidReq.ortb2.user.customdata : '';
+    user.ext = bidReq.ortb2.user.ext ? bidReq.ortb2.user.ext : '';
   } else {
     user.id = '';
     user.buyeruid = '';
     user.keywords = '';
     user.customdata = '';
+    user.ext = {};
   }
   return user;
 }
 // Function to get asset data for response
 const getNativeAssestData = (params, assets) => {
-  let response = {};
+  const response = {};
   if (params.title) {
     response.key = 'title';
     response.value = params.title.text;
@@ -200,7 +205,7 @@ const getNativeAssestData = (params, assets) => {
 const getAssetData = (paramId, asset) => {
   let resp = '';
   for (let i = 0; i < asset.length; i++) {
-    if (asset[i].id == paramId) {
+    if (asset[i].id === paramId) {
       switch (asset[i].data.type) {
         case 1 : resp = 'sponsored';
           break;
@@ -217,7 +222,7 @@ const getAssetData = (paramId, asset) => {
 const getAssetImageDataType = (paramId, asset) => {
   let resp = '';
   for (let i = 0; i < asset.length; i++) {
-    if (asset[i].id == paramId) {
+    if (asset[i].id === paramId) {
       switch (asset[i].img.type) {
         case 1 : resp = 'icon';
           break;

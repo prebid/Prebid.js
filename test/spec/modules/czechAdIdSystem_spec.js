@@ -19,9 +19,9 @@ describe('czechAdId module', function () {
 
   describe('getId()', function () {
     it('should return the uid when it exists in cookie', function () {
-      getCookieStub.withArgs('czaid').returns('czechAdIdTest');
+      getCookieStub.withArgs('czaid').returns('00000000-0000-4000-8000-000000000000');
       const id = czechAdIdSubmodule.getId();
-      expect(id).to.be.deep.equal({id: 'czechAdIdTest'});
+      expect(id).to.be.deep.equal({id: '00000000-0000-4000-8000-000000000000'});
     });
 
     cookieTestCasesForEmpty.forEach(testCase => it('should not return the uid when it doesnt exist in cookie', function () {
@@ -33,9 +33,9 @@ describe('czechAdId module', function () {
 
   describe('decode()', function () {
     it('should return the uid when it exists in cookie', function () {
-      getCookieStub.withArgs('czaid').returns('czechAdIdTest');
+      getCookieStub.withArgs('czaid').returns('00000000-0000-4000-8000-000000000000');
       const decoded = czechAdIdSubmodule.decode();
-      expect(decoded).to.be.deep.equal({czechAdId: 'czechAdIdTest'});
+      expect(decoded).to.be.deep.equal({czechAdId: '00000000-0000-4000-8000-000000000000'});
     });
   });
   describe('eid', () => {

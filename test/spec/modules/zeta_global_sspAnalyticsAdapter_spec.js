@@ -2,10 +2,10 @@ import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
 import {EVENTS} from 'src/constants.js';
 import {server} from '../../mocks/xhr.js';
-import {logError} from '../../../src/utils';
+import {logError} from '../../../src/utils.js';
 
-let utils = require('src/utils');
-let events = require('src/events');
+const utils = require('src/utils');
+const events = require('src/events');
 
 const SAMPLE_EVENTS = {
   AUCTION_END: {
@@ -526,9 +526,10 @@ describe('Zeta Global SSP Analytics Adapter', function () {
   let requests;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
+    config.setConfig({ pageUrl: 'https://www.config.domain.com/index.html' })
   });
 
   afterEach(function () {
@@ -624,8 +625,8 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           shortname: 'name'
         }
       });
-      expect(auctionSucceeded.domain).to.eql('test-zeta-ssp.net');
-      expect(auctionSucceeded.page).to.eql('test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html');
+      expect(auctionSucceeded.domain).to.eql('config.domain.com');
+      expect(auctionSucceeded.page).to.eql('https://www.config.domain.com/index.html');
       expect(auctionSucceeded.bid).to.be.deep.equal({
         adUnitCode: '/19968336/header-bid-tag-0',
         adId: '5759bb3ef7be1e8',

@@ -1,21 +1,17 @@
 import * as utils from 'src/utils.js';
 import * as events from 'src/events.js';
 import { EVENTS } from '../../../src/constants.js';
-import {loadExternalScript} from 'src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import {
   qortexSubmodule as module,
-  getContext,
-  getGroupConfig,
-  generateAnalyticsEventObject,
-  generateAnalyticsHostUrl,
   addContextToRequests,
   setContextData,
   loadScriptTag,
   initializeModuleData,
   setGroupConfigData,
-  saveContextAdded,
-  initializeBidEnrichment
-} from '../../../modules/qortexRtdProvider';
+  requestContextData,
+  windowPostMessageReceived
+} from '../../../modules/qortexRtdProvider.js';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
 
@@ -26,12 +22,10 @@ describe('qortexRtdProvider', () => {
 
   const defaultApiHost = 'https://demand.qortex.ai';
   const defaultGroupId = 'test';
-
   const validBidderArray = ['qortex', 'test'];
   const validTagConfig = {
     videoContainer: 'my-video-container'
   }
-
   const validModuleConfig = {
     params: {
       groupId: defaultGroupId,
@@ -47,10 +41,16 @@ describe('qortexRtdProvider', () => {
       bidders: validBidderArray
     }
   }
+  const invalidApiUrlModuleConfig = {
+    params: {
+      groupId: defaultGroupId,
+      apiUrl: 'test123',
+      bidders: validBidderArray
+    }
+  }
   const emptyModuleConfig = {
     params: {}
   }
-
   const validImpressionEvent = {
     detail: {
       uid: 'uid123',
@@ -68,37 +68,46 @@ describe('qortexRtdProvider', () => {
       type: 'qx-impression'
     }
   }
+  const QortexPostMessageInitialized = {
+    target: 'QORTEX-PREBIDJS-RTD-MODULE',
+    message: 'CX-BID-ENRICH-INITIALIZED',
+    params: {groupConfig: {data: true}}
+  }
+  const QortexPostMessageContext = {
+    target: 'QORTEX-PREBIDJS-RTD-MODULE',
+    message: 'DISPATCH-CONTEXT',
+    params: {context: {data: true}}
+  }
   const invalidTypeQortexEvent = {
     detail: {
       type: 'invalid-type'
     }
   }
-
   const responseHeaders = {
     'content-type': 'application/json',
     'access-control-allow-origin': '*'
   };
-
   const contextResponseObj = {
-    content: {
-      id: '123456',
-      episode: 15,
-      title: 'test episode',
-      series: 'test show',
-      season: '1',
-      url: 'https://example.com/file.mp4'
+    site: {
+      content: {
+        id: '123456',
+        episode: 15,
+        title: 'test episode',
+        series: 'test show',
+        season: '1',
+        url: 'https://example.com/file.mp4'
+      }
     }
   }
   const contextResponse = JSON.stringify(contextResponseObj);
-
   const validGroupConfigResponseObj = {
     groupId: defaultGroupId,
     active: true,
     prebidBidEnrichment: true,
+    prebidBidEnrichmentPercentage: 100,
     prebidReportingPercentage: 100
   }
   const validGroupConfigResponse = JSON.stringify(validGroupConfigResponseObj);
-
   const inactiveGroupConfigResponseObj = {
     groupId: defaultGroupId,
     active: false,
@@ -106,7 +115,13 @@ describe('qortexRtdProvider', () => {
     PrebidReportingPercentage: 100
   }
   const inactiveGroupConfigResponse = JSON.stringify(inactiveGroupConfigResponseObj);
-
+  const noEnrichmentGroupConfigResponseObj = {
+    groupId: defaultGroupId,
+    active: true,
+    prebidBidEnrichment: true,
+    prebidBidEnrichmentPercentage: 0,
+    prebidReportingPercentage: 100
+  }
   const reqBidsConfig = {
     auctionId: '1234',
     adUnits: [{
@@ -134,37 +149,6 @@ describe('qortexRtdProvider', () => {
   })
 
   describe('init', () => {
-    it('returns true for valid config object', (done) => {
-      const result = module.init(validModuleConfig);
-      expect(server.requests.length).to.be.eql(1)
-      const groupConfigReq = server.requests[0];
-      groupConfigReq.respond(200, responseHeaders, validGroupConfigResponse);
-      setTimeout(() => {
-        expect(result).to.be.true;
-        done()
-      }, 500)
-    })
-
-    it('logs warning when group config does not pass setup conditions', (done) => {
-      const result = module.init(validModuleConfig);
-      expect(server.requests.length).to.be.eql(1)
-      const groupConfigReq = server.requests[0];
-      groupConfigReq.respond(200, responseHeaders, inactiveGroupConfigResponse);
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Group config is not configured for qortex bid enrichment')).to.be.true;
-        done()
-      }, 500)
-    })
-
-    it('logs warning when group config request errors', (done) => {
-      const result = module.init(validModuleConfig);
-      server.requests[0].respond(404, responseHeaders, inactiveGroupConfigResponse);
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('No Group Config found')).to.be.true;
-        done()
-      }, 500)
-    })
-
     it('will not initialize bid enrichment if it is disabled', () => {
       module.init(bidEnrichmentDisabledModuleConfig);
       expect(logWarnSpy.calledWith('Bid Enrichment Function has been disabled in module configuration')).to.be.true;
@@ -180,7 +164,7 @@ describe('qortexRtdProvider', () => {
       const config = cloneDeep(validModuleConfig);
       config.params.tagConfig = validTagConfig;
       expect(module.init(config)).to.be.true;
-      expect(loadExternalScript.calledOnce).to.be.true;
+      expect(loadExternalScriptStub.calledOnce).to.be.true;
     })
   })
 
@@ -188,7 +172,7 @@ describe('qortexRtdProvider', () => {
     let addEventListenerSpy;
     let billableEvents = [];
 
-    let config = cloneDeep(validModuleConfig);
+    const config = cloneDeep(validModuleConfig);
     config.params.tagConfig = validTagConfig;
 
     events.on(EVENTS.BILLABLE_EVENT, (e) => {
@@ -272,41 +256,23 @@ describe('qortexRtdProvider', () => {
       expect(logWarnSpy.calledOnce).to.be.true;
     })
 
-    it('will call callback if getContext does not throw', (done) => {
-      const cb = function () {
-        expect(logWarnSpy.calledOnce).to.be.false;
-        done();
-      }
-      module.getBidRequestData(reqBidsConfig, cb);
-      server.requests[0].respond(200, responseHeaders, contextResponse);
-    })
-
-    it('will catch and log error and fire callback', (done) => {
-      module.getBidRequestData(reqBidsConfig, callbackSpy);
-      server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Returned error status code: 404')).to.be.eql(true);
-        expect(callbackSpy.calledOnce).to.be.true;
-        done();
-      }, 250)
-    })
-
-    it('will not request context if group config toggle is false', (done) => {
-      setGroupConfigData(inactiveGroupConfigResponseObj);
-      const cb = function () {
-        expect(server.requests.length).to.be.eql(0);
-        expect(logWarnSpy.called).to.be.true;
-        expect(logWarnSpy.calledWith('Bid enrichment disabled at group config')).to.be.true;
-        done();
-      }
-      module.getBidRequestData(reqBidsConfig, cb);
-    })
     it('will not request context if prebid disable toggle is true', (done) => {
       initializeModuleData(bidEnrichmentDisabledModuleConfig);
       const cb = function () {
         expect(server.requests.length).to.be.eql(0);
         expect(logWarnSpy.called).to.be.true;
         expect(logWarnSpy.calledWith('Bid enrichment disabled at prebid config')).to.be.true;
+        done();
+      }
+      module.getBidRequestData(reqBidsConfig, cb);
+    })
+
+    it('will request to add context when ad units present and enabled', (done) => {
+      const cb = function () {
+        setContextData(null);
+        expect(server.requests.length).to.be.eql(0);
+        expect(logWarnSpy.called).to.be.true;
+        expect(logWarnSpy.calledWith('No context data received at this time')).to.be.true;
         done();
       }
       module.getBidRequestData(reqBidsConfig, cb);
@@ -324,73 +290,49 @@ describe('qortexRtdProvider', () => {
       setGroupConfigData(null);
     })
 
-    it('Properly sends analytics event with valid config', (done) => {
-      saveContextAdded(reqBidsConfig);
+    it('Properly sends analytics event with valid config', () => {
       const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
       module.onAuctionEndEvent(testData);
-      const request = server.requests[0];
-      expect(request.url).to.be.eql('https://events.qortex.ai/api/v1/player-event');
-      server.requests[0].respond(200, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logMessageSpy.calledWith('Qortex analytics event sent')).to.be.true
-        done();
-      }, 200)
-    })
-
-    it('Logs warning for rejected analytics request', (done) => {
-      const invalidPercentageConfig = cloneDeep(validGroupConfigResponseObj);
-      invalidPercentageConfig.prebidReportingPercentage = -1;
-      setGroupConfigData(invalidPercentageConfig);
-      const testData = {data: 'data'};
-      module.onAuctionEndEvent(testData);
-      expect(server.requests.length).to.be.eql(0);
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Current request did not meet analytics percentage threshold, cancelling sending event')).to.be.true
-        done();
-      }, 200)
     })
   })
 
-  describe('getContext', () => {
-    beforeEach(() => {
-      initializeModuleData(validModuleConfig);
+  describe('requestContextData', () => {
+    before(() => {
+      setContextData({data: true});
     })
 
-    afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
+    after(() => {
+      setContextData(null);
     })
 
-    it('returns a promise', () => {
-      const result = getContext();
-      expect(result).to.be.a('promise');
-    })
-
-    it('uses request url generated from initialize function in config and resolves to content object data', (done) => {
-      let requestUrl = `${validModuleConfig.params.apiUrl}/api/v1/prebid/${validModuleConfig.params.groupId}/page/lookup`;
-      const ctx = getContext()
-      const request = server.requests[0]
-      request.respond(200, responseHeaders, contextResponse);
-      ctx.then(response => {
-        expect(server.requests.length).to.be.eql(1);
-        expect(request.url).to.be.eql(requestUrl);
-        expect(response).to.be.eql(contextResponseObj.content);
-        done();
-      });
-    })
-
-    it('returns null when necessary', (done) => {
-      const ctx = getContext()
-      server.requests[0].respond(202, responseHeaders, JSON.stringify({}))
-      ctx.then(response => {
-        expect(response).to.be.null;
-        expect(server.requests.length).to.be.eql(1);
-        expect(logWarnSpy.called).to.be.false;
-        done();
-      });
+    it('Will log properly when context data already available', () => {
+      requestContextData();
+      expect(logMessageSpy.calledWith('Context data already retrieved.')).to.be.true;
     })
   })
 
   describe('addContextToRequests', () => {
+    let testReqBids;
+    beforeEach(() => {
+      setGroupConfigData(validGroupConfigResponseObj);
+      testReqBids = {
+        auctionId: '1234',
+        adUnits: [{
+          bids: [
+            { bidder: 'qortex' }
+          ]
+        }],
+        ortb2Fragments: {
+          bidder: {},
+          global: {}
+        }
+      }
+    })
+
+    afterEach(() => {
+      setGroupConfigData(null);
+    })
+
     it('logs error if no data was retrieved from get context call', () => {
       initializeModuleData(validModuleConfig);
       addContextToRequests(reqBidsConfig);
@@ -400,34 +342,34 @@ describe('qortexRtdProvider', () => {
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
     })
 
-    it('adds site.content only to global ortb2 when bidders array is omitted', () => {
+    it('adds context only to global ortb2 when bidders array is omitted', () => {
       const omittedBidderArrayConfig = cloneDeep(validModuleConfig);
       delete omittedBidderArrayConfig.params.bidders;
       initializeModuleData(omittedBidderArrayConfig);
-      setContextData(contextResponseObj.content);
+      setContextData(contextResponseObj);
       addContextToRequests(reqBidsConfig);
       expect(reqBidsConfig.ortb2Fragments.global).to.have.property('site');
       expect(reqBidsConfig.ortb2Fragments.global.site).to.have.property('content');
-      expect(reqBidsConfig.ortb2Fragments.global.site.content).to.be.eql(contextResponseObj.content);
+      expect(reqBidsConfig.ortb2Fragments.global.site.content).to.be.eql(contextResponseObj.site.content);
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
     })
 
-    it('adds site.content only to bidder ortb2 when bidders array is included', () => {
+    it('adds only to bidder ortb2 when bidders array is included', () => {
       initializeModuleData(validModuleConfig);
-      setContextData(contextResponseObj.content);
+      setContextData(contextResponseObj);
       addContextToRequests(reqBidsConfig);
 
       const qortexOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['qortex']
       expect(qortexOrtb2Fragment).to.not.be.null;
       expect(qortexOrtb2Fragment).to.have.property('site');
       expect(qortexOrtb2Fragment.site).to.have.property('content');
-      expect(qortexOrtb2Fragment.site.content).to.be.eql(contextResponseObj.content);
+      expect(qortexOrtb2Fragment.site.content).to.be.eql(contextResponseObj.site.content);
 
       const testOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['test']
       expect(testOrtb2Fragment).to.not.be.null;
       expect(testOrtb2Fragment).to.have.property('site');
       expect(testOrtb2Fragment.site).to.have.property('content');
-      expect(testOrtb2Fragment.site.content).to.be.eql(contextResponseObj.content);
+      expect(testOrtb2Fragment.site.content).to.be.eql(contextResponseObj.site.content);
 
       expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
     })
@@ -436,7 +378,7 @@ describe('qortexRtdProvider', () => {
       const invalidBidderArrayConfig = cloneDeep(validModuleConfig);
       invalidBidderArrayConfig.params.bidders = [];
       initializeModuleData(invalidBidderArrayConfig);
-      setContextData(contextResponseObj.content)
+      setContextData(contextResponseObj)
       addContextToRequests(reqBidsConfig);
 
       expect(logWarnSpy.calledWith('Config contains an empty bidders array, unable to determine which bids to enrich')).to.be.ok;
@@ -445,116 +387,24 @@ describe('qortexRtdProvider', () => {
     })
   })
 
-  describe('generateAnalyticsEventObject', () => {
-    let qortexSessionInfo;
-    beforeEach(() => {
-      qortexSessionInfo = initializeModuleData(validModuleConfig);
-      setGroupConfigData(validGroupConfigResponseObj);
-    })
-
-    afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
-      setGroupConfigData(null);
-    })
-
-    it('returns expected object', () => {
-      const testEventType = 'TEST';
-      const testSubType = 'TEST_SUBTYPE';
-      const testData = {data: 'data'};
-
-      const result = generateAnalyticsEventObject(testEventType, testSubType, testData);
-
-      expect(result.sessionId).to.be.eql(qortexSessionInfo.sessionId);
-      expect(result.groupId).to.be.eql(qortexSessionInfo.groupId);
-      expect(result.eventType).to.be.eql(testEventType);
-      expect(result.subType).to.be.eql(testSubType);
-      expect(result.eventOriginSource).to.be.eql('RTD');
-      expect(result.data).to.be.eql(testData);
-    })
-  })
-
-  describe('generateAnalyticsHostUrl', () => {
-    it('will use qortex analytics host when appropriate', () => {
-      const hostUrl = generateAnalyticsHostUrl(defaultApiHost);
-      expect(hostUrl).to.be.eql('https://events.qortex.ai/api/v1/player-event');
-    })
-
-    it('will use qortex stage analytics host when appropriate', () => {
-      const hostUrl = generateAnalyticsHostUrl('https://stg-demand.qortex.ai');
-      expect(hostUrl).to.be.eql('https://stg-events.qortex.ai/api/v1/player-event');
-    })
-
-    it('will default to dev analytics host when appropriate', () => {
-      const hostUrl = generateAnalyticsHostUrl('https://dev-demand.qortex.ai');
-      expect(hostUrl).to.be.eql('https://dev-events.qortex.ai/api/v1/player-event');
-    })
-  })
-
-  describe('getGroupConfig', () => {
-    let sessionInfo;
-
-    beforeEach(() => {
-      sessionInfo = initializeModuleData(validModuleConfig);
-    })
-
-    afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
-      setGroupConfigData(null);
-      setContextData(null);
-      server.reset();
-    })
-
-    it('returns a promise', () => {
-      const result = getGroupConfig();
-      expect(result).to.be.a('promise');
-    })
-
-    it('processes group config response in valid conditions', (done) => {
-      const result = getGroupConfig();
-      const request = server.requests[0]
-      request.respond(200, responseHeaders, validGroupConfigResponse);
-      result.then(response => {
-        expect(request.url).to.be.eql(sessionInfo.groupConfigUrl);
-        expect(response.groupId).to.be.eql(validGroupConfigResponseObj.groupId);
-        expect(response.active).to.be.eql(validGroupConfigResponseObj.active);
-        expect(response.prebidBidEnrichment).to.be.eql(validGroupConfigResponseObj.prebidBidEnrichment);
-        expect(response.prebidReportingPercentage).to.be.eql(validGroupConfigResponseObj.prebidReportingPercentage);
-        done();
-      })
-    })
-  })
-
   describe('initializeBidEnrichment', () => {
     beforeEach(() => {
       initializeModuleData(validModuleConfig);
       setGroupConfigData(validGroupConfigResponseObj);
       setContextData(null);
-      server.reset();
     })
 
     afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
       setGroupConfigData(null);
       setContextData(null);
-      server.reset();
     })
 
-    it('sets context data if applicable', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(200, responseHeaders, contextResponse);
-      setTimeout(() => {
-        expect(logMessageSpy.calledWith('Contextual record Received from Qortex API')).to.be.true;
-        done()
-      }, 250)
+    it('processes incoming qortex component "initialize" message', () => {
+      windowPostMessageReceived({data: QortexPostMessageInitialized})
     })
 
-    it('logs warning if no record has been made', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(202, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Contexual record is not yet complete at this time')).to.be.true;
-        done();
-      }, 250)
+    it('processes incoming qortex component "context" message', () => {
+      windowPostMessageReceived({data: QortexPostMessageContext})
     })
   })
 })

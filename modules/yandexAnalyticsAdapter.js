@@ -3,6 +3,7 @@ import adapterManager from '../src/adapterManager.js';
 import { logError, logInfo } from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const timeoutIds = {};
 const tryUntil = (operationId, conditionCb, cb) => {
@@ -23,6 +24,7 @@ const clearTryUntilTimeouts = (timeouts) => {
   });
 };
 
+export const PBJS_INIT_EVENT_NAME = 'pbjsInit';
 const SEND_EVENTS_BUNDLE_TIMEOUT = 1500;
 const {
   BID_REQUESTED,
@@ -122,6 +124,9 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
       logError('Aborting yandex analytics provider initialization.');
     }, 25000);
 
+    yandexAnalytics.onEvent(PBJS_INIT_EVENT_NAME, {
+      'version': getGlobal().version,
+    });
     events.getEvents().forEach((event) => {
       if (event && EVENTS_TO_TRACK.indexOf(event.eventType) >= 0) {
         yandexAnalytics.onEvent(event.eventType, event);

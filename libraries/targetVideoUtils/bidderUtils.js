@@ -1,6 +1,7 @@
+import {SYNC_URL} from './constants.js';
 import {VIDEO} from '../../src/mediaTypes.js';
 import {getRefererInfo} from '../../src/refererDetection.js';
-import {createTrackPixelHtml, deepAccess, getBidRequest} from '../../src/utils.js';
+import {createTrackPixelHtml, getBidRequest, formatQS} from '../../src/utils.js';
 
 export function getSizes(request) {
   let sizes = request.sizes;
@@ -145,7 +146,7 @@ export function getBannerHtml(vastUrl) {
 export function getAd(bid) {
   let ad, adUrl, vastXml, vastUrl;
 
-  switch (deepAccess(bid, 'ext.prebid.type')) {
+  switch (bid?.ext?.prebid?.type) {
     case VIDEO:
       if (bid.adm.substr(0, 4) === 'http') {
         vastUrl = bid.adm;
@@ -165,6 +166,40 @@ export function getAd(bid) {
   }
 
   return {ad, adUrl, vastXml, vastUrl};
+}
+
+export function getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, endpoint) {
+  const params = {
+    endpoint
+  };
+
+  // Attaching GDPR Consent Params in UserSync url
+  if (gdprConsent) {
+    params.gdpr = (gdprConsent.gdprApplies ? 1 : 0);
+    params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
+  }
+
+  // CCPA
+  if (uspConsent && typeof uspConsent === 'string') {
+    params.us_privacy = encodeURIComponent(uspConsent);
+  }
+
+  // GPP Consent
+  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+    params.gpp = encodeURIComponent(gppConsent.gppString);
+    params.gpp_sid = encodeURIComponent(gppConsent?.applicableSections?.join(','));
+  }
+
+  const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
+  let response = [];
+  if (syncOptions.iframeEnabled) {
+    response = [{
+      type: 'iframe',
+      url: SYNC_URL + 'load-cookie.html?' + queryParams
+    }];
+  }
+
+  return response;
 }
 
 export function getSiteObj() {

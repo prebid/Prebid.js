@@ -3,6 +3,7 @@ import {
   generateUUID,
   logInfo,
   logError,
+  getWindowSelf,
   getPerformanceNow,
   isEmpty,
   isEmptyStr,
@@ -13,24 +14,24 @@ import { EVENTS } from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const GVLID = 1122;
 const ModuleCode = 'agma';
 const analyticsType = 'endpoint';
-const scriptVersion = '1.8.0';
+const scriptVersion = '1.9.0';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
 
 // Helper functions
 const getScreen = () => {
-  const w = window;
-  const d = document;
-  const e = d.documentElement;
-  const g = d.getElementsByTagName('body')[0];
-  const x = w.innerWidth || e.clientWidth || g.clientWidth;
-  const y = w.innerHeight || e.clientHeight || g.clientHeight;
-  return { x, y };
+  try {
+    const {width: x, height: y} = getViewportSize();
+    return { x, y };
+  } catch (e) {
+    return {x: 0, y: 0};
+  }
 };
 
 const getUserIDs = () => {
@@ -40,32 +41,17 @@ const getUserIDs = () => {
   return [];
 };
 
-export const getOrtb2Data = (options) => {
-  let site = null;
-  let user = null;
-
-  // check if data is provided via config
-  if (options.ortb2) {
-    if (options.ortb2.user) {
-      user = options.ortb2.user;
-    }
-    if (options.ortb2.site) {
-      site = options.ortb2.site;
-    }
-    if (site && user) {
-      return { site, user };
-    }
-  }
+export const getOrtb2Data = (options = {}) => {
   try {
     const configData = config.getConfig();
-    // try to fallback to global config
-    if (configData.ortb2) {
-      site = site || configData.ortb2.site;
-      user = user || configData.ortb2.user;
+    const win = getWindowSelf();
+    return {
+      site: win.agma?.ortb2?.site ?? options.ortb2?.site ?? configData.ortb2?.site,
+      user: win.agma?.ortb2?.user ?? options.ortb2?.user ?? configData.ortb2?.user,
     }
-  } catch (e) {}
-
-  return { site, user };
+  } catch (e) {
+    return {};
+  }
 };
 
 export const getTiming = () => {

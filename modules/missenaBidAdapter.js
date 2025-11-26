@@ -1,16 +1,23 @@
 import {
   buildUrl,
+  deepAccess,
   formatQS,
   generateUUID,
+  getWinDimensions,
+  isEmpty,
   isFn,
+  isStr,
   logInfo,
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -40,7 +47,7 @@ function getFloor(bidRequest) {
     mediaType: BANNER,
   });
 
-  if (!isNaN(bidFloors.floor)) {
+  if (!isNaN(bidFloors?.floor)) {
     return bidFloors;
   }
 }
@@ -54,45 +61,30 @@ function toPayload(bidRequest, bidderRequest) {
     timeout: bidderRequest.timeout,
   };
 
-  if (bidderRequest && bidderRequest.refererInfo) {
-    // TODO: is 'topmostLocation' the right value here?
-    payload.referer = bidderRequest.refererInfo.topmostLocation;
-    payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
-  }
-
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    payload.consent_string = bidderRequest.gdprConsent.consentString;
-    payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
-  }
-
-  if (bidderRequest && bidderRequest.uspConsent) {
-    payload.us_privacy = bidderRequest.uspConsent;
-  }
-
   const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-  if (bidRequest.params.test) {
-    payload.test = bidRequest.params.test;
-  }
-  if (bidRequest.params.placement) {
-    payload.placement = bidRequest.params.placement;
-  }
-  if (bidRequest.params.formats) {
-    payload.formats = bidRequest.params.formats;
-  }
-  if (bidRequest.params.isInternal) {
-    payload.is_internal = bidRequest.params.isInternal;
-  }
-  if (bidRequest.ortb2?.device?.ext?.cdep) {
-    payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
-  }
+  payload.params = bidRequest.params;
+
   payload.userEids = bidRequest.userIdAsEids || [];
-  payload.version = '$prebid.version$';
+  payload.version = 'prebid.js@$prebid.version$';
 
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
-  payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
-  payload.schain = bidRequest.schain;
+  payload.currency = getCurrencyFromBidderRequest(bidderRequest);
+  payload.schain = bidRequest?.ortb2?.source?.ext?.schain;
+  payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
+  payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
+  payload.viewport = getViewportSize();
+  payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  payload.ortb2 = {
+    ...(bidderRequest.ortb2 || {}),
+    ext: {
+      ...(bidderRequest.ortb2?.ext || {}),
+      ...(isStr(gpid) && !isEmpty(gpid) ? { gpid } : {}),
+    },
+  };
 
   return {
     method: 'POST',
@@ -114,7 +106,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid == 'object' && !!bid.params.apiKey;
+    return typeof bid === 'object' && !!bid.params.apiKey;
   },
 
   /**
@@ -131,11 +123,13 @@ export const spec = {
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
-      (!capping?.referer || capping?.referer == referer)
+      (!capping?.referer || capping?.referer === referer)
     ) {
       logInfo('Missena - Capped');
       return [];
     }
+
+    this.msnaApiKey = validBidRequests[0]?.params.apiKey;
 
     return validBidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
@@ -161,26 +155,25 @@ export const spec = {
   getUserSyncs: function (
     syncOptions,
     serverResponses,
-    gdprConsent,
+    gdprConsent = {},
     uspConsent,
   ) {
-    if (!syncOptions.iframeEnabled) {
+    if (!syncOptions.iframeEnabled || !this.msnaApiKey) {
       return [];
     }
 
-    let gdprParams = '';
-    if (
-      gdprConsent &&
-      'gdprApplies' in gdprConsent &&
-      typeof gdprConsent.gdprApplies === 'boolean'
-    ) {
-      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
-        gdprConsent.consentString
-      }`;
+    const url = new URL('https://sync.missena.io/iframe');
+    url.searchParams.append('t', this.msnaApiKey);
+
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      url.searchParams.append('gdpr', Number(gdprConsent.gdprApplies));
+      url.searchParams.append('gdpr_consent', gdprConsent.consentString);
     }
-    return [
-      { type: 'iframe', url: 'https://sync.missena.io/iframe' + gdprParams },
-    ];
+    if (uspConsent) {
+      url.searchParams.append('us_privacy', uspConsent);
+    }
+
+    return [{ type: 'iframe', url: url.href }];
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction

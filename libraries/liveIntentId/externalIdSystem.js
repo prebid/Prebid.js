@@ -1,7 +1,7 @@
 import { logError } from '../../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID, PRIMARY_IDS } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeResult, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
 // Reference to the client for the liQHub.
 let cachedClientRef
@@ -52,20 +52,6 @@ function initializeClient(configParams) {
     timeout: configParams.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT
   }
 
-  let idCookieSettings
-  if (configParams.fpid != null) {
-    const fpidConfig = configParams.fpid
-    let source
-    if (fpidConfig.strategy === 'html5') {
-      source = 'local_storage'
-    } else {
-      source = fpidConfig.strategy
-    }
-    idCookieSettings = { idCookieSettings: { type: 'provided', source, key: fpidConfig.name } };
-  } else {
-    idCookieSettings = {}
-  }
-
   function loadConsent() {
     const consent = {}
     const usPrivacyString = uspDataHandler.getConsentData();
@@ -93,12 +79,12 @@ function initializeClient(configParams) {
     consent,
     partnerCookies,
     collectSettings,
-    ...idCookieSettings,
     resolveSettings
   })
 
-  if (configParams.emailHash != null) {
-    window.liQHub.push({ type: 'collect', clientRef, sourceEvent: { hash: configParams.emailHash } })
+  const sourceEvent = makeSourceEventToSend(configParams)
+  if (sourceEvent != null) {
+    window.liQHub.push({ type: 'collect', clientRef, sourceEvent })
   }
 
   cachedClientRef = clientRef
@@ -148,11 +134,12 @@ export const liveIntentExternalIdSubmodule = {
    */
   decode(value, config) {
     const configParams = config?.params ?? {};
+    setUpTreatment(configParams);
 
     // Ensure client is initialized and we fired at least one collect request.
     initializeClient(configParams)
 
-    return composeIdObject(value);
+    return composeResult(value, configParams)
   },
 
   /**
@@ -161,6 +148,7 @@ export const liveIntentExternalIdSubmodule = {
    */
   getId(config) {
     const configParams = config?.params ?? {};
+    setUpTreatment(configParams);
 
     const clientRef = initializeClient(configParams)
 

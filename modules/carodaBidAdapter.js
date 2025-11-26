@@ -1,17 +1,19 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict'
 
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   logError,
   mergeDeep,
   sizeTupleToRtbSize,
   sizesToSizeTuples
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 
 const { getConfig } = config;
 
@@ -38,6 +40,7 @@ export const spec = {
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // TODO: consider using the Prebid-generated page view ID instead of generating a custom one
     topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9);
     const pageViewId = topUsableWindow.carodaPageViewId;
     const ortbCommon = getORTBCommon(bidderRequest);
@@ -45,9 +48,9 @@ export const spec = {
       getFirstWithKey(validBidRequests, 'params.priceType') ||
       'net';
     const test = getFirstWithKey(validBidRequests, 'params.test');
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
-    const schain = getFirstWithKey(validBidRequests, 'schain');
+    const schain = getFirstWithKey(validBidRequests, 'ortb2.source.ext.schain');
     const request = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bidderRequest.auctionId,
@@ -152,7 +155,7 @@ function getTopUsableWindow () {
 function getORTBCommon (bidderRequest) {
   let app, site;
   const commonFpd = bidderRequest.ortb2 || {};
-  let { user } = commonFpd;
+  const { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
     app = getConfig('app') || {}
     if (commonFpd.app) {
@@ -168,8 +171,10 @@ function getORTBCommon (bidderRequest) {
     }
   }
   const device = getConfig('device') || {};
-  device.w = device.w || window.innerWidth;
-  device.h = device.h || window.innerHeight;
+  const { innerWidth, innerHeight } = getWinDimensions();
+
+  device.w = device.w || innerWidth;
+  device.h = device.h || innerHeight;
   device.ua = device.ua || navigator.userAgent;
   return {
     app,
@@ -184,8 +189,8 @@ function getImps (validBidRequests, common) {
     const floorInfo = bid.getFloor
       ? bid.getFloor({ currency: common.currency || 'EUR' })
       : {};
-    const bidfloor = floorInfo.floor;
-    const bidfloorcur = floorInfo.currency;
+    const bidfloor = floorInfo?.floor;
+    const bidfloorcur = floorInfo?.currency;
     const { ctok, placementId } = bid.params;
     const imp = {
       bid_id: bid.bidId,

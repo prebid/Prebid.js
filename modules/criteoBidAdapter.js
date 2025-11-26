@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel} from '../src/utils.js';
+import {deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel, deepAccess, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -9,6 +9,7 @@ import {OUTSTREAM} from '../src/video.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
+import {config} from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -32,6 +33,7 @@ const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
 const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
+const DEFAULT_GZIP_ENABLED = true;
 
 /**
  * Defines the generic oRTB converter and all customization functions.
@@ -56,7 +58,7 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The ORTB 2.5 imp object.
  */
 function imp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
+  const imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
   imp.tagid = bidRequest.adUnitCode;
@@ -92,7 +94,7 @@ function imp(buildImp, bidRequest, context) {
     }
     deepSetValue(imp, 'video.ext', {
       context: bidRequest.mediaTypes.video.context,
-      playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
+      playersizes: parseSizes(bidRequest?.mediaTypes?.video?.playerSize, parseSize),
       plcmt: bidRequest.mediaTypes.video.plcmt,
       poddur: bidRequest.mediaTypes.video.adPodDurationSec,
       rqddurs: bidRequest.mediaTypes.video.durationRangeSec,
@@ -100,7 +102,7 @@ function imp(buildImp, bidRequest, context) {
   }
 
   if (imp.native && typeof imp.native.request !== 'undefined') {
-    let requestNative = JSON.parse(imp.native.request);
+    const requestNative = JSON.parse(imp.native.request);
 
     // We remove the native asset requirements if we used the bypass to generate the imp
     const hasAssetRequirements = requestNative.assets &&
@@ -156,31 +158,31 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @returns {*}
  */
 function bidResponse(buildBidResponse, bid, context) {
-  context.mediaType = deepAccess(bid, 'ext.mediatype');
+  context.mediaType = bid?.ext?.mediatype;
   if (context.mediaType === NATIVE && typeof bid.adm_native !== 'undefined') {
     bid.adm = bid.adm_native;
     delete bid.adm_native;
   }
 
-  let bidResponse = buildBidResponse(bid, context);
+  const bidResponse = buildBidResponse(bid, context);
   const {bidRequest} = context;
 
-  bidResponse.currency = deepAccess(bid, 'ext.cur')
+  bidResponse.currency = bid?.ext?.cur;
 
-  if (typeof deepAccess(bid, 'ext.meta') !== 'undefined') {
+  if (typeof bid?.ext?.meta !== 'undefined') {
     deepSetValue(bidResponse, 'meta', {
       ...bidResponse.meta,
       ...bid.ext.meta
     });
   }
-  if (typeof deepAccess(bid, 'ext.paf.content_id') !== 'undefined') {
+  if (typeof bid?.ext?.paf?.content_id !== 'undefined') {
     deepSetValue(bidResponse, 'meta.paf.content_id', bid.ext.paf.content_id)
   }
 
   if (bidResponse.mediaType === VIDEO) {
     bidResponse.vastUrl = bid.ext?.displayurl;
     // if outstream video, add a default render for it.
-    if (deepAccess(bidRequest, 'mediaTypes.video.context') === OUTSTREAM) {
+    if (bidRequest?.mediaTypes?.video?.context === OUTSTREAM) {
       bidResponse.renderer = createOutstreamVideoRenderer(bid);
     }
   }
@@ -198,11 +200,11 @@ function bidResponse(buildBidResponse, bid, context) {
  * @returns *
  */
 function response(buildResponse, bidResponses, ortbResponse, context) {
-  let response = buildResponse(bidResponses, ortbResponse, context);
+  const response = buildResponse(bidResponses, ortbResponse, context);
 
-  const pafTransmission = deepAccess(ortbResponse, 'ext.paf.transmission');
+  const pafTransmission = ortbResponse?.ext?.paf?.transmission;
   response.bids.forEach(bid => {
-    if (typeof pafTransmission !== 'undefined' && typeof deepAccess(bid, 'meta.paf.content_id') !== 'undefined') {
+    if (typeof pafTransmission !== 'undefined' && typeof bid?.meta?.paf?.content_id !== 'undefined') {
       deepSetValue(bid, 'meta.paf.transmission', pafTransmission);
     } else {
       delete bid.meta.paf;
@@ -219,7 +221,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
-    let { gppString = '', applicableSections = [] } = gppConsent;
+    const { gppString = '', applicableSections = [] } = gppConsent;
 
     const refererInfo = getRefererInfo();
     const origin = 'criteoPrebidAdapter';
@@ -230,7 +232,7 @@ export const spec = {
       queryParams.push(`topUrl=${refererInfo.domain}`);
       if (gdprConsent) {
         if (gdprConsent.gdprApplies) {
-          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`);
         }
         if (gdprConsent.consentString) {
           queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
@@ -260,8 +262,8 @@ export const spec = {
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
-      window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != 'https://gum.criteo.com') {
+      function handleGumMessage(event) {
+        if (!event.data || event.origin !== 'https://gum.criteo.com') {
           return;
         }
 
@@ -269,7 +271,7 @@ export const spec = {
           return;
         }
 
-        this.removeEventListener('message', handler);
+        window.removeEventListener('message', handleGumMessage, true);
 
         event.stopImmediatePropagation();
 
@@ -284,11 +286,12 @@ export const spec = {
             saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR, refererInfo.domain);
           }
 
-          if (response.callbacks) {
-            response.callbacks.forEach(triggerPixel);
-          }
+          response?.callbacks?.forEach?.(triggerPixel);
         }
-      }, true);
+      }
+
+      window.removeEventListener('message', handleGumMessage, true);
+      window.addEventListener('message', handleGumMessage, true);
 
       const jsonHashSerialized = JSON.stringify(jsonHash).replace(/"/g, '%22');
 
@@ -362,7 +365,7 @@ export const spec = {
         // We support native request without assets requirements because we can fill them later on.
         // This is a trick to fool oRTB converter isOpenRTBBidRequestValid(ortb) fn because it needs
         // nativeOrtbRequest.assets to be non-empty.
-        if (deepAccess(bidRequest, 'nativeOrtbRequest.assets') == null) {
+        if (bidRequest?.nativeOrtbRequest?.assets == null) {
           logWarn(LOG_PREFIX + 'native asset requirements are missing');
           deepSetValue(bidRequest, 'nativeOrtbRequest.assets', [{}]);
         }
@@ -374,7 +377,15 @@ export const spec = {
     const data = CONVERTER.toORTB({bidderRequest, bidRequests, context});
 
     if (data) {
-      return { method: 'POST', url, data, bidRequests };
+      return {
+        method: 'POST',
+        url,
+        data,
+        bidRequests,
+        options: {
+          endpointCompression: getGzipSetting()
+        },
+      };
     }
   },
 
@@ -384,14 +395,14 @@ export const spec = {
    * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
    */
   interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
+    if (typeof response?.body === 'undefined') {
       return []; // no bid
     }
 
     const interpretedResponse = CONVERTER.fromORTB({response: response.body, request: request.data});
     const bids = interpretedResponse.bids || [];
 
-    const fledgeAuctionConfigs = deepAccess(response.body, 'ext.igi')?.filter(igi => isArray(igi?.igs))
+    const fledgeAuctionConfigs = response.body?.ext?.igi?.filter(igi => isArray(igi?.igs))
       .flatMap(igi => igi.igs);
     if (fledgeAuctionConfigs?.length) {
       return {
@@ -420,6 +431,28 @@ export const spec = {
     }
   }
 };
+
+function getGzipSetting() {
+  try {
+    const gzipSetting = deepAccess(config.getBidderConfig(), 'criteo.gzipEnabled');
+
+    if (gzipSetting !== undefined) {
+      const gzipValue = String(gzipSetting).toLowerCase().trim();
+      if (gzipValue === 'true' || gzipValue === 'false') {
+        const parsedValue = gzipValue === 'true';
+        logInfo('Criteo: Using bidder-specific gzipEnabled setting:', parsedValue);
+        return parsedValue;
+      }
+
+      logWarn('Criteo: Invalid gzipEnabled value in bidder config:', gzipSetting);
+    }
+  } catch (e) {
+    logWarn('Criteo: Error accessing bidder config:', e);
+  }
+
+  logInfo('Criteo: Using default gzipEnabled setting:', DEFAULT_GZIP_ENABLED);
+  return DEFAULT_GZIP_ENABLED;
+}
 
 function readFromAllStorages(name) {
   const fromCookie = storage.getCookie(name);
@@ -524,17 +557,17 @@ function buildCdbUrl(context) {
 function checkNativeSendId(bidRequest) {
   return !(bidRequest.nativeParams &&
     (
-      (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true || bidRequest.nativeParams.image.sendTargetingKeys === true))) ||
-      (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
-      (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
-      (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
-      (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
-      (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
+      (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true))) ||
+      (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true))) ||
+      (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true))) ||
+      (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true))) ||
+      (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true))) ||
+      (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true)))
     ));
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  if (!sizes) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
@@ -548,11 +581,11 @@ function parseSize(size) {
 }
 
 function hasVideoMediaType(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
+  return bidRequest?.mediaTypes?.video !== undefined;
 }
 
 function hasNativeMediaType(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.native') !== undefined;
+  return bidRequest?.mediaTypes?.native !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
@@ -562,12 +595,12 @@ function hasValidVideoMediaType(bidRequest) {
 
   requiredMediaTypesParams.forEach(function (param) {
     if (param === 'placement') {
-      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined && deepAccess(bidRequest, 'mediaTypes.video.plcmt') === undefined && deepAccess(bidRequest, 'params.video.plcmt') === undefined) {
+      if (bidRequest?.mediaTypes?.video?.[param] === undefined && bidRequest?.params?.video?.[param] === undefined && bidRequest?.mediaTypes?.video?.plcmt === undefined && bidRequest?.params?.video?.plcmt === undefined) {
         isValid = false;
         logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' or mediaTypes.video.plcmt is required');
       }
     } else {
-      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
+      if (bidRequest?.mediaTypes?.video?.[param] === undefined && bidRequest?.params?.video?.[param] === undefined) {
         isValid = false;
         logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
       }
@@ -604,14 +637,18 @@ function getFloors(bidRequest) {
     if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         floors.banner = {};
-        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER }));
+        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes)
+        bannerSizes.forEach(bannerSize => {
+          floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER });
+        });
       }
 
       if (bidRequest.mediaTypes?.video) {
         floors.video = {};
-        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO }));
+        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize)
+        videoSizes.forEach(videoSize => {
+          floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO });
+        });
       }
 
       if (bidRequest.mediaTypes?.native) {
@@ -638,14 +675,14 @@ function createOutstreamVideoRenderer(bid) {
   }
 
   const render = (_, renderDocument) => {
-    let payload = {
+    const payload = {
       slotid: bid.id,
       vastUrl: bid.ext?.displayurl,
       vastXml: bid.adm,
       documentContext: renderDocument,
     };
 
-    let outstreamConfig = bid.ext.videoPlayerConfig;
+    const outstreamConfig = bid.ext.videoPlayerConfig;
     window.CriteoOutStream[bid.ext.videoPlayerType].play(payload, outstreamConfig)
   };
 

@@ -7,10 +7,22 @@ import {
   replaceAuctionPrice,
   triggerPixel
 } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+const additionalData = new WeakMap();
+
+export function setAdditionalData(obj, key, value) {
+  const prevValue = additionalData.get(obj) || {};
+  additionalData.set(obj, { ...prevValue, [key]: value });
+}
+
+export function getAdditionalData(obj, key) {
+  const data = additionalData.get(obj) || {};
+  return data[key];
+}
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
@@ -36,17 +48,18 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
     data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
     options: {
       contentType: 'application/json'
-    }
+    },
+    bidderRequest
   };
 };
 
-export const interpretResponse = function (serverResponse) {
+export const interpretResponse = function (serverResponse, request) {
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        bids.push({
+        const bid = {
           requestId: b.impid,
           cpm: b.price,
           currency: res.cur,
@@ -58,23 +71,28 @@ export const interpretResponse = function (serverResponse) {
           ttl: TIME_TO_LIVE_IN_SECONDS,
           ad: b.adm,
           nurl: b.nurl,
+          cid: b.cid,
           meta: {
             advertiserDomains: b.adomain
           }
-        })
+        }
+        setAdditionalData(bid, 'adServerCurrency', getCurrencyFromBidderRequest(request.bidderRequest));
+        bids.push(bid);
       })
     });
   }
+
   return bids;
 };
 
 export const onBidWon = function (bid) {
+  const adServerCurrency = getAdditionalData(bid, 'adServerCurrency');
   // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
   // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
   const publisherPrice = bid.cpm || 0;
-  const publisherCurrency = bid.currency || config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
+  const publisherCurrency = bid.currency || adServerCurrency || SUPPORTED_CURRENCY;
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
-  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
+  const adServerPriceCurrency = adServerCurrency || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
     const winNotificationUrl = replaceAuctionPrice(bid.nurl, publisherPrice)
       .replace(/\${AUCTION_PRICE_CURRENCY}/g, publisherCurrency)
@@ -113,6 +131,18 @@ function getPageUrlFromRefererInfo() {
     : window.location.href;
 }
 
+function getPurposeStatus(purposeData, purposeField, purposeNumber) {
+  if (!purposeData) {
+    return false;
+  }
+
+  if (!purposeData[purposeField]) {
+    return false;
+  }
+
+  return purposeData[purposeField][purposeNumber] === true;
+}
+
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout;
@@ -128,13 +158,10 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     const purposeData = vendorData.purpose;
     const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
     const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;
-    purpose2Given = restrictionForPurpose2 === 1 ? (
-      purposeData && purposeData.consents && purposeData.consents[2]
-    ) : (
-      restrictionForPurpose2 === 0
-        ? false : (purposeData && purposeData.legitimateInterests && purposeData.legitimateInterests[2])
+    purpose2Given = restrictionForPurpose2 === 1 ? getPurposeStatus(purposeData, 'consents', 2) : (
+      restrictionForPurpose2 === 0 ? false : getPurposeStatus(purposeData, 'legitimateInterests', 2)
     );
-    purpose3Given = purposeData && purposeData.consents && purposeData.consents[3];
+    purpose3Given = getPurposeStatus(purposeData, 'consents', 3);
   }
   const request = {
     id: bidderRequest.bidderRequestId,
@@ -143,7 +170,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice()
+      devicetype: getDevice(),
+      ua: navigator.userAgent,
+      sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
       page: pageUrl,
@@ -152,7 +181,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     ext: {
       kobler: {
         tcf_purpose_2_given: purpose2Given,
-        tcf_purpose_3_given: purpose3Given
+        tcf_purpose_3_given: purpose3Given,
+        page_view_id: bidderRequest.pageViewId
       }
     }
   };
@@ -163,7 +193,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
 function buildOpenRtbImpObject(validBidRequest) {
   const sizes = getSizes(validBidRequest);
   const mainSize = sizes[0];
-  const floorInfo = getFloorInfo(validBidRequest, mainSize);
+  const floorInfo = getFloorInfo(validBidRequest, mainSize) || {};
 
   return {
     id: validBidRequest.bidId,

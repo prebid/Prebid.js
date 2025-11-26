@@ -2,6 +2,7 @@ import {
   API_FRAMEWORKS,
   PLACEMENT,
   PLAYBACK_METHODS,
+  PLCMT,
   PROTOCOLS,
   VIDEO_MIME_TYPE,
   VPAID_MIME_TYPE
@@ -32,7 +33,7 @@ import {submodule} from '../src/hook.js';
 const setupFailMessage = 'Failed to instantiate the player';
 
 /**
- * @constructor
+ * @class
  * @param {Object} config - videoProviderConfig
  * @param {function} adPlayerPro_
  * @param {CallbackStorage} callbackStorage_
@@ -42,10 +43,10 @@ const setupFailMessage = 'Failed to instantiate the player';
 export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, utils) {
   const adPlayerPro = adPlayerPro_;
   let player = null;
-  let playerVersion = null;
+  const playerVersion = null;
   const playerConfig = config.playerConfig;
   const divId = config.divId;
-  let callbackStorage = callbackStorage_;
+  const callbackStorage = callbackStorage_;
   let supportedMediaTypes = null;
   let setupCompleteCallbacks = [];
   let setupFailedCallbacks = [];
@@ -109,6 +110,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         API_FRAMEWORKS.VPAID_2_0,
         API_FRAMEWORKS.OMID_1_0
       ],
+      plcmt: utils.getPlcmt(playerConfig)
     };
 
     return video;
@@ -119,6 +121,10 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
 
   function setAdTagUrl(adTagUrl, options) {
     setupPlayer(playerConfig, adTagUrl || options.adXml)
+  }
+
+  function setAdXml(vastXml) {
+    setupPlayer(playerConfig, vastXml);
   }
 
   function onEvent(externalEventName, callback, basePayload) {
@@ -158,7 +164,6 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         return;
     }
 
-    // eslint-disable-next-line no-unreachable
     const playerEventName = utils.getPlayerEvent(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
     player && player.on(playerEventName, eventHandler);
@@ -190,6 +195,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy
@@ -207,7 +213,9 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
 
     player = adPlayerPro(divId);
     callbackStorage.addAllCallbacks(player.on);
-    player.on('AdStopped', () => player = null);
+    player.on('AdStopped', () => {
+      player = null;
+    });
     player.setup(playerConfig);
   }
 
@@ -347,6 +355,16 @@ export const utils = {
       return mute ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     return PLAYBACK_METHODS.CLICK_TO_PLAY;
+  },
+
+  getPlcmt: function ({type, autoplay, muted, file}) {
+    type = type || 'inStream';
+    if (!file) {
+      // INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.
+      return type === 'rewarded' || type === 'inView' ? PLCMT.INTERSTITIAL : PLCMT.OUTSTREAM;
+    }
+    // INSTREAM must be set to “sound on” by default at player start
+    return type === 'inStream' && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT;
   }
 }
 
@@ -378,7 +396,7 @@ export function callbackStorageFactory() {
   }
 
   function getCallback(eventType, callback) {
-    let eventHandlers = storage[eventType];
+    const eventHandlers = storage[eventType];
     if (eventHandlers) {
       return eventHandlers[callback];
     }
@@ -390,7 +408,7 @@ export function callbackStorageFactory() {
       delete storageHandlers[eventType];
       return;
     }
-    let eventHandlers = storage[eventType];
+    const eventHandlers = storage[eventType];
     if (eventHandlers) {
       const eventHandler = eventHandlers[callback];
       if (eventHandler) {
@@ -424,7 +442,7 @@ export function callbackStorageFactory() {
   }
 
   function addAllCallbacks(functionOnPlayer) {
-    for (let eventType in storageHandlers) {
+    for (const eventType in storageHandlers) {
       storageHandlers[eventType].forEach(handler => functionOnPlayer(eventType, handler));
     }
   }

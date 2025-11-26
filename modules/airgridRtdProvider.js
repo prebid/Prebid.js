@@ -17,7 +17,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'airgrid';
-const AG_TCF_ID = 782;
+const MIQ_TCF_ID = 101;
 export const AG_AUDIENCE_IDS_KEY = 'edkt_matched_audience_ids';
 
 export const storage = getStorageManager({
@@ -76,7 +76,7 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
 
   const agUserData = [
     {
-      id: String(AG_TCF_ID),
+      id: String(MIQ_TCF_ID),
       ext: {
         segtax: 540,
       },
@@ -129,7 +129,7 @@ export const airgridSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: passAudiencesToBidders,
-  gvlid: AG_TCF_ID
+  gvlid: MIQ_TCF_ID
 };
 
 submodule(MODULE_NAME, airgridSubmodule);

@@ -2,13 +2,15 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
-  storage
+  storage,
+  getAndSetFirstPartyData,
+  createFirstPartyData,
 } from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {config} from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -19,6 +21,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -91,6 +94,36 @@ const VIDEO_BID = {
   }
 }
 
+const ORTB2_DEVICE = {
+  sua: {
+    'source': 2,
+    'platform': {
+      'brand': 'Android',
+      'version': ['8', '0', '0']
+    },
+    'browsers': [
+      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+    ],
+    'mobile': 1,
+    'model': 'SM-G955U',
+    'bitness': '64',
+    'architecture': ''
+  },
+  w: 980,
+  h: 1720,
+  dnt: 0,
+  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+  language: 'en',
+  devicetype: 1,
+  make: 'Apple',
+  model: 'iPhone 12 Pro Max',
+  os: 'iOS',
+  osv: '17.4',
+  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+};
+
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string',
@@ -114,24 +147,7 @@ const BIDDER_REQUEST = {
       'gpp_sid': [7],
       'coppa': 0
     },
-    'device': {
-      'sua': {
-        'source': 2,
-        'platform': {
-          'brand': 'Android',
-          'version': ['8', '0', '0']
-        },
-        'browsers': [
-          {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-          {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-          {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
-        ],
-        'mobile': 1,
-        'model': 'SM-G955U',
-        'bitness': '64',
-        'architecture': ''
-      }
-    }
+    'device': ORTB2_DEVICE,
   }
 };
 
@@ -171,6 +187,13 @@ const VIDEO_SERVER_RESPONSE = {
       'price': 2,
       'cookies': []
     }]
+  }
+};
+
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {"content": {"language": "en"}
   }
 };
 
@@ -251,14 +274,19 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
+    let createFirstPartyDataStub;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
+      createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
+        pcid: 'pcid',
+        pcidDate: 1000
+      });
     });
 
     it('should build video request', function () {
@@ -295,6 +323,8 @@ describe('KueezRtbBidAdapter', function () {
           referrer: 'https://www.somereferrer.com',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           schain: VIDEO_BID.schain,
+          iiqpcid: 'pcid',
+          iiqpcidDate: 1000,
           sizes: ['545x307'],
           sua: {
             'source': 2,
@@ -312,6 +342,7 @@ describe('KueezRtbBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          device: ORTB2_DEVICE,
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           mediaTypes: {
@@ -336,6 +367,7 @@ describe('KueezRtbBidAdapter', function () {
           contentLang: 'en',
           contentData: [],
           isStorageAllowed: true,
+          ortb2: ORTB2_OBJ,
           pagecat: [],
           userData: [],
           coppa: 0
@@ -363,6 +395,8 @@ describe('KueezRtbBidAdapter', function () {
           auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
+          iiqpcid: 'pcid',
+          iiqpcidDate: 1000,
           bidderWinsCount: 1,
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
@@ -383,6 +417,7 @@ describe('KueezRtbBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          device: ORTB2_DEVICE,
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,
@@ -396,6 +431,8 @@ describe('KueezRtbBidAdapter', function () {
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           mediaTypes: [BANNER],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
@@ -412,7 +449,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
@@ -422,7 +459,7 @@ describe('KueezRtbBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -430,7 +467,7 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -438,8 +475,19 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
+      }]);
+    });
+
+    it('should have valid user sync with coppa on response', function () {
+      config.setConfig({
+        coppa: 1
+      });
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
       }]);
     });
 
@@ -457,7 +505,7 @@ describe('KueezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
         'type': 'image'
       }]);
     });
@@ -565,6 +613,70 @@ describe('KueezRtbBidAdapter', function () {
         expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
       });
     });
+    // testing bid.userIdAsEids handling
+    it("should include user ids from bid.userIdAsEids (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+    })
+    it("should include user ids from bid.userIdAsEids (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        },
+        {
+          "source": "rwdcntrl.net",
+          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
+    })
+    // testing user.ext.eid handling
+    it("should include user ids from user.ext.eid (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+    })
+    it("should include user ids from user.ext.eid (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            },
+            {
+              "source": "adserver.org",
+              "uids": [{"id": "fakeid495ff1"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
+    })
   });
 
   describe('alternate param names extractors', function () {
@@ -589,14 +701,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -624,14 +736,14 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         kueezrtb: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();
@@ -666,6 +778,38 @@ describe('KueezRtbBidAdapter', function () {
       const parsed = tryParseJSON(value);
       expect(typeof parsed).to.be.equal('number');
       expect(parsed).to.be.equal(value);
+    });
+  });
+
+  describe('First party data', () => {
+    before(function () {
+      getGlobal().bidderSettings = {
+        kueezrtb: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      getGlobal().bidderSettings = {};
+      storage.removeDataFromLocalStorage('_iiq_fdata');
+    })
+
+    it('should create first party data', function () {
+      const data = createFirstPartyData();
+      expect(data).to.have.property('pcid');
+      expect(data).to.have.property('pcidDate');
+    });
+
+    it('should get and set first party data', function () {
+      storage.removeDataFromLocalStorage('_iiq_fdata');
+
+      const data = getAndSetFirstPartyData();
+      expect(data).to.have.property('pcid');
+      expect(data).to.have.property('pcidDate');
+
+      const stored = storage.getDataFromLocalStorage('_iiq_fdata');
+      const parsed = tryParseJSON(stored);
+      expect(parsed).to.deep.equal(data);
     });
   });
 });
