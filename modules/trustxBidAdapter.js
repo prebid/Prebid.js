@@ -182,28 +182,25 @@ const ortbAdapterConverter = ortbConverter({
       });
     }
 
-    const userKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords') || null;
-    const siteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords') || null;
+    // Add ortb2 keywords to pageKeywords if present
+    const ortb2UserKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords');
+    const ortb2SiteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords');
 
-    if (userKeywords) {
-      pageKeywords = pageKeywords || {};
-      pageKeywords.user = pageKeywords.user || {};
-      pageKeywords.user.ortb2 = [
-        {
-          name: 'keywords',
-          keywords: userKeywords.split(','),
-        }
-      ];
+    if (ortb2UserKeywords) {
+      if (!pageKeywords) pageKeywords = {};
+      if (!pageKeywords.user) pageKeywords.user = {};
+      pageKeywords.user.ortb2 = [{
+        name: 'keywords',
+        keywords: ortb2UserKeywords.split(',')
+      }];
     }
-    if (siteKeywords) {
-      pageKeywords = pageKeywords || {};
-      pageKeywords.site = pageKeywords.site || {};
-      pageKeywords.site.ortb2 = [
-        {
-          name: 'keywords',
-          keywords: siteKeywords.split(','),
-        }
-      ];
+    if (ortb2SiteKeywords) {
+      if (!pageKeywords) pageKeywords = {};
+      if (!pageKeywords.site) pageKeywords.site = {};
+      pageKeywords.site.ortb2 = [{
+        name: 'keywords',
+        keywords: ortb2SiteKeywords.split(',')
+      }];
     }
 
     if (pageKeywords) {
@@ -604,61 +601,83 @@ function isVideoValid(bidRequest) {
 }
 
 function makeNewUserIdInFPDStorage() {
-  if (config.getConfig('localStorageWriteAllowed')) {
-    const value = generateUUID().replace(/-/g, '');
-    storage.setDataInLocalStorage(USER_ID_KEY, value);
-    return value;
+  const writeAllowed = config.getConfig('localStorageWriteAllowed');
+  if (writeAllowed) {
+    const newUserId = generateUUID().replace(/-/g, '');
+    storage.setDataInLocalStorage(USER_ID_KEY, newUserId);
+    return newUserId;
   }
   return null;
 }
 
 function getUserIdFromFPDStorage() {
-  return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
+  const storedUserId = storage.getDataFromLocalStorage(USER_ID_KEY);
+  return storedUserId || makeNewUserIdInFPDStorage();
 }
 
 function reformatKeywords(pageKeywords) {
-  const formatedPageKeywords = {};
-  Object.keys(pageKeywords).forEach((name) => {
+  const result = {};
+  const keywordNames = Object.keys(pageKeywords);
+
+  for (let i = 0; i < keywordNames.length; i++) {
+    const name = keywordNames[i];
     const keywords = pageKeywords[name];
-    if (keywords) {
-      if (name === 'site' || name === 'user') {
-        const formatedKeywords = {};
-        Object.keys(keywords).forEach((pubName) => {
-          if (Array.isArray(keywords[pubName])) {
-            const formatedPublisher = [];
-            keywords[pubName].forEach((pubItem) => {
-              if (typeof pubItem === 'object' && pubItem.name) {
-                const formatedPubItem = { name: pubItem.name, segments: [] };
-                Object.keys(pubItem).forEach((key) => {
-                  if (Array.isArray(pubItem[key])) {
-                    pubItem[key].forEach((keyword) => {
-                      if (keyword) {
-                        if (typeof keyword === 'string') {
-                          formatedPubItem.segments.push({ name: key, value: keyword });
-                        } else if (key === 'segments' && typeof keyword.name === 'string' && typeof keyword.value === 'string') {
-                          formatedPubItem.segments.push(keyword);
-                        }
+    if (!keywords) continue;
+
+    if (name === 'site' || name === 'user') {
+      const formatted = {};
+      const pubNames = Object.keys(keywords);
+
+      for (let j = 0; j < pubNames.length; j++) {
+        const pubName = pubNames[j];
+        const pubArray = keywords[pubName];
+
+        if (Array.isArray(pubArray)) {
+          const formattedPubs = [];
+
+          for (let k = 0; k < pubArray.length; k++) {
+            const pubItem = pubArray[k];
+            if (typeof pubItem === 'object' && pubItem.name) {
+              const formattedItem = { name: pubItem.name, segments: [] };
+              const itemKeys = Object.keys(pubItem);
+
+              for (let l = 0; l < itemKeys.length; l++) {
+                const key = itemKeys[l];
+                const keyArray = pubItem[key];
+
+                if (Array.isArray(keyArray)) {
+                  for (let m = 0; m < keyArray.length; m++) {
+                    const keyword = keyArray[m];
+                    if (keyword) {
+                      if (typeof keyword === 'string') {
+                        formattedItem.segments.push({ name: key, value: keyword });
+                      } else if (key === 'segments' && typeof keyword.name === 'string' && typeof keyword.value === 'string') {
+                        formattedItem.segments.push(keyword);
                       }
-                    });
+                    }
                   }
-                });
-                if (formatedPubItem.segments.length) {
-                  formatedPublisher.push(formatedPubItem);
                 }
               }
-            });
-            if (formatedPublisher.length) {
-              formatedKeywords[pubName] = formatedPublisher;
+
+              if (formattedItem.segments.length > 0) {
+                formattedPubs.push(formattedItem);
+              }
             }
           }
-        });
-        formatedPageKeywords[name] = formatedKeywords;
-      } else {
-        formatedPageKeywords[name] = keywords;
+
+          if (formattedPubs.length > 0) {
+            formatted[pubName] = formattedPubs;
+          }
+        }
       }
+
+      result[name] = formatted;
+    } else {
+      result[name] = keywords;
     }
-  });
-  return Object.keys(formatedPageKeywords).length && formatedPageKeywords;
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
 }
 
 registerBidder(spec);
