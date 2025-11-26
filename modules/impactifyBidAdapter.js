@@ -386,6 +386,5 @@ export const spec = {
 
     return true;
   },
-  
 };
 registerBidder(spec);
