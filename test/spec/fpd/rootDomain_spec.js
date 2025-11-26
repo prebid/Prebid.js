@@ -1,5 +1,6 @@
 import {expect} from 'chai/index.js';
 import {findRootDomain, coreStorage} from 'src/fpd/rootDomain.js';
+import {canSetCookie} from '../../../src/storageManager.js';
 
 describe('findRootDomain', function () {
   let sandbox, cookies, rejectDomain;
@@ -26,6 +27,7 @@ describe('findRootDomain', function () {
 
   afterEach(function () {
     sandbox.restore();
+    canSetCookie.clear();
   });
 
   after(() => {
