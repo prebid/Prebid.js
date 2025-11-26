@@ -99,6 +99,34 @@ describe('FPD enrichment', () => {
         });
       });
 
+      // ===== New test: prefer JSON-LD keywords over meta =====
+      describe('json/ld keywords', () => {
+        let scriptTag;
+        beforeEach(() => {
+          // add a JSON-LD script that contains keywords
+          scriptTag = document.createElement('script');
+          scriptTag.type = 'application/ld+json';
+          scriptTag.textContent = JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            keywords: 'json1, json2'
+          });
+          document.head.appendChild(scriptTag);
+        });
+        afterEach(() => {
+          document.head.removeChild(scriptTag);
+        });
+
+        testWindows(() => window, () => {
+          it('uses JSON-LD keywords when present', () => {
+            return fpd(ORTB2).then(ortb2 => {
+              // JSON-LD should be preferred; returned format is a comma-joined string (no spaces)
+              expect(ortb2[section].keywords).to.eql('json1,json2');
+            });
+          });
+        });
+      });
+
       it('should not set keywords if meta tag is not present', () => {
         return fpd(ORTB2).then(ortb2 => {
           expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;

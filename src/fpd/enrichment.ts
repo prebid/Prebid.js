@@ -160,12 +160,47 @@ const ENRICHMENTS = {
   }
 };
 
+/**
+ * Detect keywords also from json/ld if this is present
+ */
+const detectJsonLdKeywords = () => {
+  const scriptTags = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+
+  let keywords = [];
+
+  for (const scriptTag of scriptTags) {
+    try {
+      const jsonData = JSON.parse(scriptTag.textContent);
+      const jsonObjects = Array.isArray(jsonData) ? jsonData : [jsonData];
+
+      for (const obj of jsonObjects) {
+        if (typeof obj.keywords === 'string') {
+          const parts = obj.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+          keywords.push(...parts);
+        }
+      }
+    } catch (error) {
+      // silent
+    }
+  }
+  return keywords.length > 0 ? keywords.join(',') : undefined;
+};
+
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
 // section is appropriate
 function clientEnrichment(ortb2, ri) {
   const domain = parseDomain(ri.page, {noLeadingWww: true});
-  const keywords = winFallback((win) => win.document.querySelector('meta[name=\'keywords\']'))
-    ?.content?.replace?.(/\s/g, '');
+  const jsonLdKeywords = detectJsonLdKeywords();
+  let keywords;
+
+  if (jsonLdKeywords) {
+    keywords = jsonLdKeywords;
+  } else {
+    keywords = winFallback((win) =>
+      win.document.querySelector('meta[name="keywords"]')
+    )?.content?.replace?.(/\s/g, '');
+  }
+
   return removeUndef({
     domain,
     keywords,
