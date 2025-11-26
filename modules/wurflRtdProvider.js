@@ -752,7 +752,6 @@ const WurflJSDevice = {
     // For authorized bidders: basic + pub + bidder-specific caps
     const wurflData = {
       ...(isOverQuota ? this._getBasicCaps() : {}),
-      ...(isOverQuota ? this._getPubCaps() : {}),
       ...this._getBidderCaps(bidderCode)
     };
 
