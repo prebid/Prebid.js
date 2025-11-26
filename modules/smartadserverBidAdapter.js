@@ -151,7 +151,7 @@ export const spec = {
         return 3;
       }
     }
-    return 1;
+    return 1; // SADR-5619
   },
 
   /**
@@ -165,7 +165,10 @@ export const spec = {
     return {
       method: 'POST',
       url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
+      options: {
+        browsingTopics: false
+      }
     };
   },
 
