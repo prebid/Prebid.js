@@ -55,7 +55,7 @@ var adUnits = [
         bids: [{
             bidder: 'trustx',
             params: {
-                uid: '123456',
+                uid: 123456,
                 bidFloor: 0.5
             }
         }]
@@ -109,7 +109,7 @@ var adUnits = [
             {
                 bidder: 'trustx',
                 params: {
-                    uid: '123456',
+                    uid: 123456,
                     bidFloor: 5.0
                 }
             }
@@ -142,7 +142,7 @@ var adUnits = [
             {
                 bidder: 'trustx',
                 params: {
-                    uid: '123456',
+                    uid: 123456,
                     bidFloor: 6.0
                 }
             }
@@ -215,7 +215,7 @@ The adapter also supports Prebid's Floor Module via `getFloor()` function. The h
 
 ```
 params: {
-    uid: '455069',
+    uid: 455069,
     bidFloor: 0.5,  // or bidfloor or floorcpm
     currency: 'USD' // optional, defaults to USD
 }
@@ -229,7 +229,7 @@ Keywords can be specified at impression level (in params) or at request level (i
 
 ```
 params: {
-    uid: '455069',
+    uid: 455069,
     keywords: {
         site: {
             publisher: [{
