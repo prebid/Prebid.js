@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.0.6';
+const MODULE_VERSION = '2.1.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -175,22 +175,13 @@ function enrichDeviceFPD(reqBidsConfigObj, deviceData) {
     enrichedDevice[field] = deviceData[field];
   });
 
-  // Use mergeDeep to properly merge into global device
-  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, { device: enrichedDevice });
-}
-
-/**
- * enrichDeviceExt enriches the global device.ext.wurfl object with extension data
- * @param {Object} reqBidsConfigObj Bid request configuration object
- * @param {Object} extData Extension data in format { device: { ext: { wurfl: {...} } } }
- */
-function enrichDeviceExt(reqBidsConfigObj, extData) {
-  if (!extData || !reqBidsConfigObj?.ortb2Fragments?.global) {
-    return;
+  // Also copy ext field if present (contains ext.wurfl capabilities)
+  if (deviceData.ext) {
+    enrichedDevice.ext = deviceData.ext;
   }
 
-  // Use mergeDeep to properly merge ext.wurfl data into global device
-  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, extData);
+  // Use mergeDeep to properly merge into global device
+  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, { device: enrichedDevice });
 }
 
 /**
@@ -205,24 +196,32 @@ function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
     reqBidsConfigObj.ortb2Fragments.bidder = {};
   }
 
-  bidders.forEach((bidderCode) => {
-    // Get bidder data (handles both authorized and unauthorized bidders)
-    const bidderDevice = wjsDevice.Bidder(bidderCode);
+  const isOverQuota = wjsDevice._isOverQuota();
 
-    // Skip if no data to inject (over quota + unauthorized)
-    if (Object.keys(bidderDevice).length === 0) {
-      bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.NONE);
+  bidders.forEach((bidderCode) => {
+    const isAuthorized = wjsDevice._isAuthorized(bidderCode);
+
+    if (!isAuthorized) {
+      // Over quota + unauthorized -> NO ENRICHMENT
+      if (isOverQuota) {
+        bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.NONE);
+        return;
+      }
+      // Under quota + unauthorized -> inherits from global no bidder enrichment
+      bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.WURFL_PUB);
       return;
     }
 
-    // Set enrichment type based on authorization status
-    if (wjsDevice._isAuthorized(bidderCode)) {
-      bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.WURFL_SSP);
-    } else {
-      bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.WURFL_PUB);
+    // From here: bidder IS authorized
+    const bidderDevice = wjsDevice.Bidder(bidderCode);
+    bidderEnrichment.set(bidderCode, ENRICHMENT_TYPE.WURFL_SSP);
+
+    // Edge case: authorized but no data (e.g., missing caps)
+    if (Object.keys(bidderDevice).length === 0) {
+      return;
     }
 
-    // Inject WURFL data
+    // Authorized bidder with data to inject
     const bd = reqBidsConfigObj.ortb2Fragments.bidder[bidderCode] || {};
     mergeDeep(bd, bidderDevice);
     reqBidsConfigObj.ortb2Fragments.bidder[bidderCode] = bd;
@@ -555,11 +554,8 @@ const WurflDebugger = {
     window.WurflRtdDebug.data.pbjsData = pbjsData;
   },
 
-  setLceData(lceDevice, extWurfl) {
-    window.WurflRtdDebug.data.lceDevice = {
-      ...lceDevice,
-      ext: extWurfl?.device?.ext
-    };
+  setLceData(lceDevice) {
+    window.WurflRtdDebug.data.lceDevice = lceDevice;
   },
 
   setCacheExpired(expired) {
@@ -690,6 +686,8 @@ const WurflJSDevice = {
   },
 
   // Public API - returns device object for First Party Data (global)
+  // When under quota: returns device fields + ext.wurfl(basic+pub)
+  // When over quota: returns device fields only
   FPD() {
     if (this._device !== null) {
       return this._device;
@@ -714,6 +712,19 @@ const WurflJSDevice = {
       pxratio: this._toNumber(wd.density_class),
       js: this._toNumber(wd.ajax_support_javascript)
     };
+
+    const isOverQuota = this._isOverQuota();
+    if (!isOverQuota) {
+      const basicCaps = this._getBasicCaps();
+      const pubCaps = this._getPubCaps();
+      this._device.ext = {
+        wurfl: {
+          ...basicCaps,
+          ...pubCaps
+        }
+      };
+    }
+
     return this._device;
   },
 
@@ -722,8 +733,8 @@ const WurflJSDevice = {
     const isAuthorized = this._isAuthorized(bidderCode);
     const isOverQuota = this._isOverQuota();
 
-    // When unauthorized and over quota, return empty
-    if (!isAuthorized && isOverQuota) {
+    // When unauthorized return empty
+    if (!isAuthorized) {
       return {};
     }
 
@@ -739,11 +750,10 @@ const WurflJSDevice = {
     }
 
     // For authorized bidders: basic + pub + bidder-specific caps
-    // For unauthorized bidders (under quota only): basic + pub caps (no bidder-specific)
     const wurflData = {
-      ...this._getBasicCaps(),
-      ...this._getPubCaps(),
-      ...(isAuthorized ? this._getBidderCaps(bidderCode) : {})
+      ...(isOverQuota ? this._getBasicCaps() : {}),
+      ...(isOverQuota ? this._getPubCaps() : {}),
+      ...this._getBidderCaps(bidderCode)
     };
 
     return {
@@ -1043,31 +1053,16 @@ const WurflLCEDevice = {
       }
     }
 
-    return device;
-  },
-
-  // Public API - returns device.ext.wurfl object with LCE-detected capabilities
-  // Returns: { device: { ext: { wurfl: { is_robot: boolean } } } }
-  Ext() {
-    // Early exit - check window exists
-    if (typeof window === 'undefined') {
-      return { device: { ext: { wurfl: {} } } };
-    }
-
-    const useragent = this._getUserAgent();
-    if (!useragent) {
-      return { device: { ext: { wurfl: {} } } };
-    }
-
-    return {
-      device: {
-        ext: {
-          wurfl: {
-            is_robot: this._isRobot(useragent)
-          }
+    // Add ext.wurfl with is_robot detection
+    if (useragent) {
+      device.ext = {
+        wurfl: {
+          is_robot: this._isRobot(useragent)
         }
-      }
-    };
+      };
+    }
+
+    return device;
   }
 };
 // ==================== END WURFL LCE DEVICE MODULE ====================
@@ -1152,11 +1147,11 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     WurflDebugger.setCacheData(cachedWurflData.WURFL, cachedWurflData.wurfl_pbjs);
 
     const wjsDevice = WurflJSDevice.fromCache(cachedWurflData);
-    if (!wjsDevice._isOverQuota()) {
+    if (wjsDevice._isOverQuota()) {
+      enrichmentType = ENRICHMENT_TYPE.NONE;
+    } else {
       enrichDeviceFPD(reqBidsConfigObj, wjsDevice.FPD());
       enrichmentType = ENRICHMENT_TYPE.WURFL_PUB;
-    } else {
-      enrichmentType = ENRICHMENT_TYPE.NONE;
     }
     enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice);
 
@@ -1195,22 +1190,18 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   WurflDebugger.lceDetectionStart();
 
   let lceDevice;
-  let extWurfl;
   try {
     lceDevice = WurflLCEDevice.FPD();
-    extWurfl = WurflLCEDevice.Ext();
     enrichmentType = ENRICHMENT_TYPE.LCE;
   } catch (e) {
     logger.logError('Error generating LCE device data:', e);
     lceDevice = { js: 1 };
-    extWurfl = { device: { ext: { wurfl: {} } } };
     enrichmentType = ENRICHMENT_TYPE.LCE_ERROR;
   }
 
   WurflDebugger.lceDetectionStop();
-  WurflDebugger.setLceData(lceDevice, extWurfl);
+  WurflDebugger.setLceData(lceDevice);
   enrichDeviceFPD(reqBidsConfigObj, lceDevice);
-  enrichDeviceExt(reqBidsConfigObj, extWurfl);
 
   // Set enrichment type for all bidders
   bidders.forEach(bidder => bidderEnrichment.set(bidder, enrichmentType));
