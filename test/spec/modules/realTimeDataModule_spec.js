@@ -8,12 +8,12 @@ import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModu
 import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
 
-const getBidRequestDataSpy = sinon.spy();
 
 describe('Real time module', function () {
   let eventHandlers;
   let sandbox;
   let validSM, validSMWait, invalidSM, failureSM, nonConfSM, conf;
+  let getBidRequestDataStub;
 
   function mockEmitEvent(event, ...args) {
     (eventHandlers[event] || []).forEach((h) => h(...args));
@@ -22,6 +22,8 @@ describe('Real time module', function () {
   before(() => {
     eventHandlers = {};
     sandbox = sinon.createSandbox();
+    getBidRequestDataStub = sinon.stub();
+
     sandbox.stub(events, 'on').callsFake((event, handler) => {
       if (!eventHandlers.hasOwnProperty(event)) {
         eventHandlers[event] = [];
@@ -41,7 +43,7 @@ describe('Real time module', function () {
       getTargetingData: (adUnitsCodes) => {
         return {'ad2': {'key': 'validSM'}}
       },
-      getBidRequestData: getBidRequestDataSpy
+      getBidRequestData: getBidRequestDataStub
     };
 
     validSMWait = {
@@ -50,7 +52,7 @@ describe('Real time module', function () {
       getTargetingData: (adUnitsCodes) => {
         return {'ad1': {'key': 'validSMWait'}}
       },
-      getBidRequestData: getBidRequestDataSpy
+      getBidRequestData: getBidRequestDataStub
     };
 
     invalidSM = {
@@ -129,11 +131,16 @@ describe('Real time module', function () {
     });
 
     it('should be able to modify bid request', function (done) {
+      const request = {bidRequest: {}};
+      getBidRequestDataStub.callsFake((req) => {
+        req.foo = 'bar';
+      });
       rtdModule.setBidRequestsData(() => {
-        assert(getBidRequestDataSpy.calledTwice);
-        assert(getBidRequestDataSpy.calledWith(sinon.match({bidRequest: {}})));
+        assert(getBidRequestDataStub.calledTwice);
+        assert(getBidRequestDataStub.calledWith(sinon.match({bidRequest: {}})));
+        expect(request.foo).to.eql('bar');
         done();
-      }, {bidRequest: {}})
+      }, request)
     });
 
     it('sould place targeting on adUnits', function (done) {
