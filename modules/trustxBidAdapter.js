@@ -24,11 +24,11 @@ import {getStorageManager} from '../src/storageManager.js';
  */
 
 const BIDDER_CODE = 'trustx';
-const BID_TTL = 300;
+const BID_TTL = 360;
 const NET_REVENUE = false;
 const SUPPORTED_CURRENCY = 'USD';
 const OUTSTREAM_PLAYER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-const USYNC_DELETE_URL = 'https://ads.trustx.org/usync-delete';
+const USYNC_DELETE_URL = 'https://sync.trustx.org/usync-delete';
 const ADAPTER_VERSION = '1.0';
 const USER_ID_KEY = 'txuid';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
