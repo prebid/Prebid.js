@@ -275,16 +275,6 @@ describe('sevioBidAdapter', function () {
     expect(requests[0].data.keywords.tokens).to.deep.equal(['keyword1', 'keyword2']);
   });
 
-  // Minimal env shims some helpers rely on
-  Object.defineProperty(window, 'visualViewport', {
-    value: { width: 1200, height: 800 },
-    configurable: true
-  });
-  Object.defineProperty(window, 'screen', {
-    value: { width: 1920, height: 1080 },
-    configurable: true
-  });
-
   function mkBid(overrides) {
     return Object.assign({
       bidId: 'bid-1',
