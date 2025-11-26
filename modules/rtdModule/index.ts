@@ -2,18 +2,15 @@ import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn, mergeDeep} from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
-import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
+import {EVENTS, JSON_MAPPING} from '../../src/constants.js';
+import adapterManager, {gdprDataHandler, gppDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
 import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';
 import {activityParamsBuilder} from '../../src/activities/params.js';
-import type {RequestBidsOptions, StartAuctionOptions} from "../../src/prebid.ts";
+import type {StartAuctionOptions} from "../../src/prebid.ts";
 import type {ProviderConfig, RTDProvider, RTDProviderConfig} from "./spec.ts";
-import type {Defer} from "../../src/utils/promise.ts";
-import type {AdUnitDefinition} from "../../src/adUnits.ts";
-import type {ORTBFragments} from "../../src/types/common";
 
 const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
