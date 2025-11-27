@@ -6,11 +6,8 @@ import {
   logMessage,
   parseSizesInput,
   triggerPixel,
-  getWinDimensions,
   logError
 } from '../src/utils.js';
-import {buildPlacementProcessingFunction, buildRequestsBase} from "../libraries/teqblazeUtils/bidderUtils";
-import {getAllOrtbKeywords} from "../libraries/keywords/keywords";
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -44,7 +41,7 @@ export const spec = {
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
     if (video) {
-      return !!(video.playerSize && video.context === 'outstream');  // Focus on outstream
+      return !!(video.playerSize && video.context === 'outstream');// Focus on outstream
     }
 
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
@@ -71,23 +68,22 @@ export const spec = {
       let requestUrl = adqueryRequestUrl;
 
       if (isVideo) {
-        // Optionally use a dedicated video endpoint if your server differentiates
         requestUrl = buildUrl({
           protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
           hostname: ADQUERY_BIDDER_DOMAIN,
-          pathname: '/openrtb2/auction2', // Adjust if your server has a specific video endpoint
+          pathname: '/openrtb2/auction2',
         });
       }
 
       const request = {
         method: 'POST',
-        url: requestUrl, // ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
+        url: requestUrl,
         data: buildRequest(bid, bidderRequest, isVideo),
         options: {
           withCredentials: false,
           crossOrigin: true
         },
-        bidId: bid.bidId // Add bidId for mapping responses
+        bidId: bid.bidId
       };
 
       requests.push(request);
@@ -371,50 +367,6 @@ function buildRequest(validBidRequests, bidderRequest, isVideo = false) {
     bidderRequestsCount: bid.bidderRequestsCount,
     sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
   };
-}
-
-function isMobile() {
-  return /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
-}
-
-function getOS() {
-  const ua = navigator.userAgent;
-  if (/Windows/.test(ua)) return 'Windows';
-  if (/Mac OS X/.test(ua)) return 'Mac OS X';
-  if (/Android/.test(ua)) return 'Android';
-  if (/iPhone|iPad|iPod/.test(ua)) return 'iOS';
-  if (/Linux/.test(ua)) return 'Linux';
-  return 'Unknown';
-}
-
-function getOSVersion() {
-  const match = navigator.userAgent.match(/(Android|iPhone OS)[\s/]?([\d._]+)/i);
-  logMessage('getOSVersion', match)
-  return match ? match[2].replace(/_/g, '.') : undefined;
-}
-
-function getDeviceMake() {
-  const ua = navigator.userAgent;
-  if (/iPhone/.test(ua)) return 'Apple';
-  if (/iPad/.test(ua)) return 'Apple';
-  if (/Samsung/.test(ua)) return 'Samsung';
-  if (/Huawei/.test(ua)) return 'Huawei';
-  return undefined;
-}
-
-function getDeviceModel() {
-  const ua = navigator.userAgent;
-  const match = ua.match(/\(([^;]+);[\s/]?([^)]+)\)/);
-  logMessage('getDeviceModel', match)
-  return match ? match[2] : undefined;
-}
-
-function getConnectionType() {
-  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (!conn) return undefined;
-  const type = conn.effectiveType || conn.type;
-  const map = { '4g': 5, '3g': 4, '2g': 3, 'slow-2g': 2 };
-  return map[type] || undefined;
 }
 
 registerBidder(spec);
