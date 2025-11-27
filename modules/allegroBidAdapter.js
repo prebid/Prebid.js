@@ -219,7 +219,7 @@ export const spec = {
       url: url,
       data: converter.toORTB({bidderRequest, bidRequests}),
       options: {
-        contentType: 'application/json'
+        contentType: 'text/plain'
       },
     }
   },

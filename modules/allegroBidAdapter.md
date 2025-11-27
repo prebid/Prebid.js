@@ -71,5 +71,5 @@ When `allegro.triggerImpressionPixel` is enabled, the adapter will automatically
 - **Protocol**: OpenRTB 2.5
 - **TTL**: 360 seconds
 - **Net Revenue**: true
-- **Content Type**: application/json
+- **Content Type**: text/plain
 
