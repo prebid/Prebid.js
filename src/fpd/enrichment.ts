@@ -163,9 +163,9 @@ const ENRICHMENTS = {
 /**
  * Detect keywords also from json/ld if this is present
  */
-const detectJsonLdKeywords = () => {
-  const scriptTags = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
-
+const detectJsonLdKeywords = (win = window) => {
+  const doc = win.document;
+  const scriptTags = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
   let keywords = [];
 
   for (const scriptTag of scriptTags) {
@@ -190,7 +190,7 @@ const detectJsonLdKeywords = () => {
 // section is appropriate
 function clientEnrichment(ortb2, ri) {
   const domain = parseDomain(ri.page, {noLeadingWww: true});
-  const jsonLdKeywords = detectJsonLdKeywords();
+  const jsonLdKeywords = winFallback((win) => detectJsonLdKeywords(win));
   let keywords;
 
   if (jsonLdKeywords) {

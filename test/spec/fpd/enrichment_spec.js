@@ -34,7 +34,8 @@ describe('FPD enrichment', () => {
         language: ''
       },
       document: {
-        querySelector: sinon.stub()
+        querySelector: sinon.stub(),
+        querySelectorAll: sinon.stub().callsFake((sel) => Array.from(document.querySelectorAll(sel))),
       },
       screen: {
         width: 1,
@@ -99,34 +100,6 @@ describe('FPD enrichment', () => {
         });
       });
 
-      // ===== New test: prefer JSON-LD keywords over meta =====
-      describe('json/ld keywords', () => {
-        let scriptTag;
-        beforeEach(() => {
-          // add a JSON-LD script that contains keywords
-          scriptTag = document.createElement('script');
-          scriptTag.type = 'application/ld+json';
-          scriptTag.textContent = JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebPage',
-            keywords: 'json1, json2'
-          });
-          document.head.appendChild(scriptTag);
-        });
-        afterEach(() => {
-          document.head.removeChild(scriptTag);
-        });
-
-        testWindows(() => window, () => {
-          it('uses JSON-LD keywords when present', () => {
-            return fpd(ORTB2).then(ortb2 => {
-              // JSON-LD should be preferred; returned format is a comma-joined string (no spaces)
-              expect(ortb2[section].keywords).to.eql('json1,json2');
-            });
-          });
-        });
-      });
-
       it('should not set keywords if meta tag is not present', () => {
         return fpd(ORTB2).then(ortb2 => {
           expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
@@ -135,6 +108,42 @@ describe('FPD enrichment', () => {
     })
   })
 
+  CLIENT_SECTIONS.forEach(section => {
+    const ORTB2 = {[section]: {ext: {}}};
+    // ===== New test: prefer JSON-LD keywords over meta =====
+    describe('json/ld keywords', () => {
+      let scriptTag;
+      let metaTag;
+      beforeEach(() => {
+        metaTag = document.createElement('meta');
+        metaTag.name = 'keywords';
+        metaTag.content = 'kw1, kw2';
+        document.head.appendChild(metaTag);
+        // add a JSON-LD script that contains keywords
+        scriptTag = document.createElement('script');
+        scriptTag.type = 'application/ld+json';
+        scriptTag.textContent = JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          keywords: 'json1, json2'
+        });
+        document.head.appendChild(scriptTag);
+      });
+      afterEach(() => {
+        document.head.removeChild(scriptTag);
+        document.head.removeChild(metaTag);
+      });
+
+      testWindows(() => window, () => {
+        it('uses JSON-LD keywords when present', () => {
+          return fpd(ORTB2).then(ortb2 => {
+            // JSON-LD should be preferred; returned format is a comma-joined string (no spaces)
+            expect(ortb2[section].keywords).to.eql('json1,json2');
+          });
+        });
+      });
+    });
+  });
   describe('site', () => {
     describe('when mixed with app/dooh', () => {
       beforeEach(() => {
