@@ -1,5 +1,5 @@
 import { ajax } from '../src/ajax.js';
-import { generateUUID, isNumber } from '../src/utils.js';
+import { generateUUID, isNumber, parseSizesInput } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
@@ -41,20 +41,12 @@ function handleAuctionInitEvent(auctionInitEvent) {
   // dependeing on the result of rolling the dice outside of Prebid.
   const partnerIdFromAnalyticsLabels = auctionInitEvent.analyticsLabels?.partnerId;
 
-  const asz = []
-
-  auctionInitEvent?.adUnits.forEach(adUnit => {
-    if (adUnit?.mediaTypes?.banner?.sizes) {
-      for (const [w, h] of adUnit.mediaTypes.banner.sizes) {
-        asz.push(w + 'x' + h);
-      }
-    }
-
-    if (adUnit?.mediaTypes?.video?.playerSize) {
-      const [w, h] = adUnit.mediaTypes.video.playerSize;
-      asz.push(w + 'x' + h);
-    }
-  })
+  const asz = auctionInitEvent?.adUnits.reduce((acc, adUnit) =>
+    acc.concat(
+      parseSizesInput(adUnit?.mediaTypes?.banner?.sizes),
+      parseSizesInput(adUnit?.mediaTypes?.video?.playerSize)
+    )
+  ) ?? []
 
   const data = {
     id: generateUUID(),
