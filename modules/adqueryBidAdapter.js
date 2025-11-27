@@ -287,8 +287,7 @@ export const spec = {
   }
 };
 
-function buildRequest(validBidRequests, bidderRequest, isVideo = false) {
-  const bid = validBidRequests;
+function buildRequest(bid, bidderRequest, isVideo = false) {
   let userId = null;
   if (window.qid) {
     userId = window.qid;
