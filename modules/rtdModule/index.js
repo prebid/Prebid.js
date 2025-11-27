@@ -313,10 +313,31 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
 
   const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
   waitTimeout = setTimeout(exitHook, timeout);
+  const fpdKey = 'ortb2Fragments';
 
   relevantSubModules.forEach(sm => {
-    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
-    sm.getBidRequestData({...reqBidsConfigObj, ortb2Fragments: fpdGuard}, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj[fpdKey] ?? {}, activityParams(MODULE_TYPE_RTD, sm.name));
+    // submodules need to be able to modify the request object, but we need
+    // to protect the FPD portion of it. Use a proxy that passes through everything
+    // except 'ortb2Fragments'.
+    const request = new Proxy(reqBidsConfigObj, {
+      get(target, prop, receiver) {
+        if (prop === fpdKey) return fpdGuard;
+        return Reflect.get(target, prop, receiver);
+      },
+      set(target, prop, value, receiver) {
+        if (prop === fpdKey) {
+          mergeDeep(fpdGuard, value);
+          return true;
+        }
+        return Reflect.set(target, prop, value, receiver);
+      },
+      deleteProperty(target, prop) {
+        if (prop === fpdKey) return true;
+        return Reflect.deleteProperty(target, prop)
+      }
+    })
+    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
   function onGetBidRequestDataCallback() {
