@@ -93,7 +93,7 @@ config.getConfig('s2sConfig', config => {
   }
 });
 
-const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
+export const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
 function getConfigName(s2sConfig) {
   // According to our docs, "module" bid (stored impressions)
@@ -505,18 +505,59 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
+    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+
+    const ortb2 = ortb2Fragments.global || {};
+    const bidderOrtb2 = ortb2Fragments.bidder || {};
+
+    const getTid = tidFactory();
+
+    const mergeBidderFpd = (() => {
+      const fpdCache: Record<BidderCode, any> = {};
+      return function(auctionId: string, bidderCode: BidderCode, s2sActivityParams?) {
+        const cacheKey = bidderCode + (s2sActivityParams != null ? s2sActivityParams[ACTIVITY_PARAM_S2S_NAME] : '');
+        const redact = dep.redact(
+          s2sActivityParams != null
+            ? s2sActivityParams
+            : activityParams(MODULE_TYPE_BIDDER, bidderCode)
+        );
+        if (fpdCache[cacheKey] !== undefined) {
+          return [fpdCache[cacheKey], redact];
+        }
+        const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
+        const fpd = Object.freeze(redact.ortb2(mergeDeep(
+          {},
+          ortb2,
+          bidderOrtb2[bidderCode],
+          {
+            source: {
+              tid,
+              ext: {tidSource}
+            }
+          }
+        )));
+        fpdCache[bidderCode] = fpd;
+        return [fpd, redact];
+      }
+    })();
+
     adUnits.forEach(au => {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+      au.bids = au.bids.filter((bid) => {
+        const ortb2 = mergeBidderFpd(auctionId, bid.bidder);
+        return !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+          bid,
+          ortb2,
+          adUnit: au
+        }))
+      })
       incrementRequestsCounter(au.code);
     });
 
     adUnits = setupAdUnitMediaTypes(adUnits, labels);
-
-    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
 
     if (config.getConfig('bidderSequence') === RANDOM) {
       clientBidders = shuffle(clientBidders);
@@ -525,29 +566,8 @@ const adapterManager = {
 
     const bidRequests: BidderRequest<any>[] = [];
 
-    const ortb2 = ortb2Fragments.global || {};
-    const bidderOrtb2 = ortb2Fragments.bidder || {};
-
-    const getTid = tidFactory();
-
     function addOrtb2<T extends BidderRequest<any>>(bidderRequest: Partial<T>, s2sActivityParams?): T {
-      const redact = dep.redact(
-        s2sActivityParams != null
-          ? s2sActivityParams
-          : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
-      );
-      const [tid, tidSource] = getTid(bidderRequest.bidderCode, bidderRequest.auctionId, bidderOrtb2[bidderRequest.bidderCode]?.source?.tid ?? ortb2.source?.tid);
-      const fpd = Object.freeze(redact.ortb2(mergeDeep(
-        {},
-        ortb2,
-        bidderOrtb2[bidderRequest.bidderCode],
-        {
-          source: {
-            tid,
-            ext: {tidSource}
-          }
-        }
-      )));
+      const [fpd, redact] = mergeBidderFpd(bidderRequest.auctionId, bidderRequest.bidderCode, s2sActivityParams);
       bidderRequest.ortb2 = fpd;
       bidderRequest.bids = bidderRequest.bids.map((bid) => {
         bid.ortb2 = fpd;
