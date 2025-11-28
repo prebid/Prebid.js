@@ -2,11 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   isBidRequestValid,
-  buildRequestsBase,
-  interpretResponse,
-  getUserSyncs,
-  buildPlacementProcessingFunction
-} from '../libraries/teqblazeUtils/bidderUtils.js';
+} from '../libraries/vidazooUtils/bidderUtils.js';
+import { getTimeZone } from '../libraries/timezone.js';
 
 const BIDDER_CODE = 'screencore';
 const GVLID = 1473;
@@ -24,8 +21,7 @@ const REGION_SUBDOMAIN_SUFFIX = {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = (getTimeZone() || '').split('/')[0];
 
     switch (region) {
       case 'Asia':
