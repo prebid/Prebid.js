@@ -74,6 +74,24 @@ function getDomComplexity(document) {
   return document?.querySelectorAll('*')?.length ?? -1;
 }
 
+const normalizeKeywords = (input) => {
+  if (!input) return [];
+
+  if (Array.isArray(input)) {
+    return input.map(k => k.trim()).filter(Boolean);
+  }
+
+  if (typeof input === 'string') {
+    return input
+      .split(',')
+      .map(k => k.trim())
+      .filter(Boolean);
+  }
+
+  // Any other type → ignore
+  return [];
+};
+
 const detectAdType = (bid) =>
   (
     ["native", "banner"].find((t) => bid.mediaTypes?.[t]) || "unknown"
@@ -285,7 +303,12 @@ export const spec = {
             ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
           },
         ],
-        keywords: { tokens: ortbRequest?.site?.keywords || bidRequest.params?.keywords || [] },
+        keywords: {
+          tokens: normalizeKeywords(
+            ortbRequest?.site?.keywords ||
+            bidRequest.params?.keywords
+          )
+        },
         privacy: {
           gpp: gpp?.consentString || "",
           tcfeu: gdpr?.consentString || "",
