@@ -18,8 +18,7 @@ const EXPECTED_TARGETING_KEYS = {
 setupTest({
   url: TEST_PAGE_URL,
   waitFor: CREATIVE_IFRAME_CSS_SELECTOR,
-  expectGAMCreative: true,
-  nestedIframe: false
+  expectGAMCreative: true
 }, 'Prebid.js Native Ad Unit Test', function () {
   it('should load the targeting keys with correct values', async function () {
     const result = await browser.execute(function () {
