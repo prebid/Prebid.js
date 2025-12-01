@@ -505,17 +505,20 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
-    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
-
     const ortb2 = ortb2Fragments.global || {};
     const bidderOrtb2 = ortb2Fragments.bidder || {};
 
     const getTid = tidFactory();
 
+    const getCacheKey = (bidderCode: BidderCode, s2sActivityParams?): string => {
+      const s2sName = s2sActivityParams != null ? s2sActivityParams[ACTIVITY_PARAM_S2S_NAME] : '';
+      return s2sName ? `${bidderCode}:${s2sName}` : `${bidderCode}:`;
+    };
+
     const mergeBidderFpd = (() => {
-      const fpdCache: Record<BidderCode, any> = {};
+      const fpdCache: any = {};
       return function(auctionId: string, bidderCode: BidderCode, s2sActivityParams?) {
-        const cacheKey = bidderCode + (s2sActivityParams != null ? s2sActivityParams[ACTIVITY_PARAM_S2S_NAME] : '');
+        const cacheKey = getCacheKey(bidderCode, s2sActivityParams);
         const redact = dep.redact(
           s2sActivityParams != null
             ? s2sActivityParams
@@ -536,7 +539,7 @@ const adapterManager = {
             }
           }
         )));
-        fpdCache[bidderCode] = fpd;
+        fpdCache[cacheKey] = fpd;
         return [fpd, redact];
       }
     })();
@@ -558,6 +561,7 @@ const adapterManager = {
     });
 
     adUnits = setupAdUnitMediaTypes(adUnits, labels);
+    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
 
     if (config.getConfig('bidderSequence') === RANDOM) {
       clientBidders = shuffle(clientBidders);

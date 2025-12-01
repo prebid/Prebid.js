@@ -458,7 +458,11 @@ declare module './hook' {
 export const addBidResponse = ignoreCallbackArg(hook('async', function(adUnitCode: string, bid: Partial<Bid>, reject: (reason: (typeof REJECTION_REASON)[keyof typeof REJECTION_REASON]) => void): void {
   if (!isValidPrice(bid)) {
     reject(REJECTION_REASON.PRICE_TOO_HIGH);
-  } else if (!isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, bid.bidder || bid.bidderCode))) {
+  } else if (!isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, bid.bidder || bid.bidderCode, {
+    bid,
+    ortb2: auctionManager.index.getOrtb2(bid),
+    adUnit: auctionManager.index.getAdUnit(bid)
+  }))) {
     reject(REJECTION_REASON.BIDDER_DISALLOWED);
   } else {
     this.dispatch.call(null, adUnitCode, bid);

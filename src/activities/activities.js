@@ -62,6 +62,6 @@ export const LOAD_EXTERNAL_SCRIPT = 'loadExternalScript';
 export const ACTIVITY_ACCESS_REQUEST_CREDENTIALS = 'accessRequestCredentials';
 
 /**
- * fetchBid: a bidder wants to bid.
+ * acceptBid: a bid is about to be accepted.
  */
 export const ACTIVITY_ADD_BID_RESPONSE = 'acceptBid';

@@ -145,82 +145,70 @@ function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
   }
 }
 
-export function evaluateSchema(func, args, context) {
-  switch (func) {
-    case 'percent':
-      return () => Math.random() * 100 < args[0];
-    case 'adUnitCode':
-      return () => context.adUnit.code === args[0];
-    case 'adUnitCodeIn':
-      return () => args.includes(context.adUnit.code);
-    case 'deviceCountry':
-      return () => context.ortb2?.device?.geo?.country === args[0];
-    case 'deviceCountryIn':
-      return () => args.includes(context.ortb2?.device?.geo?.country);
-    case 'channel':
-      return () => {
-        const channel = context.ortb2?.ext?.prebid?.channel;
-        if (channel === 'pbjs') return 'web';
-        return channel || '';
-      }
-    case 'eidAvailable':
-      return () => {
-        const eids = context.ortb2?.user?.eids || [];
-        return eids.length > 0;
-      }
-    case 'userFpdAvailable':
-      return () => {
-        const fpd = context.ortb2?.user?.data || {};
-        const extFpd = context.ortb2?.user?.ext?.data || {};
-        const mergedFpd = { ...fpd, ...extFpd };
-        return Object.keys(mergedFpd).length > 0;
-      }
-    case 'fpdAvailable':
-      return () => {
-        const extData = context.ortb2?.user?.ext?.data || {};
-        const usrData = context.ortb2?.user?.data || {};
-        const siteExtData = context.ortb2?.site?.ext?.data || {};
-        const siteContentData = context.ortb2?.site?.content?.data || {};
-        const appExtData = context.ortb2?.app?.ext?.data || {};
-        const appContentData = context.ortb2?.app?.content?.data || {};
-        const mergedFpd = { ...extData, ...usrData, ...siteExtData, ...siteContentData, ...appExtData, ...appContentData };
-        return Object.keys(mergedFpd).length > 0;
-      }
-    case 'gppSidIn':
-      return () => {
-        const gppSids = context.regs?.gpp_sid || [];
-        return args.some((sid) => gppSids.includes(sid));
-      }
-    case 'tcfInScope':
-      return () => context.regs?.ext?.gdpr === 1;
-    case 'domainIn':
-      return () => {
-        const domain = context.ortb2?.site?.domain || context.ortb2?.app?.domain || '';
-        return args.includes(domain);
-      }
-    case 'bundleIn':
-      return () => {
-        const bundle = context.ortb2?.app?.bundle || '';
-        return args.includes(bundle);
-      }
-    case 'mediaTypeIn':
-      return () => {
-        const mediaTypes = Object.keys(context.adUnit?.mediaTypes) || [];
-        return args.some((type) => mediaTypes.includes(type));
-      }
-    case 'deviceTypeIn':
-      return () => {
-        const deviceType = context.ortb2?.device?.devicetype;
-        return args.includes(deviceType);
-      }
-    case 'bidPrice':
-      return () => {
-        const bidPrice = context.bid?.price || 0;
-        return bidPrice >= args[0];
-      }
-    default:
-      return () => null;
+const schemaEvaluators = {
+  percent: (args, context) => () => Math.random() * 100 < args[0],
+  adUnitCode: (args, context) => () => context.adUnit.code === args[0],
+  adUnitCodeIn: (args, context) => () => args.includes(context.adUnit.code),
+  deviceCountry: (args, context) => () => context.ortb2?.device?.geo?.country === args[0],
+  deviceCountryIn: (args, context) => () => args.includes(context.ortb2?.device?.geo?.country),
+  channel: (args, context) => () => {
+    const channel = context.ortb2?.ext?.prebid?.channel;
+    if (channel === 'pbjs') return 'web';
+    return channel || '';
+  },
+  eidAvailable: (args, context) => () => {
+    const eids = context.ortb2?.user?.eids || [];
+    return eids.length > 0;
+  },
+  userFpdAvailable: (args, context) => () => {
+    const fpd = context.ortb2?.user?.data || {};
+    const extFpd = context.ortb2?.user?.ext?.data || {};
+    const mergedFpd = { ...fpd, ...extFpd };
+    return Object.keys(mergedFpd).length > 0;
+  },
+  fpdAvailable: (args, context) => () => {
+    const extData = context.ortb2?.user?.ext?.data || {};
+    const usrData = context.ortb2?.user?.data || {};
+    const siteExtData = context.ortb2?.site?.ext?.data || {};
+    const siteContentData = context.ortb2?.site?.content?.data || {};
+    const appExtData = context.ortb2?.app?.ext?.data || {};
+    const appContentData = context.ortb2?.app?.content?.data || {};
+    const mergedFpd = { ...extData, ...usrData, ...siteExtData, ...siteContentData, ...appExtData, ...appContentData };
+    return Object.keys(mergedFpd).length > 0;
+  },
+  gppSidIn: (args, context) => () => {
+    const gppSids = context.ortb2?.regs?.gpp_sid || [];
+    return args.some((sid) => gppSids.includes(sid));
+  },
+  tcfInScope: (args, context) => () => context.regs?.ext?.gdpr === 1,
+  domainIn: (args, context) => () => {
+    const domain = context.ortb2?.site?.domain || context.ortb2?.app?.domain || '';
+    return args.includes(domain);
+  },
+  bundleIn: (args, context) => () => {
+    const bundle = context.ortb2?.app?.bundle || '';
+    return args.includes(bundle);
+  },
+  mediaTypeIn: (args, context) => () => {
+    const mediaTypes = Object.keys(context.adUnit?.mediaTypes) || [];
+    return args.some((type) => mediaTypes.includes(type));
+  },
+  deviceTypeIn: (args, context) => () => {
+    const deviceType = context.ortb2?.device?.devicetype;
+    return args.includes(deviceType);
+  },
+  bidPrice: (args, context) => () => {
+    const bidPrice = context.bid?.price || 0;
+    return bidPrice >= args[0];
   }
+};
+
+export function evaluateSchema(func, args, context) {
+  const evaluator = schemaEvaluators[func];
+  if (evaluator) {
+    return evaluator(args, context);
+  }
+  return () => null;
 }
 
 function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {

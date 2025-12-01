@@ -435,9 +435,11 @@ describe('Rules Module', function() {
 
     it('should evaluate gppSidIn condition', function() {
       const context1 = {
-        regs: {
-          gpp_sid: [1, 2, 3]
-        }
+        ortb2: {
+          regs: {
+            gpp_sid: [1, 2, 3]
+          }
+        }        
       };
       const func1 = rulesModule.evaluateSchema('gppSidIn', [2], context1);
       expect(func1()).to.be.true;
