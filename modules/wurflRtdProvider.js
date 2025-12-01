@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.1.0';
+const MODULE_VERSION = '2.1.1';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -1248,8 +1248,14 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     host = statsHost;
   }
 
-  const url = new URL(host);
-  url.pathname = STATS_ENDPOINT_PATH;
+  let url;
+  try {
+    url = new URL(host);
+    url.pathname = STATS_ENDPOINT_PATH;
+  } catch (e) {
+    logger.logError('Invalid stats host URL:', host);
+    return;
+  }
 
   // Calculate consent class
   let consentClass;
@@ -1259,12 +1265,6 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   } catch (e) {
     logger.logError('Error calculating consent class:', e);
     consentClass = CONSENT_CLASS.ERROR;
-  }
-
-  // Only send beacon if there are bids to report
-  if (!auctionDetails.bidsReceived || auctionDetails.bidsReceived.length === 0) {
-    logger.logMessage('auction completed - no bids received');
-    return;
   }
 
   // Build a lookup object for winning bid request IDs
@@ -1277,8 +1277,9 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 
   // Build a lookup object for bid responses: "adUnitCode:bidderCode" -> bid
   const bidResponseMap = {};
-  for (let i = 0; i < auctionDetails.bidsReceived.length; i++) {
-    const bid = auctionDetails.bidsReceived[i];
+  const bidsReceived = auctionDetails.bidsReceived || [];
+  for (let i = 0; i < bidsReceived.length; i++) {
+    const bid = bidsReceived[i];
     const adUnitCode = bid.adUnitCode;
     const bidderCode = bid.bidderCode || bid.bidder;
     const key = adUnitCode + ':' + bidderCode;
@@ -1295,8 +1296,9 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
       const bidders = [];
 
       // Check each bidder configured for this ad unit
-      for (let j = 0; j < adUnit.bids.length; j++) {
-        const bidConfig = adUnit.bids[j];
+      const bids = adUnit.bids || [];
+      for (let j = 0; j < bids.length; j++) {
+        const bidConfig = bids[j];
         const bidderCode = bidConfig.bidder;
         const key = adUnitCode + ':' + bidderCode;
         const bidResponse = bidResponseMap[key];
@@ -1329,7 +1331,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   }
 
   logger.logMessage('auction completed', {
-    bidsReceived: auctionDetails.bidsReceived.length,
+    bidsReceived: auctionDetails.bidsReceived ? auctionDetails.bidsReceived.length : 0,
     bidsWon: winningBids.length,
     adUnits: adUnits.length
   });
@@ -1356,9 +1358,11 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 
   const payload = JSON.stringify(payloadData);
 
+  // Both sendBeacon and fetch send as text/plain to avoid CORS preflight requests.
+  // Server must parse body as JSON regardless of Content-Type header.
   const sentBeacon = sendBeacon(url.toString(), payload);
   if (sentBeacon) {
-    WurflDebugger.setBeaconPayload(JSON.parse(payload));
+    WurflDebugger.setBeaconPayload(payloadData);
     return;
   }
 
@@ -1367,9 +1371,11 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     body: payload,
     mode: 'no-cors',
     keepalive: true
+  }).catch((e) => {
+    logger.logError('Failed to send beacon via fetch:', e);
   });
 
-  WurflDebugger.setBeaconPayload(JSON.parse(payload));
+  WurflDebugger.setBeaconPayload(payloadData);
 }
 
 // ==================== MODULE EXPORT ====================

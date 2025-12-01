@@ -1173,7 +1173,7 @@ describe('wurflRtdProvider', function () {
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
       const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(false);
-      const fetchAjaxStub = sandbox.stub(ajaxModule, 'fetch');
+      const fetchAjaxStub = sandbox.stub(ajaxModule, 'fetch').returns(Promise.resolve());
 
       // Mock getGlobal().getHighestCpmBids()
       const mockHighestCpmBids = [
@@ -1411,7 +1411,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
         const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon');
-        const fetchStub = sandbox.stub(ajaxModule, 'fetch');
+        const fetchStub = sandbox.stub(ajaxModule, 'fetch').returns(Promise.resolve());
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
