@@ -81,7 +81,14 @@ describe('Optable RTD Submodule', function () {
 
     it('does nothing if targeting data is missing the ortb2 property', async function () {
       window.optable.instance.targetingFromCache.returns({});
-      window.optable.instance.targeting.resolves({});
+
+      // Dispatch event with empty ortb2 data after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: {}
+        });
+        window.dispatchEvent(event);
+      }, 10);
 
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.called).to.be.false;
@@ -98,7 +105,14 @@ describe('Optable RTD Submodule', function () {
     it('calls targeting function if no data is found in cache', async function () {
       const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
       window.optable.instance.targetingFromCache.returns(null);
-      window.optable.instance.targeting.resolves(targetingData);
+
+      // Dispatch event with targeting data after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: targetingData
+        });
+        window.dispatchEvent(event);
+      }, 10);
 
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
@@ -162,18 +176,33 @@ describe('Optable RTD Submodule', function () {
 
     it('calls callback when assuming the bundle is present', function (done) {
       moduleConfig.params.bundleUrl = null;
+      window.optable = {
+        cmd: [],
+        instance: {
+          targetingFromCache: sandbox.stub().returns(null)
+        }
+      };
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
       // Check that the function is queued
       expect(window.optable.cmd.length).to.equal(1);
+
+      // Dispatch the event after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: {ortb2: {user: {ext: {optable: 'testData'}}}}
+        });
+        window.dispatchEvent(event);
+      }, 10);
+
       // Manually trigger the queued function
       window.optable.cmd[0]();
 
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;
         done();
-      }, 50);
+      }, 100);
     });
 
     it('mergeOptableData catches error and executes callback when something goes wrong', function (done) {
@@ -206,14 +235,35 @@ describe('Optable RTD Submodule', function () {
     });
 
     it("doesn't fail when optable is not available", function (done) {
+      moduleConfig.params.bundleUrl = null;
       delete window.optable;
+
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-      expect(window?.optable?.cmd?.length).to.be.undefined;
+
+      // The code should have created window.optable with cmd array
+      expect(window.optable).to.exist;
+      expect(window.optable.cmd.length).to.equal(1);
+
+      // Simulate optable bundle initializing and executing commands
+      window.optable.instance = {
+        targetingFromCache: () => null
+      };
+
+      // Dispatch event after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: {ortb2: {user: {ext: {optable: 'testData'}}}}
+        });
+        window.dispatchEvent(event);
+      }, 10);
+
+      // Execute the queued command (simulating optable bundle execution)
+      window.optable.cmd[0]();
 
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;
         done();
-      }, 50);
+      }, 100);
     });
   });
 
