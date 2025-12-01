@@ -26,13 +26,13 @@ export const parseConfig = (moduleConfig) => {
 
   // Verify that bundleUrl is a valid URL: only secure (HTTPS) URLs are allowed
   if (typeof bundleUrl === 'string' && bundleUrl.length && !bundleUrl.startsWith('https://')) {
-    throw new Error(
-      LOG_PREFIX + ' Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.'
-    );
+    logError('Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.');
+    return {bundleUrl: null, adserverTargeting, handleRtd: null};
   }
 
   if (handleRtd && typeof handleRtd !== 'function') {
-    throw new Error(LOG_PREFIX + ' handleRtd must be a function');
+    logError('handleRtd must be a function');
+    return {bundleUrl, adserverTargeting, handleRtd: null};
   }
 
   const result = {bundleUrl, adserverTargeting, handleRtd};
