@@ -587,12 +587,12 @@ function interpretResponse(serverResponse, bidRequest) {
   // DEMO/TEST: Always return a test bid for Echo Ads demo
   // TODO: Remove this hardcoded response in production
   if (true) {
-    logWarn('[GumGum] DEMO MODE: Returning hardcoded test bid for Echo Ads demo (Nintendo 300x250)');
+    logWarn('[GumGum] DEMO MODE: Returning hardcoded test bid for Echo Ads demo (ACME 300x250)');
     return [{
-      ad: '<a href="https://www.nintendo.com" target="_blank"><img src="https://assets.playground.xyz/caitlyn.gregson@playgroundxyz.com/13990869_Switch-Logo-300x250.jpg" width="300" height="250" border="0" alt="Nintendo Switch" style="display:block;"/></a>',
+      ad: '<a href="https://example.com" target="_blank"><img src="https://storage.googleapis.com/echoads-demo/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
       mediaType: BANNER,
       cpm: 2.50,
-      creativeId: 'nintendo-echo-demo',
+      creativeId: 'acme-echo-demo',
       currency: 'USD',
       height: 250,
       width: 300,
@@ -600,7 +600,7 @@ function interpretResponse(serverResponse, bidRequest) {
       requestId: bidRequest.id,
       ttl: TIME_TO_LIVE,
       meta: {
-        advertiserDomains: ['nintendo.com'],
+        advertiserDomains: ['example.com'],
         mediaType: BANNER
       }
     }];

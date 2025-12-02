@@ -308,6 +308,9 @@ function onTriggerActivated() {
     return;
   }
 
+  // Set flag immediately to prevent other automatic triggers from firing
+  hasBeenTriggered = true;
+
   // Check frequency cap
   if (!checkFrequencyCap()) {
     logInfo(`${MODULE_NAME}: Not showing ad - frequency cap limit reached`);
@@ -339,7 +342,6 @@ function onTriggerActivated() {
       if (cachedBid) {
         clearInterval(checkInterval);
         logInfo(`${MODULE_NAME}: Bid received, showing ad`);
-        hasBeenTriggered = true;
         showEchoAd();
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
@@ -349,7 +351,6 @@ function onTriggerActivated() {
   } else if (cachedBid) {
     // Show ad immediately
     logInfo(`${MODULE_NAME}: Using cached bid`);
-    hasBeenTriggered = true;
     showEchoAd();
   } else if (auctionInProgress) {
     logInfo(`${MODULE_NAME}: Auction in progress, waiting for completion...`);
@@ -361,7 +362,6 @@ function onTriggerActivated() {
       if (cachedBid) {
         clearInterval(checkInterval);
         logInfo(`${MODULE_NAME}: Bid received, showing ad`);
-        hasBeenTriggered = true;
         showEchoAd();
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
@@ -471,6 +471,9 @@ function showEchoAd() {
   } else if (displayType === 'interstitial') {
     showInterstitial();
   }
+
+  // Clear cached bid immediately - each bid can only be used once
+  cachedBid = null;
 
   // Update frequency cap
   updateFrequencyCap();
@@ -617,8 +620,9 @@ function closeEchoAd() {
     overlay.remove();
   }
 
-  // Reset trigger flag to allow subsequent triggers
-  hasBeenTriggered = false;
+  // Do NOT reset hasBeenTriggered - automatic triggers should only fire once per session
+  // Manual triggers bypass this flag entirely
+  // Cached bid is already cleared when ad is shown
 
   // Call onAdClose callback
   if (moduleConfig.onAdClose && typeof moduleConfig.onAdClose === 'function') {
