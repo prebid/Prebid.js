@@ -152,7 +152,11 @@
         document.documentElement.scrollHeight
       );
       var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      return ((scrollTop + windowHeight) / documentHeight) * 100;
+      var scrollableHeight = documentHeight - windowHeight;
+
+      // 0% at top, 100% when scrolled to bottom
+      if (scrollableHeight <= 0) return 0;
+      return (scrollTop / scrollableHeight) * 100;
     }
 
     window.addEventListener('scroll', updateScrollIndicator);
