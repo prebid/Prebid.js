@@ -13,7 +13,7 @@ function getSubdomain() {
   };
 
   try {
-    const region = (getTimeZone() || '').split('/')[0];
+    const region = getTimeZone().split('/')[0];
     return regionMap[region] || regionMap.America;
   } catch (err) {
     return regionMap.America;

@@ -53,7 +53,7 @@ function getSubdomain() {
   };
 
   try {
-    const region = (getTimeZone() || '').split('/')[0];
+    const region = getTimeZone().split('/')[0];
     return regionMap[region] || 'bidder_us';
   } catch (err) {
     return 'bidder_us';
