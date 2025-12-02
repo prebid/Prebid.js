@@ -177,10 +177,21 @@ function buildPlacement(bidRequest) {
       bidId: bidRequest.bidId,
       transactionId: bidRequest.ortb2Imp?.ext?.tid,
       sizes: sizes.map(size => {
+        let floorInfo = null;
+        if (typeof bidRequest.getFloor === 'function') {
+          try {
+            floorInfo = bidRequest.getFloor({
+              currency: 'USD',
+              mediaType: bidRequest.params.adUnitType,
+              size: [size[0], size[1]]
+            });
+          } catch (e) {}
+        }
         return {
           width: size[0],
-          height: size[1]
-        }
+          height: size[1],
+          floorInfo: floorInfo
+        };
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
       ortb2Imp: bidRequest.ortb2Imp,
