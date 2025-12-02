@@ -1,5 +1,5 @@
 // plugins/floorProvider.js
-import { logInfo, logError, isFn, logMessage, isEmpty } from '../../../src/utils.js';
+import { logInfo, logError, logMessage, isEmpty } from '../../../src/utils.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../../userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../pubmaticUtils.js';
 import { config as conf } from '../../../src/config.js';
@@ -39,11 +39,6 @@ export async function init(pluginName, configJsonManager) {
 
   if (!getFloorConfig()?.enabled) {
     logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration is disabled`);
-    return false;
-  }
-
-  if (!isFn(continueAuction)) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
     return false;
   }
 
