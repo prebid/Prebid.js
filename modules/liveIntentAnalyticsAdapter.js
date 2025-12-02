@@ -45,8 +45,8 @@ function handleAuctionInitEvent(auctionInitEvent) {
     acc.concat(
       parseSizesInput(adUnit?.mediaTypes?.banner?.sizes),
       parseSizesInput(adUnit?.mediaTypes?.video?.playerSize)
-    )
-  ) ?? []
+    ), []
+  )
 
   const data = {
     id: generateUUID(),
