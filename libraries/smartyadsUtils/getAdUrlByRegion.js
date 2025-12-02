@@ -12,7 +12,7 @@ export function getAdUrlByRegion(bid) {
   if (bid.params.region && adUrls[bid.params.region]) {
     adUrl = adUrls[bid.params.region];
   } else {
-    const region = (getTimeZone() || '').split('/')[0];
+    const region = getTimeZone().split('/')[0];
 
     switch (region) {
       case 'Europe':

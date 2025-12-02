@@ -82,7 +82,7 @@ function getAdUrlByRegion(bid) {
     ENDPOINT = ENDPOINTS[bid.params.region];
   } else {
     try {
-      const region = (getTimeZone() || '').split('/')[0];
+      const region = getTimeZone().split('/')[0];
 
       switch (region) {
         case 'Europe':

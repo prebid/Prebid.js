@@ -25,7 +25,7 @@ const REGION_SUBDOMAIN_SUFFIX = {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const region = (getTimeZone() || '').split('/')[0];
+    const region = getTimeZone().split('/')[0];
 
     switch (region) {
       case 'Asia':
