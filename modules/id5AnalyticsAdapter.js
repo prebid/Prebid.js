@@ -2,7 +2,7 @@ import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {EVENTS} from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
-import {logError, logInfo} from '../src/utils.js';
+import {compressDataWithGZip, isGzipCompressionSupported, logError, logInfo} from '../src/utils.js';
 import * as events from '../src/events.js';
 
 const {
@@ -12,6 +12,7 @@ const {
 } = EVENTS
 
 const GVLID = 131;
+const COMPRESSION_THRESHOLD = 2048;
 
 const STANDARD_EVENTS_TO_TRACK = [
   AUCTION_END,
@@ -44,8 +45,20 @@ const id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
   },
 
   sendEvent: (eventToSend) => {
-    // By giving some content this will be automatically a POST
-    ajax(id5Analytics.options.ingestUrl, null, JSON.stringify(eventToSend));
+    const serializedEvent = JSON.stringify(eventToSend);
+    if (!id5Analytics.options.compressionDisabled && isGzipCompressionSupported() && serializedEvent.length > COMPRESSION_THRESHOLD) {
+      compressDataWithGZip(serializedEvent).then(compressedData => {
+        ajax(id5Analytics.options.ingestUrl, null, compressedData, {
+          contentType: 'application/json',
+          customHeaders: {
+            'Content-Encoding': 'gzip'
+          }
+        });
+      })
+    } else {
+      // By giving some content this will be automatically a POST
+      ajax(id5Analytics.options.ingestUrl, null, serializedEvent);
+    }
   },
 
   makeEvent: (event, payload) => {
