@@ -148,9 +148,9 @@ function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
 const schemaEvaluators = {
   percent: (args, context) => () => Math.random() * 100 < args[0],
   adUnitCode: (args, context) => () => context.adUnit.code === args[0],
-  adUnitCodeIn: (args, context) => () => args.includes(context.adUnit.code),
+  adUnitCodeIn: (args, context) => () => args[0].includes(context.adUnit.code),
   deviceCountry: (args, context) => () => context.ortb2?.device?.geo?.country === args[0],
-  deviceCountryIn: (args, context) => () => args.includes(context.ortb2?.device?.geo?.country),
+  deviceCountryIn: (args, context) => () => args[0].includes(context.ortb2?.device?.geo?.country),
   channel: (args, context) => () => {
     const channel = context.ortb2?.ext?.prebid?.channel;
     if (channel === 'pbjs') return 'web';
@@ -178,27 +178,27 @@ const schemaEvaluators = {
   },
   gppSidIn: (args, context) => () => {
     const gppSids = context.ortb2?.regs?.gpp_sid || [];
-    return args.some((sid) => gppSids.includes(sid));
+    return args[0].some((sid) => gppSids.includes(sid));
   },
-  tcfInScope: (args, context) => () => context.regs?.ext?.gdpr === 1,
+  tcfInScope: (args, context) => () => context.ortb2?.regs?.ext?.gdpr === 1,
   domainIn: (args, context) => () => {
     const domain = context.ortb2?.site?.domain || context.ortb2?.app?.domain || '';
-    return args.includes(domain);
+    return args[0].includes(domain);
   },
   bundleIn: (args, context) => () => {
     const bundle = context.ortb2?.app?.bundle || '';
-    return args.includes(bundle);
+    return args[0].includes(bundle);
   },
   mediaTypeIn: (args, context) => () => {
     const mediaTypes = Object.keys(context.adUnit?.mediaTypes) || [];
-    return args.some((type) => mediaTypes.includes(type));
+    return args[0].some((type) => mediaTypes.includes(type));
   },
   deviceTypeIn: (args, context) => () => {
     const deviceType = context.ortb2?.device?.devicetype;
-    return args.includes(deviceType);
+    return args[0].includes(deviceType);
   },
   bidPrice: (args, context) => () => {
-    const bidPrice = context.bid?.price || 0;
+    const bidPrice = context.bid?.cpm || 0;
     return bidPrice >= args[0];
   }
 };
@@ -214,33 +214,37 @@ export function evaluateSchema(func, args, context) {
 function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
   switch (func) {
     case 'excludeBidders':
+    case 'includeBidders':
       return () => {
-        let activity;
-        switch (stage) {
-          case 'processed-auction-request':
-            activity = ACTIVITY_FETCH_BIDS;
-            break;
-          case 'processed-auction':
-          default:
-            activity = ACTIVITY_ADD_BID_RESPONSE;
-            break;
-        }
+        const activity = {
+          'processed-auction-request': ACTIVITY_FETCH_BIDS,
+          'processed-auction': ACTIVITY_ADD_BID_RESPONSE
+        }[stage];
         args.forEach(({bidders, analyticsValue, seatnonbid}) => {
           const unregister = registerActivityControl(activity, MODULE_NAME, (params) => {
+            if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return { allow: true };
             let conditionMet = true;
             for (const [index, schemaEntry] of schema.entries()) {
-              const func = evaluateSchema(schemaEntry.function, schemaEntry.args || [], params);
-              if (evaluateCondition(conditions[index], func)) {
+              const schemaFunction = evaluateSchema(schemaEntry.function, schemaEntry.args || [], params);
+              if (!evaluateCondition(conditions[index], schemaFunction)) {
                 conditionMet = false;
                 break;
               }
             }
-            if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return { allow: true };
-            const finalCondition = conditionMet && !bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
-            if (finalCondition === false && analyticsKey && analyticsValue) {
+
+            if (!conditionMet) {
+              return { allow: true };
+            }
+
+            const bidderIncluded = bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
+            const allow = func === 'excludeBidders' ? !bidderIncluded : bidderIncluded;
+
+            if (analyticsKey && analyticsValue) {
               setLabels({ [analyticsKey]: analyticsValue });
             }
-            return { allow: finalCondition, reason: `Bidder ${params.bidder} excluded by rules module` };
+            if (!allow) {
+              return { allow, reason: `Bidder ${params.bid?.bidder} excluded by rules module` };
+            }
           });
           unregisterFunctions.push(unregister);
         });

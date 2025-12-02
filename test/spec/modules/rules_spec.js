@@ -107,106 +107,55 @@ describe('Rules Module', function() {
   });
 
   describe('evaluateConfig', function() {
-    it('should exclude bidder when it matches bidders list for processed-auction-request stage', function() {
-      const rulesJson = {
-        enabled: true,
-        timestamp: '1234567890',
-        ruleSets: [{
-          name: 'testRuleSet',
-          stage: 'processed-auction-request',
-          version: '1.0',
-          modelGroups: [{
-            weight: 100,
-            selected: true,
-            analyticsKey: 'testAnalyticsKey',
-            schema: [],
-            rules: [{
-              conditions: ['*'],
-              results: [{
-                function: 'excludeBidders',
-                args: [{
-                  bidders: ['bidder1'],
-                  analyticsValue: 'excluded'
+    [
+      ['processed-auction-request', ACTIVITY_FETCH_BIDS],
+      ['processed-auction', ACTIVITY_ADD_BID_RESPONSE]
+    ].forEach(([stage, activity]) => {
+      it(`should exclude bidder when it matches bidders list for ${stage} stage`, function() {
+        const rulesJson = {
+          enabled: true,
+          timestamp: '1234567890',
+          ruleSets: [{
+            name: 'testRuleSet',
+            stage: stage,
+            version: '1.0',
+            modelGroups: [{
+              weight: 100,
+              selected: true,
+              analyticsKey: 'testAnalyticsKey',
+              schema: [{ function: 'adUnitCode', args: ['adUnit-0000'] }],
+              rules: [{
+                conditions: ['true'],
+                results: [{
+                  function: 'excludeBidders',
+                  args: [{
+                    bidders: ['bidder1'],
+                    analyticsValue: 'excluded'
+                  }]
                 }]
               }]
             }]
           }]
-        }]
-      };
+        };
 
-      sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(rulesJson);
+        sandbox.stub(Math, 'random').returns(0.5);
 
-      expect(isActivityAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, 'bidder1', {}))).to.eql(false);
-    });
+        const bidder1Params = activityParams(MODULE_TYPE_BIDDER, 'bidder1', {
+          adUnit: { code: 'adUnit-0000' }
+        });
 
-    it('should allow bidder when it does not match bidders list for processed-auction-request stage', function() {
-      const rulesJson = {
-        enabled: true,
-        timestamp: '1234567890',
-        ruleSets: [{
-          name: 'testRuleSet',
-          stage: 'processed-auction-request',
-          version: '1.0',
-          modelGroups: [{
-            weight: 100,
-            selected: true,
-            analyticsKey: 'testAnalyticsKey',
-            schema: [],
-            rules: [{
-              conditions: ['*'],
-              results: [{
-                function: 'excludeBidders',
-                args: [{
-                  bidders: ['bidder1'],
-                  analyticsValue: 'excluded'
-                }]
-              }]
-            }]
-          }]
-        }]
-      };
+        const bidder2Params = activityParams(MODULE_TYPE_BIDDER, 'bidder2', {
+          adUnit: { code: 'adUnit-0000' }
+        });
 
-      sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(rulesJson);
+        expect(isActivityAllowed(activity, bidder1Params)).to.be.true;
+        expect(isActivityAllowed(activity, bidder2Params)).to.be.true;
 
-      expect(isActivityAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, 'bidder2', {}))).to.eql(true);
-    });
+        rulesModule.evaluateConfig(rulesJson);
 
-    it('should exclude bidder when it matches bidders list for processed-auction stage', function() {
-      const rulesJson = {
-        enabled: true,
-        timestamp: '1234567890',
-        ruleSets: [{
-          name: 'testRuleSet',
-          stage: 'processed-auction',
-          version: '1.0',
-          modelGroups: [{
-            weight: 100,
-            selected: true,
-            analyticsKey: 'testAnalyticsKey',
-            schema: [],
-            rules: [{
-              conditions: ['*'],
-              results: [{
-                function: 'excludeBidders',
-                args: [{
-                  bidders: ['bidder3'],
-                  analyticsValue: 'excluded'
-                }]
-              }]
-            }]
-          }]
-        }]
-      };
-
-      sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(rulesJson);
-
-      // Verify that excluded bidder is not allowed for processed-auction
-      expect(isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, 'bidder3', {}))).to.eql(false);
-      // Verify that non-excluded bidder is allowed for processed-auction
-      expect(isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, 'bidder4', {}))).to.eql(true);
+        expect(isActivityAllowed(activity, bidder1Params)).to.be.false;
+        expect(isActivityAllowed(activity, bidder2Params)).to.be.true;
+      });
     });
 
     it('should execute default rules when provided', function() {
@@ -278,10 +227,10 @@ describe('Rules Module', function() {
           code: 'div-1'
         }
       };
-      const func = rulesModule.evaluateSchema('adUnitCodeIn', ['div-1', 'div-2'], context);
+      const func = rulesModule.evaluateSchema('adUnitCodeIn', [['div-1', 'div-2']], context);
       expect(func()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('adUnitCodeIn', ['div-3', 'div-4'], context);
+      const func2 = rulesModule.evaluateSchema('adUnitCodeIn', [['div-3', 'div-4']], context);
       expect(func2()).to.be.false;
     });
 
@@ -312,10 +261,10 @@ describe('Rules Module', function() {
           }
         }
       };
-      const func = rulesModule.evaluateSchema('deviceCountryIn', ['US', 'UK'], context);
+      const func = rulesModule.evaluateSchema('deviceCountryIn', [['US', 'UK']], context);
       expect(func()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('deviceCountryIn', ['DE', 'FR'], context);
+      const func2 = rulesModule.evaluateSchema('deviceCountryIn', [['DE', 'FR']], context);
       expect(func2()).to.be.false;
     });
 
@@ -439,20 +388,22 @@ describe('Rules Module', function() {
           regs: {
             gpp_sid: [1, 2, 3]
           }
-        }        
+        }
       };
-      const func1 = rulesModule.evaluateSchema('gppSidIn', [2], context1);
+      const func1 = rulesModule.evaluateSchema('gppSidIn', [[2]], context1);
       expect(func1()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('gppSidIn', [4], context1);
+      const func2 = rulesModule.evaluateSchema('gppSidIn', [[4]], context1);
       expect(func2()).to.be.false;
     });
 
     it('should evaluate tcfInScope condition', function() {
       const context1 = {
-        regs: {
-          ext: {
-            gdpr: 1
+        ortb2: {
+          regs: {
+            ext: {
+              gdpr: 1
+            }
           }
         }
       };
@@ -478,7 +429,7 @@ describe('Rules Module', function() {
           }
         }
       };
-      const func1 = rulesModule.evaluateSchema('domainIn', ['example.com', 'test.com'], context1);
+      const func1 = rulesModule.evaluateSchema('domainIn', [['example.com', 'test.com']], context1);
       expect(func1()).to.be.true;
 
       const context2 = {
@@ -488,10 +439,10 @@ describe('Rules Module', function() {
           }
         }
       };
-      const func2 = rulesModule.evaluateSchema('domainIn', ['app.example.com'], context2);
+      const func2 = rulesModule.evaluateSchema('domainIn', [['app.example.com']], context2);
       expect(func2()).to.be.true;
 
-      const func3 = rulesModule.evaluateSchema('domainIn', ['other.com'], context1);
+      const func3 = rulesModule.evaluateSchema('domainIn', [['other.com']], context1);
       expect(func3()).to.be.false;
     });
 
@@ -506,7 +457,7 @@ describe('Rules Module', function() {
       const func1 = rulesModule.evaluateSchema('bundleIn', ['com.example.app'], context1);
       expect(func1()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('bundleIn', ['com.other.app'], context1);
+      const func2 = rulesModule.evaluateSchema('bundleIn', [['com.other.app']], context1);
       expect(func2()).to.be.false;
     });
 
@@ -519,10 +470,10 @@ describe('Rules Module', function() {
           }
         }
       };
-      const func1 = rulesModule.evaluateSchema('mediaTypeIn', ['banner'], context1);
+      const func1 = rulesModule.evaluateSchema('mediaTypeIn', [['banner']], context1);
       expect(func1()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('mediaTypeIn', ['native'], context1);
+      const func2 = rulesModule.evaluateSchema('mediaTypeIn', [['native']], context1);
       expect(func2()).to.be.false;
     });
 
@@ -534,17 +485,17 @@ describe('Rules Module', function() {
           }
         }
       };
-      const func1 = rulesModule.evaluateSchema('deviceTypeIn', [2, 3], context1);
+      const func1 = rulesModule.evaluateSchema('deviceTypeIn', [[2, 3]], context1);
       expect(func1()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('deviceTypeIn', [4, 5], context1);
+      const func2 = rulesModule.evaluateSchema('deviceTypeIn', [[4, 5]], context1);
       expect(func2()).to.be.false;
     });
 
     it('should evaluate bidPrice condition', function() {
       const context1 = {
         bid: {
-          price: 5.50
+          cpm: 5.50
         }
       };
       const func1 = rulesModule.evaluateSchema('bidPrice', [5.0], context1);
@@ -555,7 +506,7 @@ describe('Rules Module', function() {
 
       const context3 = {
         bid: {
-          price: 0
+          cpm: 0
         }
       };
       const func3 = rulesModule.evaluateSchema('bidPrice', [1.0], context3);

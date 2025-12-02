@@ -1,0 +1,226 @@
+{
+  "enabled": true,
+  "generateRulesFromBidderConfig": true,
+  "timestamp": "20250131 00:00:00",
+  "ruleSets": [
+    {
+      "stage": "processed-auction-request",
+      "name": "exclude-in-jpn",
+      "version": "1234",
+      "modelGroups": [
+        {
+          "weight": 98,
+          "analyticsKey": "experiment-name",
+          "version": "4567",
+          "schema": [
+            { "function": "deviceCountryIn", "args": [["JPN"]] }
+          ],
+          "default": [],
+          "rules": [
+            {
+              "conditions": ["true"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    { "bidders": ["bidderA"], "seatnonbid": 203, "analyticsValue": "rmjpn" },
+                    { "bidders": ["bidderD"], "seatnonbid": 203, "ifSyncedId": false, "analyticsValue": "rmjpn" }
+                  ]
+                }
+              ]
+            },
+            {
+              "conditions": [],
+              "results": []
+            }
+          ]
+        },
+        {
+          "weight": 2,
+          "default": []
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction-request",
+      "modelGroups": [
+        {
+          "schema": [
+            { "function": "percent", "args": [5] },
+            { "function": "buyeruidAvailable" }
+          ],
+          "analyticsKey": "bidderB-buyeruid",
+          "default": [
+            {
+              "function": "logAtag",
+              "args": { "analyticsValue": "default-allow" }
+            }
+          ],
+          "rules": [
+            {
+              "conditions": ["true", "false"],
+              "results": [
+                {
+                  "function": "logAtag",
+                  "args": { "analyticsValue": "bidderB-allowed" }
+                }
+              ]
+            },
+            {
+              "conditions": ["*", "false"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderB"],
+                      "seatnonbid": 203,
+                      "analyticsValue": "nobuyeruid"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "conditions": ["*", "*"],
+              "results": [
+                {
+                  "function": "logAtag",
+                  "args": { "analyticsValue": "default-allow" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction",
+      "modelGroups": [
+        {
+          "schema": [{ "function": "percent", "args": [5] }],
+          "analyticsKey": "bidderC-testing",
+          "default": [
+            {
+              "function": "logAtag",
+              "args": { "analyticsValue": "default-allow" }
+            }
+          ],
+          "rules": [
+            {
+              "conditions": ["false"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderC"],
+                      "seatnonbid": 203,
+                      "analyticsValue": "excluded"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction",
+      "modelGroups": [
+        {
+          "schema": [
+            {
+              "function": "deviceCountry",
+              "args": [
+                [
+                  "AUT",
+                  "BEL",
+                  "BGR",
+                  "HRV",
+                  "CYP",
+                  "CZE",
+                  "DNK",
+                  "EST",
+                  "FIN",
+                  "FRA",
+                  "DEU",
+                  "GRC",
+                  "HUN",
+                  "IRL",
+                  "ITA",
+                  "LVA",
+                  "LTU",
+                  "LUX",
+                  "MLT",
+                  "NLD",
+                  "POL",
+                  "PRT",
+                  "ROU",
+                  "SVK",
+                  "SVN",
+                  "ESP",
+                  "SWE",
+                  "GBR"
+                ]
+              ]
+            }
+          ],
+          "rules": [
+            {
+              "conditions": ["true"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderM", "bidderN", "bidderO", "bidderP"],
+                      "seatNonBid": 203
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "conditions": ["false"],
+              "results": [
+                {
+                  "function": "excludeModules",
+                  "args": [{ "modules": ["moduleA"] }]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "processed-auction",
+      "modelGroups": [
+        {
+          "schema": [
+            { "function": "deviceCountrySet", "args": [["USA", "CAN"]] }
+          ],
+          "analyticsKey": "bidder-yaml",
+          "rules": [
+            {
+              "conditions": ["false"],
+              "results": [
+                {
+                  "function": "excludeBidders",
+                  "args": [
+                    {
+                      "bidders": ["bidderX"],
+                      "seatNonBid": 203
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

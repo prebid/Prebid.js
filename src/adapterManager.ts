@@ -550,7 +550,7 @@ const adapterManager = {
       }
       // filter out bidders that cannot participate in the auction
       au.bids = au.bids.filter((bid) => {
-        const ortb2 = mergeBidderFpd(auctionId, bid.bidder);
+        const [ortb2] = mergeBidderFpd(auctionId, bid.bidder);
         return !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
           bid,
           ortb2,
