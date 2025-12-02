@@ -630,6 +630,7 @@ function closeEchoAd() {
 
 /**
  * Manual trigger function (exposed to publishers)
+ * Unlike automatic triggers, manual triggers can be called multiple times per session
  */
 export function triggerEchoAd() {
   if (!isInitialized) {
@@ -637,7 +638,65 @@ export function triggerEchoAd() {
     return;
   }
 
-  onTriggerActivated();
+  // Manual triggers bypass the hasBeenTriggered check
+  // but still respect frequency caps
+  if (!checkFrequencyCap()) {
+    logInfo(`${MODULE_NAME}: Not showing ad - frequency cap limit reached`);
+
+    // Call onFrequencyCapReached callback if provided
+    if (moduleConfig.onFrequencyCapReached && typeof moduleConfig.onFrequencyCapReached === 'function') {
+      moduleConfig.onFrequencyCapReached();
+    }
+
+    return;
+  }
+
+  logInfo(`${MODULE_NAME}: Manual trigger activated!`);
+
+  // Call onTrigger callback if provided
+  if (moduleConfig.onTrigger && typeof moduleConfig.onTrigger === 'function') {
+    moduleConfig.onTrigger();
+  }
+
+  // If we don't have a cached bid yet, start auction
+  if (!cachedBid && !auctionInProgress) {
+    logInfo(`${MODULE_NAME}: No cached bid, starting auction...`);
+    startAuction();
+    // Wait for auction to complete, then show ad
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (cachedBid) {
+        clearInterval(checkInterval);
+        logInfo(`${MODULE_NAME}: Bid received, showing ad`);
+        showEchoAd();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        logWarn(`${MODULE_NAME}: Timeout waiting for bids, no ad to show`);
+      }
+    }, 100);
+  } else if (cachedBid) {
+    // Show ad immediately
+    logInfo(`${MODULE_NAME}: Using cached bid`);
+    showEchoAd();
+  } else if (auctionInProgress) {
+    logInfo(`${MODULE_NAME}: Auction in progress, waiting for completion...`);
+    // Wait for auction to complete
+    let attempts = 0;
+    const maxAttempts = 50;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (cachedBid) {
+        clearInterval(checkInterval);
+        logInfo(`${MODULE_NAME}: Bid received, showing ad`);
+        showEchoAd();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        logWarn(`${MODULE_NAME}: Timeout waiting for bids, no ad to show`);
+      }
+    }, 100);
+  }
 }
 
 /**
