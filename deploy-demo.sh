@@ -63,10 +63,11 @@ gsutil acl ch -u AllUsers:R gs://$BUCKET_NAME/build/dev/prebid.js
 # Clean up temp file
 rm "$TEMP_HTML"
 
-# Set cache control headers for development
+# Set cache control headers for demo (no-store ensures always fresh content)
 echo "⚙️  Setting cache headers..."
-gsutil setmeta -h "Cache-Control:no-cache, max-age=0" gs://$BUCKET_NAME/index.html
-gsutil setmeta -h "Cache-Control:no-cache, max-age=0" gs://$BUCKET_NAME/build/dev/prebid.js
+gsutil setmeta -h "Cache-Control:no-store, no-cache, must-revalidate" gs://$BUCKET_NAME/index.html
+gsutil setmeta -h "Cache-Control:no-store, no-cache, must-revalidate" gs://$BUCKET_NAME/build/dev/prebid.js
+gsutil setmeta -h "Cache-Control:no-store, no-cache, must-revalidate" gs://$BUCKET_NAME/creatives/acme.png 2>/dev/null || true
 
 echo "✅ Deployment complete!"
 echo ""
