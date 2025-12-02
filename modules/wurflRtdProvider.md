@@ -13,6 +13,8 @@ The module sets the WURFL data in `device.ext.wurfl` and all the bidder adapters
 
 For a more detailed analysis bidders can subscribe to detect iPhone and iPad models and receive additional [WURFL device capabilities](https://www.scientiamobile.com/capabilities/?products%5B%5D=wurfl-js).
 
+**Note:** This module loads a dynamically generated JavaScript from prebid.wurflcloud.com
+
 ## User-Agent Client Hints
 
 WURFL.js is fully compatible with Chromium's User-Agent Client Hints (UA-CH) initiative. If User-Agent Client Hints are absent in the HTTP headers that WURFL.js receives, the service will automatically fall back to using the User-Agent Client Hints' JS API to fetch [high entropy client hint values](https://wicg.github.io/ua-client-hints/#getHighEntropyValues) from the client device. However, we recommend that you explicitly opt-in/advertise support for User-Agent Client Hints on your website and delegate them to the WURFL.js service for the fastest detection experience. Our documentation regarding implementing User-Agent Client Hint support [is available here](https://docs.scientiamobile.com/guides/implementing-useragent-clienthints).
