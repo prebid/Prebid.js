@@ -258,8 +258,11 @@ function calculateScrollDepth() {
     document.documentElement.scrollHeight
   );
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollableHeight = documentHeight - windowHeight;
 
-  return ((scrollTop + windowHeight) / documentHeight) * 100;
+  // 0% at top, 100% when scrolled to bottom
+  if (scrollableHeight <= 0) return 0;
+  return (scrollTop / scrollableHeight) * 100;
 }
 
 /**
