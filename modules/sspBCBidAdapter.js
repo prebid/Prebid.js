@@ -166,7 +166,7 @@ const getNotificationPayload = bidData => {
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
-  const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
+  const { connection = {}, userAgentData = {} } = navigator;
   const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
@@ -174,7 +174,7 @@ const applyClientHints = ortbRequest => {
     'CH-Rtt': connection.rtt,
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
-    'CH-DeviceMemory': deviceMemory,
+    'CH-DeviceMemory': null,
     'CH-Dpr': getDevicePixelRatio(W),
     'CH-ViewportWidth': viewport.width,
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
