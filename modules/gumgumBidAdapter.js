@@ -589,7 +589,7 @@ function interpretResponse(serverResponse, bidRequest) {
   if (true) {
     logWarn('[GumGum] DEMO MODE: Returning hardcoded test bid for Echo Ads demo (ACME 300x250)');
     return [{
-      ad: '<a href="https://example.com" target="_blank"><img src="https://storage.googleapis.com/echoads-demo/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
+      ad: '<a href="https://example.com" target="_blank"><img src="https://gumgum.github.io/echoads/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
       mediaType: BANNER,
       cpm: 2.50,
       creativeId: 'acme-echo-demo',

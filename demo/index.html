@@ -1,0 +1,514 @@
+<!--
+  Echo Ads Module - GumGum Test Demo
+
+  This example uses GumGum's test placement credentials to demonstrate
+  the Echo Ads module with real bid responses.
+-->
+
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo Ads - GumGum Demo</title>
+  <script async src="build/dev/prebid.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #ff6b35;
+      padding-bottom: 10px;
+    }
+
+    .info-box {
+      background: #fff3e0;
+      border-left: 4px solid #ff6b35;
+      padding: 15px;
+      margin: 20px 0;
+    }
+
+    .status {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .controls {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    button {
+      background: #ff6b35;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background: #e55a2b;
+    }
+
+    .scroll-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: #ff6b35;
+      transition: width 0.3s;
+      z-index: 1000;
+    }
+
+    .metric {
+      display: inline-block;
+      margin-right: 20px;
+      font-weight: bold;
+    }
+
+    .content {
+      margin: 40px 0;
+    }
+
+    .paragraph {
+      margin: 20px 0;
+      text-align: justify;
+    }
+
+    .footer {
+      margin-top: 100px;
+      padding: 40px;
+      background: #ff6b35;
+      color: white;
+      text-align: center;
+    }
+  </style>
+
+  <script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    // Track events
+    var triggerLog = [];
+    function logEvent(message) {
+      var timestamp = new Date().toLocaleTimeString();
+      triggerLog.push('[' + timestamp + '] ' + message);
+      updateStatus();
+      console.log(message);
+    }
+
+    function updateStatus() {
+      var statusEl = document.getElementById('status');
+      if (statusEl) {
+        statusEl.innerHTML = '<strong>Event Log:</strong><br>' + triggerLog.slice(-15).join('<br>');
+        // Auto-scroll to bottom
+        statusEl.scrollTop = statusEl.scrollHeight;
+      }
+    }
+
+    function updateScrollIndicator() {
+      var scrollDepth = calculateScrollDepth();
+      var indicator = document.getElementById('scroll-indicator');
+      if (indicator) {
+        indicator.style.width = scrollDepth + '%';
+      }
+      var scrollDisplay = document.getElementById('scroll-depth');
+      if (scrollDisplay) {
+        scrollDisplay.textContent = Math.round(scrollDepth) + '%';
+      }
+    }
+
+    function calculateScrollDepth() {
+      var windowHeight = window.innerHeight;
+      var documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var scrollableHeight = documentHeight - windowHeight;
+
+      // 0% at top, 100% when scrolled to bottom
+      if (scrollableHeight <= 0) return 0;
+      return (scrollTop / scrollableHeight) * 100;
+    }
+
+    window.addEventListener('scroll', updateScrollIndicator);
+    window.addEventListener('load', updateScrollIndicator);
+
+    // Configure Echo Ads with GumGum test placement
+    pbjs.que.push(function() {
+      logEvent('Configuring Echo Ads module with GumGum test placement...');
+
+      pbjs.setConfig({
+        echoAds: {
+          // Ad unit with GumGum test credentials
+          adUnit: {
+            code: 'echo-ad-gumgum',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            bids: [
+              {
+                bidder: 'gumgum',
+                params: {
+                  zone: 'dc9d6be1',    // GumGum test zone
+                  slot: '15901',       // GumGum test slot
+                  bidfloor: 0.03
+                }
+              }
+            ]
+          },
+
+          // Trigger configuration
+          trigger: {
+            scroll: { depth: 90 },      // Trigger at 90% scroll
+            timeOnPage: 45000           // OR after 45 seconds
+          },
+
+          // Pre-fetch strategy
+          prefetch: {
+            mode: 'lazy',
+            lazyTriggerPoint: {
+              scroll: { depth: 70 }     // Start auction at 70% scroll
+            }
+          },
+
+          // Display configuration
+          display: {
+            type: 'overlay',
+            closeButton: true,
+            closeDelay: 3000,           // 3 second delay before close button
+            frequency: {
+              maxPerSession: 5,         // Allow multiple for testing
+              maxPerDay: 10
+            }
+          },
+
+          // Callbacks
+          onBidCached: function(bidInfo) {
+            logEvent('✓ Bid cached: ' + bidInfo.bidder + ' $' + bidInfo.cpm.toFixed(2) + ' CPM (' + bidInfo.size + ')');
+          },
+          onTrigger: function() {
+            logEvent('✓ Trigger activated! Preparing to show Echo Ad...');
+          },
+          onAdRender: function() {
+            logEvent('✓ Echo Ad rendered successfully');
+          },
+          onAdClose: function() {
+            logEvent('✓ Echo Ad closed by user');
+          },
+          onFrequencyCapReached: function() {
+            logEvent('⚠ Frequency cap reached - ad not shown');
+          }
+        }
+      });
+
+      logEvent('Echo Ads configured - scroll to 70% to start auction, 90% to trigger');
+      logEvent('Using GumGum test zone: dc9d6be1, slot: 15901');
+    });
+
+    // Manual trigger
+    function manualTrigger() {
+      logEvent('Manual trigger button clicked');
+      if (pbjs.echoAds) {
+        pbjs.echoAds.trigger();
+      } else {
+        logEvent('ERROR: Echo Ads module not loaded');
+      }
+    }
+
+    // Clear frequency caps
+    function clearFrequencyCaps() {
+      try {
+        sessionStorage.removeItem('echoAds_session_count');
+        localStorage.removeItem('echoAds_daily_count');
+        localStorage.removeItem('echoAds_last_shown');
+        logEvent('✓ Frequency caps cleared');
+        updateFrequencyDisplay();
+      } catch (e) {
+        logEvent('ERROR: Could not clear frequency caps - ' + e.message);
+      }
+    }
+
+    // Show current frequency cap status
+    function updateFrequencyDisplay() {
+      try {
+        const sessionCount = parseInt(sessionStorage.getItem('echoAds_session_count') || '0');
+        const dailyData = localStorage.getItem('echoAds_daily_count');
+        let dailyCount = 0;
+        if (dailyData) {
+          const { date, count } = JSON.parse(dailyData);
+          const today = new Date().toDateString();
+          if (date === today) {
+            dailyCount = count;
+          }
+        }
+
+        const freqEl = document.getElementById('frequency-status');
+        if (freqEl) {
+          freqEl.innerHTML = 'Session: ' + sessionCount + '/5 | Daily: ' + dailyCount + '/10';
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+
+    // Update frequency display immediately and then every second
+    updateFrequencyDisplay();
+    setInterval(updateFrequencyDisplay, 1000);
+
+    // Reset
+    function resetEchoAds() {
+      if (pbjs.echoAds && pbjs.echoAds.reset) {
+        pbjs.echoAds.reset();
+        logEvent('Echo Ads state reset - reconfiguring...');
+
+        setTimeout(function() {
+          pbjs.que.push(function() {
+            pbjs.setConfig({
+              echoAds: {
+                adUnit: {
+                  code: 'echo-ad-gumgum',
+                  mediaTypes: {
+                    banner: {
+                      sizes: [[300, 250]]
+                    }
+                  },
+                  bids: [
+                    {
+                      bidder: 'gumgum',
+                      params: {
+                        zone: 'dc9d6be1',
+                        slot: '15901',
+                        bidfloor: 0.03
+                      }
+                    }
+                  ]
+                },
+                trigger: {
+                  scroll: { depth: 90 },
+                  timeOnPage: 45000
+                },
+                prefetch: {
+                  mode: 'lazy',
+                  lazyTriggerPoint: {
+                    scroll: { depth: 70 }
+                  }
+                },
+                display: {
+                  type: 'overlay',
+                  closeButton: true,
+                  closeDelay: 3000,
+                  frequency: {
+                    maxPerSession: 5,
+                    maxPerDay: 10
+                  }
+                },
+                onBidCached: function(bidInfo) {
+                  logEvent('✓ Bid cached: ' + bidInfo.bidder + ' $' + bidInfo.cpm.toFixed(2) + ' CPM (' + bidInfo.size + ')');
+                },
+                onTrigger: function() {
+                  logEvent('✓ Trigger activated!');
+                },
+                onAdRender: function() {
+                  logEvent('✓ Echo Ad rendered successfully');
+                },
+                onAdClose: function() {
+                  logEvent('✓ Echo Ad closed by user');
+                },
+                onFrequencyCapReached: function() {
+                  logEvent('⚠ Frequency cap reached - ad not shown');
+                }
+              }
+            });
+            logEvent('Echo Ads reconfigured');
+          });
+        }, 100);
+      }
+    }
+
+    // Time on page
+    var pageLoadTime = Date.now();
+    setInterval(function() {
+      var timeOnPage = Math.round((Date.now() - pageLoadTime) / 1000);
+      var timeDisplay = document.getElementById('time-on-page');
+      if (timeDisplay) {
+        timeDisplay.textContent = timeOnPage + 's';
+      }
+    }, 1000);
+  </script>
+</head>
+
+<body>
+  <div class="scroll-indicator" id="scroll-indicator"></div>
+
+  <div class="container">
+    <h1>Echo Ads Module - GumGum Demo</h1>
+
+    <div class="info-box">
+      <strong>Demo Configuration</strong><br>
+      This demo uses a hardcoded bid response (ACME 300x250 creative) for testing purposes.<br>
+      In production, the GumGum adapter would fetch real bids using your zone credentials.
+    </div>
+
+    <div class="status" id="status">
+      <strong>Event Log (last 15):</strong><br>
+      Loading...
+    </div>
+
+    <div class="controls">
+      <h3>Controls & Metrics</h3>
+      <div style="margin-bottom: 15px;">
+        <span class="metric">Scroll Depth: <span id="scroll-depth">0%</span></span>
+        <span class="metric">Time on Page: <span id="time-on-page">0s</span></span>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span class="metric">Frequency Caps: <span id="frequency-status">Session: 0/5 | Daily: 0/10</span></span>
+      </div>
+      <button onclick="manualTrigger()">Manual Trigger Echo Ad</button>
+      <button onclick="clearFrequencyCaps()">Clear Frequency Caps</button>
+    </div>
+
+    <h2>Current Configuration</h2>
+
+    <div class="content">
+      <div class="paragraph">
+        <strong>Trigger Conditions:</strong>
+        <ul>
+          <li>Scroll depth reaches <strong>90%</strong>, OR</li>
+          <li>Time on page reaches <strong>45 seconds</strong></li>
+        </ul>
+      </div>
+
+      <div class="paragraph">
+        <strong>Pre-fetch Strategy:</strong>
+        <ul>
+          <li>Mode: <strong>Lazy</strong> (auction starts when scroll reaches 70%)</li>
+          <li>Benefit: Bid is cached and ready when trigger activates at 90%</li>
+        </ul>
+      </div>
+
+      <div class="paragraph">
+        <strong>Display Settings:</strong>
+        <ul>
+          <li>Type: <strong>Overlay</strong> (dark background with centered ad)</li>
+          <li>Close button delay: <strong>3 seconds</strong> (ensures viewability)</li>
+          <li>Ad size: <strong>300x250</strong></li>
+        </ul>
+      </div>
+
+      <div class="paragraph">
+        <strong>Frequency Capping:</strong>
+        <ul>
+          <li>Max per session: <strong>5 ads</strong></li>
+          <li>Max per day: <strong>10 ads</strong></li>
+        </ul>
+      </div>
+
+      <h2>Testing Instructions</h2>
+
+      <ul>
+        <li>Click <strong>"Manual Trigger Echo Ad"</strong> to test immediately</li>
+        <li>Scroll to 90% to trigger automatically (watch the scroll depth meter)</li>
+        <li>Wait 45 seconds to trigger via time-on-page</li>
+        <li>Use <strong>"Clear Frequency Caps"</strong> to reset counters for repeated testing</li>
+        <li>Watch the event log to see module activity in real-time</li>
+      </ul>
+
+      <h2>Publisher Configuration Options</h2>
+
+      <div class="paragraph">
+        Publishers can customize Echo Ads behavior through the Prebid.js configuration:
+      </div>
+
+      <ul>
+        <li><strong>Bidders:</strong> Works with any Prebid bidder (GumGum, AppNexus, etc.)</li>
+        <li><strong>Ad Sizes:</strong> Configure any standard IAB sizes (300x250, 728x90, etc.)</li>
+        <li><strong>Trigger Points:</strong> Set custom scroll depth, time thresholds, or custom functions</li>
+        <li><strong>Pre-fetch Mode:</strong> Choose eager (immediate) or lazy (conditional) auction start</li>
+        <li><strong>Display Type:</strong> Overlay or interstitial formats</li>
+        <li><strong>Close Delay:</strong> Configure viewability guarantee period (0-10 seconds)</li>
+        <li><strong>Frequency Caps:</strong> Set session and daily limits to control user experience</li>
+        <li><strong>Callbacks:</strong> Hook into trigger, render, close, and frequency cap events</li>
+      </ul>
+
+      <h2>Keep Scrolling...</h2>
+
+      <div class="paragraph">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt
+        ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+        laboris nisi ut aliquip ex ea commodo consequat.
+      </div>
+
+      <div class="paragraph">
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+        mollit anim id est laborum.
+      </div>
+
+      <div class="paragraph">
+        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
+        totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae
+        dicta sunt explicabo.
+      </div>
+
+      <div class="paragraph">
+        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur
+        magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem
+        ipsum quia dolor sit amet, consectetur, adipisci velit.
+      </div>
+
+      <div class="paragraph">
+        At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum
+        deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non
+        provident.
+      </div>
+
+      <div class="paragraph">
+        Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.
+        Et harum quidem rerum facilis est et expedita distinctio.
+      </div>
+
+      <div class="paragraph">
+        Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et
+        voluptates repudiandae sint et molestiae non recusandae.
+      </div>
+    </div>
+
+    <div class="footer">
+      <h2>End of Content</h2>
+      <p>If you've scrolled this far, the Echo Ad should have appeared!</p>
+      <p>Echo Ads Module v1.0.0 - GumGum Test Demo</p>
+    </div>
+  </div>
+</body>
+</html>
