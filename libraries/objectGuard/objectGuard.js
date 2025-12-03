@@ -26,6 +26,10 @@ export function objectGuard(rules) {
   // build a tree representation of them, where the root is the object itself,
   // and each node's children are properties of the corresponding (nested) object.
 
+  function invalid() {
+    return new Error('incompatible redaction rules');
+  }
+
   rules.forEach(rule => {
     rule.paths.forEach(path => {
       let node = root;
@@ -36,15 +40,22 @@ export function objectGuard(rules) {
         node.wpRules = node.wpRules ?? [];
         node.redactRules = node.redactRules ?? [];
       });
-      (rule.wp ? node.wpRules : node.redactRules).push(rule);
-      if (rule.wp) {
-        // mark the whole path as write protected, so that write operations
-        // on parents do not need to walk down the tree
-        let parent = node;
-        while (parent && !parent.hasWP) {
-          parent.hasWP = true;
-          parent = parent.parent;
+      const tag = rule.wp ? 'hasWP' : 'hasRedact';
+      const ruleset = rule.wp ? 'wpRules' : 'redactRules';
+      // sanity check: do not allow rules of the same type on related paths,
+      // e.g. redact both 'user' and 'user.eids'; we don't need and this logic
+      // does not handle it
+      if (node[tag] && !node[ruleset]?.length) {
+        throw invalid();
+      }
+      node[ruleset].push(rule);
+      let parent = node;
+      while (parent) {
+        parent[tag] = true;
+        if (parent !== node && parent[ruleset]?.length) {
+          throw invalid();
         }
+        parent = parent.parent;
       }
     });
   });
@@ -151,6 +162,10 @@ export function objectGuard(rules) {
             if (rule && rule.check(applies)) {
               return rule.get(val);
             }
+          }
+          if ((children || hasWP) && val != null && typeof val === 'object') {
+            // some nested properties have rules, return a guard for the branch
+            return mkGuard(val, tree.children?.[prop] || tree, final || children == null, applies, cache);
           }
         }
         return val;

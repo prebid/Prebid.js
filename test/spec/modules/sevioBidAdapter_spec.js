@@ -275,16 +275,6 @@ describe('sevioBidAdapter', function () {
     expect(requests[0].data.keywords.tokens).to.deep.equal(['keyword1', 'keyword2']);
   });
 
-  // Minimal env shims some helpers rely on
-  Object.defineProperty(window, 'visualViewport', {
-    value: { width: 1200, height: 800 },
-    configurable: true
-  });
-  Object.defineProperty(window, 'screen', {
-    value: { width: 1920, height: 1080 },
-    configurable: true
-  });
-
   function mkBid(overrides) {
     return Object.assign({
       bidId: 'bid-1',
@@ -506,6 +496,18 @@ describe('sevioBidAdapter', function () {
       const payload = req[0].data;
 
       expect(payload).to.not.have.property('currency');
+    });
+    it('parses comma-separated keywords string into tokens array', function () {
+      const singleBidRequest = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId', keywords: 'play, games,  fun ' }, // string CSV
+        mediaTypes: { banner: { sizes: [[728, 90]] } },
+        bidId: 'bid-kw-str'
+      }];
+      const requests = spec.buildRequests(singleBidRequest, baseBidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+      expect(requests[0].data).to.have.nested.property('keywords.tokens');
+      expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games', 'fun']);
     });
   });
 });
