@@ -573,6 +573,7 @@ describe('OguryBidAdapter', () => {
   describe('buildRequests', () => {
     let windowTopStub;
     const stubbedCurrentTime = 1234567890
+    const stubbedDevicePixelRatio = 1
     const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
       return stubbedCurrentTime;
     });
@@ -626,7 +627,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.device).to.deep.equal({
         ...ortb2.device,
-        pxratio: getDevicePixelRatio()
+        pxratio: stubbedDevicePixelRatio,
       });
 
       expect(dataRequest.regs.ext.gdpr).to.be.a('number');
@@ -635,7 +636,7 @@ describe('OguryBidAdapter', () => {
 
     beforeEach(() => {
       windowTopStub = sinon.stub(utils, 'getWindowTop');
-      windowTopStub.returns({ location: { href: currentLocation } });
+      windowTopStub.returns({ location: { href: currentLocation } , devicePixelRatio: stubbedDevicePixelRatio});
     });
 
     afterEach(() => {
