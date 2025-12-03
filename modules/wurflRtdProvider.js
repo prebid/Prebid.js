@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.1.1';
+const MODULE_VERSION = '2.2.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -53,8 +53,7 @@ const ENRICHMENT_TYPE = {
   LCE: 'lce',
   LCE_ERROR: 'lcefailed',
   WURFL_PUB: 'wurfl_pub',
-  WURFL_SSP: 'wurfl_ssp',
-  WURFL_PUB_SSP: 'wurfl_pub_ssp'
+  WURFL_SSP: 'wurfl_ssp'
 };
 
 // Consent class constants
@@ -76,7 +75,9 @@ const AB_TEST = {
   CONTROL_GROUP: 'control',
   TREATMENT_GROUP: 'treatment',
   DEFAULT_SPLIT: 0.5,
-  DEFAULT_NAME: 'unknown'
+  DEFAULT_NAME: 'unknown',
+  ENRICHMENT_TYPE_LCE: 'lce',
+  ENRICHMENT_TYPE_WURFL: 'wurfl'
 };
 
 const logger = prefixLog('[WURFL RTD Submodule]');
@@ -104,9 +105,6 @@ let tier;
 
 // overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
 let overQuota;
-
-// abTest stores A/B test configuration and variant (set by init)
-let abTest;
 
 /**
  * Safely gets an object from localStorage with JSON parsing
@@ -320,21 +318,6 @@ function shouldSample(rate) {
   }
   const randomValue = Math.floor(Math.random() * 100);
   return randomValue < rate;
-}
-
-/**
- * getABVariant determines A/B test variant assignment based on split
- * @param {number} split Treatment group split from 0-1 (float, e.g., 0.5 = 50% treatment)
- * @returns {string} AB_TEST.TREATMENT_GROUP or AB_TEST.CONTROL_GROUP
- */
-function getABVariant(split) {
-  if (split >= 1) {
-    return AB_TEST.TREATMENT_GROUP;
-  }
-  if (split <= 0) {
-    return AB_TEST.CONTROL_GROUP;
-  }
-  return Math.random() < split ? AB_TEST.TREATMENT_GROUP : AB_TEST.CONTROL_GROUP;
 }
 
 /**
@@ -1066,6 +1049,106 @@ const WurflLCEDevice = {
 };
 // ==================== END WURFL LCE DEVICE MODULE ====================
 
+
+// ==================== A/B TEST MANAGER  ====================
+
+const ABTestManager = {
+  _enabled: false,
+  _name: null,
+  _variant: null,
+  _excludeLCE: true,
+  _enrichmentType: null,
+
+  /**
+   * Initializes A/B test configuration
+   * @param {Object} params Configuration params from config.params
+   */
+  init(params) {
+    this._enabled = false;
+    this._name = null;
+    this._variant = null;
+    this._excludeLCE = true;
+    this._enrichmentType = null;
+
+    const abTestEnabled = params?.abTest ?? false;
+    if (!abTestEnabled) {
+      return;
+    }
+
+    this._enabled = true;
+    this._name = params?.abName ?? AB_TEST.DEFAULT_NAME;
+    this._excludeLCE = params?.abExcludeLCE ?? true;
+
+    const split = params?.abSplit ?? AB_TEST.DEFAULT_SPLIT;
+    this._variant = this._computeVariant(split);
+
+    logger.logMessage(`A/B test "${this._name}": user in ${this._variant} group (exclude_lce: ${this._excludeLCE})`);
+  },
+
+  /**
+   * _computeVariant determines A/B test variant assignment based on split
+   * @param {number} split Treatment group split from 0-1 (float, e.g., 0.5 = 50% treatment)
+   * @returns {string} AB_TEST.TREATMENT_GROUP or AB_TEST.CONTROL_GROUP
+   */
+  _computeVariant(split) {
+    if (split >= 1) {
+      return AB_TEST.TREATMENT_GROUP;
+    }
+    if (split <= 0) {
+      return AB_TEST.CONTROL_GROUP;
+    }
+    return Math.random() < split ? AB_TEST.TREATMENT_GROUP : AB_TEST.CONTROL_GROUP;
+  },
+
+  /**
+   * Sets the enrichment type encountered in current auction
+   * @param {string} enrichmentType 'lce' or 'wurfl'
+   */
+  setEnrichmentType(enrichmentType) {
+    this._enrichmentType = enrichmentType;
+  },
+
+  /**
+   * Checks if A/B test is enabled for current auction
+   * @returns {boolean} True if A/B test should be applied
+   */
+  isEnabled() {
+    if (!this._enabled) return false;
+    if (this._enrichmentType === AB_TEST.ENRICHMENT_TYPE_LCE && this._excludeLCE) {
+      return false;
+    }
+    return true;
+  },
+
+  /**
+   * Checks if enrichment should be skipped (control group)
+   * @returns {boolean} True if enrichment should be skipped
+   */
+  isInControlGroup() {
+    if (!this.isEnabled()) {
+      return false;
+    }
+    return (this._variant === AB_TEST.CONTROL_GROUP)
+  },
+
+  /**
+   * Gets beacon payload fields (returns null if not active for auction)
+   * @returns {Object|null}
+   */
+  getBeaconPayload() {
+    if (!this.isEnabled()) {
+      return null;
+    }
+
+    return {
+      ab_name: this._name,
+      ab_variant: this._variant
+    };
+  }
+};
+
+// ==================== END A/B TEST MANAGER MODULE ====================
+
 // ==================== EXPORTED FUNCTIONS ====================
 
 /**
@@ -1084,22 +1167,12 @@ const init = (config, userConsent) => {
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
-  abTest = null;
 
-  // A/B testing: set if enabled
-  const abTestEnabled = config?.params?.abTest ?? false;
-  if (abTestEnabled) {
-    const abName = config?.params?.abName ?? AB_TEST.DEFAULT_NAME;
-    const abSplit = config?.params?.abSplit ?? AB_TEST.DEFAULT_SPLIT;
-    const abVariant = getABVariant(abSplit);
-    abTest = { ab_name: abName, ab_variant: abVariant };
-    logger.logMessage(`A/B test "${abName}": user in ${abVariant} group`);
-  }
+  logger.logMessage('initialized', { version: MODULE_VERSION });
 
-  logger.logMessage('initialized', {
-    version: MODULE_VERSION,
-    abTest: abTest ? `${abTest.ab_name}:${abTest.ab_variant}` : 'disabled'
-  });
+  // A/B testing: initialize ABTestManager
+  ABTestManager.init(config?.params);
+
   return true;
 }
 
@@ -1123,8 +1196,16 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     });
   });
 
-  // A/B test: Skip enrichment for control group but allow beacon sending
-  if (abTest && abTest.ab_variant === AB_TEST.CONTROL_GROUP) {
+  // Determine enrichment type based on cache availability
+  WurflDebugger.cacheReadStart();
+  const cachedWurflData = getObjectFromStorage(WURFL_RTD_STORAGE_KEY);
+  WurflDebugger.cacheReadStop();
+
+  const abEnrichmentType = cachedWurflData ? AB_TEST.ENRICHMENT_TYPE_WURFL : AB_TEST.ENRICHMENT_TYPE_LCE;
+  ABTestManager.setEnrichmentType(abEnrichmentType);
+
+  // A/B test: Skip enrichment for control group
+  if (ABTestManager.isInControlGroup()) {
     logger.logMessage('A/B test control group: skipping enrichment');
     enrichmentType = ENRICHMENT_TYPE.NONE;
     bidders.forEach(bidder => bidderEnrichment.set(bidder, ENRICHMENT_TYPE.NONE));
@@ -1134,10 +1215,6 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   }
 
   // Priority 1: Check if WURFL.js response is cached
-  WurflDebugger.cacheReadStart();
-  const cachedWurflData = getObjectFromStorage(WURFL_RTD_STORAGE_KEY);
-  WurflDebugger.cacheReadStop();
-
   if (cachedWurflData) {
     const isExpired = cachedWurflData.expire_at && Date.now() > cachedWurflData.expire_at;
 
@@ -1351,9 +1428,10 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   };
 
   // Add A/B test fields if enabled
-  if (abTest) {
-    payloadData.ab_name = abTest.ab_name;
-    payloadData.ab_variant = abTest.ab_variant;
+  const abPayload = ABTestManager.getBeaconPayload();
+  if (abPayload) {
+    payloadData.ab_name = abPayload.ab_name;
+    payloadData.ab_variant = abPayload.ab_variant;
   }
 
   const payload = JSON.stringify(payloadData);
