@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { spec, ortbConverterProps } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
 import { server } from '../../mocks/xhr.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -572,13 +573,8 @@ describe('OguryBidAdapter', () => {
   describe('buildRequests', () => {
     let windowTopStub;
     const stubbedCurrentTime = 1234567890
-    const stubbedDevicePixelRatio = 1
     const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
       return stubbedCurrentTime;
-    });
-
-    const stubbedDevicePixelMethod = sinon.stub(window, 'devicePixelRatio').get(function() {
-      return stubbedDevicePixelRatio;
     });
 
     const defaultTimeout = 1000;
@@ -630,7 +626,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.device).to.deep.equal({
         ...ortb2.device,
-        pxratio: stubbedDevicePixelRatio,
+        pxratio: getDevicePixelRatio()
       });
 
       expect(dataRequest.regs.ext.gdpr).to.be.a('number');
@@ -648,7 +644,6 @@ describe('OguryBidAdapter', () => {
 
     after(() => {
       stubbedCurrentTimeMethod.restore();
-      stubbedDevicePixelMethod.restore();
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
