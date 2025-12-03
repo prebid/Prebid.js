@@ -153,10 +153,7 @@ export function objectGuard(rules) {
           return mkGuard(val, tree, final, applies, cache)
         } else if (tree.children?.hasOwnProperty(prop)) {
           const {children, hasWP} = tree.children[prop];
-          if ((children || hasWP) && val != null && typeof val === 'object') {
-            // some nested properties have rules, return a guard for the branch
-            return mkGuard(val, tree.children?.[prop] || tree, final || children == null, applies, cache);
-          } else if (isData(val)) {
+          if (isData(val)) {
             // if this property has redact rules, apply them
             const rule = getRedactRule(tree.children[prop]);
             if (rule && rule.check(applies)) {
