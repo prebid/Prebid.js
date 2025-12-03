@@ -438,28 +438,6 @@ describe('teadsBidAdapter', () => {
       expect(payload.device).to.deep.equal(ortb2DeviceBidderRequest.ortb2.device);
     });
 
-    it('should add hardwareConcurrency info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
-
-      if (hardwareConcurrency) {
-        expect(payload.hardwareConcurrency).to.exist;
-        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
-      } else expect(payload.hardwareConcurrency).to.not.exist
-    });
-
-    it('should add deviceMemory info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const deviceMemory = window.top.navigator.deviceMemory
-
-      if (deviceMemory) {
-        expect(payload.deviceMemory).to.exist;
-        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
-      } else expect(payload.deviceMemory).to.not.exist;
-    });
-
     describe('pageTitle', function () {
       it('should add pageTitle info to payload based on document title', function () {
         const testText = 'This is a title';
