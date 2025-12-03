@@ -116,10 +116,6 @@ export const sharethroughAdapterSpec = {
       }
     }
 
-    if (bidderRequest.ortb2?.device?.ext?.cdep) {
-      req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
-    }
-
     // if present, merge device object from ortb2 into `req.device`
     if (bidderRequest?.ortb2?.device) {
       mergeDeep(req.device, bidderRequest.ortb2.device);
