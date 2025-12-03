@@ -1,6 +1,6 @@
 'use strict';
 
-import { getDNT } from '../libraries/navigatorData/dnt.js';
+import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -16,7 +16,7 @@ const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.4';
+const TAPPX_BIDDER_VERSION = '0.1.5';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -209,6 +209,7 @@ function interpretBid(serverBid, request) {
   if (typeof serverBid.lurl !== 'undefined') { bidReturned.lurl = serverBid.lurl }
   if (typeof serverBid.nurl !== 'undefined') { bidReturned.nurl = serverBid.nurl }
   if (typeof serverBid.burl !== 'undefined') { bidReturned.burl = serverBid.burl }
+  if (typeof serverBid.adomain !== 'undefined') { bidReturned.adomain = serverBid.adomain }
 
   if (typeof request.bids?.mediaTypes !== 'undefined' && typeof request.bids?.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
@@ -231,7 +232,7 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
-    bidReturned.meta = { advertiserDomains: request.bids?.adomain };
+    bidReturned.meta = { advertiserDomains: bidReturned.adomain };
   }
 
   return bidReturned;

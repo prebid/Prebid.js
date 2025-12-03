@@ -25,6 +25,9 @@ const ALIASES = {
   'addigi': {area: '1', pid: '425'},
   'jambojar': {area: '1', pid: '426'},
   'anzu': {area: '1', pid: '445'},
+  'amcom': {area: '1', pid: '397'},
+  'adastra': {area: '1', pid: '33'},
+  'radiantfusion': {area: '1', pid: '455'},
 };
 
 const BASE_URLS = {
@@ -40,6 +43,9 @@ const BASE_URLS = {
   'jambojar': 'https://jambojar-prebid.attekmi.co/pbjs',
   'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.co/pbjs',
   'anzu': 'https://anzu-prebid.attekmi.co/pbjs',
+  'amcom': 'https://amcom-prebid.attekmi.co/pbjs',
+  'adastra': 'https://adastra-prebid.attekmi.co/pbjs',
+  'radiantfusion': 'https://radiantfusion-prebid.attekmi.co/pbjs',
 };
 
 const adapterState = {};

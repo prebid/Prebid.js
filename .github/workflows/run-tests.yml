@@ -1,0 +1,237 @@
+name: Run unit tests
+on:
+  workflow_call:
+    inputs:
+      browser:
+        description: values to set as the BROWSER env variable
+        required: false
+        type: string
+      chunks:
+        description: Number of chunks to split tests into
+        required: false
+        type: number
+        default: 1
+      build-cmd:
+        description: Build command, run once
+        required: false
+        type: string
+      built-key:
+        description: Artifact name for built source
+        required: false
+        type: string
+      test-cmd:
+        description: Test command, run once per chunk
+        required: true
+        type: string
+      browserstack:
+        description: If true, set up browserstack environment and adjust concurrency
+        required: false
+        type: boolean
+        default: false
+      browserstack-sessions:
+        description: Number of browserstack sessions needed to run tests
+        required: false
+        type: number
+        default: 6
+      timeout:
+        description: Timeout on test run
+        required: false
+        type: number
+        default: 10
+      runs-on:
+        description: Runner image
+        required: false
+        default: ubuntu-latest
+        type: string
+      install-safari:
+        description: Install Safari
+        type: boolean
+        required: false
+        default: false
+      install-chrome:
+        description: Chrome version to install via @puppeteer/browsers
+        type: string
+        required: false
+      run-npm-install:
+        description: Run npm install before tests
+        type: boolean
+        required: false
+        default: false
+      install-deb:
+        description: URL to deb to install before tests
+        type: string
+        required: false
+    outputs:
+      coverage:
+        description: Artifact name for coverage results
+        value: ${{ jobs.collect-coverage.outputs.coverage }}
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+
+jobs:
+  checkout:
+    name: "Define chunks"
+    runs-on: ubuntu-latest
+    outputs:
+      chunks: ${{ steps.chunks.outputs.chunks }}
+      id: ${{ steps.chunks.outputs.id }}
+    steps:
+      - name: Define chunks
+        id: chunks
+        run: |
+          echo 'chunks=[ '$(seq --separator=, 1 1 ${{ inputs.chunks }})' ]' >> out;
+          echo 'id='"$(uuidgen)" >> out;
+          cat out >> "$GITHUB_OUTPUT";
+        
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: ${{ !inputs.built-key && inputs.build-cmd || '' }}
+      source-key: ${{ inputs.built-key || 'source' }}
+
+  run-tests:
+    needs: [checkout, build]
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
+      matrix:
+        chunk-no: ${{ fromJSON(needs.checkout.outputs.chunks) }}
+
+    name: Test${{ inputs.chunks > 1 && format(' chunk {0}', matrix.chunk-no) || '' }}
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      TEST_CHUNKS: ${{ inputs.chunks }}
+      TEST_CHUNK: ${{ matrix.chunk-no }}
+      BROWSER: ${{ inputs.browser }}
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+    concurrency:
+      # The following generates 'browserstack-<run_id>' when inputs.browserstack is true, and a hopefully unique ID otherwise
+      # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
+      # (cfr. https://github.com/orgs/community/discussions/12835)
+      # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
+      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.checkout.outputs.id, matrix.chunk-no) }}
+      cancel-in-progress: false
+
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.built-key }}
+
+      - name: Install safari
+        if: ${{ inputs.install-safari }}
+        run: |
+          brew install --cask safari-technology-preview
+          defaults write com.apple.Safari IncludeDevelopMenu YES
+          defaults write com.apple.Safari AllowRemoteAutomation 1
+          sudo safaridriver --enable
+          sudo "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver" --enable
+
+      - name: Install Chrome
+        if: ${{ inputs.install-chrome }}
+        shell: bash
+        run: |
+          out=($(npx @puppeteer/browsers install chrome@${{ inputs.install-chrome }}))
+          echo 'CHROME_BIN='"${out[1]}" >> env;
+          cat env
+          cat env >> "$GITHUB_ENV"
+
+      - name: Install deb
+        if: ${{ inputs.install-deb }}
+        uses: ./.github/actions/install-deb
+        with:
+          url: ${{ inputs.install-deb }}
+
+      - name: Run npm install
+        if: ${{ inputs.run-npm-install }}
+        run: |
+          npm install
+
+      - name: 'BrowserStack Env Setup'
+        if: ${{ inputs.browserstack }}
+        uses: 'browserstack/github-actions/setup-env@master'
+        with:
+          username:  ${{ secrets.BROWSERSTACK_USER_NAME}}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          build-name: Run ${{github.run_id}}, attempt ${{ github.run_attempt }}, chunk ${{ matrix.chunk-no }}, ref ${{ github.event_name == 'pull_request_target' && format('PR {0}', github.event.pull_request.number) || github.ref }}, ${{ inputs.test-cmd }}
+
+      - name: 'BrowserStackLocal Setup'
+        if: ${{ inputs.browserstack }}
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: start
+          local-identifier: random
+
+      - name: 'Wait for browserstack'
+        if: ${{ inputs.browserstack }}
+        uses: ./.github/actions/wait-for-browserstack
+        with:
+          sessions: ${{ inputs.browserstack-sessions }}
+
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: ${{ inputs.timeout }}
+          max_attempts: 3
+          command: ${{ inputs.test-cmd }}
+          shell: bash
+
+      - name: 'BrowserStackLocal Stop'
+        if: ${{ inputs.browserstack }}
+        uses: 'browserstack/github-actions/setup-local@master'
+        with:
+          local-testing: stop
+
+      - name: 'Check for coverage'
+        id: 'coverage'
+        shell: bash
+        run: |
+          if [ -d "./build/coverage" ]; then 
+            echo 'coverage=true' >> "$GITHUB_OUTPUT";
+          fi
+
+      - name: 'Save coverage result'
+        if: ${{ steps.coverage.outputs.coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
+          path: ./build/coverage
+          overwrite: true
+
+  collect-coverage:
+    if: ${{ needs.run-tests.outputs.coverage }}
+    needs: [build, run-tests]
+    name: 'Collect coverage results'
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: coverage-complete-${{ inputs.test-cmd }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Restore source
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.built-key }}
+
+      - name: Download coverage results
+        uses: actions/download-artifact@v6
+        with:
+          path: ./build/coverage
+          pattern: coverage-partial-${{ inputs.test-cmd }}-*
+          merge-multiple: true
+
+      - name: 'Save working directory'
+        uses: ./.github/actions/save
+        with:
+          name: coverage-complete-${{ inputs.test-cmd }}
+
