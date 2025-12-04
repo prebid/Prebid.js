@@ -6,7 +6,7 @@ import {
   logMessage,
   parseSizesInput,
   triggerPixel,
-  logError
+  deepSetValue
 } from '../src/utils.js';
 
 /**
@@ -324,7 +324,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
       }]
     }
 
-    videoRequest.site.ext.bidder = bid.params
+    deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
     videoRequest.id = bid.bidId
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
@@ -332,13 +332,11 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
 
     let floorInfo;
     if (typeof bid.getFloor === 'function') {
-      logError('INNER44.2 bid.getFloor: ');
       floorInfo = bid.getFloor({
         currency: currency,
         mediaType: "video",
         size: "*"
       });
-      logError('INNER44.3 bid.getFloor: ', floorInfo);
     }
     const bidfloor = floorInfo?.floor;
     const bidfloorcur = floorInfo?.currency;
