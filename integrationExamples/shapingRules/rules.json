@@ -181,15 +181,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "conditions": ["false"],
-              "results": [
-                {
-                  "function": "excludeModules",
-                  "args": [{ "modules": ["moduleA"] }]
-                }
-              ]
             }
           ]
         }
