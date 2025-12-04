@@ -64,7 +64,7 @@ import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
 import {fillAudioDefaults, ORTB_AUDIO_PARAMS} from './audio.ts';
 
 import {getGlobalVarName} from "./buildOptions.ts";
-import {yieldAll, yieldsIf} from "./utils/yield.ts";
+import {yieldAll} from "./utils/yield.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
