@@ -47,7 +47,8 @@ pbjs.setConfig({
         waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
         params: {
           bundleUrl: '<optional, your bundle url>',
-          adserverTargeting: '<optional, true by default, set to true to also set GAM targeting keywords to ad slots>',
+          adserverTargeting: true, // optional, true by default, set to true to also set GAM targeting keywords to ad slots
+          instance: window.optable.rtd.instance, // optional, defaults to window.optable.rtd.instance if not specified
         },
       },
     ],
@@ -91,14 +92,13 @@ To handle PPIDs and the above input - a custom `handleRtd` function may need to 
 
 ### Parameters
 
-| Name                     | Type     | Description                                                                                                                                                                                                                                                     | Default          | Notes    |
-|--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------|
-| name                     | String   | Real time data module name                                                                                                                                                                                                                                      | Always `optable` |          |
-| waitForIt                | Boolean  | Should be set `true` together with `auctionDelay: 1000`                                                                                                                                                                                                         | `false`          |          |
-| params                   | Object   |                                                                                                                                                                                                                                                                 |                  |          |
-| params.bundleUrl         | String   | Optable bundle URL                                                                                                                                                                                                                                              | `null`           | Optional |
-| params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`           | Optional |
-| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`           | Optional |
+| Name                     | Type     | Description                                                                                                                                                                                                                                                     | Default                    | Notes    |
+|--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|----------|
+| name                     | String   | Real time data module name                                                                                                                                                                                                                                      | Always `optable`           |          |
+| params                   | Object   |                                                                                                                                                                                                                                                                 |                            |          |
+| params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`                     | Optional |
+| params.instance          | Object   | Optable SDK instance to use for targeting data.                                                                                                                                                                                                                 | `window.optable.rtd.instance`  | Optional |
+| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`                     | Optional |
 
 ## Publisher Customized RTD Handler Function
 
