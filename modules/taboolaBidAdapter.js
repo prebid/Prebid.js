@@ -218,9 +218,13 @@ export const spec = {
     if (bid.nurl && !bid.deferBilling) {
       const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
       ajax(resolvedNurl);
+      bid.taboolaBillingFired = true;
     }
   },
   onBidBillable: (bid) => {
+    if (bid.taboolaBillingFired) {
+      return;
+    }
     const billingUrl = bid.burl || bid.nurl;
     if (billingUrl) {
       const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
