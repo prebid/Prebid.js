@@ -10,10 +10,11 @@ import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js'
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
 import { getStorageManager } from '../src/storageManager.js'
+import { getGlobal } from '../src/prebidGlobal.js'
 
 /** Prebid Event Handlers */
 
-const ADAPTER_CODE = 'automatadAnalytics'
+const ADAPTER_CODE = 'mileAnalytics'
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE})
 const trialCountMilsMapping = [1500, 3000, 5000, 10000];
 
@@ -71,6 +72,11 @@ const processEvents = () => {
             window.atmtdAnalytics.auctionInitHandler(args);
           } else {
             shouldTryAgain = true
+          }
+          break;
+        case EVENTS.AUCTION_END:
+          if (window.atmtdAnalytics && window.atmtdAnalytics.auctionEndHandler) {
+            window.atmtdAnalytics.auctionEndHandler(args);
           }
           break;
         case EVENTS.BID_REQUESTED:
@@ -216,6 +222,14 @@ const atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
+      case EVENTS.AUCTION_END:
+        if (window.atmtdAnalytics && window.atmtdAnalytics.auctionEndHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.auctionEndHandler(args);
+        } else {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args])
+        }
+        break;
       case EVENTS.BID_REQUESTED:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidRequestedHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidRequestedHandler(args);
@@ -302,10 +316,13 @@ atmtdAdapter.enableAnalytics = function (configuration) {
   self.initializeQueue()
   self.addGPTHandlers()
 
+  const pbjs = getGlobal();
+
   window.__atmtdSDKConfig = {
     publisherID: conf.publisherID,
     siteID: conf.siteID,
-    collectDebugMessages: conf.logDebug ? conf.logDebug : false
+    collectDebugMessages: conf.logDebug ? conf.logDebug : false,
+    version: pbjs.version
   }
 
   logMessage(`Automatad Analytics Adapter enabled with sdk config`, window.__atmtdSDKConfig)
