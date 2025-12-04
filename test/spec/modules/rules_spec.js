@@ -201,7 +201,7 @@ describe('Rules Module', function() {
 
   describe('evaluateSchema', function() {
     it('should evaluate percent condition', function() {
-      sandbox.stub(rulesModule.dep, 'getSessionRandom').returns(0.3);
+      sandbox.stub(rulesModule.dep, 'getGlobalRandom').returns(0.3);
       const func = rulesModule.evaluateSchema('percent', [50], {});
       const result = func();
       // 30 < 50, so should return true

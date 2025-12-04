@@ -12,14 +12,14 @@ import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
 const MODULE_NAME = 'shapingRulesModule';
 
-const SESSION_RANDOM = Math.random();
+const GLOBAL_RANDOM = Math.random();
 
 export const dep = {
-  getSessionRandom: getSessionRandom
+  getGlobalRandom: getGlobalRandom
 };
 
-function getSessionRandom() {
-  return SESSION_RANDOM;
+function getGlobalRandom() {
+  return GLOBAL_RANDOM;
 }
 
 let unregisterFunctions: Array<() => void> = [];
@@ -156,7 +156,7 @@ function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
 }
 
 const schemaEvaluators = {
-  percent: (args, context) => () => dep.getSessionRandom() * 100 < args[0],
+  percent: (args, context) => () => dep.getGlobalRandom() * 100 < args[0],
   adUnitCode: (args, context) => () => context.adUnit.code === args[0],
   adUnitCodeIn: (args, context) => () => args[0].includes(context.adUnit.code),
   deviceCountry: (args, context) => () => context.ortb2?.device?.geo?.country === args[0],
