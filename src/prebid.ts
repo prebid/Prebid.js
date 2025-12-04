@@ -650,9 +650,9 @@ type RenderAdOptions = {
  * @param  id adId of the bid to render
  * @param options
  */
-const renderAd = yieldsIf(() => getGlobal().yield === true || (getGlobal().yield as any)?.render, function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
+function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
   renderAdDirect(doc, id, options);
-})
+}
 addApiMethod('renderAd', renderAd);
 
 /**
@@ -1220,7 +1220,7 @@ function runCommand(cmd) {
 }
 function _processQueue(queue, cb?) {
   yieldAll(
-    () => getGlobal().yield === true || (getGlobal().yield as any)?.queue,
+    () => getGlobal().yield ?? true,
     queue.map(cmd => () => runCommand(cmd)), cb
   );
 }

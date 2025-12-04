@@ -35,17 +35,6 @@ describe('main thread yielding', () => {
           yield: sinon.stub().callsFake(() => Promise.resolve())
         };
       });
-      it('should use pbjs.scheduler.yield, when available', async () => {
-        getGlobal().yield = {
-          scheduler
-        };
-        try {
-          await runYield();
-          sinon.assert.called(scheduler.yield);
-        } finally {
-          delete getGlobal().yield;
-        }
-      });
       it('should use window.scheduler, when available', async () => {
         window.scheduler = scheduler;
         try {

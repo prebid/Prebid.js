@@ -201,15 +201,10 @@ window.apntag = {
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub, sandbox;
-  function getBidToRenderHook(next, ...args) {
-    // make sure we can handle async bidToRender
-    setTimeout(() => next(...args));
-  }
   before((done) => {
     hook.ready();
     pbjsModule.requestBids.getHooks().remove();
     resetDebugging();
-    getBidToRender.before(getBidToRenderHook, 100);
     // preload creative renderer
     getCreativeRenderer({}).then(() => done());
   });
@@ -231,7 +226,6 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
-    getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
   describe('processQueue', () => {
@@ -1238,6 +1232,7 @@ describe('Unit: Prebid Module', function () {
     }
 
     beforeEach(function () {
+      bidId++;
       doc = {
         write: sinon.spy(),
         close: sinon.spy(),
@@ -1296,16 +1291,43 @@ describe('Unit: Prebid Module', function () {
       })
     });
 
-    it('should write the ad to the doc', function () {
-      pushBidResponseToAuction({
-        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+    describe('when legacyRender is set', () => {
+      beforeEach(() => {
+        pbjs.setConfig({
+          auctionOptions: {
+            legacyRender: true
+          }
+        })
       });
-      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
-      return renderAd(doc, bidId).then(() => {
-        assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
-        assert.ok(doc.close.called, 'close method called');
-      })
-    });
+
+      afterEach(() => {
+        configObj.resetConfig()
+      });
+
+      it('should immediately write the ad to the doc', function () {
+        pushBidResponseToAuction({
+          ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+        });
+        pbjs.renderAd(doc, bidId);
+        sinon.assert.calledWith(doc.write, adResponse.ad);
+        sinon.assert.called(doc.close);
+      });
+    })
+
+    describe('when legacyRender is NOT set', () => {
+      it('should use an iframe, not document.write', function () {
+        const ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+        pushBidResponseToAuction({
+          ad
+        });
+        const iframe = {};
+        doc.createElement.returns(iframe);
+        return renderAd(doc, bidId).then(() => {
+          expect(iframe.srcdoc).to.eql(ad);
+          sinon.assert.notCalled(doc.write);
+        })
+      });
+    })
 
     it('should place the url inside an iframe on the doc', function () {
       pushBidResponseToAuction({
@@ -1349,7 +1371,7 @@ describe('Unit: Prebid Module', function () {
         mediatype: 'video'
       });
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.notCalled(doc.write);
+        sinon.assert.notCalled(doc.createElement);
       });
     });
 
@@ -1359,7 +1381,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       var error = { message: 'doc write error' };
-      doc.write = sinon.stub().throws(error);
+      doc.createElement.throws(error);
 
       return renderAd(doc, bidId).then(() => {
         var errorMessage = `Error rendering ad (id: ${bidId}): doc write error`
@@ -1380,7 +1402,8 @@ describe('Unit: Prebid Module', function () {
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
       return renderAd(doc, bidId).then(() => {
-        assert.deepEqual(pbjs.getAllWinningBids()[0], adResponse);
+        const winningBid = pbjs.getAllWinningBids().find(el => el.adId === adResponse.adId);
+        expect(winningBid).to.eql(adResponse);
       });
     });
 
@@ -1439,13 +1462,13 @@ describe('Unit: Prebid Module', function () {
         spyAddWinningBid.resetHistory();
         onWonEvent.resetHistory();
         onStaleEvent.resetHistory();
-        doc.write.resetHistory();
+        doc.createElement.resetHistory();
         return renderAd(doc, bidId);
       }).then(() => {
         // Second render should have a warning but still be rendered
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.calledWith(onStaleEvent, adResponse);
-        sinon.assert.called(doc.write);
+        sinon.assert.called(doc.createElement);
 
         // Clean up
         pbjs.offEvent(EVENTS.BID_WON, onWonEvent);

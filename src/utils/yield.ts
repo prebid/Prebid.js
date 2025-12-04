@@ -1,23 +1,16 @@
-import {getGlobal} from "../prebidGlobal.ts";
 import {PbPromise} from "./promise.ts";
 
 declare module '../prebidGlobal' {
   interface PrebidJS {
     /**
-     * Configure yielding of the main thread.
+     * Enable yielding of the main thread.
      */
-    yield?: boolean | {
-      queue?: boolean;
-      render?: boolean;
-      scheduler?: {
-        yield: () => Promise<void>;
-      }
-    }
+    yield?: boolean;
   }
 }
 
 function doYield() {
-  const scheduler = (getGlobal().yield as any)?.scheduler ?? (window as any).scheduler;
+  const scheduler = (window as any).scheduler;
   return typeof scheduler?.yield === 'function' ? scheduler.yield() : PbPromise.resolve()
 }
 
