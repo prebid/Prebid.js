@@ -1,10 +1,10 @@
 // jshint esversion: 6, es3: false, node: true
- 
+
 import { assert } from 'chai';
 import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 
 describe('Adf adapter', function () {
   let bids = [];
@@ -22,7 +22,7 @@ describe('Adf adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'adformOpenRTB',
       'params': {
         'mid': '19910113'
@@ -67,13 +67,13 @@ describe('Adf adapter', function () {
       config.resetConfig();
     });
     it('should send request with correct structure', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {
           adxDomain: '10.8.57.207'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
@@ -83,8 +83,8 @@ describe('Adf adapter', function () {
 
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-        let ortb2 = {
+        const validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        const ortb2 = {
           regs: {
             ext: {
               gdpr: 1
@@ -96,16 +96,16 @@ describe('Adf adapter', function () {
             }
           }
         };
-        let bidderRequest = { ortb2, refererInfo: { page: 'page' } };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+        const bidderRequest = { ortb2, refererInfo: { page: 'page' } };
+        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user.ext.consent, 'consentDataString');
         assert.equal(request.regs.ext.gdpr, 1);
       });
 
       it('should send CCPA Consent data to adform', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-        let ortb2 = {
+        const validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+        const ortb2 = {
           regs: {
             ext: {
               us_privacy: '1YA-'
@@ -129,9 +129,9 @@ describe('Adf adapter', function () {
       });
 
       it('should transfer DSA info', function () {
-        let validBidRequests = [ { bidId: 'bidId', params: { siteId: 'siteId' } } ];
+        const validBidRequests = [ { bidId: 'bidId', params: { siteId: 'siteId' } } ];
 
-        let request = JSON.parse(
+        const request = JSON.parse(
           spec.buildRequests(validBidRequests, {
             refererInfo: { page: 'page' },
             ortb2: {
@@ -173,34 +173,34 @@ describe('Adf adapter', function () {
     });
 
     it('should add test and is_debug to request, if test is set in parameters', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: { test: 1 }
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
       assert.ok(request.is_debug);
       assert.equal(request.test, 1);
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,user,device,source,ext,imp,regs'.split(',');
-      let validBidRequests = [{
+      const keys = 'site,user,device,source,ext,imp,regs'.split(',');
+      const validBidRequests = [{
         bidId: 'bidId',
         params: { siteId: 'siteId' }
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-      let data = Object.keys(request);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+      const data = Object.keys(request);
 
       assert.deepEqual(keys, data);
     });
 
     it('should set request keys correct values', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: { siteId: 'siteId' },
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {
+      const request = JSON.parse(spec.buildRequests(validBidRequests, {
         refererInfo: {page: 'page'},
         ortb2: {source: {tid: 'tid'}}
       }).data);
@@ -210,56 +210,35 @@ describe('Adf adapter', function () {
     });
 
     it('should send coppa flag', function () {
-      let ortb2 = { regs: { coppa: 1 } };
-      let validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { ortb2, refererInfo: { page: 'page' } }).data);
+      const ortb2 = { regs: { coppa: 1 } };
+      const validBidRequests = [{ bidId: 'bidId', params: { test: 1 } }];
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { ortb2, refererInfo: { page: 'page' } }).data);
 
       assert.equal(request.regs.coppa, 1);
     });
 
     it('should send info about device', function () {
-      config.setConfig({
-        device: { w: 100, h: 100 }
-      });
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: { mid: '1000' }
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-
-      assert.equal(request.device.ua, navigator.userAgent);
-      assert.equal(request.device.w, 100);
-      assert.equal(request.device.h, 100);
-    });
-
-    it('should merge ortb2.device info', function () {
-      config.setConfig({
-        device: { w: 100, h: 100 }
-      });
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: { mid: '1000' }
-      }];
-      let ortb2 = { device: { ua: 'customUA', w: 200, geo: { lat: 1, lon: 1 } } };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { ortb2, refererInfo: { page: 'page' } }).data);
+      const ortb2 = { device: { ua: 'customUA', h: 100, w: 100, geo: { lat: 1, lon: 1 } } };
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { ortb2, refererInfo: { page: 'page' } }).data);
 
       assert.equal(request.device.ua, 'customUA');
-      assert.equal(request.device.w, 200);
+      assert.equal(request.device.w, 100);
       assert.equal(request.device.h, 100);
       assert.deepEqual(request.device.geo, { lat: 1, lon: 1 });
     });
 
     it('should send app info', function () {
-      config.setConfig({
-        app: { id: 'appid' },
-      });
-      const ortb2 = { app: { name: 'appname' } };
-      let validBidRequests = [{
+      const ortb2 = { app: { id: 'appid', name: 'appname' } };
+      const validBidRequests = [{
         bidId: 'bidId',
         params: { mid: '1000' },
         ortb2
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data);
 
       assert.equal(request.app.id, 'appid');
       assert.equal(request.app.name, 'appname');
@@ -267,41 +246,35 @@ describe('Adf adapter', function () {
     });
 
     it('should send info about the site', function () {
-      config.setConfig({
+      const ortb2 = {
         site: {
           id: '123123',
           publisher: {
-            domain: 'publisher.domain.com'
-          }
-        },
-      });
-      const ortb2 = {
-        site: {
-          publisher: {
+            domain: 'publisher.domain.com',
             name: 'publisher\'s name'
           }
         }
       };
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: { mid: '1000' },
         ortb2
       }];
-      let refererInfo = { page: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
+      const refererInfo = { page: 'page' };
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
+        id: '123123',
         page: refererInfo.page,
         publisher: {
           domain: 'publisher.domain.com',
           name: 'publisher\'s name'
-        },
-        id: '123123'
+        }
       });
     });
 
     it('should pass extended ids', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {},
         userIdAsEids: [
@@ -310,35 +283,41 @@ describe('Adf adapter', function () {
         ]
       }];
 
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
       assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
     });
 
     it('should send currency if defined', function () {
-      let validBidRequests = [{ params: {} }];
-      let refererInfo = { page: 'page' };
+      const validBidRequests = [{ params: {} }];
+      const refererInfo = { page: 'page' };
       const bidderRequest = { refererInfo };
       setCurrencyConfig({ adServerCurrency: 'EUR' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        let request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        const request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
         assert.deepEqual(request.cur, [ 'EUR' ]);
         setCurrencyConfig({});
       });
     });
 
     it('should pass supply chain object', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {},
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       }];
 
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
       assert.deepEqual(request.source.ext.schain, {
         validation: 'strict',
         config: {
@@ -349,20 +328,20 @@ describe('Adf adapter', function () {
 
     describe('priceType', function () {
       it('should send default priceType', function () {
-        let validBidRequests = [{
+        const validBidRequests = [{
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+        const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.ext.pt, 'net');
       });
       it('should send correct priceType value', function () {
-        let validBidRequests = [{
+        const validBidRequests = [{
           bidId: 'bidId',
           params: { priceType: 'net' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+        const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.ext.pt, 'net');
       });
@@ -370,19 +349,19 @@ describe('Adf adapter', function () {
 
     describe('bids', function () {
       it('should add more than one bid to the request', function () {
-        let validBidRequests = [{
+        const validBidRequests = [{
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }, {
           bidId: 'bidId2',
           params: { siteId: 'siteId' }
         }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
+        const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
 
         assert.equal(request.imp.length, 2);
       });
       it('should add incrementing values of id', function () {
-        let validBidRequests = [{
+        const validBidRequests = [{
           bidId: 'bidId',
           params: { mid: '1000' },
           mediaTypes: {video: {}}
@@ -395,7 +374,7 @@ describe('Adf adapter', function () {
           params: { mid: '1000' },
           mediaTypes: {video: {}}
         }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+        const imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].id, i + 1);
@@ -403,24 +382,29 @@ describe('Adf adapter', function () {
       });
 
       it('should add mid', function () {
-        let validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
+        const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
           { bidId: 'bidId2', params: {mid: 1001}, mediaTypes: {video: {}} },
           { bidId: 'bidId3', params: {mid: 1002}, mediaTypes: {video: {}} }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+        const imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
         }
       });
 
-      it('should add first party data', function () {
-        let validBidRequests = [
-          { bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { data: { some: 'value' } } } },
-          { bidId: 'bidId2', params: { mid: 1001 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { data: { some: 'value', another: 1 } } } },
+      it('should add imp.ext properties', function () {
+        const validBidRequests = [
+          { bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { some: 'value' } } },
+          { bidId: 'bidId2', params: { mid: 1001 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { some: 'value', another: 1 } } },
           { bidId: 'bidId3', params: { mid: 1002 }, mediaTypes: { video: {} }, ortb2Imp: { ext: {} } }
         ];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+        const expectedExtensions = [
+          { some: 'value', bidder: {} },
+          { some: 'value', another: 1, bidder: {} },
+          { bidder: {} },
+        ]
+        const imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
-          assert.deepEqual(imps[i].ext.data, validBidRequests[i].ortb2Imp.ext.data);
+          assert.deepEqual(imps[i].ext, expectedExtensions[i]);
         }
       });
 
@@ -451,7 +435,7 @@ describe('Adf adapter', function () {
       describe('price floors', function () {
         it('should not add if floors module not configured', function () {
           const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
-          let imp = getRequestImps(validBidRequests)[0];
+          const imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, undefined);
@@ -459,7 +443,7 @@ describe('Adf adapter', function () {
 
         it('should not add if floor price not defined', function () {
           const validBidRequests = [ getBidWithFloor() ];
-          let imp = getRequestImps(validBidRequests)[0];
+          const imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
           assert.equal(imp.bidfloorcur, 'USD');
@@ -479,7 +463,7 @@ describe('Adf adapter', function () {
         it('should add correct floor values', function () {
           const expectedFloors = [ 1, 1.3, 0.5 ];
           const validBidRequests = expectedFloors.map(getBidWithFloor);
-          let imps = getRequestImps(validBidRequests);
+          const imps = getRequestImps(validBidRequests);
 
           expectedFloors.forEach((floor, index) => {
             assert.equal(imps[index].bidfloor, floor);
@@ -494,7 +478,7 @@ describe('Adf adapter', function () {
           } };
           const expectedFloors = [ 1, 1.3, 0.5 ];
           setCurrencyConfig({ adServerCurrency: 'DKK' });
-          let validBidRequests = expectedFloors.map(getBidWithFloorTest);
+          const validBidRequests = expectedFloors.map(getBidWithFloorTest);
           return addFPDToBidderRequest(validBidRequests[0]).then(res => {
             getRequestImps(validBidRequests, res);
             assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' })
@@ -548,7 +532,7 @@ describe('Adf adapter', function () {
 
       describe('multiple media types', function () {
         it('should use all configured media types for bidding', function () {
-          let validBidRequests = [{
+          const validBidRequests = [{
             bidId: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
@@ -589,7 +573,7 @@ describe('Adf adapter', function () {
               video: {}
             }
           }];
-          let [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+          const [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
           assert.ok(first.banner);
           assert.ok(first.video);
@@ -607,7 +591,7 @@ describe('Adf adapter', function () {
 
       describe('banner', function () {
         it('should convert sizes to openrtb format', function () {
-          let validBidRequests = [{
+          const validBidRequests = [{
             bidId: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
@@ -616,7 +600,7 @@ describe('Adf adapter', function () {
               }
             }
           }];
-          let { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
+          const { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
           assert.deepEqual(banner, {
             format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
           });
@@ -625,7 +609,7 @@ describe('Adf adapter', function () {
 
       describe('video', function () {
         it('should pass video mediatype config', function () {
-          let validBidRequests = [{
+          const validBidRequests = [{
             bidId: 'bidId',
             params: { mid: 1000 },
             mediaTypes: {
@@ -636,7 +620,7 @@ describe('Adf adapter', function () {
               }
             }
           }];
-          let { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
+          const { video } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
           assert.deepEqual(video, {
             playerSize: [640, 480],
             context: 'outstream',
@@ -648,7 +632,7 @@ describe('Adf adapter', function () {
       describe('native', function () {
         describe('assets', function () {
           it('should use nativeOrtbRequest instead of nativeParams or mediaTypes', function () {
-            let validBidRequests = [{
+            const validBidRequests = [{
               bidId: 'bidId',
               params: { mid: 1000 },
               nativeParams: {
@@ -687,7 +671,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+            const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
             assert.ok(assets[0].title);
             assert.equal(assets[0].title.len, 200);
             assert.deepEqual(assets[1].img, { type: 3, w: 170, h: 70 });
@@ -699,7 +683,7 @@ describe('Adf adapter', function () {
           });
 
           it('should set correct asset id', function () {
-            let validBidRequests = [{
+            const validBidRequests = [{
               bidId: 'bidId',
               params: { mid: 1000 },
               nativeParams: {
@@ -739,7 +723,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+            const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
 
             assert.equal(assets[0].id, 0);
             assert.equal(assets[1].id, 1);
@@ -747,7 +731,7 @@ describe('Adf adapter', function () {
           });
 
           it('should add required key if it is necessary', function () {
-            let validBidRequests = [{
+            const validBidRequests = [{
               bidId: 'bidId',
               params: { mid: 1000 },
               nativeParams: {
@@ -765,7 +749,7 @@ describe('Adf adapter', function () {
                 ]
               }
             }];
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+            const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
 
             assert.equal(assets[0].required, 1);
             assert.ok(!assets[1].required);
@@ -774,7 +758,7 @@ describe('Adf adapter', function () {
           });
 
           it('should map img and data assets', function () {
-            let validBidRequests = [{
+            const validBidRequests = [{
               bidId: 'bidId',
               params: { mid: 1000 },
               nativeParams: {
@@ -797,7 +781,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+            const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
             assert.ok(assets[0].title);
             assert.equal(assets[0].title.len, 140);
             assert.deepEqual(assets[1].img, { type: 3, w: 150, h: 50 });
@@ -836,7 +820,7 @@ describe('Adf adapter', function () {
               }
             }];
 
-            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+            const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
             assert.ok(assets[0].img);
             assert.equal(assets[0].img.wmin, 100);
             assert.equal(assets[0].img.hmin, 300);
@@ -891,7 +875,7 @@ describe('Adf adapter', function () {
             }
           }];
 
-          let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+          const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
           assert.ok(assets[0].img);
           assert.ok(!assets[0].img.wmin);
           assert.ok(!assets[0].img.hmin);
@@ -907,13 +891,13 @@ describe('Adf adapter', function () {
 
   describe('interpretResponse', function () {
     it('should return if no body in response', function () {
-      let serverResponse = {};
-      let bidRequest = {};
+      const serverResponse = {};
+      const bidRequest = {};
 
       assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
     });
     it('should return more than one bids', function () {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           seatbid: [{
             bid: [{impid: '1', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 0, title: {text: 'Asset title text'}}]}}]
@@ -922,7 +906,7 @@ describe('Adf adapter', function () {
           }]
         }
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [
           {
@@ -955,7 +939,7 @@ describe('Adf adapter', function () {
     });
 
     it('should parse seatbids', function () {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           seatbid: [{
             bid: [
@@ -967,7 +951,7 @@ describe('Adf adapter', function () {
           }]
         }
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [
           {
@@ -1027,7 +1011,7 @@ describe('Adf adapter', function () {
     });
 
     it('should set correct values to bid', function () {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           id: null,
           bidid: null,
@@ -1065,7 +1049,7 @@ describe('Adf adapter', function () {
           cur: 'NOK'
         }
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [
           {
@@ -1187,7 +1171,7 @@ describe('Adf adapter', function () {
           cur: 'NOK'
         }
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [{
           bidId: 'bidId1',
@@ -1259,7 +1243,7 @@ describe('Adf adapter', function () {
           cur: 'NOK'
         }
       };
-      let bidRequest = {
+      const bidRequest = {
         data: {},
         bids: [{ bidId: 'bidId1' }]
       };
@@ -1269,14 +1253,14 @@ describe('Adf adapter', function () {
 
     describe('banner', function () {
       it('should set ad content on response', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             seatbid: [{
               bid: [{ impid: '1', adm: '<banner>', ext: { prebid: { type: 'banner' } } }]
             }]
           }
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {
@@ -1296,14 +1280,14 @@ describe('Adf adapter', function () {
 
     describe('video', function () {
       it('should set vastXml on response', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             seatbid: [{
               bid: [{ impid: '1', adm: '<vast>', ext: { prebid: { type: 'video' } } }]
             }]
           }
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {
@@ -1321,15 +1305,15 @@ describe('Adf adapter', function () {
       });
 
       it('should set vastUrl if nurl is present in response', function () {
-        let vastUrl = 'http://url.to/vast'
-        let serverResponse = {
+        const vastUrl = 'http://url.to/vast'
+        const serverResponse = {
           body: {
             seatbid: [{
               bid: [{ impid: '1', adm: '<vast>', nurl: vastUrl, ext: { prebid: { type: 'video' } } }]
             }]
           }
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {
@@ -1347,14 +1331,14 @@ describe('Adf adapter', function () {
       });
 
       it('should add renderer for outstream bids', function () {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             seatbid: [{
               bid: [{ impid: '1', adm: '<vast>', ext: { prebid: { type: 'video' } } }, { impid: '2', adm: '<vast>', ext: { prebid: { type: 'video' } } }]
             }]
           }
         };
-        let bidRequest = {
+        const bidRequest = {
           data: {},
           bids: [
             {

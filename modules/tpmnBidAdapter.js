@@ -1,4 +1,3 @@
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -66,11 +65,11 @@ function isValidVideoRequest(bid) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  let requests = [];
+  const requests = [];
   try {
     if (validBidRequests.length === 0 || !bidderRequest) return [];
-    let bannerBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.banner'));
-    let videoBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.video'));
+    const bannerBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.banner'));
+    const videoBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.video'));
 
     bannerBids.forEach(bid => {
       requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -129,7 +128,7 @@ const CONVERTER = ortbConverter({
     currency: DEFAULT_CURRENCY
   },
   imp(buildImp, bidRequest, context) {
-    let imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context);
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
     }

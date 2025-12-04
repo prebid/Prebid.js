@@ -15,8 +15,9 @@ const {logMessage, logWarn, logError} = optableLog;
  */
 export const parseConfig = (moduleConfig) => {
   let bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
-  let adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
-  let handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
+  const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
+  const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
+  const instance = deepAccess(moduleConfig, 'params.instance', null);
 
   // If present, trim the bundle URL
   if (typeof bundleUrl === 'string') {
@@ -25,17 +26,50 @@ export const parseConfig = (moduleConfig) => {
 
   // Verify that bundleUrl is a valid URL: only secure (HTTPS) URLs are allowed
   if (typeof bundleUrl === 'string' && bundleUrl.length && !bundleUrl.startsWith('https://')) {
-    throw new Error(
-      LOG_PREFIX + ' Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.'
-    );
+    logError('Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.');
+    return {bundleUrl: null, adserverTargeting, handleRtd: null};
   }
 
   if (handleRtd && typeof handleRtd !== 'function') {
-    throw new Error(LOG_PREFIX + ' handleRtd must be a function');
+    logError('handleRtd must be a function');
+    return {bundleUrl, adserverTargeting, handleRtd: null};
   }
 
-  return {bundleUrl, adserverTargeting, handleRtd};
+  const result = {bundleUrl, adserverTargeting, handleRtd};
+  if (instance !== null) {
+    result.instance = instance;
+  }
+  return result;
 }
+
+/**
+ * Wait for Optable SDK event to fire with targeting data
+ * @param {string} eventName Name of the event to listen for
+ * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
+ */
+const waitForOptableEvent = (eventName) => {
+  return new Promise((resolve) => {
+    const optableBundle = /** @type {Object} */ (window.optable);
+    const cachedData = optableBundle?.instance?.targetingFromCache();
+
+    if (cachedData && cachedData.ortb2) {
+      logMessage('Optable SDK already has cached data');
+      resolve(cachedData);
+      return;
+    }
+
+    const eventListener = (event) => {
+      logMessage(`Received ${eventName} event`);
+      // Extract targeting data from event detail
+      const targetingData = event.detail;
+      window.removeEventListener(eventName, eventListener);
+      resolve(targetingData);
+    };
+
+    window.addEventListener(eventName, eventListener);
+    logMessage(`Waiting for ${eventName} event`);
+  });
+};
 
 /**
  * Default function to handle/enrich RTD data
@@ -45,15 +79,8 @@ export const parseConfig = (moduleConfig) => {
  * @returns {Promise<void>}
  */
 export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
-  const optableBundle = /** @type {Object} */ (window.optable);
-  // Get targeting data from cache, if available
-  let targetingData = optableBundle?.instance?.targetingFromCache();
-  // If no targeting data is found in the cache, call the targeting function
-  if (!targetingData) {
-    // Call Optable DCN for targeting data and return the ORTB2 object
-    targetingData = await optableBundle?.instance?.targeting();
-  }
-  logMessage('Original targeting data from targeting(): ', targetingData);
+  // Wait for the Optable SDK to dispatch targeting data via event
+  let targetingData = await waitForOptableEvent('optable-targeting:change');
 
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
@@ -92,7 +119,6 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
   try {
     // Extract the bundle URL from the module configuration
     const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
-
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
@@ -135,8 +161,8 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
  * @returns {Object} Targeting data
  */
 export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) => {
-  // Extract `adserverTargeting` from the module configuration
-  const {adserverTargeting} = parseConfig(moduleConfig);
+  // Extract `adserverTargeting` and `instance` from the module configuration
+  const {adserverTargeting, instance} = parseConfig(moduleConfig);
   logMessage('Ad Server targeting: ', adserverTargeting);
 
   if (!adserverTargeting) {
@@ -145,9 +171,17 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
   }
 
   const targetingData = {};
+  // Resolve the SDK instance object based on the instance string
+  // Default to 'instance' if not provided
+  const instanceKey = instance || 'instance';
+  const sdkInstance = window?.optable?.[instanceKey];
+  if (!sdkInstance) {
+    logWarn(`No Optable SDK instance found for: ${instanceKey}`);
+    return targetingData;
+  }
 
   // Get the Optable targeting data from the cache
-  const optableTargetingData = window?.optable?.instance?.targetingKeyValuesFromCache() || {};
+  const optableTargetingData = sdkInstance?.targetingKeyValuesFromCache?.() || targetingData;
 
   // If no Optable targeting data is found, return an empty object
   if (!Object.keys(optableTargetingData).length) {

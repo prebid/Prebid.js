@@ -9,7 +9,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'retailspot';
-const GVL_ID = 1319;
 
 const DEFAULT_SUBDOMAIN = 'hbapi';
 const PREPROD_SUBDOMAIN = 'hbapi-preprod';
@@ -19,7 +18,6 @@ const DEV_URL = 'http://localhost:3030/';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['rs'], // short code
   /**
@@ -151,7 +149,7 @@ function createBid(response, bidRequests) {
   }
 
   const request = bidRequests && bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId);
-  // In case we don't retreive the size from the adserver, use the given one.
+  // In case we don't retrieve the size from the adserver, use the given one.
   if (request) {
     if (!response.width || response.width === '0') {
       response.width = request.width;
@@ -176,7 +174,7 @@ function createBid(response, bidRequests) {
     mediaType: response.mediaType
   };
 
-  // retreive video response if present
+  // retrieve video response if present
   if (response.mediaType === 'video') {
     bid.vastXml = window.atob(response.vastXml);
   } else {

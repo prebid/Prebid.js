@@ -1,7 +1,7 @@
 import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 import * as browsiUtils from '../../../libraries/browsiUtils/browsiUtils.js';
-import * as utils from '../../../src/utils'
-import * as events from '../../../src/events';
+import * as utils from '../../../src/utils.js'
+import * as events from '../../../src/events.js';
 import * as sinon from 'sinon';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as Global from '../../../src/prebidGlobal.js';
@@ -38,7 +38,7 @@ describe('browsi Real time data sub module', function () {
   let timestampStub;
 
   before(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     eventsEmitSpy = sandbox.spy(events, ['emit']);
     timestampStub = sandbox.stub(utils, 'timestamp');
     sandbox.stub(Global, 'getGlobal').callsFake(() => {

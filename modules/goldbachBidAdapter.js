@@ -221,11 +221,11 @@ export const spec = {
     const syncs = []
     const uid = ensureUid(gdprConsent);
     if (hasPurpose1Consent(gdprConsent)) {
-      let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
+      const type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
       if (type) {
         syncs.push({
           type: type,
-          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?uid=${uid}&xandrId=$UID`
+          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?uid=${uid}&xandrId=$UID&gdpr_consent=${gdprConsent.consentString}&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`,
         })
       }
     }

@@ -83,9 +83,8 @@ function userIdSystemBlockRule(bannedModules, init) {
   }
 };
 
-export function getCalculatedSubmodules() {
-  const {modules = []} = moduleConfig;
-  return modules
+export function getCalculatedSubmodules(modules = moduleConfig.modules) {
+  return (modules || [])
     .map(({name, percentage}) => {
       const enabled = Math.random() < percentage;
       return {name, percentage, enabled}

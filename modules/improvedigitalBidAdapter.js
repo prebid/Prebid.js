@@ -63,8 +63,8 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param bidderRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {{ortbRequest:Object}} bidderRequest
+   * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse(serverResponse, { ortbRequest }) {
     return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
@@ -280,12 +280,15 @@ const ID_REQUEST = {
         url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(ortbRequest),
         ortbRequest,
-        bidderRequest
+        bidderRequest,
+        options: {
+          endpointCompression: true,
+        },
       }
     }
 
     let publisherId = null;
-    bidRequests.map((bidRequest) => {
+    bidRequests.forEach((bidRequest) => {
       const bidParamsPublisherId = bidRequest.params.publisherId;
       const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
       if (singleRequestMode) {

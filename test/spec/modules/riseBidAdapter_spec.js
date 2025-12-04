@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
-import {decorateAdUnitsWithNativeParams} from '../../../src/native';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-multi-test';
@@ -395,12 +395,17 @@ describe('riseAdapter', function () {
     });
 
     it('should have schain param if it is available in the bidRequest', () => {
-      const schain = {
-        ver: '1.0',
-        complete: 1,
-        nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+      bidderRequest.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+            }
+          }
+        }
       };
-      bidRequests[0].schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
@@ -536,6 +541,29 @@ describe('riseAdapter', function () {
         };
         const request = spec.buildRequests([bid], bidderRequest);
         expect(request.data.bids[0].coppa).to.be.equal(1);
+      });
+    });
+
+    describe('User Eids', function() {
+      it('should get the Eids from the userIdAsEids object and set them in the request', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        const userIds = [
+          {
+            sourcer: 'pubcid.org',
+            uids: [{
+              id: '12345678',
+              atype: 1,
+            }]
+          }];
+        bid.userIdAsEids = userIds;
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.params.userIds).to.be.equal(JSON.stringify(userIds));
+      });
+
+      it('should not set the userIds request param if no userIdAsEids are set', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.params.userIds).to.be.undefined;
       });
     });
   });

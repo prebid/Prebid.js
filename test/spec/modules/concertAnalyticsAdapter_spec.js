@@ -2,32 +2,26 @@ import concertAnalytics from 'modules/concertAnalyticsAdapter.js';
 import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
+import { server } from 'test/mocks/xhr.js';
 
-const sinon = require('sinon');
-let adapterManager = require('src/adapterManager').default;
-let events = require('src/events');
+import sinon from 'sinon';
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
 
 describe('ConcertAnalyticsAdapter', function() {
   let sandbox;
-  let xhr;
-  let requests;
   let clock;
-  let timestamp = 1896134400;
-  let auctionId = '9f894496-10fe-4652-863d-623462bf82b8';
-  let timeout = 1000;
+  const timestamp = 1896134400;
+  const auctionId = '9f894496-10fe-4652-863d-623462bf82b8';
+  const timeout = 1000;
 
   before(function () {
     sandbox = sinon.createSandbox();
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-
-    xhr.onCreate = function (request) {
-      requests.push(request);
-    };
     clock = sandbox.useFakeTimers(1896134400);
   });
 
   after(function () {
+    clock.restore();
     sandbox.restore();
   });
 
@@ -56,11 +50,11 @@ describe('ConcertAnalyticsAdapter', function() {
       clock.tick(3000 + 1000);
 
       const eventsToReport = ['bidResponse', 'bidWon'];
-      for (var i = 0; i < concertAnalytics.eventsStorage.length; i++) {
+      for (let i = 0; i < concertAnalytics.eventsStorage.length; i++) {
         expect(eventsToReport.indexOf(concertAnalytics.eventsStorage[i].event)).to.be.above(-1);
       }
 
-      for (var i = 0; i < eventsToReport.length; i++) {
+      for (let i = 0; i < eventsToReport.length; i++) {
         expect(concertAnalytics.eventsStorage.some(function(event) {
           return event.event === eventsToReport[i]
         })).to.equal(true);

@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { testPageURL, setupTest } = require('../../../helpers/testing-utils');
+const { testPageURL, setupTest } = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('currency.html?pbjs_debug=true');
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';

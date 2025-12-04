@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/h12mediaBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import {clearCache} from '../../../libraries/boundingClientRect/boundingClientRect';
+import {clearCache} from '../../../libraries/boundingClientRect/boundingClientRect.js';
 
 describe('H12 Media Adapter', function () {
   const DEFAULT_CURRENCY = 'USD';
@@ -153,7 +153,7 @@ describe('H12 Media Adapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(frameElement, 'getBoundingClientRect').returns({
       left: 10,
       top: 10,
@@ -169,7 +169,8 @@ describe('H12 Media Adapter', function () {
   });
 
   after(function() {
-    sandbox.reset();
+    sandbox.resetHistory();
+    sandbox.resetBehavior();
   })
 
   describe('inherited functions', function () {
