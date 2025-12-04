@@ -495,22 +495,27 @@ describe('Rules Module', function() {
     it('should evaluate bidPrice condition', function() {
       const context1 = {
         bid: {
-          cpm: 5.50
+          cpm: 5.50,
+          currency: 'USD'
         }
       };
-      const func1 = rulesModule.evaluateSchema('bidPrice', [5.0], context1);
+      const func1 = rulesModule.evaluateSchema('bidPrice', ['gt', 'USD', 5.0], context1);
       expect(func1()).to.be.true;
 
-      const func2 = rulesModule.evaluateSchema('bidPrice', [6.0], context1);
+      const func2 = rulesModule.evaluateSchema('bidPrice', ['gt', 'USD', 6.0], context1);
       expect(func2()).to.be.false;
+
+      const func3 = rulesModule.evaluateSchema('bidPrice', ['lte', 'USD', 6.0], context1);
+      expect(func3()).to.be.true;
 
       const context3 = {
         bid: {
-          cpm: 0
+          cpm: 0,
+          currency: 'USD'
         }
       };
-      const func3 = rulesModule.evaluateSchema('bidPrice', [1.0], context3);
-      expect(func3()).to.be.false;
+      const func4 = rulesModule.evaluateSchema('bidPrice', ['gt', 'USD', 1.0], context3);
+      expect(func4()).to.be.false;
     });
 
     it('should return null function for unknown schema function', function() {

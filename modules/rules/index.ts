@@ -198,8 +198,21 @@ const schemaEvaluators = {
     return args[0].includes(deviceType);
   },
   bidPrice: (args, context) => () => {
-    const bidPrice = context.bid?.cpm || 0;
-    return bidPrice >= args[0];
+    const [operator, currency, value] = args || [];
+    const {cpm: bidPrice, currency: bidCurrency} = context.bid || {};
+    if (bidCurrency !== currency) {
+      return false;
+    }
+    if (operator === 'gt') {
+      return bidPrice > value;
+    } else if (operator === 'gte') {
+      return bidPrice >= value;
+    } else if (operator === 'lt') {
+      return bidPrice < value;
+    } else if (operator === 'lte') {
+      return bidPrice <= value;
+    }
+    return false;
   }
 };
 
