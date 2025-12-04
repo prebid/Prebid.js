@@ -1713,7 +1713,7 @@
       "componentType": "bidder",
       "componentName": "clickio",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1500,
       "disclosureURL": null
     },
     {
@@ -4273,6 +4273,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "radiantfusion",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "smartico",
       "aliasOf": null,
       "gvlid": null,
@@ -5290,8 +5297,8 @@
     {
       "componentType": "rtd",
       "componentName": "permutive",
-      "gvlid": 361,
-      "disclosureURL": null
+      "gvlid": null,
+      "disclosureURL": "https://assets.permutive.app/tcf/tcf.json"
     },
     {
       "componentType": "rtd",
@@ -5695,8 +5702,8 @@
     {
       "componentType": "userId",
       "componentName": "permutiveIdentityManagerId",
-      "gvlid": 361,
-      "disclosureURL": null,
+      "gvlid": null,
+      "disclosureURL": "https://assets.permutive.app/tcf/tcf.json",
       "aliasOf": null
     },
     {
