@@ -34,7 +34,7 @@ const {
 } = EVENTS
 
 const CONFIG_WITH_DEBUG = {
-  provider: 'atmtdAnalyticsAdapter',
+  provider: 'mileAnalytics',
   options: {
     publisherID: '230',
     siteID: '421'
@@ -71,14 +71,14 @@ describe('Mile Analytics Adapter', () => {
 
     it('Should log error and return false if options is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter'
+        provider: 'mileAnalytics'
       })
 
       expect(utils.logError.called).to.equal(true)
     });
     it('Should log error and return false if pub id is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           siteID: '230'
         }
@@ -88,7 +88,7 @@ describe('Mile Analytics Adapter', () => {
     });
     it('Should log error and return false if pub id is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230'
         }
@@ -98,7 +98,7 @@ describe('Mile Analytics Adapter', () => {
     });
     it('Should successfully configure the adapter and set global log debug messages flag to false', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '421',
@@ -114,7 +114,7 @@ describe('Mile Analytics Adapter', () => {
       sandbox.stub(exports, 'addGPTHandlers').callsFake(() => {});
 
       const config = {
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '410',
@@ -401,7 +401,7 @@ describe('Mile Analytics Adapter', () => {
   describe('Process Events from Que when SDK still has not loaded', () => {
     before(() => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '421'
@@ -531,7 +531,7 @@ describe('Mile Analytics Adapter', () => {
   describe('Process Events from Que when SDK has loaded', () => {
     before(() => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '421'
