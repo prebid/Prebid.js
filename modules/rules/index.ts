@@ -10,7 +10,7 @@ import { getHook } from "../../src/hook.ts";
 import { logError, logInfo, logWarn } from "../../src/utils.ts";
 import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
-const MODULE_NAME = 'shapingRulesModule';
+const MODULE_NAME = 'shapingRules';
 
 const GLOBAL_RANDOM = Math.random();
 
@@ -352,4 +352,4 @@ export function reset() {
   setLabels({});
 }
 
-config.getConfig('rules', config => init(config.rules));
+config.getConfig(MODULE_NAME, config => init(config[MODULE_NAME]));

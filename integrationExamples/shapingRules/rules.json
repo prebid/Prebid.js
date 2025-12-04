@@ -23,7 +23,7 @@
                 {
                   "function": "excludeBidders",
                   "args": [
-                    { "bidders": ["bidderA"], "seatnonbid": 203, "analyticsValue": "rmjpn" },
+                    { "bidders": ["testBidder"], "seatnonbid": 203, "analyticsValue": "rmjpn" },
                     { "bidders": ["bidderD"], "seatnonbid": 203, "ifSyncedId": false, "analyticsValue": "rmjpn" }
                   ]
                 }
@@ -38,59 +38,6 @@
         {
           "weight": 2,
           "default": []
-        }
-      ]
-    },
-    {
-      "stage": "processed-auction-request",
-      "modelGroups": [
-        {
-          "schema": [
-            { "function": "percent", "args": [5] },
-            { "function": "buyeruidAvailable" }
-          ],
-          "analyticsKey": "bidderB-buyeruid",
-          "default": [
-            {
-              "function": "logAtag",
-              "args": { "analyticsValue": "default-allow" }
-            }
-          ],
-          "rules": [
-            {
-              "conditions": ["true", "false"],
-              "results": [
-                {
-                  "function": "logAtag",
-                  "args": { "analyticsValue": "bidderB-allowed" }
-                }
-              ]
-            },
-            {
-              "conditions": ["*", "false"],
-              "results": [
-                {
-                  "function": "excludeBidders",
-                  "args": [
-                    {
-                      "bidders": ["bidderB"],
-                      "seatnonbid": 203,
-                      "analyticsValue": "nobuyeruid"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "conditions": ["*", "*"],
-              "results": [
-                {
-                  "function": "logAtag",
-                  "args": { "analyticsValue": "default-allow" }
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -191,7 +138,7 @@
       "modelGroups": [
         {
           "schema": [
-            { "function": "deviceCountrySet", "args": [["USA", "CAN"]] }
+            { "function": "deviceCountryIn", "args": [["USA", "CAN"]] }
           ],
           "analyticsKey": "bidder-yaml",
           "rules": [
