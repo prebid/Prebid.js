@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.2.0';
+const MODULE_VERSION = '2.3.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -923,13 +923,6 @@ const WurflLCEDevice = {
     // Assumes window.screen exists (caller checked)
     if (window.screen.deviceXDPI && window.screen.logicalXDPI && window.screen.logicalXDPI > 0) {
       return window.screen.deviceXDPI / window.screen.logicalXDPI;
-    }
-
-    const screenWidth = window.screen.availWidth;
-    const docWidth = window.document?.documentElement?.clientWidth;
-
-    if (screenWidth && docWidth && docWidth > 0) {
-      return Math.round(screenWidth / docWidth);
     }
 
     return undefined;
