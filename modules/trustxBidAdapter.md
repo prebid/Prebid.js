@@ -11,19 +11,6 @@ Maintainer:   prebid@trustx.org
 Module that connects to TRUSTX's premium demand sources.
 TRUSTX bid adapter supports Banner and Video ad formats with advanced targeting capabilities.
 
-# Bidder Config
-
-You can allow writing in localStorage using `pbjs.setBidderConfig` for the bidder `trustx`:
-
-```
-pbjs.setBidderConfig({
-    bidders: ["trustx"],
-    config: {
-        localStorageWriteAllowed: true
-    }
-})
-```
-
 # Required Parameters
 
 ## Banner
@@ -221,42 +208,6 @@ params: {
 }
 ```
 
-## Keywords
-
-Keywords can be specified at impression level (in params) or at request level (in ortb2.site.keywords or ortb2.user.keywords).
-
-### Impression-level keywords
-
-```
-params: {
-    uid: 455069,
-    keywords: {
-        site: {
-            publisher: [{
-                name: 'someKeywordsName',
-                brandsafety: ['disaster'],
-                topic: ['stress', 'fear']
-            }]
-        }
-    }
-}
-```
-
-### Request-level keywords (via ortb2)
-
-```
-pbjs.setConfig({
-    ortb2: {
-        site: {
-            keywords: 'news,technology'
-        },
-        user: {
-            keywords: 'premium,subscriber'
-        }
-    }
-});
-```
-
 ## Backward Compatibility with Grid Adapter
 
 The TRUSTX adapter is fully compatible with Grid adapter parameters for seamless migration:
@@ -264,7 +215,6 @@ The TRUSTX adapter is fully compatible with Grid adapter parameters for seamless
 - `uid` - Same as Grid adapter (required)
 - `secid` - Alternative to uid (required if uid not provided)
 - `bidFloor` / `bidfloor` / `floorcpm` - Bid floor (optional)
-- `keywords` - Keywords support (optional)
 
 # First Party Data (FPD) Support
 
@@ -293,7 +243,7 @@ pbjs.setConfig({
 
 ## User FPD
 
-User ID is automatically stored in localStorage (key: `txuid`) when received from server response. The adapter also reads user ID from localStorage for subsequent requests.
+User IDs are passed through Prebid's User ID modules (e.g., SharedId) via `user.ext.eids`.
 
 ## Device FPD
 
@@ -303,15 +253,12 @@ Device data from `ortb2.device` is automatically included in requests.
 
 The adapter supports server-side user sync. Sync URLs are extracted from server response (`ext.usersync`) and automatically registered with Prebid.js.
 
-**Important:** For alias bidders, you must enable `aliasSyncEnabled` in userSync config:
-
 ```
 pbjs.setConfig({
     userSync: {
         syncEnabled: true,
         iframeEnabled: true,
-        pixelEnabled: true,
-        aliasSyncEnabled: true  // Required for trustx alias
+        pixelEnabled: true
     }
 });
 ```

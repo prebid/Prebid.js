@@ -4,17 +4,13 @@ import {
   logMessage,
   deepAccess,
   deepSetValue,
-  mergeDeep,
-  ajax,
-  isEmpty,
-  generateUUID
+  mergeDeep
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -28,10 +24,7 @@ const BID_TTL = 360;
 const NET_REVENUE = false;
 const SUPPORTED_CURRENCY = 'USD';
 const OUTSTREAM_PLAYER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-const USYNC_DELETE_URL = 'https://sync.trustx.org/usync-delete';
 const ADAPTER_VERSION = '1.0';
-const USER_ID_KEY = 'txuid';
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const ortbAdapterConverter = ortbConverter({
   context: {
@@ -75,16 +68,6 @@ const ortbAdapterConverter = ortbConverter({
         impression.ext = {};
       }
       impression.ext.divid = bidRequest.adUnitCode.toString();
-    }
-
-    if (params.keywords && Object.keys(params.keywords).length > 0) {
-      if (!impression.ext) {
-        impression.ext = {};
-      }
-      if (!impression.ext.bidder) {
-        impression.ext.bidder = {};
-      }
-      impression.ext.bidder.keywords = params.keywords;
     }
 
     if (impression.banner && impression.banner.format && impression.banner.format.length > 0) {
@@ -140,17 +123,6 @@ const ortbAdapterConverter = ortbConverter({
       deepSetValue(requestObj, 'regs.coppa', 1);
     }
 
-    // DSA
-    if (bidderRequest.ortb2?.regs?.ext?.dsa) {
-      if (!requestObj.regs) {
-        requestObj.regs = {ext: {}};
-      }
-      if (!requestObj.regs.ext) {
-        requestObj.regs.ext = {};
-      }
-      requestObj.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
-    }
-
     // User IDs (eIDs)
     if (bidderRequest.bidRequests && bidderRequest.bidRequests.length > 0) {
       const bidRequest = bidderRequest.bidRequests[0];
@@ -161,103 +133,6 @@ const ortbAdapterConverter = ortbConverter({
       // Supply Chain (schain)
       if (bidRequest.schain) {
         deepSetValue(requestObj, 'source.ext.schain', bidRequest.schain);
-      }
-    }
-
-    const fpdUserId = getUserIdFromFPDStorage();
-    if (fpdUserId) {
-      if (!requestObj.user) requestObj.user = {};
-      requestObj.user.id = fpdUserId.toString();
-    }
-
-    let pageKeywords = null;
-    if (bidderRequest.bidRequests && bidderRequest.bidRequests.length > 0) {
-      bidderRequest.bidRequests.forEach(bidRequest => {
-        const keywords = bidRequest.params?.keywords;
-        if (!isEmpty(keywords)) {
-          if (!pageKeywords) {
-            pageKeywords = keywords;
-          }
-        }
-      });
-    }
-
-    // Add ortb2 keywords to pageKeywords if present
-    const ortb2UserKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords');
-    const ortb2SiteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords');
-
-    if (ortb2UserKeywords) {
-      if (!pageKeywords) pageKeywords = {};
-      if (!pageKeywords.user) pageKeywords.user = {};
-      pageKeywords.user.ortb2 = [{
-        name: 'keywords',
-        keywords: ortb2UserKeywords.split(',')
-      }];
-    }
-    if (ortb2SiteKeywords) {
-      if (!pageKeywords) pageKeywords = {};
-      if (!pageKeywords.site) pageKeywords.site = {};
-      pageKeywords.site.ortb2 = [{
-        name: 'keywords',
-        keywords: ortb2SiteKeywords.split(',')
-      }];
-    }
-
-    if (pageKeywords) {
-      const formattedKeywords = reformatKeywords(pageKeywords);
-      if (formattedKeywords) {
-        if (!requestObj.ext) {
-          requestObj.ext = {};
-        }
-        requestObj.ext.keywords = formattedKeywords;
-      }
-    }
-
-    // Site First Party Data
-    if (bidderRequest.ortb2?.site) {
-      const site = bidderRequest.ortb2.site;
-      if (!requestObj.site) requestObj.site = {};
-
-      // Common site fields
-      const siteFields = ['name', 'domain', 'page', 'ref', 'search', 'keywords', 'cat', 'pagecat'];
-      siteFields.forEach(field => {
-        if (site[field]) {
-          requestObj.site[field] = site[field];
-        }
-      });
-
-      // Content data
-      if (site.content) {
-        if (!requestObj.site.content) requestObj.site.content = {};
-
-        // Copy content fields
-        const contentFields = ['id', 'title', 'series', 'season', 'episode', 'genre'];
-        contentFields.forEach(field => {
-          if (site.content[field]) {
-            requestObj.site.content[field] = site.content[field];
-          }
-        });
-
-        // Content data segments - avoid duplicates
-        if (site.content.data) {
-          const existingData = requestObj.site.content.data || [];
-          const existingIds = new Set(existingData.map(item => item.id || JSON.stringify(item)));
-          const newData = site.content.data.filter(item => {
-            const itemId = item.id || JSON.stringify(item);
-            return !existingIds.has(itemId);
-          });
-          if (newData.length > 0) {
-            requestObj.site.content.data = existingData.concat(newData);
-          } else if (existingData.length === 0) {
-            requestObj.site.content.data = [];
-          }
-        }
-      }
-
-      // Site extensions
-      if (site.ext) {
-        if (!requestObj.site.ext) requestObj.site.ext = {};
-        mergeDeep(requestObj.site.ext, site.ext);
       }
     }
 
@@ -366,13 +241,6 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const userId = deepAccess(serverResponse, 'body.ext.userid');
-    if (userId && config.getConfig('localStorageWriteAllowed')) {
-      if (storage.localStorageIsEnabled()) {
-        storage.setDataInLocalStorage(USER_ID_KEY, userId);
-      }
-    }
-
     return ortbAdapterConverter.fromORTB({
       response: serverResponse.body,
       request: bidRequest.data
@@ -425,22 +293,7 @@ export const spec = {
 
     logInfo('trustx.getUserSyncs result=%o', syncElements);
     return syncElements;
-  },
-
-  /**
-   * Handle data deletion requests
-   * This will both delete local storage data and notify the server
-   */
-  onDataDeletionRequest: function(data) {
-    if (storage.localStorageIsEnabled()) {
-      storage.removeDataFromLocalStorage(USER_ID_KEY);
-    }
-    ajax(USYNC_DELETE_URL, null, null, {
-      method: 'GET',
-      withCredentials: true,
-      browsingTopics: false
-    });
-  },
+  }
 };
 
 /**
@@ -598,86 +451,6 @@ function isVideoValid(bidRequest) {
   }
 
   return true;
-}
-
-function makeNewUserIdInFPDStorage() {
-  const writeAllowed = config.getConfig('localStorageWriteAllowed');
-  if (writeAllowed) {
-    const newUserId = generateUUID().replace(/-/g, '');
-    storage.setDataInLocalStorage(USER_ID_KEY, newUserId);
-    return newUserId;
-  }
-  return null;
-}
-
-function getUserIdFromFPDStorage() {
-  const storedUserId = storage.getDataFromLocalStorage(USER_ID_KEY);
-  return storedUserId || makeNewUserIdInFPDStorage();
-}
-
-function reformatKeywords(pageKeywords) {
-  const result = {};
-  const keywordNames = Object.keys(pageKeywords);
-
-  for (let i = 0; i < keywordNames.length; i++) {
-    const name = keywordNames[i];
-    const keywords = pageKeywords[name];
-    if (!keywords) continue;
-
-    if (name === 'site' || name === 'user') {
-      const formatted = {};
-      const pubNames = Object.keys(keywords);
-
-      for (let j = 0; j < pubNames.length; j++) {
-        const pubName = pubNames[j];
-        const pubArray = keywords[pubName];
-
-        if (Array.isArray(pubArray)) {
-          const formattedPubs = [];
-
-          for (let k = 0; k < pubArray.length; k++) {
-            const pubItem = pubArray[k];
-            if (typeof pubItem === 'object' && pubItem.name) {
-              const formattedItem = { name: pubItem.name, segments: [] };
-              const itemKeys = Object.keys(pubItem);
-
-              for (let l = 0; l < itemKeys.length; l++) {
-                const key = itemKeys[l];
-                const keyArray = pubItem[key];
-
-                if (Array.isArray(keyArray)) {
-                  for (let m = 0; m < keyArray.length; m++) {
-                    const keyword = keyArray[m];
-                    if (keyword) {
-                      if (typeof keyword === 'string') {
-                        formattedItem.segments.push({ name: key, value: keyword });
-                      } else if (key === 'segments' && typeof keyword.name === 'string' && typeof keyword.value === 'string') {
-                        formattedItem.segments.push(keyword);
-                      }
-                    }
-                  }
-                }
-              }
-
-              if (formattedItem.segments.length > 0) {
-                formattedPubs.push(formattedItem);
-              }
-            }
-          }
-
-          if (formattedPubs.length > 0) {
-            formatted[pubName] = formattedPubs;
-          }
-        }
-      }
-
-      result[name] = formatted;
-    } else {
-      result[name] = keywords;
-    }
-  }
-
-  return Object.keys(result).length > 0 ? result : null;
 }
 
 registerBidder(spec);
