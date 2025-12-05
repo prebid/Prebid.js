@@ -2890,15 +2890,6 @@ describe('the rubicon adapter', function () {
           expect(slotParams.kw).to.equal('a,b,c');
         });
 
-        it('should pass along o_ae param when fledge is enabled', () => {
-          const localBidRequest = Object.assign({}, bidderRequest.bids[0]);
-          localBidRequest.ortb2Imp.ext.ae = true;
-
-          const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
-
-          expect(slotParams['o_ae']).to.equal(1)
-        });
-
         it('should add p_site.mobile if mobile is a number in ortb2.site', function () {
           // Set up a bidRequest with mobile property as a number
           const localBidderRequest = Object.assign({}, bidderRequest);
