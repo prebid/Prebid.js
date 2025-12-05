@@ -1,13 +1,15 @@
 import * as events from 'src/events';
 import * as utils from 'src/utils.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 
-import spec, {self as exports} from 'modules/automatadAnalyticsAdapter.js';
+import spec, {self as exports} from 'modules/mileAnalyticsAdapter.js';
 
 import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 
 const obj = {
   auctionInitHandler: (args) => {},
+  auctionEndHandler: (args) => {},
   bidResponseHandler: (args) => {},
   bidderDoneHandler: (args) => {},
   bidWonHandler: (args) => {},
@@ -27,19 +29,20 @@ const {
   BID_RESPONSE,
   BID_TIMEOUT,
   BID_WON,
-  NO_BID
+  NO_BID,
+  AUCTION_END
 } = EVENTS
 
 const CONFIG_WITH_DEBUG = {
-  provider: 'atmtdAnalyticsAdapter',
+  provider: 'mileAnalytics',
   options: {
     publisherID: '230',
     siteID: '421'
   },
-  includeEvents: [AUCTION_DEBUG, AUCTION_INIT, BIDDER_DONE, BID_RESPONSE, BID_TIMEOUT, NO_BID, BID_WON, BID_REQUESTED, BID_REJECTED]
+  includeEvents: [AUCTION_DEBUG, AUCTION_INIT, BIDDER_DONE, BID_RESPONSE, BID_TIMEOUT, NO_BID, BID_WON, BID_REQUESTED, BID_REJECTED, AUCTION_END]
 }
 
-describe('Automatad Analytics Adapter', () => {
+describe('Mile Analytics Adapter', () => {
   var sandbox, clock;
 
   describe('Adapter Setup Configuration', () => {
@@ -48,6 +51,7 @@ describe('Automatad Analytics Adapter', () => {
       sandbox.stub(utils, 'logMessage')
       sandbox.stub(events, 'getEvents').returns([]);
       sandbox.stub(utils, 'logError');
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({ version: '10.0.0' });
     });
     afterEach(() => {
       sandbox.restore();
@@ -67,14 +71,14 @@ describe('Automatad Analytics Adapter', () => {
 
     it('Should log error and return false if options is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter'
+        provider: 'mileAnalytics'
       })
 
       expect(utils.logError.called).to.equal(true)
     });
     it('Should log error and return false if pub id is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           siteID: '230'
         }
@@ -84,7 +88,7 @@ describe('Automatad Analytics Adapter', () => {
     });
     it('Should log error and return false if pub id is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230'
         }
@@ -94,7 +98,7 @@ describe('Automatad Analytics Adapter', () => {
     });
     it('Should successfully configure the adapter and set global log debug messages flag to false', () => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '421',
@@ -108,8 +112,9 @@ describe('Automatad Analytics Adapter', () => {
     it('Should successfully configure the adapter and set global log debug messages flag to true', () => {
       sandbox.stub(exports, 'initializeQueue').callsFake(() => {});
       sandbox.stub(exports, 'addGPTHandlers').callsFake(() => {});
+
       const config = {
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '410',
@@ -122,6 +127,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.initializeQueue.called).to.equal(true)
       expect(exports.addGPTHandlers.called).to.equal(true)
       expect(utils.logMessage.called).to.equal(true)
+      expect(window.__atmtdSDKConfig.version).to.equal('10.0.0')
       spec.disableAnalytics();
     });
   });
@@ -229,6 +235,15 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(AUCTION_INIT)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(AUCTION_INIT)
+    });
+
+    it('Should push to the que when the auctionEnd event is fired', () => {
+      events.emit(AUCTION_END, {type: AUCTION_END})
+      expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
+      expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
+      expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
+      expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(AUCTION_END)
+      expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(AUCTION_END)
     });
 
     it('Should push to the que when the bidResponse event is fired', () => {
@@ -386,7 +401,7 @@ describe('Automatad Analytics Adapter', () => {
   describe('Process Events from Que when SDK still has not loaded', () => {
     before(() => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '421'
@@ -516,7 +531,7 @@ describe('Automatad Analytics Adapter', () => {
   describe('Process Events from Que when SDK has loaded', () => {
     before(() => {
       spec.enableAnalytics({
-        provider: 'atmtdAnalyticsAdapter',
+        provider: 'mileAnalytics',
         options: {
           publisherID: '230',
           siteID: '421'
