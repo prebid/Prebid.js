@@ -199,6 +199,29 @@ describe('Rules Module', function() {
     });
   });
 
+  describe('getGlobalRandom', function() {
+    it('should return the same value for the same auctionId and call Math.random only once', function() {
+      const auctionId = 'test-auction-id';
+      const mathRandomStub = sandbox.stub(Math, 'random').returns(0.42);
+
+      const result1 = rulesModule.dep.getGlobalRandom(auctionId);
+      const result2 = rulesModule.dep.getGlobalRandom(auctionId);
+      const result3 = rulesModule.dep.getGlobalRandom(auctionId);
+
+      expect(result1).to.equal(0.42);
+      expect(result2).to.equal(0.42);
+      expect(result3).to.equal(0.42);
+      expect(mathRandomStub.calledOnce).to.equal(true);
+
+      const otherAuctionId = 'other-auction-id';
+      mathRandomStub.returns(0.99);
+      const result4 = rulesModule.dep.getGlobalRandom(otherAuctionId);
+
+      expect(result4).to.equal(0.99);
+      expect(mathRandomStub.calledTwice).to.equal(true);
+    });
+  });
+
   describe('evaluateSchema', function() {
     it('should evaluate percent condition', function() {
       sandbox.stub(rulesModule.dep, 'getGlobalRandom').returns(0.3);

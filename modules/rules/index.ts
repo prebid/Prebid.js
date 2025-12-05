@@ -12,14 +12,20 @@ import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
 const MODULE_NAME = 'shapingRules';
 
-const GLOBAL_RANDOM = Math.random();
+const GLOBAL_RANDOM_STORE = new Map<string, number>();
 
 export const dep = {
   getGlobalRandom: getGlobalRandom
 };
 
-function getGlobalRandom() {
-  return GLOBAL_RANDOM;
+function getGlobalRandom(auctionId: string) {
+  if (!auctionId) {
+    return Math.random();
+  }
+  if (!GLOBAL_RANDOM_STORE.has(auctionId)) {
+    GLOBAL_RANDOM_STORE.set(auctionId, Math.random());
+  }
+  return GLOBAL_RANDOM_STORE.get(auctionId);
 }
 
 let unregisterFunctions: Array<() => void> = [];
@@ -156,7 +162,10 @@ function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
 }
 
 const schemaEvaluators = {
-  percent: (args, context) => () => dep.getGlobalRandom() * 100 < args[0],
+  percent: (args, context) => () => {
+    const auctionId = context.bid?.auctionId;
+    return dep.getGlobalRandom(auctionId) * 100 < args[0]
+  },
   adUnitCode: (args, context) => () => context.adUnit.code === args[0],
   adUnitCodeIn: (args, context) => () => args[0].includes(context.adUnit.code),
   deviceCountry: (args, context) => () => context.ortb2?.device?.geo?.country === args[0],
