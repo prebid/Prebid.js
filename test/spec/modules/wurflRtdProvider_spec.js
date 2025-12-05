@@ -978,6 +978,85 @@ describe('wurflRtdProvider', function () {
       expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
     });
 
+    it('should not include device.w and device.h in LCE enrichment (removed in v2.3.0 - fingerprinting APIs)', (done) => {
+      // Reset reqBidsConfigObj to clean state
+      reqBidsConfigObj.ortb2Fragments.global.device = {};
+      reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+      // Setup empty cache to trigger LCE
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+      // Mock a typical desktop Chrome user agent to get consistent device detection
+      const originalUserAgent = navigator.userAgent;
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        configurable: true,
+        writable: true
+      });
+
+      const callback = () => {
+        const device = reqBidsConfigObj.ortb2Fragments.global.device;
+
+        // Verify device object exists
+        expect(device).to.exist;
+
+        // CRITICAL: Verify device.w and device.h are NOT present
+        // These were removed in v2.3.0 due to fingerprinting API concerns (screen.availWidth, screen.width/height)
+        expect(device).to.not.have.property('w');
+        expect(device).to.not.have.property('h');
+
+        // Verify other ORTB2_DEVICE_FIELDS properties ARE populated when available
+        // From ORTB2_DEVICE_FIELDS: ['make', 'model', 'devicetype', 'os', 'osv', 'hwv', 'h', 'w', 'ppi', 'pxratio', 'js']
+        expect(device.js).to.equal(1); // Always present
+
+        // These should be present based on UA detection
+        expect(device.make).to.be.a('string').and.not.be.empty;
+        expect(device.devicetype).to.be.a('number'); // ORTB2_DEVICE_TYPE.PERSONAL_COMPUTER (2)
+        expect(device.os).to.be.a('string').and.not.be.empty;
+
+        // osv, model, hwv may be present depending on UA
+        if (device.osv !== undefined) {
+          expect(device.osv).to.be.a('string');
+        }
+        if (device.model !== undefined) {
+          expect(device.model).to.be.a('string');
+        }
+        if (device.hwv !== undefined) {
+          expect(device.hwv).to.be.a('string');
+        }
+
+        // pxratio from devicePixelRatio is acceptable (not a flagged fingerprinting API)
+        if (device.pxratio !== undefined) {
+          expect(device.pxratio).to.be.a('number');
+        }
+
+        // ppi is not typically populated by LCE (would come from WURFL server-side data)
+        // Just verify it doesn't exist or is undefined in LCE mode
+        expect(device.ppi).to.be.undefined;
+
+        // Verify ext.wurfl.is_robot is set
+        expect(device.ext).to.exist;
+        expect(device.ext.wurfl).to.exist;
+        expect(device.ext.wurfl.is_robot).to.be.a('boolean');
+
+        // Restore original userAgent
+        Object.defineProperty(navigator, 'userAgent', {
+          value: originalUserAgent,
+          configurable: true,
+          writable: true
+        });
+
+        done();
+      };
+
+      const moduleConfig = { params: {} };
+      const userConsent = {};
+
+      wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
+    });
+
     describe('LCE bot detection', () => {
       let originalUserAgent;
 
