@@ -17,6 +17,7 @@ export const parseConfig = (moduleConfig) => {
   let bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
   const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
   const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
+  const instance = deepAccess(moduleConfig, 'params.instance', null);
 
   // If present, trim the bundle URL
   if (typeof bundleUrl === 'string') {
@@ -25,16 +26,20 @@ export const parseConfig = (moduleConfig) => {
 
   // Verify that bundleUrl is a valid URL: only secure (HTTPS) URLs are allowed
   if (typeof bundleUrl === 'string' && bundleUrl.length && !bundleUrl.startsWith('https://')) {
-    throw new Error(
-      LOG_PREFIX + ' Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.'
-    );
+    logError('Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.');
+    return {bundleUrl: null, adserverTargeting, handleRtd: null};
   }
 
   if (handleRtd && typeof handleRtd !== 'function') {
-    throw new Error(LOG_PREFIX + ' handleRtd must be a function');
+    logError('handleRtd must be a function');
+    return {bundleUrl, adserverTargeting, handleRtd: null};
   }
 
-  return {bundleUrl, adserverTargeting, handleRtd};
+  const result = {bundleUrl, adserverTargeting, handleRtd};
+  if (instance !== null) {
+    result.instance = instance;
+  }
+  return result;
 }
 
 /**
@@ -156,8 +161,8 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
  * @returns {Object} Targeting data
  */
 export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) => {
-  // Extract `adserverTargeting` from the module configuration
-  const {adserverTargeting} = parseConfig(moduleConfig);
+  // Extract `adserverTargeting` and `instance` from the module configuration
+  const {adserverTargeting, instance} = parseConfig(moduleConfig);
   logMessage('Ad Server targeting: ', adserverTargeting);
 
   if (!adserverTargeting) {
@@ -166,9 +171,17 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
   }
 
   const targetingData = {};
+  // Resolve the SDK instance object based on the instance string
+  // Default to 'instance' if not provided
+  const instanceKey = instance || 'instance';
+  const sdkInstance = window?.optable?.[instanceKey];
+  if (!sdkInstance) {
+    logWarn(`No Optable SDK instance found for: ${instanceKey}`);
+    return targetingData;
+  }
 
   // Get the Optable targeting data from the cache
-  const optableTargetingData = window?.optable?.instance?.targetingKeyValuesFromCache() || {};
+  const optableTargetingData = sdkInstance?.targetingKeyValuesFromCache?.() || targetingData;
 
   // If no Optable targeting data is found, return an empty object
   if (!Object.keys(optableTargetingData).length) {
