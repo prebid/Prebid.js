@@ -13,6 +13,7 @@ import {
 } from 'modules/hypelabBidAdapter.js';
 
 import { BANNER } from 'src/mediaTypes.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const mockValidBidRequest = {
   bidder: 'hypelab',
@@ -177,7 +178,7 @@ describe('hypelabBidAdapter', function () {
       expect(data.dpr).to.be.a('number');
       expect(data.location).to.be.a('string');
       expect(data.floor).to.equal(null);
-      expect(data.dpr).to.equal(1);
+      expect(data.dpr).to.equal(getDevicePixelRatio());
       expect(data.wp).to.deep.equal({
         ada: false,
         bnb: false,

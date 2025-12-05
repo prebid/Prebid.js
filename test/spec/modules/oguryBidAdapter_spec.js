@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { spec, ortbConverterProps } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
 import { server } from '../../mocks/xhr.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -577,10 +578,6 @@ describe('OguryBidAdapter', () => {
       return stubbedCurrentTime;
     });
 
-    const stubbedDevicePixelMethod = sinon.stub(window, 'devicePixelRatio').get(function() {
-      return stubbedDevicePixelRatio;
-    });
-
     const defaultTimeout = 1000;
 
     function assertImpObject(ortbBidRequest, bidRequest) {
@@ -639,7 +636,7 @@ describe('OguryBidAdapter', () => {
 
     beforeEach(() => {
       windowTopStub = sinon.stub(utils, 'getWindowTop');
-      windowTopStub.returns({ location: { href: currentLocation } });
+      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: stubbedDevicePixelRatio});
     });
 
     afterEach(() => {
@@ -648,7 +645,6 @@ describe('OguryBidAdapter', () => {
 
     after(() => {
       stubbedCurrentTimeMethod.restore();
-      stubbedDevicePixelMethod.restore();
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
