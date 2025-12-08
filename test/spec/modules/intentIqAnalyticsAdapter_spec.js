@@ -686,10 +686,10 @@ describe("IntentIQ tests all", function () {
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
-    expect(logErrorStub.calledOnce).to.be.true;
-    expect(logErrorStub.firstCall.args[0]).to.contain(
-      "required data is missing. Skipping the current process"
+    expect(logErrorStub.lastCall.firstArg).to.be.equal(
+      "IIQ ANALYTICS → required data is missing. Skipping the current process"
     );
+
     expect(server.requests.length).to.be.equal(0); // no request
   });
 
