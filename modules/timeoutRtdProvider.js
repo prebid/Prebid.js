@@ -3,6 +3,7 @@ import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { bidderTimeoutFunctions } from '../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -12,10 +13,6 @@ const SUBMODULE_NAME = 'timeout';
 
 // this allows the stubbing of functions during testing
 export const timeoutRtdFunctions = {
-  getDeviceType,
-  getConnectionSpeed,
-  checkVideo,
-  calculateTimeoutModifier,
   handleTimeoutIncrement
 };
 
@@ -163,7 +160,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
  */
 function handleTimeoutIncrement(reqBidsConfigObj, rules) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-  const timeoutModifier = timeoutRtdFunctions.calculateTimeoutModifier(adUnits, rules);
+  const timeoutModifier = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
   const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout');
   reqBidsConfigObj.timeout = bidderTimeout + timeoutModifier;
 }

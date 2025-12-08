@@ -549,7 +549,6 @@ export const spec = {
       data['p_site.mobile'] = bidRequest.ortb2.site.mobile
     }
 
-    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest?.ortb2?.user?.ext?.eids) {
       bidRequest.ortb2.user.ext.eids.forEach(({ source, uids = [], inserter, matcher, mm, ext = {} }) => {
@@ -1049,27 +1048,6 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
-  }
-}
-
-function addDesiredSegtaxes(bidderRequest, target) {
-  if (rubiConf.readTopics === false) {
-    return;
-  }
-  const iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
-  const vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
-  const userData = bidderRequest.ortb2?.user?.data || [];
-  const siteData = bidderRequest.ortb2?.site?.content?.data || [];
-  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
-  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
-}
-
-function iterateOverSegmentData(target, char, segments) {
-  return (topic) => {
-    const taxonomy = Number(topic.ext?.segtax);
-    if (segments.includes(taxonomy)) {
-      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
-    }
   }
 }
 
