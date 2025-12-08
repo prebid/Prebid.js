@@ -507,5 +507,18 @@ describe('sevioBidAdapter', function () {
 
       expect(payload).to.not.have.property('currency');
     });
+
+    it('parses comma-separated keywords string into tokens array', function () {
+      const singleBidRequest = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId', keywords: 'play, games,  fun ' }, // string CSV
+        mediaTypes: { banner: { sizes: [[728, 90]] } },
+        bidId: 'bid-kw-str'
+      }];
+      const requests = spec.buildRequests(singleBidRequest, baseBidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+      expect(requests[0].data).to.have.nested.property('keywords.tokens');
+      expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games', 'fun']);
+    });
   });
 });

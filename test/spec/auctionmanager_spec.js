@@ -967,6 +967,17 @@ describe('auctionmanager.js', function () {
           })
         });
 
+        it('sets timeToRespond on noBid entries', async () => {
+          auction.callBids();
+          await auction.end;
+          const noBids = auction.getNoBids();
+          expect(noBids.length).to.equal(1);
+
+          const noBid = noBids[0];
+          expect(noBid).to.have.property('timeToRespond');
+          expect(noBid.timeToRespond).to.be.a('number');
+        });
+
         Object.entries({
           'bids': {
             bd: [{
