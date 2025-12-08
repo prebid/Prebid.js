@@ -180,6 +180,7 @@ function receivePartnerData() {
     iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints;
   } catch (e) {
     logError(e);
+    return false;
   }
 }
 
@@ -229,9 +230,9 @@ function bidWon(args, isReportExternal) {
   }
 
   const success = receivePartnerData();
-  if (success) {
+  if (success === false) {
     // in fact analytical adapter could not exist without intentIqIdSystem, and first party data is generated there
-    logError('IIQ ANALYTICS → required data missing. Skipping initialization')
+    logError('IIQ ANALYTICS → required data is missing. Skipping the current process')
     return;
   }
   if (shouldSendReport(isReportExternal)) {

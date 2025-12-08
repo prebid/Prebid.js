@@ -681,6 +681,18 @@ describe("IntentIQ tests all", function () {
     expect(request.url).to.include(`&spd=${expectedSpdEncoded}`);
   });
 
+  it("should not send request in case there is no generated global identity object", function () {
+    window[`iiq_identity_${partner}`] = undefined;
+
+    events.emit(EVENTS.BID_WON, getWonRequest());
+
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(logErrorStub.firstCall.args[0]).to.contain(
+      "required data is missing. Skipping the current process"
+    );
+    expect(server.requests.length).to.be.equal(0); // no request
+  });
+
   describe("GAM prediction reporting", function () {
     function createMockGAM() {
       const listeners = {};
