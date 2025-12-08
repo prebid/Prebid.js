@@ -16,7 +16,6 @@ import {
 import { reportingServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { gamPredictionReport } from '../libraries/intentIqUtils/gamPredictionReport.js';
-import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
 
 const MODULE_NAME = 'iiqAnalytics';
 const analyticsType = 'endpoint';
@@ -157,18 +156,16 @@ function receivePartnerData() {
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
     const FPD = window[identityGlobalName]?.firstPartyData
-    if (!FPD) {
+    if (!window[identityGlobalName] || !FPD) {
       return false
     }
     iiqAnalyticsAnalyticsAdapter.initOptions.fpid = FPD
-    const partnerData = window[identityGlobalName]?.partnerData
-    const clientsHints = window[identityGlobalName]?.clientsHints || '';
+    const { partnerData, clientsHints = '', actualABGroup } = window[identityGlobalName]
 
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.dataIdsInitialized = true;
       iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = partnerData.terminationCause;
       iiqAnalyticsAnalyticsAdapter.initOptions.abTestUuid = partnerData.abTestUuid;
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = defineABTestingGroup(partnerData.terminationCause, iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage);
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = partnerData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = partnerData.eidl || -1;
       iiqAnalyticsAnalyticsAdapter.initOptions.clientType = partnerData.clientType || null;
@@ -177,6 +174,7 @@ function receivePartnerData() {
       iiqAnalyticsAnalyticsAdapter.initOptions.rrtt = partnerData.rrtt || null;
     }
 
+    iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = actualABGroup;
     iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints;
   } catch (e) {
     logError(e);

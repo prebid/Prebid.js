@@ -435,7 +435,7 @@ describe("IntentIQ tests all", function () {
   });
 
   it("should handle initialization values from local storage", function () {
-    window[`iiq_identity_${partner}`].partnerData.terminationCause = 41;
+    window[`iiq_identity_${partner}`].actualABGroup = WITHOUT_IIQ;
 
     events.emit(EVENTS.BID_WON, getWonRequest());
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal(

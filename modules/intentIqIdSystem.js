@@ -60,6 +60,7 @@ let noDataCount = 0;
 export let firstPartyData;
 let partnerData;
 let clientHints;
+let actualABGroup
 
 /**
  * Generate standard UUID string
@@ -338,7 +339,7 @@ export const intentIqIdSubmodule = {
     const cmpData = getCmpData();
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
-    let actualABGroup = defineABTestingGroup(partnerData?.terminationCause, configParams.abPercentage);
+    actualABGroup = defineABTestingGroup(partnerData?.terminationCause, configParams.abPercentage);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
@@ -435,6 +436,7 @@ export const intentIqIdSubmodule = {
         window[globalName].partnerData = partnerData
         window[globalName].firstPartyData = firstPartyData
         window[globalName].clientHints = clientHints
+        window[globalName].actualABGroup = actualABGroup
       }
     }
 
