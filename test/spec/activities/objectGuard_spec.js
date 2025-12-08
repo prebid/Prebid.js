@@ -1,5 +1,6 @@
 import {objectGuard, writeProtectRule} from '../../../libraries/objectGuard/objectGuard.js';
 import {redactRule} from '../../../src/activities/redactor.js';
+import {mergeDeep} from 'src/utils.js';
 
 describe('objectGuard', () => {
   describe('read rule', () => {
@@ -107,6 +108,14 @@ describe('objectGuard', () => {
         paths: ['foo', 'bar', 'outer.inner.foo', 'outer.inner.bar'],
         applies: sinon.stub().callsFake(() => applies)
       });
+    });
+
+    it('should work  with mergeDeep', () => {
+      applies = false;
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      mergeDeep(guard, {foo: {nested: 'item'}});
+      expect(obj.foo).to.eql({nested: 'item'});
     });
 
     it('should reject conflicting rules', () => {
