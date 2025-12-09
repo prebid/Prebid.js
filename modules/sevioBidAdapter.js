@@ -7,7 +7,7 @@ import {getDomComplexity, getPageDescription, getPageTitle} from "../libraries/f
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0';
+const ADAPTER_VERSION = '1.0.1';
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
 });
