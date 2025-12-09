@@ -880,7 +880,8 @@ describe('gdpr enforcement', function () {
       purpose: 'basicAds',
       enforcePurpose: true,
       enforceVendor: true,
-      vendorExceptions: []
+      vendorExceptions: [],
+      deferS2Sbidders: false
     }];
     beforeEach(function () {
       sandbox = sinon.createSandbox();
@@ -926,7 +927,8 @@ describe('gdpr enforcement', function () {
         purpose: 'basicAds',
         enforcePurpose: false,
         enforceVendor: true,
-        vendorExceptions: ['bidderA']
+        vendorExceptions: ['bidderA'],
+        deferS2Sbidders: false
       }
       setEnforcementConfig({
         gdpr: {

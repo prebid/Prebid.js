@@ -65,7 +65,8 @@ const CONFIGURABLE_RULES = {
       purpose: 'basicAds',
       enforcePurpose: true,
       enforceVendor: true,
-      vendorExceptions: []
+      vendorExceptions: [],
+      deferS2Sbidders: false
     }
   },
   personalizedAds: {
@@ -236,8 +237,9 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
     return true;
   }
   const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
+  const deferS2Sbidders = rule.purpose === 'basicAds' && !gvlId && rule.deferS2Sbidders;
   const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
-  return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || vendor);
+  return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || deferS2Sbidders || vendor);
 }
 
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = () => null) {
