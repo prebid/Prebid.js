@@ -7,6 +7,7 @@ import {
   getUserSyncs,
   buildPlacementProcessingFunction
 } from '../libraries/teqblazeUtils/bidderUtils.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const BIDDER_CODE = 'screencore';
 const GVLID = 1473;
@@ -24,8 +25,7 @@ const REGION_SUBDOMAIN_SUFFIX = {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = getTimeZone().split('/')[0];
 
     switch (region) {
       case 'Asia':
