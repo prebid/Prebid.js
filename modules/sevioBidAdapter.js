@@ -5,7 +5,7 @@ import { config } from "../src/config.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.1'; // 12.2025
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
 });
