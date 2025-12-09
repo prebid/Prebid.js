@@ -326,7 +326,7 @@ describe('sevioBidAdapter', function () {
     it('getPageTitle prefers top.title; falls back to og:title (top document)', () => {
       window.top.document.title = 'Doc Title';
       let out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.pageTitle).to.equal('Doc Title');
+      expect(out[0].data.context[0].text).to.equal('Doc Title');
 
       window.top.document.title = '';
       const meta = window.top.document.createElement('meta');
@@ -335,7 +335,7 @@ describe('sevioBidAdapter', function () {
       window.top.document.head.appendChild(meta);
 
       out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.pageTitle).to.equal('OG Title');
+      expect(out[0].data.context[0].text).to.equal('OG Title');
 
       meta.remove();
     });
@@ -352,7 +352,7 @@ describe('sevioBidAdapter', function () {
           get() { throw new Error('cross-origin'); }
         });
         const out = spec.buildRequests([mkBid()], baseBidderRequest);
-        expect(out[0].data.pageTitle).to.equal('Local Title');
+        expect(out[0].data.context[0].text).to.equal('Local Title');
         Object.defineProperty(window, 'top', original);
         restored = true;
       } catch (e) {
