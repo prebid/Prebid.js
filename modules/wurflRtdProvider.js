@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.2.0';
+const MODULE_VERSION = '2.3.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -925,24 +925,7 @@ const WurflLCEDevice = {
       return window.screen.deviceXDPI / window.screen.logicalXDPI;
     }
 
-    const screenWidth = window.screen.availWidth;
-    const docWidth = window.document?.documentElement?.clientWidth;
-
-    if (screenWidth && docWidth && docWidth > 0) {
-      return Math.round(screenWidth / docWidth);
-    }
-
     return undefined;
-  },
-
-  _getScreenWidth(pixelRatio) {
-    // Assumes window.screen exists (caller checked)
-    return Math.round(window.screen.width * pixelRatio);
-  },
-
-  _getScreenHeight(pixelRatio) {
-    // Assumes window.screen exists (caller checked)
-    return Math.round(window.screen.height * pixelRatio);
   },
 
   _getMake(ua) {
@@ -1022,16 +1005,6 @@ const WurflLCEDevice = {
       const pixelRatio = this._getDevicePixelRatioValue();
       if (pixelRatio !== undefined) {
         device.pxratio = pixelRatio;
-
-        const width = this._getScreenWidth(pixelRatio);
-        if (width !== undefined) {
-          device.w = width;
-        }
-
-        const height = this._getScreenHeight(pixelRatio);
-        if (height !== undefined) {
-          device.h = height;
-        }
       }
     }
 
@@ -1048,7 +1021,6 @@ const WurflLCEDevice = {
   }
 };
 // ==================== END WURFL LCE DEVICE MODULE ====================
-
 
 // ==================== A/B TEST MANAGER  ====================
 
