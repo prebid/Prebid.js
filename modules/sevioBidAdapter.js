@@ -320,8 +320,13 @@ export const spec = {
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
         pageReferer: document.referrer,
-        pageTitle: getPageTitle().slice(0, 300),
-        pageDescription: getPageDescription().slice(0, 300),
+        context: [{
+          source: "title",
+          text: getPageTitle().slice(0, 300)
+        }, {
+          source: "meta:description",
+          text: getPageDescription().slice(0, 300)
+        }],
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
         deviceWidth: screen.width,
