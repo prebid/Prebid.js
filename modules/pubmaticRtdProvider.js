@@ -52,7 +52,7 @@ export function ConfigJsonManager() {
 
       // Extract country code if available
       const cc = response.headers?.get('country_code');
-      country = cc ? cc.split(',')?.map(code => code.trim())[0] : "IN";
+      country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
 
       // Parse the JSON response
       const ymConfigs = await response.json();
@@ -106,12 +106,15 @@ pluginManager.register('dynamicTimeout', DynamicTimeout);
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-  const { publisherId, profileId } = config?.params || {};
+  let { publisherId, profileId } = config?.params || {};
 
   if (!publisherId || !profileId) {
     logError(`${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`);
     return false;
   }
+
+  publisherId = String(publisherId).trim();
+  profileId = String(profileId).trim();
 
   // Fetch configuration and initialize plugins
   _ymConfigPromise = configJsonManager.fetchConfig(publisherId, profileId)

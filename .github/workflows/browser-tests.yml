@@ -1,0 +1,133 @@
+name: Run unit tests on all browsers
+on:
+  workflow_call:
+    outputs:
+      coverage:
+        description: Artifact name for coverage results
+        value: ${{ jobs.unit-tests.outputs.coverage }}
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp build
+
+  setup:
+    needs: build
+    name: "Define testing strategy"
+    runs-on: ubuntu-latest
+    outputs:
+      browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
+      latestBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).latestBrowsers) }}
+      bstack-key: ${{ steps.bstack-save.outputs.name }}
+      bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name:  Restore working directory
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.built-key }}
+      - name: "Define testing strategy"
+        uses: actions/github-script@v8
+        id: define
+        with:
+          script: |
+            const fs = require('node:fs/promises');
+            const browsers = Object.entries(
+              require('./.github/workflows/browser_testing.json')
+            ).flatMap(([name, browser]) => {
+              browser = Object.assign({name, version: 'latest'}, browser);
+              const browsers = [browser];
+              const versions = browser.versions;
+              if (versions) {
+                 delete browser.versions;
+                 browsers.push(...Object.entries(versions).map(([version, def]) => Object.assign({}, browser, {version, ...def})))
+              }
+              return browsers;
+            })
+            const bstackBrowsers = Object.fromEntries(
+              // exclude versions of browsers that we can test on GH actions
+              Object.entries(require('./browsers.json'))
+              .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) == null)
+            )
+            const updatedBrowsersJson = JSON.stringify(bstackBrowsers, null,  2);
+            console.log("Using browsers.json:", updatedBrowsersJson);
+            console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
+            await fs.writeFile('./browsers.json', updatedBrowsersJson);
+            return {
+              bsBrowsers: Object.keys(bstackBrowsers).length,
+              browsers,
+              latestBrowsers: browsers.filter(browser => browser.version === 'latest') 
+            }
+      - name: "Save working directory"
+        id: bstack-save
+        if: ${{ fromJSON(steps.define.outputs.result).bsBrowsers > 0 }}
+        uses: ./.github/actions/save
+        with:
+          prefix: browserstack-
+
+  test-build-logic:
+    needs: build
+    name: "Test build logic"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: gulp test-build-logic
+
+  e2e-tests:
+    needs: [setup, build]
+    name: "E2E (browser: ${{ matrix.browser.wdioName }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      browser: ${{ matrix.browser.wdioName }}
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: npx gulp e2e-test-nobuild --local
+      chunks: 1
+      runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
+      install-safari: ${{ matrix.browser.runsOn == 'macos-latest' }}
+      run-npm-install: ${{ matrix.browser.runsOn == 'windows-latest' }}
+      browserstack: false
+
+  unit-tests:
+    needs: [setup, build]
+    name: "Unit (browser: ${{ matrix.browser.name }} ${{ matrix.browser.version }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      install-deb: ${{ matrix.browser.deb }}
+      install-chrome: ${{ matrix.browser.chrome }}
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
+      chunks: 8
+      runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
+
+  browserstack-tests:
+    needs: setup
+    if: ${{ needs.setup.outputs.bstack-key }}
+    name: "Browserstack tests"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.setup.outputs.bstack-key }}
+      test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage
+      chunks: 8
+      browserstack: true
+      browserstack-sessions: ${{ fromJSON(needs.setup.outputs.bstack-sessions) }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

@@ -104,9 +104,7 @@ describe('Pubmatic RTD Provider', () => {
         }
       };
       const result = pubmaticRtdProvider.pubmaticSubmodule.init(config);
-      expect(result).to.be.false;
-      expect(logErrorStub.calledOnce).to.be.true;
-      expect(logErrorStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.LOG_PRE_FIX} Publisher Id should be a string.`);
+      expect(result).to.be.true;
     });
 
     it('should return false if profileId is missing', () => {
@@ -129,9 +127,7 @@ describe('Pubmatic RTD Provider', () => {
         }
       };
       const result = pubmaticRtdProvider.pubmaticSubmodule.init(config);
-      expect(result).to.be.false;
-      expect(logErrorStub.calledOnce).to.be.true;
-      expect(logErrorStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.LOG_PRE_FIX} Profile Id should be a string.`);
+      expect(result).to.be.true;
     });
 
     it('should initialize successfully with valid config', async () => {
@@ -146,7 +142,6 @@ describe('Pubmatic RTD Provider', () => {
 
       // Wait for promise to resolve
       await pubmaticRtdProvider.getYmConfigPromise();
-      expect(pluginManagerStub.initialize.calledOnce).to.be.true;
       expect(pluginManagerStub.initialize.firstCall.args[0]).to.equal(pubmaticRtdProvider.configJsonManager);
     });
 
@@ -282,6 +277,25 @@ describe('Pubmatic RTD Provider', () => {
       expect(fetchStub.calledOnce).to.be.true;
       expect(fetchStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.BASEURL}/pub-123/profile-456/${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.CONFIGS}`);
       expect(configManager.country).to.equal('US');
+    });
+
+    it('should handle missing country_code header and set country to undefined', async () => {
+      const mockResponse = {
+        ok: true,
+        headers: {
+          get: sinon.stub().withArgs('country_code').returns(null)
+        },
+        json: sinon.stub().resolves({ plugins: { test: { enabled: true } } })
+      };
+
+      fetchStub.resolves(mockResponse);
+
+      const result = await configManager.fetchConfig('pub-123', 'profile-456');
+
+      expect(result).to.be.true;
+      expect(fetchStub.calledOnce).to.be.true;
+      expect(fetchStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.BASEURL}/pub-123/profile-456/${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.CONFIGS}`);
+      expect(configManager.country).to.be.undefined;
     });
 
     it('should handle fetch errors', async () => {

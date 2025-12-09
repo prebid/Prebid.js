@@ -13,6 +13,18 @@ describe('objectGuard', () => {
         get(val) { return `repl${val}` },
       }
     })
+
+    it('should reject conflicting rules', () => {
+      const crule = {...rule, paths: ['outer']};
+      expect(() => objectGuard([rule, crule])).to.throw();
+      expect(() => objectGuard([crule, rule])).to.throw();
+    });
+
+    it('should preserve object identity', () => {
+      const guard = objectGuard([rule])({outer: {inner: {foo: 'bar'}}});
+      expect(guard.outer).to.equal(guard.outer);
+      expect(guard.outer.inner).to.equal(guard.outer.inner);
+    })
     it('can prevent top level read access', () => {
       const obj = objectGuard([rule])({'foo': 1, 'other': 2});
       expect(obj).to.eql({
@@ -96,6 +108,18 @@ describe('objectGuard', () => {
         applies: sinon.stub().callsFake(() => applies)
       });
     });
+
+    it('should reject conflicting rules', () => {
+      const crule = {...rule, paths: ['outer']};
+      expect(() => objectGuard([rule, crule])).to.throw();
+      expect(() => objectGuard([crule, rule])).to.throw();
+    });
+
+    it('should preserve object identity', () => {
+      const guard = objectGuard([rule])({outer: {inner: {foo: 'bar'}}});
+      expect(guard.outer).to.equal(guard.outer);
+      expect(guard.outer.inner).to.equal(guard.outer.inner);
+    })
 
     it('does not mess up array reads', () => {
       const guard = objectGuard([rule])({foo: [{bar: 'baz'}]});
@@ -247,22 +271,31 @@ describe('objectGuard', () => {
       expect(obj.foo).to.eql('21bar');
     });
 
-    it('can apply both redact and write protect', () => {
-      const obj = objectGuard([
-        redactRule({
-          paths: ['foo'],
-          applies: () => true,
-          get(val) {
-            return 'redact' + val;
-          },
-        }),
-        writeProtectRule({
-          paths: ['foo'],
-          applies: () => true,
+    describe('when a property has both redact and write protect rules', () => {
+      let rules;
+      beforeEach(() => {
+        rules = [
+          redactRule({
+            paths: ['foo'],
+            applies: () => true,
+          }),
+          writeProtectRule({
+            paths: ['foo'],
+            applies: () => true,
+          })
+        ];
+      })
+      Object.entries({
+        'simple value': 'val',
+        'object value': {inner: 'val'}
+      }).forEach(([t, val]) => {
+        it(`can apply them both (on ${t})`, () => {
+          const obj = objectGuard(rules)({foo: val});
+          expect(obj.foo).to.not.exist;
+          obj.foo = {other: 'val'};
+          expect(obj.foo).to.not.exist;
         })
-      ])({foo: 'bar'});
-      obj.foo = 'baz';
-      expect(obj.foo).to.eql('redactbar');
-    });
+      })
+    })
   })
 });
