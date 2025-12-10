@@ -1,4 +1,4 @@
-import { isPlainObject, logError, logInfo } from '../src/utils.js';
+import { isPlainObject, logError, logInfo, deepAccess } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
@@ -34,6 +34,8 @@ let globalName;
 let alreadySubscribedOnGAM = false;
 let reportList = {};
 let cleanReportsID;
+let iiqConfig;
+let iqParams;
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -74,7 +76,9 @@ const PARAMS_NAMES = {
 };
 
 function getIntentIqConfig() {
-  return config.getConfig('userSync.userIds')?.find((m) => m.name === 'intentIqId');
+  iqParams = config.getConfig('userSync.userIds')?.find(m => m.name === 'intentIqId');
+  if (!iqParams && iiqConfig) iqParams = deepAccess(iiqConfig, 'options');
+  return iqParams;
 }
 
 const DEFAULT_URL = 'https://reports.intentiq.com/report';
@@ -141,6 +145,7 @@ function initAdapterConfig(config) {
               : '';
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
             manualWinReportEnabled || false;
+    iiqAnalyticsAnalyticsAdapter.initOptions.group = typeof iiqConfig.params?.group === 'string' ? iiqConfig.params.group : null;
     iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqIdSystemConfig.params?.domainName || '';
     iiqAnalyticsAnalyticsAdapter.initOptions.siloEnabled =
             typeof iiqIdSystemConfig.params?.siloEnabled === 'boolean' ? iiqIdSystemConfig.params.siloEnabled : false;
@@ -172,7 +177,11 @@ function initReadLsIds() {
       )
     );
     if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
+      if (iiqAnalyticsAnalyticsAdapter.initOptions.group) {
+        iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.group;
+      } else {
+        iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
+      }
     }
     const partnerData = readData(
       FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner,
@@ -485,8 +494,9 @@ function constructFullUrl(data) {
 iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapter.enableAnalytics;
 
 iiqAnalyticsAnalyticsAdapter.enableAnalytics = function (myConfig) {
+  iiqConfig = myConfig;
   iiqAnalyticsAnalyticsAdapter.originEnableAnalytics(myConfig); // call the base class function
-  initAdapterConfig(myConfig)
+  initAdapterConfig(myConfig);
 };
 adapterManager.registerAnalyticsAdapter({
   adapter: iiqAnalyticsAnalyticsAdapter,

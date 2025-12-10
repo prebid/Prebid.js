@@ -764,4 +764,174 @@ describe('IntentIQ tests all', function () {
       expect(decodedPayload).to.have.property('placementId', expectedPlacementId);
     });
   });
+
+  describe('group override from configParams', function () {
+    beforeEach(function () {
+      localStorage.clear();
+      iiqAnalyticsAnalyticsAdapter.initOptions = {
+        lsValueInitialized: false,
+        partner: null,
+        fpid: null,
+        currentGroup: null,
+        dataInLs: null,
+        eidl: null,
+        lsIdsInitialized: false,
+        manualWinReportEnabled: false,
+        group: null,
+        domainName: null,
+        siloEnabled: false,
+        reportMethod: null,
+        additionalParams: null,
+        cmpRate: null,
+      };
+    });
+
+    afterEach(function () {
+      localStorage.clear();
+    });
+
+    it('should use group from config when group is provided', function () {
+      const customGroup = 'A';
+      const [userConfig] = getUserConfig();
+      userConfig.params.group = customGroup;
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testdata"}');
+
+      events.emit(EVENTS.BID_WON, wonRequest);
+
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal(customGroup);
+    });
+
+    it('should include config group in payload when group is provided', function () {
+      const customGroup = 'A';
+      const [userConfig] = getUserConfig();
+      userConfig.params.group = customGroup;
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testdata"}');
+
+      events.emit(EVENTS.BID_WON, wonRequest);
+
+      const request = server.requests[0];
+      const urlParams = new URL(request.url);
+      const encodedPayload = urlParams.searchParams.get('payload');
+      const decodedPayload = JSON.parse(atob(JSON.parse(encodedPayload)[0]));
+
+      expect(decodedPayload.abGroup).to.equal(customGroup);
+    });
+
+    it('should use storage group when group is not provided in config', function () {
+      const [userConfig] = getUserConfig();
+      // No group provided
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testdata"}');
+
+      events.emit(EVENTS.BID_WON, wonRequest);
+
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
+    });
+
+    it('should store group in initOptions when group is provided in config', function () {
+      const customGroup = 'A';
+      const [userConfig] = getUserConfig();
+      userConfig.params.group = customGroup;
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+
+      events.emit(EVENTS.BID_WON, wonRequest);
+
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.group).to.equal(customGroup);
+    });
+  });
+
+  describe('getIntentIqConfig fallback behavior', function () {
+    beforeEach(function () {
+      localStorage.clear();
+      iiqAnalyticsAnalyticsAdapter.initOptions = {
+        lsValueInitialized: false,
+        partner: null,
+        fpid: null,
+        currentGroup: null,
+        dataInLs: null,
+        eidl: null,
+        lsIdsInitialized: false,
+        manualWinReportEnabled: false,
+        group: null,
+        domainName: null,
+        siloEnabled: false,
+        reportMethod: null,
+        additionalParams: null,
+        cmpRate: null,
+      };
+    });
+
+    afterEach(function () {
+      localStorage.clear();
+    });
+
+    it('should use config from enableAnalytics options when userSync.userIds is not available', function () {
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(undefined);
+
+      iiqAnalyticsAnalyticsAdapter.disableAnalytics();
+      iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+        provider: 'iiqAnalytics',
+        options: {
+          params: {
+            partner: partner,
+            group: 'C'
+          }
+        }
+      });
+
+      localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testdata"}');
+
+      events.emit(EVENTS.BID_WON, wonRequest);
+
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.partner).to.equal(partner);
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.group).to.equal('C');
+    });
+
+    it('should prioritize userSync.userIds config over enableAnalytics options', function () {
+      const [userConfig] = getUserConfig();
+      userConfig.params.group = 'A';
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      iiqAnalyticsAnalyticsAdapter.disableAnalytics();
+      iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+        provider: 'iiqAnalytics',
+        options: {
+          params: {
+            partner: 999,
+            group: 'C'
+          }
+        }
+      });
+
+      localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+      localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testdata"}');
+
+      events.emit(EVENTS.BID_WON, wonRequest);
+
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.partner).to.equal(partner);
+      expect(iiqAnalyticsAnalyticsAdapter.initOptions.group).to.equal('A');
+    });
+  });
 });

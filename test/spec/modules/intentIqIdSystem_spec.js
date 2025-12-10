@@ -1547,4 +1547,144 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
     expect(groupChangedSpy.calledWith(WITH_IIQ)).to.be.true;
   });
+
+  describe('group override from configParams', function () {
+    beforeEach(function () {
+      localStorage.clear();
+      const expiredDate = new Date(0).toUTCString();
+      storage.setCookie(FIRST_PARTY_KEY, '', expiredDate, 'Lax');
+      storage.setCookie(FIRST_PARTY_KEY + '_' + partner, '', expiredDate, 'Lax');
+    });
+
+    afterEach(function () {
+      localStorage.clear();
+    });
+
+    it('should use group from configParams when group is provided', function () {
+      const customGroup = 'A';
+      const configParams = {
+        params: {
+          partner: partner,
+          group: customGroup
+        }
+      };
+
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+      submoduleCallback(callBackSpy);
+
+      let request = server.requests[0];
+      expect(request.url).to.contain('&testGroup=' + encodeURIComponent(customGroup));
+    });
+
+    it('should not override group from server response when group is provided in config', function () {
+      const customGroup = 'A';
+      const groupChangedSpy = sinon.spy();
+      const configParams = {
+        params: {
+          partner: partner,
+          group: customGroup,
+          groupChanged: groupChangedSpy
+        }
+      };
+
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+      submoduleCallback(callBackSpy);
+
+      let request = server.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          tc: 41,
+          isOptedOut: false,
+          data: { eids: [] }
+        })
+      );
+
+      // Group should remain as the custom group, not changed to WITHOUT_IIQ
+      expect(groupChangedSpy.calledWith(customGroup)).to.be.true;
+    });
+
+    it('should not override group to WITH_IIQ when group is provided in config', function () {
+      const customGroup = 'B';
+      const groupChangedSpy = sinon.spy();
+      const configParams = {
+        params: {
+          partner: partner,
+          group: customGroup,
+          groupChanged: groupChangedSpy
+        }
+      };
+
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+      submoduleCallback(callBackSpy);
+
+      let request = server.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          tc: 20,
+          isOptedOut: false,
+          data: { eids: ['test_eid'] },
+          ls: true
+        })
+      );
+
+      // Group should remain as the custom group, not changed to WITH_IIQ
+      expect(groupChangedSpy.calledWith(customGroup)).to.be.true;
+    });
+
+    it('should allow server to set group when group is not provided in config', function () {
+      const groupChangedSpy = sinon.spy();
+      const configParams = {
+        params: {
+          partner: partner,
+          groupChanged: groupChangedSpy
+        }
+      };
+
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+      submoduleCallback(callBackSpy);
+
+      let request = server.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          tc: 41,
+          isOptedOut: false,
+          data: { eids: [] }
+        })
+      );
+
+      // Group should be set to WITHOUT_IIQ by server response
+      expect(groupChangedSpy.calledWith(WITHOUT_IIQ)).to.be.true;
+    });
+
+    it('should set GAM targeting with group from config', function () {
+      const customGroup = 'A';
+      let mockGamObject = mockGAM();
+      const configParams = {
+        params: {
+          partner: partner,
+          group: customGroup,
+          gamObjectReference: mockGamObject
+        }
+      };
+
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+      submoduleCallback(callBackSpy);
+
+      mockGamObject.cmd.forEach(cb => cb());
+
+      let groupValue = mockGamObject.pubads().getTargeting('intent_iq_group');
+      expect(groupValue).to.deep.equal([customGroup]);
+    });
+  });
 });
