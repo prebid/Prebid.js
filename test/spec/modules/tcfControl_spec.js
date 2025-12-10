@@ -421,12 +421,12 @@ describe('gdpr enforcement', function () {
       consent.vendorData.vendor.consents = {};
       consent.vendorData.vendor.legitimateInterests = {};
       consent.vendorData.purpose.consents['2'] = true;
-      
+
       const s2sBidderParams = activityParams(MODULE_TYPE_BIDDER, 's2sBidder', {isS2S: true});
       expectAllow(true, fetchBidsRule(s2sBidderParams));
     });
 
-    it('should block client bidder when deferS2Sbidders is true', function() {
+    it('should not make exceptions for client bidders when deferS2Sbidders is true', function() {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -442,7 +442,7 @@ describe('gdpr enforcement', function () {
       consent.vendorData.vendor.consents = {};
       consent.vendorData.vendor.legitimateInterests = {};
       consent.vendorData.purpose.consents['2'] = true;
-      
+
       const clientBidderParams = activityParams(MODULE_TYPE_BIDDER, 'clientBidder');
       expectAllow(false, fetchBidsRule(clientBidderParams));
     });
