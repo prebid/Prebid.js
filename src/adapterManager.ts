@@ -505,12 +505,16 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
+    const serverBiddersCodes = getS2SBidderSet(_s2sConfigs);
+
     adUnits.forEach(au => {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+        isS2S: serverBiddersCodes.has(bid.bidder)
+      })))
       incrementRequestsCounter(au.code);
     });
 

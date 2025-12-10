@@ -229,7 +229,7 @@ function getConsent(consentData, type, purposeNo, gvlId) {
  * @param {number=} gvlId - GVL ID for the module
  * @returns {boolean}
  */
-export function validateRules(rule, consentData, currentModule, gvlId) {
+export function validateRules(rule, consentData, currentModule, gvlId, params = {}) {
   const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
 
   // return 'true' if vendor present in 'vendorExceptions'
@@ -237,7 +237,7 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
     return true;
   }
   const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
-  const deferS2Sbidders = rule.purpose === 'basicAds' && !gvlId && rule.deferS2Sbidders;
+  const deferS2Sbidders = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders;
   const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
   return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || deferS2Sbidders || vendor);
 }
@@ -249,7 +249,7 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = 
 
     if (shouldEnforce(consentData, purposeNo, modName)) {
       const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
-      const allow = !!checkConsent(consentData, modName, gvlid);
+      const allow = !!checkConsent(consentData, modName, gvlid, params);
       if (!allow) {
         blocked && blocked.add(modName);
         return {allow};
@@ -259,7 +259,7 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = 
 }
 
 function singlePurposeGdprRule(purposeNo, blocked = null, gvlidFallback: any = () => null) {
-  return gdprRule(purposeNo, (cd, modName, gvlid) => !!validateRules(ACTIVE_RULES.purpose[purposeNo], cd, modName, gvlid), blocked, gvlidFallback);
+  return gdprRule(purposeNo, (cd, modName, gvlid, params) => !!validateRules(ACTIVE_RULES.purpose[purposeNo], cd, modName, gvlid, params), blocked, gvlidFallback);
 }
 
 function exceptPrebidModules(ruleFn) {
