@@ -42,11 +42,6 @@ export async function init(pluginName, configJsonManager) {
     return false;
   }
 
-  if (!isFn(continueAuction)) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
-    return false;
-  }
-
   setConfigJsonManager(configJsonManager);
   try {
     conf.setConfig(prepareFloorsConfig());
