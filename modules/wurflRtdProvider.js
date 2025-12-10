@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.3.0';
+const MODULE_VERSION = '2.3.1';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -1330,7 +1330,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   for (let i = 0; i < bidsReceived.length; i++) {
     const bid = bidsReceived[i];
     const adUnitCode = bid.adUnitCode;
-    const bidderCode = bid.bidderCode || bid.bidder;
+    const bidderCode = bid.bidder || bid.bidderCode;
     const key = adUnitCode + ':' + bidderCode;
     bidResponseMap[key] = bid;
   }
