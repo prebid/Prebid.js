@@ -145,7 +145,7 @@ function initAdapterConfig(config) {
               : '';
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
             manualWinReportEnabled || false;
-    iiqAnalyticsAnalyticsAdapter.initOptions.group = typeof iiqConfig.params?.group === 'string' ? iiqConfig.params.group : null;
+    iiqAnalyticsAnalyticsAdapter.initOptions.group = typeof iiqIdSystemConfig.params?.group === 'string' ? iiqIdSystemConfig.params.group : null;
     iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqIdSystemConfig.params?.domainName || '';
     iiqAnalyticsAnalyticsAdapter.initOptions.siloEnabled =
             typeof iiqIdSystemConfig.params?.siloEnabled === 'boolean' ? iiqIdSystemConfig.params.siloEnabled : false;
