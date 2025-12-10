@@ -110,7 +110,7 @@ export const spec = {
       if (bidderRequest && bidderRequest.gdprConsent) {
         keyValues._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies;
+          keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
       }
 
