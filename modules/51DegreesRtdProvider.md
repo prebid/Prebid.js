@@ -10,7 +10,7 @@
 
 The 51Degrees module enriches an OpenRTB request with [51Degrees Device Data](https://51degrees.com/documentation/index.html).
 
-The 51Degrees module sets the following fields of the device object: `devicetype`, `make`, `model`, `os`, `osv`, `h`, `w`, `ppi`, `pxratio`. Interested bidder adapters may use these fields as needed. In addition, the module sets `device.ext.fiftyonedegrees.deviceId` to a permanent device ID, which can be rapidly looked up in on-premise data, exposing over 250 properties, including device age, chipset, codec support, price, operating system and app/browser versions, age, and embedded features. The module also sets `device.ext.fiftyonedegrees.tpc` to indicate whether third-party cookies are enabled in the browser.
+The 51Degrees module sets the following fields of the device object: `devicetype`, `make`, `model`, `os`, `osv`, `h`, `w`, `ppi`, `pxratio`. Interested bidder adapters may use these fields as needed. In addition, the module sets `device.ext.fiftyonedegrees.deviceId` to a permanent device ID, which can be rapidly looked up in on-premise data, exposing over 250 properties, including device age, chipset, codec support, price, operating system and app/browser versions, age, and embedded features. The module also sets `device.ext.fiftyonedegrees.tpc` to indicate whether third-party cookies are enabled in the browser, with possible values of `"True"`, `"False"`, or `"Unknown"` (the latter indicating that a detection attempt was made but failed).
 
 The module supports on-premise and cloud device detection services, with free options for both.
 
