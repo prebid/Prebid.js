@@ -33,6 +33,7 @@ const BASE_URLS = {
   'attekmi': 'https://prebid.attekmi.co/pbjs',
   'smarthub': 'https://prebid.attekmi.co/pbjs',
   'markapp': 'https://markapp-prebid.attekmi.co/pbjs',
+  'markapp-apac': 'https://markapp-apac-prebid.attekmi.co/pbjs',
   'jdpmedia': 'https://jdpmedia-prebid.attekmi.co/pbjs',
   'tredio': 'https://tredio-prebid.attekmi.co/pbjs',
   'felixads': 'https://felixads-prebid.attekmi.co/pbjs',
