@@ -367,7 +367,8 @@ describe('51DegreesRtdProvider', function() {
     it('does not set the deviceid if it is not provided', function() {
       const device = {...fiftyOneDegreesDevice};
       delete device.deviceid;
-      expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('ext');
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext).to.not.have.any.keys('fiftyonedegrees_deviceId');
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext.fiftyonedegrees).to.not.have.any.keys('deviceId');
     });
 
     it('sets the model to hardwarename if hardwaremodel is not provided', function() {
