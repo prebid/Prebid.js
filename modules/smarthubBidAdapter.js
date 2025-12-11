@@ -51,14 +51,14 @@ const adapterState = {};
 
 const _getPartnerUrl = (partner) => {
   const region = ALIASES[partner]?.region;
-  const partnerRegion = region ? `${partner}-${String(region).toLocaleLowerCase()}` : partner;
+  const partnerName = region ? `${partner}-${String(region).toLocaleLowerCase()}` : partner;
 
   const urls = Object.keys(BASE_URLS);
-  if (urls.includes(partnerRegion)) {
-    return BASE_URLS[partnerRegion];
+  if (urls.includes(partnerName)) {
+    return BASE_URLS[partnerName];
   }
 
-  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerRegion}`;
+  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
 }
 
 const _getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();
