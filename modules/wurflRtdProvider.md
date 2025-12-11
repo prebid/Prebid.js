@@ -49,15 +49,16 @@ pbjs.setConfig({
 
 ### Parameters
 
-| Name           | Type    | Description                                                      | Default        |
-| :------------- | :------ | :--------------------------------------------------------------- | :------------- |
-| name           | String  | Real time data module name                                       | Always 'wurfl' |
-| waitForIt      | Boolean | Should be `true` if there's an `auctionDelay` defined (optional) | `false`        |
-| params         | Object  |                                                                  |                |
-| params.altHost | String  | Alternate host to connect to WURFL.js                            |                |
-| params.abTest  | Boolean | Enable A/B testing mode                                          | `false`        |
-| params.abName  | String  | A/B test name identifier                                         | `'unknown'`    |
-| params.abSplit | Number  | Fraction of users in treatment group (0-1)                       | `0.5`          |
+| Name                | Type    | Description                                                      | Default        |
+| :------------------ | :------ | :--------------------------------------------------------------- | :------------- |
+| name                | String  | Real time data module name                                       | Always 'wurfl' |
+| waitForIt           | Boolean | Should be `true` if there's an `auctionDelay` defined (optional) | `false`        |
+| params              | Object  |                                                                  |                |
+| params.altHost      | String  | Alternate host to connect to WURFL.js                            |                |
+| params.abTest       | Boolean | Enable A/B testing mode                                          | `false`        |
+| params.abName       | String  | A/B test name identifier                                         | `'unknown'`    |
+| params.abSplit      | Number  | Fraction of users in treatment group (0-1)                       | `0.5`          |
+| params.abExcludeLCE | Boolean | Don't apply A/B testing to LCE bids                              | `true`         |
 
 ### A/B Testing
 
