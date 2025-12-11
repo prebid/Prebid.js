@@ -33,6 +33,7 @@ describe('51DegreesRtdProvider', function() {
     devicetype: 'Desktop',
     pixelratio: 1,
     deviceid: '17595-131215-132535-18092',
+    thirdpartycookiesenabled: 'True',
   };
 
   const fiftyOneDegreesDeviceX2scaling = {
@@ -61,6 +62,10 @@ describe('51DegreesRtdProvider', function() {
       pxratio: 1,
       ext: {
         fiftyonedegrees_deviceId: '17595-131215-132535-18092',
+        fiftyonedegrees: {
+          deviceId: '17595-131215-132535-18092',
+          tpc: 'True',
+        },
       },
     },
   };
