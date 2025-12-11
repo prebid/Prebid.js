@@ -115,5 +115,4 @@ describe('FPD normalization', () => {
       });
     });
   })
-
 })
