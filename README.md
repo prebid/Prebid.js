@@ -3,6 +3,8 @@
 
 # Prebid.js
 
+PLEASE TELL ME WHYYYYYYYY, MY CAR IS IN THE FRONT YARD
+
 > A free and open source library for publishers to quickly implement header bidding.
 
 This README is for developers who want to contribute to Prebid.js.
