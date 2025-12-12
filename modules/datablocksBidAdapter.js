@@ -1,3 +1,4 @@
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import {deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -135,7 +136,7 @@ export const spec = {
       'whl': win.history.length,
       'wxo': win.pageXOffset,
       'wyo': win.pageYOffset,
-      'wpr': win.devicePixelRatio,
+      'wpr': getDevicePixelRatio(win),
       'is_bot': botTest.doTests(),
       'is_hid': win.document.hidden,
       'vs': win.document.visibilityState

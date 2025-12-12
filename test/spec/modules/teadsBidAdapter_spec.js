@@ -3,6 +3,7 @@ import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { spec, storage } from 'modules/teadsBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { getScreenOrientation } from 'src/utils.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -360,7 +361,7 @@ describe('teadsBidAdapter', () => {
     it('should add pixelRatio info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const pixelRatio = window.top.devicePixelRatio
+      const pixelRatio = getDevicePixelRatio();
 
       expect(payload.devicePixelRatio).to.exist;
       expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);
