@@ -33,6 +33,7 @@ describe('51DegreesRtdProvider', function() {
     devicetype: 'Desktop',
     pixelratio: 1,
     deviceid: '17595-131215-132535-18092',
+    thirdpartycookiesenabled: 'True',
   };
 
   const fiftyOneDegreesDeviceX2scaling = {
@@ -61,6 +62,10 @@ describe('51DegreesRtdProvider', function() {
       pxratio: 1,
       ext: {
         fiftyonedegrees_deviceId: '17595-131215-132535-18092',
+        fiftyonedegrees: {
+          deviceId: '17595-131215-132535-18092',
+          tpc: 'True',
+        },
       },
     },
   };
@@ -362,7 +367,8 @@ describe('51DegreesRtdProvider', function() {
     it('does not set the deviceid if it is not provided', function() {
       const device = {...fiftyOneDegreesDevice};
       delete device.deviceid;
-      expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('ext');
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext).to.not.have.any.keys('fiftyonedegrees_deviceId');
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext.fiftyonedegrees).to.not.have.any.keys('deviceId');
     });
 
     it('sets the model to hardwarename if hardwaremodel is not provided', function() {
