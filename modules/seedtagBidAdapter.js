@@ -127,7 +127,7 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidRequestsCount || 1,
+    requestCount: validBidRequest.bidderRequestsCount || 1,
   };
 
   if (hasVideoMediaType(validBidRequest) && hasMandatoryVideoParams(validBidRequest)) {

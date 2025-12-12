@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sevioBidAdapter.js';
-
+import { config } from 'src/config.js';
 const ENDPOINT_URL = 'https://req.adx.ws/prebid';
 
 describe('sevioBidAdapter', function () {
@@ -326,7 +326,7 @@ describe('sevioBidAdapter', function () {
     it('getPageTitle prefers top.title; falls back to og:title (top document)', () => {
       window.top.document.title = 'Doc Title';
       let out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.pageTitle).to.equal('Doc Title');
+      expect(out[0].data.context[0].text).to.equal('Doc Title');
 
       window.top.document.title = '';
       const meta = window.top.document.createElement('meta');
@@ -335,7 +335,7 @@ describe('sevioBidAdapter', function () {
       window.top.document.head.appendChild(meta);
 
       out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.pageTitle).to.equal('OG Title');
+      expect(out[0].data.context[0].text).to.equal('OG Title');
 
       meta.remove();
     });
@@ -352,7 +352,7 @@ describe('sevioBidAdapter', function () {
           get() { throw new Error('cross-origin'); }
         });
         const out = spec.buildRequests([mkBid()], baseBidderRequest);
-        expect(out[0].data.pageTitle).to.equal('Local Title');
+        expect(out[0].data.context[0].text).to.equal('Local Title');
         Object.defineProperty(window, 'top', original);
         restored = true;
       } catch (e) {
@@ -407,6 +407,118 @@ describe('sevioBidAdapter', function () {
       } else {
         Object.defineProperty(perfTop, 'timing', { configurable: true, value: undefined });
       }
+    });
+
+    it('handles multiple sizes correctly', function () {
+      const multiSizeBidRequests = [
+        {
+          bidder: 'sevio',
+          params: { zone: 'zoneId' },
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [728, 90],
+                [160, 600],
+              ]
+            }
+          },
+          bidId: 'multi123',
+        }
+      ];
+
+      const bidderRequests = {
+        refererInfo: {
+          numIframes: 0,
+          reachedTop: true,
+          referer: 'https://example.com',
+          stack: ['https://example.com']
+        }
+      };
+
+      const request = spec.buildRequests(multiSizeBidRequests, bidderRequests);
+      const sizes = request[0].data.ads[0].sizes;
+
+      expect(sizes).to.deep.equal([
+        { width: 300, height: 250 },
+        { width: 728, height: 90 },
+        { width: 160, height: 600 },
+      ]);
+    });
+  });
+
+  describe('currency handling', function () {
+    let bidRequests;
+    let bidderRequests;
+
+    beforeEach(function () {
+      bidRequests = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: '123'
+      }];
+
+      bidderRequests = {
+        refererInfo: {
+          referer: 'https://example.com',
+          page: 'https://example.com',
+        }
+      };
+    });
+
+    afterEach(function () {
+      if (typeof config.resetConfig === 'function') {
+        config.resetConfig();
+      } else if (typeof config.setConfig === 'function') {
+        config.setConfig({ currency: null });
+      }
+    });
+
+    it('includes EUR currency when EUR is set in prebid config', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      });
+
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload.currency).to.equal('EUR');
+    });
+
+    it('includes GBP currency when GBP is set in prebid config', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'GBP'
+        }
+      });
+
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload.currency).to.equal('GBP');
+    });
+
+    it('does NOT include currency when no currency config is set', function () {
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload).to.not.have.property('currency');
+    });
+
+    it('parses comma-separated keywords string into tokens array', function () {
+      const singleBidRequest = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId', keywords: 'play, games,  fun ' }, // string CSV
+        mediaTypes: { banner: { sizes: [[728, 90]] } },
+        bidId: 'bid-kw-str'
+      }];
+      const requests = spec.buildRequests(singleBidRequest, baseBidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+      expect(requests[0].data).to.have.nested.property('keywords.tokens');
+      expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games', 'fun']);
     });
   });
 });

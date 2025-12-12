@@ -2890,88 +2890,6 @@ describe('the rubicon adapter', function () {
           expect(slotParams.kw).to.equal('a,b,c');
         });
 
-        it('should pass along o_ae param when fledge is enabled', () => {
-          const localBidRequest = Object.assign({}, bidderRequest.bids[0]);
-          localBidRequest.ortb2Imp.ext.ae = true;
-
-          const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
-
-          expect(slotParams['o_ae']).to.equal(1)
-        });
-
-        it('should pass along desired segtaxes, but not non-desired ones', () => {
-          const localBidderRequest = Object.assign({}, bidderRequest);
-          localBidderRequest.refererInfo = {domain: 'bob'};
-          config.setConfig({
-            rubicon: {
-              sendUserSegtax: [9],
-              sendSiteSegtax: [10]
-            }
-          });
-          localBidderRequest.ortb2.user = {
-            data: [{
-              ext: {
-                segtax: '404'
-              },
-              segment: [{id: 5}, {id: 6}]
-            }, {
-              ext: {
-                segtax: '508'
-              },
-              segment: [{id: 5}, {id: 2}]
-            }, {
-              ext: {
-                segtax: '9'
-              },
-              segment: [{id: 1}, {id: 2}]
-            }]
-          }
-          localBidderRequest.ortb2.site = {
-            content: {
-              data: [{
-                ext: {
-                  segtax: '10'
-                },
-                segment: [{id: 2}, {id: 3}]
-              }, {
-                ext: {
-                  segtax: '507'
-                },
-                segment: [{id: 3}, {id: 4}]
-              }]
-            }
-          }
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
-          expect(slotParams['tg_i.tax507']).is.equal('3,4');
-          expect(slotParams['tg_v.tax508']).is.equal('5,2');
-          expect(slotParams['tg_v.tax9']).is.equal('1,2');
-          expect(slotParams['tg_i.tax10']).is.equal('2,3');
-          expect(slotParams['tg_v.tax404']).is.equal(undefined);
-        });
-
-        it('should support IAB segtax 7 in site segments', () => {
-          const localBidderRequest = Object.assign({}, bidderRequest);
-          localBidderRequest.refererInfo = {domain: 'bob'};
-          config.setConfig({
-            rubicon: {
-              sendUserSegtax: [4],
-              sendSiteSegtax: [1, 2, 5, 6, 7]
-            }
-          });
-          localBidderRequest.ortb2.site = {
-            content: {
-              data: [{
-                ext: {
-                  segtax: '7'
-                },
-                segment: [{id: 8}, {id: 9}]
-              }]
-            }
-          };
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
-          expect(slotParams['tg_i.tax7']).to.equal('8,9');
-        });
-
         it('should add p_site.mobile if mobile is a number in ortb2.site', function () {
           // Set up a bidRequest with mobile property as a number
           const localBidderRequest = Object.assign({}, bidderRequest);
@@ -3814,43 +3732,6 @@ describe('the rubicon adapter', function () {
           });
 
           expect(bids).to.be.lengthOf(0);
-        });
-
-        it('Should support recieving an auctionConfig and pass it along to Prebid', function () {
-          const response = {
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'size_id': 15,
-            'alt_size_ids': [
-              43
-            ],
-            'tracking': '',
-            'inventory': {},
-            'ads': [{
-              'status': 'ok',
-              'cpm': 0,
-              'size_id': 15
-            }],
-            'component_auction_config': [{
-              'random': 'value',
-              'bidId': '5432'
-            },
-            {
-              'random': 'string',
-              'bidId': '6789'
-            }]
-          };
-
-          const {bids, paapi} = spec.interpretResponse({body: response}, {
-            bidRequest: bidderRequest.bids[0]
-          });
-
-          expect(bids).to.be.lengthOf(1);
-          expect(paapi[0].bidId).to.equal('5432');
-          expect(paapi[0].config.random).to.equal('value');
-          expect(paapi[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {

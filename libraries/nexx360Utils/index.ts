@@ -5,7 +5,7 @@ import { INSTREAM, OUTSTREAM } from '../../src/video.js';
 import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
 import { StorageManager } from '../../src/storageManager.js';
-import { BidRequest, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
+import { BidRequest, ORTBImp, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
 import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
@@ -122,7 +122,7 @@ export const createRenderer = (
   return renderer;
 };
 
-export const enrichImp = (imp, bidRequest:BidRequest<string>) => {
+export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp => {
   deepSetValue(imp, 'tagid', bidRequest.adUnitCode);
   deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode);
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
