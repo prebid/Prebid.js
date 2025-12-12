@@ -123,9 +123,9 @@ describe('Rules Module', function() {
               weight: 100,
               selected: true,
               analyticsKey: 'testAnalyticsKey',
-              schema: [{ function: 'adUnitCode', args: ['adUnit-0000'] }],
+              schema: [{ function: 'adUnitCode', args: [] }],
               rules: [{
-                conditions: ['true'],
+                conditions: ['adUnit-0000'],
                 results: [{
                   function: 'excludeBidders',
                   args: [{
@@ -237,11 +237,11 @@ describe('Rules Module', function() {
           code: 'div-1'
         }
       };
-      const func = rulesModule.evaluateSchema('adUnitCode', ['div-1'], context);
-      expect(func()).to.be.true;
+      const func = rulesModule.evaluateSchema('adUnitCode', [], context);
+      expect(func()).to.equal('div-1');
 
-      const func2 = rulesModule.evaluateSchema('adUnitCode', ['div-2'], context);
-      expect(func2()).to.be.false;
+      const func2 = rulesModule.evaluateSchema('adUnitCode', [], context);
+      expect(func2()).to.equal('div-1');
     });
 
     it('should evaluate adUnitCodeIn condition', function() {
@@ -267,11 +267,11 @@ describe('Rules Module', function() {
           }
         }
       };
-      const func = rulesModule.evaluateSchema('deviceCountry', ['US'], context);
-      expect(func()).to.be.true;
+      const func = rulesModule.evaluateSchema('deviceCountry', [], context);
+      expect(func()).to.equal('US');
 
-      const func2 = rulesModule.evaluateSchema('deviceCountry', ['UK'], context);
-      expect(func2()).to.be.false;
+      const func2 = rulesModule.evaluateSchema('deviceCountry', [], context);
+      expect(func2()).to.equal('US');
     });
 
     it('should evaluate deviceCountryIn condition', function() {
@@ -444,6 +444,34 @@ describe('Rules Module', function() {
       expect(func2()).to.be.false;
     });
 
+    it('should evaluate domain condition', function() {
+      const context1 = {
+        ortb2: {
+          site: {
+            domain: 'example.com'
+          }
+        }
+      };
+      const func1 = rulesModule.evaluateSchema('domain', [], context1);
+      expect(func1()).to.equal('example.com');
+
+      const context2 = {
+        ortb2: {
+          app: {
+            domain: 'app.example.com'
+          }
+        }
+      };
+      const func2 = rulesModule.evaluateSchema('domain', [], context2);
+      expect(func2()).to.equal('app.example.com');
+
+      const context3 = {
+        ortb2: {}
+      };
+      const func3 = rulesModule.evaluateSchema('domain', [], context3);
+      expect(func3()).to.equal('');
+    });
+
     it('should evaluate domainIn condition', function() {
       const context1 = {
         ortb2: {
@@ -467,6 +495,24 @@ describe('Rules Module', function() {
 
       const func3 = rulesModule.evaluateSchema('domainIn', [['other.com']], context1);
       expect(func3()).to.be.false;
+    });
+
+    it('should evaluate bundle condition', function() {
+      const context1 = {
+        ortb2: {
+          app: {
+            bundle: 'com.example.app'
+          }
+        }
+      };
+      const func1 = rulesModule.evaluateSchema('bundle', [], context1);
+      expect(func1()).to.equal('com.example.app');
+
+      const context2 = {
+        ortb2: {}
+      };
+      const func2 = rulesModule.evaluateSchema('bundle', [], context2);
+      expect(func2()).to.equal('');
     });
 
     it('should evaluate bundleIn condition', function() {

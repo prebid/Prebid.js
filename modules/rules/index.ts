@@ -166,9 +166,9 @@ const schemaEvaluators = {
     const auctionId = context.bid?.auctionId;
     return dep.getGlobalRandom(auctionId) * 100 < args[0]
   },
-  adUnitCode: (args, context) => () => context.adUnit.code === args[0],
+  adUnitCode: (args, context) => () => context.adUnit.code,
   adUnitCodeIn: (args, context) => () => args[0].includes(context.adUnit.code),
-  deviceCountry: (args, context) => () => context.ortb2?.device?.geo?.country === args[0],
+  deviceCountry: (args, context) => () => context.ortb2?.device?.geo?.country,
   deviceCountryIn: (args, context) => () => args[0].includes(context.ortb2?.device?.geo?.country),
   channel: (args, context) => () => {
     const channel = context.ortb2?.ext?.prebid?.channel;
@@ -200,9 +200,17 @@ const schemaEvaluators = {
     return args[0].some((sid) => gppSids.includes(sid));
   },
   tcfInScope: (args, context) => () => context.ortb2?.regs?.ext?.gdpr === 1,
+  domain: (args, context) => () => {
+    const domain = context.ortb2?.site?.domain || context.ortb2?.app?.domain || '';
+    return domain;
+  },
   domainIn: (args, context) => () => {
     const domain = context.ortb2?.site?.domain || context.ortb2?.app?.domain || '';
     return args[0].includes(domain);
+  },
+  bundle: (args, context) => () => {
+    const bundle = context.ortb2?.app?.bundle || '';
+    return bundle;
   },
   bundleIn: (args, context) => () => {
     const bundle = context.ortb2?.app?.bundle || '';
@@ -300,7 +308,7 @@ function evaluateCondition(condition, func) {
     case 'false':
       return func() === false;
     default:
-      return false;
+      return func() === condition;
   }
 }
 
