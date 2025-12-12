@@ -308,6 +308,7 @@ export const intentIqIdSubmodule = {
     const gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
     const groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
     const siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
+    let manualGroup = isStr(configParams.group) ? configParams.group : undefined;
     sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData) : '';
     sourceMetaDataExternal = isNumber(configParams.sourceMetaDataExternal) ? configParams.sourceMetaDataExternal : undefined;
     const additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
@@ -323,6 +324,10 @@ export const intentIqIdSubmodule = {
     const cmpData = getCmpData();
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
+    if (manualGroup) {
+      firstPartyData = firstPartyData || {};
+      firstPartyData.group = manualGroup;
+    }
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
@@ -343,7 +348,7 @@ export const intentIqIdSubmodule = {
       firstPartyData = {
         pcid: firstPartyId,
         pcidDate: Date.now(),
-        group: NOT_YET_DEFINED,
+        group: manualGroup || NOT_YET_DEFINED,
         uspString: EMPTY,
         gppString: EMPTY,
         gdprString: EMPTY,
@@ -525,14 +530,18 @@ export const intentIqIdSubmodule = {
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
               if (Number(respJson.tc) === 41) {
-                firstPartyData.group = WITHOUT_IIQ;
+                if (!manualGroup) {
+                  firstPartyData.group = WITHOUT_IIQ;
+                }
                 storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
                 if (groupChanged) groupChanged(firstPartyData.group);
                 defineEmptyDataAndFireCallback();
                 if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
                 return
               } else {
-                firstPartyData.group = WITH_IIQ;
+                if (!manualGroup) {
+                  firstPartyData.group = WITH_IIQ;
+                }
                 if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
                 if (groupChanged) groupChanged(firstPartyData.group);
               }
