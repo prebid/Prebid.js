@@ -18,6 +18,7 @@ import {
   getDomLoadingDuration,
   getSafeframeGeometry,
   getUniqueIdentifierStr,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   inIframe,
@@ -28,6 +29,9 @@ import {
 } from '../src/utils.js';
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+
+import {getGlobalVarName} from '../src/buildOptions.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -45,7 +49,7 @@ export const PLACEMENT_SOURCES = {
 };
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
-const { logError, logWarn } = prefixLog('AdagioRtdProvider:');
+const { logError, logInfo, logWarn } = prefixLog('AdagioRtdProvider:');
 
 // Guard to avoid storing the same bid data several times.
 const guard = new Set();
@@ -236,6 +240,25 @@ export const _internal = {
         return value;
       }
     });
+  },
+
+  // Compute the placement from the legacy RTD config params or ortb2Imp.ext.data.placement key.
+  computePlacementFromLegacy: function(rtdConfig, adUnit) {
+    const placementSource = deepAccess(rtdConfig, 'params.placementSource', '');
+    let placementFromSource = '';
+
+    switch (placementSource.toLowerCase()) {
+      case PLACEMENT_SOURCES.ADUNITCODE:
+        placementFromSource = adUnit.code;
+        break;
+      case PLACEMENT_SOURCES.GPID:
+        placementFromSource = deepAccess(adUnit, 'ortb2Imp.ext.gpid')
+        break;
+    }
+
+    const placementLegacy = deepAccess(adUnit, 'ortb2Imp.ext.data.placement', '');
+
+    return placementFromSource || placementLegacy;
   }
 };
 
@@ -315,7 +338,6 @@ function onBidRequest(bidderRequest, config, _userConsent) {
  * @param {*} config
  */
 function onGetBidRequestData(bidReqConfig, callback, config) {
-  const configParams = deepAccess(config, 'params', {});
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const features = _internal.getFeatures().get();
   const ext = {
@@ -343,30 +365,11 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
     const slotPosition = getSlotPosition(divId);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
-    // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
-    // Btw, We allow fallback sources to programmatically set this value.
-    // The source is defined in the `config.params.placementSource` and the possible values are `code` or `gpid`.
-    // (Please note that this `placement` is not related to the oRTB video property.)
-    if (!deepAccess(ortb2Imp, 'ext.data.placement')) {
-      const { placementSource = '' } = configParams;
-
-      switch (placementSource.toLowerCase()) {
-        case PLACEMENT_SOURCES.ADUNITCODE:
-          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
-          break;
-        case PLACEMENT_SOURCES.GPID:
-          deepSetValue(ortb2Imp, 'ext.data.placement', deepAccess(ortb2Imp, 'ext.gpid'));
-          break;
-        default:
-          logWarn('`ortb2Imp.ext.data.placement` is missing and `params.definePlacement` is not set in the config.');
-      }
-    }
-
-    // We expect that `pagetype`, `category`, `placement` are defined in FPD `ortb2.site.ext.data` and `adUnits[].ortb2Imp.ext.data` objects.
-    // Btw, we have to ensure compatibility with publishers that use the "legacy" adagio params at the adUnit.params level.
     const adagioBid = adUnit.bids.find(bid => _internal.isAdagioBidder(bid.bidder));
     if (adagioBid) {
       // ortb2 level
+      // We expect that `pagetype`, `category` are defined in FPD `ortb2.site.ext.data` object.
+      // Btw, we still ensure compatibility with publishers that use the adagio params at the adUnit.params level.
       let mustWarnOrtb2 = false;
       if (!deepAccess(ortb2Site, 'ext.data.pagetype') && adagioBid.params.pagetype) {
         deepSetValue(ortb2Site, 'ext.data.pagetype', adagioBid.params.pagetype);
@@ -376,21 +379,28 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
         deepSetValue(ortb2Site, 'ext.data.category', adagioBid.params.category);
         mustWarnOrtb2 = true;
       }
-
-      // ortb2Imp level
-      let mustWarnOrtb2Imp = false;
-      if (!deepAccess(ortb2Imp, 'ext.data.placement')) {
-        if (adagioBid.params.placement) {
-          deepSetValue(ortb2Imp, 'ext.data.placement', adagioBid.params.placement);
-          mustWarnOrtb2Imp = true;
-        }
-      }
-
       if (mustWarnOrtb2) {
-        logWarn('`pagetype` and `category` must be defined in the FPD `ortb2.site.ext.data` object. Relying on `adUnits[].bids.adagio.params` is deprecated.');
+        logInfo('`pagetype` and/or `category` have been set in the FPD `ortb2.site.ext.data` object from `adUnits[].bids.adagio.params`.');
       }
-      if (mustWarnOrtb2Imp) {
-        logWarn('`placement` must be defined in the FPD `adUnits[].ortb2Imp.ext.data` object. Relying on `adUnits[].bids.adagio.params` is deprecated.');
+
+      // ortb2Imp level to handle legacy.
+      // The `placement` is finally set at the adUnit.params level (see https://github.com/prebid/Prebid.js/issues/12845)
+      // but we still need to set it at the ortb2Imp level for our internal use.
+      const placementParam = adagioBid.params.placement;
+      const adgRtdPlacement = deepAccess(ortb2Imp, 'ext.data.adg_rtd.placement', '');
+
+      if (placementParam) {
+        // Always overwrite the ortb2Imp value with the one from the adagio adUnit.params.placement if defined.
+        // This is the common case.
+        deepSetValue(ortb2Imp, 'ext.data.adg_rtd.placement', placementParam);
+      }
+
+      if (!placementParam && !adgRtdPlacement) {
+        const p = _internal.computePlacementFromLegacy(config, adUnit);
+        if (p) {
+          deepSetValue(ortb2Imp, 'ext.data.adg_rtd.placement', p);
+          logWarn('`ortb2Imp.ext.data.adg_rtd.placement` has been set from a legacy source. Please set `bids[].adagio.params.placement` or `ortb2Imp.ext.data.adg_rtd.placement` value.');
+        }
       }
     }
   });
@@ -444,7 +454,7 @@ function storeRequestInAdagioNS(bid, config) {
       bidderRequestsCount,
       ortb2: ortb2Data,
       ortb2Imp: ortb2ImpData,
-      localPbjs: '$$PREBID_GLOBAL$$',
+      localPbjs: getGlobalVarName(),
       localPbjsRef: getGlobal(),
       organizationId,
       site
@@ -469,8 +479,8 @@ function getElementFromTopWindow(element, currentWindow) {
       return element;
     } else {
       const frame = currentWindow.frameElement;
-      const frameClientRect = frame.getBoundingClientRect();
-      const elementClientRect = element.getBoundingClientRect();
+      const frameClientRect = getBoundingClientRect(frame);
+      const elementClientRect = getBoundingClientRect(element);
 
       if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
         return false;
@@ -520,14 +530,15 @@ function getSlotPosition(divId) {
         return '';
       }
 
-      let box = domElement.getBoundingClientRect();
+      const box = getBoundingClientRect(domElement);
 
-      const docEl = d.documentElement;
+      const windowDimensions = getWinDimensions();
+
       const body = d.body;
       const clientTop = d.clientTop || body.clientTop || 0;
       const clientLeft = d.clientLeft || body.clientLeft || 0;
-      const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
-      const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+      const scrollTop = wt.pageYOffset || windowDimensions.document.documentElement.scrollTop || windowDimensions.document.body.scrollTop;
+      const scrollLeft = wt.pageXOffset || windowDimensions.document.documentElement.scrollLeft || windowDimensions.document.body.scrollLeft;
 
       const elComputedStyle = wt.getComputedStyle(domElement, null);
       const mustDisplayElement = elComputedStyle.display === 'none';
@@ -584,9 +595,9 @@ function getViewPortDimensions() {
     viewportDims.h = Math.round(win.h);
   } else {
     // window.top based computing
-    const wt = getWindowTop();
-    viewportDims.w = wt.innerWidth;
-    viewportDims.h = wt.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    viewportDims.w = innerWidth;
+    viewportDims.h = innerHeight;
   }
 
   return `${viewportDims.w}x${viewportDims.h}`;

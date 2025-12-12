@@ -136,7 +136,6 @@ class LockrAIMApiClient {
             }
           });
           LockrAIMApiClient.canRefreshToken = true;
-          return;
         } catch (_err) {
           this._logWarn(_err);
           rejectPromise(responseText);

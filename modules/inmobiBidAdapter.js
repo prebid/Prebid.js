@@ -48,7 +48,7 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The constructed impression object.
  */
 function imp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
+  const imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
   imp.tagid = bidRequest.adUnitCode;
@@ -115,7 +115,7 @@ function bidResponse(buildBidResponse, bid, context) {
     const admJson = JSON.parse(bid.adm);
     bid.adm = JSON.stringify(admJson.native);
   }
-  let bidResponse = buildBidResponse(bid, context);
+  const bidResponse = buildBidResponse(bid, context);
 
   if (typeof deepAccess(bid, 'ext') !== 'undefined') {
     deepSetValue(bidResponse, 'meta', {
@@ -137,7 +137,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @returns {Object} Prebid.js compatible bid response.
  */
 function response(buildResponse, bidResponses, ortbResponse, context) {
-  let response = buildResponse(bidResponses, ortbResponse, context);
+  const response = buildResponse(bidResponses, ortbResponse, context);
 
   return response;
 }
@@ -258,7 +258,7 @@ export const spec = {
    * @returns {Bid[]} Parsed bids or configurations.
    */
   interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
+    if (typeof response?.body === 'undefined') {
       return [];
     }
 
@@ -316,7 +316,7 @@ export const spec = {
 };
 
 function isReportingAllowed(loggingPercentage) {
-  return loggingPercentage != 0;
+  return loggingPercentage !== 0;
 }
 
 function report(type, data) {

@@ -156,9 +156,21 @@ describe('Adverxo Bid Adapter', () => {
   });
 
   describe('isBidRequestValid', function () {
-    it('should validate bid request with valid params', () => {
+    it('should validate bid request with valid params (adUnit as number)', () => {
       const validBid = makeBidRequestWithParams({
         adUnitId: 1,
+        auth: 'authExample',
+        host: 'www.bidExample.com'
+      });
+
+      const isValid = spec.isBidRequestValid(validBid);
+
+      expect(isValid).to.be.true;
+    });
+
+    it('should validate bid request with valid params (adUnit as string)', () => {
+      const validBid = makeBidRequestWithParams({
+        adUnitId: "1",
         auth: 'authExample',
         host: 'www.bidExample.com'
       });
@@ -178,6 +190,18 @@ describe('Adverxo Bid Adapter', () => {
 
     it('should not validate bid request with missing param(adUnitId)', () => {
       const invalidBid = makeBidRequestWithParams({
+        auth: 'authExample',
+        host: 'www.bidExample.com'
+      });
+
+      const isValid = spec.isBidRequestValid(invalidBid);
+
+      expect(isValid).to.be.false;
+    });
+
+    it('should not validate bid request with invalid param(adUnitId)', () => {
+      const invalidBid = makeBidRequestWithParams({
+        adUnitId: "1a",
         auth: 'authExample',
         host: 'www.bidExample.com'
       });
@@ -238,7 +262,7 @@ describe('Adverxo Bid Adapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
 
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://egrevirda.com/pickpbs?id=1&auth=authExample');
+      expect(request.url).to.equal('https://arcantila.com/pickpbs?id=1&auth=authExample');
     });
 
     it('should use correct default bidUrl', () => {

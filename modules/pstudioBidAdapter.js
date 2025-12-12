@@ -78,9 +78,9 @@ export const spec = {
     if (!serverResponse.body.bids) return [];
     const { id } = JSON.parse(bidRequest.data);
 
-    serverResponse.body.bids.map((bid) => {
+    serverResponse.body.bids.forEach((bid) => {
       const { cpm, width, height, currency, ad, meta } = bid;
-      let bidResponse = {
+      const bidResponse = {
         requestId: id,
         cpm,
         width,
@@ -118,7 +118,7 @@ export const spec = {
       writeIdToCookie(COOKIE_NAME, userId);
     }
 
-    USER_SYNCS.map((userSync) => {
+    USER_SYNCS.forEach((userSync) => {
       if (userSync.type === 'img') {
         syncs.push({
           type: 'image',
@@ -132,7 +132,7 @@ export const spec = {
 };
 
 function buildRequestData(bid, bidderRequest) {
-  let payloadObject = buildBaseObject(bid, bidderRequest);
+  const payloadObject = buildBaseObject(bid, bidderRequest);
 
   if (bid.mediaTypes.banner) {
     return buildBannerObject(bid, payloadObject);
@@ -371,8 +371,8 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
 }
 
 function cleanObject(data) {
-  for (let key in data) {
-    if (typeof data[key] == 'object') {
+  for (const key in data) {
+    if (typeof data[key] === 'object') {
       cleanObject(data[key]);
 
       if (isEmpty(data[key])) delete data[key];

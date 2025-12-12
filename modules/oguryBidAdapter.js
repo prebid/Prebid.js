@@ -13,9 +13,9 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.0';
+const ADAPTER_VERSION = '2.0.5';
 
-export const converter = ortbConverter({
+export const ortbConverterProps = {
   context: {
     netRevenue: true,
     ttl: 60,
@@ -35,9 +35,6 @@ export const converter = ortbConverter({
 
     const bidWithAssetKey = bidderRequest.bids.find(bid => Boolean(deepAccess(bid, 'params.assetKey', false)));
     if (bidWithAssetKey) deepSetValue(req, 'site.id', bidWithAssetKey.params.assetKey);
-
-    const bidWithUserIds = bidderRequest.bids.find(bid => Boolean(bid.userId));
-    if (bidWithUserIds) deepSetValue(req, 'user.ext.uids', bidWithUserIds.userId);
 
     return req;
   },
@@ -61,11 +58,18 @@ export const converter = ortbConverter({
   },
 
   bidResponse(buildBidResponse, bid, context) {
+    const nurl = bid.nurl;
+    delete bid.nurl;
+
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.currency = 'USD';
+    bidResponse.nurl = nurl;
+
     return bidResponse;
   }
-});
+}
+
+export const converter = ortbConverter(ortbConverterProps);
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -95,15 +99,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync?source=prebid&gdpr_consent=${consent}&gpp=${gpp}&gpp_sid=${gppSid}`
       }
     ];
   }
@@ -130,7 +126,7 @@ function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
-  let floorResult = bid.getFloor({
+  const floorResult = bid.getFloor({
     currency: 'USD',
     mediaType: 'banner',
     size: '*'

@@ -2,15 +2,16 @@ import {expect} from 'chai';
 import { spec, storage } from 'modules/mgidBidAdapter.js';
 import { version } from 'package.json';
 import * as utils from '../../../src/utils.js';
-import {USERSYNC_DEFAULT_CONFIG} from '../../../src/userSync';
-import {config} from '../../../src/config';
+import { getDNT } from 'libraries/dnt/index.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../../../src/userSync.js';
+import {config} from '../../../src/config.js';
 
 describe('Mgid bid adapter', function () {
   let sandbox;
   let logErrorSpy;
   let logWarnSpy;
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
@@ -20,10 +21,9 @@ describe('Mgid bid adapter', function () {
     utils.logError.restore();
     utils.logWarn.restore();
   });
-  const ua = navigator.userAgent;
   const screenHeight = screen.height;
   const screenWidth = screen.width;
-  const dnt = (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0;
+  const dnt = getDNT() ? 1 : 0;
   const language = navigator.language ? 'language' : 'userLanguage';
   let lang = navigator[language].split('-')[0];
   if (lang.length !== 2 && lang.length !== 3) {
@@ -38,7 +38,7 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let sbid = {
+    const sbid = {
       'adUnitCode': 'div',
       'bidder': 'mgid',
       'params': {
@@ -48,26 +48,26 @@ describe('Mgid bid adapter', function () {
     };
 
     it('should not accept bid without required params', function () {
-      let isValid = spec.isBidRequestValid(sbid);
+      const isValid = spec.isBidRequestValid(sbid);
       expect(isValid).to.equal(false);
     });
 
     it('should return false when params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '', placementId: ''};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.adUnitCode = '';
       bid.mediaTypes = {
@@ -80,7 +80,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when adUnitCode not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.adUnitCode = '';
       bid.mediaTypes = {
@@ -93,7 +93,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return true when valid params are passed as nums', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.adUnitCode = 'div';
       bid.mediaTypes = {
@@ -106,7 +106,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when valid params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.mediaTypes = {
         native: {
@@ -118,14 +118,14 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when valid mediaTypes are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid mediaTypes.banner are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
@@ -134,7 +134,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when valid mediaTypes.banner.sizes are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
@@ -144,7 +144,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when valid mediaTypes.banner.sizes are not valid', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
@@ -154,7 +154,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return true when valid params are passed as strings', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.adUnitCode = 'div';
       bid.params = {accountId: '1', placementId: '1'};
@@ -167,7 +167,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when valid mediaTypes.native is not object', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
         native: []
@@ -176,7 +176,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when mediaTypes.native is empty object', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
@@ -186,7 +186,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when mediaTypes.native is invalid object', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
@@ -200,7 +200,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return false when mediaTypes.native has unsupported required asset', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.params = {accountId: '2', placementId: '1'};
       bid.mediaTypes = {
         native: {
@@ -219,7 +219,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should return true when mediaTypes.native all assets needed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.adUnitCode = 'div';
       bid.params = {accountId: '2', placementId: '1'};
       bid.mediaTypes = {
@@ -239,7 +239,7 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('override defaults', function () {
-    let sbid = {
+    const sbid = {
       bidder: 'mgid',
       params: {
         accountId: '1',
@@ -247,19 +247,19 @@ describe('Mgid bid adapter', function () {
       },
     };
     it('should return object', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request).to.exist.and.to.be.a('object');
     });
 
     it('should return overwrite default bidurl', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.params = {
         bidUrl: 'https://newbidurl.com/',
         accountId: '1',
@@ -270,12 +270,12 @@ describe('Mgid bid adapter', function () {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.include('https://newbidurl.com/1');
     });
     it('should return overwrite default bidFloor', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.params = {
         bidFloor: 1.1,
         accountId: '1',
@@ -286,7 +286,7 @@ describe('Mgid bid adapter', function () {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request.data).to.be.a('string');
       const data = JSON.parse(request.data);
@@ -296,7 +296,7 @@ describe('Mgid bid adapter', function () {
       expect(data.imp[0].bidfloor).to.deep.equal(1.1);
     });
     it('should return overwrite default currency', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       bid.params = {
         cur: 'GBP',
         accountId: '1',
@@ -307,7 +307,7 @@ describe('Mgid bid adapter', function () {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request.data).to.be.a('string');
       const data = JSON.parse(request.data);
@@ -317,7 +317,7 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let abid = {
+    const abid = {
       adUnitCode: 'div',
       bidder: 'mgid',
       ortb2Imp: {
@@ -341,16 +341,16 @@ describe('Mgid bid adapter', function () {
       expect(spec.buildRequests([])).to.be.undefined;
     });
     it('should return request url with muid', function () {
-      let getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('mgMuidn').returns('xxx');
 
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1?muid=xxx');
 
@@ -358,13 +358,13 @@ describe('Mgid bid adapter', function () {
     });
     it('should proper handle gdpr', function () {
       config.setConfig({coppa: 1})
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'gdpr', gdprApplies: true}, uspConsent: 'usp', gppConsent: {gppString: 'gpp'}});
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
       expect(request.method).deep.equal('POST');
@@ -373,13 +373,13 @@ describe('Mgid bid adapter', function () {
       expect(data.regs).deep.equal({ext: {gdpr: 1, us_privacy: 'usp'}, gpp: 'gpp', coppa: 1});
     });
     it('should handle refererInfo', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const domain = 'site.com'
       const page = `http://${domain}/site.html`
       const ref = 'http://ref.com/ref.html'
@@ -392,26 +392,29 @@ describe('Mgid bid adapter', function () {
       expect(data.site.ref).to.deep.equal(ref);
     });
     it('should handle schain', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      bid.schain = ['schain1', 'schain2'];
-      let bidRequests = [bid];
+      bid.ortb2 = bid.ortb2 || {};
+      bid.ortb2.source = bid.ortb2.source || {};
+      bid.ortb2.source.ext = bid.ortb2.source.ext || {};
+      bid.ortb2.source.ext.schain = ['schain1', 'schain2'];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       const data = JSON.parse(request.data);
-      expect(data.source).to.deep.equal({ext: {schain: bid.schain}});
+      expect(data.source).to.deep.equal({ext: {schain: bid.ortb2.source.ext.schain}});
     });
     it('should handle userId', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const bidderRequest = {userId: 'userid'};
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
@@ -420,26 +423,26 @@ describe('Mgid bid adapter', function () {
       expect(data.user.id).to.deep.equal(bidderRequest.userId);
     });
     it('should handle eids', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
       bid.userIdAsEids = ['eid1', 'eid2']
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       const data = JSON.parse(request.data);
       expect(data.user.ext.eids).to.deep.equal(bid.userIdAsEids);
     });
     it('should return proper banner imp', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const page = top.location.href;
       const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
@@ -449,7 +452,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -461,11 +464,11 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"banner":{"w":300,"h":250}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"banner":{"w":300,"h":250}}],"tmax":3000}`,
       });
     });
     it('should not return native imp if minimum asset list not requested', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         native: '',
       };
@@ -473,12 +476,12 @@ describe('Mgid bid adapter', function () {
         title: {required: true},
         image: {sizes: [80, 80]},
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request).to.be.undefined;
     });
     it('should return proper native imp', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         native: '',
       };
@@ -488,7 +491,7 @@ describe('Mgid bid adapter', function () {
         sponsored: { },
       };
 
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const page = top.location.href;
       const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
@@ -499,7 +502,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -511,11 +514,11 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
       });
     });
     it('should return proper native imp with image altered', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         native: '',
       };
@@ -526,7 +529,7 @@ describe('Mgid bid adapter', function () {
         sponsored: { },
       };
 
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const page = top.location.href;
       const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
@@ -537,7 +540,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -548,11 +551,11 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":492,"h":328,"wmin":50,"hmin":50}},{"id":3,"required":0,"img":{"type":1,"w":50,"h":50}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":492,"h":328,"wmin":50,"hmin":50}},{"id":3,"required":0,"img":{"type":1,"w":50,"h":50}},{"id":11,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
       });
     });
     it('should return proper native imp with sponsoredBy', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         native: '',
       };
@@ -562,7 +565,7 @@ describe('Mgid bid adapter', function () {
         sponsoredBy: { },
       };
 
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const page = top.location.href;
       const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
@@ -573,7 +576,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -584,18 +587,18 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":4,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"native":{"request":{"plcmtcnt":1,"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":80,"h":80}},{"id":4,"required":0,"data":{"type":1}}]}}}],"tmax":3000}`,
       });
     });
     it('should return proper banner request', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 600], [300, 250]],
           pos: 1,
         },
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
 
       const page = top.location.href;
@@ -606,7 +609,7 @@ describe('Mgid bid adapter', function () {
       expect(data.site.domain).to.deep.equal(domain);
       expect(data.site.page).to.deep.equal(page);
       expect(data.cur).to.deep.equal(['USD']);
-      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.ua).to.deep.equal(navigator.userAgent);
       expect(data.device.dnt).equal(dnt);
       expect(data.device.h).equal(screenHeight);
       expect(data.device.w).equal(screenWidth);
@@ -618,19 +621,19 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': 'https://prebid.mgid.com/prebid/1',
-        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${ua}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"banner":{"w":300,"h":600,"format":[{"w":300,"h":600},{"w":300,"h":250}],"pos":1}}],"tmax":3000}`,
+        'data': `{"site":{"domain":"${domain}","page":"${page}"},"cur":["USD"],"geo":{"utcoffset":${utcOffset}},"device":{"ua":"${navigator.userAgent}","js":1,"dnt":${dnt},"h":${screenHeight},"w":${screenWidth},"language":"${lang}"},"ext":{"mgid_ver":"${mgid_ver}","prebid_ver":"${version}"},"imp":[{"tagid":"2/div","secure":${secure},"ext":{"gpid":"/1111/gpid"},"banner":{"w":300,"h":600,"format":[{"w":300,"h":600},{"w":300,"h":250}],"pos":1}}],"tmax":3000}`,
       });
     });
     it('should proper handle ortb2 data', function () {
-      let bid = Object.assign({}, abid);
+      const bid = Object.assign({}, abid);
       bid.mediaTypes = {
         banner: {
           sizes: [[300, 250]]
         }
       };
-      let bidRequests = [bid];
+      const bidRequests = [bid];
 
-      let bidderRequest = {
+      const bidderRequest = {
         gdprConsent: {
           consentString: 'consent1',
           gdprApplies: false,
@@ -692,24 +695,24 @@ describe('Mgid bid adapter', function () {
 
   describe('interpretResponse', function () {
     it('should not push proper native bid response if adm is missing', function () {
-      let resp = {
+      const resp = {
         body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
-      let bids = spec.interpretResponse(resp);
+      const bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([])
     });
     it('should not push proper native bid response if assets is empty', function () {
-      let resp = {
+      const resp = {
         body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[],"imptrackers":["imptrackers1"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
-      let bids = spec.interpretResponse(resp);
+      const bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([])
     });
     it('should push proper native bid response, assets1', function () {
-      let resp = {
+      const resp = {
         body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}},{"id":4,"required":0,"data":{"type":4,"value":"sponsored"}},{"id":5,"required":0,"data":{"type":6,"value":"price1"}},{"id":6,"required":0,"data":{"type":7,"value":"price2"}}],"imptrackers":["imptrackers1"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}], ext: {'muidn': 'userid'}}
       };
-      let bids = spec.interpretResponse(resp);
+      const bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([{
         'ad': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}},{"id":4,"required":0,"data":{"type":4,"value":"sponsored"}},{"id":5,"required":0,"data":{"type":6,"value":"price1"}},{"id":6,"required":0,"data":{"type":7,"value":"price2"}}],"imptrackers":["imptrackers1"]}}',
         'burl': 'https burl',
@@ -750,10 +753,10 @@ describe('Mgid bid adapter', function () {
       }])
     });
     it('should push proper native bid response, assets2', function () {
-      let resp = {
+      const resp = {
         body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}}],"imptrackers":["imptrackers1"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}, 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
-      let bids = spec.interpretResponse(resp);
+      const bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([
         {
           'ad': '{"native":{"ver":"1.1","link":{"url":"link_url"},"assets":[{"id":1,"required":0,"title":{"text":"title1"}},{"id":2,"required":0,"img":{"w":80,"h":80,"type":3,"url":"image_src"}},{"id":3,"required":0,"img":{"w":50,"h":50,"type":1,"url":"icon_src"}}],"imptrackers":["imptrackers1"]}}',
@@ -793,14 +796,14 @@ describe('Mgid bid adapter', function () {
     });
 
     it('should not push bid response', function () {
-      let bids = spec.interpretResponse();
+      const bids = spec.interpretResponse();
       expect(bids).to.be.undefined;
     });
     it('should push proper banner bid response', function () {
-      let resp = {
+      const resp = {
         body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': '', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': 'html: adm', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'adomain': ['test.com']}], 'seat': '44082'}]}
       };
-      let bids = spec.interpretResponse(resp);
+      const bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([
         {
           'ad': 'html: adm',
@@ -918,7 +921,7 @@ describe('Mgid bid adapter', function () {
 
   describe('price floor module', function() {
     let bidRequest;
-    let bidRequests0 = {
+    const bidRequests0 = {
       adUnitCode: 'div',
       bidder: 'mgid',
       params: {

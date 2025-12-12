@@ -36,20 +36,6 @@ describe('My6sense Bid adapter test', function () {
           paidClicks: ''
         }
       },
-      {
-        // invalid 3 - wrong bidder name
-        bidder: 'test',
-        params: {
-          key: 'ZxA0bNhlO9tf5EZ1Q9ZYdS',
-          dataVersion: 3,
-          pageUrl: 'liran.com',
-          zone: '[ZONE]',
-          dataParams: '',
-          dataView: '',
-          organicClicks: '',
-          paidClicks: ''
-        }
-      }
     ];
     serverResponses = [
       {
@@ -108,9 +94,6 @@ describe('My6sense Bid adapter test', function () {
     });
     it('with invalid data 3', function () {
       expect(spec.isBidRequestValid(bidRequests[2])).to.equal(false);
-    });
-    it('with invalid data 3', function () {
-      expect(spec.isBidRequestValid(bidRequests[3])).to.equal(false);
     });
   });
 

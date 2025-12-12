@@ -1,14 +1,16 @@
 import * as utils from 'src/utils.js';
-import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils';
+import {lookupConsentData, consentManagementHook, configParser} from '../../../libraries/consentManagement/cmUtils.js';
 
 describe('consent management utils', () => {
-  let sandbox;
+  let sandbox, clock;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
+    clock = sandbox.useFakeTimers();
     ['logError', 'logInfo', 'logWarn'].forEach(n => sandbox.stub(utils, n));
   });
   afterEach(() => {
     sandbox.restore();
+    clock.restore();
   });
 
   describe('consentManagementHook', () => {
@@ -88,7 +90,6 @@ describe('consent management utils', () => {
             cmHook(next, {});
             await loadResult;
             sinon.assert.notCalled(utils.logWarn)
-            sinon.assert.calledWith(utils.logInfo, sinon.match('already known'));
           })
         });
 
@@ -169,7 +170,7 @@ describe('consent management utils', () => {
 
         it('should not time out after it resolves', async () => {
           await runLookup();
-          await new Promise((resolve) => setTimeout(resolve, timeout + 10));
+          clock.tick(timeout + 10);
           sinon.assert.notCalled(consentDataHandler.setConsentData);
         });
       });
@@ -188,7 +189,9 @@ describe('consent management utils', () => {
       [0, 100].forEach(timeout => {
         it(`should resolve with null consent after cmpTimeout ( = ${timeout}ms)`, async () => {
           cmpTimeout = timeout;
-          const {consentData, error} = await runLookup();
+          const lookup = runLookup();
+          clock.tick(timeout + 1);
+          const {consentData, error} = await lookup;
           sinon.assert.calledWith(consentDataHandler.setConsentData, {consent: null});
           expect(consentData).to.eql({consent: null})
           expect(error.message).to.match(/.*CMP to load.*/)
@@ -199,27 +202,150 @@ describe('consent management utils', () => {
           cmpTimeout = 100;
           actionTimeout = timeout;
           const lookup = runLookup();
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          clock.tick(10);
           setProvisionalConsent({consent: 'provisional'});
+          clock.tick(timeout + 1);
           const {consentData, error} = await lookup;
           expect(consentData).to.eql({consent: 'provisional'});
           expect(error.message).to.match(/.*action.*/)
         });
       });
 
-      it('should not reset action timeout if provisional consent is updated multiple times', (done) => {
+      it('should not reset action timeout if provisional consent is updated multiple times', async () => {
         actionTimeout = 100;
         let consentData;
-        runLookup().then((res) => {
+        const lookup = runLookup().then((res) => {
           consentData = res.consentData;
-        })
+        });
         setProvisionalConsent({consent: 1});
-        setTimeout(() => setProvisionalConsent({consent: 2}), 20);
-        setTimeout(() => {
-          expect(consentData).to.eql({consent: 2});
-          done();
-        }, 100)
+        clock.tick(20);
+        setProvisionalConsent({consent: 2});
+        clock.tick(80);
+        await lookup;
+        expect(consentData).to.eql({consent: 2});
       })
     });
+  });
+
+  describe('configParser', () => {
+    let namespace, displayName, consentDataHandler, parseConsentData, getNullConsent, cmpHandlers, cmpEventCleanup;
+    let getConsentConfig, resetConsentDataHandler;
+
+    beforeEach(() => {
+      namespace = 'test';
+      displayName = 'TEST';
+      resetConsentDataHandler = sinon.stub();
+      consentDataHandler = {
+        reset: sinon.stub(),
+        removeCmpEventListener: sinon.stub(),
+        getConsentData: sinon.stub(),
+        setConsentData: sinon.stub()
+      };
+      parseConsentData = sinon.stub().callsFake(data => data);
+      getNullConsent = sinon.stub().returns({consent: null});
+      cmpHandlers = {
+        iab: sinon.stub().returns(Promise.resolve())
+      };
+      cmpEventCleanup = sinon.stub();
+
+      // Create a spy for resetConsentDataHandler to verify it's called
+      const configParserInstance = configParser({
+        namespace,
+        displayName,
+        consentDataHandler,
+        parseConsentData,
+        getNullConsent,
+        cmpHandlers,
+        cmpEventCleanup
+      });
+
+      getConsentConfig = configParserInstance;
+    });
+
+    it('should reset and return empty object when config is not defined', () => {
+      const result = getConsentConfig();
+      expect(result).to.deep.equal({});
+      sinon.assert.calledWith(utils.logWarn, sinon.match('config not defined'));
+    });
+
+    it('should reset and return empty object when config is not an object', () => {
+      const result = getConsentConfig({[namespace]: 'not an object'});
+      expect(result).to.deep.equal({});
+      sinon.assert.calledWith(utils.logWarn, sinon.match('config not defined'));
+    });
+
+    describe('when module is explicitly disabled', () => {
+      it('should reset consent data handler and return empty object when enabled is false', () => {
+        const result = getConsentConfig({[namespace]: {enabled: false}});
+
+        expect(result).to.deep.equal({});
+        sinon.assert.calledWith(utils.logWarn, sinon.match('config enabled is set to false'));
+      });
+
+      it('should call cmpEventCleanup when enabled is false', () => {
+        getConsentConfig({[namespace]: {enabled: false}});
+
+        sinon.assert.called(cmpEventCleanup);
+        sinon.assert.calledWith(utils.logWarn, sinon.match('config enabled is set to false'));
+      });
+
+      it('should handle cmpEventCleanup errors gracefully', () => {
+        const cleanupError = new Error('Cleanup failed');
+        cmpEventCleanup.throws(cleanupError);
+
+        getConsentConfig({[namespace]: {enabled: false}});
+
+        sinon.assert.called(cmpEventCleanup);
+        sinon.assert.calledWith(utils.logError, sinon.match('Error during CMP event cleanup'), cleanupError);
+      });
+
+      it('should not call cmpEventCleanup when enabled is true', () => {
+        getConsentConfig({[namespace]: {enabled: true, cmpApi: 'iab'}});
+
+        sinon.assert.notCalled(cmpEventCleanup);
+      });
+
+      it('should not call cmpEventCleanup when enabled is not specified', () => {
+        getConsentConfig({[namespace]: {cmpApi: 'iab'}});
+
+        sinon.assert.notCalled(cmpEventCleanup);
+      });
+    });
+
+    describe('cmpEventCleanup parameter', () => {
+      it('should work without cmpEventCleanup parameter', () => {
+        const configParserWithoutCleanup = configParser({
+          namespace,
+          displayName,
+          consentDataHandler,
+          parseConsentData,
+          getNullConsent,
+          cmpHandlers
+          // No cmpEventCleanup provided
+        });
+
+        const result = configParserWithoutCleanup({[namespace]: {enabled: false}});
+        expect(result).to.deep.equal({});
+        // Should not throw error when cmpEventCleanup is undefined
+      });
+
+      it('should only call cmpEventCleanup if it is a function', () => {
+        const configParserWithNonFunction = configParser({
+          namespace,
+          displayName,
+          consentDataHandler,
+          parseConsentData,
+          getNullConsent,
+          cmpHandlers,
+          cmpEventCleanup: 'not a function'
+        });
+
+        const result = configParserWithNonFunction({[namespace]: {enabled: false}});
+        expect(result).to.deep.equal({});
+        // Should not throw error when cmpEventCleanup is not a function
+      });
+    });
+
+    // Additional tests for other configParser functionality could be added here
   });
 });

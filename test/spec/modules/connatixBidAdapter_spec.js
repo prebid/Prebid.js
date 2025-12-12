@@ -17,6 +17,8 @@ import {
 import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import * as utils from '../../../src/utils.js';
+import * as winDimensions from '../../../src/utils/winDimensions.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -178,19 +180,25 @@ describe('connatixBidAdapter', function () {
     it('should return the correct percentage if the element is partially in view', () => {
       const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
+      const getWinDimensionsStub = sinon.stub(winDimensions, 'getWinDimensions');
+      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
 
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
+      getWinDimensionsStub.restore();
     });
 
     it('should return 0% if the element is not in view', () => {
+      const getWinDimensionsStub = sinon.stub(winDimensions, 'getWinDimensions');
+      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
       const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
 
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(0);
+      getWinDimensionsStub.restore();
     });
 
     it('should use provided width and height if element dimensions are zero', () => {
@@ -569,7 +577,7 @@ describe('connatixBidAdapter', function () {
   describe('buildRequests', function () {
     let serverRequest;
     let setCookieStub, setDataInLocalStorageStub;
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         canonicalUrl: '',
         numIframes: 0,
@@ -645,7 +653,7 @@ describe('connatixBidAdapter', function () {
   describe('interpretResponse', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
-    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
+    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId, Lurl: 'test-lurl'};
 
     let serverResponse;
     this.beforeEach(function () {
@@ -685,6 +693,7 @@ describe('connatixBidAdapter', function () {
       expect(bidResponse.currency).to.equal('USD');
       expect(bidResponse.mediaType).to.equal(BANNER);
       expect(bidResponse.netRevenue).to.be.true;
+      expect(bidResponse.lurl).to.equal('test-lurl');
     });
 
     it('Should return n bid responses for n bids', function() {
@@ -878,7 +887,7 @@ describe('connatixBidAdapter', function () {
           'atype': 1
         }]
       }];
-      let serverRequest = spec.buildRequests(validBidRequests, {});
+      const serverRequest = spec.buildRequests(validBidRequests, {});
       expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
   });

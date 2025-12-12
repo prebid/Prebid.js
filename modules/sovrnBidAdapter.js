@@ -8,12 +8,10 @@ import {
   isInteger,
   logWarn,
   getBidIdParameter,
-  isEmptyStr,
   mergeDeep
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
-  ADPOD,
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
@@ -32,7 +30,6 @@ const ORTB_VIDEO_PARAMS = {
 }
 
 const REQUIRED_VIDEO_PARAMS = {
-  context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
@@ -70,7 +67,7 @@ export const spec = {
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
-      let sovrnImps = [];
+      const sovrnImps = [];
       let iv;
       let schain;
       let eids;
@@ -88,8 +85,9 @@ export const spec = {
           })
         }
 
-        if (bid.schain) {
-          schain = schain || bid.schain
+        const bidSchain = bid?.ortb2?.source?.ext?.schain;
+        if (bidSchain) {
+          schain = schain || bidSchain
         }
         iv = iv || getBidIdParameter('iv', bid.params)
 
@@ -123,17 +121,6 @@ export const spec = {
           imp.ext = imp.ext || {}
           imp.ext.deals = segmentsString.split(',').map(deal => deal.trim())
         }
-
-        const auctionEnvironment = bid?.ortb2Imp?.ext?.ae
-        if (bidderRequest.paapi?.enabled && isInteger(auctionEnvironment)) {
-          imp.ext = imp.ext || {}
-          imp.ext.ae = auctionEnvironment
-        } else {
-          if (imp.ext?.ae) {
-            delete imp.ext.ae
-          }
-        }
-
         sovrnImps.push(imp)
       })
 
@@ -169,6 +156,11 @@ export const spec = {
       const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
       if (coppa) {
         deepSetValue(sovrnBidReq, 'regs.coppa', 1);
+      }
+
+      const bcat = deepAccess(bidderRequest, 'ortb2.bcat');
+      if (bcat) {
+        deepSetValue(sovrnBidReq, 'bcat', bcat);
       }
 
       if (bidderRequest.gdprConsent) {
@@ -212,14 +204,14 @@ export const spec = {
 
   /**
    * Format Sovrn responses as Prebid bid responses
-   * @param {id, seatbid, ext} sovrnResponse A successful response from Sovrn.
-   * @return An array of formatted bids (+ fledgeAuctionConfigs if available)
+   * @param {*} param0 A successful response from Sovrn.
+   * @return {Bid[]} An array of formatted bids.
    */
-  interpretResponse: function({ body: {id, seatbid, ext} }) {
+  interpretResponse: function({ body: {id, seatbid} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 
     try {
-      let bids = seatbid
+      return seatbid
         .filter(seat => seat)
         .map(seat => seat.bid.map(sovrnBid => {
           const bid = {
@@ -231,59 +223,20 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            mediaType: Number(sovrnBid.mtype) === 2 ? VIDEO : BANNER,
             ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (sovrnBid.nurl) {
-            bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
-          } else {
+          if (Number(sovrnBid.mtype) === 2) {
             bid.vastXml = decodeURIComponent(sovrnBid.adm)
+          } else {
+            bid.ad = sovrnBid.nurl ? decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`) : decodeURIComponent(sovrnBid.adm)
           }
 
           return bid
         }))
         .flat()
-
-      let fledgeAuctionConfigs = null;
-      if (isArray(ext?.igbid)) {
-        const seller = ext.seller
-        const decisionLogicUrl = ext.decisionLogicUrl
-        const sellerTimeout = ext.sellerTimeout
-        ext.igbid.filter(item => isValidIgBid(item)).forEach((igbid) => {
-          const perBuyerSignals = {}
-          igbid.igbuyer.filter(item => isValidIgBuyer(item)).forEach(buyerItem => {
-            perBuyerSignals[buyerItem.igdomain] = buyerItem.buyerdata
-          })
-          const interestGroupBuyers = [...Object.keys(perBuyerSignals)]
-          if (interestGroupBuyers.length) {
-            fledgeAuctionConfigs = fledgeAuctionConfigs || {}
-            fledgeAuctionConfigs[igbid.impid] = {
-              seller,
-              decisionLogicUrl,
-              sellerTimeout,
-              interestGroupBuyers: interestGroupBuyers,
-              perBuyerSignals,
-            }
-          }
-        })
-      }
-      if (fledgeAuctionConfigs) {
-        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-          return {
-            bidId,
-            config: Object.assign({
-              auctionSignals: {}
-            }, cfg)
-          }
-        })
-        return {
-          bids,
-          paapi: fledgeAuctionConfigs,
-        }
-      }
-      return bids
     } catch (e) {
       logError('Could not interpret bidresponse, error details:', e)
       return e
@@ -379,14 +332,6 @@ function _getBidFloors(bid) {
   }
   const paramValue = parseFloat(getBidIdParameter('bidfloor', bid.params))
   return !isNaN(paramValue) ? paramValue : undefined
-}
-
-function isValidIgBid(igBid) {
-  return !isEmptyStr(igBid.impid) && isArray(igBid.igbuyer) && igBid.igbuyer.length
-}
-
-function isValidIgBuyer(igBuyer) {
-  return !isEmptyStr(igBuyer.igdomain)
 }
 
 registerBidder(spec)
