@@ -21,11 +21,15 @@ No registration for this module is required.
 {: .table .table-bordered .table-striped }
 | Parameter | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
+| params.partner| Required | Number   | This is the partner ID value obtained from registering with IntentIQ.   | `1177538` |
 | options.manualWinReportEnabled | Optional | Boolean | This variable determines whether the bidWon event is triggered automatically. If set to false, the event will occur automatically, and manual reporting with reportExternalWin will be disabled. If set to true, the event will not occur automatically, allowing manual reporting through reportExternalWin. The default value is false. | `false` |
 | options.reportMethod | Optional | String | Defines the HTTP method used to send the analytics report. If set to `"POST"`, the report payload will be sent in the body of the request. If set to `"GET"` (default), the payload will be included as a query parameter in the request URL. | `"GET"` |
 | options.reportingServerAddress | Optional | String | The base URL for the IntentIQ reporting server. If parameter is provided in `configParams`, it will be used. | `"https://domain.com"` |
 | options.adUnitConfig | Optional | Number |  Determines how the `placementId` parameter is extracted in the report (default is 1). Possible values: 1 – adUnitCode first, 2 – placementId first, 3 – only adUnitCode, 4 – only placementId. | `1` |
 | options.gamPredictReporting | Optional | Boolean |  This variable controls whether the GAM prediction logic is enabled or disabled. The main purpose of this logic is to extract information from a rendered GAM slot when no Prebid bidWon event is available. In that case, we take the highest CPM from the current auction and add 0.01 to that value. | `false` |
+| params.ABTestingConfigurationSource | Optional | String | Determines how AB group will be defined. Possible values: `"IIQServer"` – group defined by IIQ server, `"percentage"` – generated group based on abPercentage, `"group"` – define group based on value provided by partner. | `IIQServer` |
+| params.abPercentage | Optional | Number | Percentage for A/B testing group. Default value is `95` | `95` |
+| params.group | Optional | String | Define group provided by partner, possible values: `"A"`, `"B"` | `"A"` |
 
 #### Example Configuration
 
@@ -33,6 +37,7 @@ No registration for this module is required.
 pbjs.enableAnalytics({
     provider: 'iiqAnalytics',
     options: {
+        partner: 1177538,
         manualWinReportEnabled: false,
         reportMethod: "GET",
         adUnitConfig: 1,
