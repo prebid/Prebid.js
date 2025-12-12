@@ -1,19 +1,17 @@
-import { deepSetValue, generateUUID } from '../src/utils.js';
+import { deepSetValue } from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {AdapterRequest, BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse, enrichImp, enrichRequest, getAmxId, getUserSyncs } from '../libraries/alliancegravityUtils/index.js';
+import { interpretResponse, enrichImp, getUserSyncs } from '../libraries/alliancegravityUtils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'alliance_gravity';
-const BIDDER_VERSION = '1.0';
 const REQUEST_URL = 'https://pbs.production.agrvt.com/openrtb2/auction';
-const PAGE_VIEW_ID = generateUUID();
 const GVLID = 501;
 
 const DEFAULT_GZIP_ENABLED = false;
@@ -59,10 +57,7 @@ const converter = ortbConverter({
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    let request:ORTBRequest = buildRequest(imps, bidderRequest, context);
-    const amxId = getAmxId(STORAGE, BIDDER_CODE);
-    request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION);
-    return request;
+    return buildRequest(imps, bidderRequest, context);
   },
 });
 

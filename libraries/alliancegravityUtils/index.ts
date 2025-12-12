@@ -1,34 +1,12 @@
-import { deepAccess, deepSetValue, generateUUID, logInfo } from '../../src/utils.js';
+import { deepAccess, deepSetValue, logInfo } from '../../src/utils.js';
 import {Renderer} from '../../src/Renderer.js';
-import { getCurrencyFromBidderRequest } from '../ortb2Utils/currency.js';
 import { INSTREAM, OUTSTREAM } from '../../src/video.js';
 import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
-import { StorageManager } from '../../src/storageManager.js';
-import { BidRequest, ORTBImp, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
+import { BidRequest, ORTBImp, ORTBResponse } from '../../src/prebid.public.js';
 import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-
-let sessionId:string | null = null;
-
-const getSessionId = ():string => {
-  if (!sessionId) {
-    sessionId = generateUUID();
-  }
-  return sessionId;
-}
-
-let lastPageUrl:string = '';
-let requestCounter:number = 0;
-
-const getRequestCount = ():number => {
-  if (lastPageUrl === window.location.pathname) {
-    return ++requestCounter;
-  }
-  lastPageUrl = window.location.pathname;
-  return 0;
-}
 
 export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (typeof serverResponses === 'object' &&
@@ -107,35 +85,6 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
   return imp;
 }
 
-export const enrichRequest = (
-  request: ORTBRequest,
-  amxId: string | null,
-  pageViewId: string,
-  bidderVersion: string):ORTBRequest => {
-  if (amxId) {
-    deepSetValue(request, 'ext.localStorage.amxId', amxId);
-    if (!request.user) request.user = {};
-    if (!request.user.ext) request.user.ext = {};
-    if (!request.user.ext.eids) request.user.ext.eids = [];
-    (request.user.ext.eids as any).push({
-      source: 'amxdt.net',
-      uids: [{
-        id: `${amxId}`,
-        atype: 1
-      }]
-    });
-  }
-  deepSetValue(request, 'ext.version', '$prebid.version$');
-  deepSetValue(request, 'ext.source', 'prebid.js');
-  deepSetValue(request, 'ext.pageViewId', pageViewId);
-  deepSetValue(request, 'ext.bidderVersion', bidderVersion);
-  deepSetValue(request, 'ext.sessionId', getSessionId());
-  deepSetValue(request, 'ext.requestCounter', getRequestCount());
-  deepSetValue(request, 'cur', [getCurrencyFromBidderRequest(request) || 'USD']);
-  if (!request.user) request.user = {};
-  return request;
-};
-
 export function createResponse(bid:any, ortbResponse:any): BidResponse {
   let mediaType: MediaType = BANNER;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) mediaType = VIDEO;
@@ -198,20 +147,4 @@ export const interpretResponse = (serverResponse: ServerResponse): AdapterRespon
     }
   }
   return responses;
-}
-
-/**
- * Get the AMX ID
- * @return { string | false } false if localstorageNotEnabled
- */
-export const getAmxId = (
-  storage: StorageManager,
-  bidderCode: string
-): string | null => {
-  if (!storage.localStorageIsEnabled()) {
-    logInfo(`localstorage not enabled for ${bidderCode}`);
-    return null;
-  }
-  const amxId = storage.getDataFromLocalStorage('__amuidpb');
-  return amxId || null;
 }
