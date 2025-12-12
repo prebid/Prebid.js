@@ -1,6 +1,8 @@
 import {expect} from 'chai';
 import {spec} from 'modules/opscoBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {addFPDToBidderRequest} from "../../helpers/fpd.js";
+import 'modules/priceFloors.js';
 
 describe('opscoBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -69,6 +71,7 @@ describe('opscoBidAdapter', function () {
 
     beforeEach(function () {
       validBid = {
+        bidId: 'bid123',
         bidder: 'opsco',
         params: {
           placementId: '123',
@@ -82,16 +85,12 @@ describe('opscoBidAdapter', function () {
       };
 
       bidderRequest = {
-        bidderRequestId: 'bid123',
+        bidderRequestId: 'bidderRequestId',
         refererInfo: {
           domain: 'example.com',
           page: 'https://example.com/page',
           ref: 'https://referrer.com'
-        },
-        gdprConsent: {
-          consentString: 'GDPR_CONSENT_STRING',
-          gdprApplies: true
-        },
+        }
       };
     });
 
@@ -113,39 +112,60 @@ describe('opscoBidAdapter', function () {
       });
     });
 
-    it('should send GDPR consent in the payload if present', function () {
-      const request = spec.buildRequests([validBid], bidderRequest);
-      expect(JSON.parse(request.data).user.ext.consent).to.deep.equal('GDPR_CONSENT_STRING');
+    it('should send GDPR consent in the payload if present', async function () {
+      const request = spec.buildRequests([validBid], await addFPDToBidderRequest({
+        ...bidderRequest,
+        gdprConsent: {
+          consentString: 'GDPR_CONSENT_STRING',
+          gdprApplies: true
+        }
+      }));
+      expect(request.data.regs.ext.gdpr).to.exist.and.to.equal(1);
+      expect(request.data.user.ext.consent).to.deep.equal('GDPR_CONSENT_STRING');
     });
 
-    it('should send CCPA in the payload if present', function () {
-      const ccpa = '1YYY';
-      bidderRequest.uspConsent = ccpa;
-      const request = spec.buildRequests([validBid], bidderRequest);
-      expect(JSON.parse(request.data).regs.ext.us_privacy).to.equal(ccpa);
+    it('should send CCPA in the payload if present', async function () {
+      const request = spec.buildRequests([validBid], await addFPDToBidderRequest({
+        ...bidderRequest,
+        ...{uspConsent: '1YYY'}
+      }));
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
     });
 
-    it('should send eids in the payload if present', function () {
-      const eids = {data: [{source: 'test', uids: [{id: '123', ext: {}}]}]};
-      validBid.userIdAsEids = eids;
-      const request = spec.buildRequests([validBid], bidderRequest);
-      expect(JSON.parse(request.data).user.ext.eids).to.deep.equal(eids);
+    it('should send eids in the payload if present', async function () {
+      const eids = [{source: 'test', uids: [{id: '123', ext: {}}]}];
+      const request = spec.buildRequests([validBid], await addFPDToBidderRequest({
+        ...bidderRequest,
+        ortb2: {user: {ext: {eids: eids}}}
+      }));
+      expect(request.data.user.ext.eids).to.deep.equal(eids);
     });
 
     it('should send schain in the payload if present', function () {
       const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'exchange1.com', 'sid': '1234', 'hp': 1}]};
-      validBid.ortb2 = validBid.ortb2 || {};
-      validBid.ortb2.source = validBid.ortb2.source || {};
-      validBid.ortb2.source.ext = validBid.ortb2.source.ext || {};
-      validBid.ortb2.source.ext.schain = schain;
+      const request = spec.buildRequests([validBid], {
+        ...bidderRequest,
+        ortb2: {source: {ext: {schain: schain}}}
+      });
+      expect(request.data.source.ext.schain).to.deep.equal(schain);
+    });
+
+    it('should send bid floor', function () {
       const request = spec.buildRequests([validBid], bidderRequest);
-      expect(JSON.parse(request.data).source.ext.schain).to.deep.equal(schain);
+      expect(request.data.imp[0].id).to.equal('bid123');
+      expect(request.data.imp[0].bidfloorcur).to.not.exist;
+
+      const getFloorResponse = { currency: 'USD', floor: 3 };
+      validBid.getFloor = () => getFloorResponse;
+      const requestWithFloor = spec.buildRequests([validBid], bidderRequest);
+      expect(requestWithFloor.data.imp[0].bidfloor).to.equal(3);
+      expect(requestWithFloor.data.imp[0].bidfloorcur).to.equal('USD');
     });
 
     it('should correctly identify test mode', function () {
       validBid.params.test = true;
       const request = spec.buildRequests([validBid], bidderRequest);
-      expect(JSON.parse(request.data).test).to.equal(1);
+      expect(request.data.test).to.equal(1);
     });
   });
 

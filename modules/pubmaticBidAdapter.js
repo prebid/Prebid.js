@@ -340,9 +340,9 @@ const setFloorInImp = (imp, bid) => {
 const updateBannerImp = (bannerObj, adSlot) => {
   const slot = adSlot.split(':');
   let splits = slot[0]?.split('@');
-  splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
+  splits = splits?.length === 2 ? splits[1].split('x') : splits.length === 3 ? splits[2].split('x') : [];
   const primarySize = bannerObj.format[0];
-  if (splits.length !== 2 || (parseInt(splits[0]) == 0 && parseInt(splits[1]) == 0)) {
+  if (splits.length !== 2 || (parseInt(splits[0]) === 0 && parseInt(splits[1]) === 0)) {
     bannerObj.w = primarySize.w;
     bannerObj.h = primarySize.h;
   } else {
@@ -460,7 +460,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   res.pm_dspid = bid.ext?.dspid ? bid.ext.dspid : null;
   res.pm_seat = seatbid.seat;
   if (!res.creativeId) res.creativeId = bid.id;
-  if (res.ttl == DEFAULT_TTL) res.ttl = MEDIATYPE_TTL[res.mediaType];
+  if (Number(res.ttl) === DEFAULT_TTL) res.ttl = MEDIATYPE_TTL[res.mediaType];
   if (bid.dealid) {
     res.dealChannel = bid.ext?.deal_channel ? dealChannel[bid.ext.deal_channel] || null : 'PMP';
   }
@@ -505,7 +505,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
 }
 
 const addExtenstionParams = (req, bidderRequest) => {
-  const { profId, verId, wiid, transactionId } = conf;
+  const { profId, verId, wiid } = conf;
   req.ext = {
     epoch: new Date().getTime(), // Sending epoch timestamp in request.ext object
     wrapper: {
@@ -513,7 +513,6 @@ const addExtenstionParams = (req, bidderRequest) => {
       version: verId ? parseInt(verId) : undefined,
       wiid: wiid,
       wv: '$$REPO_AND_VERSION$$',
-      transactionId,
       wp: 'pbjs',
       biddercode: bidderRequest?.bidderCode
     },
@@ -531,7 +530,7 @@ const addExtenstionParams = (req, bidderRequest) => {
  */
 const assignDealTier = (bid, context, maxduration) => {
   if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
-  if (context != ADPOD) return;
+  if (context !== ADPOD) return;
 
   const duration = bid?.ext?.video?.duration || maxduration;
   // if (!duration) return;
@@ -550,6 +549,7 @@ const validateAllowedCategories = (acat) => {
           return true;
         } else {
           logWarn(LOG_WARN_PREFIX + 'acat: Each category should be a string, ignoring category: ' + item);
+          return false;
         }
       })
       .map(item => item.trim())
@@ -826,7 +826,6 @@ export const spec = {
       originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
       _handleCustomParams(bid.params, conf);
-      conf.transactionId = bid.ortb2Imp?.ext?.tid;
       const { bcat, acat } = bid.params;
       if (bcat) {
         blockedIabCategories = blockedIabCategories.concat(bcat);

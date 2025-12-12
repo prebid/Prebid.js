@@ -1041,7 +1041,9 @@ describe('IndexexchangeAdapter', function () {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
   };
 
-  const extractPayload = function (bidRequest) { return bidRequest.data }
+  const extractPayload = function (bidRequest) {
+    return bidRequest.data
+  }
 
   const generateEid = function (numEid) {
     const eids = [];
@@ -2306,7 +2308,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].transactionId);
       expect(impression.ext.sid).to.equal(sidValue);
 
-      impression.banner.format.map(({ w, h, ext }, index) => {
+      impression.banner.format.forEach(({ w, h, ext }, index) => {
         const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
 
         expect(w).to.equal(size[0]);
@@ -2707,14 +2709,14 @@ describe('IndexexchangeAdapter', function () {
         const bannerImpression = extractPayload(request[0]).imp[0];
         const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
+        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
         expect(bannerImpression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
 
         expect(bannerImpression.banner.format).to.be.length(2);
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
         expect(bannerImpression.ext.sid).to.equal(sidValue);
 
-        bannerImpression.banner.format.map(({ w, h, ext }, index) => {
+        bannerImpression.banner.format.forEach(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
 
           expect(w).to.equal(size[0]);
@@ -2724,7 +2726,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should have video request', () => {
-        const videoImpression = extractPayload(request[1]).imp[0];
+        const videoImpression = extractPayload(request[0]).imp[1];
 
         expect(videoImpression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
         expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
@@ -2830,14 +2832,14 @@ describe('IndexexchangeAdapter', function () {
         const bannerImpression = extractPayload(request[0]).imp[0];
         const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
 
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
+        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
         expect(bannerImpression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
 
         expect(bannerImpression.banner.format).to.be.length(2);
         expect(bannerImpression.banner.topframe).to.be.oneOf([0, 1]);
         expect(bannerImpression.ext.sid).to.equal(sidValue);
 
-        bannerImpression.banner.format.map(({ w, h, ext }, index) => {
+        bannerImpression.banner.format.forEach(({ w, h, ext }, index) => {
           const size = DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[index];
 
           expect(w).to.equal(size[0]);
@@ -2847,9 +2849,9 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should have native request', () => {
-        const nativeImpression = extractPayload(request[1]).imp[0];
+        const nativeImpression = extractPayload(request[0]).imp[1];
 
-        expect(request[1].data.hasOwnProperty('v')).to.equal(false);
+        expect(request[0].data.hasOwnProperty('v')).to.equal(false);
         expect(nativeImpression.id).to.equal(DEFAULT_NATIVE_VALID_BID[0].bidId);
         expect(nativeImpression.native).to.deep.equal(DEFAULT_NATIVE_IMP);
       });
@@ -2963,7 +2965,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.banner.topframe).to.be.oneOf([0, 1]);
       expect(impression.ext.sid).to.equal(sidValue);
 
-      impression.banner.format.map(({ w, h, ext }, index) => {
+      impression.banner.format.forEach(({ w, h, ext }, index) => {
         const size = bid.mediaTypes.banner.sizes[index];
 
         expect(w).to.equal(size[0]);
@@ -2990,7 +2992,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impressions).to.have.lengthOf(2);
       expect(request.data.sn).to.be.undefined;
 
-      impressions.map((impression, impressionIndex) => {
+      impressions.forEach((impression, impressionIndex) => {
         const firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
         const sidValue = bids[impressionIndex].params.id;
 
@@ -2998,7 +3000,7 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.topframe).to.be.oneOf([0, 1]);
         expect(impression.ext.sid).to.equal(sidValue);
 
-        impression.banner.format.map(({ w, h, ext }, index) => {
+        impression.banner.format.forEach(({ w, h, ext }, index) => {
           const size = bids[impressionIndex].mediaTypes.banner.sizes[index];
 
           expect(w).to.equal(size[0]);
@@ -3393,108 +3395,236 @@ describe('IndexexchangeAdapter', function () {
     })
   });
 
-  describe('buildRequestMultiFormat', function () {
-    it('only banner bidder params set', function () {
-      const request = spec.buildRequests(DEFAULT_MULTIFORMAT_BANNER_VALID_BID, {})
-      const bannerImpression = extractPayload(request[0]).imp[0];
-      expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-      expect(bannerImpression.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
-      expect(bannerImpression.banner.format[0].w).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[0]);
-      expect(bannerImpression.banner.format[0].h).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[1]);
+  describe('buildRequestMultiFormat', () => {
+    const getReq = (bids) => spec.buildRequests(bids, {});
+    const getImps = (req) => extractPayload(req[0]).imp;
+    const getImp = (req, i = 0) => getImps(req)[i];
+    const expectBannerSize = (banner, size) => {
+      expect(banner.format[0].w).to.equal(size[0]);
+      expect(banner.format[0].h).to.equal(size[1]);
+    };
+    const expectVideoSize = (video, size) => {
+      expect(video.w).to.equal(size[0]);
+      expect(video.h).to.equal(size[1]);
+    };
+
+    let validBids;
+
+    beforeEach(() => {
+      validBids = DEFAULT_MULTIFORMAT_VALID_BID;
     });
 
-    describe('only video bidder params set', function () {
-      it('should generate video impression', function () {
-        const request = spec.buildRequests(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID, {});
-        const videoImp = extractPayload(request[1]).imp[0];
-        expect(extractPayload(request[1]).imp).to.have.lengthOf(1);
-        expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
-        expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
-        expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
+    afterEach(() => {
+      validBids = DEFAULT_MULTIFORMAT_VALID_BID;
+    });
+
+    describe('single-type bidder params', () => {
+      it('banner-only: generates a single banner imp with correct size', () => {
+        const req = getReq(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+        const imp = getImp(req);
+        const banner = imp.banner;
+
+        expect(req).to.have.lengthOf(1);
+        expect(getImps(req)).to.have.lengthOf(1);
+        expect(imp.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
+        expectBannerSize(banner, DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size);
+      });
+
+      it('video-only: generates a single video imp with correct size', () => {
+        const req = getReq(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID);
+        const imp = getImp(req);
+        const video = imp.video;
+
+        expect(req).to.have.lengthOf(1);
+        expect(getImps(req)).to.have.lengthOf(1);
+        expect(imp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
+        expectVideoSize(video, DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size);
       });
     });
 
-    describe('both banner and video bidder params set', function () {
+    describe('mixed banner + video bids', () => {
       const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-      let request;
-      before(() => {
-        request = spec.buildRequests(bids, {});
-      })
+      let req;
 
-      it('should return valid banner requests', function () {
-        const impressions = extractPayload(request[0]).imp;
+      beforeEach(() => {
+        req = getReq(bids);
+      });
 
-        expect(impressions).to.have.lengthOf(2);
+      it('builds a single request', () => {
+        expect(req).to.have.lengthOf(1);
+      });
 
-        impressions.map((impression, index) => {
-          const bid = bids[index];
+      it('produces two imps (banner then video) with correct fields', () => {
+        const imps = getImps(req);
+        expect(imps).to.have.lengthOf(2);
 
-          expect(impression.id).to.equal(bid.bidId);
-          expect(impression.banner.format).to.be.length(bid.mediaTypes.banner.sizes.length);
-          expect(impression.banner.topframe).to.be.oneOf([0, 1]);
-
-          impression.banner.format.map(({ w, h, ext }, index) => {
-            const size = bid.mediaTypes.banner.sizes[index];
-
-            expect(w).to.equal(size[0]);
-            expect(h).to.equal(size[1]);
-            expect(ext.siteID).to.equal(bid.params.siteId);
-          });
+        // banner imp assertions
+        const bImp = imps[0];
+        expect(bImp.id).to.equal(bids[0].bidId);
+        expect(bImp.banner.format).to.have.length(bids[0].mediaTypes.banner.sizes.length);
+        expect(bImp.banner.topframe).to.be.oneOf([0, 1]);
+        bImp.banner.format.forEach(({ w, h, ext }, i) => {
+          const [sw, sh] = bids[0].mediaTypes.banner.sizes[i];
+          expect(w).to.equal(sw);
+          expect(h).to.equal(sh);
+          expect(ext.siteID).to.be.undefined;
         });
+
+        // video imp assertions
+        const vImp = imps[1];
+        expect(vImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
+        expect(vImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][0]);
+        expect(vImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][1]);
       });
 
-      it('should return valid banner and video requests', function () {
-        const videoImpression = extractPayload(request[1]).imp[0];
-
-        expect(extractPayload(request[1]).imp).to.have.lengthOf(1);
-        expect(videoImpression.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
-        expect(videoImpression.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][0]);
-        expect(videoImpression.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][1]);
-      });
-
-      it('should contain all correct IXdiag properties', function () {
-        const diagObj = extractPayload(request[0]).ext.ixdiag;
-        expect(diagObj.iu).to.equal(0);
-        expect(diagObj.nu).to.equal(0);
-        expect(diagObj.ou).to.equal(2);
-        expect(diagObj.ren).to.equal(true);
-        expect(diagObj.mfu).to.equal(2);
-        expect(diagObj.allu).to.equal(2);
-        expect(diagObj.version).to.equal('$prebid.version$');
-        expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
-        expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
+      it('ixdiag contains expected properties', () => {
+        const diag = extractPayload(req[0]).ext.ixdiag;
+        expect(diag.iu).to.equal(0);
+        expect(diag.nu).to.equal(0);
+        expect(diag.ou).to.equal(2);
+        expect(diag.ren).to.equal(true);
+        expect(diag.mfu).to.equal(2);
+        expect(diag.allu).to.equal(2);
+        expect(diag.version).to.equal('$prebid.version$');
+        expect(diag.url).to.equal('http://localhost:9876/context.html');
+        expect(diag.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId);
+        expect(diag.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode);
       });
     });
 
-    describe('siteId overrides', function () {
-      it('should use siteId override', function () {
-        const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
-        const request = spec.buildRequests(validBids, {});
-        const bannerImps = request[0].data.imp[0];
-        const videoImps = request[1].data.imp[0];
-        const nativeImps = request[2].data.imp[0];
-        expect(videoImps.ext.siteID).to.equal('1111');
-        bannerImps.banner.format.map(({ ext }) => {
-          expect(ext.siteID).to.equal('2222');
-        });
-        expect(nativeImps.ext.siteID).to.equal('3333');
+    describe('multi-imp when adunits differ', () => {
+      it('banner+video with different adunits => single request, two imps', () => {
+        const bid = { ...DEFAULT_MULTIFORMAT_VALID_BID[0], bidId: '1abcdef' };
+        const bids = [DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0], bid];
+        const req = getReq(bids);
+        expect(req).to.have.lengthOf(1);
+        expect(getImps(req)).to.have.lengthOf(2);
       });
 
-      it('should use default siteId if overrides are not provided', function () {
-        const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
-        delete validBids[0].params.banner;
-        delete validBids[0].params.video;
-        delete validBids[0].params.native;
-        const request = spec.buildRequests(validBids, {});
-        const bannerImps = request[0].data.imp[0];
-        const videoImps = request[1].data.imp[0];
-        const nativeImps = request[2].data.imp[0];
-        expect(videoImps.ext.siteID).to.equal('456');
-        bannerImps.banner.format.map(({ ext }) => {
-          expect(ext.siteID).to.equal('456');
-        });
-        expect(nativeImps.ext.siteID).to.equal('456');
+      it('video+banner with different adunits => single request, two imps', () => {
+        const bid = { ...DEFAULT_BANNER_VALID_BID[0], bidId: '1abcdef' };
+        const bids = [DEFAULT_VIDEO_VALID_BID[0], bid];
+        const req = getReq(bids);
+        expect(req).to.have.lengthOf(1);
+        expect(getImps(req)).to.have.lengthOf(2);
+      });
+
+      it('different ad units simple case => still one request', () => {
+        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
+        const req = getReq(bids);
+        expect(req).to.have.lengthOf(1);
+      });
+    });
+
+    describe('banner + native multiformat in a single bid', () => {
+      it('one request, one imp that includes both banner and native', () => {
+        const req = getReq(DEFAULT_MULTIFORMAT_NATIVE_VALID_BID);
+        expect(req).to.have.lengthOf(1);
+        const imp = getImp(req);
+        expect(getImps(req)).to.have.lengthOf(1);
+        expect(imp.banner).to.exist;
+        expect(imp.native).to.exist;
+      });
+    });
+
+    describe('siteId overrides (multiformat)', () => {
+      it('uses per-type overrides when provided', () => {
+        validBids[0].params = {
+          tagId: '123',
+          siteId: '456',
+          size: [300, 250],
+          video: { siteId: '1111' },
+          banner: { siteId: '2222' },
+          native: { siteId: '3333' }
+        };
+        const req = getReq(validBids);
+        const imp = req[0].data.imp[0];
+
+        expect(imp.ext.siteID).to.equal('2222');
+        expect(imp.video.ext.siteID).to.be.undefined;
+        imp.banner.format.map(({ ext }) => expect(ext.siteID).to.be.undefined);
+        expect(imp.native.ext.siteID).to.be.undefined;
+      });
+
+      it('falls back to default siteId when no per-type overrides provided', () => {
+        const bids = validBids;
+        delete bids[0].params.banner;
+        delete bids[0].params.video;
+        delete bids[0].params.native;
+
+        const req = getReq(bids);
+        const imp = req[0].data.imp[0];
+
+        expect(imp.ext.siteID).to.equal('456');
+        expect(imp.video.ext.siteID).to.be.undefined;
+        imp.banner.format.map(({ ext }) => expect(ext.siteID).to.be.undefined);
+        expect(imp.native.ext.siteID).to.be.undefined;
+      });
+    });
+
+    describe('bid floor resolution in multiformat', () => {
+      it('banner/video same adUnitCode: global = video, banner ext keeps own floor', () => {
+        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
+        bids[0].params.bidFloor = 2.35;
+        bids[0].params.bidFloorCur = 'USD';
+
+        const saved = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
+        bids[1].params.bidFloor = 2.05;
+        bids[1].params.bidFloorCur = 'USD';
+
+        const req = getReq(bids);
+        const imp = getImp(req);
+
+        expect(getImps(req)).to.have.lengthOf(1);
+        expect(imp.bidfloor).to.equal(2.05);
+        expect(imp.bidfloorcur).to.equal('USD');
+        expect(imp.video.ext.bidfloor).to.equal(2.05);
+        expect(imp.banner.format[0].ext.bidfloor).to.equal(2.35);
+
+        bids[1].adUnitCode = saved;
+      });
+
+      it('banner/native same adUnitCode: global = native (2.05), native ext = 2.05', () => {
+        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
+        bids[0].params.bidFloor = 2.35;
+        bids[0].params.bidFloorCur = 'USD';
+
+        const saved = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
+        bids[1].params.bidFloor = 2.05;
+        bids[1].params.bidFloorCur = 'USD';
+
+        const req = getReq(bids);
+        const imp = getImp(req);
+
+        expect(getImps(req)).to.have.lengthOf(1);
+        expect(imp.bidfloor).to.equal(2.05);
+        expect(imp.bidfloorcur).to.equal('USD');
+        expect(imp.native.ext.bidfloor).to.equal(2.05);
+
+        bids[1].adUnitCode = saved;
+      });
+
+      it('banner/native same adUnitCode: global = banner (2.05), native ext = 2.35 when native higher', () => {
+        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
+        bids[0].params.bidFloor = 2.05;
+        bids[0].params.bidFloorCur = 'USD';
+
+        const saved = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
+        bids[1].params.bidFloor = 2.35;
+        bids[1].params.bidFloorCur = 'USD';
+
+        const req = getReq(bids);
+        const imp = getImp(req);
+
+        expect(getImps(req)).to.have.lengthOf(1);
+        expect(imp.bidfloor).to.equal(2.05);
+        expect(imp.bidfloorcur).to.equal('USD');
+        expect(imp.native.ext.bidfloor).to.equal(2.35);
+
+        bids[1].adUnitCode = saved;
       });
     });
   });
@@ -4706,223 +4836,6 @@ describe('IndexexchangeAdapter', function () {
       r = extractPayload(requests[0]);
       expect(r.ext.features).to.deep.equal({
         [FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES[0]]: { activated: false }
-      });
-    });
-
-    describe('multiformat tests with enable multiformat ft enabled', () => {
-      let ftStub;
-      let validBids;
-      beforeEach(() => {
-        ftStub = sinon.stub(FEATURE_TOGGLES, 'isFeatureEnabled').callsFake((ftName) => {
-          if (ftName == 'pbjs_enable_multiformat') {
-            return true;
-          }
-          return false;
-        });
-        validBids = DEFAULT_MULTIFORMAT_VALID_BID;
-      });
-
-      afterEach(() => {
-        ftStub.restore();
-        validBids = DEFAULT_MULTIFORMAT_VALID_BID;
-      });
-
-      it('banner multiformat request, should generate banner imp', () => {
-        const request = spec.buildRequests(DEFAULT_MULTIFORMAT_BANNER_VALID_BID, {})
-        const imp = extractPayload(request[0]).imp[0];
-        const bannerImpression = imp.banner
-        expect(request).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-        expect(imp.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
-        expect(bannerImpression.format[0].w).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[0]);
-        expect(bannerImpression.format[0].h).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[1]);
-      });
-      it('should generate video impression', () => {
-        const request = spec.buildRequests(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID, {});
-        const imp = extractPayload(request[0]).imp[0];
-        const videoImp = imp.video
-        expect(request).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-        expect(imp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
-        expect(videoImp.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
-        expect(videoImp.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
-      });
-      it('different ad units, should only have 1 request', () => {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-        const request = spec.buildRequests(bids, {});
-        expect(request).to.have.lengthOf(1);
-      });
-      it('should return valid banner requests', function () {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-        const request = spec.buildRequests(bids, {});
-        const impressions = extractPayload(request[0]).imp;
-        expect(impressions).to.have.lengthOf(2);
-
-        expect(impressions[0].id).to.equal(bids[0].bidId);
-        expect(impressions[0].banner.format).to.be.length(bids[0].mediaTypes.banner.sizes.length);
-        expect(impressions[0].banner.topframe).to.be.oneOf([0, 1]);
-        expect(impressions[0].ext.siteID).to.equal('123');
-        expect(impressions[1].ext.siteID).to.equal('456');
-        impressions[0].banner.format.map(({ w, h, ext }, index) => {
-          const size = bids[0].mediaTypes.banner.sizes[index];
-
-          expect(w).to.equal(size[0]);
-          expect(h).to.equal(size[1]);
-          expect(ext.siteID).to.be.undefined;
-        });
-
-        impressions[1].banner.format.map(({ w, h, ext }, index) => {
-          const size = bids[1].mediaTypes.banner.sizes[index];
-
-          expect(w).to.equal(size[0]);
-          expect(h).to.equal(size[1]);
-          expect(ext.siteID).to.be.undefined;
-        });
-      });
-      it('banner / native multiformat request, only 1 request expect 1 imp', () => {
-        const request = spec.buildRequests(DEFAULT_MULTIFORMAT_NATIVE_VALID_BID, {});
-        expect(request).to.have.lengthOf(1);
-        const imp = extractPayload(request[0]).imp[0];
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-        expect(imp.banner).to.exist;
-        expect(imp.native).to.exist;
-      });
-
-      it('should return valid banner and video requests', function () {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-        const request = spec.buildRequests(bids, {});
-        const videoImpression = extractPayload(request[0]).imp[1];
-
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
-        expect(videoImpression.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
-        expect(videoImpression.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][0]);
-        expect(videoImpression.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][1]);
-      });
-
-      it('multiformat banner / video - bid floors', function () {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-        bids[0].params.bidFloor = 2.35;
-        bids[0].params.bidFloorCur = 'USD';
-        const adunitcode = bids[1].adUnitCode;
-        bids[1].adUnitCode = bids[0].adUnitCode;
-        bids[1].params.bidFloor = 2.05;
-        bids[1].params.bidFloorCur = 'USD';
-        const request = spec.buildRequests(bids, {});
-
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
-        expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
-        expect(extractPayload(request[0]).imp[0].video.ext.bidfloor).to.equal(2.05);
-        expect(extractPayload(request[0]).imp[0].banner.format[0].ext.bidfloor).to.equal(2.35);
-        bids[1].adUnitCode = adunitcode;
-      });
-
-      it('multiformat banner / native - bid floors', function () {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
-        bids[0].params.bidFloor = 2.35;
-        bids[0].params.bidFloorCur = 'USD';
-        const adunitcode = bids[1].adUnitCode;
-        bids[1].adUnitCode = bids[0].adUnitCode;
-        bids[1].params.bidFloor = 2.05;
-        bids[1].params.bidFloorCur = 'USD';
-        const request = spec.buildRequests(bids, {});
-
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
-        expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
-        expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.05);
-        bids[1].adUnitCode = adunitcode;
-      });
-
-      it('multiformat banner / native - bid floors, banner imp less', function () {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
-        bids[0].params.bidFloor = 2.05;
-        bids[0].params.bidFloorCur = 'USD';
-        const adunitcode = bids[1].adUnitCode;
-        bids[1].adUnitCode = bids[0].adUnitCode;
-        bids[1].params.bidFloor = 2.35;
-        bids[1].params.bidFloorCur = 'USD';
-        const request = spec.buildRequests(bids, {});
-
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
-        expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
-        expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.35);
-        bids[1].adUnitCode = adunitcode;
-      });
-
-      it('should return valid banner and video requests, different adunit, creates multiimp request', function () {
-        const bid = DEFAULT_MULTIFORMAT_VALID_BID[0]
-        bid.bidId = '1abcdef'
-        const bids = [DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0], bid];
-        const request = spec.buildRequests(bids, {});
-        expect(request).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
-      });
-
-      it('should return valid  video requests, different adunit, creates multiimp request', function () {
-        const bid = DEFAULT_BANNER_VALID_BID[0]
-        bid.bidId = '1abcdef'
-        const bids = [DEFAULT_VIDEO_VALID_BID[0], bid];
-        const request = spec.buildRequests(bids, {});
-        expect(request).to.have.lengthOf(1);
-        expect(extractPayload(request[0]).imp).to.have.lengthOf(2);
-      });
-
-      it('should contain all correct IXdiag properties', function () {
-        const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-        const request = spec.buildRequests(bids, {});
-        const diagObj = extractPayload(request[0]).ext.ixdiag;
-        expect(diagObj.iu).to.equal(0);
-        expect(diagObj.nu).to.equal(0);
-        expect(diagObj.ou).to.equal(2);
-        expect(diagObj.ren).to.equal(true);
-        expect(diagObj.mfu).to.equal(2);
-        expect(diagObj.allu).to.equal(2);
-        expect(diagObj.version).to.equal('$prebid.version$');
-        expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
-        expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
-      });
-
-      it('should use siteId override for multiformat', function () {
-        validBids[0].params = {
-          tagId: '123',
-          siteId: '456',
-          size: [300, 250],
-          video: {
-            siteId: '1111'
-          },
-          banner: {
-            siteId: '2222'
-          },
-          native: {
-            siteId: '3333'
-          }
-        }
-        const request = spec.buildRequests(validBids, {});
-        const imp = request[0].data.imp[0];
-        expect(imp.ext.siteID).to.equal('2222');
-        expect(imp.video.ext.siteID).to.be.undefined;
-        imp.banner.format.map(({ ext }) => {
-          expect(ext.siteID).to.be.undefined;
-        });
-        expect(imp.native.ext.siteID).to.be.undefined;
-      });
-
-      it('should use default siteId if overrides are not provided for multiformat', function () {
-        const bids = validBids;
-        delete bids[0].params.banner;
-        delete bids[0].params.video;
-        delete bids[0].params.native;
-        const request = spec.buildRequests(bids, {});
-        const imp = request[0].data.imp[0]
-        expect(imp.video.ext.siteID).to.be.undefined;
-        imp.banner.format.map(({ ext }) => {
-          expect(ext.siteID).to.be.undefined;
-        });
-        expect(imp.native.ext.siteID).to.be.undefined;
-        expect(imp.ext.siteID).to.equal('456');
       });
     });
   });

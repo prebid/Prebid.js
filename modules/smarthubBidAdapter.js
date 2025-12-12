@@ -11,7 +11,7 @@ import {
 const BIDDER_CODE = 'smarthub';
 const SYNC_URLS = {
   '1': 'https://us.shb-sync.com',
-  '4': 'https://us4.shb-sync.com'
+  '4': 'https://us4.shb-sync.com',
 };
 
 const ALIASES = {
@@ -24,6 +24,10 @@ const ALIASES = {
   'adinify': {area: '1', pid: '424'},
   'addigi': {area: '1', pid: '425'},
   'jambojar': {area: '1', pid: '426'},
+  'anzu': {area: '1', pid: '445'},
+  'amcom': {area: '1', pid: '397'},
+  'adastra': {area: '1', pid: '33'},
+  'radiantfusion': {area: '1', pid: '455'},
 };
 
 const BASE_URLS = {
@@ -38,6 +42,10 @@ const BASE_URLS = {
   'addigi': 'https://addigi-prebid.attekmi.co/pbjs',
   'jambojar': 'https://jambojar-prebid.attekmi.co/pbjs',
   'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.co/pbjs',
+  'anzu': 'https://anzu-prebid.attekmi.co/pbjs',
+  'amcom': 'https://amcom-prebid.attekmi.co/pbjs',
+  'adastra': 'https://adastra-prebid.attekmi.co/pbjs',
+  'radiantfusion': 'https://radiantfusion-prebid.attekmi.co/pbjs',
 };
 
 const adapterState = {};

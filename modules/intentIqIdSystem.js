@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {logError, isPlainObject, isStr, isNumber, getWinDimensions} from '../src/utils.js';
+import {logError, isPlainObject, isStr, isNumber} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
@@ -21,7 +21,7 @@ import {
   CLIENT_HINTS_KEY,
   EMPTY,
   GVLID,
-  VERSION, INVALID_ID, SCREEN_PARAMS, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
+  VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
   HOURS_24, CH_KEYS
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
@@ -68,38 +68,13 @@ function generateGUID() {
   const guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
-    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   });
   return guid;
 }
 
-function collectDeviceInfo() {
-  const windowDimensions = getWinDimensions();
-  return {
-    windowInnerHeight: windowDimensions.innerHeight,
-    windowInnerWidth: windowDimensions.innerWidth,
-    devicePixelRatio: windowDimensions.devicePixelRatio,
-    windowScreenHeight: windowDimensions.screen.height,
-    windowScreenWidth: windowDimensions.screen.width,
-    language: navigator.language
-  }
-}
-
 function addUniquenessToUrl(url) {
   url += '&tsrnd=' + Math.floor(Math.random() * 1000) + '_' + new Date().getTime();
-  return url;
-}
-
-function appendDeviceInfoToUrl(url, deviceInfo) {
-  const screenParamsString = Object.entries(SCREEN_PARAMS)
-    .map(([index, param]) => {
-      const value = (deviceInfo)[param];
-      return `${index}:${value}`;
-    })
-    .join(',');
-
-  url += `&cz=${encodeURIComponent(screenParamsString)}`;
-  url += `&dw=${deviceInfo.windowScreenWidth}&dh=${deviceInfo.windowScreenHeight}&dpr=${deviceInfo.devicePixelRatio}&lan=${deviceInfo.language}`;
   return url;
 }
 
@@ -169,7 +144,6 @@ function addMetaData(url, data) {
 }
 
 export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
-  const deviceInfo = collectDeviceInfo();
   const browser = detectBrowser();
 
   let url = iiqPixelServerAddress(configParams, cmpData.gdprString);
@@ -179,7 +153,6 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   url = appendPartnersFirstParty(url, configParams);
   url = addUniquenessToUrl(url);
   url += partnerData?.clientType ? '&idtype=' + partnerData.clientType : '';
-  if (deviceInfo) url = appendDeviceInfoToUrl(url, deviceInfo);
   url += VERSION ? '&jsver=' + VERSION : '';
   if (clientHints) url += '&uh=' + encodeURIComponent(clientHints);
   url = appendVrrefAndFui(url, configParams.domainName);
@@ -219,7 +192,8 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
  * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
  * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
-export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
+export function setGamReporting(gamObjectReference, gamParameterName, userGroup, isBlacklisted = false) {
+  if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     gamObjectReference.cmd.push(() => {
       gamObjectReference
@@ -299,7 +273,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return value && value != '' && INVALID_ID != value ? {'intentIqId': value} : undefined;
+    return value && INVALID_ID !== value ? {'intentIqId': value} : undefined;
   },
 
   /**
@@ -350,7 +324,12 @@ export const intentIqIdSubmodule = {
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
-    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group);
+    const currentBrowserLowerCase = detectBrowser();
+    const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
+    const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
+    let newUser = false;
+
+    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group, isBlacklisted);
 
     if (groupChanged) groupChanged(firstPartyData?.group || NOT_YET_DEFINED);
 
@@ -358,10 +337,6 @@ export const intentIqIdSubmodule = {
       firePartnerCallback();
     }, configParams.timeoutInMillis || 500
     );
-
-    const currentBrowserLowerCase = detectBrowser();
-    const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
-    let newUser = false;
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
@@ -478,7 +453,7 @@ export const intentIqIdSubmodule = {
     }
 
     // Check if current browser is in blacklist
-    if (browserBlackList?.includes(currentBrowserLowerCase)) {
+    if (isBlacklisted) {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
 
@@ -549,7 +524,7 @@ export const intentIqIdSubmodule = {
 
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
-              if (respJson.tc == 41) {
+              if (Number(respJson.tc) === 41) {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
                 if (groupChanged) groupChanged(firstPartyData.group);
@@ -594,7 +569,7 @@ export const intentIqIdSubmodule = {
                 return
               }
               // If data is empty, means we should save as INVALID_ID
-              if (respJson.data == '') {
+              if (respJson.data === '') {
                 respJson.data = INVALID_ID;
               } else {
                 // If data is a single string, assume it is an id with source intentiq.com
@@ -616,6 +591,12 @@ export const intentIqIdSubmodule = {
             if ('spd' in respJson) {
               // server provided data
               firstPartyData.spd = respJson.spd;
+            }
+            if ('gpr' in respJson) {
+              // GAM prediction reporting
+              partnerData.gpr = respJson.gpr;
+            } else {
+              delete partnerData.gpr // remove prediction flag in case server doesn't provide it
             }
 
             if (rrttStrtTime && rrttStrtTime > 0) {

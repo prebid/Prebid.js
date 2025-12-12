@@ -47,7 +47,7 @@ export const spec = {
       if (vb.sizes && Array.isArray(vb.sizes)) {
         for (var j = 0; j < vb.sizes.length; j++) {
           const s = vb.sizes[j];
-          if (Array.isArray(s) && s.length == 2) {
+          if (Array.isArray(s) && s.length === 2) {
             o.sizes.push(s[0] + 'x' + s[1]);
           }
         }

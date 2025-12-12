@@ -31,6 +31,11 @@ describe('TeqBlazeBidderUtils', function () {
       params: {
         placementId: 'testBanner'
       },
+      ortb2Imp: {
+        ext: {
+          gpid: "/1111/homepage-leftnav"
+        }
+      },
       userIdAsEids
     },
     {
@@ -184,6 +189,7 @@ describe('TeqBlazeBidderUtils', function () {
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
+          expect(placement.gpid).to.be.an('string');
         }
         switch (placement.adFormat) {
           case BANNER:
@@ -286,7 +292,7 @@ describe('TeqBlazeBidderUtils', function () {
         model: 'iPhone 12 Pro Max',
         os: 'iOS',
         osv: '17.4',
-        ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+        ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
       };
       const _bidderRequest = JSON.parse(JSON.stringify(bidderRequest));
       _bidderRequest.ortb2.device = ortb2Device;
@@ -505,8 +511,8 @@ describe('TeqBlazeBidderUtils', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with proper sync config , include GDPR', function() {
+  describe('getUserSyncs', function () {
+    it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -518,7 +524,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`)
     });
-    it('Should return array of objects with proper sync config , include CCPA', function() {
+    it('Should return array of objects with proper sync config , include CCPA', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {
         consentString: '1---'
       });
@@ -529,7 +535,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&ccpa_consent=1---&coppa=0`)
     });
-    it('Should return array of objects with proper sync config , include GPP', function() {
+    it('Should return array of objects with proper sync config , include GPP', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {}, {
         gppString: 'abc123',
         applicableSections: [8]
