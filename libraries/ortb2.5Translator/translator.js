@@ -66,7 +66,7 @@ export const TO_25_DEFAULT_RULES = Object.freeze([
 
 export const TO_26_DEFAULT_RULES = Object.freeze([
   ...EXT_PROMOTIONS.map(f => moveRule(addExt(...splitPath(f)), removeExt)),
-])
+]);
 
 /**
  * Factory for ORTB 2.5 translation functions.
