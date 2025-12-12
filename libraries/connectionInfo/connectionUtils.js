@@ -3,11 +3,51 @@
  *
  * @returns {number} - Type of connection.
  */
+function resolveNavigator() {
+  if (typeof window !== 'undefined' && window.navigator) {
+    return window.navigator;
+  }
+
+  if (typeof navigator !== 'undefined') {
+    return navigator;
+  }
+
+  return null;
+}
+
+function resolveNetworkInformation() {
+  const nav = resolveNavigator();
+  if (!nav) {
+    return null;
+  }
+
+  return nav.connection || nav.mozConnection || nav.webkitConnection || null;
+}
+
+export function getConnectionInfo() {
+  const connection = resolveNetworkInformation();
+
+  if (!connection) {
+    return null;
+  }
+
+  return {
+    type: connection.type ?? null,
+    effectiveType: connection.effectiveType ?? null,
+    downlink: typeof connection.downlink === 'number' ? connection.downlink : null,
+    downlinkMax: typeof connection.downlinkMax === 'number' ? connection.downlinkMax : null,
+    rtt: typeof connection.rtt === 'number' ? connection.rtt : null,
+    saveData: typeof connection.saveData === 'boolean' ? connection.saveData : null,
+    bandwidth: typeof connection.bandwidth === 'number' ? connection.bandwidth : null
+  };
+}
+
 export function getConnectionType() {
-  const connection = navigator.connection || navigator.webkitConnection;
+  const connection = getConnectionInfo();
   if (!connection) {
     return 0;
   }
+
   switch (connection.type) {
     case 'ethernet':
       return 1;

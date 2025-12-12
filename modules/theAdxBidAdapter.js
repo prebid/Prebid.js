@@ -9,6 +9,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -374,11 +375,11 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
     dnt: getDNT() ? 1 : 0,
   };
   // Include connection info if available
-  const CONNECTION = navigator.connection || navigator.webkitConnection;
-  if (CONNECTION && CONNECTION.type) {
-    device['connectiontype'] = CONNECTION.type;
-    if (CONNECTION.downlinkMax) {
-      device['connectionDownlinkMax'] = CONNECTION.downlinkMax;
+  const connection = getConnectionInfo();
+  if (connection?.type) {
+    device['connectiontype'] = connection.type;
+    if (connection.downlinkMax != null) {
+      device['connectionDownlinkMax'] = connection.downlinkMax;
     }
   }
 
