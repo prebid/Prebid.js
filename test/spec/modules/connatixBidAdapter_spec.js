@@ -976,7 +976,7 @@ describe('connatixBidAdapter', function () {
       expect(floor).to.equal(0);
     });
   });
-  
+
   describe('getUserSyncs with message event listener', function() {
     const CNX_IDS_LOCAL_STORAGE_KEY = 'cnx_user_ids';
     const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
