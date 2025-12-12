@@ -145,9 +145,10 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
         }
       };
 
-      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-        [CONSTANTS.SUBMODULE_NAME]: ortb2
-      });
+      reqBidsConfigObj.ortb2Fragments.bidder[CONSTANTS.SUBMODULE_NAME] = mergeDeep(
+        reqBidsConfigObj.ortb2Fragments.bidder[CONSTANTS.SUBMODULE_NAME] || {},
+        ortb2
+      );
     }
 
     callback();
