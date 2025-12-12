@@ -55,6 +55,7 @@ export function gamPredictionReport (gamObjectReference, sendData) {
                 dataToSend.originalCurrency = bid.originalCurrency;
                 dataToSend.status = bid.status;
                 dataToSend.prebidAuctionId = element.args?.auctionId;
+                if (!dataToSend.bidderCode) dataToSend.bidderCode = bid.bidder;
               };
               if (dataToSend.bidderCode) {
                 const relevantBid = element.args?.bidsReceived.find(
