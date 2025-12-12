@@ -339,7 +339,7 @@ export const intentIqIdSubmodule = {
     const cmpData = getCmpData();
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
-    actualABGroup = defineABTestingGroup(partnerData?.terminationCause, configParams.abPercentage);
+    actualABGroup = defineABTestingGroup(configParams, partnerData?.terminationCause);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
@@ -495,6 +495,8 @@ export const intentIqIdSubmodule = {
       return { id: runtimeEids.eids };
     }
 
+    updateGlobalObj() // update global object before server request, to make sure analytical adapter will have it even if the server is "not in time"
+
     // use protocol relative urls for http or https
     let url = `${iiqServerAddress(configParams, gdprDetected)}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
@@ -511,6 +513,7 @@ export const intentIqIdSubmodule = {
     url = handleAdditionalParams(currentBrowserLowerCase, url, 1, additionalParams);
     url = appendSPData(url, firstPartyData)
     url += '&source=' + PREBID;
+    url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource
 
     // Add vrref and fui to the URL
     url = appendVrrefAndFui(url, configParams.domainName);
@@ -542,7 +545,7 @@ export const intentIqIdSubmodule = {
 
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
-              actualABGroup = defineABTestingGroup(respJson.tc, configParams.abPercentage);
+              actualABGroup = defineABTestingGroup(configParams, respJson.tc,);
 
               if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, actualABGroup);
               if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);

@@ -18,6 +18,7 @@ import {
   VERSION,
   WITHOUT_IIQ,
   WITH_IIQ,
+  AB_CONFIG_SOURCE,
 } from "../../../libraries/intentIqConstants/intentIqConstants.js";
 import * as detectBrowserUtils from "../../../libraries/intentIqUtils/detectBrowserUtils.js";
 import {
@@ -681,18 +682,6 @@ describe("IntentIQ tests all", function () {
     expect(request.url).to.include(`&spd=${expectedSpdEncoded}`);
   });
 
-  it("should not send request in case there is no generated global identity object", function () {
-    window[`iiq_identity_${partner}`] = undefined;
-
-    events.emit(EVENTS.BID_WON, getWonRequest());
-
-    expect(logErrorStub.lastCall.firstArg).to.be.equal(
-      "IIQ ANALYTICS → required data is missing. Skipping the current process"
-    );
-
-    expect(server.requests.length).to.be.equal(0); // no request
-  });
-
   describe("GAM prediction reporting", function () {
     function createMockGAM() {
       const listeners = {};
@@ -969,4 +958,79 @@ describe("IntentIQ tests all", function () {
       });
     }
   );
+
+  it("should include ABTestingConfigurationSource in payload when provided", function () {
+    const ABTestingConfigurationSource = "percentage";
+    enableAnalyticWithSpecialOptions({ ABTestingConfigurationSource });
+
+    const [userConfig] = getUserConfig();
+    config.getConfig.restore();
+    sinon
+      .stub(config, "getConfig")
+      .withArgs("userSync.userIds")
+      .returns([userConfig]);
+
+    events.emit(EVENTS.BID_WON, getWonRequest());
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const encodedPayload = urlParams.searchParams.get("payload");
+    const decodedPayload = JSON.parse(atob(JSON.parse(encodedPayload)[0]));
+
+    expect(server.requests.length).to.be.above(0);
+    expect(decodedPayload).to.have.property(
+      "ABTestingConfigurationSource",
+      ABTestingConfigurationSource
+    );
+  });
+
+  it("should not include ABTestingConfigurationSource in payload when not provided", function () {
+    enableAnalyticWithSpecialOptions({});
+
+    const [userConfig] = getUserConfig();
+    config.getConfig.restore();
+    sinon
+      .stub(config, "getConfig")
+      .withArgs("userSync.userIds")
+      .returns([userConfig]);
+
+    events.emit(EVENTS.BID_WON, getWonRequest());
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const encodedPayload = urlParams.searchParams.get("payload");
+    const decodedPayload = JSON.parse(atob(JSON.parse(encodedPayload)[0]));
+
+    expect(server.requests.length).to.be.above(0);
+    expect(decodedPayload).to.not.have.property("ABTestingConfigurationSource");
+  });
+
+  it("should use group from provided options when ABTestingConfigurationSource is 'group'", function () {
+    const providedGroup = WITHOUT_IIQ;
+    // Ensure actualABGroup is not set so group from options is used
+    delete window[`iiq_identity_${partner}`].actualABGroup;
+
+    enableAnalyticWithSpecialOptions({
+      group: providedGroup,
+      ABTestingConfigurationSource: AB_CONFIG_SOURCE.GROUP,
+    });
+
+    const [userConfig] = getUserConfig();
+    config.getConfig.restore();
+    sinon
+      .stub(config, "getConfig")
+      .withArgs("userSync.userIds")
+      .returns([userConfig]);
+
+    events.emit(EVENTS.BID_WON, getWonRequest());
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const encodedPayload = urlParams.searchParams.get("payload");
+    const decodedPayload = JSON.parse(atob(JSON.parse(encodedPayload)[0]));
+
+    expect(server.requests.length).to.be.above(0);
+    // Verify that the group from options is used in the payload
+    expect(decodedPayload).to.have.property("abGroup", providedGroup);
+  });
 });

@@ -1592,4 +1592,34 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
     expect(groupChangedSpy.calledWith(WITH_IIQ)).to.be.true;
   });
+
+  it('should use group provided by partner', async function () {
+    const groupChangedSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
+    const usedGroup = 'B'
+    const ABTestingConfigurationSource = 'group'
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        ABTestingConfigurationSource,
+        group: usedGroup,
+        groupChanged: groupChangedSpy
+      }
+    };
+
+    const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+    submoduleCallback(callBackSpy);
+    await waitForClientHints()
+    const request = server.requests[0];
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+
+    expect(request.url).to.contain(`ABTestingConfigurationSource=${ABTestingConfigurationSource}`);
+    expect(request.url).to.contain(`testGroup=${usedGroup}`);
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(groupChangedSpy.calledWith(usedGroup)).to.be.true;
+  });
 });

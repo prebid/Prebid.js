@@ -16,6 +16,7 @@ import {
 import { reportingServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { gamPredictionReport } from '../libraries/intentIqUtils/gamPredictionReport.js';
+import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
 
 const MODULE_NAME = 'iiqAnalytics';
 const analyticsType = 'endpoint';
@@ -63,7 +64,7 @@ const PARAMS_NAMES = {
   firstPartyId: 'pcid',
   placementId: 'placementId',
   adType: 'adType',
-  abTestUuid: 'abTestUuid'
+  abTestUuid: 'abTestUuid',
 };
 
 function getIntentIqConfig() {
@@ -124,8 +125,18 @@ function initAdapterConfig(config) {
   defineGlobalVariableName();
   const iiqIdSystemConfig = getIntentIqConfig();
 
+  const options = config?.options || {}
+  const { manualWinReportEnabled, gamPredictReporting, reportMethod, reportingServerAddress: reportEndpoint, adUnitConfig, partner, ABTestingConfigurationSource } = options
+  iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
+            manualWinReportEnabled || false;
+  iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = parseReportingMethod(reportMethod);
+  iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting = typeof gamPredictReporting === 'boolean' ? gamPredictReporting : false;
+  iiqAnalyticsAnalyticsAdapter.initOptions.reportingServerAddress = typeof reportEndpoint === 'string' ? reportEndpoint : '';
+  iiqAnalyticsAnalyticsAdapter.initOptions.adUnitConfig = typeof adUnitConfig === 'number' ? adUnitConfig : 1;
+  iiqAnalyticsAnalyticsAdapter.initOptions.configSource = ABTestingConfigurationSource;
+  iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = defineABTestingGroup(options)
+
   if (iiqIdSystemConfig) {
-    const { manualWinReportEnabled, gamPredictReporting, reportMethod, reportingServerAddress: reportEndpoint, adUnitConfig } = config?.options || {}
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
     iiqAnalyticsAnalyticsAdapter.initOptions.partner =
             iiqIdSystemConfig.params?.partner && !isNaN(iiqIdSystemConfig.params.partner) ? iiqIdSystemConfig.params.partner : -1;
@@ -134,20 +145,14 @@ function initAdapterConfig(config) {
             typeof iiqIdSystemConfig.params?.browserBlackList === 'string'
               ? iiqIdSystemConfig.params.browserBlackList.toLowerCase()
               : '';
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
-            manualWinReportEnabled || false;
     iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqIdSystemConfig.params?.domainName || '';
     iiqAnalyticsAnalyticsAdapter.initOptions.siloEnabled =
             typeof iiqIdSystemConfig.params?.siloEnabled === 'boolean' ? iiqIdSystemConfig.params.siloEnabled : false;
-    iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = parseReportingMethod(reportMethod);
     iiqAnalyticsAnalyticsAdapter.initOptions.additionalParams = iiqIdSystemConfig.params?.additionalParams || null;
-    iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting = typeof gamPredictReporting === 'boolean' ? gamPredictReporting : false;
-    iiqAnalyticsAnalyticsAdapter.initOptions.reportingServerAddress = typeof reportEndpoint === 'string' ? reportEndpoint : '';
-    iiqAnalyticsAnalyticsAdapter.initOptions.adUnitConfig = typeof adUnitConfig === 'number' ? adUnitConfig : 1;
   } else {
     logError('IIQ ANALYTICS -> there is no initialized intentIqIdSystem module')
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = false;
-    iiqAnalyticsAnalyticsAdapter.initOptions.partner = -1;
+    iiqAnalyticsAnalyticsAdapter.initOptions.partner = partner || -1;
     iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = 'GET';
   }
 }
@@ -174,7 +179,9 @@ function receivePartnerData() {
       iiqAnalyticsAnalyticsAdapter.initOptions.rrtt = partnerData.rrtt || null;
     }
 
-    iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = actualABGroup;
+    if (actualABGroup) {
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = actualABGroup;
+    }
     iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints;
   } catch (e) {
     logError(e);
@@ -227,15 +234,13 @@ function bidWon(args, isReportExternal) {
     return;
   }
 
-  const success = receivePartnerData();
-  if (success === false) {
-    // in fact analytical adapter could not exist without intentIqIdSystem, and first party data is generated there
-    logError('IIQ ANALYTICS → required data is missing. Skipping the current process')
-    return;
-  }
   if (shouldSendReport(isReportExternal)) {
+    const success = receivePartnerData();
     const preparedPayload = preparePayload(args);
     if (!preparedPayload) return false;
+    if (success === false) {
+      preparedPayload[PARAMS_NAMES.terminationCause] = -1
+    }
     const { url, method, payload } = constructFullUrl(preparedPayload);
     if (method === 'POST') {
       ajax(url, undefined, payload, {
@@ -306,6 +311,9 @@ export function preparePayload(data) {
   }
   if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid?.pid) {
     result[PARAMS_NAMES.profile] = encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pid);
+  }
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.configSource) {
+    result[PARAMS_NAMES.ABTestingConfigurationSource] = iiqAnalyticsAnalyticsAdapter.initOptions.configSource
   }
   prepareData(data, result);
 
