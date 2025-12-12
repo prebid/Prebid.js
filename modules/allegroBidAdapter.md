@@ -27,14 +27,12 @@ The Allegro adapter supports the following configuration options:
 | `allegro.convertExtensionFields` | optional | Boolean | Enable/disable conversion of OpenRTB extension fields to DoubleClick format | `true`                                                  |
 | `allegro.triggerImpressionPixel` | optional | Boolean | Enable/disable triggering impression tracking pixels on bid won event       | `false`                                                 |
 
-## Configuration Example
+## Configuration example
 
 ```javascript
 pbjs.setConfig({
   allegro: {
-    bidderUrl: 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid', // optional
-    convertExtensionFields: true, // optional, default is true
-    triggerImpressionPixel: true  // optional, default is false
+    triggerImpressionPixel: true
   }
 });
 ```
