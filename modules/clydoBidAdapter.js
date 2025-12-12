@@ -16,6 +16,10 @@ const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 30
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    context.mediaType = deepAccess(bid, 'ext.mediaType');
+    return buildBidResponse(bid, context)
   }
 });
 
