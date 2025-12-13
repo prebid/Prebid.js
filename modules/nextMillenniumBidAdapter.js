@@ -23,7 +23,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
-const NM_VERSION = '4.5.0';
+const NM_VERSION = '4.5.1';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -148,6 +148,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    const bidIds = new Map()
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
@@ -180,10 +181,14 @@ export const spec = {
       const id = getPlacementId(bid);
       const {cur, mediaTypes} = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
-      const imp = getImp(bid, id, mediaTypes);
+
+      const impId = String(i + 1)
+      bidIds.set(impId, bid.bidId)
+
+      const imp = getImp(impId, bid, id, mediaTypes);
       setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
       postBody.imp.push(imp);
-      postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
+      postBody.ext.next_mil_imps.push(getExtNextMilImp(impId, bid));
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -196,19 +201,21 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true,
       },
+
+      bidIds,
     });
 
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bid.impid;
+        const requestId = bidRequest.bidIds.get(bid.impid);
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
@@ -327,11 +334,11 @@ export const spec = {
   },
 };
 
-export function getExtNextMilImp(bid) {
+export function getExtNextMilImp(impId, bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
   const {adSlots, allowedAds} = bid.params
   const nextMilImp = {
-    impId: bid.bidId,
+    impId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
@@ -346,10 +353,10 @@ export function getExtNextMilImp(bid) {
   return nextMilImp;
 }
 
-export function getImp(bid, id, mediaTypes) {
+export function getImp(impId, bid, id, mediaTypes) {
   const {banner, video} = mediaTypes;
   const imp = {
-    id: bid.bidId,
+    id: impId,
     ext: {
       prebid: {
         storedrequest: {
