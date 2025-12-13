@@ -188,7 +188,7 @@ export const spec = {
       const imp = getImp(impId, bid, id, mediaTypes);
       setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
       postBody.imp.push(imp);
-      postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
+      postBody.ext.next_mil_imps.push(getExtNextMilImp(impId, bid));
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -334,11 +334,11 @@ export const spec = {
   },
 };
 
-export function getExtNextMilImp(bid) {
+export function getExtNextMilImp(impId, bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
   const {adSlots, allowedAds} = bid.params
   const nextMilImp = {
-    impId: bid.bidId,
+    impId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,

@@ -900,17 +900,17 @@ describe('nextMillenniumBidAdapterTests', () => {
   describe('Check ext.next_mil_imps', function() {
     const expectedNextMilImps = [
       {
-        impId: 'bid1234',
+        impId: '1',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'bid1235',
+        impId: '2',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'bid1236',
+        impId: '3',
         nextMillennium: {refresh_count: 1},
       },
     ];
@@ -1322,15 +1322,19 @@ describe('nextMillenniumBidAdapterTests', () => {
     const tests = [
       {
         title: 'parameters adSlots and allowedAds are empty',
+        impId: '1',
         bid: {
           params: {},
         },
 
-        expected: {},
+        expected: {
+          impId: '1',
+        },
       },
 
       {
         title: 'parameters adSlots and allowedAds',
+        impId: '2',
         bid: {
           params: {
             adSlots: ['test1'],
@@ -1339,15 +1343,17 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
+          impId: '2',
           adSlots: ['test1'],
           allowedAds: ['test2'],
         },
       },
     ];
 
-    for (const {title, bid, expected} of tests) {
+    for (const {title, impId, bid, expected} of tests) {
       it(title, () => {
-        const extNextMilImp = getExtNextMilImp(bid);
+        const extNextMilImp = getExtNextMilImp(impId, bid);
+        expect(extNextMilImp.impId).to.deep.equal(expected.impId);
         expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
         expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
