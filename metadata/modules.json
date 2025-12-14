@@ -1713,7 +1713,7 @@
       "componentType": "bidder",
       "componentName": "clickio",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1500,
       "disclosureURL": null
     },
     {
@@ -2391,13 +2391,6 @@
     {
       "componentType": "bidder",
       "componentName": "gridNM",
-      "aliasOf": "grid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "trustx",
       "aliasOf": "grid",
       "gvlid": null,
       "disclosureURL": null
@@ -3167,6 +3160,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mycodemedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mytarget",
       "aliasOf": null,
       "gvlid": null,
@@ -3331,13 +3331,6 @@
       "componentName": "glomexbidder",
       "aliasOf": "nexx360",
       "gvlid": 967,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "revnew",
-      "aliasOf": "nexx360",
-      "gvlid": 1468,
       "disclosureURL": null
     },
     {
@@ -3916,6 +3909,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "revnew",
+      "aliasOf": null,
+      "gvlid": 1468,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "rhythmone",
       "aliasOf": null,
       "gvlid": 36,
@@ -4273,6 +4273,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "radiantfusion",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "smartico",
       "aliasOf": null,
       "gvlid": null,
@@ -4568,6 +4575,13 @@
     {
       "componentType": "bidder",
       "componentName": "truereach",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "trustx",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -5290,8 +5304,8 @@
     {
       "componentType": "rtd",
       "componentName": "permutive",
-      "gvlid": 361,
-      "disclosureURL": null
+      "gvlid": null,
+      "disclosureURL": "https://assets.permutive.app/tcf/tcf.json"
     },
     {
       "componentType": "rtd",
@@ -5695,8 +5709,8 @@
     {
       "componentType": "userId",
       "componentName": "permutiveIdentityManagerId",
-      "gvlid": 361,
-      "disclosureURL": null,
+      "gvlid": null,
+      "disclosureURL": "https://assets.permutive.app/tcf/tcf.json",
       "aliasOf": null
     },
     {
