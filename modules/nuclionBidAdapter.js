@@ -1,8 +1,9 @@
-import { deepAccess, deepClone, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'nuclion';
 const DEFAULT_CURRENCY = 'USD';
@@ -55,6 +56,81 @@ function sendBeaconSafe(url, data) {
   } catch (e) {}
 }
 
+// Configure ortbConverter
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: CREATIVE_TTL
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    // Add custom bidder params to imp.ext
+    imp.ext = imp.ext || {};
+    imp.ext.bidder = {
+      placementId: deepAccess(bidRequest, 'params.placementId'),
+      feedId: deepAccess(bidRequest, 'params.feedId'),
+      publisherId: deepAccess(bidRequest, 'params.publisherId')
+    };
+    return imp;
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    request.cur = [DEFAULT_CURRENCY];
+    return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    
+    // Store burl for win notification
+    if (bid.burl) {
+      bidResponse.burl = bid.burl;
+    }
+    
+    // Handle outstream renderer
+    if (bidResponse.mediaType === VIDEO) {
+      const videoContext = deepAccess(context, 'bidRequest.mediaTypes.video.context');
+      if (videoContext === OUTSTREAM) {
+        bidResponse.renderer = createRenderer({
+          slotBidId: bid.impid,
+          adUnitCode: context.bidRequest.adUnitCode,
+          playerUrl: getPlayerUrl(context.bidderCode || BIDDER_CODE)
+        });
+      }
+    }
+    
+    return bidResponse;
+  }
+});
+
+function createRenderer(config) {
+  const renderer = Renderer.install({
+    id: config.slotBidId,
+    url: config.playerUrl,
+    config: {},
+    adUnitCode: config.adUnitCode,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender((bid) => {
+      bid.renderer.push(() => {
+        if (window.nuclionPlayer && window.nuclionPlayer.init) {
+          window.nuclionPlayer.init({
+            width: bid.width,
+            height: bid.height,
+            vastXml: bid.vastXml,
+            vastUrl: bid.vastUrl,
+            nodeId: bid.adUnitCode,
+            config: bid.renderer.getConfig()
+          });
+        }
+      });
+    });
+  } catch (e) {}
+
+  return renderer;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['adryx', 'revantagenuclion'],
@@ -65,128 +141,32 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    try {
-      const bidderCode = validBidRequests[0].bidder;
-      const requestPayload = buildRequestPayload(validBidRequests, bidderRequest);
+    const bidderCode = validBidRequests[0].bidder;
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
 
-      return {
-        method: 'POST',
-        url: getEndpointUrl(bidderCode),
-        data: JSON.stringify(requestPayload),
-        options: {
-          contentType: 'text/plain',
-          withCredentials: false
-        },
-        bidderCode: bidderCode,
-        bidRequests: validBidRequests
-      };
-    } catch (error) {
-      return [];
-    }
+    return {
+      method: 'POST',
+      url: getEndpointUrl(bidderCode),
+      data: data,
+      options: {
+        contentType: 'application/json',
+        withCredentials: false
+      },
+      bidderCode: bidderCode
+    };
   },
 
-  interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
+  interpretResponse: function (serverResponse, request) {
+    if (!serverResponse || !serverResponse.body) {
+      return [];
+    }
 
-    try {
-      if (!serverResponse || !serverResponse.body) {
-        return bidResponses;
-      }
+    const response = converter.fromORTB({
+      response: serverResponse.body,
+      request: request.data
+    });
 
-      const responseBody = serverResponse.body;
-      const bidRequests = bidRequest.bidRequests || [];
-      const bidderCode = bidRequest.bidderCode || BIDDER_CODE;
-
-      const bidRequestsMap = {};
-      bidRequests.forEach(request => {
-        bidRequestsMap[request.bidId] = request;
-      });
-
-      if (!responseBody.seatbid || !Array.isArray(responseBody.seatbid)) {
-        return bidResponses;
-      }
-
-      responseBody.seatbid.forEach(seatbid => {
-        if (!seatbid.bid || !Array.isArray(seatbid.bid)) {
-          return;
-        }
-
-        seatbid.bid.forEach(bid => {
-          const originalBidRequest = bidRequestsMap[bid.impid];
-
-          if (!originalBidRequest || !bid.price || bid.price <= 0) {
-            return;
-          }
-
-          const hasAdMarkup = !!(bid.adm || bid.vastXml || bid.vastUrl);
-          if (!hasAdMarkup) {
-            return;
-          }
-
-          const bidResponse = {
-            requestId: bid.impid,
-            cpm: parseFloat(bid.price) || 0,
-            width: parseInt(bid.w, 10) || 300,
-            height: parseInt(bid.h, 10) || 250,
-            creativeId: bid.crid || bid.id || ('nuclion_' + Date.now()),
-            dealId: bid.dealid || undefined,
-            currency: responseBody.cur || DEFAULT_CURRENCY,
-            netRevenue: true,
-            ttl: CREATIVE_TTL,
-            meta: {
-              advertiserDomains: bid.adomain || [],
-              dsp: seatbid.seat || 'unknown',
-              networkName: 'Nuclion'
-            }
-          };
-
-          if (bid.burl) {
-            bidResponse.burl = bid.burl;
-          }
-
-          const isVideo = (bid.ext && bid.ext.mediaType === 'video') ||
-                         bid.vastXml || bid.vastUrl ||
-                         (originalBidRequest.mediaTypes && originalBidRequest.mediaTypes.video &&
-                          !originalBidRequest.mediaTypes.banner);
-
-          if (isVideo) {
-            bidResponse.mediaType = VIDEO;
-            bidResponse.vastXml = bid.vastXml || bid.adm;
-            bidResponse.vastUrl = bid.vastUrl;
-
-            if (!bidResponse.vastUrl && !bidResponse.vastXml) {
-              return;
-            }
-
-            const videoContext = deepAccess(originalBidRequest, 'mediaTypes.video.context');
-
-            if (videoContext === OUTSTREAM) {
-              bidResponse.renderer = createRenderer({
-                slotBidId: bid.impid,
-                adUnitCode: originalBidRequest.adUnitCode,
-                playerUrl: getPlayerUrl(bidderCode)
-              });
-            }
-          } else {
-            bidResponse.mediaType = BANNER;
-            bidResponse.ad = bid.adm;
-
-            if (!bidResponse.ad) {
-              return;
-            }
-          }
-
-          if (bid.ext && bid.ext.dspPrice) {
-            bidResponse.meta.dspPrice = bid.ext.dspPrice;
-          }
-
-          bidResponses.push(bidResponse);
-        });
-      });
-
-    } catch (error) {}
-
-    return bidResponses;
+    return response.bids || [];
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -241,9 +221,10 @@ export const spec = {
       });
     }
 
+    // Dynamic syncs from server response
     serverResponses.forEach(response => {
       const body = response.body;
-      if (body && body.userSyncs && Array.isArray(body.userSyncs)) {
+      if (body?.userSyncs?.length) {
         body.userSyncs.forEach(sync => {
           if (sync.type === 'iframe' && syncOptions.iframeEnabled) {
             syncs.push({ type: 'iframe', url: sync.url });
@@ -262,20 +243,10 @@ export const spec = {
       if (navigator.sendBeacon) {
         const success = navigator.sendBeacon(bid.burl);
         if (!success) {
-          fetch(bid.burl, {
-            method: 'GET',
-            mode: 'no-cors',
-            cache: 'no-cache',
-            keepalive: true
-          }).catch(() => {});
+          fetch(bid.burl, { method: 'GET', mode: 'no-cors', keepalive: true }).catch(() => {});
         }
       } else {
-        fetch(bid.burl, {
-          method: 'GET',
-          mode: 'no-cors',
-          cache: 'no-cache',
-          keepalive: true
-        }).catch(() => {});
+        fetch(bid.burl, { method: 'GET', mode: 'no-cors', keepalive: true }).catch(() => {});
       }
     }
   },
@@ -300,185 +271,5 @@ export const spec = {
     });
   }
 };
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-function buildRequestPayload(bidRequests, bidderRequest) {
-  const impressions = bidRequests.map(bidRequest => {
-    const sizes = getBidSizes(bidRequest);
-    const floor = getBidFloor(bidRequest);
-
-    const impression = {
-      id: bidRequest.bidId,
-      tagid: bidRequest.adUnitCode,
-      bidfloor: floor,
-      ext: {
-        feedId: deepAccess(bidRequest, 'params.feedId'),
-        bidder: {
-          placementId: deepAccess(bidRequest, 'params.placementId'),
-          publisherId: deepAccess(bidRequest, 'params.publisherId')
-        }
-      }
-    };
-
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner) {
-      impression.banner = {
-        w: sizes[0][0],
-        h: sizes[0][1],
-        format: sizes.map(size => ({
-          w: size[0],
-          h: size[1]
-        }))
-      };
-    }
-
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
-      const video = bidRequest.mediaTypes.video;
-      impression.video = {
-        mimes: video.mimes || ['video/mp4', 'video/webm'],
-        minduration: video.minduration || 0,
-        maxduration: video.maxduration || 60,
-        protocols: video.protocols || [2, 3, 5, 6],
-        placement: video.placement || 1,
-        plcmt: video.plcmt || video.placement || 1,
-        playbackmethod: video.playbackmethod || [1, 2],
-        api: video.api || [1, 2],
-        skip: video.skip || 0,
-        skipmin: video.skipmin || 0,
-        skipafter: video.skipafter || 0,
-        pos: video.pos || 0,
-        startdelay: video.startdelay || 0,
-        linearity: video.linearity || 1
-      };
-
-      if (video.playerSize && video.playerSize[0]) {
-        impression.video.w = video.playerSize[0][0];
-        impression.video.h = video.playerSize[0][1];
-      }
-    }
-
-    return impression;
-  });
-
-  const user = {};
-
-  if (bidRequests[0] && bidRequests[0].userIdAsEids) {
-    user.eids = deepClone(bidRequests[0].userIdAsEids);
-  }
-
-  const ortb2 = bidderRequest.ortb2 || {};
-  const site = {
-    domain: typeof window !== 'undefined' ? window.location.hostname : '',
-    page: typeof window !== 'undefined' ? window.location.href : '',
-    ref: typeof document !== 'undefined' ? document.referrer : ''
-  };
-
-  if (ortb2.site) {
-    Object.assign(site, deepClone(ortb2.site));
-  }
-
-  const device = deepClone(ortb2.device) || {};
-  device.ua = device.ua || (typeof navigator !== 'undefined' ? navigator.userAgent : '');
-  device.language = device.language || (typeof navigator !== 'undefined' ? navigator.language : '');
-  device.w = device.w || (typeof screen !== 'undefined' ? screen.width : 0);
-  device.h = device.h || (typeof screen !== 'undefined' ? screen.height : 0);
-
-  const regs = { ext: {} };
-
-  if (bidderRequest.gdprConsent) {
-    regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    user.ext = user.ext || {};
-    user.ext.consent = bidderRequest.gdprConsent.consentString;
-  }
-
-  if (bidderRequest.uspConsent) {
-    regs.ext.us_privacy = bidderRequest.uspConsent;
-  }
-
-  if (bidderRequest.gppConsent) {
-    if (bidderRequest.gppConsent.gppString) {
-      regs.ext.gpp = bidderRequest.gppConsent.gppString;
-    }
-    if (bidderRequest.gppConsent.applicableSections) {
-      regs.ext.gpp_sid = bidderRequest.gppConsent.applicableSections;
-    }
-  }
-
-  const schain = bidderRequest.schain || (bidRequests[0] && bidRequests[0].schain);
-
-  return {
-    id: bidderRequest.auctionId,
-    imp: impressions,
-    site: site,
-    device: device,
-    user: user,
-    regs: regs,
-    source: schain ? { schain: schain } : undefined,
-    tmax: bidderRequest.timeout || 1000,
-    cur: [DEFAULT_CURRENCY]
-  };
-}
-
-function getBidSizes(bidRequest) {
-  return bidRequest.mediaTypes?.banner?.sizes ||
-         bidRequest.mediaTypes?.video?.playerSize ||
-         bidRequest.sizes ||
-         [[300, 250]];
-}
-
-function getBidFloor(bidRequest) {
-  if (!isFn(bidRequest.getFloor)) {
-    return 0;
-  }
-
-  const mediaType = bidRequest.mediaTypes?.video ? 'video' : 'banner';
-  
-  try {
-    const floorInfo = bidRequest.getFloor({
-      currency: DEFAULT_CURRENCY,
-      mediaType: mediaType,
-      size: '*'
-    });
-
-    if (floorInfo?.currency === DEFAULT_CURRENCY && !isNaN(floorInfo.floor)) {
-      return floorInfo.floor;
-    }
-  } catch (e) {}
-
-  return 0;
-}
-
-function createRenderer(config) {
-  const renderer = Renderer.install({
-    id: config.slotBidId,
-    url: config.playerUrl,
-    config: {},
-    adUnitCode: config.adUnitCode,
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(outstreamRender);
-  } catch (e) {}
-
-  return renderer;
-}
-
-function outstreamRender(bid) {
-  bid.renderer.push(() => {
-    if (window.nuclionPlayer && window.nuclionPlayer.init) {
-      window.nuclionPlayer.init({
-        width: bid.width,
-        height: bid.height,
-        vastXml: bid.vastXml,
-        vastUrl: bid.vastUrl,
-        nodeId: bid.adUnitCode,
-        config: bid.renderer.getConfig()
-      });
-    }
-  });
-}
 
 registerBidder(spec);
