@@ -43,13 +43,13 @@ export function isUsingNewSizeMapping(adUnits) {
     if (V2_ADUNITS.has(adUnit)) return V2_ADUNITS.get(adUnit);
     if (adUnit.mediaTypes) {
       // checks for the presence of sizeConfig property at the adUnit.mediaTypes object
-      for (let mediaType of Object.keys(adUnit.mediaTypes)) {
+      for (const mediaType of Object.keys(adUnit.mediaTypes)) {
         if (adUnit.mediaTypes[mediaType].sizeConfig) {
           V2_ADUNITS.set(adUnit, true);
           return true;
         }
       }
-      for (let bid of adUnit.bids && isArray(adUnit.bids) ? adUnit.bids : []) {
+      for (const bid of adUnit.bids && isArray(adUnit.bids) ? adUnit.bids : []) {
         if (bid.sizeConfig) {
           V2_ADUNITS.set(adUnit, true);
           return true;
@@ -58,6 +58,7 @@ export function isUsingNewSizeMapping(adUnits) {
       V2_ADUNITS.set(adUnit, false);
       return false;
     }
+    return false;
   });
 }
 
@@ -329,7 +330,7 @@ export function getFilteredMediaTypes(mediaTypes) {
 
   transformedMediaTypes = deepClone(mediaTypes);
 
-  let activeSizeBucket = {
+  const activeSizeBucket = {
     banner: undefined,
     video: undefined,
     native: undefined
@@ -339,7 +340,7 @@ export function getFilteredMediaTypes(mediaTypes) {
   activeViewportHeight = getWinDimensions().innerHeight;
 
   const activeViewport = [activeViewportWidth, activeViewportHeight];
-  Object.keys(mediaTypes).map(mediaType => {
+  Object.keys(mediaTypes).forEach(mediaType => {
     const sizeConfig = mediaTypes[mediaType].sizeConfig;
     if (sizeConfig) {
       activeSizeBucket[mediaType] = getActiveSizeBucket(sizeConfig, activeViewport);

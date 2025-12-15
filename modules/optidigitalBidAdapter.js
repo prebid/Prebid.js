@@ -220,12 +220,12 @@ function buildImp(bidRequest, ortb2) {
     CUR = bidRequest.params.currency;
   }
 
-  let bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
 
-  let battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
+  const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
   if (battr && Array.isArray(battr) && battr.length) {
     imp.battr = battr;
   }
@@ -241,7 +241,7 @@ function getAdContainer(container) {
 
 function _getFloor (bid, sizes, currency) {
   let floor = null;
-  let size = sizes.length === 1 ? sizes[0] : '*';
+  const size = sizes.length === 1 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
     try {
       const floorInfo = bid.getFloor({

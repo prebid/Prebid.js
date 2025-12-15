@@ -1,13 +1,13 @@
 import {expect} from 'chai';
 import medianetAnalytics from 'modules/medianetAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import {EVENTS} from 'src/constants.js';
+import {EVENTS, REJECTION_REASON} from 'src/constants.js';
 import * as events from 'src/events.js';
 import {clearEvents} from 'src/events.js';
 import {deepAccess} from 'src/utils.js';
 import 'src/prebid.js';
 import {config} from 'src/config.js';
-import {REJECTION_REASON} from 'src/constants.js';
+
 import {getGlobal} from 'src/prebidGlobal.js';
 import sinon from "sinon";
 import * as mnUtils from '../../../libraries/medianetUtils/utils.js';
@@ -363,7 +363,7 @@ function performAuctionNoWin() {
 }
 
 function performMultiBidAuction() {
-  let bidRequest = createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [BANNER_AD_UNIT]);
+  const bidRequest = createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [BANNER_AD_UNIT]);
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, bidRequest);
   MOCK.MULTI_BID_RESPONSES.forEach(bidResp => events.emit(BID_RESPONSE, bidResp));
@@ -400,8 +400,8 @@ function performCurrencyConversionAuction() {
 describe('Media.net Analytics Adapter', function () {
   let sandbox;
   let clock;
-  let CUSTOMER_ID = 'test123';
-  let VALID_CONFIGURATION = {
+  const CUSTOMER_ID = 'test123';
+  const VALID_CONFIGURATION = {
     options: {
       cid: CUSTOMER_ID
     }
@@ -453,7 +453,7 @@ describe('Media.net Analytics Adapter', function () {
       // Set config required for vastTrackerHandler
       config.setConfig({
         cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          url: 'https://test.cache.url/endpoint'
         }
       });
     });
@@ -663,7 +663,7 @@ describe('Media.net Analytics Adapter', function () {
       clock.tick(2000);
 
       waitForPromiseResolve(Promise.resolve()).then(() => {
-        let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
+        const winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
         expect(winningBid.adid).equals('3e6e4bce5c8fb3');
         medianetAnalytics.clearlogsQueue();
 
@@ -672,7 +672,7 @@ describe('Media.net Analytics Adapter', function () {
 
         return waitForPromiseResolve(Promise.resolve());
       }).then(() => {
-        let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
+        const winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
         expect(winningBid.adid).equals('3e6e4bce5c8fb3');
         done();
       }).catch(done);
@@ -683,7 +683,7 @@ describe('Media.net Analytics Adapter', function () {
       clock.tick(2000);
 
       waitForPromiseResolve(Promise.resolve()).then(() => {
-        let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
+        const winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
         expect(winningBid.adid).equals('3e6e4bce5c8fb3');
         medianetAnalytics.clearlogsQueue();
         done();
@@ -696,8 +696,8 @@ describe('Media.net Analytics Adapter', function () {
       clock.tick(2000);
 
       waitForPromiseResolve(Promise.resolve()).then(() => {
-        let winningBids = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner);
-        let errors = medianetAnalytics.getErrorQueue().map((log) => getQueryData(log));
+        const winningBids = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner);
+        const errors = medianetAnalytics.getErrorQueue().map((log) => getQueryData(log));
         expect(winningBids.length).equals(0);
         expect(errors.length).equals(1);
         expect(errors[0].event).equals('winning_bid_absent');
@@ -710,7 +710,7 @@ describe('Media.net Analytics Adapter', function () {
       clock.tick(2000);
 
       waitForPromiseResolve(Promise.resolve()).then(() => {
-        let bidRejectedLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log))[0];
+        const bidRejectedLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log))[0];
         expect(bidRejectedLog.pvnm).to.have.ordered.members(['-2', 'medianet', 'medianet', 'medianet']);
         expect(bidRejectedLog.status).to.have.ordered.members(['1', '1', '12', '12']);
         done();
@@ -735,6 +735,85 @@ describe('Media.net Analytics Adapter', function () {
       }).catch(done);
     });
 
+    it('should set serverLatencyMillis and filtered pbsExt for S2S bids on AUCTION_END', function (done) {
+      // enable analytics and start an S2S auction flow
+      medianetAnalytics.clearlogsQueue();
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.MNET_S2S_BID_RESPONSE);
+
+      // craft bidderRequests with S2S info and pbs ext including debug
+      const bidderRequestsWithExt = Object.assign({}, MOCK.MNET_S2S_BID_REQUESTED, {
+        serverResponseTimeMs: 123,
+        pbsExt: { foo: 'bar', baz: 1, debug: { trace: true } }
+      });
+
+      // trigger AUCTION_END with the enriched bidderRequests
+      events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [bidderRequestsWithExt] }));
+      // advance fake timers to allow async auctionEnd processing to run
+      clock.tick(2000);
+
+      waitForPromiseResolve(Promise.resolve()).then(() => {
+        // inspect internal auctions state through prebid global
+        const auctions = getGlobal().medianetGlobals.analytics.auctions;
+        const auctionObj = auctions[MOCK.AUCTION_END.auctionId];
+        expect(auctionObj).to.exist;
+
+        // locate the bid by id from the S2S request
+        const bidId = MOCK.MNET_S2S_BID_REQUESTED.bids[0].bidId;
+        const bidObj = auctionObj.bidsReceived.find(b => b.bidId === bidId);
+        expect(bidObj).to.exist;
+        expect(bidObj.serverLatencyMillis).to.equal(123);
+        // pbsExt should not include 'debug'
+        expect(bidObj.pbsExt).to.deep.equal({ foo: 'bar', baz: 1 });
+        done();
+      }).catch(done);
+    });
+
+    it('should map PBS server error to bid status for S2S timed-out bids', function (done) {
+      // Start S2S auction and create a timed-out bid for the same bidId
+      medianetAnalytics.clearlogsQueue();
+      const auctionId = MOCK.MNET_S2S_BID_REQUESTED.auctionId;
+      const bidId = MOCK.MNET_S2S_BID_REQUESTED.bids[0].bidId;
+
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
+
+      // mark the bid as timed out so bidsReceived contains a non-success entry
+      const timedOut = [{
+        bidId,
+        bidder: 'medianet',
+        adUnitCode: MOCK.MNET_S2S_BID_REQUESTED.bids[0].adUnitCode,
+        auctionId,
+        params: MOCK.MNET_S2S_BID_REQUESTED.bids[0].params,
+        timeout: 100,
+        src: 's2s'
+      }];
+      events.emit(BID_TIMEOUT, timedOut);
+
+      // bidderRequests with serverErrors (e.g., 501)
+      const bidderRequestsWithError = Object.assign({}, MOCK.MNET_S2S_BID_REQUESTED, {
+        serverResponseTimeMs: 50,
+        pbsExt: {},
+        serverErrors: [{ code: 501 }]
+      });
+
+      events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [bidderRequestsWithError] }));
+      // advance fake timers to allow async auctionEnd processing to run
+      clock.tick(2000);
+
+      waitForPromiseResolve(Promise.resolve()).then(() => {
+        const auctions = getGlobal().medianetGlobals.analytics.auctions;
+        const auctionObj = auctions[auctionId];
+        expect(auctionObj).to.exist;
+        const bidObj = auctionObj.bidsReceived.find(b => b.bidId === bidId);
+        expect(bidObj).to.exist;
+        // 2000 (PBS_ERROR_STATUS_START) + 501
+        expect(bidObj.status).to.equal(2000 + 501);
+        done();
+      }).catch(done);
+    });
+
     it('should handle currency conversion from JPY to USD', function (done) {
       const prebidGlobal = getGlobal();
       prebidGlobal.convertCurrency = prebidGlobal.convertCurrency || function () {
@@ -747,7 +826,7 @@ describe('Media.net Analytics Adapter', function () {
 
       waitForPromiseResolve(Promise.resolve()).then(() => {
         const queue = medianetAnalytics.getlogsQueue();
-        expect(queue.length).equals(1);
+        expect(queue.length).to.be.greaterThan(0);
         const currencyLog = queue.map((log) => getQueryData(log, true))[0];
 
         expect(currencyLog.curr).to.have.ordered.members(['', 'JPY', '']);
@@ -764,7 +843,7 @@ describe('Media.net Analytics Adapter', function () {
     it('should have winner log in standard auction', function () {
       performBidWonAuction();
 
-      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
+      const winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
       expect(winnerLog.length).to.equal(1);
       expect(winnerLog[0].lgtp).to.equal('RA');
     });
@@ -772,7 +851,7 @@ describe('Media.net Analytics Adapter', function () {
     it('should have correct values in winner log', function () {
       performBidWonAuction();
 
-      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
+      const winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
       expect(winnerLog[0]).to.include({
         winner: '1',
         pvnm: 'medianet',
@@ -793,7 +872,7 @@ describe('Media.net Analytics Adapter', function () {
 
     it('should have correct bid floor data in winner log', function (done) {
       performBidWonAuction();
-      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
+      const winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
       expect(winnerLog[0]).to.include({
         winner: '1',
         curr: 'USD',

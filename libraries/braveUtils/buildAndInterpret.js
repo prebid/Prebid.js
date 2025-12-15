@@ -22,7 +22,7 @@ export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defa
     device: bidderRequest.ortb2?.device || { w: screen.width, h: screen.height, language: navigator.language?.split('-')[0], ua: navigator.userAgent },
     site: prepareSite(validBidRequests[0], bidderRequest),
     tmax: bidderRequest.timeout,
-    regs: { ext: {}, coppa: config.getConfig('coppa') == true ? 1 : 0 },
+    regs: { ext: {}, coppa: config.getConfig('coppa') === true ? 1 : 0 },
     user: { ext: {} },
     imp
   };
@@ -38,7 +38,7 @@ export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defa
 export const interpretResponse = (serverResponse, defaultCur, parseNative) => {
   if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
-  let bids = [];
+  const bids = [];
   serverResponse.body.seatbid.forEach(response => {
     response.bid.forEach(bid => {
       const mediaType = bid.ext?.mediaType || 'banner';

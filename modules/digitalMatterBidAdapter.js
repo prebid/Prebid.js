@@ -1,4 +1,5 @@
-import {deepAccess, deepSetValue, getDNT, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
+import {deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -156,8 +157,8 @@ export const spec = {
             const userSync = response.body.ext.usersync;
 
             userSync.forEach((element) => {
-              let url = element.url;
-              let type = element.type;
+              const url = element.url;
+              const type = element.type;
 
               if (url) {
                 if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
@@ -178,7 +179,7 @@ export const spec = {
   }
 }
 
-let usersSynced = false;
+const usersSynced = false;
 
 function hasBannerMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');

@@ -1,17 +1,17 @@
 import { expect } from "chai";
-import { newBidder } from "../../../src/adapters/bidderFactory";
-import { BID_ENDPOINT, spec, storage } from "../../../modules/cwireBidAdapter";
-import { deepClone, logInfo } from "../../../src/utils";
+import { newBidder } from "../../../src/adapters/bidderFactory.js";
+import { BID_ENDPOINT, spec, storage } from "../../../modules/cwireBidAdapter.js";
+import { deepClone, logInfo } from "../../../src/utils.js";
 import * as utils from "src/utils.js";
 import sinon, { stub } from "sinon";
-import { config } from "../../../src/config";
+import { config } from "../../../src/config.js";
 import * as autoplayLib from "../../../libraries/autoplayDetection/autoplay.js";
 
 describe("C-WIRE bid adapter", () => {
   config.setConfig({ debug: true });
   let sandbox;
   const adapter = newBidder(spec);
-  let bidRequests = [
+  const bidRequests = [
     {
       bidder: "cwire",
       params: {
@@ -29,6 +29,9 @@ describe("C-WIRE bid adapter", () => {
       transactionId: "04f2659e-c005-4eb1-a57c-fa93145e3843",
     },
   ];
+  const bidderRequest = {
+    pageViewId: "326dca71-9ca0-4e8f-9e4d-6106161ac1ad"
+  }
   const response = {
     body: {
       cwid: "2ef90743-7936-4a82-8acf-e73382a64e94",
@@ -67,7 +70,7 @@ describe("C-WIRE bid adapter", () => {
   });
   describe("buildRequests", function () {
     it("sends bid request to ENDPOINT via POST", function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).to.equal(BID_ENDPOINT);
       expect(request.method).to.equal("POST");
     });
@@ -87,9 +90,9 @@ describe("C-WIRE bid adapter", () => {
 
     it("should add creativeId if url parameter given", function () {
       // set from bid.params
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.cwcreative).to.exist;
       expect(payload.cwcreative).to.deep.equal("str-str");
@@ -108,9 +111,9 @@ describe("C-WIRE bid adapter", () => {
       });
     });
     it("width and height should be set", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
       const el = document.getElementById(`${bidRequest.adUnitCode}`);
 
@@ -140,9 +143,9 @@ describe("C-WIRE bid adapter", () => {
       });
     });
     it("css maxWidth should be set", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
       const el = document.getElementById(`${bidRequest.adUnitCode}`);
 
@@ -150,7 +153,7 @@ describe("C-WIRE bid adapter", () => {
 
       expect(el).to.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq("400px");
-      !expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
+      expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
     });
     afterEach(function () {
       sandbox.restore();
@@ -165,9 +168,9 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("read from url parameter", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -188,9 +191,9 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("read from url parameter", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -211,9 +214,9 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("read from url parameter", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -236,9 +239,9 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("cw_id is set", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -261,9 +264,9 @@ describe("C-WIRE bid adapter", () => {
       });
     });
     it("pageId flattened", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -277,7 +280,7 @@ describe("C-WIRE bid adapter", () => {
 
   describe("pageId and placementId are required params", function () {
     it("invalid request", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       delete bidRequest.params;
 
       const valid = spec.isBidRequestValid(bidRequest);
@@ -285,7 +288,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("valid request", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       bidRequest.params.pageId = 42;
       bidRequest.params.placementId = 42;
 
@@ -294,7 +297,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("cwcreative must be of type string", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       bidRequest.params.pageId = 42;
       bidRequest.params.placementId = 42;
 
@@ -303,9 +306,9 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("build request adds pageId", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.slots[0].pageId).to.exist;
@@ -314,7 +317,7 @@ describe("C-WIRE bid adapter", () => {
 
   describe("process serverResponse", function () {
     it("html to ad mapping", function () {
-      let bidResponse = deepClone(response);
+      const bidResponse = deepClone(response);
       const bids = spec.interpretResponse(bidResponse, {});
 
       expect(bids[0].ad).to.exist;
@@ -328,7 +331,7 @@ describe("C-WIRE bid adapter", () => {
       expect(userSyncs).to.be.empty;
     });
     it("empty user-syncs if no syncOption enabled", function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: 1,
@@ -343,7 +346,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("user-syncs with enabled pixel option", function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: 1,
@@ -352,7 +355,7 @@ describe("C-WIRE bid adapter", () => {
         gdprApplies: false,
         consentString: "testConsentString",
       };
-      let synOptions = { pixelEnabled: true, iframeEnabled: true };
+      const synOptions = { pixelEnabled: true, iframeEnabled: true };
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal("image");
@@ -362,7 +365,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("user-syncs with enabled iframe option", function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: {
@@ -373,7 +376,7 @@ describe("C-WIRE bid adapter", () => {
         gdprApplies: true,
         consentString: "abc123",
       };
-      let synOptions = { iframeEnabled: true };
+      const synOptions = { iframeEnabled: true };
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal("iframe");
@@ -391,8 +394,8 @@ describe("C-WIRE bid adapter", () => {
     it("should include autoplay: true when autoplay is enabled", function () {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(true);
 
-      let bidRequest = deepClone(bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.slots[0].params.autoplay).to.equal(true);
@@ -401,8 +404,8 @@ describe("C-WIRE bid adapter", () => {
     it("should include autoplay: false when autoplay is disabled", function () {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(false);
 
-      let bidRequest = deepClone(bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.slots[0].params.autoplay).to.equal(false);

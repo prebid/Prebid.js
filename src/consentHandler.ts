@@ -17,22 +17,22 @@ export const CONSENT_COPPA = 'coppa';
 export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA;
 
 export interface ConsentData {
-    // with just core, only coppa is defined - everything else will be null.
-    // importing consent modules also imports the type definitions.
-    [CONSENT_COPPA]: boolean;
+  // with just core, only coppa is defined - everything else will be null.
+  // importing consent modules also imports the type definitions.
+  [CONSENT_COPPA]: boolean;
 }
 
 type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ConsentManagementConfig {
-    // consentManagement config - extended in consent management modules
+  // consentManagement config - extended in consent management modules
 }
 
 declare module './config' {
-    interface Config {
-        consentManagement?: ConsentManagementConfig;
-    }
+  interface Config {
+    consentManagement?: ConsentManagementConfig;
+  }
 }
 
 export class ConsentHandler<T> {
@@ -108,12 +108,19 @@ export class ConsentHandler<T> {
   }
 
   getConsentData(): T {
-    return this.#data;
+    if (this.#enabled) {
+      return this.#data;
+    }
+    return null;
   }
 
   get hash() {
     if (this.#dirty) {
-      this.#hash = cyrb53Hash(JSON.stringify(this.#data && this.hashFields ? this.hashFields.map(f => this.#data[f]) : this.#data))
+      this.#hash = cyrb53Hash(
+        JSON.stringify(
+          this.#data && this.hashFields ? this.hashFields.map((f) => this.#data[f]) : this.#data
+        )
+      );
       this.#dirty = false;
     }
     return this.#hash;
@@ -132,16 +139,18 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
 }
 
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
-  hashFields = ['gdprApplies', 'consentString']
+  hashFields = ["gdprApplies", "consentString"];
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
         gdprApplies: consentData.gdprApplies as boolean,
-        consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
+        consentStringSize: isStr(consentData.vendorData.tcString)
+          ? consentData.vendorData.tcString.length
+          : 0,
         generatedAt: this.generatedTime,
-        apiVersion: consentData.apiVersion
-      }
+        apiVersion: consentData.apiVersion,
+      };
     }
   }
 }
@@ -160,16 +169,16 @@ class GppConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GPP
 
 export type GVLID = number | typeof VENDORLESS_GVLID;
 type GVLIDResult = {
-    /**
-     * A map from module type to that module's GVL ID.
-     */
-    modules: {
-        [moduleType: string]: GVLID;
-    };
-    /**
-     * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
-     */
-    gvlid?: GVLID;
+  /**
+   * A map from module type to that module's GVL ID.
+   */
+  modules: {
+    [moduleType: string]: GVLID;
+  };
+  /**
+   * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
+   */
+  gvlid?: GVLID;
 }
 
 export function gvlidRegistry() {
@@ -217,12 +226,12 @@ export const uspDataHandler = new UspConsentHandler();
 export const gppDataHandler = new GppConsentHandler();
 
 declare module './config' {
-    interface Config {
-        /**
-         * Child Online Privacy Protection Act (COPPA) flag.
-         */
-        coppa?: boolean;
-    }
+  interface Config {
+    /**
+     * Child Online Privacy Protection Act (COPPA) flag.
+     */
+    coppa?: boolean;
+  }
 }
 
 export const coppaDataHandler = (() => {
@@ -253,11 +262,11 @@ const ALL_HANDLERS = {
 } as const;
 
 export type AllConsentData = {
-    [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
+  [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
 }
 
 interface MultiHandler extends Pick<ConsentHandler<AllConsentData>, 'promise' | 'hash' | 'getConsentData' | 'reset'> {
-    getConsentMeta(): {[K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>}
+  getConsentMeta(): {[K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>}
 }
 
 export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {

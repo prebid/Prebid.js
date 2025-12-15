@@ -53,7 +53,7 @@ const getNativeAssetType = id => {
   }
 
   // ...others should be decoded from nativeAssetMap
-  for (let assetName in nativeAssetMap) {
+  for (const assetName in nativeAssetMap) {
     const assetId = nativeAssetMap[assetName];
     if (assetId === id) {
       return assetName;
@@ -165,7 +165,7 @@ const getNotificationPayload = bidData => {
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
-  const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
+  const { connection = {}, userAgentData = {} } = navigator;
   const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
@@ -173,7 +173,7 @@ const applyClientHints = ortbRequest => {
     'CH-Rtt': connection.rtt,
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
-    'CH-DeviceMemory': deviceMemory,
+    'CH-DeviceMemory': null,
     'CH-Dpr': W.devicePixelRatio,
     'CH-ViewportWidth': viewport.width,
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
@@ -269,7 +269,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  */
 const getHighestFloor = (slot) => {
   const currency = requestCurrency
-  let result = { floor: 0, currency };
+  const result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
     let bannerFloor = 0;
@@ -793,7 +793,7 @@ const spec = {
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
-    let mySyncs = [];
+    const mySyncs = [];
     if (iframeEnabled) {
       mySyncs.push({
         type: 'iframe',

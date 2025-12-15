@@ -40,6 +40,7 @@ export const spec = {
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // TODO: consider using the Prebid-generated page view ID instead of generating a custom one
     topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9);
     const pageViewId = topUsableWindow.carodaPageViewId;
     const ortbCommon = getORTBCommon(bidderRequest);
@@ -154,7 +155,7 @@ function getTopUsableWindow () {
 function getORTBCommon (bidderRequest) {
   let app, site;
   const commonFpd = bidderRequest.ortb2 || {};
-  let { user } = commonFpd;
+  const { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
     app = getConfig('app') || {}
     if (commonFpd.app) {

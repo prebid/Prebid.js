@@ -85,43 +85,43 @@ describe('GrowAdvertising Adapter', function() {
   describe('implementation', function () {
     describe('for requests', function () {
       it('should accept valid bid', function () {
-        let validBid = {
+        const validBid = {
           bidder: 'growads',
           params: {
             zoneId: ZONE_ID
           }
         };
 
-        let isValid = spec.isBidRequestValid(validBid);
+        const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
 
       it('should reject null zoneId bid', function () {
-        let zoneNullBid = {
+        const zoneNullBid = {
           bidder: 'growads',
           params: {
             zoneId: null
           }
         };
 
-        let isValid = spec.isBidRequestValid(zoneNullBid);
+        const isValid = spec.isBidRequestValid(zoneNullBid);
         expect(isValid).to.equal(false);
       });
 
       it('should reject absent zoneId bid', function () {
-        let absentZoneBid = {
+        const absentZoneBid = {
           bidder: 'growads',
           params: {
             param: ZONE_ID
           }
         };
 
-        let isValid = spec.isBidRequestValid(absentZoneBid);
+        const isValid = spec.isBidRequestValid(absentZoneBid);
         expect(isValid).to.equal(false);
       });
 
       it('should use custom domain', function () {
-        let validBid = {
+        const validBid = {
           bidder: 'growads',
           params: {
             zoneId: ZONE_ID,
@@ -129,24 +129,24 @@ describe('GrowAdvertising Adapter', function() {
           },
         };
 
-        let requests = spec.buildRequests([validBid]);
+        const requests = spec.buildRequests([validBid]);
         expect(requests[0].url).to.have.string('test.subdomain.');
       });
 
       it('should use default domain', function () {
-        let validBid = {
+        const validBid = {
           bidder: 'growads',
           params: {
             zoneId: ZONE_ID,
           },
         };
 
-        let requests = spec.buildRequests([validBid]);
+        const requests = spec.buildRequests([validBid]);
         expect(requests[0].url).to.have.string('portal.growadvertising.com');
       });
 
       it('should increment zone index', function () {
-        let validBids = [
+        const validBids = [
           {
             bidder: 'growads',
             params: {
@@ -161,7 +161,7 @@ describe('GrowAdvertising Adapter', function() {
           }
         ];
 
-        let requests = spec.buildRequests(validBids);
+        const requests = spec.buildRequests(validBids);
         expect(requests[0].data).to.include({i: 0});
         expect(requests[1].data).to.include({i: 1});
       });
@@ -170,7 +170,7 @@ describe('GrowAdvertising Adapter', function() {
     describe('bid responses', function () {
       describe(BANNER, function () {
         it('should return complete bid response banner', function () {
-          let bids = spec.interpretResponse(serverResponseBanner, {bidRequest: bidRequests[0]});
+          const bids = spec.interpretResponse(serverResponseBanner, {bidRequest: bidRequests[0]});
 
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].bidderCode).to.equal('growads');
@@ -183,32 +183,32 @@ describe('GrowAdvertising Adapter', function() {
         });
 
         it('should return empty bid on incorrect size', function () {
-          let response = utils.mergeDeep(serverResponseBanner, {
+          const response = utils.mergeDeep(serverResponseBanner, {
             body: {
               width: 150,
               height: 150
             }
           });
 
-          let bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
+          const bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
           expect([]).to.be.lengthOf(0);
         });
 
         it('should return empty bid on incorrect CPM', function () {
-          let response = utils.mergeDeep(serverResponseBanner, {
+          const response = utils.mergeDeep(serverResponseBanner, {
             body: {
               cpm: 10
             }
           });
 
-          let bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
+          const bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
           expect([]).to.be.lengthOf(0);
         });
       });
 
       describe(NATIVE, function () {
         it('should return complete bid response banner', function () {
-          let bids = spec.interpretResponse(serverResponseNative, {bidRequest: bidRequests[1]});
+          const bids = spec.interpretResponse(serverResponseNative, {bidRequest: bidRequests[1]});
 
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].bidderCode).to.equal('growads');

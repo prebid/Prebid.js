@@ -21,9 +21,9 @@ const ANALYTICS_TYPE = 'endpoint';
 const BIDDER_CODE = 'smartyads';
 const GVLID = 534;
 
-let smartyParams = {};
+const smartyParams = {};
 
-let smartyadsAdapter = Object.assign({},
+const smartyadsAdapter = Object.assign({},
   adapter({
     url: URL,
     analyticsType: ANALYTICS_TYPE,
@@ -84,12 +84,12 @@ const auctionHandler = (eventType, data) => {
 }
 
 const bidHandler = (eventType, bid) => {
-  let bids = bid.length ? bid : [ bid ];
+  const bids = bid.length ? bid : [ bid ];
 
   for (const bidObj of bids) {
     let bidToSend;
 
-    if (bidObj.bidderCode != BIDDER_CODE) {
+    if (bidObj.bidderCode !== BIDDER_CODE) {
       if (eventType === BID_WON) {
         bidToSend = {
           cpm: bidObj.cpm,

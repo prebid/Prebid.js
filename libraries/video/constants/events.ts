@@ -98,11 +98,11 @@ export const videoEvents = {
 } as const;
 
 export const additionalEvents = [
-    AUCTION_AD_LOAD_ATTEMPT,
-    AUCTION_AD_LOAD_QUEUED,
-    AUCTION_AD_LOAD_ABORT,
-    BID_IMPRESSION,
-    BID_ERROR
+  AUCTION_AD_LOAD_ATTEMPT,
+  AUCTION_AD_LOAD_QUEUED,
+  AUCTION_AD_LOAD_ABORT,
+  BID_IMPRESSION,
+  BID_ERROR
 ] as const;
 
 type Event = { [K in keyof typeof videoEvents]: (typeof videoEvents)[K] }[keyof typeof videoEvents] | typeof additionalEvents[number];

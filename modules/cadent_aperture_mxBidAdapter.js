@@ -1,3 +1,4 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess, getBidIdParameter,
@@ -19,10 +20,10 @@ const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
-  { code: 'emx_digital', gvlid: 183 },
-  { code: 'cadent', gvlid: 183 },
-  { code: 'emxdigital', gvlid: 183 },
-  { code: 'cadentaperturemx', gvlid: 183 },
+  { code: 'emx_digital'},
+  { code: 'cadent'},
+  { code: 'emxdigital'},
+  { code: 'cadentaperturemx'},
 ];
 
 const EIDS_SUPPORTED = [
@@ -82,7 +83,7 @@ export const cadentAdapter = {
     return {
       ua: navigator.userAgent,
       js: 1,
-      dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       devicetype: cadentAdapter.isMobile() ? 1 : cadentAdapter.isConnectedTV() ? 3 : 2,
@@ -98,7 +99,7 @@ export const cadentAdapter = {
   },
   outstreamRender: (bid) => {
     bid.renderer.push(function () {
-      let params = (bid && bid.params && bid.params[0] && bid.params[0].video) ? bid.params[0].video : {};
+      const params = (bid && bid.params && bid.params[0] && bid.params[0].video) ? bid.params[0].video : {};
       window.emxVideoQueue = window.emxVideoQueue || [];
       window.queueEmxVideo({
         id: bid.adUnitCode,
@@ -125,7 +126,7 @@ export const cadentAdapter = {
     return renderer;
   },
   buildVideo: (bid) => {
-    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video);
+    const videoObj = Object.assign(bid.mediaTypes.video, bid.params.video);
 
     if (isArray(bid.mediaTypes.video.playerSize[0])) {
       videoObj['w'] = bid.mediaTypes.video.playerSize[0][0];
@@ -205,7 +206,7 @@ export const cadentAdapter = {
   },
   getUserId(bidRequests) {
     return ({ key, source, rtiPartner }) => {
-      let id = deepAccess(bidRequests, `userId.${key}`);
+      const id = deepAccess(bidRequests, `userId.${key}`);
       return id ? cadentAdapter.formatEid(id, source, rtiPartner) : null;
     };
   },
@@ -222,8 +223,7 @@ export const cadentAdapter = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 183,
-  alias: ALIASES,
+  aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
@@ -267,10 +267,10 @@ export const spec = {
     const site = cadentAdapter.getSite(bidderRequest.refererInfo);
 
     _each(validBidRequests, function (bid) {
-      let tagid = getBidIdParameter('tagid', bid.params);
-      let bidfloor = parseFloat(getBidFloor(bid)) || 0;
-      let isVideo = !!bid.mediaTypes.video;
-      let data = {
+      const tagid = getBidIdParameter('tagid', bid.params);
+      const bidfloor = parseFloat(getBidFloor(bid)) || 0;
+      const isVideo = !!bid.mediaTypes.video;
+      const data = {
         id: bid.bidId,
         tid: bid.ortb2Imp?.ext?.tid,
         tagid,
@@ -278,16 +278,16 @@ export const spec = {
       };
 
       // adding gpid support
-      let gpid =
+      const gpid =
         deepAccess(bid, 'ortb2Imp.ext.gpid') ||
         deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot')
 
       if (gpid) {
         data.ext = { gpid: gpid.toString() };
       }
-      let typeSpecifics = isVideo ? { video: cadentAdapter.buildVideo(bid) } : { banner: cadentAdapter.buildBanner(bid) };
-      let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
-      let cadentBid = Object.assign(data, typeSpecifics, bidfloorObj);
+      const typeSpecifics = isVideo ? { video: cadentAdapter.buildVideo(bid) } : { banner: cadentAdapter.buildBanner(bid) };
+      const bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
+      const cadentBid = Object.assign(data, typeSpecifics, bidfloorObj);
       cadentImps.push(cadentBid);
     });
 
@@ -309,7 +309,7 @@ export const spec = {
 
     // adding eid support
     if (bidderRequest.userId) {
-      let eids = cadentAdapter.getEids(bidderRequest);
+      const eids = cadentAdapter.getEids(bidderRequest);
       if (eids.length > 0) {
         if (cadentData.user && cadentData.user.ext) {
           cadentData.user.ext.eids = eids;
@@ -332,13 +332,13 @@ export const spec = {
     };
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    let cadentBidResponses = [];
-    let response = serverResponse.body || {};
+    const cadentBidResponses = [];
+    const response = serverResponse.body || {};
     if (response.seatbid && response.seatbid.length > 0 && response.seatbid[0].bid) {
       response.seatbid.forEach(function (cadentBid) {
         cadentBid = cadentBid.bid[0];
         let isVideo = false;
-        let adm = cadentAdapter.parseResponse(cadentBid.adm) || '';
+        const adm = cadentAdapter.parseResponse(cadentBid.adm) || '';
         let bidResponse = {
           requestId: cadentBid.id,
           cpm: cadentBid.price,
@@ -411,7 +411,7 @@ function getBidFloor(bid) {
     return parseFloat(getBidIdParameter('bidfloor', bid.params));
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: DEFAULT_CUR,
     mediaType: '*',
     size: '*'

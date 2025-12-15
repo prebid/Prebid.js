@@ -17,11 +17,11 @@ const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
 const BID_VURL_ARRAY = 'vurls';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 
-export let isBidAdUnitCodeMatchingSlot = (bid, slot) => {
+export const isBidAdUnitCodeMatchingSlot = (bid, slot) => {
   return (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode);
 }
 
-export let getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
+export const getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
   return getGlobal().getAllWinningBids().find(
     // supports custom match function from config
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
@@ -30,9 +30,9 @@ export let getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
   ) || null;
 };
 
-export let fireViewabilityPixels = (globalModuleConfig, bid) => {
+export const fireViewabilityPixels = (globalModuleConfig, bid) => {
   if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && bid.hasOwnProperty(BID_VURL_ARRAY)) {
-    let queryParams = gdprParams();
+    const queryParams = gdprParams();
 
     const uspConsent = uspDataHandler.getConsentData();
     if (uspConsent) { queryParams.us_privacy = uspConsent; }
@@ -48,19 +48,22 @@ export let fireViewabilityPixels = (globalModuleConfig, bid) => {
         url += '?';
       }
       // append all query params, `&key=urlEncoded(value)`
-      url += Object.keys(queryParams).reduce((prev, key) => prev += `&${key}=${encodeURIComponent(queryParams[key])}`, '');
+      url += Object.keys(queryParams).reduce((prev, key) => {
+        prev += `&${key}=${encodeURIComponent(queryParams[key])}`;
+        return prev;
+      }, '');
       triggerPixel(url)
     });
   }
 };
 
-export let logWinningBidNotFound = (slot) => {
+export const logWinningBidNotFound = (slot) => {
   logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
 };
 
-export let impressionViewableHandler = (globalModuleConfig, event) => {
+export const impressionViewableHandler = (globalModuleConfig, event) => {
   const slot = event.slot;
-  let respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
+  const respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
 
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);

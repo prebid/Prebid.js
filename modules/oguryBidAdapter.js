@@ -13,7 +13,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.4';
+const ADAPTER_VERSION = '2.0.5';
 
 export const ortbConverterProps = {
   context: {
@@ -99,15 +99,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync?source=prebid&gdpr_consent=${consent}&gpp=${gpp}&gpp_sid=${gppSid}`
       }
     ];
   }
@@ -134,7 +126,7 @@ function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
-  let floorResult = bid.getFloor({
+  const floorResult = bid.getFloor({
     currency: 'USD',
     mediaType: 'banner',
     size: '*'

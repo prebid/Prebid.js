@@ -4,13 +4,13 @@ import {normalizeFPD} from '../src/fpd/normalize.js';
 import type {ORTBRequest} from "../src/types/ortb/request";
 
 export type SchainConfig = {
-    config: ORTBRequest['source']['schain'];
+  config: ORTBRequest['source']['schain'];
 }
 
 declare module '../src/config' {
-    interface Config {
-        schain?: SchainConfig;
-    }
+  interface Config {
+    schain?: SchainConfig;
+  }
 }
 
 export function applySchainConfig(ortb2Fragments) {

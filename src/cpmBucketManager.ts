@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 import { isEmpty, logWarn } from './utils.js';
 import { config } from './config.js';
 
@@ -80,7 +81,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   });
 
   let bucketFloor = 0;
-  let bucket = config.buckets.find(bucket => {
+  const bucket = config.buckets.find(bucket => {
     if (cpm > cap.max * granularityMultiplier) {
       // cpm exceeds cap, just return the cap.
       let precision = bucket.precision;
@@ -115,13 +116,13 @@ function isValidPriceConfig(config) {
 }
 
 declare module './config' {
-    interface Config {
-        /**
-         * CPM rounding function. Default is Math.floor.
-         * @param cpm
-         */
-        cpmRoundingFunction?: (cpm: number) => number;
-    }
+  interface Config {
+    /**
+     * CPM rounding function. Default is Math.floor.
+     * @param cpm
+     */
+    cpmRoundingFunction?: (cpm: number) => number;
+  }
 }
 
 function getCpmTarget(cpm, bucket, granularityMultiplier) {
@@ -129,7 +130,7 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   const increment = bucket.increment * granularityMultiplier;
   const bucketMin = bucket.min * granularityMultiplier;
   let roundingFunction = Math.floor;
-  let customRoundingFunction = config.getConfig('cpmRoundingFunction');
+  const customRoundingFunction = config.getConfig('cpmRoundingFunction');
   if (typeof customRoundingFunction === 'function') {
     roundingFunction = customRoundingFunction;
   }
@@ -139,8 +140,8 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   // this is done as JS can return values slightly below the expected mark which would skew the price bucket target
   //   (eg 4.01 / 0.01 = 400.99999999999994)
   // min precison should be 2 to move decimal place over.
-  let pow = Math.pow(10, precision + 2);
-  let cpmToRound = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
+  const pow = Math.pow(10, precision + 2);
+  const cpmToRound = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
   let cpmTarget;
   let invalidRounding;
   // It is likely that we will be passed {cpmRoundingFunction: roundingFunction()}

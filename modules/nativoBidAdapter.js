@@ -212,7 +212,7 @@ export const spec = {
     const adUnitData = buildAdUnitData(validBidRequests)
 
     // Build basic required QS Params
-    let params = [
+    const params = [
       // Prebid version
       {
         key: 'ntv_pbv',
@@ -313,7 +313,7 @@ export const spec = {
     ]
     const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
 
-    let serverRequest = {
+    const serverRequest = {
       method: 'POST',
       url: requestUrl,
       data: openRTBDataString,
@@ -523,13 +523,13 @@ export class RequestData {
   }
 
   processBidRequestData(bidRequest, bidderRequest) {
-    for (let bidRequestDataSource of this.bidRequestDataSources) {
+    for (const bidRequestDataSource of this.bidRequestDataSources) {
       bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
     }
   }
 
   getRequestDataQueryString() {
-    if (this.bidRequestDataSources.length == 0) return
+    if (this.bidRequestDataSources.length === 0) return
 
     const queryParams = this.bidRequestDataSources
       .map((dataSource) => dataSource.getRequestQueryString())
@@ -591,15 +591,15 @@ export function parseFloorPriceData(bidRequest) {
   if (typeof bidRequest.getFloor !== 'function') return
 
   // Setup price floor data per bid request
-  let bidRequestFloorPriceData = {}
-  let bidMediaTypes = bidRequest.mediaTypes
-  let sizeOptions = new Set()
+  const bidRequestFloorPriceData = {}
+  const bidMediaTypes = bidRequest.mediaTypes
+  const sizeOptions = new Set()
   // Step through meach media type so we can get floor data for each media type per bid request
   Object.keys(bidMediaTypes).forEach((mediaType) => {
     // Setup price floor data per media type
-    let mediaTypeData = bidMediaTypes[mediaType]
-    let mediaTypeFloorPriceData = {}
-    let mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
+    const mediaTypeData = bidMediaTypes[mediaType]
+    const mediaTypeFloorPriceData = {}
+    const mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
     // Step through each size of the media type so we can get floor data for each size per media type
     mediaTypeSizes.forEach((size) => {
       // Get floor price data per the getFloor method and respective media type / size combination
@@ -791,7 +791,7 @@ function appendFilterData(filter, filterData) {
 export function getPageUrlFromBidRequest(bidRequest) {
   let paramPageUrl = deepAccess(bidRequest, 'params.url')
 
-  if (paramPageUrl == undefined) return
+  if (paramPageUrl === undefined) return
 
   if (hasProtocol(paramPageUrl)) return paramPageUrl
 
@@ -804,7 +804,7 @@ export function getPageUrlFromBidRequest(bidRequest) {
 }
 
 export function hasProtocol(url) {
-  const protocolRegexp = /^http[s]?\:/
+  const protocolRegexp = /^http[s]?:/
   return protocolRegexp.test(url)
 }
 

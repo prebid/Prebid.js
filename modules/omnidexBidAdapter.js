@@ -12,6 +12,7 @@ import {
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'omnidex';
 const BIDDER_VERSION = '1.0.0';
+const GVLID = 1463;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
@@ -41,7 +42,8 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon
+  onBidWon,
+  gvlid: GVLID,
 };
 
 registerBidder(spec);

@@ -11,6 +11,7 @@ import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
 import {configParser} from '../libraries/consentManagement/cmUtils.js';
+import {createCmpEventManager, type CmpEventManager} from '../libraries/cmp/cmpEventUtils.js';
 import {CONSENT_GDPR} from "../src/consentHandler.ts";
 import type {CMConfig} from "../libraries/consentManagement/cmUtils.ts";
 
@@ -24,52 +25,55 @@ const cmpCallMap = {
   'iab': lookupIabConsent,
 };
 
+// CMP event manager instance for TCF
+export let tcfCmpEventManager: CmpEventManager | null = null;
+
 /**
  * @see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework
  * @see https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore
  */
 export type TCFConsentData = {
-    apiVersion: typeof CMP_VERSION;
-    /**
-     * The consent string.
-     */
-    consentString: string;
-    /**
-     * True if GDPR is in scope.
-     */
-    gdprApplies: boolean;
-    /**
-     * The response from the CMP.
-     */
-    vendorData: Record<string, unknown>;
-    /**
-     * Additional consent string, if provided by the CMP.
-     * @see https://support.google.com/admanager/answer/9681920?hl=en
-     */
-    addtlConsent?: `${number}~${string}~${string}`;
+  apiVersion: typeof CMP_VERSION;
+  /**
+   * The consent string.
+   */
+  consentString: string;
+  /**
+   * True if GDPR is in scope.
+   */
+  gdprApplies: boolean;
+  /**
+   * The response from the CMP.
+   */
+  vendorData: Record<string, unknown>;
+  /**
+   * Additional consent string, if provided by the CMP.
+   * @see https://support.google.com/admanager/answer/9681920?hl=en
+   */
+  addtlConsent?: `${number}~${string}~${string}`;
 }
 
 export interface TCFConfig {
-    /**
-     *  Defines what the gdprApplies flag should be when the CMP doesn’t respond in time or the static data doesn’t supply.
-     *  Defaults to false.
-     */
-    defaultGdprScope?: boolean;
-    /**
-     * If true, indicates that the publisher is to be considered an “Online Platform” for the purposes of the Digital Services Act
-     */
-    dsaPlatform?: boolean;
+  /**
+   *  Defines what the gdprApplies flag should be when the CMP doesn’t respond in time or the static data doesn’t supply.
+   *  Defaults to false.
+   */
+  defaultGdprScope?: boolean;
+  /**
+   * If true, indicates that the publisher is to be considered an “Online Platform” for the purposes of the Digital Services Act
+   */
+  dsaPlatform?: boolean;
 }
 
 type TCFCMConfig = TCFConfig & CMConfig<TCFConsentData>;
 
 declare module '../src/consentHandler' {
-    interface ConsentData {
-        [CONSENT_GDPR]: TCFConsentData;
-    }
-    interface ConsentManagementConfig {
-        [CONSENT_GDPR]?: TCFCMConfig;
-    }
+  interface ConsentData {
+    [CONSENT_GDPR]: TCFConsentData;
+  }
+  interface ConsentManagementConfig {
+    [CONSENT_GDPR]?: TCFCMConfig;
+  }
 }
 
 /**
@@ -87,6 +91,9 @@ function lookupIabConsent(setProvisionalConsent) {
 
         if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
           try {
+            if (tcfData.listenerId !== null && tcfData.listenerId !== undefined) {
+              tcfCmpEventManager?.setCmpListenerId(tcfData.listenerId);
+            }
             gdprDataHandler.setConsentData(parseConsentData(tcfData));
             resolve();
           } catch (e) {
@@ -112,6 +119,12 @@ function lookupIabConsent(setProvisionalConsent) {
     } else {
       logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
     }
+
+    // Initialize CMP event manager and set CMP API
+    if (!tcfCmpEventManager) {
+      tcfCmpEventManager = createCmpEventManager('tcf', () => gdprDataHandler.getConsentData());
+    }
+    tcfCmpEventManager.setCmpApi(cmp);
 
     cmp({
       command: 'addEventListener',
@@ -159,14 +172,25 @@ export function resetConsentData() {
   gdprDataHandler.reset();
 }
 
+export function removeCmpListener() {
+  // Clean up CMP event listeners before resetting
+  if (tcfCmpEventManager) {
+    tcfCmpEventManager.removeCmpEventListener();
+    tcfCmpEventManager = null;
+  }
+  resetConsentData();
+}
+
 const parseConfig = configParser({
   namespace: 'gdpr',
   displayName: 'TCF',
   consentDataHandler: gdprDataHandler,
   cmpHandlers: cmpCallMap,
   parseConsentData,
-  getNullConsent: () => toConsentData(null)
+  getNullConsent: () => toConsentData(null),
+  cmpEventCleanup: removeCmpListener
 } as any)
+
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  */

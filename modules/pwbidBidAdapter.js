@@ -1,4 +1,5 @@
-import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
+import { _each, isBoolean, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -13,7 +14,6 @@ import { OUTSTREAM, INSTREAM } from '../src/video.js';
  */
 
 const VERSION = '0.3.0';
-const GVLID = 842;
 const NET_REVENUE = true;
 const UNDEFINED = undefined;
 const DEFAULT_CURRENCY = 'USD';
@@ -122,8 +122,8 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
 ]
 
 let isInvalidNativeRequest = false
-let NATIVE_ASSET_ID_TO_KEY_MAP = {};
-let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+const NATIVE_ASSET_ID_TO_KEY_MAP = {};
+const NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // together allows traversal of NATIVE_ASSETS_LIST in any direction
 // id -> key
@@ -134,7 +134,6 @@ _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = a
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['pubwise'],
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
@@ -154,8 +153,8 @@ export const spec = {
       // video ad validation
       if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
         // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
-        let mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
-        let paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
+        const mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
+        const paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
         if (_isNonEmptyArray(mediaTypesVideoMimes) === false && _isNonEmptyArray(paramsVideoMimes) === false) {
           _logWarn('Error: For video ads, bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array. Call suppressed:', JSON.stringify(bid));
           return false;
@@ -218,7 +217,7 @@ export const spec = {
     });
 
     // no payload imps, no rason to continue
-    if (payload.imp.length == 0) {
+    if (payload.imp.length === 0) {
       return;
     }
 
@@ -300,7 +299,7 @@ export const spec = {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     _logInfo('interpretResponse request', request);
-    let parsedRequest = request.data; // not currently stringified
+    const parsedRequest = request.data; // not currently stringified
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
 
     // try {
@@ -312,7 +311,7 @@ export const spec = {
         seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
+              const newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0).toFixed(2),
                 width: bid.w,
@@ -380,7 +379,7 @@ export const spec = {
 
 function _checkMediaType(bid, newBid) {
   // Check Various ADM Aspects to Determine Media Type
-  if (bid.ext && bid.ext['bidtype'] != undefined) {
+  if (bid.ext && bid.ext.bidtype !== undefined && bid.ext.bidtype !== null) {
     // this is the most explicity check
     newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
@@ -468,7 +467,7 @@ function _parseNativeResponse(bid, newBid) {
 }
 
 function _getDomainFromURL(url) {
-  let anchor = document.createElement('a');
+  const anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
@@ -513,7 +512,7 @@ function _createOrtbTemplate(conf) {
     device: {
       ua: navigator.userAgent,
       js: 1,
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: navigator.language,
@@ -669,10 +668,10 @@ function _addFloorFromFloorModule(impObj, bid) {
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubwise.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        let floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
+        const floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
         if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
-          let mediaTypeFloor = parseFloat(floorInfo.floor);
-          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+          const mediaTypeFloor = parseFloat(floorInfo.floor);
+          bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
       }
     });
@@ -803,13 +802,13 @@ function _createNativeRequest(params) {
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
     var lengthOfExistingAssets = nativeRequestObject.assets.length;
     for (var i = 0; i < lengthOfExistingAssets; i++) {
-      if (ele.id == nativeRequestObject.assets[i].id) {
+      if (ele.id === nativeRequestObject.assets[i].id) {
         presentrequiredAssetCount++;
         break;
       }
     }
   });
-  if (requiredAssetCount == presentrequiredAssetCount) {
+  if (requiredAssetCount === presentrequiredAssetCount) {
     isInvalidNativeRequest = false;
   } else {
     isInvalidNativeRequest = true;
@@ -937,7 +936,7 @@ function _isNonEmptyArray(test) {
  * @returns
  */
 function _getEndpointURL(bid) {
-  if (!isEmptyStr(bid?.params?.endpoint_url) && bid?.params?.endpoint_url != UNDEFINED) {
+  if (bid?.params?.endpoint_url) {
     return bid.params.endpoint_url;
   }
 

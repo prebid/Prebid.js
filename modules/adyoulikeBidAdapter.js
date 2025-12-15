@@ -75,9 +75,9 @@ export const spec = {
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
-        let mediatype = getMediatype(bidReq);
-        let sizesArray = getSizeArray(bidReq);
-        let size = getSize(sizesArray);
+        const mediatype = getMediatype(bidReq);
+        const sizesArray = getSizeArray(bidReq);
+        const size = getSize(sizesArray);
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
         accumulator[bidReq.bidId].TransactionID = bidReq.ortb2Imp?.ext?.tid;
@@ -228,7 +228,7 @@ export const spec = {
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
-  let dcHostname = ((bidderRequest) || []).find(bid => bid.params.DC);
+  const dcHostname = ((bidderRequest) || []).find(bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
   }
@@ -273,7 +273,7 @@ function getPageRefreshed() {
 
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest, hasVideo) {
-  let host = getHostname(bidRequests);
+  const host = getHostname(bidRequests);
   const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
     protocol: 'https',
@@ -401,7 +401,7 @@ function getTrackers(eventsArray, jsTrackers) {
 
   if (!eventsArray) return result;
 
-  eventsArray.map((item, index) => {
+  eventsArray.forEach((item, index) => {
     if ((jsTrackers && item.Kind === 'JAVASCRIPT_URL') ||
         (!jsTrackers && item.Kind === 'PIXEL_URL')) {
       result.push(item.Url);
@@ -446,7 +446,7 @@ function getNativeAssets(response, nativeConfig) {
     native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
-  Object.keys(nativeConfig).map(function(key, index) {
+  Object.keys(nativeConfig).forEach(function(key, index) {
     switch (key) {
       case 'title':
         native[key] = textsJson.TITLE;
