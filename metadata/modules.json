@@ -2397,13 +2397,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "trustx",
-      "aliasOf": "grid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "growads",
       "aliasOf": null,
       "gvlid": null,
@@ -3167,6 +3160,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mycodemedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mytarget",
       "aliasOf": null,
       "gvlid": null,
@@ -3331,13 +3331,6 @@
       "componentName": "glomexbidder",
       "aliasOf": "nexx360",
       "gvlid": 967,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "revnew",
-      "aliasOf": "nexx360",
-      "gvlid": 1468,
       "disclosureURL": null
     },
     {
@@ -3912,6 +3905,13 @@
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "revnew",
+      "aliasOf": null,
+      "gvlid": 1468,
       "disclosureURL": null
     },
     {
@@ -4575,6 +4575,13 @@
     {
       "componentType": "bidder",
       "componentName": "truereach",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "trustx",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
