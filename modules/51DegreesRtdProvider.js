@@ -264,8 +264,10 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
   // kept for backward compatibility
   deepSetNotEmptyValue(ortb2Device, 'ext.fiftyonedegrees_deviceId', device.deviceid);
-  deepSetNotEmptyValue(ortb2Device, 'ext.fiftyonedegrees.deviceId', device.deviceid);
-  deepSetNotEmptyValue(ortb2Device, 'ext.fiftyonedegrees.tpc', device.thirdpartycookiesenabled);
+  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid);
+  if (['True', 'False'].includes(device.thirdpartycookiesenabled)) {
+    deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
+  }
 
   return {device: ortb2Device};
 }
