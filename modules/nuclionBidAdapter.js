@@ -57,7 +57,7 @@ function sendBeaconSafe(url, data) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adryx', 'revantagenuclion'],
+  aliases: ['adryx', 'revantagenuclion'], // TODO: Get GVL IDs for these
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
