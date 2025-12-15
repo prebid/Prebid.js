@@ -2,10 +2,8 @@ import { expect } from "chai";
 import iiqAnalyticsAnalyticsAdapter from "modules/intentIqAnalyticsAdapter.js";
 import * as utils from "src/utils.js";
 import { server } from "test/mocks/xhr.js";
-import { config } from "src/config.js";
 import { EVENTS } from "src/constants.js";
 import * as events from "src/events.js";
-import { getStorageManager } from "src/storageManager.js";
 import sinon from "sinon";
 import {
   REPORTER_ID,
@@ -73,38 +71,12 @@ const REPORT_SERVER_ADDRESS = "https://test-reports.intentiq.com/report";
 
 const randomVal = () => Math.floor(Math.random() * 100000) + 1;
 
-const getUserConfig = () => [
-  {
-    name: "intentIqId",
-    params: {
-      partner: partner,
-      unpack: null,
-      manualWinReportEnabled: false,
-    },
-    storage: {
-      type: "html5",
-      name: "intentIqId",
-      expires: 60,
-      refreshInSeconds: 14400,
-    },
-  },
-];
-
-const getUserConfigWithReportingServerAddress = () => [
-  {
-    name: "intentIqId",
-    params: {
-      partner: partner,
-      unpack: null,
-    },
-    storage: {
-      type: "html5",
-      name: "intentIqId",
-      expires: 60,
-      refreshInSeconds: 14400,
-    },
-  },
-];
+const getDefaultConfig = () => {
+  return {
+    partner,
+    manualWinReportEnabled: false,
+  }
+}
 
 const getWonRequest = () => ({
   bidderCode: "pubmatic",
@@ -138,11 +110,14 @@ const getWonRequest = () => ({
   status: "rendered",
 });
 
-const enableAnalyticWithSpecialOptions = (options) => {
+const enableAnalyticWithSpecialOptions = (receivedOptions) => {
   iiqAnalyticsAnalyticsAdapter.disableAnalytics();
   iiqAnalyticsAnalyticsAdapter.enableAnalytics({
     provider: "iiqAnalytics",
-    options,
+    options: {
+      ...getDefaultConfig(),
+      ...receivedOptions
+    },
   });
 };
 
@@ -155,14 +130,7 @@ describe("IntentIQ tests all", function () {
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, "logError");
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(getUserConfig());
     sinon.stub(events, "getEvents").returns([]);
-    iiqAnalyticsAnalyticsAdapter.enableAnalytics({
-      provider: "iiqAnalytics",
-    });
     iiqAnalyticsAnalyticsAdapter.initOptions = {
       lsValueInitialized: false,
       partner: null,
@@ -175,6 +143,10 @@ describe("IntentIQ tests all", function () {
       manualWinReportEnabled: false,
       domainName: null,
     };
+    iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+      provider: "iiqAnalytics",
+      options: getDefaultConfig()
+    });
     if (iiqAnalyticsAnalyticsAdapter.track.restore) {
       iiqAnalyticsAnalyticsAdapter.track.restore();
     }
@@ -188,7 +160,6 @@ describe("IntentIQ tests all", function () {
     if (getWindowTopStub) getWindowTopStub.restore();
     if (getWindowLocationStub) getWindowLocationStub.restore();
     if (detectBrowserStub) detectBrowserStub.restore();
-    config.getConfig.restore();
     events.getEvents.restore();
     iiqAnalyticsAnalyticsAdapter.disableAnalytics();
     if (iiqAnalyticsAnalyticsAdapter.track.restore) {
@@ -203,14 +174,7 @@ describe("IntentIQ tests all", function () {
     enableAnalyticWithSpecialOptions({
       reportMethod: "POST",
     });
-    const [userConfig] = getUserConfig();
     const wonRequest = getWonRequest();
-
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns([userConfig]);
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
@@ -225,13 +189,7 @@ describe("IntentIQ tests all", function () {
   });
 
   it("should send GET request with payload in query string if reportMethod is NOT provided", function () {
-    const [userConfig] = getUserConfig();
     const wonRequest = getWonRequest();
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns([userConfig]);
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
@@ -298,18 +256,10 @@ describe("IntentIQ tests all", function () {
       .stub(utils, "getWindowLocation")
       .returns({ href: "http://localhost:9876/" });
     const externalWinEvent = { cpm: 1, currency: "USD", adType: "banner" };
-    const [userConfig] = getUserConfig();
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns([userConfig]);
-
-    const partnerId = userConfig.params.partner;
 
     events.emit(EVENTS.BID_REQUESTED);
 
-    window[`intentIqAnalyticsAdapter_${partnerId}`].reportExternalWin(
+    window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin(
       externalWinEvent
     );
 
@@ -432,7 +382,7 @@ describe("IntentIQ tests all", function () {
   it("should not send request if manualWinReportEnabled is true", function () {
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     events.emit(EVENTS.BID_WON, getWonRequest());
-    expect(server.requests.length).to.equal(1);
+    expect(server.requests.length).to.equal(0);
   });
 
   it("should handle initialization values from local storage", function () {
@@ -499,14 +449,9 @@ describe("IntentIQ tests all", function () {
   });
 
   it("should not send request if the browser is in blacklist (chrome)", function () {
-    const USERID_CONFIG_BROWSER = [...getUserConfig()];
-    USERID_CONFIG_BROWSER[0].params.browserBlackList = "ChrOmE";
-
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(USERID_CONFIG_BROWSER);
+    enableAnalyticWithSpecialOptions({
+      browserBlackList: "ChrOmE"
+    })
     detectBrowserStub = sinon
       .stub(detectBrowserUtils, "detectBrowser")
       .returns("chrome");
@@ -517,14 +462,10 @@ describe("IntentIQ tests all", function () {
   });
 
   it("should send request if the browser is not in blacklist (safari)", function () {
-    const USERID_CONFIG_BROWSER = [...getUserConfig()];
-    USERID_CONFIG_BROWSER[0].params.browserBlackList = "chrome,firefox";
+    enableAnalyticWithSpecialOptions({
+      browserBlackList: "chrome,firefox"
+    })
 
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(USERID_CONFIG_BROWSER);
     detectBrowserStub = sinon
       .stub(detectBrowserUtils, "detectBrowser")
       .returns("safari");
@@ -547,21 +488,12 @@ describe("IntentIQ tests all", function () {
   });
 
   it("should send request in reportingServerAddress no gdpr", function () {
-    const USERID_CONFIG_BROWSER = [
-      ...getUserConfigWithReportingServerAddress(),
-    ];
-    USERID_CONFIG_BROWSER[0].params.browserBlackList = "chrome,firefox";
-
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(USERID_CONFIG_BROWSER);
     detectBrowserStub = sinon
       .stub(detectBrowserUtils, "detectBrowser")
       .returns("safari");
     enableAnalyticWithSpecialOptions({
       reportingServerAddress: REPORT_SERVER_ADDRESS,
+      browserBlackList: "chrome,firefox"
     });
 
     events.emit(EVENTS.BID_WON, getWonRequest());
@@ -579,45 +511,16 @@ describe("IntentIQ tests all", function () {
     expect(request.url).to.include(`&source=${PREBID}`);
   });
 
-  it("should use correct key if siloEnabled is true", function () {
-    const siloEnabled = true;
-    const USERID_CONFIG = [...getUserConfig()];
-    USERID_CONFIG[0].params.siloEnabled = siloEnabled;
-
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(USERID_CONFIG);
-
-    localStorage.setItem(
-      FIRST_PARTY_KEY,
-      `${FIRST_PARTY_KEY}${siloEnabled ? "_p_" + partner : ""}`
-    );
-    events.emit(EVENTS.BID_WON, getWonRequest());
-
-    expect(server.requests.length).to.be.above(0);
-    const request = server.requests[0];
-    expect(request.url).to.contain(
-      REPORT_ENDPOINT + "?pid=" + partner + "&mct=1"
-    );
-  });
-
   it("should send additionalParams in report if valid and small enough", function () {
-    const userConfig = getUserConfig();
-    userConfig[0].params.additionalParams = [
-      {
-        parameterName: "general",
-        parameterValue: "Lee",
-        destination: [0, 0, 1],
-      },
-    ];
-
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(userConfig);
+    enableAnalyticWithSpecialOptions({
+      additionalParams: [
+        {
+          parameterName: "general",
+          parameterValue: "Lee",
+          destination: [0, 0, 1],
+        },
+      ]
+    })
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
@@ -627,26 +530,23 @@ describe("IntentIQ tests all", function () {
 
   it("should not send additionalParams in report if value is too large", function () {
     const longVal = "x".repeat(5000000);
-    const userConfig = getUserConfig();
-    userConfig[0].params.additionalParams = [
-      {
-        parameterName: "general",
-        parameterValue: longVal,
-        destination: [0, 0, 1],
-      },
-    ];
 
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns(userConfig);
+    enableAnalyticWithSpecialOptions({
+      additionalParams: [
+        {
+          parameterName: "general",
+          parameterValue: longVal,
+          destination: [0, 0, 1],
+        },
+      ]
+    })
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
     const request = server.requests[0];
     expect(request.url).not.to.include("general");
   });
+
   it("should include spd parameter from LS in report URL", function () {
     const spdObject = { foo: "bar", value: 42 };
     const expectedSpdEncoded = encodeURIComponent(JSON.stringify(spdObject));
@@ -696,20 +596,12 @@ describe("IntentIQ tests all", function () {
       };
     }
 
-    function withConfigGamPredict(gamObj) {
-      const [userConfig] = getUserConfig();
-      userConfig.params.gamObjectReference = gamObj;
-      userConfig.params.gamPredictReporting = true;
-      config.getConfig.restore();
-      sinon
-        .stub(config, "getConfig")
-        .withArgs("userSync.userIds")
-        .returns([userConfig]);
-    }
-
     it("should subscribe to GAM and send report on slotRenderEnded without prior bidWon", function () {
       const gam = createMockGAM();
-      withConfigGamPredict(gam);
+
+      enableAnalyticWithSpecialOptions({
+        gamObjectReference: gam
+      })
 
       // enable subscription by LS flag
       window[`iiq_identity_${partner}`].partnerData.gpr = true;
@@ -760,7 +652,6 @@ describe("IntentIQ tests all", function () {
 
     it("should NOT send report if a matching bidWon already exists", function () {
       const gam = createMockGAM();
-      withConfigGamPredict(gam);
 
       localStorage.setItem(
         FIRST_PARTY_KEY + "_" + partner,
@@ -932,14 +823,7 @@ describe("IntentIQ tests all", function () {
   adUnitConfigTests.forEach(
     ({ adUnitConfig, description, event, expectedPlacementId }) => {
       it(description, function () {
-        const [userConfig] = getUserConfig();
         enableAnalyticWithSpecialOptions({ adUnitConfig });
-
-        config.getConfig.restore();
-        sinon
-          .stub(config, "getConfig")
-          .withArgs("userSync.userIds")
-          .returns([userConfig]);
 
         const testEvent = { ...getWonRequest(), ...event };
         events.emit(EVENTS.BID_WON, testEvent);
@@ -963,13 +847,6 @@ describe("IntentIQ tests all", function () {
     const ABTestingConfigurationSource = "percentage";
     enableAnalyticWithSpecialOptions({ ABTestingConfigurationSource });
 
-    const [userConfig] = getUserConfig();
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns([userConfig]);
-
     events.emit(EVENTS.BID_WON, getWonRequest());
 
     const request = server.requests[0];
@@ -986,13 +863,6 @@ describe("IntentIQ tests all", function () {
 
   it("should not include ABTestingConfigurationSource in payload when not provided", function () {
     enableAnalyticWithSpecialOptions({});
-
-    const [userConfig] = getUserConfig();
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns([userConfig]);
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
@@ -1014,13 +884,6 @@ describe("IntentIQ tests all", function () {
       group: providedGroup,
       ABTestingConfigurationSource: AB_CONFIG_SOURCE.GROUP,
     });
-
-    const [userConfig] = getUserConfig();
-    config.getConfig.restore();
-    sinon
-      .stub(config, "getConfig")
-      .withArgs("userSync.userIds")
-      .returns([userConfig]);
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
