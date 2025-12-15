@@ -1,4 +1,4 @@
-import { deepAccess, deepClone } from '../src/utils.js';
+import { deepAccess, deepClone, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
@@ -57,7 +57,7 @@ function sendBeaconSafe(url, data) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adryx', 'revantagenuclion'], // TODO: Get GVL IDs for these
+  aliases: ['adryx', 'revantagenuclion'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
@@ -384,7 +384,6 @@ function buildRequestPayload(bidRequests, bidderRequest) {
   device.language = device.language || (typeof navigator !== 'undefined' ? navigator.language : '');
   device.w = device.w || (typeof screen !== 'undefined' ? screen.width : 0);
   device.h = device.h || (typeof screen !== 'undefined' ? screen.height : 0);
-  device.devicetype = device.devicetype || getDeviceType();
 
   const regs = { ext: {} };
 
@@ -423,74 +422,32 @@ function buildRequestPayload(bidRequests, bidderRequest) {
 }
 
 function getBidSizes(bidRequest) {
-  if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner &&
-      Array.isArray(bidRequest.mediaTypes.banner.sizes)) {
-    return bidRequest.mediaTypes.banner.sizes;
-  }
-  if (bidRequest.mediaTypes && bidRequest.mediaTypes.video &&
-      bidRequest.mediaTypes.video.playerSize) {
-    return bidRequest.mediaTypes.video.playerSize;
-  }
-  return bidRequest.sizes || [[300, 250]];
+  return bidRequest.mediaTypes?.banner?.sizes ||
+         bidRequest.mediaTypes?.video?.playerSize ||
+         bidRequest.sizes ||
+         [[300, 250]];
 }
 
 function getBidFloor(bidRequest) {
-  let floor = 0;
+  if (!isFn(bidRequest.getFloor)) {
+    return 0;
+  }
 
-  if (typeof bidRequest.getFloor === 'function') {
-    const mediaType = (bidRequest.mediaTypes && bidRequest.mediaTypes.video) ? 'video' : 'banner';
-    const sizes = getBidSizes(bidRequest);
+  const mediaType = bidRequest.mediaTypes?.video ? 'video' : 'banner';
+  
+  try {
+    const floorInfo = bidRequest.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: mediaType,
+      size: '*'
+    });
 
-    for (let i = 0; i < sizes.length; i++) {
-      try {
-        const floorInfo = bidRequest.getFloor({
-          currency: DEFAULT_CURRENCY,
-          mediaType: mediaType,
-          size: sizes[i]
-        });
-
-        if (floorInfo && floorInfo.floor > floor &&
-            floorInfo.currency === DEFAULT_CURRENCY && !isNaN(floorInfo.floor)) {
-          floor = floorInfo.floor;
-        }
-      } catch (e) {}
+    if (floorInfo?.currency === DEFAULT_CURRENCY && !isNaN(floorInfo.floor)) {
+      return floorInfo.floor;
     }
+  } catch (e) {}
 
-    if (floor === 0) {
-      try {
-        const wildcardFloor = bidRequest.getFloor({
-          currency: DEFAULT_CURRENCY,
-          mediaType: mediaType,
-          size: '*'
-        });
-
-        if (typeof wildcardFloor === 'object' &&
-            wildcardFloor.currency === DEFAULT_CURRENCY &&
-            !isNaN(wildcardFloor.floor)) {
-          floor = wildcardFloor.floor;
-        }
-      } catch (e) {}
-    }
-  }
-
-  return floor;
-}
-
-function getDeviceType() {
-  if (typeof screen === 'undefined') {
-    return 1;
-  }
-
-  const screenWidth = screen.width;
-  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-
-  if (/iPhone|iPod/i.test(userAgent) || (screenWidth < 768 && /Mobile/i.test(userAgent))) {
-    return 2;
-  }
-  if (/iPad/i.test(userAgent) || (screenWidth >= 768 && screenWidth < 1024)) {
-    return 5;
-  }
-  return 1;
+  return 0;
 }
 
 function createRenderer(config) {
