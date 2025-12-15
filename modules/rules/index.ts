@@ -35,7 +35,8 @@ let rulesConfig: ModuleConfig = {
     method: 'GET',
     url: ''
   },
-  auctionDelay: 0
+  auctionDelay: 0,
+  extraSchemaEvaluators: {}
 };
 
 let fetching = false;
@@ -50,6 +51,9 @@ interface ModuleConfig {
     method: string;
   };
   auctionDelay?: number;
+  extraSchemaEvaluators?: {
+    [key: string]: (args: any[], context: any) => () => any;
+  };
 }
 
 interface ModelGroupSchema {
@@ -244,7 +248,8 @@ const schemaEvaluators = {
 };
 
 export function evaluateSchema(func, args, context) {
-  const evaluator = schemaEvaluators[func];
+  const evaluators = { ...schemaEvaluators, ...rulesConfig.extraSchemaEvaluators };
+  const evaluator = evaluators[func];
   if (evaluator) {
     return evaluator(args, context);
   }

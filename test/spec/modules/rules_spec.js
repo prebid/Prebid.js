@@ -591,5 +591,49 @@ describe('Rules Module', function() {
       const func = rulesModule.evaluateSchema('unknownFunction', [], {});
       expect(func()).to.be.null;
     });
+
+    describe('extraSchemaEvaluators', function() {
+      it('should use custom browser evaluator from extraSchemaEvaluators', function() {
+        const browserEvaluator = (args, context) => {
+          return () => {
+            const userAgent = context.ortb2?.device?.ua || navigator.userAgent;
+            if (userAgent.includes('Chrome')) return 'Chrome';
+            if (userAgent.includes('Firefox')) return 'Firefox';
+            if (userAgent.includes('Safari')) return 'Safari';
+            if (userAgent.includes('Edge')) return 'Edge';
+            return 'Unknown';
+          };
+        };
+
+        config.setConfig({
+          shapingRules: {
+            extraSchemaEvaluators: {
+              browser: browserEvaluator
+            }
+          }
+        });
+
+        const context1 = {
+          ortb2: {
+            device: {
+              ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0'
+            }
+          }
+        };
+
+        const func1 = rulesModule.evaluateSchema('browser', [], context1);
+        expect(func1()).to.equal('Chrome');
+
+        const context2 = {
+          ortb2: {
+            device: {
+              ua: 'Mozilla/5.0 Firefox/121.0.0'
+            }
+          }
+        };
+        const func2 = rulesModule.evaluateSchema('browser', [], context2);
+        expect(func2()).to.equal('Firefox');
+      });
+    });
   });
 });
