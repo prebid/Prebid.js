@@ -25,8 +25,7 @@ var adUnits = [
     bids: [{
         bidder: 'alliance_gravity',
         params: {
-          owner: "test",
-          code: "code"
+          srid: "11223344"
         }
       }]
   },

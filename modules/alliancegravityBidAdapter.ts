@@ -42,8 +42,8 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
     let imp:ORTBImp = buildImp(bidRequest, context);
     imp = enrichImp(imp, bidRequest);
-    const divId = bidRequest.params.divId || bidRequest.adUnitCode;
-    const slotEl:HTMLElement | null = typeof divId === 'string' ? document.getElementById(divId) : null;
+    const adUnitCode = bidRequest.adUnitCode;
+    const slotEl:HTMLElement | null = document.getElementById(adUnitCode);
     if (slotEl) {
       const { width, height } = getBoundingClientRect(slotEl);
       deepSetValue(imp, 'ext.dimensions.slotW', width);
@@ -52,8 +52,6 @@ const converter = ortbConverter({
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }
     deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.srid);
-    if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
-    if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -62,7 +60,7 @@ const converter = ortbConverter({
 });
 
 const isBidRequestValid = (bid:BidRequest<typeof BIDDER_CODE>): boolean => {
-  if (!bid.params.srid || typeof bid.params.srid !== 'string') {
+  if (!bid.params.srid || typeof bid.params.srid !== 'string' || bid.params.srid === '') {
     return false;
   }
   return true;
