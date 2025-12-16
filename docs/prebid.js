@@ -1,5 +1,5 @@
 /* prebid.js v10.19.0-pre
-Updated: 2025-12-02
+Updated: 2025-12-16
 Modules: echoAdsModule, gumgumBidAdapter */
 
 if (!window.pbjs || !window.pbjs.libLoaded) {
@@ -14784,7 +14784,11 @@ function showOverlay() {
   // Create ad container
   const adContainer = document.createElement('div');
   adContainer.id = moduleConfig.adUnit.code;
-  adContainer.style.cssText = "\n    position: relative;\n    background: white;\n    padding: 20px;\n    border-radius: 8px;\n    box-shadow: 0 4px 20px rgba(0,0,0,0.3);\n  ";
+
+  // Set min dimensions based on bid size to prevent collapse with third-party tags
+  const minWidth = cachedBid.width || 300;
+  const minHeight = cachedBid.height || 250;
+  adContainer.style.cssText = "\n    position: relative;\n    background: white;\n    padding: 20px;\n    border-radius: 8px;\n    box-shadow: 0 4px 20px rgba(0,0,0,0.3);\n    min-width: ".concat(minWidth, "px;\n    min-height: ").concat(minHeight, "px;\n  ");
 
   // Render the ad first - insert HTML directly
   if (cachedBid.ad) {
@@ -14797,7 +14801,7 @@ function showOverlay() {
   if (displayConfig.closeButton !== false) {
     const closeButton = document.createElement('button');
     closeButton.innerHTML = '&times;';
-    closeButton.style.cssText = "\n      position: absolute;\n      top: -12px;\n      right: -12px;\n      background: #000;\n      color: #fff;\n      border: none;\n      border-radius: 50%;\n      width: 28px;\n      height: 28px;\n      font-size: 20px;\n      font-weight: normal;\n      line-height: 28px;\n      text-align: center;\n      cursor: pointer;\n      z-index: 1001;\n      box-shadow: 0 2px 6px rgba(0,0,0,0.4);\n      padding: 0;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    ";
+    closeButton.style.cssText = "\n      position: absolute;\n      top: -12px;\n      right: -12px;\n      background: #000;\n      color: #fff;\n      border: none;\n      border-radius: 50%;\n      width: 28px;\n      height: 28px;\n      font-size: 20px;\n      font-weight: normal;\n      line-height: 28px;\n      text-align: center;\n      cursor: pointer;\n      z-index: 2147483647;\n      box-shadow: 0 2px 6px rgba(0,0,0,0.4);\n      padding: 0;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      pointer-events: auto;\n    ";
 
     // Add hover effect
     closeButton.onmouseenter = function () {
@@ -15569,26 +15573,49 @@ function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const serverResponseBody = serverResponse.body;
 
-  // DEMO/TEST: Always return a test bid for Echo Ads demo
+  // DEMO/TEST: Return selected test creative for Echo Ads demo
   // TODO: Remove this hardcoded response in production
   if (true) {
-    (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.logWarn)('[GumGum] DEMO MODE: Returning hardcoded test bid for Echo Ads demo (ACME 300x250)');
-    return [{
-      ad: '<a href="https://example.com" target="_blank"><img src="https://gumgum.github.io/echoads/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
-      mediaType: _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER,
-      cpm: 2.50,
-      creativeId: 'acme-echo-demo',
-      currency: 'USD',
-      height: 250,
-      width: 300,
-      netRevenue: true,
-      requestId: bidRequest.id,
-      ttl: TIME_TO_LIVE,
-      meta: {
-        advertiserDomains: ['example.com'],
-        mediaType: _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER
-      }
-    }];
+    // Check if a test creative has been selected from the demo UI
+    const selectedCreative = typeof window !== 'undefined' && window.selectedTestCreative || null;
+    if (selectedCreative) {
+      (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.logWarn)('[GumGum] DEMO MODE: Returning test bid for Echo Ads demo (' + selectedCreative.name + ')');
+      return [{
+        ad: selectedCreative.creative,
+        mediaType: _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER,
+        cpm: 2.50,
+        creativeId: selectedCreative.id,
+        currency: 'USD',
+        height: selectedCreative.height,
+        width: selectedCreative.width,
+        netRevenue: true,
+        requestId: bidRequest.id,
+        ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: ['example.com'],
+          mediaType: _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER
+        }
+      }];
+    } else {
+      // Fallback to default ACME creative if no creative is selected
+      (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.logWarn)('[GumGum] DEMO MODE: Returning default test bid for Echo Ads demo (ACME 300x250)');
+      return [{
+        ad: '<a href="https://example.com" target="_blank"><img src="https://gumgum.github.io/echoads/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
+        mediaType: _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER,
+        cpm: 2.50,
+        creativeId: 'acme-echo-demo',
+        currency: 'USD',
+        height: 250,
+        width: 300,
+        netRevenue: true,
+        requestId: bidRequest.id,
+        ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: ['example.com'],
+          mediaType: _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER
+        }
+      }];
+    }
   }
   // removed by dead control flow
 

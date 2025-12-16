@@ -10,7 +10,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Echo Ads - GumGum Demo</title>
-  <script async src="prebid.js"></script>
+  <script src="prebid.js"></script>
   <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
 
   <style>
@@ -239,11 +239,13 @@
     // Manual trigger
     function manualTrigger() {
       logEvent('Manual trigger button clicked');
-      if (pbjs.echoAds) {
-        pbjs.echoAds.trigger();
-      } else {
-        logEvent('ERROR: Echo Ads module not loaded');
-      }
+      pbjs.que.push(function() {
+        if (pbjs.echoAds) {
+          pbjs.echoAds.trigger();
+        } else {
+          logEvent('ERROR: Echo Ads module not loaded');
+        }
+      });
     }
 
     // Clear frequency caps
@@ -285,6 +287,69 @@
     // Update frequency display immediately and then every second
     updateFrequencyDisplay();
     setInterval(updateFrequencyDisplay, 1000);
+
+    // Creative management
+    let availableCreatives = [];
+    let selectedCreative = null;
+
+    // Load available creatives from JSON file
+    function loadCreatives() {
+      fetch('test-creatives/creatives.json')
+        .then(response => response.json())
+        .then(creatives => {
+          availableCreatives = creatives;
+          const selector = document.getElementById('creative-selector');
+
+          // Clear loading message
+          selector.innerHTML = '';
+
+          // Add options for each creative
+          creatives.forEach((creative, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = creative.name;
+            selector.appendChild(option);
+          });
+
+          // Select the first creative by default
+          if (creatives.length > 0) {
+            selector.value = '0';
+            selectCreative();
+          }
+
+          logEvent('Loaded ' + creatives.length + ' test creative(s)');
+        })
+        .catch(error => {
+          logEvent('ERROR: Failed to load creatives - ' + error.message);
+          const selector = document.getElementById('creative-selector');
+          selector.innerHTML = '<option value="">Error loading creatives</option>';
+        });
+    }
+
+    // Handle creative selection
+    function selectCreative() {
+      const selector = document.getElementById('creative-selector');
+      const index = parseInt(selector.value);
+
+      if (isNaN(index) || index < 0 || index >= availableCreatives.length) {
+        return;
+      }
+
+      selectedCreative = availableCreatives[index];
+
+      // Update info display
+      const infoEl = document.getElementById('creative-info');
+      infoEl.innerHTML = '<strong>Type:</strong> ' + selectedCreative.type +
+                        ' | <strong>Size:</strong> ' + selectedCreative.width + 'x' + selectedCreative.height;
+
+      // Store selected creative ID in window for gumgumBidAdapter to access
+      window.selectedTestCreative = selectedCreative;
+
+      logEvent('Selected creative: ' + selectedCreative.name);
+    }
+
+    // Load creatives on page load
+    loadCreatives();
 
     // Reset
     function resetEchoAds() {
@@ -396,6 +461,17 @@
       </div>
       <button onclick="manualTrigger()">Manual Trigger Echo Ad</button>
       <button onclick="clearFrequencyCaps()">Clear Frequency Caps</button>
+    </div>
+
+    <div class="controls">
+      <h3>Test Creative</h3>
+      <div style="margin-bottom: 15px;">
+        <label for="creative-selector" style="display: block; margin-bottom: 5px;">Select Creative:</label>
+        <select id="creative-selector" onchange="selectCreative()" style="width: 100%; padding: 8px; font-size: 14px;">
+          <option value="">Loading creatives...</option>
+        </select>
+      </div>
+      <div id="creative-info" style="font-size: 12px; color: #666; margin-top: 10px;"></div>
     </div>
 
     <h2>Current Configuration</h2>

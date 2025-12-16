@@ -512,12 +512,19 @@ function showOverlay() {
   // Create ad container
   const adContainer = document.createElement('div');
   adContainer.id = moduleConfig.adUnit.code;
+
+  // Set min dimensions based on bid size to prevent collapse with third-party tags
+  const minWidth = cachedBid.width || 300;
+  const minHeight = cachedBid.height || 250;
+
   adContainer.style.cssText = `
     position: relative;
     background: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    min-width: ${minWidth}px;
+    min-height: ${minHeight}px;
   `;
 
   // Render the ad first - insert HTML directly
@@ -546,12 +553,13 @@ function showOverlay() {
       line-height: 28px;
       text-align: center;
       cursor: pointer;
-      z-index: 1001;
+      z-index: 2147483647;
       box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      pointer-events: auto;
     `;
 
     // Add hover effect

@@ -584,26 +584,50 @@ function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
 
-  // DEMO/TEST: Always return a test bid for Echo Ads demo
+  // DEMO/TEST: Return selected test creative for Echo Ads demo
   // TODO: Remove this hardcoded response in production
   if (true) {
-    logWarn('[GumGum] DEMO MODE: Returning hardcoded test bid for Echo Ads demo (ACME 300x250)');
-    return [{
-      ad: '<a href="https://example.com" target="_blank"><img src="https://gumgum.github.io/echoads/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
-      mediaType: BANNER,
-      cpm: 2.50,
-      creativeId: 'acme-echo-demo',
-      currency: 'USD',
-      height: 250,
-      width: 300,
-      netRevenue: true,
-      requestId: bidRequest.id,
-      ttl: TIME_TO_LIVE,
-      meta: {
-        advertiserDomains: ['example.com'],
-        mediaType: BANNER
-      }
-    }];
+    // Check if a test creative has been selected from the demo UI
+    const selectedCreative = (typeof window !== 'undefined' && window.selectedTestCreative) || null;
+
+    if (selectedCreative) {
+      logWarn('[GumGum] DEMO MODE: Returning test bid for Echo Ads demo (' + selectedCreative.name + ')');
+      return [{
+        ad: selectedCreative.creative,
+        mediaType: BANNER,
+        cpm: 2.50,
+        creativeId: selectedCreative.id,
+        currency: 'USD',
+        height: selectedCreative.height,
+        width: selectedCreative.width,
+        netRevenue: true,
+        requestId: bidRequest.id,
+        ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: ['example.com'],
+          mediaType: BANNER
+        }
+      }];
+    } else {
+      // Fallback to default ACME creative if no creative is selected
+      logWarn('[GumGum] DEMO MODE: Returning default test bid for Echo Ads demo (ACME 300x250)');
+      return [{
+        ad: '<a href="https://example.com" target="_blank"><img src="https://gumgum.github.io/echoads/creatives/acme.png" width="300" height="250" border="0" alt="ACME Products" style="display:block;"/></a>',
+        mediaType: BANNER,
+        cpm: 2.50,
+        creativeId: 'acme-echo-demo',
+        currency: 'USD',
+        height: 250,
+        width: 300,
+        netRevenue: true,
+        requestId: bidRequest.id,
+        ttl: TIME_TO_LIVE,
+        meta: {
+          advertiserDomains: ['example.com'],
+          mediaType: BANNER
+        }
+      }];
+    }
   }
 
   if (!serverResponseBody || serverResponseBody.err) {
