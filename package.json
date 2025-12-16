@@ -20,7 +20,8 @@
   "scripts": {
     "serve": "gulp serve",
     "test": "gulp test",
-    "lint": "gulp lint"
+    "lint": "gulp lint",
+    "echoads": "npx gulp build-bundle-dev --modules=echoAdsModule,gumgumBidAdapter --nolint && cp build/dev/prebid.js echoAdsDemo/prebid.js && cd echoAdsDemo && python3 -m http.server 8080"
   },
   "repository": {
     "type": "git",
