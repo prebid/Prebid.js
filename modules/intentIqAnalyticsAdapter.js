@@ -296,17 +296,19 @@ export function preparePayload(data) {
   }
   prepareData(data, result);
 
-  if (!reportList[result.placementId] || !reportList[result.placementId][result.prebidAuctionId]) {
-    reportList[result.placementId] = reportList[result.placementId]
-      ? { ...reportList[result.placementId], [result.prebidAuctionId]: 1 }
-      : { [result.prebidAuctionId]: 1 };
-    cleanReportsID = setTimeout(() => {
-      if (cleanReportsID) clearTimeout(cleanReportsID);
-      restoreReportList();
-    }, 1500); // clear object in 1.5 second after defining reporting list
-  } else {
-    logError('Duplication detected, report will be not sent');
-    return;
+  if (shouldSubscribeOnGAM()) {
+    if (!reportList[result.placementId] || !reportList[result.placementId][result.prebidAuctionId]) {
+      reportList[result.placementId] = reportList[result.placementId]
+        ? { ...reportList[result.placementId], [result.prebidAuctionId]: 1 }
+        : { [result.prebidAuctionId]: 1 };
+      cleanReportsID = setTimeout(() => {
+        if (cleanReportsID) clearTimeout(cleanReportsID);
+        restoreReportList();
+      }, 1500); // clear object in 1.5 second after defining reporting list
+    } else {
+      logError('Duplication detected, report will be not sent');
+      return;
+    }
   }
 
   fillEidsData(result);
