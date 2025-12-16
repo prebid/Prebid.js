@@ -514,6 +514,7 @@ export const intentIqIdSubmodule = {
     url = appendSPData(url, firstPartyData)
     url += '&source=' + PREBID;
     url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource
+    url += '&abtg=' + encodeURIComponent(actualABGroup)
 
     // Add vrref and fui to the URL
     url = appendVrrefAndFui(url, configParams.domainName);
