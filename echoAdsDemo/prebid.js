@@ -14297,6 +14297,8 @@ const RENDERER = "/******/ (() => { // webpackBootstrap\n/******/ \t\"use strict
 /* harmony import */ var _src_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../src/utils.js */ "./src/utils.js");
 /* harmony import */ var _src_events_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../src/events.js */ "./src/events.js");
 /* harmony import */ var _src_constants_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../src/constants.js */ "./src/constants.js");
+/* harmony import */ var _src_utils_winDimensions_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../src/utils/winDimensions.js */ "./src/utils/winDimensions.js");
+/* harmony import */ var _src_storageManager_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../src/storageManager.js */ "./src/storageManager.js");
 
 /**
  * Echo Ads Module
@@ -14317,8 +14319,15 @@ const RENDERER = "/******/ (() => { // webpackBootstrap\n/******/ \t\"use strict
 
 
 
+
 const MODULE_NAME = 'echoAds';
 const VERSION = '1.0.0';
+
+// Storage manager
+const storage = (0,_src_storageManager_js__WEBPACK_IMPORTED_MODULE_6__.getStorageManager)({
+  moduleType: 'core',
+  moduleName: MODULE_NAME
+});
 
 // Module state
 let moduleConfig = null;
@@ -14541,7 +14550,9 @@ function handleScroll() {
   });
 }
 function calculateScrollDepth() {
-  const windowHeight = window.innerHeight;
+  const {
+    height: windowHeight
+  } = (0,_src_utils_winDimensions_js__WEBPACK_IMPORTED_MODULE_5__.getWindowDimensions)();
   const documentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   const scrollableHeight = documentHeight - windowHeight;
@@ -14666,11 +14677,10 @@ function checkFrequencyCap() {
     return true; // No frequency cap configured
   }
   const freq = moduleConfig.display.frequency;
-  const now = Date.now();
   try {
     // Check session cap
     if (freq.maxPerSession) {
-      const sessionCount = parseInt(sessionStorage.getItem(STORAGE_KEY_SESSION) || '0');
+      const sessionCount = parseInt(storage.getDataFromSessionStorage(STORAGE_KEY_SESSION) || '0');
       if (sessionCount >= freq.maxPerSession) {
         (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_2__.logWarn)("".concat(MODULE_NAME, ": Session frequency cap reached (").concat(sessionCount, "/").concat(freq.maxPerSession, ")"));
         return false;
@@ -14679,7 +14689,7 @@ function checkFrequencyCap() {
 
     // Check daily cap
     if (freq.maxPerDay) {
-      const dailyData = localStorage.getItem(STORAGE_KEY_DAILY);
+      const dailyData = storage.getDataFromLocalStorage(STORAGE_KEY_DAILY);
       if (dailyData) {
         const {
           date,
@@ -14710,14 +14720,14 @@ function updateFrequencyCap() {
   try {
     // Update session count
     if (freq.maxPerSession) {
-      const sessionCount = parseInt(sessionStorage.getItem(STORAGE_KEY_SESSION) || '0');
-      sessionStorage.setItem(STORAGE_KEY_SESSION, (sessionCount + 1).toString());
+      const sessionCount = parseInt(storage.getDataFromSessionStorage(STORAGE_KEY_SESSION) || '0');
+      storage.setDataInSessionStorage(STORAGE_KEY_SESSION, (sessionCount + 1).toString());
     }
 
     // Update daily count
     if (freq.maxPerDay) {
       const today = new Date().toDateString();
-      const dailyData = localStorage.getItem(STORAGE_KEY_DAILY);
+      const dailyData = storage.getDataFromLocalStorage(STORAGE_KEY_DAILY);
       let count = 1;
       if (dailyData) {
         const {
@@ -14728,14 +14738,14 @@ function updateFrequencyCap() {
           count = prevCount + 1;
         }
       }
-      localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify({
+      storage.setDataInLocalStorage(STORAGE_KEY_DAILY, JSON.stringify({
         date: today,
         count
       }));
     }
 
     // Update last shown timestamp
-    localStorage.setItem(STORAGE_KEY_LAST_SHOWN, Date.now().toString());
+    storage.setDataInLocalStorage(STORAGE_KEY_LAST_SHOWN, Date.now().toString());
   } catch (e) {
     (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_2__.logError)("".concat(MODULE_NAME, ": Error updating frequency cap"), e);
   }
@@ -15575,9 +15585,10 @@ function interpretResponse(serverResponse, bidRequest) {
 
   // DEMO/TEST: Return selected test creative for Echo Ads demo
   // TODO: Remove this hardcoded response in production
-  if (true) {
+  const isDemoMode = typeof window !== 'undefined' && window.selectedTestCreative;
+  if (isDemoMode) {
     // Check if a test creative has been selected from the demo UI
-    const selectedCreative = typeof window !== 'undefined' && window.selectedTestCreative || null;
+    const selectedCreative = window.selectedTestCreative;
     if (selectedCreative) {
       (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.logWarn)('[GumGum] DEMO MODE: Returning test bid for Echo Ads demo (' + selectedCreative.name + ')');
       return [{
@@ -15617,38 +15628,109 @@ function interpretResponse(serverResponse, bidRequest) {
       }];
     }
   }
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
+  if (!serverResponseBody || serverResponseBody.err) {
+    const data = bidRequest.data || {};
+    const id = data.si || data.ni || data.t || data.pubId;
+    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
+    invalidRequestIds[id] = {
+      productId: data.pi,
+      timestamp: new Date().getTime()
+    };
+    setTimeout(() => {
+      !!invalidRequestIds[id] && delete invalidRequestIds[id];
+    }, delayTime);
+    (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.logWarn)("[GumGum] Please check the implementation for ".concat(id));
+  }
+  const defaultResponse = {
+    ad: {
+      price: 0,
+      id: 0,
+      markup: '',
+      width: 0,
+      height: 0
+    },
+    pag: {
+      pvid: 0
+    },
+    meta: {
+      adomain: [],
+      mediaType: ''
+    }
+  };
+  const {
+    ad: {
+      price: cpm,
+      id: creativeId,
+      markup,
+      cur,
+      width: responseWidth,
+      height: responseHeight,
+      maxw,
+      maxh
+    },
+    cw: wrapper,
+    pag: {
+      pvid
+    },
+    jcsi,
+    meta: {
+      adomain: advertiserDomains,
+      mediaType: type
+    }
+  } = Object.assign(defaultResponse, serverResponseBody);
+  const data = bidRequest.data || {};
+  const product = data.pi;
+  const mediaType = product === 6 || product === 7 ? _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.VIDEO : _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.BANNER;
+  const isTestUnit = product === 3 && data.si === 9;
+  const metaData = {
+    advertiserDomains: advertiserDomains || [],
+    mediaType: type || mediaType
+  };
+  let sizes = (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.parseSizesInput)(bidRequest.sizes);
+  if (maxw && maxh) {
+    sizes = ["".concat(maxw, "x").concat(maxh)];
+  } else if (product === 5 && sizes.includes('1x1')) {
+    sizes = ['1x1'];
+    // added logic for in-slot multi-szie
+  } else if (product === 2 && sizes.includes('1x1') || product === 3) {
+    const requestSizesThatMatchResponse = bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
+      const [width, height] = current;
+      if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
+      return result;
+    }, []) || [];
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : (0,_src_utils_js__WEBPACK_IMPORTED_MODULE_3__.parseSizesInput)(bidRequest.sizes);
+  }
+  const [width, height] = sizes[0].split('x');
+  if (jcsi) {
+    serverResponseBody.jcsi = JCSI;
+  }
 
   // update Page View ID from server response
-  // removed by dead control flow
-
-  // removed by dead control flow
-
-  // removed by dead control flow
-
+  pageViewId = pvid;
+  if (creativeId) {
+    bidResponses.push(_objectSpread(_objectSpread({
+      // dealId: DEAL_ID,
+      // referrer: REFERER,
+      ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, {
+        bidRequest
+      })) : markup
+    }, mediaType === _src_mediaTypes_js__WEBPACK_IMPORTED_MODULE_2__.VIDEO && {
+      ad: markup,
+      vastXml: markup
+    }), {}, {
+      mediaType,
+      cpm: isTestUnit ? 0.1 : cpm,
+      creativeId,
+      currency: cur || 'USD',
+      height,
+      netRevenue: true,
+      requestId: bidRequest.id,
+      ttl: TIME_TO_LIVE,
+      width,
+      meta: metaData
+    }));
+  }
+  return bidResponses;
 }
 
 /**

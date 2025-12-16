@@ -586,9 +586,10 @@ function interpretResponse(serverResponse, bidRequest) {
 
   // DEMO/TEST: Return selected test creative for Echo Ads demo
   // TODO: Remove this hardcoded response in production
-  if (true) {
+  const isDemoMode = (typeof window !== 'undefined' && window.selectedTestCreative);
+  if (isDemoMode) {
     // Check if a test creative has been selected from the demo UI
-    const selectedCreative = (typeof window !== 'undefined' && window.selectedTestCreative) || null;
+    const selectedCreative = window.selectedTestCreative;
 
     if (selectedCreative) {
       logWarn('[GumGum] DEMO MODE: Returning test bid for Echo Ads demo (' + selectedCreative.name + ')');

@@ -12,14 +12,18 @@
  */
 
 import { config } from '../../src/config.js';
-import { getHook } from '../../src/hook.js';
-import { logInfo, logWarn, logError, deepAccess, getWindowTop } from '../../src/utils.js';
+import { logInfo, logWarn, logError } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
+import { getWindowDimensions } from '../../src/utils/winDimensions.js';
+import { getStorageManager } from '../../src/storageManager.js';
 
 const MODULE_NAME = 'echoAds';
 const VERSION = '1.0.0';
+
+// Storage manager
+const storage = getStorageManager({ moduleType: 'core', moduleName: MODULE_NAME });
 
 // Module state
 let moduleConfig = null;
@@ -252,7 +256,7 @@ function handleScroll() {
 }
 
 function calculateScrollDepth() {
-  const windowHeight = window.innerHeight;
+  const { height: windowHeight } = getWindowDimensions();
   const documentHeight = Math.max(
     document.body.scrollHeight,
     document.documentElement.scrollHeight
@@ -383,12 +387,11 @@ function checkFrequencyCap() {
   }
 
   const freq = moduleConfig.display.frequency;
-  const now = Date.now();
 
   try {
     // Check session cap
     if (freq.maxPerSession) {
-      const sessionCount = parseInt(sessionStorage.getItem(STORAGE_KEY_SESSION) || '0');
+      const sessionCount = parseInt(storage.getDataFromSessionStorage(STORAGE_KEY_SESSION) || '0');
       if (sessionCount >= freq.maxPerSession) {
         logWarn(`${MODULE_NAME}: Session frequency cap reached (${sessionCount}/${freq.maxPerSession})`);
         return false;
@@ -397,7 +400,7 @@ function checkFrequencyCap() {
 
     // Check daily cap
     if (freq.maxPerDay) {
-      const dailyData = localStorage.getItem(STORAGE_KEY_DAILY);
+      const dailyData = storage.getDataFromLocalStorage(STORAGE_KEY_DAILY);
       if (dailyData) {
         const { date, count } = JSON.parse(dailyData);
         const today = new Date().toDateString();
@@ -428,14 +431,14 @@ function updateFrequencyCap() {
   try {
     // Update session count
     if (freq.maxPerSession) {
-      const sessionCount = parseInt(sessionStorage.getItem(STORAGE_KEY_SESSION) || '0');
-      sessionStorage.setItem(STORAGE_KEY_SESSION, (sessionCount + 1).toString());
+      const sessionCount = parseInt(storage.getDataFromSessionStorage(STORAGE_KEY_SESSION) || '0');
+      storage.setDataInSessionStorage(STORAGE_KEY_SESSION, (sessionCount + 1).toString());
     }
 
     // Update daily count
     if (freq.maxPerDay) {
       const today = new Date().toDateString();
-      const dailyData = localStorage.getItem(STORAGE_KEY_DAILY);
+      const dailyData = storage.getDataFromLocalStorage(STORAGE_KEY_DAILY);
       let count = 1;
 
       if (dailyData) {
@@ -445,11 +448,11 @@ function updateFrequencyCap() {
         }
       }
 
-      localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify({ date: today, count }));
+      storage.setDataInLocalStorage(STORAGE_KEY_DAILY, JSON.stringify({ date: today, count }));
     }
 
     // Update last shown timestamp
-    localStorage.setItem(STORAGE_KEY_LAST_SHOWN, Date.now().toString());
+    storage.setDataInLocalStorage(STORAGE_KEY_LAST_SHOWN, Date.now().toString());
   } catch (e) {
     logError(`${MODULE_NAME}: Error updating frequency cap`, e);
   }
