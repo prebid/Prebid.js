@@ -1617,6 +1617,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
     );
 
+    expect(request.url).to.contain(`abtg=${usedGroup}`);
     expect(request.url).to.contain(`ABTestingConfigurationSource=${ABTestingConfigurationSource}`);
     expect(request.url).to.contain(`testGroup=${usedGroup}`);
     expect(callBackSpy.calledOnce).to.be.true;
