@@ -496,6 +496,14 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
+
+    // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
+    if (userObject.ext && isPlainObject(userObject.ext)) {
+      outBoundBidRequest.user.ext = {
+        ...outBoundBidRequest.user.ext,
+        ...userObject.ext
+      };
+    }
   };
 
   return outBoundBidRequest;
