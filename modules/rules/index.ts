@@ -174,7 +174,7 @@ function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, de
 
 const schemaEvaluators = {
   percent: (args, context) => () => {
-    const auctionId = context.bid?.auctionId;
+    const auctionId = context.auctiondId || context.bid?.auctionId;
     return dep.getGlobalRandom(auctionId) * 100 < args[0]
   },
   adUnitCode: (args, context) => () => context.adUnit.code,
