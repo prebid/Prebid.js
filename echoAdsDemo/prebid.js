@@ -1,5 +1,5 @@
 /* prebid.js v10.19.0-pre
-Updated: 2025-12-16
+Updated: 2025-12-17
 Modules: echoAdsModule, gumgumBidAdapter */
 
 if (!window.pbjs || !window.pbjs.libLoaded) {

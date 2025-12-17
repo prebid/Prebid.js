@@ -109,6 +109,99 @@
       color: white;
       text-align: center;
     }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    .tag-input-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .tag-input-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .tag-input-section button {
+      margin-top: 10px;
+    }
+
+    .tag-input-section button.primary,
+    .tag-input-section button.save,
+    .tag-input-section button.save.primary {
+      background: #ff6b35;
+      color: white;
+    }
+    .tag-input-section button.primary:hover,
+    .tag-input-section button.save:hover,
+    .tag-input-section button.save.primary:hover {
+      background: #e55a2b;
+    }
+    .tag-input-section button.secondary {
+      background: #6c757d;
+    }
+
+    .tag-input-section button.secondary:hover {
+      background: #5a6268;
+    }
+
+    .tag-input-section input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    .tag-input-section button.save {
+      background: #007bff;
+    }
+
+    .tag-input-section button.save:hover {
+      background: #0056b3;
+    }
+
+    .save-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      display: none;
+    }
+
+    .save-message {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .save-message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .save-message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
   </style>
 
   <script>
@@ -291,6 +384,7 @@
     // Creative management
     let availableCreatives = [];
     let selectedCreative = null;
+    let pastedTagCreative = null;
 
     // Load available creatives from JSON file
     function loadCreatives() {
@@ -311,8 +405,8 @@
             selector.appendChild(option);
           });
 
-          // Select the first creative by default
-          if (creatives.length > 0) {
+          // Select the first creative by default (only if no pasted tag is active)
+          if (creatives.length > 0 && !pastedTagCreative) {
             selector.value = '0';
             selectCreative();
           }
@@ -335,6 +429,24 @@
         return;
       }
 
+      // Clear pasted tag when selecting from JSON
+      pastedTagCreative = null;
+      const tagInput = document.getElementById('custom-tag-input');
+      if (tagInput) {
+        tagInput.value = '';
+      }
+      const nameInput = document.getElementById('creative-name-input');
+      if (nameInput) {
+        nameInput.value = '';
+      }
+      updatePastedTagInfo();
+
+      // Hide save section
+      const saveSection = document.querySelector('.save-section');
+      if (saveSection) {
+        saveSection.style.display = 'none';
+      }
+
       selectedCreative = availableCreatives[index];
 
       // Update info display
@@ -346,6 +458,319 @@
       window.selectedTestCreative = selectedCreative;
 
       logEvent('Selected creative: ' + selectedCreative.name);
+    }
+
+    // Extract dimensions from HTML tag
+    function extractDimensionsFromTag(html) {
+      // Try to find width and height attributes
+      const widthMatch = html.match(/width\s*=\s*["']?(\d+)["']?/i) || html.match(/width:\s*(\d+)/i);
+      const heightMatch = html.match(/height\s*=\s*["']?(\d+)["']?/i) || html.match(/height:\s*(\d+)/i);
+      
+      let width = 300; // default
+      let height = 250; // default
+      
+      if (widthMatch) {
+        width = parseInt(widthMatch[1]);
+      }
+      if (heightMatch) {
+        height = parseInt(heightMatch[1]);
+      }
+      
+      return { width, height };
+    }
+
+    // Use pasted tag as creative
+    function usePastedTag() {
+      const tagInput = document.getElementById('custom-tag-input');
+      const tagHtml = tagInput.value.trim();
+
+      if (!tagHtml) {
+        logEvent('ERROR: No tag pasted. Please paste an ad tag first.');
+        return;
+      }
+
+      // Extract dimensions from the tag
+      const dimensions = extractDimensionsFromTag(tagHtml);
+
+      // Create a creative object from the pasted tag
+      pastedTagCreative = {
+        id: 'pasted-tag-' + Date.now(),
+        name: 'Pasted Custom Tag (' + dimensions.width + 'x' + dimensions.height + ')',
+        type: 'third-party-tag',
+        width: dimensions.width,
+        height: dimensions.height,
+        creative: tagHtml
+      };
+
+      // Set as selected creative
+      selectedCreative = pastedTagCreative;
+      window.selectedTestCreative = pastedTagCreative;
+
+      // Update UI
+      updatePastedTagInfo();
+      const infoEl = document.getElementById('creative-info');
+      infoEl.innerHTML = '<strong>Type:</strong> ' + pastedTagCreative.type +
+                        ' | <strong>Size:</strong> ' + pastedTagCreative.width + 'x' + pastedTagCreative.height +
+                        ' | <strong>Source:</strong> Pasted Tag';
+
+      // Disable selector to show pasted tag is active
+      const selector = document.getElementById('creative-selector');
+      if (selector) {
+        selector.disabled = true;
+        selector.style.opacity = '0.5';
+      }
+
+      // Pre-fill name input if empty
+      const nameInput = document.getElementById('creative-name-input');
+      if (nameInput && !nameInput.value.trim()) {
+        nameInput.value = 'Custom Tag ' + dimensions.width + 'x' + dimensions.height;
+      }
+
+      // Show save section
+      const saveSection = document.querySelector('.save-section');
+      if (saveSection) {
+        saveSection.style.display = 'block';
+      }
+
+      logEvent('✓ Using pasted custom tag (' + dimensions.width + 'x' + dimensions.height + ')');
+    }
+
+    // Clear pasted tag and return to JSON creatives
+    function clearPastedTag() {
+      const tagInput = document.getElementById('custom-tag-input');
+      if (tagInput) {
+        tagInput.value = '';
+      }
+
+      const nameInput = document.getElementById('creative-name-input');
+      if (nameInput) {
+        nameInput.value = '';
+      }
+
+      pastedTagCreative = null;
+      updatePastedTagInfo();
+
+      // Hide save section
+      const saveSection = document.querySelector('.save-section');
+      if (saveSection) {
+        saveSection.style.display = 'none';
+      }
+
+      // Clear save message
+      const saveMessageEl = document.getElementById('save-message');
+      if (saveMessageEl) {
+        saveMessageEl.style.display = 'none';
+        saveMessageEl.textContent = '';
+      }
+
+      // Re-enable selector
+      const selector = document.getElementById('creative-selector');
+      if (selector) {
+        selector.disabled = false;
+        selector.style.opacity = '1';
+      }
+
+      // Select first JSON creative if available
+      if (availableCreatives.length > 0) {
+        selector.value = '0';
+        selectCreative();
+      } else {
+        selectedCreative = null;
+        window.selectedTestCreative = null;
+        const infoEl = document.getElementById('creative-info');
+        if (infoEl) {
+          infoEl.innerHTML = '';
+        }
+      }
+
+      logEvent('Cleared pasted tag - using JSON creatives');
+    }
+
+    // Update pasted tag info display
+    function updatePastedTagInfo() {
+      const infoEl = document.getElementById('pasted-tag-info');
+      if (infoEl) {
+        if (pastedTagCreative) {
+          infoEl.innerHTML = '<strong style="color: #28a745;">✓ Active:</strong> Using pasted tag (' + 
+                            pastedTagCreative.width + 'x' + pastedTagCreative.height + ')';
+        } else {
+          infoEl.innerHTML = '';
+        }
+      }
+    }
+
+    // Generate a unique ID for a creative
+    function generateCreativeId(name) {
+      const baseId = name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const timestamp = Date.now();
+      return baseId + '-' + timestamp;
+    }
+
+    // Save creative to JSON (adds to list and provides download)
+    function saveCreativeToJSON() {
+      const nameInput = document.getElementById('creative-name-input');
+      const tagInput = document.getElementById('custom-tag-input');
+      const saveMessageEl = document.getElementById('save-message');
+
+      // Validate inputs
+      const creativeName = nameInput.value.trim();
+      const tagHtml = tagInput.value.trim();
+
+      if (!creativeName) {
+        showSaveMessage('Please enter a name for the creative.', 'error');
+        return;
+      }
+
+      if (!tagHtml) {
+        showSaveMessage('Please paste an ad tag first.', 'error');
+        return;
+      }
+
+      // Extract dimensions
+      const dimensions = extractDimensionsFromTag(tagHtml);
+
+      // Create creative object
+      const newCreative = {
+        id: generateCreativeId(creativeName),
+        name: creativeName + ' (' + dimensions.width + 'x' + dimensions.height + ')',
+        type: 'third-party-tag',
+        width: dimensions.width,
+        height: dimensions.height,
+        creative: tagHtml
+      };
+
+      // Check if creative with same name already exists
+      let newIndex;
+      const existingIndex = availableCreatives.findIndex(c => c.name === newCreative.name);
+      if (existingIndex !== -1) {
+        if (!confirm('A creative with this name already exists. Do you want to replace it?')) {
+          return;
+        }
+        availableCreatives[existingIndex] = newCreative;
+        newIndex = existingIndex;
+      } else {
+        // Add to the list
+        availableCreatives.push(newCreative);
+        newIndex = availableCreatives.length - 1;
+      }
+
+      // Update dropdown
+      updateCreativeSelector();
+
+      // Select the newly saved creative
+      const selector = document.getElementById('creative-selector');
+      selector.value = newIndex.toString();
+      selectCreative();
+
+      // Clear pasted tag state
+      pastedTagCreative = null;
+      updatePastedTagInfo();
+      const selectorEl = document.getElementById('creative-selector');
+      if (selectorEl) {
+        selectorEl.disabled = false;
+        selectorEl.style.opacity = '1';
+      }
+
+      // Try to save to server first
+      saveToServer(newCreative).then(serverSuccess => {
+        if (serverSuccess) {
+          // Server save succeeded - no need to download
+          showSaveMessage('Creative saved successfully to server! It has been added to the dropdown and will be available for all users.', 'success');
+        } else {
+          // Server save failed - download JSON file as fallback
+          downloadUpdatedJSON();
+          showSaveMessage('Creative saved successfully! It has been added to the dropdown. JSON file downloaded (server save unavailable).', 'success');
+        }
+        logEvent('✓ Saved creative: ' + newCreative.name);
+
+        // Clear the inputs
+        nameInput.value = '';
+        tagInput.value = '';
+      });
+    }
+
+    // Update the creative selector dropdown
+    function updateCreativeSelector() {
+      const selector = document.getElementById('creative-selector');
+      if (!selector) return;
+
+      // Clear existing options
+      selector.innerHTML = '';
+
+      // Add options for each creative
+      availableCreatives.forEach((creative, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = creative.name;
+        selector.appendChild(option);
+      });
+    }
+
+    // Download updated JSON file
+    function downloadUpdatedJSON() {
+      try {
+        const jsonString = JSON.stringify(availableCreatives, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'creatives.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        logEvent('ERROR: Failed to download JSON - ' + error.message);
+        showSaveMessage('Failed to download JSON file: ' + error.message, 'error');
+      }
+    }
+
+    // Try to save to server endpoint
+    function saveToServer(creative) {
+      return fetch('test-creatives/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          creatives: availableCreatives
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Server responded with error: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          logEvent('✓ Creative saved to server successfully');
+          return true;
+        } else {
+          throw new Error(data.error || 'Server save failed');
+        }
+      })
+      .catch((error) => {
+        logEvent('⚠️ Server save failed: ' + error.message + ' - JSON will be downloaded instead');
+        return false;
+      });
+    }
+
+    // Show save message
+    function showSaveMessage(message, type) {
+      const saveMessageEl = document.getElementById('save-message');
+      if (saveMessageEl) {
+        saveMessageEl.textContent = message;
+        saveMessageEl.className = 'save-message ' + (type || 'success');
+        saveMessageEl.style.display = 'block';
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          saveMessageEl.style.display = 'none';
+        }, 5000);
+      }
     }
 
     // Load creatives on page load
@@ -441,13 +866,34 @@
 
     <div class="info-box">
       <strong>Demo Configuration</strong><br>
-      This demo uses a hardcoded bid response (ACME 300x250 creative) for testing purposes.<br>
+      This demo uses a hardcoded bid response for testing purposes. You can configure test creatives below.<br>
       In production, the GumGum adapter would fetch real bids using your zone credentials.
     </div>
 
-    <div class="status" id="status">
-      <strong>Event Log (last 15):</strong><br>
-      Loading...
+    <div class="controls">
+      <h3>Test Creative</h3>
+      <div style="margin-bottom: 15px;">
+        <label for="creative-selector" style="display: block; margin-bottom: 5px;">Select Creative:</label>
+        <select id="creative-selector" onchange="selectCreative()" style="width: 100%; padding: 8px; font-size: 14px;">
+          <option value="">Loading creatives...</option>
+        </select>
+      </div>
+      <div id="creative-info" style="font-size: 12px; color: #666; margin-top: 10px;"></div>
+      
+      <div class="tag-input-section">
+        <label for="custom-tag-input">Or Paste Custom Ad Tag:</label>
+        <textarea id="custom-tag-input" placeholder="Paste your ad tag HTML here..."></textarea>
+        <button class="primary" onclick="usePastedTag()">Use Pasted Tag</button>
+        <button onclick="clearPastedTag()" class="secondary" style="margin-left: 10px;">Clear & Use JSON Creatives</button>
+        <div id="pasted-tag-info" style="font-size: 12px; color: #666; margin-top: 10px;"></div>
+        
+        <div class="save-section">
+          <label for="creative-name-input">Save Creative Name:</label>
+          <input type="text" id="creative-name-input" placeholder="Enter a name for this creative (e.g., 'My Custom Banner')" />
+          <button onclick="saveCreativeToJSON()" class="save primary">Save to JSON</button>
+          <div id="save-message"></div>
+        </div>
+      </div>
     </div>
 
     <div class="controls">
@@ -464,14 +910,10 @@
     </div>
 
     <div class="controls">
-      <h3>Test Creative</h3>
-      <div style="margin-bottom: 15px;">
-        <label for="creative-selector" style="display: block; margin-bottom: 5px;">Select Creative:</label>
-        <select id="creative-selector" onchange="selectCreative()" style="width: 100%; padding: 8px; font-size: 14px;">
-          <option value="">Loading creatives...</option>
-        </select>
+      <h3>Logs</h3>
+      <div class="status" id="status">
+        Loading...
       </div>
-      <div id="creative-info" style="font-size: 12px; color: #666; margin-top: 10px;"></div>
     </div>
 
     <h2>Current Configuration</h2>
