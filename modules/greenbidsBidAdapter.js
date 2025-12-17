@@ -10,7 +10,7 @@ import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLin
  */
 
 const BIDDER_CODE = 'greenbids';
-const ENDPOINT_URL = 'https://hb.greenbids.ai';
+export const ENDPOINT_URL = 'https://hb.greenbids.ai';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
