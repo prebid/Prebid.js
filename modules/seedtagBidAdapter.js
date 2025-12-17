@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -53,12 +54,9 @@ function getBidFloor(bidRequest) {
 }
 
 const getConnectionType = () => {
-  const connection =
-    navigator.connection ||
-    navigator.mozConnection ||
-    navigator.webkitConnection ||
-    {};
-  switch (connection.type || connection.effectiveType) {
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type || connection?.effectiveType;
+  switch (connectionType) {
     case 'wifi':
     case 'ethernet':
       return deviceConnection.FIXED;
