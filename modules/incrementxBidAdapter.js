@@ -14,6 +14,33 @@ const ENDPOINT_URL = 'https://hb.incrementxserv.com/vzhbidder/bid';
 const DEFAULT_CURRENCY = 'USD';
 const CREATIVE_TTL = 300;
 
+// OUTSTREAM RENDERER
+function createRenderer(bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: bid.slotBidId,
+    url: bid.rUrl,
+    config: rendererOptions,
+    adUnitCode: bid.adUnitCode,
+    loaded: false
+  });
+  try {
+    renderer.setRender(({ renderer, width, height, vastXml, adUnitCode }) => {
+      renderer.push(() => {
+        window.onetag.Player.init({
+          ...bid,
+          width,
+          height,
+          vastXml,
+          nodeId: adUnitCode,
+          config: renderer.getConfig()
+        });
+      });
+    });
+  } catch (e) { }
+
+  return renderer;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['incrx'],
@@ -158,33 +185,6 @@ export const spec = {
     }
 
     return [bid];
-
-    // OUTSTREAM RENDERER
-    function createRenderer(bid, rendererOptions = {}) {
-      const renderer = Renderer.install({
-        id: bid.slotBidId,
-        url: bid.rUrl,
-        config: rendererOptions,
-        adUnitCode: bid.adUnitCode,
-        loaded: false
-      });
-      try {
-        renderer.setRender(({ renderer, width, height, vastXml, adUnitCode }) => {
-          renderer.push(() => {
-            window.onetag.Player.init({
-              ...bid,
-              width,
-              height,
-              vastXml,
-              nodeId: adUnitCode,
-              config: renderer.getConfig()
-            });
-          });
-        });
-      } catch (e) { }
-
-      return renderer;
-    }
   }
 
 };
