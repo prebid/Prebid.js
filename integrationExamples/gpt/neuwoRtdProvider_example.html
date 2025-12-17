@@ -286,13 +286,84 @@
 
     <div>
         <h2>Neuwo Data in Bid Request</h2>
-        <p>The retrieved data from Neuwo API is injected into the bid request as OpenRTB (ORTB2)`site.content.data` and
-            `user.data`. Full bid request can be inspected in Developer Tools Console under
+        <p>The retrieved data from Neuwo API is injected into the bid request as OpenRTB (ORTB2)
+            <code>site.content.data</code> and
+            <code>user.data</code>. Full bid request can be inspected in Developer Tools Console under
             <code>INFO: NeuwoRTDModule injectIabCategories: post-injection bidsConfig</code>
         </p>
+        <h3>Neuwo Site Content Data</h3>
+        <pre id="neuwo-site-data" style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data.</pre>
+        <h3>Neuwo User Data</h3>
+        <pre id="neuwo-user-data" style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data.</pre>
+    </div>
+
+    <div>
+        <h2>Accessing Neuwo Data in JavaScript</h2>
+        <p>Listen to the <code>bidRequested</code> event to access the enriched ORTB2 data:</p>
+        <pre style="background: #f4f4f4; padding: 10px; overflow-x: auto;">
+pbjs.onEvent('bidRequested', function(bidRequest) {
+    const ortb2 = bidRequest.ortb2;
+    const neuwoSiteData = ortb2?.site?.content?.data?.find(d => d.name === 'www.neuwo.ai');
+    const neuwoUserData = ortb2?.user?.data?.find(d => d.name === 'www.neuwo.ai');
+    console.log('Neuwo data:', { siteContent: neuwoSiteData, user: neuwoUserData });
+});
+        </pre>
+        <p>After clicking "Update", the Neuwo data is stored in the global <code>neuwoData</code> variable. Open
+            Developer Tools Console to see the logged data.</p>
+        <p>For more information about accessing data retrieved from Neuwo API, see <a href="../../modules/neuwoRtdProvider.md">modules/neuwoRtdProvider.md</a>.</p>
     </div>
 
 </body>
+
+<script type="text/javascript">
+    // =====================================================
+    // How to access the Neuwo analysis results outside of Prebid.js
+    // =====================================================
+    var neuwoData = null; // Global variable to store Neuwo data for later use
+
+    pbjs.que.push(function() {
+        pbjs.onEvent('bidRequested', function(bidRequest) {
+            console.log('=== Neuwo Data Access: bidRequested Event ===');
+
+            // The ortb2 data is available directly on the bidRequest
+            if (bidRequest && bidRequest.ortb2) {
+                const ortb2 = bidRequest.ortb2;
+                console.log('Full ORTB2 from bidRequest:', ortb2);
+
+                // Extract Neuwo-specific data (from www.neuwo.ai provider)
+                const siteContentData = ortb2?.site?.content?.data;
+                const userData = ortb2?.user?.data;
+
+                // Filter to get only Neuwo data
+                const neuwoSiteData = siteContentData?.find(d => d.name === 'www.neuwo.ai');
+                const neuwoUserData = userData?.find(d => d.name === 'www.neuwo.ai');
+
+                // Store in global variable for later use
+                neuwoData = {
+                    siteContent: neuwoSiteData,
+                    user: neuwoUserData
+                };
+                console.log('Neuwo data stored in global "neuwoData" variable:', neuwoData);
+
+                // Update display elements on the page
+                const siteDataEl = document.getElementById('neuwo-site-data');
+                const userDataEl = document.getElementById('neuwo-user-data');
+                if (siteDataEl) {
+                    siteDataEl.textContent = neuwoSiteData
+                        ? JSON.stringify(neuwoSiteData, null, 2)
+                        : 'No Neuwo site content data found in response.';
+                }
+                if (userDataEl) {
+                    userDataEl.textContent = neuwoUserData
+                        ? JSON.stringify(neuwoUserData, null, 2)
+                        : 'No Neuwo user data found in response.';
+                }
+            } else {
+                console.warn('No ortb2 data found in bidRequest. This may indicate the RTD module has not enriched the bid request yet.');
+            }
+        });
+    });
+</script>
 
 <script type="text/javascript">
     const helper = document.getElementById('help');
