@@ -191,9 +191,10 @@ describe('Rules Module', function() {
       };
 
       sandbox.stub(Math, 'random').returns(0.5);
-      rulesModule.evaluateConfig(rulesJson);
+      const auctionId = 'test-auction-id';
+      rulesModule.evaluateConfig(rulesJson, auctionId);
 
-      expect(setLabelsStub.calledWith({ testAnalyticsKey: 'default-allow' })).to.be.true;
+      expect(setLabelsStub.calledWith({ [auctionId + '-testAnalyticsKey']: 'default-allow' })).to.be.true;
 
       setLabelsStub.resetHistory();
     });
@@ -202,20 +203,30 @@ describe('Rules Module', function() {
   describe('getGlobalRandom', function() {
     it('should return the same value for the same auctionId and call Math.random only once', function() {
       const auctionId = 'test-auction-id';
+      const otherAuctionId = 'other-auction-id';
       const mathRandomStub = sandbox.stub(Math, 'random').returns(0.42);
+      const auction1 = {auctionId: auctionId};
+      const auction2 = {auctionId: otherAuctionId};
+      const auctions = {
+        [auctionId]: auction1,
+        [otherAuctionId]: auction2
+      }
 
-      const result1 = rulesModule.dep.getGlobalRandom(auctionId);
-      const result2 = rulesModule.dep.getGlobalRandom(auctionId);
-      const result3 = rulesModule.dep.getGlobalRandom(auctionId);
+      const index = {
+        getAuction: ({auctionId}) => auctions[auctionId]
+      }
+
+      const result1 = rulesModule.dep.getGlobalRandom(auctionId, index);
+      const result2 = rulesModule.dep.getGlobalRandom(auctionId, index);
+      const result3 = rulesModule.dep.getGlobalRandom(auctionId, index);
 
       expect(result1).to.equal(0.42);
       expect(result2).to.equal(0.42);
       expect(result3).to.equal(0.42);
       expect(mathRandomStub.calledOnce).to.equal(true);
 
-      const otherAuctionId = 'other-auction-id';
       mathRandomStub.returns(0.99);
-      const result4 = rulesModule.dep.getGlobalRandom(otherAuctionId);
+      const result4 = rulesModule.dep.getGlobalRandom(otherAuctionId, index);
 
       expect(result4).to.equal(0.99);
       expect(mathRandomStub.calledTwice).to.equal(true);

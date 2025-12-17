@@ -246,7 +246,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       done.resolve();
 
       events.emit(EVENTS.AUCTION_END, getProperties());
-      bidsBackCallback(_adUnits, function () {
+      bidsBackCallback(_adUnits, auctionId, function () {
         try {
           if (_callback != null) {
             const bids = _bidsReceived.toArray()
@@ -481,7 +481,7 @@ export const addBidderRequests = hook('sync', function(bidderRequests) {
   this.dispatch.call(this.context, bidderRequests);
 }, 'addBidderRequests');
 
-export const bidsBackCallback = hook('async', function (adUnits, callback) {
+export const bidsBackCallback = hook('async', function (adUnits, auctionId, callback) {
   if (callback) {
     callback();
   }

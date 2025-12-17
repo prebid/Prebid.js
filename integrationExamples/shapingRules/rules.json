@@ -36,7 +36,7 @@
           ]
         },
         {
-          "weight": 100,
+          "weight": 2,
           "analyticsKey": "experiment-name-2",
           "version": "4567",
           "schema": [

@@ -554,7 +554,8 @@ const adapterManager = {
         return !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
           bid,
           ortb2,
-          adUnit: au
+          adUnit: au,
+          auctionId
         }))
       })
       incrementRequestsCounter(au.code);

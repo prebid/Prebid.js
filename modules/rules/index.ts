@@ -5,32 +5,35 @@ import { MODULE_TYPE_BIDDER } from "../../src/activities/modules.ts";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
 import { registerActivityControl } from "../../src/activities/rules.js";
 import { ajax } from "../../src/ajax.ts";
+import { AuctionIndex } from "../../src/auctionIndex.js";
+import { auctionManager } from "../../src/auctionManager.js";
 import { config } from "../../src/config.ts";
 import { getHook } from "../../src/hook.ts";
-import { logError, logInfo, logWarn } from "../../src/utils.ts";
+import { generateUUID, logError, logInfo, logWarn } from "../../src/utils.ts";
 import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
 const MODULE_NAME = 'shapingRules';
 
-const GLOBAL_RANDOM_STORE = new Map<string, number>();
+const GLOBAL_RANDOM_STORE = new WeakMap<{ auctionId: string }, number>();
 
 export const dep = {
   getGlobalRandom: getGlobalRandom
 };
 
-function getGlobalRandom(auctionId: string) {
+function getGlobalRandom(auctionId: string, auctionIndex: AuctionIndex = auctionManager.index) {
   if (!auctionId) {
     return Math.random();
   }
-  if (!GLOBAL_RANDOM_STORE.has(auctionId)) {
-    GLOBAL_RANDOM_STORE.set(auctionId, Math.random());
+  const auction = auctionIndex.getAuction({auctionId});
+  if (!GLOBAL_RANDOM_STORE.has(auction)) {
+    GLOBAL_RANDOM_STORE.set(auction, Math.random());
   }
-  return GLOBAL_RANDOM_STORE.get(auctionId);
+  return GLOBAL_RANDOM_STORE.get(auction);
 }
 
-let unregisterFunctions: Array<() => void> = [];
+let unregisterFunctions: { [key: string]: Array<() => void> } = {};
 
-let rulesConfig: ModuleConfig = {
+let moduleConfig: ModuleConfig = {
   endpoint: {
     method: 'GET',
     url: ''
@@ -44,6 +47,8 @@ let fetching = false;
 let rulesLoaded = false;
 
 const delayedAuctions = timeoutQueue();
+
+let rulesConfig: RulesConfig = null;
 
 interface ModuleConfig {
   endpoint?: {
@@ -92,7 +97,7 @@ interface RulesConfig {
   enabled: boolean;
 }
 
-export function evaluateConfig(config: RulesConfig) {
+export function evaluateConfig(config: RulesConfig, auctionId: string) {
   if (!config || !config.ruleSets) {
     logWarn(`${MODULE_NAME}: Invalid structure for rules engine`);
     return;
@@ -110,7 +115,7 @@ export function evaluateConfig(config: RulesConfig) {
   for (const ruleSet of stageRules) {
     const modelGroup = ruleSet.modelGroups?.find(group => group.selected);
     if (!modelGroup) continue;
-    evaluateRules(modelGroup.rules || [], modelGroup.schema || [], ruleSet.stage, modelGroup.analyticsKey, modelGroup.default);
+    evaluateRules(modelGroup.rules || [], modelGroup.schema || [], ruleSet.stage, modelGroup.analyticsKey, auctionId, modelGroup.default);
   }
 }
 
@@ -127,6 +132,7 @@ export function assignModelGroups(rulesets: RuleSet[]) {
     let randomValue = Math.random() * weightSum;
 
     for (const group of modelGroups) {
+      group.selected = false;
       // 100 is default weight if not specified
       const groupWeight = group.weight ?? 100;
       if (randomValue < groupWeight) {
@@ -142,10 +148,10 @@ export function assignModelGroups(rulesets: RuleSet[]) {
   }
 }
 
-function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
+function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, defaultRules?) {
   if (defaultRules) {
     for (const result of defaultRules) {
-      const registerResult = evaluateFunction(result.function, result.args || [], [], [], stage, analyticsKey);
+      const registerResult = evaluateFunction(result.function, result.args || [], [], [], stage, analyticsKey, auctionId);
       if (!registerResult) {
         logError(`${MODULE_NAME}: Unknown result function ${result.function}`);
         continue;
@@ -155,7 +161,7 @@ function evaluateRules(rules, schema, stage, analyticsKey, defaultRules?) {
   }
   for (const rule of rules) {
     for (const result of rule.results) {
-      const registerResult = evaluateFunction(result.function, result.args || [], schema, rule.conditions, stage, analyticsKey);
+      const registerResult = evaluateFunction(result.function, result.args || [], schema, rule.conditions, stage, analyticsKey, auctionId);
       if (!registerResult) {
         logError(`${MODULE_NAME}: Unknown result function ${result.function}`);
         continue;
@@ -248,7 +254,7 @@ const schemaEvaluators = {
 };
 
 export function evaluateSchema(func, args, context) {
-  const evaluators = { ...schemaEvaluators, ...rulesConfig.extraSchemaEvaluators };
+  const evaluators = { ...schemaEvaluators, ...moduleConfig.extraSchemaEvaluators };
   const evaluator = evaluators[func];
   if (evaluator) {
     return evaluator(args, context);
@@ -256,7 +262,7 @@ export function evaluateSchema(func, args, context) {
   return () => null;
 }
 
-function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
+function evaluateFunction(func, args, schema, conditions, stage, analyticsKey, auctionId) {
   switch (func) {
     case 'excludeBidders':
     case 'includeBidders':
@@ -267,6 +273,7 @@ function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
         }[stage];
         args.forEach(({bidders, analyticsValue, seatnonbid}) => {
           const unregister = registerActivityControl(activity, MODULE_NAME, (params) => {
+            if ((params.auctionId || params.bid?.auctionId) !== auctionId) return { allow: true };
             if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return { allow: true };
             let conditionMet = true;
             for (const [index, schemaEntry] of schema.entries()) {
@@ -285,19 +292,21 @@ function evaluateFunction(func, args, schema, conditions, stage, analyticsKey) {
             const allow = func === 'excludeBidders' ? !bidderIncluded : bidderIncluded;
 
             if (analyticsKey && analyticsValue) {
-              setLabels({ [analyticsKey]: analyticsValue });
+              setLabels({ [auctionId + '-' + analyticsKey]: analyticsValue });
             }
             if (!allow) {
               return { allow, reason: `Bidder ${params.bid?.bidder} excluded by rules module` };
             }
           });
-          unregisterFunctions.push(unregister);
+
+          unregisterFunctions[auctionId] = unregisterFunctions[auctionId] || [];
+          unregisterFunctions[auctionId].push(unregister);
         });
       }
     case 'logAtag':
       return () => {
         // @todo: is that enough?
-        setLabels({ [analyticsKey]: args.analyticsValue });
+        setLabels({ [auctionId + '-' + analyticsKey]: args.analyticsValue });
       }
     default:
       return () => null;
@@ -317,7 +326,7 @@ function evaluateCondition(condition, func) {
   }
 }
 
-export function fetchRules(endpoint = rulesConfig.endpoint) {
+export function fetchRules(endpoint = moduleConfig.endpoint) {
   if (fetching) {
     logWarn(`${MODULE_NAME}: A fetch is already occurring. Skipping.`);
     return;
@@ -330,9 +339,9 @@ export function fetchRules(endpoint = rulesConfig.endpoint) {
     success: (response: any) => {
       fetching = false;
       rulesLoaded = true;
+      rulesConfig = JSON.parse(response);
       delayedAuctions.resume();
       logInfo(`${MODULE_NAME}: Rules configuration fetched successfully.`);
-      evaluateConfig(JSON.parse(response));
     },
     error: () => {
       fetching = false;
@@ -340,8 +349,14 @@ export function fetchRules(endpoint = rulesConfig.endpoint) {
   }, null, { method: 'GET' });
 }
 
+export const startAuctionHook = timedAuctionHook('rules', function startAuctionHook(fn, req) {
+  req.auctionId = req.auctionId || generateUUID();
+  evaluateConfig(rulesConfig, req.auctionId);
+  fn.call(this, req);
+});
+
 export const requestBidsHook = timedAuctionHook('rules', function requestBidsHook(fn, reqBidsConfigObj) {
-  const { auctionDelay = 0 } = rulesConfig;
+  const { auctionDelay = 0 } = moduleConfig;
   const continueAuction = ((that) => () => fn.call(that, reqBidsConfigObj))(this);
 
   if (!rulesLoaded && auctionDelay > 0) {
@@ -354,21 +369,37 @@ export const requestBidsHook = timedAuctionHook('rules', function requestBidsHoo
   }
 });
 
-function init(rules: ModuleConfig) {
-  rulesConfig = rules;
-  fetchRules();
-  getHook('requestBids').before(requestBidsHook, 50);
-}
-
-export function reset() {
-  unregisterFunctions.forEach(unregister => {
+export const bidsBackCallbackHook = function bidsBackCallbackHook(fn, adUnits, auctionId, callback) {
+  // unregistering rules for finished auction
+  unregisterFunctions[auctionId].forEach(unregister => {
     if (unregister && typeof unregister === 'function') {
       unregister();
     }
   });
-  unregisterFunctions = [];
+  fn.call(this, adUnits, callback);
+};
+
+function init(rules: ModuleConfig) {
+  moduleConfig = rules;
+  fetchRules();
+  getHook('requestBids').before(requestBidsHook, 50);
+  getHook('startAuction').before(startAuctionHook, 50);
+  getHook('bidsBackCallback').before(bidsBackCallbackHook, 50);
+}
+
+export function reset() {
+  Object.values(unregisterFunctions).forEach(unregister => {
+    unregister.forEach(unregister => {
+      if (unregister && typeof unregister === 'function') {
+        unregister();
+      }
+    });
+  });
+  unregisterFunctions = {};
   try {
     getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
+    getHook('startAuction').getHooks({hook: startAuctionHook}).remove();
+    getHook('bidsBackCallback').getHooks({hook: bidsBackCallbackHook}).remove();
   } catch (e) {
   }
   setLabels({});
