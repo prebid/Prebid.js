@@ -310,16 +310,21 @@ pbjs.onEvent('bidRequested', function(bidRequest) {
         </pre>
         <p>After clicking "Update", the Neuwo data is stored in the global <code>neuwoData</code> variable. Open
             Developer Tools Console to see the logged data.</p>
-        <p>For more information about accessing data retrieved from Neuwo API, see <a href="../../modules/neuwoRtdProvider.md">modules/neuwoRtdProvider.md</a>.</p>
+        <p><strong>Note:</strong> Event timing tests for multiple Prebid.js events (auctionInit, bidRequested, beforeBidderHttp, bidResponse, auctionEnd) are available in the page source code but are commented out. To enable them, uncomment the timing test section in the JavaScript code.</p>
+    </div>
+
+    <div>
+        <p>For more information about Neuwo RTD Module configuration and  accessing data retrieved from Neuwo API, see <a href="../../modules/neuwoRtdProvider.md">modules/neuwoRtdProvider.md</a>.</p>
     </div>
 
 </body>
 
 <script type="text/javascript">
     // =====================================================
-    // How to access the Neuwo analysis results outside of Prebid.js
+    // Accessing Neuwo analysis results outside of Prebid.js
+    // Basic example using "bidRequested" event, which occurs early in the auction lifecycle and provides easy access to enriched data
     // =====================================================
-    var neuwoData = null; // Global variable to store Neuwo data for later use
+    let neuwoData = null; // Global variable to store Neuwo data for later use
 
     pbjs.que.push(function() {
         pbjs.onEvent('bidRequested', function(bidRequest) {
@@ -345,24 +350,161 @@ pbjs.onEvent('bidRequested', function(bidRequest) {
                 };
                 console.log('Neuwo data stored in global "neuwoData" variable:', neuwoData);
 
-                // Update display elements on the page
-                const siteDataEl = document.getElementById('neuwo-site-data');
-                const userDataEl = document.getElementById('neuwo-user-data');
-                if (siteDataEl) {
-                    siteDataEl.textContent = neuwoSiteData
-                        ? JSON.stringify(neuwoSiteData, null, 2)
-                        : 'No Neuwo site content data found in response.';
-                }
-                if (userDataEl) {
-                    userDataEl.textContent = neuwoUserData
-                        ? JSON.stringify(neuwoUserData, null, 2)
-                        : 'No Neuwo user data found in response.';
-                }
+                updateDisplayElements(neuwoSiteData, neuwoUserData)
             } else {
                 console.warn('No ortb2 data found in bidRequest. This may indicate the RTD module has not enriched the bid request yet.');
             }
         });
     });
+
+    // Helper to update display elements
+    function updateDisplayElements(neuwoSiteData, neuwoUserData) {
+        const siteDataEl = document.getElementById('neuwo-site-data');
+        const userDataEl = document.getElementById('neuwo-user-data');
+        if (siteDataEl) {
+            siteDataEl.textContent = neuwoSiteData
+                ? JSON.stringify(neuwoSiteData, null, 2)
+                : 'No Neuwo site content data found in response.';
+        }
+        if (userDataEl) {
+            userDataEl.textContent = neuwoUserData
+                ? JSON.stringify(neuwoUserData, null, 2)
+                : 'No Neuwo user data found in response.';
+        }
+    }
+
+    /*
+    // =====================================================
+    // Examples and timing test of selected Prebid.js events
+    // =====================================================
+    let startTime = null;
+    let eventOrder = 0;
+
+    // Reset timing on Update button click
+    window.addEventListener('DOMContentLoaded', function() {
+        const updateButton = document.querySelector('button[onClick="onSettingsUpdate()"]');
+        if (updateButton) {
+            updateButton.addEventListener('click', function() {
+                eventOrder = 0;
+                startTime = performance.now();
+                console.log('=== Timing test reset - awaiting first event after Update click ===');
+            });
+        }
+    });
+
+    // Helper function to extract and log Neuwo data
+    function extractNeuwoData(ortb2, eventName) {
+        const siteContentData = ortb2?.site?.content?.data;
+        const userData = ortb2?.user?.data;
+        const neuwoSiteData = siteContentData?.find(d => d.name === 'www.neuwo.ai');
+        const neuwoUserData = userData?.find(d => d.name === 'www.neuwo.ai');
+
+        const hasData = !!(neuwoSiteData || neuwoUserData);
+        const status = hasData ? 'HAS DATA' : 'NO DATA';
+
+        console.log(`[${eventName}] Status: ${status}`);
+        if (hasData) {
+            console.log(`[${eventName}] Neuwo Site Data:`, neuwoSiteData);
+            console.log(`[${eventName}] Neuwo User Data:`, neuwoUserData);
+        }
+
+        return { neuwoSiteData, neuwoUserData, hasData };
+    }
+
+    pbjs.que.push(function () {
+
+        // =====================================================
+        // EVENT 1: auctionInit
+        // =====================================================
+        pbjs.onEvent('auctionInit', function (auctionData) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] auctionInit (${time}ms) ===`);
+            console.log('auctionData keys:', Object.keys(auctionData));
+            console.log('bidderRequests count:', auctionData.bidderRequests?.length || 0);
+
+            if (auctionData.bidderRequests && auctionData.bidderRequests.length > 0) {
+                const ortb2 = auctionData.bidderRequests[0].ortb2;
+                const result = extractNeuwoData(ortb2, 'auctionInit');
+            } else {
+                console.log('[auctionInit] NO bidderRequests available');
+            }
+        });
+
+        // =====================================================
+        // EVENT 2: bidRequested (fires per bidder)
+        // =====================================================
+        pbjs.onEvent('bidRequested', function (bidderRequest) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] bidRequested (${time}ms) - Bidder: ${bidderRequest.bidderCode} ===`);
+
+            const ortb2 = bidderRequest.ortb2;
+            extractNeuwoData(ortb2, 'bidRequested');
+        });
+
+        // =====================================================
+        // EVENT 3: beforeBidderHttp
+        // =====================================================
+        pbjs.onEvent('beforeBidderHttp', function (bidRequests) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] beforeBidderHttp (${time}ms) ===`);
+            console.log('bidRequests is array:', Array.isArray(bidRequests));
+            console.log('bidRequests count:', bidRequests?.length || 0);
+
+            if (Array.isArray(bidRequests) && bidRequests.length > 0) {
+                const ortb2 = bidRequests[0].ortb2;
+                extractNeuwoData(ortb2, 'beforeBidderHttp');
+            } else if (bidRequests && !Array.isArray(bidRequests)) {
+                // Maybe it's a single object?
+                const ortb2 = bidRequests.ortb2;
+                extractNeuwoData(ortb2, 'beforeBidderHttp');
+            } else {
+                console.log('[beforeBidderHttp] NO bidRequests available');
+            }
+        });
+
+        // =====================================================
+        // EVENT 4: bidResponse
+        // =====================================================
+        pbjs.onEvent('bidResponse', function (bidResponse) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] bidResponse (${time}ms) ===`);
+            console.log('bidResponse keys:', Object.keys(bidResponse));
+
+            // Check if ortb2 is directly on bidResponse
+            if (bidResponse.ortb2) {
+                extractNeuwoData(bidResponse.ortb2, 'bidResponse');
+            } else {
+                console.log('[bidResponse] No direct ortb2 on bidResponse object');
+            }
+        });
+
+        // =====================================================
+        // EVENT 5: auctionEnd
+        // =====================================================
+        pbjs.onEvent('auctionEnd', function (auctionData) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] auctionEnd (${time}ms) ===`);
+            console.log('bidderRequests count:', auctionData.bidderRequests?.length || 0);
+
+            if (auctionData.bidderRequests && auctionData.bidderRequests.length > 0) {
+                const ortb2 = auctionData.bidderRequests[0].ortb2;
+                extractNeuwoData(ortb2, 'auctionEnd');
+            } else {
+                console.log('[auctionEnd] NO bidderRequests available');
+            }
+
+            // Print summary
+            console.log('\n========================================');
+            console.log('EVENT TESTING COMPLETE');
+            console.log('========================================');
+        });
+    });
+    */
 </script>
 
 <script type="text/javascript">
