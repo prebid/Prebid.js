@@ -265,6 +265,35 @@ describe('dasBidAdapter', function () {
       expect(payload.ext.network).to.equal('network1');
     });
 
+    it('should set withCredentials to false when adbeta flag is present', function () {
+      const bidRequestsWithAdbeta = [{
+        bidId: 'bid123',
+        params: {
+          site: 'site1',
+          area: 'area1',
+          slot: 'slot1',
+          network: 'network1',
+          adbeta: 'l1021885!slot.nativestd',
+          pageContext: {}
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+
+      const bidderRequestWithAdbeta = {
+        bidderRequestId: 'reqId123',
+        ortb2: {},
+        adbeta: true
+      };
+
+      const request = spec.buildRequests(bidRequestsWithAdbeta, bidderRequestWithAdbeta);
+
+      expect(request.options.withCredentials).to.be.false;
+    });
+
     describe('interpretResponse', function () {
       const serverResponse = {
         body: {
