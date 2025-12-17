@@ -371,7 +371,7 @@ export const requestBidsHook = timedAuctionHook('rules', function requestBidsHoo
 
 export const bidsBackCallbackHook = function bidsBackCallbackHook(fn, adUnits, auctionId, callback) {
   // unregistering rules for finished auction
-  unregisterFunctions[auctionId].forEach(unregister => {
+  (unregisterFunctions[auctionId] || []).forEach(unregister => {
     if (unregister && typeof unregister === 'function') {
       unregister();
     }
