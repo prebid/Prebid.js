@@ -1,4 +1,5 @@
-import { logInfo, isEmpty, deepAccess, parseUrl, getDNT, parseSizesInput, _map } from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
+import { logInfo, isEmpty, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
 import {
   BANNER,
   NATIVE,
@@ -8,6 +9,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -278,7 +280,7 @@ export const spec = {
           mediaType: mediaType,
           native: native,
         };
-        if (mediaType == VIDEO && videoXml) {
+        if (mediaType === VIDEO && videoXml) {
           response.vastUrl = videoXml;
           response.videoCacheKey = bid.ext.rid;
         }
@@ -373,11 +375,11 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
     dnt: getDNT() ? 1 : 0,
   };
   // Include connection info if available
-  const CONNECTION = navigator.connection || navigator.webkitConnection;
-  if (CONNECTION && CONNECTION.type) {
-    device['connectiontype'] = CONNECTION.type;
-    if (CONNECTION.downlinkMax) {
-      device['connectionDownlinkMax'] = CONNECTION.downlinkMax;
+  const connection = getConnectionInfo();
+  if (connection?.type) {
+    device['connectiontype'] = connection.type;
+    if (connection.downlinkMax != null) {
+      device['connectionDownlinkMax'] = connection.downlinkMax;
     }
   }
 
@@ -505,7 +507,7 @@ const generateImpBody = (bidRequest, bidderRequest) => {
 }
 const getRegionEndPoint = (bidRequest) => {
   if (bidRequest && bidRequest.params && bidRequest.params.region) {
-    if (bidRequest.params.region.toLowerCase() == 'tr') {
+    if (bidRequest.params.region.toLowerCase() === 'tr') {
       return ENDPOINT_TR_URL;
     }
   }

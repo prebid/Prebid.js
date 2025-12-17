@@ -15,6 +15,7 @@ import {
   markWinner
 } from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
+import {PbPromise} from './utils/promise.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -134,17 +135,43 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
+function getDimension(value) {
+  return value ? value + 'px' : '100%';
+}
+
+export function resizeAnchor(ins, width, height) {
+  /**
+   * Special handling for google anchor ads
+   * For anchors, the element to resize is an <ins> element that is an ancestor of the creative iframe
+   * On desktop this is sized to the creative dimensions;
+   * on mobile one dimension is fixed to 100%.
+   */
+  return new PbPromise((resolve, reject) => {
+    let tryCounter = 10;
+    // wait until GPT has set dimensions on the ins, otherwise our changes will be overridden
+    const resizer = setInterval(() => {
+      let done = false;
+      Object.entries({width, height})
+        .forEach(([dimension, newValue]) => {
+          if (/\d+px/.test(ins.style[dimension])) {
+            ins.style[dimension] = getDimension(newValue);
+            done = true;
+          }
+        })
+      if (done || (tryCounter-- === 0)) {
+        clearInterval(resizer);
+        done ? resolve() : reject(new Error('Could not resize anchor'))
+      }
+    }, 50)
+  })
+}
+
 export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
-  function getDimension(value) {
-    return value ? value + 'px' : '100%';
-  }
-  // resize both container div + iframe
-  ['div', 'iframe'].forEach(elmType => {
-    // not select element that gets removed after dfp render
-    const element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+
+  function resize(element) {
     if (element) {
       const elementStyle = element.style;
       elementStyle.width = getDimension(width)
@@ -152,7 +179,13 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
     } else {
       logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
-  });
+  }
+
+  // not select element that gets removed after dfp render
+  const iframe = getElementByAdUnit('iframe:not([style*="display: none"])');
+  resize(iframe);
+  const anchorIns = iframe?.closest('ins[data-anchor-status]');
+  anchorIns ? resizeAnchor(anchorIns, width, height) : resize(iframe?.parentElement);
 
   function getElementByAdUnit(elmType) {
     const id = getElementIdBasedOnAdServer(adId, adUnitCode);

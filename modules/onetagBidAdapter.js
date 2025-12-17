@@ -8,6 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -141,9 +142,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       payload.onetagSid = storage.getDataFromLocalStorage('onetag_sid');
     }
   } catch (e) { }
-  const connection = navigator.connection || navigator.webkitConnection;
-  payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
-  payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+  const connection = getConnectionInfo();
+  payload.networkConnectionType = connection?.type || null;
+  payload.networkEffectiveConnectionType = connection?.effectiveType || null;
   payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
   return {
     method: 'POST',
@@ -284,16 +285,12 @@ function getPageInfo(bidderRequest) {
     referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
     stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
-    wWidth: getWinDimensions().innerWidth,
-    wHeight: getWinDimensions().innerHeight,
-    oWidth: winDimensions.outerWidth,
-    oHeight: winDimensions.outerHeight,
+    wWidth: winDimensions.innerWidth,
+    wHeight: winDimensions.innerHeight,
     sWidth: winDimensions.screen.width,
     sHeight: winDimensions.screen.height,
-    aWidth: winDimensions.screen.availWidth,
-    aHeight: winDimensions.screen.availHeight,
-    sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
-    sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
+    sLeft: null,
+    sTop: null,
     xOffset: topmostFrame.pageXOffset,
     yOffset: topmostFrame.pageYOffset,
     docHidden: getDocumentVisibility(topmostFrame),
@@ -302,7 +299,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.4'
+      adapter: '1.1.5'
     }
   };
 }
@@ -486,7 +483,7 @@ function getBidFloor(bidRequest, mediaType, sizes) {
 
     return {
       ...floorData,
-      size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
+      size: size && size.length === 2 ? {width: size[0], height: size[1]} : null,
       floor: floorData.floor != null ? floorData.floor : null
     };
   };

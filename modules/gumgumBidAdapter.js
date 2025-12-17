@@ -5,6 +5,7 @@ import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -42,8 +43,8 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   let ns;
 
   function getNetworkSpeed () {
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
-    const Mbps = connection && (connection.downlink || connection.bandwidth);
+    const connection = getConnectionInfo();
+    const Mbps = connection?.downlink ?? connection?.bandwidth;
     return Mbps ? Math.round(Mbps * 1024) : null;
   }
 
@@ -122,7 +123,7 @@ function _serializeSupplyChainObj(schainObj) {
   let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
 
   // order of properties: asi,sid,hp,rid,name,domain
-  schainObj.nodes.map(node => {
+  schainObj.nodes.forEach(node => {
     serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;

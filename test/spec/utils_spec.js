@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
+import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
 
@@ -1444,18 +1445,18 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should invoke resetWinDimensions once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(internal, 'resetWinDimensions');
-    getWinDimensions();
+  it('should clear cache once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'reset');
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledOnce(resetWinDimensionsSpy);
     clock.tick(18);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
 });

@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -53,12 +54,9 @@ function getBidFloor(bidRequest) {
 }
 
 const getConnectionType = () => {
-  const connection =
-    navigator.connection ||
-    navigator.mozConnection ||
-    navigator.webkitConnection ||
-    {};
-  switch (connection.type || connection.effectiveType) {
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type || connection?.effectiveType;
+  switch (connectionType) {
     case 'wifi':
     case 'ethernet':
       return deviceConnection.FIXED;
@@ -127,10 +125,10 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidRequestsCount || 1,
+    requestCount: validBidRequest.bidderRequestsCount || 1,
   };
 
-  if (hasVideoMediaType(validBidRequest)) {
+  if (hasVideoMediaType(validBidRequest) && hasMandatoryVideoParams(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
   }
 
@@ -147,7 +145,7 @@ function buildBidRequest(validBidRequest) {
  */
 function getVideoParams(validBidRequest) {
   const videoParams = validBidRequest.mediaTypes.video || {};
-  if (videoParams.playerSize) {
+  if (videoParams.playerSize && isArray(videoParams.playerSize) && videoParams.playerSize.length > 0) {
     videoParams.w = videoParams.playerSize[0][0];
     videoParams.h = videoParams.playerSize[0][1];
   }

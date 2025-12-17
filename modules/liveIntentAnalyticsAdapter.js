@@ -1,5 +1,5 @@
 import { ajax } from '../src/ajax.js';
-import { generateUUID, isNumber } from '../src/utils.js';
+import { generateUUID, isNumber, parseSizesInput } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
@@ -41,6 +41,13 @@ function handleAuctionInitEvent(auctionInitEvent) {
   // dependeing on the result of rolling the dice outside of Prebid.
   const partnerIdFromAnalyticsLabels = auctionInitEvent.analyticsLabels?.partnerId;
 
+  const asz = auctionInitEvent?.adUnits.reduce((acc, adUnit) =>
+    acc.concat(
+      parseSizesInput(adUnit?.mediaTypes?.banner?.sizes),
+      parseSizesInput(adUnit?.mediaTypes?.video?.playerSize)
+    ), []
+  )
+
   const data = {
     id: generateUUID(),
     aid: auctionInitEvent.auctionId,
@@ -51,7 +58,8 @@ function handleAuctionInitEvent(auctionInitEvent) {
     tr: window.liTreatmentRate,
     me: encodeBoolean(window.liModuleEnabled),
     liip: encodeBoolean(liveIntentIdsPresent),
-    aun: auctionInitEvent?.adUnits?.length || 0
+    aun: auctionInitEvent?.adUnits?.length || 0,
+    asz: asz.join(',')
   };
   const filteredData = ignoreUndefined(data);
   sendData('auction-init', filteredData);
@@ -82,7 +90,8 @@ function handleBidWonEvent(bidWonEvent) {
     rts: bidWonEvent.responseTimestamp,
     tr: window.liTreatmentRate,
     me: encodeBoolean(window.liModuleEnabled),
-    liip: encodeBoolean(liveIntentIdsPresent)
+    liip: encodeBoolean(liveIntentIdsPresent),
+    asz: bidWonEvent.width + 'x' + bidWonEvent.height
   };
 
   const filteredData = ignoreUndefined(data);
@@ -115,7 +124,7 @@ function ignoreUndefined(data) {
 liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
-  const userIdModuleConfig = prebidConfig.getConfig('userSync.userIds').filter(m => m.name == 'liveIntentId')?.at(0)?.params
+  const userIdModuleConfig = prebidConfig.getConfig('userSync.userIds').filter(m => m.name === 'liveIntentId')?.at(0)?.params
   partnerIdFromUserIdConfig = userIdModuleConfig?.liCollectConfig?.appId || userIdModuleConfig?.distributorId;
   sendAuctionInitEvents = config?.options.sendAuctionInitEvents;
   liAnalytics.originEnableAnalytics(config); // call the base class function

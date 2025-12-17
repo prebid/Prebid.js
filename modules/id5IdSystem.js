@@ -7,6 +7,7 @@
 
 import {
   deepAccess,
+  deepClone,
   deepSetValue,
   isEmpty,
   isEmptyStr,
@@ -24,10 +25,10 @@ import {PbPromise} from '../src/utils/promise.js';
 import {loadExternalScript} from '../src/adloader.js';
 
 /**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.ts').IdProviderSpec} Submodule
+ * @typedef {import('../modules/userId/spec.ts').UserIdConfig} SubmoduleConfig
+ * @typedef {import('../src/consentHandler').AllConsentData} ConsentData
+ * @typedef {import('../modules/userId/spec.ts').ProviderResponse} ProviderResponse
  */
 
 const MODULE_NAME = 'id5Id';
@@ -41,10 +42,24 @@ const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
- * @typedef {Object} IdResponse
+ * @typedef {Object} Id5Response
  * @property {string} [universal_uid] - The encrypted ID5 ID to pass to bidders
  * @property {Object} [ext] - The extensions object to pass to bidders
  * @property {Object} [ab_testing] - A/B testing configuration
+ * @property {Object} [ids]
+ * @property {string} signature
+ * @property {number} [nbPage]
+ * @property {string} [publisherTrueLinkId] - The publisher's TrueLink ID
+ */
+
+/**
+ * @typedef {Object.<string, Id5Response>} PartnerId5Responses
+ */
+
+/**
+ * @typedef {Id5Response} Id5PrebidResponse
+ * @property {PartnerId5Responses} pbjs
+ *
  */
 
 /**
@@ -105,6 +120,11 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {string} [gamTargetingPrefix] - When set, the GAM targeting tags will be set and use the specified prefix, for example 'id5'.
  */
 
+/**
+ * @typedef {SubmoduleConfig} Id5SubmoduleConfig
+ * @property {Id5PrebidConfig} params
+ */
+
 const DEFAULT_EIDS = {
   'id5id': {
     getValue: function (data) {
@@ -136,7 +156,7 @@ const DEFAULT_EIDS = {
     getValue: function (data) {
       return data.uid;
     },
-    getSource: function (data) {
+    getSource: function () {
       return TRUE_LINK_SOURCE;
     },
     atype: 1,
@@ -165,11 +185,25 @@ export const id5IdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function decode
-   * @param {(Object|string)} value
-   * @param {SubmoduleConfig|undefined} config
+   * @param {Id5PrebidResponse|Id5Response} value
+   * @param {Id5SubmoduleConfig} config
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
+    const partnerResponse = getPartnerResponse(value, config.params)
+    // get generic/legacy response in case no partner specific
+    // it may happen in case old cached value found
+    // or overwritten by other integration (older version)
+    return this._decodeResponse(partnerResponse || value, config);
+  },
+
+  /**
+   *
+   * @param {Id5Response} value
+   * @param {Id5SubmoduleConfig} config
+   * @private
+   */
+  _decodeResponse(value, config) {
     if (value && value.ids !== undefined) {
       const responseObj = {};
       const eids = {};
@@ -248,10 +282,10 @@ export const id5IdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
-   * @param {SubmoduleConfig} submoduleConfig
+   * @param {Id5SubmoduleConfig} submoduleConfig
    * @param {ConsentData} consentData
    * @param {(Object|undefined)} cacheIdObj
-   * @returns {IdResponse|undefined}
+   * @returns {ProviderResponse}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
     if (!validateConfig(submoduleConfig)) {
@@ -267,7 +301,7 @@ export const id5IdSubmodule = {
       const fetchFlow = new IdFetchFlow(submoduleConfig, consentData?.gdpr, cacheIdObj, consentData?.usp, consentData?.gpp);
       fetchFlow.execute()
         .then(response => {
-          cbFunction(response);
+          cbFunction(createResponse(response, submoduleConfig.params, cacheIdObj));
         })
         .catch(error => {
           logError(LOG_PREFIX + 'getId fetch encountered an error', error);
@@ -283,22 +317,26 @@ export const id5IdSubmodule = {
    *  If IdResponse#callback is defined, then it'll called at the end of auction.
    *  It's permissible to return neither, one, or both fields.
    * @function extendId
-   * @param {SubmoduleConfig} config
-   * @param {ConsentData|undefined} consentData
-   * @param {Object} cacheIdObj - existing id, if any
-   * @return {IdResponse} A response object that contains id.
+   * @param {Id5SubmoduleConfig} config
+   * @param {ConsentData} consentData
+   * @param {Id5PrebidResponse} cacheIdObj - existing id, if any
+   * @return {ProviderResponse} A response object that contains id.
    */
   extendId(config, consentData, cacheIdObj) {
     if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
-      return cacheIdObj;
+      return {id: cacheIdObj};
     }
-
-    logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
-    if (cacheIdObj) {
-      cacheIdObj.nbPage = incrementNb(cacheIdObj);
+    if (getPartnerResponse(cacheIdObj, config.params)) { // response for partner is present
+      logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
+      const updatedObject = deepClone(cacheIdObj);
+      const responseToUpdate = getPartnerResponse(updatedObject, config.params);
+      responseToUpdate.nbPage = incrementNb(responseToUpdate);
+      return {id: updatedObject};
+    } else {
+      logInfo(LOG_PREFIX + ' refreshing ID.  Cached object does not have ID for partner', cacheIdObj);
+      return this.getId(config, consentData, cacheIdObj);
     }
-    return cacheIdObj;
   },
   primaryIds: ['id5id', 'trueLinkId'],
   eids: DEFAULT_EIDS,
@@ -311,14 +349,14 @@ export class IdFetchFlow {
   constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData, gppData) {
     this.submoduleConfig = submoduleConfig;
     this.gdprConsentData = gdprConsentData;
-    this.cacheIdObj = cacheIdObj;
+    this.cacheIdObj = isPlainObject(cacheIdObj?.pbjs) ? cacheIdObj.pbjs[submoduleConfig.params.partner] : cacheIdObj;
     this.usPrivacyData = usPrivacyData;
     this.gppData = gppData;
   }
 
   /**
    * Calls the ID5 Servers to fetch an ID5 ID
-   * @returns {Promise<IdResponse>} The result of calling the server side
+   * @returns {Promise<Id5Response>} The result of calling the server side
    */
   async execute() {
     const configCallPromise = this.#callForConfig();
@@ -532,36 +570,16 @@ function incrementNb(cachedObj) {
 
 function updateTargeting(fetchResponse, config) {
   if (config.params.gamTargetingPrefix) {
-    const tags = {};
-    let universalUid = fetchResponse.universal_uid;
-    if (universalUid.startsWith('ID5*')) {
-      tags.id = "y";
+    const tags = fetchResponse.tags;
+    if (tags) {
+      window.googletag = window.googletag || {cmd: []};
+      window.googletag.cmd = window.googletag.cmd || [];
+      window.googletag.cmd.push(() => {
+        for (const tag in tags) {
+          window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
+        }
+      });
     }
-    let abTestingResult = fetchResponse.ab_testing?.result;
-    switch (abTestingResult) {
-      case 'control':
-        tags.ab = 'c';
-        break;
-      case 'normal':
-        tags.ab = 'n';
-        break;
-    }
-    let enrichment = fetchResponse.enrichment;
-    if (enrichment?.enriched === true) {
-      tags.enrich = 'y';
-    } else if (enrichment?.enrichment_selected === true) {
-      tags.enrich = 's';
-    } else if (enrichment?.enrichment_selected === false) {
-      tags.enrich = 'c';
-    }
-
-    window.googletag = window.googletag || {cmd: []};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      for (const tag in tags) {
-        window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
-      }
-    });
   }
 }
 
@@ -574,10 +592,40 @@ function hasWriteConsentToLocalStorage(consentData) {
   const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
   const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`);
   const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`);
-  if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
-    return false;
+  return !(hasGdpr && (!localstorageConsent || !id5VendorConsent));
+}
+
+/**
+ *
+ * @param response {Id5Response|Id5PrebidResponse}
+ * @param config {Id5PrebidConfig}
+ */
+function getPartnerResponse(response, config) {
+  if (response?.pbjs && isPlainObject(response.pbjs)) {
+    return response.pbjs[config.partner];
   }
-  return true;
+  return undefined;
+}
+
+/**
+ *
+ *  @param {Id5Response} response
+ *  @param {Id5PrebidConfig} config
+ *  @param {Id5PrebidResponse} cacheIdObj
+ *  @returns {Id5PrebidResponse}
+ */
+function createResponse(response, config, cacheIdObj) {
+  let responseObj = {}
+  if (isPlainObject(cacheIdObj) && (cacheIdObj.universal_uid !== undefined || isPlainObject(cacheIdObj.pbjs))) {
+    Object.assign(responseObj, deepClone(cacheIdObj));
+  }
+  Object.assign(responseObj, deepClone(response)); // assign the whole response for old versions
+  responseObj.signature = response.signature; // update signature in case it was erased in response
+  if (!isPlainObject(responseObj.pbjs)) {
+    responseObj.pbjs = {};
+  }
+  responseObj.pbjs[config.partner] = deepClone(response);
+  return responseObj;
 }
 
 submodule('userId', id5IdSubmodule);

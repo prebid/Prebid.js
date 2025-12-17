@@ -12,7 +12,7 @@ const SUPPORTED_SIZES = [
 ];
 
 function getPageUrl(bidRequest, bidderRequest) {
-  if (bidRequest.params.pageUrl && bidRequest.params.pageUrl != '[PAGE_URL]') {
+  if (bidRequest.params.pageUrl && bidRequest.params.pageUrl !== '[PAGE_URL]') {
     return bidRequest.params.pageUrl;
   }
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
@@ -152,6 +152,7 @@ export const spec = {
           data: ''
         };
       }
+      return undefined;
     }).filter(Boolean);
   },
 
@@ -160,7 +161,7 @@ export const spec = {
       return [];
     }
     var response = serverResponse.body;
-    var isNative = response.pbtypeId == 1;
+    var isNative = Number(response.pbtypeId) === 1;
     return response.recs.map(rec => {
       const bid = {
         requestId: response.ireqId,

@@ -22,22 +22,22 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
-const NM_VERSION = '4.3.0';
+const NM_VERSION = '4.5.1';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
-const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const TEST_ENDPOINT = 'https://dev.pbsa.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
-const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
+const REPORT_ENDPOINT = 'https://hb-analytics.nextmillmedia.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TMAX = 1500;
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
-  context: undefined,
   delivery: undefined,
   linearity: undefined,
   maxduration: undefined,
@@ -61,18 +61,79 @@ const VIDEO_PARAMS_DEFAULT = {
 };
 
 const VIDEO_PARAMS = Object.keys(VIDEO_PARAMS_DEFAULT);
-const ALLOWED_ORTB2_PARAMETERS = [
+
+export const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
+  'site.keywords',
+  'site.name',
+  'site.cattax',
+  'site.cat',
+  'site.sectioncat',
+  'site.search',
+  'site.mobile',
+  'site.privacypolicy',
+  'site.kwarray',
   'site.content.cat',
   'site.content.language',
-  'device.sua',
-  'site.keywords',
   'site.content.keywords',
+  'site.publisher.id',
+  'site.publisher.name',
+  'site.publisher.cattax',
+  'site.publisher.cat',
+  'site.publisher.domain',
+  'device.sua',
+  'device.ip',
+  'device.ipv6',
+  'device.dnt',
+  'device.lmt',
+  'device.devicetype',
+  'device.make',
+  'device.model',
+  'device.os',
+  'device.osv',
+  'device.hwv',
+  'device.geo.lat',
+  'device.geo.lon',
+  'device.geo.type',
+  'device.geo.accuracy',
+  'device.geo.lastfix',
+  'device.geo.ipservice',
+  'device.geo.country',
+  'device.geo.region',
+  'device.geo.regionfips104',
+  'device.geo.metro',
+  'device.geo.city',
+  'device.geo.zip',
+  'device.geo.utcoffset',
+  'device.language',
+  'device.langb',
   'user.keywords',
   'bcat',
   'badv',
   'wlang',
   'wlangb',
+  'cattax',
+];
+
+const ALLOWED_ORTB2_IMP_PARAMETERS = [
+  'displaymanager',
+  'displaymanagerver',
+  'instl',
+  'banner.btype',
+  'banner.battr',
+  'banner.mimes',
+  'banner.topframe',
+  'banner.expdir',
+  'banner.api',
+  'banner.format',
+  'video.rqddurs',
+  'video.battr',
+  'video.maxextended',
+  'video.minbitrate',
+  'video.maxbitrate',
+  'video.boxingallowed',
+  'video.api',
+  'video.companiontype',
 ];
 
 export const spec = {
@@ -88,6 +149,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    const bidIds = new Map()
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
@@ -109,7 +171,7 @@ export const spec = {
     };
 
     setConsentStrings(postBody, bidderRequest);
-    setOrtb2Parameters(postBody, bidderRequest?.ortb2);
+    setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, bidderRequest?.ortb2);
 
     const urlParameters = parseUrl(getWindowTop().location.href).search;
     const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -120,8 +182,14 @@ export const spec = {
       const id = getPlacementId(bid);
       const {cur, mediaTypes} = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
-      postBody.imp.push(getImp(bid, id, mediaTypes));
-      postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
+
+      const impId = String(i + 1)
+      bidIds.set(impId, bid.bidId)
+
+      const imp = getImp(impId, bid, id, mediaTypes);
+      setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
+      postBody.imp.push(imp);
+      postBody.ext.next_mil_imps.push(getExtNextMilImp(impId, bid));
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -134,19 +202,21 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true,
       },
+
+      bidIds,
     });
 
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bid.impid;
+        const requestId = bidRequest.bidIds.get(bid.impid);
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
@@ -225,7 +295,7 @@ export const spec = {
     if (!Array.isArray(bids)) bids = [bids];
 
     const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
-    if (bidder != BIDDER_CODE) return;
+    if (bidder !== BIDDER_CODE) return;
 
     const params = [];
     _each(bids, bid => {
@@ -265,10 +335,11 @@ export const spec = {
   },
 };
 
-function getExtNextMilImp(bid) {
+export function getExtNextMilImp(impId, bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
+  const {adSlots, allowedAds} = bid.params
   const nextMilImp = {
-    impId: bid.bidId,
+    impId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
@@ -277,13 +348,16 @@ function getExtNextMilImp(bid) {
     },
   };
 
+  if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots;
+  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
+
   return nextMilImp;
 }
 
-export function getImp(bid, id, mediaTypes) {
+export function getImp(impId, bid, id, mediaTypes) {
   const {banner, video} = mediaTypes;
   const imp = {
-    id: bid.bidId,
+    id: impId,
     ext: {
       prebid: {
         storedrequest: {
@@ -382,13 +456,13 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
   };
 };
 
-export function setOrtb2Parameters(postBody, ortb2 = {}) {
-  for (const parameter of ALLOWED_ORTB2_PARAMETERS) {
+export function setOrtb2Parameters(allowedOrtb2Parameters, body, ortb2 = {}) {
+  for (const parameter of allowedOrtb2Parameters) {
     const value = deepAccess(ortb2, parameter);
-    if (value) deepSetValue(postBody, parameter, value);
+    if (value) deepSetValue(body, parameter, value);
   }
 
-  if (postBody.wlang) delete postBody.wlangb
+  if (body.wlang) delete body.wlangb
 }
 
 export function setEids(postBody = {}, bids = []) {
@@ -504,7 +578,24 @@ function getDeviceObj() {
     h: height,
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
+    js: 1,
+    connectiontype: getDeviceConnectionType(),
   };
+}
+
+function getDeviceConnectionType() {
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type;
+  const effectiveType = connection?.effectiveType;
+  if (connectionType === 'ethernet') return 1;
+  if (connectionType === 'wifi') return 2;
+
+  if (effectiveType === 'slow-2g') return 3;
+  if (effectiveType === '2g') return 4;
+  if (effectiveType === '3g') return 5;
+  if (effectiveType === '4g') return 6;
+
+  return undefined;
 }
 
 export function getSourceObj(validBidRequests, bidderRequest) {
@@ -524,7 +615,7 @@ function getSua() {
   if (!(brands && platform)) return undefined;
 
   return {
-    brands,
+    browsers: brands,
     mobile: Number(!!mobile),
     platform: (platform && {brand: platform}) || undefined,
   };

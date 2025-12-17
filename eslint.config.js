@@ -3,11 +3,12 @@ const lintImports = require('eslint-plugin-import')
 const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
+const chaiFriendly = require('eslint-plugin-chai-friendly');
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
-const {getSourceFolders, getIgnoreSources} = require('./gulpHelpers.js');
+const {getSourceFolders} = require('./gulpHelpers.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -32,6 +33,13 @@ const allowedImports = {
     'dlv',
     'dset'
   ],
+  // [false] means disallow ANY import outside of modules/debugging
+  // this is because debugging also gets built as a standalone module,
+  // and importing global state does not work as expected.
+  // in theory imports that do not involve global state are fine, but
+  // even innocuous imports can become problematic if the source changes,
+  // and it's too easy to forget this is a problem for debugging-standalone.
+  'modules/debugging': [false],
   libraries: [],
   creative: [],
 }
@@ -55,10 +63,10 @@ module.exports = [
   includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
   {
     ignores: [
-      ...getIgnoreSources(),
       'integrationExamples/**/*',
       // do not lint build-related stuff
       '*.js',
+      '*.mjs',
       'metadata/**/*',
       'customize/**/*',
       ...jsPattern('plugins'),
@@ -120,9 +128,8 @@ module.exports = [
       //
       // See Issue #1111.
       // also see: reality. These are here to stay.
+      // we're working on them though :)
 
-      eqeqeq: 'off',
-      'no-useless-escape': 'off',
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -144,7 +151,6 @@ module.exports = [
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
       'no-void': 'off',
-      'array-callback-return': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',
@@ -163,7 +169,6 @@ module.exports = [
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
       '@stylistic/object-property-newline': 'off',
-
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
@@ -228,6 +233,9 @@ module.exports = [
   },
   {
     files: sourcePattern('test'),
+    plugins: {
+      'chai-friendly': chaiFriendly
+    },
     languageOptions: {
       globals: {
         ...globals.mocha,
@@ -236,11 +244,13 @@ module.exports = [
       }
     },
     rules: {
-      // tests were not subject to many rules and they are now a nightmare
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
+      'chai-friendly/no-unused-expressions': 'error',
+      // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      'no-useless-escape': 'off',
       'no-return-assign': 'off',
       'camelcase': 'off'
     }

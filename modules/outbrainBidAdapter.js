@@ -219,6 +219,7 @@ export const spec = {
         }
         return bidObject;
       }
+      return null;
     }).filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
@@ -282,7 +283,7 @@ function parseNative(bid) {
           result.impressionTrackers.push(tracker.url);
           break;
         case 2: // js
-          result.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          result.javascriptTrackers = `<script src="${tracker.url}"></script>`;
           break;
       }
     });
@@ -414,7 +415,7 @@ function isValidVideoRequest(bid) {
     return false;
   }
 
-  if (videoAdUnit.context == '') {
+  if (videoAdUnit.context === '') {
     return false;
   }
 

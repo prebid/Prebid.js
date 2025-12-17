@@ -15,11 +15,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_109_windows_10": {
+  "bs_chrome_113_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "109.0",
+    "browser_version": "113.0",
     "device": null,
     "os": "Windows"
   },
@@ -47,5 +47,4 @@
     "device": null,
     "os": "OS X"
   }
-
 }
