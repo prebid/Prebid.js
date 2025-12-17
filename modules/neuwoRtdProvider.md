@@ -147,6 +147,51 @@ pbjs.setConfig({
 });
 ```
 
+## Accessing Neuwo Data Outside Prebid.js
+
+The Neuwo RTD module enriches bid requests with contextual data that can be accessed in application code for analytics, targeting, integration with Google Ad Manager as [Publisher Provided Signals (PPS)](https://support.google.com/admanager/answer/15287325) or other purposes. The enriched data is available through Prebid.js events.
+
+### Example of Using the `bidRequested` Event
+
+Listen to the `bidRequested` event to access the enriched ORTB2 data. This event fires early in the auction lifecycle and provides direct access to the Neuwo data:
+
+```javascript
+pbjs.que.push(function() {
+  pbjs.onEvent('bidRequested', function(bidRequest) {
+    // The ortb2 data is available directly on the bidRequest
+    const ortb2 = bidRequest.ortb2;
+
+    // Extract Neuwo-specific data (from www.neuwo.ai provider)
+    const neuwoSiteData = ortb2?.site?.content?.data?.find(d => d.name === 'www.neuwo.ai');
+    const neuwoUserData = ortb2?.user?.data?.find(d => d.name === 'www.neuwo.ai');
+
+    // Use the data in the application
+    console.log('Neuwo Site Content:', neuwoSiteData);
+    console.log('Neuwo User Data:', neuwoUserData);
+
+    // Example: Store in a global variable for later use
+    window.neuwoData = {
+      siteContent: neuwoSiteData,
+      user: neuwoUserData
+    };
+  });
+});
+```
+
+### Other Prebid.js Events
+
+The Neuwo data is also available in other Prebid.js events:
+
+| Order | Event              | Fires Once Per | Data Location                        |
+| :---- | :----------------- | :------------- | :----------------------------------- |
+| 1     | `auctionInit`      | Auction        | `auctionData.bidderRequests[].ortb2` |
+| 2     | `bidRequested`     | Bidder         | `bidRequest.ortb2`                   |
+| 3     | `beforeBidderHttp` | Bidder         | `bidRequests[].ortb2`                |
+| 4     | `bidResponse`      | Bidder         | `bidResponse.ortb2`                  |
+| 5     | `auctionEnd`       | Auction        | `auctionData.bidderRequests[].ortb2` |
+
+For more information on Prebid.js events, see the [Prebid.js Event API documentation](https://docs.prebid.org/dev-docs/publisher-api-reference/getEvents.html).
+
 ## Local Development
 
 Install the exact versions of packages specified in the lockfile:
