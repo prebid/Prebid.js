@@ -55,6 +55,7 @@ interface ModuleConfig {
     url: string;
     method: string;
   };
+  rules?: RulesConfig;
   auctionDelay?: number;
   extraSchemaEvaluators?: {
     [key: string]: (args: any[], context: any) => () => any;
@@ -379,9 +380,15 @@ export const bidsBackCallbackHook = function bidsBackCallbackHook(fn, adUnits, a
   fn.call(this, adUnits, callback);
 };
 
-function init(rules: ModuleConfig) {
-  moduleConfig = rules;
-  fetchRules();
+function init(config: ModuleConfig) {
+  moduleConfig = config;
+
+  // use static config if provided
+  if (config.rules) {
+    rulesConfig = config.rules;
+  } else {
+    fetchRules();
+  }
   getHook('requestBids').before(requestBidsHook, 50);
   getHook('startAuction').before(startAuctionHook, 50);
   getHook('bidsBackCallback').before(bidsBackCallbackHook, 50);
