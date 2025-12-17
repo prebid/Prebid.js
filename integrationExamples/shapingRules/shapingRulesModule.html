@@ -7,6 +7,7 @@
             pbjs.que = pbjs.que || [];
 
             const adUnitCode = 'adUnit-0000';
+            const adUnitCode2 = 'adUnit-0000-2';
 
             const adUnits = [{
                 mediaTypes: {
@@ -18,7 +19,19 @@
                 bids: [
                     {bidder: 'testBidder', params: {}}
                 ]
-            }]
+            },
+            {
+                mediaTypes: {
+                    banner: {
+                        sizes: [400, 500]
+                    }
+                },
+                code: adUnitCode2,
+                bids: [
+                    {bidder: 'testBidder', params: {}}
+                ]
+            },
+        ]
 
             pbjs.que.push(function () {
 
@@ -122,7 +135,7 @@
                                     creativeId: 'testCreativeId',
                                     bidder: 'testBidder',
                                 }
-                            }
+                            },
                         ]
                     }
                 });
@@ -133,6 +146,13 @@
                 pbjs.addAdUnits(adUnits);
                 pbjs.requestBids({
                     adUnitCodes: [adUnitCode],
+                    bidsBackHandler: function(bidsReceived) {
+                        console.log('Bids received: ', bidsReceived);
+                    }
+                });
+
+                pbjs.requestBids({
+                    adUnitCodes: [adUnitCode2],
                     bidsBackHandler: function(bidsReceived) {
                         console.log('Bids received: ', bidsReceived);
                     }
