@@ -40,7 +40,36 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
     fragments.global = fragments.global || {};
     fragments.bidder = fragments.bidder || {};
     const guard = {
-      global: guardOrtb2(fragments.global, params),
+      global: new Proxy(fragments.global, {
+        get(target, prop, receiver) {
+          const val = Reflect.get(target, prop, receiver);
+          // If property exists and is an object, guard it
+          if (val != null && typeof val === 'object') {
+            return guardOrtb2(val, params);
+          }
+          return val;
+        },
+        set(target, prop, newValue, receiver) {
+          if (newValue == null || typeof newValue !== 'object') {
+            logError(`ortb2Fragments.global.${prop} must be an object`);
+            return false;
+          }
+          // Get or create the property BEFORE guarding
+          let propData = Reflect.get(target, prop, receiver);
+          if (propData == null) {
+            propData = target[prop] = {};
+          }
+          // Now guard it and merge properties
+          propData = guardOrtb2(propData, params);
+          Object.entries(newValue).forEach(([key, value]) => {
+            propData[key] = value;
+          });
+          return true;
+        },
+        deleteProperty(target, prop) {
+          return Reflect.deleteProperty(target, prop);
+        }
+      }),
       bidder: new Proxy(fragments.bidder, {
         get(target, prop, receiver) {
           let bidderData = Reflect.get(target, prop, receiver);
