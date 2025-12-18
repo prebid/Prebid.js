@@ -54,6 +54,11 @@ describe('optoutAdapterTest (new adapter)', function () {
       }
     ];
 
+    it('returns [] when no validBidRequests', function () {
+      const requests = spec.buildRequests([], {});
+      expect(requests).to.deep.equal([]);
+    });
+
     it('returns a single POST request', function () {
       const requests = spec.buildRequests(bidRequests, {});
       expect(requests).to.have.lengthOf(1);
@@ -77,6 +82,11 @@ describe('optoutAdapterTest (new adapter)', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.match(/optinadserving\.com\/prebid\/display/);
       expect(requests[0].data.gdpr).to.equal(0);
+    });
+
+    it('always includes sdk_version=prebid', function () {
+      const requests = spec.buildRequests(bidRequests, {});
+      expect(requests[0].data.sdk_version).to.equal('prebid');
     });
 
     it('currency defaults to EUR when not configured', function () {
@@ -104,13 +114,33 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(slots[1].requestId).to.equal('bidB');
     });
 
-    it('normalizes customs to strings and flattens arrays', function () {
+    it('uses refererInfo.canonicalUrl when present', function () {
+      const bidderRequest = { refererInfo: { canonicalUrl: 'https://example.com/canonical' } };
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.url).to.equal('https://example.com/canonical');
+    });
+
+    it('falls back to refererInfo.page when canonicalUrl missing', function () {
+      const bidderRequest = { refererInfo: { page: 'https://example.com/page' } };
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.url).to.equal('https://example.com/page');
+    });
+
+    it('falls back to window.location.href when refererInfo missing', function () {
+      const requests = spec.buildRequests(bidRequests, {});
+      expect(requests[0].data.url).to.equal(window.location.href);
+    });
+
+    it('normalizes customs to strings, flattens arrays, stringifies objects, and drops invalid', function () {
+      const circular = {};
+      circular.self = circular;
+
       const br = [{
         bidder: 'optout',
         params: {
           adSlot: 'slot',
           publisher: '8',
-          customs: { foo: 'bar' }
+          customs: { foo: 'bar', obj: { k: 'v' }, bad: circular }
         },
         bidId: '1'
       }];
@@ -127,7 +157,68 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(customs.foo).to.equal('bar');
       expect(customs.a).to.equal('x,y');
       expect(customs.b).to.equal('123');
+      expect(customs.obj).to.equal(JSON.stringify({ k: 'v' }));
       expect(customs).to.not.have.property('c');
+      expect(customs).to.not.have.property('bad');
+    });
+
+    it('does not mutate input customs objects', function () {
+      const original = { a: ['x', 'y'], obj: { k: 'v' } };
+
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8', customs: original },
+        bidId: '1'
+      }];
+
+      spec.buildRequests(br, {});
+      expect(original.a).to.deep.equal(['x', 'y']);
+      expect(original.obj).to.deep.equal({ k: 'v' });
+    });
+
+    it('includes per-slot customs when provided in bid params', function () {
+      const br = [{
+        bidder: 'optout',
+        params: {
+          adSlot: 'slot',
+          publisher: '8',
+          customs: { x: 1, arr: ['a', 'b'], obj: { p: true } }
+        },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      const slotCustoms = requests[0].data.slots[0].customs;
+
+      expect(slotCustoms.x).to.equal('1');
+      expect(slotCustoms.arr).to.equal('a,b');
+      expect(slotCustoms.obj).to.equal(JSON.stringify({ p: true }));
+    });
+
+    it('includes ortb2 payload when any bid sets includeOrtb2', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8', includeOrtb2: true },
+        bidId: '1'
+      }];
+
+      const bidderRequest = { ortb2: { site: { domain: 'example.com' } } };
+      const requests = spec.buildRequests(br, bidderRequest);
+
+      expect(requests[0].data.ortb2).to.equal(JSON.stringify(bidderRequest.ortb2));
+    });
+
+    it('does not include ortb2 payload when includeOrtb2 is false/absent', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = { ortb2: { site: { domain: 'example.com' } } };
+      const requests = spec.buildRequests(br, bidderRequest);
+
+      expect(requests[0].data).to.not.have.property('ortb2');
     });
   });
 
@@ -193,5 +284,96 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(out).to.have.lengthOf(2);
       expect(out[0].netRevenue).to.equal(true);
     });
+
+    it('filters bids whose requestId does not map to a sent slot/requestId', function () {
+      const bidRequest = {
+        data: {
+          slots: [{ id: 'slotA', requestId: 'bidA' }]
+        }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'unknown', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', ttl: 300, creativeId: 'c1' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('supports serverResponse.body as an array (fallback behavior)', function () {
+      const bidRequest = {
+        data: {
+          slots: [{ id: 'slotA', requestId: 'bidA' }]
+        }
+      };
+
+      const serverResponse = {
+        body: [{ requestId: 'bidA', cpm: '1.2', currency: 'EUR', width: '300', height: '250', ad: '<div/>', ttl: '120', creativeId: 'c1' }]
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].cpm).to.equal(1.2);
+      expect(out[0].ttl).to.equal(120);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    it('returns [] when gdprConsent missing', function () {
+      const out = spec.getUserSyncs({ iframeEnabled: true }, [], null);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('returns [] when iframeEnabled is false', function () {
+      const out = spec.getUserSyncs(
+        { iframeEnabled: false },
+        [],
+        { gdprApplies: false, consentString: 'abc' }
+      );
+      expect(out).to.deep.equal([]);
+    });
+
+    it('returns iframe sync when iframeEnabled and gdprApplies is false', function () {
+      const out = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: false, consentString: 'abc' }
+      );
+
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].type).to.equal('iframe');
+      expect(out[0].url).to.include('gdpr=0');
+      expect(out[0].url).to.include('gdpr_consent=' + encodeURIComponent('abc'));
+    });
+
+    it('returns iframe sync when gdprApplies true and purpose1 consent true', function () {
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(true);
+
+      const out = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: true, consentString: 'CONSENT' }
+      );
+
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].type).to.equal('iframe');
+      expect(out[0].url).to.include('gdpr=1');
+      expect(out[0].url).to.include('gdpr_consent=' + encodeURIComponent('CONSENT'));
+    });
+
+    it('returns [] when gdprApplies true and purpose1 consent false', function () {
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(false);
+
+      const out = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: true, consentString: 'CONSENT' }
+      );
+
+      expect(out).to.deep.equal([]);
+    });
   });
 });
+

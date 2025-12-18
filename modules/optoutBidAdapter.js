@@ -22,6 +22,50 @@ function getCurrency() {
   return cur;
 }
 
+/**
+ * Normalize customs:
+ * - arrays -> CSV string
+ * - null/undefined -> removed
+ * - objects -> JSON string (removed if not serializable / circular)
+ * - primitives -> String(value)
+ *
+ * Returns a new object (never mutates input).
+ */
+function normalizeCustoms(input) {
+  const out = Object.assign({}, input);
+
+  Object.entries(out).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      out[key] = value.join(',');
+      return;
+    }
+
+    if (value === null || value === undefined) {
+      delete out[key];
+      return;
+    }
+
+    if (typeof value === 'object') {
+      try {
+        const str = JSON.stringify(value);
+        if (str === undefined) {
+          delete out[key];
+        } else {
+          out[key] = str;
+        }
+      } catch (e) {
+        // e.g. circular structure
+        delete out[key];
+      }
+      return;
+    }
+
+    out[key] = String(value);
+  });
+
+  return out;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -31,6 +75,10 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    if (!Array.isArray(validBidRequests) || validBidRequests.length === 0) {
+      return [];
+    }
+
     const firstBid = validBidRequests[0];
 
     let endPoint = 'https://prebid.optoutadserving.com/prebid/display';
@@ -50,21 +98,23 @@ export const spec = {
         endPoint = 'https://prebid.optinadserving.com/prebid/display';
       }
     }
+
     const addOrtb = validBidRequests.some((f) => !!f?.params?.includeOrtb2);
 
     const slots = validBidRequests.map((b) => {
-      let customs = Object.assign({}, b?.params?.customs);
-      let slot = {
+      const slotCustoms = normalizeCustoms(b?.params?.customs);
+
+      const slot = {
         adSlot: b.params.adSlot,
         id: String(b.params.id ?? b.params.adSlot),
         requestId: b.bidId,
       };
-      if (Object.keys(customs).length) slot.customs = customs;
-      return slot;
-    }
-    );
 
-    const customs = Object.assign(
+      if (Object.keys(slotCustoms).length) slot.customs = slotCustoms;
+      return slot;
+    });
+
+    const mergedCustoms = Object.assign(
       {},
       firstBid?.params?.customs,
       bidderRequest?.ortb2?.ext?.data,
@@ -72,15 +122,8 @@ export const spec = {
       bidderRequest?.ortb2?.app?.ext?.data,
       bidderRequest?.ortb2?.user?.ext?.data
     );
-    Object.entries(customs).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        customs[key] = value.join(',');
-      } else if (value === null || value === undefined) {
-        delete customs[key]; // omit keys with null/undefined values so they are not sent to the ad server
-      } else {
-        customs[key] = String(value);
-      }
-    });
+
+    const customs = normalizeCustoms(mergedCustoms);
 
     const data = {
       publisher: firstBid.params.publisher,
@@ -89,16 +132,20 @@ export const spec = {
       url: getDomain(bidderRequest),
       sdk_version: 'prebid',
       consent: consentString,
-      gdpr,
-      ortb2: addOrtb ? JSON.stringify(bidderRequest.ortb2) : undefined
+      gdpr
     };
+
     if (Object.keys(customs).length) data.customs = customs;
+
+    if (addOrtb && bidderRequest?.ortb2) {
+      data.ortb2 = JSON.stringify(bidderRequest.ortb2);
+    }
 
     return [
       {
         method: 'POST',
         url: endPoint,
-        data: data
+        data
       }
     ];
   },
@@ -124,7 +171,7 @@ export const spec = {
       .map((bid) => {
         const serverSlotOrReq = String(bid.requestId);
 
-        let prebidRequestId = prebidIds.has(serverSlotOrReq)
+        const prebidRequestId = prebidIds.has(serverSlotOrReq)
           ? serverSlotOrReq
           : slotIdToPrebidId.get(serverSlotOrReq);
 
