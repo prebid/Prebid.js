@@ -73,7 +73,7 @@ export const spec = {
       bidderRequest?.ortb2?.site?.ext?.data,
       bidderRequest?.ortb2?.app?.ext?.data,
       bidderRequest?.ortb2?.user?.ext?.data
-    )
+    );
     Object.entries(customs).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         customs[key] = value.join(',');
