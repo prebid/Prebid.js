@@ -2849,6 +2849,18 @@ describe('Unit: Prebid Module', function () {
         // only appnexus supports native
         expect(biddersCalled.length).to.equal(1);
       });
+
+      it('module bids should not be filtered out', async () => {
+        delete adUnits[0].mediaTypes.banner;
+        adUnits[0].bids.push({
+          module: 'pbsBidAdapter',
+          ortb2Imp: {}
+        });
+
+        pbjs.requestBids({adUnits});
+        await auctionStarted;
+        expect(adapterManager.callBids.getCall(0).args[0][0].bids.length).to.eql(2);
+      })
     });
 
     describe('part 2', function () {

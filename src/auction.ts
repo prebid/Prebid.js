@@ -548,6 +548,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {
+        addBidTimingProperties(bid);
         auctionInstance.addNoBid(bid);
         events.emit(EVENTS.NO_BID, bid);
       }
@@ -704,17 +705,30 @@ declare module './bidfactory' {
     adserverTargeting: BaseBidResponse['adserverTargeting'];
   }
 }
+
 /**
- * Augment `bidResponse` with properties that are common across all bids - including rejected bids.
+ * Add timing properties to a bid response
  */
-function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: string, {index = auctionManager.index} = {}) {
+function addBidTimingProperties(bidResponse: Partial<Bid>, {index = auctionManager.index} = {}) {
   const bidderRequest = index.getBidderRequest(bidResponse);
-  const adUnit = index.getAdUnit(bidResponse);
   const start = (bidderRequest && bidderRequest.start) || bidResponse.requestTimestamp;
 
   Object.assign(bidResponse, {
     responseTimestamp: bidResponse.responseTimestamp || timestamp(),
     requestTimestamp: bidResponse.requestTimestamp || start,
+  });
+  bidResponse.timeToRespond = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
+}
+
+/**
+ * Augment `bidResponse` with properties that are common across all bids - including rejected bids.
+ */
+function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: string, {index = auctionManager.index} = {}) {
+  const adUnit = index.getAdUnit(bidResponse);
+
+  addBidTimingProperties(bidResponse, {index})
+
+  Object.assign(bidResponse, {
     cpm: parseFloat(bidResponse.cpm) || 0,
     bidder: bidResponse.bidder || bidResponse.bidderCode,
     adUnitCode
@@ -723,8 +737,6 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
   if (adUnit?.ttlBuffer != null) {
     bidResponse.ttlBuffer = adUnit.ttlBuffer;
   }
-
-  bidResponse.timeToRespond = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
 }
 
 /**

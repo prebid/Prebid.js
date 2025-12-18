@@ -733,5 +733,19 @@ describe('yieldoneBidAdapter', function () {
         gdprApplies: true,
       })).to.be.undefined;
     });
+
+    it('should skip sync request for bot-like user agents', function () {
+      const originalUA = navigator.userAgent;
+      try {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+          configurable: true
+        });
+
+        expect(spec.getUserSyncs({'iframeEnabled': true})).to.be.undefined;
+      } finally {
+        Object.defineProperty(navigator, 'userAgent', { value: originalUA, configurable: true });
+      }
+    });
   });
 });
