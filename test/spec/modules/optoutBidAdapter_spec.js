@@ -1,115 +1,197 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
+import { config } from 'src/config.js';
+import * as gdprUtils from 'src/utils/gdpr.js';
 import { spec } from 'modules/optoutBidAdapter.js';
-import {config} from 'src/config.js';
 
-describe('optoutAdapterTest', function () {
-  describe('bidRequestValidity', function () {
-    it('bidRequest with adslot param', function () {
+describe('optoutAdapterTest (new adapter)', function () {
+  afterEach(function () {
+    config.resetConfig();
+    sinon.restore();
+  });
+
+  describe('isBidRequestValid', function () {
+    it('valid when publisher + adSlot exist', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optout',
-        params: {
-          'adslot': 'prebid_demo',
-          'publisher': '8'
-        }
+        params: { adSlot: 'prebid_demo', publisher: '8' }
       })).to.equal(true);
     });
 
-    it('bidRequest with no adslot param', function () {
+    it('invalid when adSlot missing', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optout',
-        params: {
-          'publisher': '8'
-        }
+        params: { publisher: '8' }
       })).to.equal(false);
     });
 
-    it('bidRequest with no publisher param', function () {
+    it('invalid when publisher missing', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optout',
-        params: {
-          'adslot': 'prebid_demo'
-        }
+        params: { adSlot: 'prebid_demo' }
       })).to.equal(false);
     });
 
-    it('bidRequest without params', function () {
+    it('invalid when params missing', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optout',
-        params: { }
+        params: {}
       })).to.equal(false);
     });
   });
 
-  describe('bidRequest', function () {
-    const bidRequests = [{
-      'bidder': 'optout',
-      'params': {
-        'adslot': 'prebid_demo',
-        'publisher': '8'
+  describe('buildRequests', function () {
+    const bidRequests = [
+      {
+        bidder: 'optout',
+        params: { adSlot: 'prebid_demo', publisher: '8' },
+        bidId: 'bidA'
       },
-      'adUnitCode': 'aaa',
-      'transactionId': '1b8389fe-615c-482d-9f1a-177fb8f7d5b0',
-      'bidId': '9304jr394ddfj',
-      'bidderRequestId': '70deaff71c281d',
-      'auctionId': '5c66da22-426a-4bac-b153-77360bef5337'
-    },
-    {
-      'bidder': 'optout',
-      'params': {
-        'adslot': 'testslot2',
-        'publisher': '2'
-      },
-      'adUnitCode': 'bbb',
-      'transactionId': '193995b4-7122-4739-959b-2463282a138b',
-      'bidId': '893j4f94e8jei',
-      'bidderRequestId': '70deaff71c281d',
-      'gdprConsent': {
-        consentString: '',
-        gdprApplies: true,
-        apiVersion: 2
-      },
-      'auctionId': 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
-    }];
+      {
+        bidder: 'optout',
+        params: { adSlot: 'testslot2', publisher: '8' },
+        bidId: 'bidB'
+      }
+    ];
 
-    it('bidRequest HTTP method', function () {
+    it('returns a single POST request', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
-        expect(requestItem.method).to.equal('POST');
-      });
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('POST');
     });
 
-    it('bidRequest url without consent', function () {
+    it('uses optout endpoint when no gdprConsent', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
-        expect(requestItem.url).to.match(new RegExp('adscience-nocookie\\.nl/prebid/display'));
-      });
+      expect(requests[0].url).to.match(/optoutadserving\.com\/prebid\/display/);
     });
 
-    it('bidRequest id', function () {
-      const requests = spec.buildRequests(bidRequests, {});
-      expect(requests[0].data.requestId).to.equal('9304jr394ddfj');
-      expect(requests[1].data.requestId).to.equal('893j4f94e8jei');
-    });
-
-    it('bidRequest with config for currency', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'USD',
-          granularityMultiplier: 1
+    it('uses optin endpoint when gdprApplies is false', function () {
+      const bidderRequest = {
+        gdprConsent: {
+          gdprApplies: false,
+          consentString: 'test',
+          apiVersion: 2
         }
-      })
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.match(/optinadserving\.com\/prebid\/display/);
+      expect(requests[0].data.gdpr).to.equal(0);
+    });
+
+    it('currency defaults to EUR when not configured', function () {
+      config.resetConfig();
+      const requests = spec.buildRequests(bidRequests, {});
+      expect(requests[0].data.cur.adServerCurrency).to.equal('EUR');
+    });
+
+    it('currency uses config when provided', function () {
+      config.setConfig({
+        currency: { adServerCurrency: 'USD', granularityMultiplier: 1 }
+      });
 
       const requests = spec.buildRequests(bidRequests, {});
       expect(requests[0].data.cur.adServerCurrency).to.equal('USD');
-      expect(requests[1].data.cur.adServerCurrency).to.equal('USD');
     });
 
-    it('bidRequest without config for currency', function () {
-      config.resetConfig();
-
+    it('builds slots with id and requestId', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      expect(requests[0].data.cur.adServerCurrency).to.equal('EUR');
-      expect(requests[1].data.cur.adServerCurrency).to.equal('EUR');
+      const slots = requests[0].data.slots;
+
+      expect(slots[0].id).to.equal('prebid_demo');
+      expect(slots[0].requestId).to.equal('bidA');
+      expect(slots[1].id).to.equal('testslot2');
+      expect(slots[1].requestId).to.equal('bidB');
+    });
+
+    it('normalizes customs to strings and flattens arrays', function () {
+      const br = [{
+        bidder: 'optout',
+        params: {
+          adSlot: 'slot',
+          publisher: '8',
+          customs: { foo: 'bar' }
+        },
+        bidId: '1'
+      }];
+
+      const bidderRequest = {
+        ortb2: {
+          ext: { data: { a: ['x', 'y'], b: 123, c: null } }
+        }
+      };
+
+      const requests = spec.buildRequests(br, bidderRequest);
+      const customs = requests[0].data.customs;
+
+      expect(customs.foo).to.equal('bar');
+      expect(customs.a).to.equal('x,y');
+      expect(customs.b).to.equal('123');
+      expect(customs).to.not.have.property('c');
+    });
+  });
+
+  describe('buildRequests (GDPR Purpose 1)', function () {
+    const bidRequests = [
+      { bidder: 'optout', params: { adSlot: 'slot', publisher: '8' }, bidId: '1' }
+    ];
+
+    it('routes to optin when purpose1 consent is true', function () {
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(true);
+
+      const bidderRequest = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'CONSENT',
+          apiVersion: 2
+        }
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.match(/optinadserving\.com\/prebid\/display/);
+      expect(requests[0].data.gdpr).to.equal(1);
+    });
+
+    it('routes to optout when purpose1 consent is false', function () {
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(false);
+
+      const bidderRequest = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'CONSENT',
+          apiVersion: 2
+        }
+      };
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.match(/optoutadserving\.com\/prebid\/display/);
+      expect(requests[0].data.gdpr).to.equal(1);
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('maps bids correctly using slot id or requestId', function () {
+      const bidRequest = {
+        data: {
+          slots: [
+            { id: 'slotA', requestId: 'bidA' },
+            { id: 'slotB', requestId: 'bidB' }
+          ]
+        }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [
+            { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', ttl: 300, creativeId: 'c1' },
+            { requestId: 'slotB', cpm: 2, currency: 'EUR', width: 728, height: 90, ad: '<div/>', ttl: 300, creativeId: 'c2' }
+          ]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.have.lengthOf(2);
+      expect(out[0].netRevenue).to.equal(true);
     });
   });
 });
