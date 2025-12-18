@@ -239,7 +239,7 @@ npx eslint 'modules/neuwoRtdProvider.js' --cache --cache-strategy content
 To run the module-specific tests:
 
 ```bash
-npx gulp test-only --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter --file=test/spec/modules/euwoRtdProvider_spec.js
+npx gulp test-only --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter --file=test/spec/modules/neuwoRtdProvider_spec.js
 ```
 
 Skip building, if the project has already been built:
