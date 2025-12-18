@@ -114,7 +114,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   // Adjusted for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?')
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
   const neuwoApiUrlFull =
-    neuwoApiUrl + joiner + ["token=" + neuwoApiToken, "url=" + pageUrl].join("&");
+    neuwoApiUrl + joiner + ["token=" + neuwoApiToken, "url=" + pageUrl, "_neuwo_prod=PrebidModule"].join("&");
 
   // Cache flow: cached response -> pending request -> new request
   // Each caller gets their own callback invoked when data is ready.
