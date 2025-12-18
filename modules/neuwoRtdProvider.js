@@ -39,6 +39,7 @@ export function clearCache() {
 
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
 // Based on https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--category-taxonomies-
+// prettier-ignore
 const IAB_CONTENT_TAXONOMY_MAP = {
   "1.0": 1,
   "2.0": 2,
@@ -88,8 +89,18 @@ function init(config, userConsent) {
  * @param {boolean} [config.params.stripFragments] If true, strips URL fragments (hash).
  * @param {Object} userConsent The user consent object.
  */
-export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  logInfo(MODULE_NAME, "getBidRequestData():", "starting getBidRequestData", config);
+export function getBidRequestData(
+  reqBidsConfigObj,
+  callback,
+  config,
+  userConsent
+) {
+  logInfo(
+    MODULE_NAME,
+    "getBidRequestData():",
+    "starting getBidRequestData",
+    config
+  );
 
   const {
     websiteToAnalyseUrl,
@@ -108,64 +119,123 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     stripAllQueryParams,
     stripQueryParamsForDomains,
     stripQueryParams,
-    stripFragments
+    stripFragments,
   });
   const pageUrl = encodeURIComponent(processedUrl);
   // Adjusted for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?')
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
   const neuwoApiUrlFull =
-    neuwoApiUrl + joiner + ["token=" + neuwoApiToken, "url=" + pageUrl, "_neuwo_prod=PrebidModule"].join("&");
+    neuwoApiUrl +
+    joiner +
+    [
+      "token=" + neuwoApiToken,
+      "url=" + pageUrl,
+      "_neuwo_prod=PrebidModule",
+    ].join("&");
 
   // Cache flow: cached response -> pending request -> new request
   // Each caller gets their own callback invoked when data is ready.
   if (enableCache && globalCachedResponse) {
     // Previous request succeeded - use cached response immediately
-    logInfo(MODULE_NAME, "getBidRequestData():", "Cache System:", "Using cached response:", globalCachedResponse);
-    injectIabCategories(globalCachedResponse, reqBidsConfigObj, iabContentTaxonomyVersion);
+    logInfo(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "Cache System:",
+      "Using cached response:",
+      globalCachedResponse
+    );
+    injectIabCategories(
+      globalCachedResponse,
+      reqBidsConfigObj,
+      iabContentTaxonomyVersion
+    );
     callback();
   } else if (enableCache && pendingRequest) {
     // Another caller started a request - wait for it instead of making a duplicate
-    logInfo(MODULE_NAME, "getBidRequestData():", "Cache System:", "Waiting for pending request");
+    logInfo(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "Cache System:",
+      "Waiting for pending request"
+    );
     pendingRequest
       .then((responseParsed) => {
         if (responseParsed) {
-          injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
+          injectIabCategories(
+            responseParsed,
+            reqBidsConfigObj,
+            iabContentTaxonomyVersion
+          );
         }
       })
       .finally(() => callback());
   } else {
     // First request or cache disabled - make the API call
-    logInfo(MODULE_NAME, "getBidRequestData():", "Cache System:", "Calling Neuwo API Endpoint:", neuwoApiUrlFull);
+    logInfo(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "Cache System:",
+      "Calling Neuwo API Endpoint:",
+      neuwoApiUrlFull
+    );
 
     const requestPromise = new Promise((resolve) => {
-      ajax(neuwoApiUrlFull, {
-        success: (response) => {
-          logInfo(MODULE_NAME, "getBidRequestData():", "success():", "Neuwo API raw response:", response);
-          try {
-            const responseParsed = JSON.parse(response);
-            // Cache response
-            if (enableCache) {
-              globalCachedResponse = responseParsed;
+      ajax(
+        neuwoApiUrlFull,
+        {
+          success: (response) => {
+            logInfo(
+              MODULE_NAME,
+              "getBidRequestData():",
+              "success():",
+              "Neuwo API raw response:",
+              response
+            );
+            try {
+              const responseParsed = JSON.parse(response);
+              // Cache response
+              if (enableCache) {
+                globalCachedResponse = responseParsed;
+              }
+              injectIabCategories(
+                responseParsed,
+                reqBidsConfigObj,
+                iabContentTaxonomyVersion
+              );
+              resolve(responseParsed);
+            } catch (ex) {
+              logError(
+                MODULE_NAME,
+                "getBidRequestData():",
+                "success():",
+                "Error parsing Neuwo API response:",
+                ex
+              );
+              resolve(null);
             }
-            injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
-            resolve(responseParsed);
-          } catch (ex) {
-            logError(MODULE_NAME, "getBidRequestData():", "success():", "Error parsing Neuwo API response:", ex);
+          },
+          error: (err) => {
+            logError(
+              MODULE_NAME,
+              "getBidRequestData():",
+              "error():",
+              "AJAX error:",
+              err
+            );
             resolve(null);
-          }
+          },
         },
-        error: (err) => {
-          logError(MODULE_NAME, "getBidRequestData():", "error():", "AJAX error:", err);
-          resolve(null);
-        }
-      }, null);
+        null
+      );
     });
 
     if (enableCache) {
       // Store promise so concurrent callers can wait on it
       pendingRequest = requestPromise;
       // Clear after settling so failed requests can be retried
-      requestPromise.finally(() => { pendingRequest = undefined; });
+      requestPromise.finally(() => {
+        pendingRequest = undefined;
+      });
     }
 
     // Signal this caller's auction to proceed once request completes
@@ -189,10 +259,19 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
  * @returns {string} The cleaned URL.
  */
 export function cleanUrl(url, options = {}) {
-  const { stripAllQueryParams, stripQueryParamsForDomains, stripQueryParams, stripFragments } = options;
+  const {
+    stripAllQueryParams,
+    stripQueryParamsForDomains,
+    stripQueryParams,
+    stripFragments,
+  } = options;
 
   if (!url) {
-    logInfo(MODULE_NAME, "cleanUrl():", "Empty or null URL provided, returning as-is");
+    logInfo(
+      MODULE_NAME,
+      "cleanUrl():",
+      "Empty or null URL provided, returning as-is"
+    );
     return url;
   }
 
@@ -216,9 +295,12 @@ export function cleanUrl(url, options = {}) {
     }
 
     // Option 2: Strip all query params for specific domains
-    if (Array.isArray(stripQueryParamsForDomains) && stripQueryParamsForDomains.length > 0) {
+    if (
+      Array.isArray(stripQueryParamsForDomains) &&
+      stripQueryParamsForDomains.length > 0
+    ) {
       const hostname = urlObj.hostname;
-      const shouldStripForDomain = stripQueryParamsForDomains.some(domain => {
+      const shouldStripForDomain = stripQueryParamsForDomains.some((domain) => {
         // Support exact match or subdomain match
         return hostname === domain || hostname.endsWith("." + domain);
       });
@@ -237,8 +319,12 @@ export function cleanUrl(url, options = {}) {
     // - "??" is treated as query parameter with key "?" and value ""
     if (Array.isArray(stripQueryParams) && stripQueryParams.length > 0) {
       const queryParams = urlObj.searchParams;
-      logInfo(MODULE_NAME, "cleanUrl():", `Query parameters to strip: ${stripQueryParams}`);
-      stripQueryParams.forEach(param => {
+      logInfo(
+        MODULE_NAME,
+        "cleanUrl():",
+        `Query parameters to strip: ${stripQueryParams}`
+      );
+      stripQueryParams.forEach((param) => {
         queryParams.delete(param);
       });
       urlObj.search = queryParams.toString();
@@ -309,12 +395,20 @@ export function buildIabData(marketingCategories, tiers, segtax) {
  * @param {Object} reqBidsConfigObj The bid request configuration object to be modified.
  * @param {string} iabContentTaxonomyVersion The version of the IAB content taxonomy to use for segtax mapping.
  */
-function injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion) {
+function injectIabCategories(
+  responseParsed,
+  reqBidsConfigObj,
+  iabContentTaxonomyVersion
+) {
   const marketingCategories = responseParsed.marketing_categories;
 
   if (!marketingCategories) {
-    logError(MODULE_NAME, "injectIabCategories():", "No Marketing Categories in Neuwo API response.");
-    return
+    logError(
+      MODULE_NAME,
+      "injectIabCategories():",
+      "No Marketing Categories in Neuwo API response."
+    );
+    return;
   }
 
   // Process content categories
@@ -322,20 +416,40 @@ function injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonom
   const contentData = buildIabData(
     marketingCategories,
     contentTiers,
-    IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] || IAB_CONTENT_TAXONOMY_MAP["3.0"]
+    IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
+      IAB_CONTENT_TAXONOMY_MAP["3.0"]
   );
 
   // Process audience categories
-  const audienceTiers = ["iab_audience_tier_3", "iab_audience_tier_4", "iab_audience_tier_5"];
+  const audienceTiers = [
+    "iab_audience_tier_3",
+    "iab_audience_tier_4",
+    "iab_audience_tier_5",
+  ];
   const audienceData = buildIabData(marketingCategories, audienceTiers, 4);
 
-  logInfo(MODULE_NAME, "injectIabCategories():", "contentData structure:", contentData);
-  logInfo(MODULE_NAME, "injectIabCategories():", "audienceData structure:", audienceData);
+  logInfo(
+    MODULE_NAME,
+    "injectIabCategories():",
+    "contentData structure:",
+    contentData
+  );
+  logInfo(
+    MODULE_NAME,
+    "injectIabCategories():",
+    "audienceData structure:",
+    audienceData
+  );
 
   injectOrtbData(reqBidsConfigObj, "site.content.data", [contentData]);
   injectOrtbData(reqBidsConfigObj, "user.data", [audienceData]);
 
-  logInfo(MODULE_NAME, "injectIabCategories():", "post-injection bidsConfig", reqBidsConfigObj);
+  logInfo(
+    MODULE_NAME,
+    "injectIabCategories():",
+    "post-injection bidsConfig",
+    reqBidsConfigObj
+  );
 }
 
 export const neuwoRtdModule = {
