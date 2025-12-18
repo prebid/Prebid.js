@@ -201,7 +201,7 @@ export const spec = {
         if (!bid.currency || !bid.ad || bid.width == null || bid.height == null) return null;
 
         const cpmNum = Number(bid.cpm);
-        if (bid.cpm == null || Number.isNaN(cpmNum)) return null;
+        if (bid.cpm == null || Number.isNaN(cpmNum) || cpmNum <= 0) return null;
 
         const w = Number(bid.width);
         const h = Number(bid.height);
