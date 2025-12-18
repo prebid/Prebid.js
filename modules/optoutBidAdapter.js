@@ -50,9 +50,7 @@ export const spec = {
         endPoint = 'https://prebid.optinadserving.com/prebid/display';
       }
     }
-    const addOrtb = validBidRequests.find((f) => {
-      return f.params.includeOrtb2
-    })
+    const addOrtb = validBidRequests.some((f) => !!f?.params?.includeOrtb2);
 
     const slots = validBidRequests.map((b) => {
       let customs = Object.assign({}, b?.params?.customs);
