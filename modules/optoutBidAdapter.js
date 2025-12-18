@@ -50,7 +50,6 @@ function normalizeCustoms(input) {
   if (!input || typeof input !== 'object') {
     return {};
   }
-  if (!input || typeof input !== 'object') return {};
 
   const out = Object.assign({}, input);
 
