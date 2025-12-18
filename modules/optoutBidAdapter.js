@@ -131,10 +131,12 @@ export const spec = {
 
       const slot = {
         adSlot: b.params.adSlot,
-        id: String(b.params.id ?? b.params.adSlot),
         requestId: b.bidId,
       };
 
+      if (b.params && b.params.id != null) {
+        slot.id = String(b.params.id);
+      }
       if (Object.keys(slotCustoms).length) slot.customs = slotCustoms;
       return slot;
     });
