@@ -198,7 +198,7 @@ export const spec = {
 
         const w = Number(bid.width);
         const h = Number(bid.height);
-        if (!w || !h) return null;
+        if (!Number.isFinite(w) || w <= 0 || !Number.isFinite(h) || h <= 0) return null;
 
         const serverSlotOrReq = String(bid.requestId);
 
