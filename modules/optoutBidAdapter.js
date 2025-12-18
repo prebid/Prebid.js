@@ -6,12 +6,27 @@ import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 const BIDDER_CODE = 'optout';
 const GVLID = 227;
 
+function sanitizeUrl(rawUrl) {
+  if (!rawUrl) return rawUrl;
+  try {
+    const u = new URL(rawUrl, deepAccess(window, 'location.href'));
+    // Avoid leaking query params / fragments
+    return `${u.origin}${u.pathname}`;
+  } catch (e) {
+    // If it's not a valid URL, return as-is (best-effort)
+    return rawUrl;
+  }
+}
+
 function getDomain(bidderRequest) {
-  return (
-    deepAccess(bidderRequest, 'refererInfo.canonicalUrl') ||
-    deepAccess(bidderRequest, 'refererInfo.page') ||
-    deepAccess(window, 'location.href')
-  );
+  const fromCanonical = deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+  if (fromCanonical) return sanitizeUrl(fromCanonical);
+
+  const fromPage = deepAccess(bidderRequest, 'refererInfo.page');
+  if (fromPage) return sanitizeUrl(fromPage);
+
+  const href = deepAccess(window, 'location.href');
+  return sanitizeUrl(href);
 }
 
 function getCurrency() {
@@ -32,6 +47,8 @@ function getCurrency() {
  * Returns a new object (never mutates input).
  */
 function normalizeCustoms(input) {
+  if (!input || typeof input !== 'object') return {};
+
   const out = Object.assign({}, input);
 
   Object.entries(out).forEach(([key, value]) => {
@@ -83,15 +100,18 @@ export const spec = {
 
     let endPoint = 'https://prebid.optoutadserving.com/prebid/display';
 
-    const gdprConsent = bidderRequest?.gdprConsent;
+    const gdprConsent =
+      bidderRequest && typeof bidderRequest === 'object' ? bidderRequest.gdprConsent : null;
+
     let consentString = '';
     let gdpr = 0;
 
-    if (gdprConsent) {
+    if (gdprConsent && typeof gdprConsent === 'object') {
       gdpr =
         typeof gdprConsent.gdprApplies === 'boolean'
           ? Number(gdprConsent.gdprApplies)
           : 0;
+
       consentString = gdprConsent.consentString || '';
 
       if (!gdpr || hasPurpose1Consent(gdprConsent)) {
@@ -99,7 +119,7 @@ export const spec = {
       }
     }
 
-    const addOrtb = validBidRequests.some((f) => !!f?.params?.includeOrtb2);
+    const shouldIncludeOrtb2 = validBidRequests.some((b) => !!b?.params?.includeOrtb2);
 
     const slots = validBidRequests.map((b) => {
       const slotCustoms = normalizeCustoms(b?.params?.customs);
@@ -126,7 +146,7 @@ export const spec = {
     const customs = normalizeCustoms(mergedCustoms);
 
     const data = {
-      publisher: firstBid.params.publisher,
+      publisher: firstBid.params.publisher, // intentionally uses the first bid's publisher when batching
       slots,
       cur: getCurrency(),
       url: getDomain(bidderRequest),
@@ -137,7 +157,7 @@ export const spec = {
 
     if (Object.keys(customs).length) data.customs = customs;
 
-    if (addOrtb && bidderRequest?.ortb2) {
+    if (shouldIncludeOrtb2 && bidderRequest?.ortb2) {
       data.ortb2 = JSON.stringify(bidderRequest.ortb2);
     }
 
@@ -169,6 +189,17 @@ export const spec = {
 
     return bids
       .map((bid) => {
+        // Defensive handling of malformed bids
+        if (!bid || !bid.requestId) return null;
+        if (!bid.currency || !bid.ad || bid.width == null || bid.height == null) return null;
+
+        const cpmNum = Number(bid.cpm);
+        if (bid.cpm == null || Number.isNaN(cpmNum)) return null;
+
+        const w = Number(bid.width);
+        const h = Number(bid.height);
+        if (!w || !h) return null;
+
         const serverSlotOrReq = String(bid.requestId);
 
         const prebidRequestId = prebidIds.has(serverSlotOrReq)
@@ -179,10 +210,10 @@ export const spec = {
 
         return {
           requestId: prebidRequestId,
-          cpm: Number(bid.cpm) || 0,
+          cpm: cpmNum,
           currency: bid.currency,
-          width: Number(bid.width),
-          height: Number(bid.height),
+          width: w,
+          height: h,
           ad: bid.ad,
           ttl: Number(bid.ttl) || 300,
           creativeId: bid.creativeId,
@@ -195,7 +226,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (!gdprConsent) return [];
+    if (!gdprConsent || typeof gdprConsent !== 'object') return [];
 
     const gdpr =
       typeof gdprConsent.gdprApplies === 'boolean'

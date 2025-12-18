@@ -4,7 +4,7 @@ import { config } from 'src/config.js';
 import * as gdprUtils from 'src/utils/gdpr.js';
 import { spec } from 'modules/optoutBidAdapter.js';
 
-describe('optoutAdapterTest (new adapter)', function () {
+describe('optoutAdapterTest', function () {
   afterEach(function () {
     config.resetConfig();
     sinon.restore();
@@ -84,6 +84,24 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(requests[0].data.gdpr).to.equal(0);
     });
 
+    it('handles gdprConsent with apiVersion 1 (no special branching)', function () {
+      const bidderRequest = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: '',
+          apiVersion: 1
+        }
+      };
+
+      // purpose1 not stubbed; safest expected is still optout when gdprApplies true & hasPurpose1Consent false/unknown
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(false);
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.gdpr).to.equal(1);
+      expect(requests[0].data.consent).to.equal('');
+      expect(requests[0].url).to.match(/optoutadserving\.com\/prebid\/display/);
+    });
+
     it('always includes sdk_version=prebid', function () {
       const requests = spec.buildRequests(bidRequests, {});
       expect(requests[0].data.sdk_version).to.equal('prebid');
@@ -114,24 +132,37 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(slots[1].requestId).to.equal('bidB');
     });
 
-    it('uses refererInfo.canonicalUrl when present', function () {
-      const bidderRequest = { refererInfo: { canonicalUrl: 'https://example.com/canonical' } };
+    it('uses refererInfo.canonicalUrl when present (sanitized to origin+pathname)', function () {
+      const bidderRequest = { refererInfo: { canonicalUrl: 'https://example.com/path?secret=1#frag' } };
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].data.url).to.equal('https://example.com/canonical');
+      expect(requests[0].data.url).to.equal('https://example.com/path');
     });
 
-    it('falls back to refererInfo.page when canonicalUrl missing', function () {
-      const bidderRequest = { refererInfo: { page: 'https://example.com/page' } };
+    it('falls back to refererInfo.page when canonicalUrl missing (sanitized)', function () {
+      const bidderRequest = { refererInfo: { page: 'https://example.com/page?x=1#y' } };
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].data.url).to.equal('https://example.com/page');
     });
 
-    it('falls back to window.location.href when refererInfo missing', function () {
+    it('falls back to window.location (sanitized) when refererInfo missing', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      expect(requests[0].data.url).to.equal(window.location.href);
+      // The adapter sanitizes to origin+pathname
+      expect(requests[0].data.url).to.equal(window.location.origin + window.location.pathname);
     });
 
-    it('normalizes customs to strings, flattens arrays, stringifies objects, and drops invalid', function () {
+    it('uses publisher from the first bid when batching, even if later bids differ', function () {
+      const br = [
+        { bidder: 'optout', params: { adSlot: 'slot1', publisher: 'PUB1' }, bidId: '1' },
+        { bidder: 'optout', params: { adSlot: 'slot2', publisher: 'PUB2' }, bidId: '2' }
+      ];
+
+      const requests = spec.buildRequests(br, {});
+      expect(requests[0].data.publisher).to.equal('PUB1');
+      // Slots are still batched into one request
+      expect(requests[0].data.slots).to.have.lengthOf(2);
+    });
+
+    it('normalizes customs to strings, flattens arrays, stringifies objects, and drops invalid (circular omitted)', function () {
       const circular = {};
       circular.self = circular;
 
@@ -159,7 +190,24 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(customs.b).to.equal('123');
       expect(customs.obj).to.equal(JSON.stringify({ k: 'v' }));
       expect(customs).to.not.have.property('c');
+      // 'bad' was circular, so it must be dropped
       expect(customs).to.not.have.property('bad');
+    });
+
+    it('handles customs as null/undefined without throwing', function () {
+      const br = [{
+        bidder: 'optout',
+        params: {
+          adSlot: 'slot',
+          publisher: '8',
+          customs: null
+        },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      // customs absent -> no slot.customs
+      expect(requests[0].data.slots[0]).to.not.have.property('customs');
     });
 
     it('does not mutate input customs objects', function () {
@@ -302,7 +350,8 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(out).to.deep.equal([]);
     });
 
-    it('supports serverResponse.body as an array (fallback behavior)', function () {
+    it('supports serverResponse.body as an array (defensive parsing)', function () {
+      // This also verifies numeric coercion is robust if server returns strings.
       const bidRequest = {
         data: {
           slots: [{ id: 'slotA', requestId: 'bidA' }]
@@ -318,11 +367,54 @@ describe('optoutAdapterTest (new adapter)', function () {
       expect(out[0].cpm).to.equal(1.2);
       expect(out[0].ttl).to.equal(120);
     });
+
+    it('drops bids with missing/invalid requestId', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [
+            { requestId: null, cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' },
+            { /* missing requestId */ cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }
+          ]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops incomplete bids missing required fields', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [
+            { requestId: 'bidA', cpm: 1, /* currency missing */ width: 300, height: 250, ad: '<div/>' },
+            { requestId: 'bidA', cpm: 1, currency: 'EUR', /* width missing */ height: 250, ad: '<div/>' },
+            { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, /* height missing */ ad: '<div/>' },
+            { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250 /* ad missing */ }
+          ]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
   });
 
   describe('getUserSyncs', function () {
     it('returns [] when gdprConsent missing', function () {
       const out = spec.getUserSyncs({ iframeEnabled: true }, [], null);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('returns [] when gdprConsent is a non-object truthy value', function () {
+      const out = spec.getUserSyncs({ iframeEnabled: true }, [], 'CONSENTSTRING');
       expect(out).to.deep.equal([]);
     });
 
@@ -376,4 +468,3 @@ describe('optoutAdapterTest (new adapter)', function () {
     });
   });
 });
-
