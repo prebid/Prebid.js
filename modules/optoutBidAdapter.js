@@ -91,7 +91,9 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
-    return !!bid?.params?.publisher && !!bid?.params?.adSlot;
+    const params = bid && bid.params;
+    const adSlot = params && (params.adSlot || params.adslot);
+    return !!(params && params.publisher && adSlot);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
