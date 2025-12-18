@@ -13,8 +13,8 @@ function sanitizeUrl(rawUrl) {
     // Avoid leaking query params / fragments
     return `${u.origin}${u.pathname}`;
   } catch (e) {
-    // If it's not a valid URL, return as-is (best-effort)
-    return rawUrl;
+    // If it's not a valid URL, return an empty string to avoid leaking potentially sensitive data
+    return '';
   }
 }
 
