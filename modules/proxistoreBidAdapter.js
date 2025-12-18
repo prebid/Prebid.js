@@ -1,11 +1,22 @@
 import { isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
 const COOKIE_LESS_URL =
   'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
+
+const converter = ortbConverter({
+  context: {
+    mediaType: BANNER,
+    netRevenue: true,
+    ttl: 30,
+    currency: 'EUR',
+  }
+});
 
 function _createServerRequest(bidRequests, bidderRequest) {
   var sizeIds = [];
@@ -34,6 +45,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
       applies: false,
       consentGiven: false,
     },
+    openrtb: converter.toORTB({ bidRequests, bidderRequest }),
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
