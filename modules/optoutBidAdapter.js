@@ -78,7 +78,7 @@ export const spec = {
       if (Array.isArray(value)) {
         customs[key] = value.join(',');
       } else if (value === null || value === undefined) {
-        delete customs[key]; // optional: drop invalid values
+        delete customs[key]; // omit keys with null/undefined values so they are not sent to the ad server
       } else {
         customs[key] = String(value);
       }
