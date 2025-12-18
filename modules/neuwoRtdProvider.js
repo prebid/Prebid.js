@@ -25,13 +25,16 @@ export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Cached API response to avoid redundant requests.
 let globalCachedResponse;
+// In-flight request promise to prevent duplicate API calls during the same request cycle.
+let pendingRequest;
 
 /**
- * Clears the cached API response. Primarily used for testing.
+ * Clears the cached API response and pending request. Primarily used for testing.
  * @private
  */
 export function clearCache() {
   globalCachedResponse = undefined;
+  pendingRequest = undefined;
 }
 
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
@@ -113,34 +116,60 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   const neuwoApiUrlFull =
     neuwoApiUrl + joiner + ["token=" + neuwoApiToken, "url=" + pageUrl].join("&");
 
-  const success = (response) => {
-    logInfo(MODULE_NAME, "getBidRequestData:", "Neuwo API raw response:", response);
-    try {
-      const responseParsed = JSON.parse(response);
-
-      if (enableCache) {
-        globalCachedResponse = responseParsed;
-      }
-
-      injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
-    } catch (ex) {
-      logError(MODULE_NAME, "getBidRequestData:", "Error while processing Neuwo API response", ex);
-    }
-    callback();
-  };
-
-  const error = (err) => {
-    logError(MODULE_NAME, "getBidRequestData:", "AJAX error:", err);
-    callback();
-  };
-
+  // Cache flow: cached response -> pending request -> new request
+  // Each caller gets their own callback invoked when data is ready.
   if (enableCache && globalCachedResponse) {
+    // Previous request succeeded - use cached response immediately
     logInfo(MODULE_NAME, "getBidRequestData:", "Using cached response:", globalCachedResponse);
     injectIabCategories(globalCachedResponse, reqBidsConfigObj, iabContentTaxonomyVersion);
     callback();
+  } else if (enableCache && pendingRequest) {
+    // Another caller started a request - wait for it instead of making a duplicate
+    logInfo(MODULE_NAME, "getBidRequestData:", "Waiting for pending request");
+    pendingRequest
+      .then((responseParsed) => {
+        if (responseParsed) {
+          injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
+        }
+      })
+      .finally(() => callback());
   } else {
-    logInfo(MODULE_NAME, "getBidRequestData:", "Calling Neuwo API Endpoint: ", neuwoApiUrlFull);
-    ajax(neuwoApiUrlFull, { success, error }, null);
+    // First request or cache disabled - make the API call
+    logInfo(MODULE_NAME, "getBidRequestData:", "Calling Neuwo API Endpoint:", neuwoApiUrlFull);
+
+    const requestPromise = new Promise((resolve) => {
+      ajax(neuwoApiUrlFull, {
+        success: (response) => {
+          logInfo(MODULE_NAME, "getBidRequestData:", "Neuwo API raw response:", response);
+          try {
+            const responseParsed = JSON.parse(response);
+            // Cache response
+            if (enableCache) {
+              globalCachedResponse = responseParsed;
+            }
+            injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
+            resolve(responseParsed);
+          } catch (ex) {
+            logError(MODULE_NAME, "getBidRequestData:", "Error parsing Neuwo API response:", ex);
+            resolve(null);
+          }
+        },
+        error: (err) => {
+          logError(MODULE_NAME, "getBidRequestData:", "AJAX error:", err);
+          resolve(null);
+        }
+      }, null);
+    });
+
+    if (enableCache) {
+      // Store promise so concurrent callers can wait on it
+      pendingRequest = requestPromise;
+      // Clear after settling so failed requests can be retried
+      requestPromise.finally(() => { pendingRequest = undefined; });
+    }
+
+    // Signal this caller's auction to proceed once request completes
+    requestPromise.finally(() => callback());
   }
 }
 
