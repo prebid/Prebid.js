@@ -31,7 +31,7 @@ function getSlotConfigs(mediaTypes, params) {
     bidId: '30b31c1838de1e',
     bidderRequestId: '22edbae2733bf6',
     auctionId: '1d1a030790a475',
-    bidRequestsCount: 1,
+    bidderRequestsCount: 1,
     bidder: 'seedtag',
     mediaTypes: mediaTypes,
     src: 'client',

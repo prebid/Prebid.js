@@ -179,7 +179,7 @@ export function objectGuard(rules) {
           // apply all (possibly nested) write protect rules
           const curValue = Reflect.get(target, prop, receiver);
           newValue = cleanup(tree.children[prop], curValue, newValue, applies);
-          if (!isData(newValue) && !target.hasOwnProperty(prop)) {
+          if (typeof newValue === 'undefined' && !target.hasOwnProperty(prop)) {
             return true;
           }
         }
