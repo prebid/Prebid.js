@@ -65,7 +65,7 @@
 
     .controls {
       margin: 30px 0;
-      padding: 20px;
+      padding: 15px;
       background: #f8f9fa;
       border-radius: 4px;
       position: relative;
@@ -151,6 +151,27 @@
       margin: 40px auto;
       display: block;
       object-fit: contain;
+    }
+
+    /* Echo Ads overlay - let container fit the ad's natural size */
+    #echo-ads-overlay > div[id^="echo-ad"] {
+      width: auto !important;
+      max-width: 95vw !important;  /* Prevent overflow on small screens */
+      min-width: auto !important;
+      height: auto !important;
+      min-height: auto !important;
+      box-sizing: border-box !important;
+      padding: 10px !important;
+      position: relative !important;
+      display: inline-block !important;
+    }
+
+    /* Ensure close button stays fixed size */
+    #echo-ads-overlay > div[id^="echo-ad"] > button {
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      max-width: 28px !important;
     }
 
     .footer {
