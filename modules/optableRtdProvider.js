@@ -50,9 +50,9 @@ export const parseConfig = (moduleConfig) => {
 const waitForOptableEvent = (eventName) => {
   return new Promise((resolve) => {
     // 1. Check if 'optable-targeting:change' event has already fired by checking global
-    if (typeof window !== 'undefined' && window.OPTABLE_RESOLVED) {
+    if (typeof window !== 'undefined' && window.localStorage.OPTABLE_RESOLVED) {
       logMessage('Optable targeting already resolved (OPTABLE_RESOLVED flag found)');
-      resolve(window.OPTABLE_RESOLVED);
+      resolve(window.localStorage.OPTABLE_RESOLVED);
       return;
     }
 
