@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -82,10 +83,10 @@ export const spec = {
       }
 
       // Include connection info if available
-      const CONNECTION = navigator.connection || navigator.webkitConnection;
-      if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
-        data['netinfo.type'] = CONNECTION.type;
-        data['netinfo.downlinkMax'] = CONNECTION.downlinkMax;
+      const connection = getConnectionInfo();
+      if (connection?.type && connection.downlinkMax != null) {
+        data['netinfo.type'] = connection.type;
+        data['netinfo.downlinkMax'] = connection.downlinkMax;
       }
 
       // Include debug data when available
