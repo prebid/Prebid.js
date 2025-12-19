@@ -255,7 +255,8 @@ const schemaEvaluators = {
 };
 
 export function evaluateSchema(func, args, context) {
-  const evaluators = { ...schemaEvaluators, ...moduleConfig.extraSchemaEvaluators };
+  const extraEvaluators = moduleConfig.extraSchemaEvaluators || {};
+  const evaluators = { ...schemaEvaluators, ...extraEvaluators };
   const evaluator = evaluators[func];
   if (evaluator) {
     return evaluator(args, context);
@@ -272,7 +273,7 @@ function evaluateFunction(func, args, schema, conditions, stage, analyticsKey, a
           'processed-auction-request': ACTIVITY_FETCH_BIDS,
           'processed-auction': ACTIVITY_ADD_BID_RESPONSE
         }[stage];
-        args.forEach(({bidders, analyticsValue, seatnonbid}) => {
+        args.forEach(({bidders, analyticsValue}) => {
           const unregister = registerActivityControl(activity, MODULE_NAME, (params) => {
             if ((params.auctionId || params.bid?.auctionId) !== auctionId) return { allow: true };
             if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return { allow: true };
@@ -395,8 +396,8 @@ function init(config: ModuleConfig) {
 }
 
 export function reset() {
-  Object.values(unregisterFunctions).forEach(unregister => {
-    unregister.forEach(unregister => {
+  Object.values(unregisterFunctions).forEach(auctionUnregisterFunctions => {
+    (auctionUnregisterFunctions || []).forEach(unregister => {
       if (unregister && typeof unregister === 'function') {
         unregister();
       }
