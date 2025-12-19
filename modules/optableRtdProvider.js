@@ -49,15 +49,46 @@ export const parseConfig = (moduleConfig) => {
  */
 const waitForOptableEvent = (eventName) => {
   return new Promise((resolve) => {
+    // 1. Check if 'optable-targeting:change' event has already fired by checking global
+    if (typeof window !== 'undefined' && window.OPTABLE_RESOLVED) {
+      logMessage('Optable targeting already resolved (OPTABLE_RESOLVED flag found)');
+      resolve(window.OPTABLE_RESOLVED);
+      return;
+    }
+
+    // 2. Check the cache - try targetingFromCache() method
     const optableBundle = /** @type {Object} */ (window.optable);
     const cachedData = optableBundle?.instance?.targetingFromCache();
 
     if (cachedData && cachedData.ortb2) {
-      logMessage('Optable SDK already has cached data');
+      logMessage('Optable SDK already has cached data via targetingFromCache()');
       resolve(cachedData);
       return;
     }
 
+    // 3. If not there, check for 'optable-cache:targeting' event
+    const checkCacheEvent = () => {
+      const cacheEventListener = (event) => {
+        logMessage('Received optable-cache:targeting event');
+        const targetingData = event.detail;
+        window.removeEventListener('optable-cache:targeting', cacheEventListener);
+        if (targetingData && targetingData.ortb2) {
+          resolve(targetingData);
+        }
+      };
+
+      // Try to listen for cache event briefly
+      window.addEventListener('optable-cache:targeting', cacheEventListener);
+
+      // Small delay to allow cache event to fire if it's going to
+      setTimeout(() => {
+        window.removeEventListener('optable-cache:targeting', cacheEventListener);
+      }, 50);
+    };
+
+    checkCacheEvent();
+
+    // 4. After we check cache, go back to waiting for the event in case it eventually reaches us
     const eventListener = (event) => {
       logMessage(`Received ${eventName} event`);
       // Extract targeting data from event detail
