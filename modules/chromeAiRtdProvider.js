@@ -304,7 +304,7 @@ const initSummarizer = async () => {
   // We check availability and defer if needed.
   try {
     const availability = await Summarizer.availability();
-    const needsDownload = availability !== 'available'; // 'after-download', 'downloading', etc.
+    const needsDownload = availability !== 'available' && availability !== 'unavailable'; // 'after-download', 'downloading', etc.
 
     if (needsDownload && !navigator.userActivation?.isActive) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer needs download (${availability}) but user inactive. Deferring init...`);
