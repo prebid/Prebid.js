@@ -108,12 +108,19 @@ export class ConsentHandler<T> {
   }
 
   getConsentData(): T {
-    return this.#data;
+    if (this.#enabled) {
+      return this.#data;
+    }
+    return null;
   }
 
   get hash() {
     if (this.#dirty) {
-      this.#hash = cyrb53Hash(JSON.stringify(this.#data && this.hashFields ? this.hashFields.map(f => this.#data[f]) : this.#data))
+      this.#hash = cyrb53Hash(
+        JSON.stringify(
+          this.#data && this.hashFields ? this.hashFields.map((f) => this.#data[f]) : this.#data
+        )
+      );
       this.#dirty = false;
     }
     return this.#hash;
@@ -132,16 +139,18 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
 }
 
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
-  hashFields = ['gdprApplies', 'consentString']
+  hashFields = ["gdprApplies", "consentString"];
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
         gdprApplies: consentData.gdprApplies as boolean,
-        consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
+        consentStringSize: isStr(consentData.vendorData.tcString)
+          ? consentData.vendorData.tcString.length
+          : 0,
         generatedAt: this.generatedTime,
-        apiVersion: consentData.apiVersion
-      }
+        apiVersion: consentData.apiVersion,
+      };
     }
   }
 }
