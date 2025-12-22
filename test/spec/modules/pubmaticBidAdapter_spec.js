@@ -501,6 +501,21 @@ describe('PubMatic adapter', () => {
         expect(imp[0].ext.pbcode).to.equal(validBidRequests[0].adUnitCode);
       });
 
+      it('should not include ae or igs in imp.ext', () => {
+        const bidWithAe = utils.deepClone(validBidRequests[0]);
+        bidWithAe.ortb2Imp = bidWithAe.ortb2Imp || {};
+        bidWithAe.ortb2Imp.ext = bidWithAe.ortb2Imp.ext || {};
+        bidWithAe.ortb2Imp.ext.ae = 1;
+        bidWithAe.ortb2Imp.ext.igs = { ae: 1, biddable: 1 };
+
+        const req = spec.buildRequests([bidWithAe], bidderRequest);
+        const { imp } = req?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext');
+        expect(imp[0].ext).to.not.have.property('ae');
+        expect(imp[0].ext).to.not.have.property('igs');
+      });
+
       it('should add bidfloor if kadfloor is present in parameters', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -1173,16 +1188,6 @@ describe('PubMatic adapter', () => {
           expect(request.data.imp[0].ext.data.customData).to.have.property('id').to.equal('id-1');
         });
       });
-
-      describe('FLEDGE', () => {
-        it('should not send imp.ext.ae when FLEDGE is disabled, ', () => {
-          const request = spec.buildRequests(validBidRequests, bidderRequest);
-          expect(request.data).to.have.property('imp');
-          expect(request.data.imp).to.be.an('array');
-          expect(request.data.imp[0]).to.have.property('ext');
-          expect(request.data.imp[0].ext).to.not.have.property('ae');
-        });
-      })
 
       describe('cpm adjustment', () => {
         beforeEach(() => {
