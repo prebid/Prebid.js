@@ -16,7 +16,7 @@ const events = {
   bids: []
 };
 
-let adUnits = [];
+let adUnitMap = new Map();
 
 var terceptAnalyticsAdapter = Object.assign(adapter(
   {
@@ -31,7 +31,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         Object.assign(events, {bids: []});
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
-        adUnits = args.adUnits;
+        adUnitMap.set(args.auctionId, args.adUnits);
       } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(item => { events.bids.push(item) });
       } else if (eventType === EVENTS.BID_RESPONSE) {
@@ -75,30 +75,23 @@ function mapBidRequests(params) {
   return arr;
 }
 
-function getAdSlotData(adUnitCode) {
-  let adserverAdSlot, pbAdSlot;
+function getAdSlotData(auctionId, adUnitCode) {
+  const auctionAdUnits = adUnitMap?.get(auctionId);
 
-  if (adUnitCode && adUnits && adUnits.length) {
-    const matchingAdUnit = adUnits.find(au => au.code === adUnitCode);
-
-    if (matchingAdUnit && matchingAdUnit.ortb2Imp &&
-        matchingAdUnit.ortb2Imp.ext &&
-        matchingAdUnit.ortb2Imp.ext.data) {
-      // Get GAM ad slot
-      if (matchingAdUnit.ortb2Imp.ext.data.adserver) {
-        adserverAdSlot = matchingAdUnit.ortb2Imp.ext.data.adserver.adslot;
-      }
-
-      // Get Prebid ad slot
-      pbAdSlot = matchingAdUnit.ortb2Imp.ext.data.pbadslot;
-    }
+  if (!Array.isArray(auctionAdUnits)) {
+    return {};
   }
 
-  return { adserverAdSlot, pbAdSlot };
+  const matchingAdUnit = auctionAdUnits.find(au => au.code === adUnitCode);
+
+  return {
+    adserverAdSlot: matchingAdUnit?.ortb2Imp?.ext?.data?.adserver?.adslot,
+    pbAdSlot: matchingAdUnit?.ortb2Imp?.ext?.data?.pbadslot,
+  };
 }
 
 function mapBidResponse(bidResponse, status) {
-  const { adserverAdSlot, pbAdSlot } = getAdSlotData(bidResponse.adUnitCode);
+  const { adserverAdSlot, pbAdSlot } = getAdSlotData(bidResponse.auctionId, bidResponse.adUnitCode);
 
   if (status === 'bidder_error') {
     return {

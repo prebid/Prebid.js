@@ -62,7 +62,17 @@ describe('tercept analytics adapter', function () {
               [300, 250],
               [300, 600]
             ],
-            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+            'ortb2Imp': {
+              'ext': {
+                'data': {
+                  'adserver': {
+                    'adslot': '/1234567/homepage-banner'
+                  },
+                  'pbadslot': 'homepage-banner-pbadslot'
+                }
+              }
+            }
           }
         ],
         'adUnitCodes': ['div-gpt-ad-1460505748561-0'],
@@ -385,7 +395,17 @@ describe('tercept analytics adapter', function () {
               [300, 250],
               [300, 600]
             ],
-            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+            'ortb2Imp': {
+              'ext': {
+                'data': {
+                  'adserver': {
+                    'adslot': '/1234567/homepage-banner'
+                  },
+                  'pbadslot': 'homepage-banner-pbadslot'
+                }
+              }
+            }
           }
         ],
         'adUnitCodes': ['div-gpt-ad-1460505748561-0'],
@@ -626,6 +646,8 @@ describe('tercept analytics adapter', function () {
           'statusMessage': 'Bid available',
           'timeToRespond': 212,
           'responseTimestamp': 1576823894050,
+          'adserverAdSlot': '/1234567/homepage-banner',
+          'pbAdSlot': 'homepage-banner-pbadslot',
           'ttl': 300,
           'ad': '<!-- Creative 96846035 served by Member 9325 via AppNexus -->',
           'adId': '393976d8770041',
@@ -652,6 +674,8 @@ describe('tercept analytics adapter', function () {
           'sizes': '300x250,300x600',
           'renderStatus': 5,
           'responseTimestamp': 1753444800000,
+          'adserverAdSlot': '/1234567/homepage-banner',
+          'pbAdSlot': 'homepage-banner-pbadslot',
           'meta': {}
         }
       ],
@@ -685,7 +709,17 @@ describe('tercept analytics adapter', function () {
               [300, 250],
               [300, 600]
             ],
-            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+            'ortb2Imp': {
+              'ext': {
+                'data': {
+                  'adserver': {
+                    'adslot': '/1234567/homepage-banner'
+                  },
+                  'pbadslot': 'homepage-banner-pbadslot'
+                }
+              }
+            }
           }
         ],
         'adUnitCodes': ['div-gpt-ad-1460505748561-0'],
@@ -822,6 +856,8 @@ describe('tercept analytics adapter', function () {
         'host': 'localhost',
         'path': '/context.html',
         'search': '',
+        'adserverAdSlot': '/1234567/homepage-banner',
+        'pbAdSlot': 'homepage-banner-pbadslot',
         'ttl': 300,
         'ad': '<!-- Creative 96846035 served by Member 9325 via AppNexus -->',
         'adId': '393976d8770041',
@@ -886,6 +922,223 @@ describe('tercept analytics adapter', function () {
       expect(server.requests.length).to.equal(2);
       const winEventData = JSON.parse(server.requests[1].requestBody);
       expect(winEventData).to.deep.equal(expectedAfterBidWon);
+    });
+
+    it('uses correct adUnits for each auction via Map lookup', function () {
+      const auction1Init = {
+        'auctionId': 'auction-1-id',
+        'timestamp': 1576823893836,
+        'auctionStatus': 'inProgress',
+        'adUnits': [
+          {
+            'code': 'div-auction-1',
+            'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
+            'bids': [{ 'bidder': 'appnexus', 'params': { 'placementId': 111 } }],
+            'sizes': [[300, 250]],
+            'transactionId': 'trans-1',
+            'ortb2Imp': {
+              'ext': {
+                'data': {
+                  'adserver': { 'adslot': '/auction1/slot' },
+                  'pbadslot': 'auction1-pbadslot'
+                }
+              }
+            }
+          }
+        ],
+        'adUnitCodes': ['div-auction-1'],
+        'bidderRequests': [],
+        'noBids': [],
+        'bidsReceived': [],
+        'winningBids': [],
+        'timeout': 1000
+      };
+
+      const auction2Init = {
+        'auctionId': 'auction-2-id',
+        'timestamp': 1576823893900,
+        'auctionStatus': 'inProgress',
+        'adUnits': [
+          {
+            'code': 'div-auction-2',
+            'mediaTypes': { 'banner': { 'sizes': [[728, 90]] } },
+            'bids': [{ 'bidder': 'rubicon', 'params': { 'placementId': 222 } }],
+            'sizes': [[728, 90]],
+            'transactionId': 'trans-2',
+            'ortb2Imp': {
+              'ext': {
+                'data': {
+                  'adserver': { 'adslot': '/auction2/slot' },
+                  'pbadslot': 'auction2-pbadslot'
+                }
+              }
+            }
+          }
+        ],
+        'adUnitCodes': ['div-auction-2'],
+        'bidderRequests': [],
+        'noBids': [],
+        'bidsReceived': [],
+        'winningBids': [],
+        'timeout': 1000
+      };
+
+      events.emit(EVENTS.AUCTION_INIT, auction1Init);
+      events.emit(EVENTS.AUCTION_INIT, auction2Init);
+
+      const bidWon1 = {
+        'bidderCode': 'appnexus',
+        'width': 300,
+        'height': 250,
+        'adId': 'ad-1',
+        'requestId': 'bid-1',
+        'mediaType': 'banner',
+        'cpm': 1.0,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 300,
+        'adUnitCode': 'div-auction-1',
+        'auctionId': 'auction-1-id',
+        'responseTimestamp': 1576823894000,
+        'requestTimestamp': 1576823893838,
+        'bidder': 'appnexus',
+        'timeToRespond': 164,
+        'size': '300x250',
+        'status': 'rendered',
+        'meta': {}
+      };
+
+      const bidWon2 = {
+        'bidderCode': 'rubicon',
+        'width': 728,
+        'height': 90,
+        'adId': 'ad-2',
+        'requestId': 'bid-2',
+        'mediaType': 'banner',
+        'cpm': 2.0,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 300,
+        'adUnitCode': 'div-auction-2',
+        'auctionId': 'auction-2-id',
+        'responseTimestamp': 1576823894100,
+        'requestTimestamp': 1576823893900,
+        'bidder': 'rubicon',
+        'timeToRespond': 200,
+        'size': '728x90',
+        'status': 'rendered',
+        'meta': {}
+      };
+
+      events.emit(EVENTS.BID_WON, bidWon1);
+      events.emit(EVENTS.BID_WON, bidWon2);
+
+      expect(server.requests.length).to.equal(2);
+
+      const winData1 = JSON.parse(server.requests[0].requestBody);
+      expect(winData1.bidWon.adserverAdSlot).to.equal('/auction1/slot');
+      expect(winData1.bidWon.pbAdSlot).to.equal('auction1-pbadslot');
+
+      const winData2 = JSON.parse(server.requests[1].requestBody);
+      expect(winData2.bidWon.adserverAdSlot).to.equal('/auction2/slot');
+      expect(winData2.bidWon.pbAdSlot).to.equal('auction2-pbadslot');
+    });
+
+    it('handles BIDDER_ERROR event', function () {
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+
+      const bidderError = {
+        'bidderCode': 'appnexus',
+        'error': 'timeout',
+        'bidderRequest': {
+          'bidderCode': 'appnexus',
+          'auctionId': 'db377024-d866-4a24-98ac-5e430f881313'
+        },
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313'
+      };
+
+      events.emit(EVENTS.BIDDER_ERROR, bidderError);
+
+      expect(server.requests.length).to.equal(1);
+      const errorData = JSON.parse(server.requests[0].requestBody);
+      expect(errorData.bidderError).to.exist;
+      expect(errorData.bidderError.status).to.equal(6);
+      expect(errorData.bidderError.adserverAdSlot).to.equal('/1234567/homepage-banner');
+      expect(errorData.bidderError.pbAdSlot).to.equal('homepage-banner-pbadslot');
+      expect(errorData.bidderError.host).to.equal(window.location.hostname);
+      expect(errorData.bidderError.path).to.equal(window.location.pathname);
+    });
+
+    it('returns empty object for getAdSlotData when ad unit not found', function () {
+      const auctionInitNoOrtb2 = {
+        'auctionId': 'no-ortb2-auction',
+        'timestamp': 1576823893836,
+        'auctionStatus': 'inProgress',
+        'adUnits': [
+          {
+            'code': 'div-no-ortb2',
+            'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
+            'bids': [{ 'bidder': 'appnexus', 'params': { 'placementId': 999 } }],
+            'sizes': [[300, 250]],
+            'transactionId': 'trans-no-ortb2'
+          }
+        ],
+        'adUnitCodes': ['div-no-ortb2'],
+        'bidderRequests': [],
+        'noBids': [],
+        'bidsReceived': [],
+        'winningBids': [],
+        'timeout': 1000
+      };
+
+      const bidRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': 'no-ortb2-auction',
+        'bidderRequestId': 'req-no-ortb2',
+        'bids': [{
+          'bidder': 'appnexus',
+          'params': { 'placementId': 999 },
+          'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
+          'adUnitCode': 'div-no-ortb2',
+          'transactionId': 'trans-no-ortb2',
+          'sizes': [[300, 250]],
+          'bidId': 'bid-no-ortb2',
+          'bidderRequestId': 'req-no-ortb2',
+          'auctionId': 'no-ortb2-auction'
+        }],
+        'auctionStart': 1576823893836
+      };
+
+      const bidResponse = {
+        'bidderCode': 'appnexus',
+        'width': 300,
+        'height': 250,
+        'adId': 'ad-no-ortb2',
+        'requestId': 'bid-no-ortb2',
+        'mediaType': 'banner',
+        'cpm': 0.5,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 300,
+        'adUnitCode': 'div-no-ortb2',
+        'auctionId': 'no-ortb2-auction',
+        'responseTimestamp': 1576823894000,
+        'bidder': 'appnexus',
+        'timeToRespond': 164,
+        'meta': {}
+      };
+
+      events.emit(EVENTS.AUCTION_INIT, auctionInitNoOrtb2);
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'no-ortb2-auction' });
+
+      expect(server.requests.length).to.equal(1);
+      const auctionData = JSON.parse(server.requests[0].requestBody);
+      const bid = auctionData.bids.find(b => b.bidId === 'bid-no-ortb2');
+      expect(bid.adserverAdSlot).to.be.undefined;
+      expect(bid.pbAdSlot).to.be.undefined;
     });
   });
 });
