@@ -3,7 +3,7 @@ import {AdapterRequest, BidderSpec, registerBidder} from '../src/adapters/bidder
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse, enrichImp, getUserSyncs } from '../libraries/alliancegravityUtils/index.js';
+import { interpretResponse, enrichImp, getUserSyncs } from '../libraries/alliance_gravityUtils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
