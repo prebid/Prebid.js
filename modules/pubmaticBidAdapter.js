@@ -99,11 +99,10 @@ const converter = ortbConverter({
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
-    if (imp.ext?.ae != null) {
+    if (imp.ext?.ae != null || imp.ext?.igs != null || imp.ext?.paapi != null) {
       delete imp.ext.ae;
-    }
-    if (imp.ext?.igs != null) {
       delete imp.ext.igs;
+      delete imp.ext.paapi;
     }
     // check for battr data types
     ['banner', 'video', 'native'].forEach(key => {

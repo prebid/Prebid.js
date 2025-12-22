@@ -507,6 +507,7 @@ describe('PubMatic adapter', () => {
         bidWithAe.ortb2Imp.ext = bidWithAe.ortb2Imp.ext || {};
         bidWithAe.ortb2Imp.ext.ae = 1;
         bidWithAe.ortb2Imp.ext.igs = { ae: 1, biddable: 1 };
+        bidWithAe.ortb2Imp.ext.paapi = { requestedSize: { width: 300, height: 250 } };
 
         const req = spec.buildRequests([bidWithAe], bidderRequest);
         const { imp } = req?.data;
@@ -514,6 +515,7 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('ext');
         expect(imp[0].ext).to.not.have.property('ae');
         expect(imp[0].ext).to.not.have.property('igs');
+        expect(imp[0].ext).to.not.have.property('paapi');
       });
 
       it('should add bidfloor if kadfloor is present in parameters', () => {
