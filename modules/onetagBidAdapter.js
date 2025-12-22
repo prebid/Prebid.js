@@ -8,6 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -141,9 +142,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       payload.onetagSid = storage.getDataFromLocalStorage('onetag_sid');
     }
   } catch (e) { }
-  const connection = navigator.connection || navigator.webkitConnection;
-  payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
-  payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+  const connection = getConnectionInfo();
+  payload.networkConnectionType = connection?.type || null;
+  payload.networkEffectiveConnectionType = connection?.effectiveType || null;
   payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
   return {
     method: 'POST',
