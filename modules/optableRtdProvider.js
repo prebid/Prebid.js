@@ -2,12 +2,22 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, mergeDeep, prefixLog} from '../src/utils.js';
 
 const MODULE_NAME = 'optable';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD]:`;
 const optableLog = prefixLog(LOG_PREFIX);
 const {logMessage, logWarn, logError} = optableLog;
+const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+
+// Event names used by the Optable SDK
+/** Event fired when targeting data is available from cache */
+const OPTABLE_CACHE_EVENT = 'optable-cache:targeting';
+/** Event fired when targeting data changes (primary event) */
+const OPTABLE_TARGETING_EVENT = 'optable-targeting:change';
+/** localStorage key used to store resolved targeting data */
+const OPTABLE_RESOLVED_KEY = 'OPTABLE_RESOLVED';
 
 /**
  * Extracts the parameters for Optable RTD module from the config object passed at instantiation
@@ -18,6 +28,7 @@ export const parseConfig = (moduleConfig) => {
   const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
   const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
   const instance = deepAccess(moduleConfig, 'params.instance', null);
+  const skipCache = deepAccess(moduleConfig, 'params.skipCache', false);
 
   // If present, trim the bundle URL
   if (typeof bundleUrl === 'string') {
@@ -27,15 +38,15 @@ export const parseConfig = (moduleConfig) => {
   // Verify that bundleUrl is a valid URL: only secure (HTTPS) URLs are allowed
   if (typeof bundleUrl === 'string' && bundleUrl.length && !bundleUrl.startsWith('https://')) {
     logError('Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.');
-    return {bundleUrl: null, adserverTargeting, handleRtd: null};
+    return {bundleUrl: null, adserverTargeting, handleRtd: null, skipCache};
   }
 
   if (handleRtd && typeof handleRtd !== 'function') {
     logError('handleRtd must be a function');
-    return {bundleUrl, adserverTargeting, handleRtd: null};
+    return {bundleUrl, adserverTargeting, handleRtd: null, skipCache};
   }
 
-  const result = {bundleUrl, adserverTargeting, handleRtd};
+  const result = {bundleUrl, adserverTargeting, handleRtd, skipCache};
   if (instance !== null) {
     result.instance = instance;
   }
@@ -43,62 +54,87 @@ export const parseConfig = (moduleConfig) => {
 }
 
 /**
- * Wait for Optable SDK event to fire with targeting data
- * @param {string} eventName Name of the event to listen for
+ * Check for cached targeting data from localStorage and set up cache event listener
+ * Priority order:
+ * 1. localStorage OPTABLE_RESOLVED_KEY - Persisted targeting data from previous page loads
+ * 2. OPTABLE_CACHE_EVENT - Brief listener for cache event
+ * @param {Function} resolve Promise resolve function to call when cached data is found
+ * @returns {Object|null} Cached targeting data if found synchronously, null otherwise (will resolve via event)
+ */
+const checkLocalStorageAndCacheEvent = (resolve) => {
+  // 1. Check if targeting event has already fired by checking localStorage
+  const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
+  if (resolvedData) {
+    try {
+      const parsedData = JSON.parse(resolvedData);
+      logMessage(`Optable targeting already resolved (${OPTABLE_RESOLVED_KEY} flag found)`);
+      return parsedData;
+    } catch (e) {
+      logWarn(`Failed to parse ${OPTABLE_RESOLVED_KEY} from localStorage`, e);
+    }
+  }
+
+  // 2. Set up a brief listener for the cache event
+  const cacheEventListener = (event) => {
+    logMessage(`Received ${OPTABLE_CACHE_EVENT} event`);
+    const targetingData = event.detail;
+    window.removeEventListener(OPTABLE_CACHE_EVENT, cacheEventListener);
+    if (targetingData && targetingData.ortb2) {
+      resolve(targetingData);
+    }
+  };
+
+  // Try to listen for cache event briefly
+  window.addEventListener(OPTABLE_CACHE_EVENT, cacheEventListener);
+
+  // Small delay to allow cache event to fire if it's going to
+  setTimeout(() => {
+    window.removeEventListener(OPTABLE_CACHE_EVENT, cacheEventListener);
+  }, 50);
+
+  return null;
+};
+
+/**
+ * Wait for Optable SDK targeting event to fire with targeting data
+ * @param {boolean} skipCache If true, skip checking cached data
  * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
  */
-const waitForOptableEvent = (eventName) => {
+const waitForOptableEvent = (skipCache = false) => {
   return new Promise((resolve) => {
-    // 1. Check if 'optable-targeting:change' event has already fired by checking global
-    if (typeof window !== 'undefined' && window.localStorage.OPTABLE_RESOLVED) {
-      logMessage('Optable targeting already resolved (OPTABLE_RESOLVED flag found)');
-      resolve(window.localStorage.OPTABLE_RESOLVED);
-      return;
+    // If skipCache is true, skip all cached data checks and wait for events
+    if (!skipCache) {
+      // 1. FIRST: Check instance.targetingFromCache() - wrapper has priority and can override cache
+      const optableBundle = /** @type {Object} */ (window.optable);
+      const instanceData = optableBundle?.instance?.targetingFromCache();
+
+      if (instanceData && instanceData.ortb2) {
+        logMessage('Optable SDK already has cached data via targetingFromCache()');
+        resolve(instanceData);
+        return;
+      }
+
+      // 2. THEN: Check other cache sources (localStorage + cache event)
+      const cachedData = checkLocalStorageAndCacheEvent(resolve);
+      if (cachedData) {
+        resolve(cachedData);
+        return;
+      }
+    } else {
+      logMessage('Cache skipped due to skipCache configuration');
     }
 
-    // 2. Check the cache - try targetingFromCache() method
-    const optableBundle = /** @type {Object} */ (window.optable);
-    const cachedData = optableBundle?.instance?.targetingFromCache();
-
-    if (cachedData && cachedData.ortb2) {
-      logMessage('Optable SDK already has cached data via targetingFromCache()');
-      resolve(cachedData);
-      return;
-    }
-
-    // 3. If not there, check for 'optable-cache:targeting' event
-    const checkCacheEvent = () => {
-      const cacheEventListener = (event) => {
-        logMessage('Received optable-cache:targeting event');
-        const targetingData = event.detail;
-        window.removeEventListener('optable-cache:targeting', cacheEventListener);
-        if (targetingData && targetingData.ortb2) {
-          resolve(targetingData);
-        }
-      };
-
-      // Try to listen for cache event briefly
-      window.addEventListener('optable-cache:targeting', cacheEventListener);
-
-      // Small delay to allow cache event to fire if it's going to
-      setTimeout(() => {
-        window.removeEventListener('optable-cache:targeting', cacheEventListener);
-      }, 50);
-    };
-
-    checkCacheEvent();
-
-    // 4. After we check cache, go back to waiting for the event in case it eventually reaches us
+    // 3. FINALLY: Wait for the targeting event
     const eventListener = (event) => {
-      logMessage(`Received ${eventName} event`);
+      logMessage(`Received ${OPTABLE_TARGETING_EVENT} event`);
       // Extract targeting data from event detail
       const targetingData = event.detail;
-      window.removeEventListener(eventName, eventListener);
+      window.removeEventListener(OPTABLE_TARGETING_EVENT, eventListener);
       resolve(targetingData);
     };
 
-    window.addEventListener(eventName, eventListener);
-    logMessage(`Waiting for ${eventName} event`);
+    window.addEventListener(OPTABLE_TARGETING_EVENT, eventListener);
+    logMessage(`Waiting for ${OPTABLE_TARGETING_EVENT} event`);
   });
 };
 
@@ -107,11 +143,12 @@ const waitForOptableEvent = (eventName) => {
  * @param reqBidsConfigObj Bid request configuration object
  * @param optableExtraData Additional data to be used by the Optable SDK
  * @param mergeFn Function to merge data
+ * @param skipCache If true, skip checking cached data
  * @returns {Promise<void>}
  */
-export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
+export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn, skipCache = false) => {
   // Wait for the Optable SDK to dispatch targeting data via event
-  let targetingData = await waitForOptableEvent('optable-targeting:change');
+  let targetingData = await waitForOptableEvent(skipCache);
 
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
@@ -131,12 +168,13 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Object} optableExtraData Additional data to be used by the Optable SDK
  * @param {Function} mergeFn Function to merge data
+ * @param {boolean} skipCache If true, skip checking cached data
  */
-export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn) => {
+export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn, skipCache = false) => {
   if (handleRtdFn.constructor.name === 'AsyncFunction') {
-    await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
+    await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn, skipCache);
   } else {
-    handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
+    handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn, skipCache);
   }
 };
 
@@ -149,7 +187,7 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Extract the bundle URL from the module configuration
-    const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
+    const {bundleUrl, handleRtd, skipCache} = parseConfig(moduleConfig);
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
@@ -161,7 +199,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       // Load Optable JS bundle and merge the data
       loadExternalScript(bundleUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
         logMessage('Successfully loaded Optable JS bundle');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
+        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep, skipCache).then(callback, callback);
       }, document);
     } else {
       // At this point, we assume that the Optable JS bundle is already
@@ -172,7 +210,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       window.optable = window.optable || { cmd: [] };
       window.optable.cmd.push(() => {
         logMessage('Optable JS bundle found on the page');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
+        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep, skipCache).then(callback, callback);
       });
     }
   } catch (error) {
