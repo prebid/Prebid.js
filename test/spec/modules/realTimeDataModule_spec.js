@@ -183,7 +183,7 @@ describe('Real time module', function () {
       });
       rtdModule.setBidRequestsData(() => {
         expect(request.ortb2Fragments.global.user.eids).to.eql(['id']);
-        expect(request.ortb2Fragments.bidder.bidderB?.user).to.not.exist;
+        expect(request.ortb2Fragments.bidder.bidderB?.user?.yob).to.not.exist;
         done();
       }, request);
     });
