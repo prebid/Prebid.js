@@ -1,7 +1,5 @@
 import { expect } from 'chai';
-import {
-  spec, getGzipSetting,
-} from 'modules/alliancegravityBidAdapter.js';
+import { spec } from 'modules/alliance_gravityBidAdapter.js';
 import sinon from 'sinon';
 const sandbox = sinon.createSandbox();
 
@@ -17,11 +15,6 @@ describe('Alliance Gravity bid adapter tests', () => {
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page',
     }
   };
-
-  it('We test getGzipSettings', () => {
-    const output = getGzipSetting();
-    expect(output).to.be.a('boolean');
-  });
 
   describe('isBidRequestValid()', () => {
     let bannerBid;

@@ -1,5 +1,4 @@
 import { deepSetValue } from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
 import {AdapterRequest, BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
@@ -8,7 +7,6 @@ import { interpretResponse, enrichImp, getUserSyncs } from '../libraries/allianc
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
-import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'alliance_gravity';
 const REQUEST_URL = 'https://pbs.production.agrvt.com/openrtb2/auction';
@@ -20,18 +18,6 @@ declare module '../src/adUnits' {
   interface BidderParams {
     srid: string
   }
-}
-
-export const STORAGE = getStorageManager({
-  bidderCode: BIDDER_CODE,
-});
-
-export const getGzipSetting = (): boolean => {
-  const getBidderConfig = config.getBidderConfig();
-  if (getBidderConfig.nexx360?.gzipEnabled === 'true') {
-    return getBidderConfig.nexx360?.gzipEnabled === 'true';
-  }
-  return DEFAULT_GZIP_ENABLED;
 }
 
 const converter = ortbConverter({
@@ -76,7 +62,7 @@ const buildRequests = (
     url: REQUEST_URL,
     data,
     options: {
-      endpointCompression: getGzipSetting()
+      endpointCompression: DEFAULT_GZIP_ENABLED
     },
   }
   return adapterRequest;
