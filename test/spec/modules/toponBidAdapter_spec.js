@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { spec } from "modules/toponBidAdapter.js";
 import * as utils from "src/utils.js";
 const USER_SYNC_URL = "https://pb.anyrtb.com/pb/page/prebidUserSyncs.html";
-const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sync";
+const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sdk_sync";
 
 describe("TopOn Adapter", function () {
   const PREBID_VERSION = "$prebid.version$";
