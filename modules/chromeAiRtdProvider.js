@@ -14,6 +14,7 @@ export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider:',
   STORAGE_KEY: 'chromeAi_detected_data', // Single key for both language and keywords
   MIN_TEXT_LENGTH: 20,
+  MAX_TEXT_LENGTH: 1000, // Limit to prevent QuotaExceededError with Chrome AI APIs
   DEFAULT_CONFIG: {
     languageDetector: {
       enabled: true,
@@ -92,6 +93,11 @@ export const getPageText = () => {
   if (!text || text.length < CONSTANTS.MIN_TEXT_LENGTH) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content (length: ${text?.length || 0}) for processing.`);
     return null;
+  }
+  // Limit text length to prevent QuotaExceededError with Chrome AI APIs
+  if (text.length > CONSTANTS.MAX_TEXT_LENGTH) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Truncating text from ${text.length} to ${CONSTANTS.MAX_TEXT_LENGTH} chars.`);
+    return text.substring(0, CONSTANTS.MAX_TEXT_LENGTH);
   }
   return text;
 };
