@@ -7,6 +7,8 @@ import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {isWebdriverEnabled} from '../libraries/webdriver/webdriver.js';
+import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -21,6 +23,7 @@ const TGID_COOKIE_KEY = 't_gid';
 const TGID_PT_COOKIE_KEY = 't_pt_gid';
 const TBLA_ID_COOKIE_KEY = 'tbla_id';
 export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
+export const refreshState = {};
 
 /**
  *  extract User Id by that order:
@@ -95,6 +98,65 @@ export const internal = {
   }
 }
 
+export function getRefreshInfo(adUnitCode) {
+  const now = Date.now();
+  const state = refreshState[adUnitCode];
+
+  if (!state) {
+    refreshState[adUnitCode] = {
+      count: 1,
+      first: now,
+      last: now
+    };
+    return {
+      count: 1,
+      first: now,
+      sinceLastSeconds: null,
+      sinceFirstSeconds: 0
+    };
+  }
+
+  const sinceLastSeconds = Math.round((now - state.last) / 1000);
+  const sinceFirstSeconds = Math.round((now - state.first) / 1000);
+  state.count++;
+  state.last = now;
+
+  return {
+    count: state.count,
+    first: state.first,
+    sinceLastSeconds,
+    sinceFirstSeconds
+  };
+}
+
+export function detectBot() {
+  try {
+    return {
+      detected: !!(
+        isWebdriverEnabled() ||
+        window.__nightmare ||
+        window.callPhantom ||
+        window._phantom ||
+        /HeadlessChrome/.test(navigator.userAgent)
+      )
+    };
+  } catch (e) {
+    return { detected: false };
+  }
+}
+
+export function getPageVisibility() {
+  try {
+    return {
+      hidden: document.hidden,
+      state: document.visibilityState,
+      hasFocus: document.hasFocus()
+    };
+  } catch (e) {
+    return { hidden: false, state: 'visible', hasFocus: true };
+  }
+}
+
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -108,7 +170,7 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const reqData = buildRequest(imps, bidderRequest, context);
-    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData)
+    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData, context)
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -137,7 +199,12 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
-    const data = converter.toORTB({bidderRequest: bidderRequest, bidRequests: validBidRequests});
+    const auctionId = bidderRequest.auctionId || validBidRequests[0]?.auctionId;
+    const data = converter.toORTB({
+      bidderRequest: bidderRequest,
+      bidRequests: validBidRequests,
+      context: { auctionId }
+    });
     const {publisherId} = bidRequest.params;
     const url = END_POINT_URL + '?publisher=' + publisherId;
 
@@ -287,10 +354,23 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
   }
 }
 
-function fillTaboolaReqData(bidderRequest, bidRequest, data) {
+function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
-  deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
+
+  const ortb2Device = bidderRequest?.ortb2?.device || {};
+  const connectionType = getConnectionType();
+  const device = {
+    ...ortb2Device,
+    js: 1,
+    ...(connectionType && { connectiontype: connectionType }),
+    ext: {
+      ...ortb2Device.ext,
+      bot: detectBot(),
+      visibility: getPageVisibility()
+    }
+  };
+  deepSetValue(data, 'device', device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
   if (data.user === undefined || data.user === null) {
     data.user = {
@@ -340,6 +420,10 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
   deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
   deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
+  const auctionId = context?.auctionId;
+  if (auctionId) {
+    deepSetValue(data, 'ext.prebid.auctionId', auctionId);
+  }
 }
 
 function fillTaboolaImpData(bid, imp) {
@@ -362,6 +446,18 @@ function fillTaboolaImpData(bid, imp) {
     imp.bidfloorcur = bidfloorcur;
   }
   deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid);
+
+  if (bid.bidId) {
+    deepSetValue(imp, 'ext.prebid.bidId', bid.bidId);
+  }
+  if (bid.adUnitCode) {
+    deepSetValue(imp, 'ext.prebid.adUnitCode', bid.adUnitCode);
+    const refreshInfo = getRefreshInfo(bid.adUnitCode);
+    deepSetValue(imp, 'ext.prebid.refresh', refreshInfo);
+  }
+  if (bid.adUnitId) {
+    deepSetValue(imp, 'ext.prebid.adUnitId', bid.adUnitId);
+  }
 }
 
 function getBanners(bid, pos) {
