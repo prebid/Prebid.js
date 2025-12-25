@@ -1687,6 +1687,108 @@ describe('Taboola Adapter', function () {
         expect(res.data.device.ext.visibility).to.have.property('hasFocus');
       });
 
+      it('should include scroll position in device.ext', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.scroll).to.exist;
+        expect(res.data.device.ext.scroll).to.have.property('top');
+        expect(res.data.device.ext.scroll).to.have.property('left');
+        expect(res.data.device.ext.scroll.top).to.be.a('number');
+        expect(res.data.device.ext.scroll.left).to.be.a('number');
+      });
+
+      it('should include viewability in imp.ext when element exists', function () {
+        const adUnitCode = 'test-viewability-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          // Viewability should be a number between 0-100 when element exists
+          expect(res.data.imp[0].ext.viewability).to.be.a('number');
+          expect(res.data.imp[0].ext.viewability).to.be.at.least(0);
+          expect(res.data.imp[0].ext.viewability).to.be.at.most(100);
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should not include viewability when element does not exist', function () {
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: 'non-existent-element-id'
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.viewability).to.be.undefined;
+      });
+
+      it('should include placement position in imp.ext when element exists', function () {
+        const adUnitCode = 'test-placement-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        testDiv.style.position = 'absolute';
+        testDiv.style.top = '100px';
+        testDiv.style.left = '50px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          expect(res.data.imp[0].ext.placement).to.exist;
+          expect(res.data.imp[0].ext.placement).to.have.property('top');
+          expect(res.data.imp[0].ext.placement).to.have.property('left');
+          expect(res.data.imp[0].ext.placement.top).to.be.a('number');
+          expect(res.data.imp[0].ext.placement.left).to.be.a('number');
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should include fold detection in imp.ext when element exists', function () {
+        const adUnitCode = 'test-fold-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          expect(res.data.imp[0].ext.fold).to.exist;
+          expect(res.data.imp[0].ext.fold).to.be.oneOf(['above', 'below']);
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should not include placement or fold when element does not exist', function () {
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: 'non-existent-placement-element'
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.placement).to.be.undefined;
+        expect(res.data.imp[0].ext.fold).to.be.undefined;
+      });
+
       it('should preserve existing ortb2 device ext properties', function () {
         const bidderRequestWithDeviceExt = {
           ...commonBidderRequest,

@@ -3,12 +3,15 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject} from '../src/utils.js';
+import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {isWebdriverEnabled} from '../libraries/webdriver/webdriver.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js';
+import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
+import {percentInView} from '../libraries/percentInView/percentInView.js';
+import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -154,6 +157,46 @@ export function getPageVisibility() {
     };
   } catch (e) {
     return { hidden: false, state: 'visible', hasFocus: true };
+  }
+}
+
+export function getDeviceExtSignals(existingExt = {}) {
+  const viewport = getViewportCoordinates();
+  return {
+    ...existingExt,
+    bot: detectBot(),
+    visibility: getPageVisibility(),
+    scroll: {
+      top: Math.round(viewport.top),
+      left: Math.round(viewport.left)
+    }
+  };
+}
+
+export function getElementSignals(adUnitCode) {
+  try {
+    const element = document.getElementById(adUnitCode);
+    if (!element) return null;
+
+    const rect = getBoundingClientRect(element);
+    const winDimensions = getWinDimensions();
+    const rawViewability = percentInView(element);
+
+    const signals = {
+      placement: {
+        top: Math.round(rect.top),
+        left: Math.round(rect.left)
+      },
+      fold: rect.top < winDimensions.innerHeight ? 'above' : 'below'
+    };
+
+    if (rawViewability !== null && !isNaN(rawViewability)) {
+      signals.viewability = Math.round(rawViewability);
+    }
+
+    return signals;
+  } catch (e) {
+    return null;
   }
 }
 
@@ -364,11 +407,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     ...ortb2Device,
     js: 1,
     ...(connectionType && { connectiontype: connectionType }),
-    ext: {
-      ...ortb2Device.ext,
-      bot: detectBot(),
-      visibility: getPageVisibility()
-    }
+    ext: getDeviceExtSignals(ortb2Device.ext)
   };
   deepSetValue(data, 'device', device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
@@ -457,6 +496,15 @@ function fillTaboolaImpData(bid, imp) {
   }
   if (bid.adUnitId) {
     deepSetValue(imp, 'ext.prebid.adUnitId', bid.adUnitId);
+  }
+
+  const elementSignals = getElementSignals(bid.adUnitCode);
+  if (elementSignals) {
+    if (elementSignals.viewability !== undefined) {
+      deepSetValue(imp, 'ext.viewability', elementSignals.viewability);
+    }
+    deepSetValue(imp, 'ext.placement', elementSignals.placement);
+    deepSetValue(imp, 'ext.fold', elementSignals.fold);
   }
 }
 
