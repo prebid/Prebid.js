@@ -213,7 +213,7 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const reqData = buildRequest(imps, bidderRequest, context);
-    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData, context)
+    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData, context);
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
