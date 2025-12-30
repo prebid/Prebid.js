@@ -644,6 +644,7 @@ const adapterManager = {
         timeout: cbTimeout,
         refererInfo,
         metrics,
+        src: 'client',
       });
       const adapter = _bidderRegistry[bidderCode];
       if (!adapter) {
