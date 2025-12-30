@@ -863,7 +863,6 @@ describe('NodalsAI RTD Provider', () => {
     });
   });
 
-
   describe('onAuctionEndEvent()', () => {
     it('should not proxy the call if we do not have user consent', () => {
       setDataInLocalStorage({
@@ -974,7 +973,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      
+
       delete window.$nodals;
       const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
       expect(result).to.deep.equal({});
@@ -986,7 +985,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      
+
       window.$nodals = {};
       const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
       expect(result).to.deep.equal({});
@@ -998,7 +997,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      
+
       window.$nodals = {
         adTargetingEngine: {}
       };
@@ -1012,7 +1011,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      
+
       Object.defineProperty(window, '$nodals', {
         get() {
           throw new Error('Access denied');
