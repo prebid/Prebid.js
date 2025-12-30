@@ -863,6 +863,7 @@ describe('NodalsAI RTD Provider', () => {
     });
   });
 
+
   describe('onAuctionEndEvent()', () => {
     it('should not proxy the call if we do not have user consent', () => {
       setDataInLocalStorage({
@@ -963,6 +964,64 @@ describe('NodalsAI RTD Provider', () => {
       expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
       expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
       expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  describe('#getEngine()', () => {
+    it('should return undefined when $nodals object does not exist', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      
+      delete window.$nodals;
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+    });
+
+    it('should return undefined when adTargetingEngine object does not exist', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      
+      window.$nodals = {};
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+    });
+
+    it('should return undefined when specific engine version does not exist', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      
+      window.$nodals = {
+        adTargetingEngine: {}
+      };
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+    });
+
+    it('should return undefined when property access throws an error', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      
+      Object.defineProperty(window, '$nodals', {
+        get() {
+          throw new Error('Access denied');
+        },
+        configurable: true
+      });
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+      delete window.$nodals;
     });
   });
 });
