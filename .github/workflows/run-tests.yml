@@ -120,7 +120,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Restore source
         uses: ./.github/actions/load
@@ -216,7 +216,7 @@ jobs:
       coverage: coverage-complete-${{ inputs.test-cmd }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Restore source
         uses: ./.github/actions/load
