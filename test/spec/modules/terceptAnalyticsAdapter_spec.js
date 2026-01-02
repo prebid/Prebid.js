@@ -640,12 +640,19 @@ describe('tercept analytics adapter', function () {
           'currency': 'USD',
           'cpm': 0.5,
           'netRevenue': true,
+          'renderedSize': null,
           'width': 300,
           'height': 250,
           'mediaType': 'banner',
           'statusMessage': 'Bid available',
           'timeToRespond': 212,
           'responseTimestamp': 1576823894050,
+          'renderTimestamp': null,
+          'reason': null,
+          'message': null,
+          'host': null,
+          'path': null,
+          'search': null,
           'adserverAdSlot': '/1234567/homepage-banner',
           'pbAdSlot': 'homepage-banner-pbadslot',
           'ttl': 300,
@@ -673,6 +680,13 @@ describe('tercept analytics adapter', function () {
           'transactionId': 'd99d90e0-663a-459d-8c87-4c92ce6a527c',
           'sizes': '300x250,300x600',
           'renderStatus': 5,
+          'renderedSize': null,
+          'renderTimestamp': null,
+          'reason': null,
+          'message': null,
+          'host': null,
+          'path': null,
+          'search': null,
           'responseTimestamp': 1753444800000,
           'adserverAdSlot': '/1234567/homepage-banner',
           'pbAdSlot': 'homepage-banner-pbadslot',
@@ -853,6 +867,9 @@ describe('tercept analytics adapter', function () {
         'timeToRespond': 212,
         'requestTimestamp': 1576823893838,
         'responseTimestamp': 1576823894050,
+        'renderTimestamp': null,
+        'reason': null,
+        'message': null,
         'host': 'localhost',
         'path': '/context.html',
         'search': '',
@@ -1139,6 +1156,125 @@ describe('tercept analytics adapter', function () {
       const bid = auctionData.bids.find(b => b.bidId === 'bid-no-ortb2');
       expect(bid.adserverAdSlot).to.be.undefined;
       expect(bid.pbAdSlot).to.be.undefined;
+    });
+
+    it('handles AD_RENDER_SUCCEEDED event', function () {
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+
+      const adRenderSucceeded = {
+        'bid': {
+          'bidderCode': 'appnexus',
+          'width': 300,
+          'height': 250,
+          'statusMessage': 'Bid available',
+          'adId': '393976d8770041',
+          'requestId': '263efc09896d0c',
+          'mediaType': 'banner',
+          'cpm': 0.5,
+          'creativeId': 96846035,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 300,
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+          'responseTimestamp': 1576823894050,
+          'requestTimestamp': 1576823893838,
+          'bidder': 'appnexus',
+          'timeToRespond': 212,
+          'size': '300x250',
+          'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+          'meta': {
+            'advertiserId': 2529885
+          }
+        },
+        'doc': {},
+        'adId': '393976d8770041'
+      };
+
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, adRenderSucceeded);
+
+      expect(server.requests.length).to.equal(1);
+      const renderData = JSON.parse(server.requests[0].requestBody);
+      expect(renderData.adRenderSucceeded).to.exist;
+      expect(renderData.adRenderSucceeded.renderStatus).to.equal(7);
+      expect(renderData.adRenderSucceeded.renderTimestamp).to.be.a('number');
+      expect(renderData.adRenderSucceeded.bidderCode).to.equal('appnexus');
+      expect(renderData.adRenderSucceeded.bidId).to.equal('263efc09896d0c');
+      expect(renderData.adRenderSucceeded.adUnitCode).to.equal('div-gpt-ad-1460505748561-0');
+      expect(renderData.adRenderSucceeded.auctionId).to.equal('db377024-d866-4a24-98ac-5e430f881313');
+      expect(renderData.adRenderSucceeded.cpm).to.equal(0.5);
+      expect(renderData.adRenderSucceeded.renderedSize).to.equal('300x250');
+      expect(renderData.adRenderSucceeded.adserverAdSlot).to.equal('/1234567/homepage-banner');
+      expect(renderData.adRenderSucceeded.pbAdSlot).to.equal('homepage-banner-pbadslot');
+      expect(renderData.adRenderSucceeded.host).to.equal(window.location.hostname);
+      expect(renderData.adRenderSucceeded.path).to.equal(window.location.pathname);
+      expect(renderData.adRenderSucceeded.reason).to.be.null;
+      expect(renderData.adRenderSucceeded.message).to.be.null;
+    });
+
+    it('handles AD_RENDER_FAILED event', function () {
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+
+      const adRenderFailed = {
+        'bid': {
+          'bidderCode': 'appnexus',
+          'width': 300,
+          'height': 250,
+          'statusMessage': 'Bid available',
+          'adId': '393976d8770041',
+          'requestId': '263efc09896d0c',
+          'mediaType': 'banner',
+          'cpm': 0.5,
+          'creativeId': 96846035,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 300,
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+          'responseTimestamp': 1576823894050,
+          'requestTimestamp': 1576823893838,
+          'bidder': 'appnexus',
+          'timeToRespond': 212,
+          'size': '300x250',
+          'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+          'meta': {
+            'advertiserId': 2529885
+          }
+        },
+        'adId': '393976d8770041',
+        'reason': 'exception',
+        'message': 'Error rendering ad: Cannot read property of undefined'
+      };
+
+      events.emit(EVENTS.AD_RENDER_FAILED, adRenderFailed);
+
+      expect(server.requests.length).to.equal(1);
+      const renderData = JSON.parse(server.requests[0].requestBody);
+      expect(renderData.adRenderFailed).to.exist;
+      expect(renderData.adRenderFailed.renderStatus).to.equal(8);
+      expect(renderData.adRenderFailed.renderTimestamp).to.be.a('number');
+      expect(renderData.adRenderFailed.bidderCode).to.equal('appnexus');
+      expect(renderData.adRenderFailed.bidId).to.equal('263efc09896d0c');
+      expect(renderData.adRenderFailed.adUnitCode).to.equal('div-gpt-ad-1460505748561-0');
+      expect(renderData.adRenderFailed.auctionId).to.equal('db377024-d866-4a24-98ac-5e430f881313');
+      expect(renderData.adRenderFailed.cpm).to.equal(0.5);
+      expect(renderData.adRenderFailed.reason).to.equal('exception');
+      expect(renderData.adRenderFailed.message).to.equal('Error rendering ad: Cannot read property of undefined');
+      expect(renderData.adRenderFailed.adserverAdSlot).to.equal('/1234567/homepage-banner');
+      expect(renderData.adRenderFailed.pbAdSlot).to.equal('homepage-banner-pbadslot');
+      expect(renderData.adRenderFailed.host).to.equal(window.location.hostname);
+      expect(renderData.adRenderFailed.path).to.equal(window.location.pathname);
+    });
+
+    it('includes null render fields in bidWon for consistency', function () {
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
+
+      expect(server.requests.length).to.equal(1);
+      const winData = JSON.parse(server.requests[0].requestBody);
+      expect(winData.bidWon.renderTimestamp).to.be.null;
+      expect(winData.bidWon.reason).to.be.null;
+      expect(winData.bidWon.message).to.be.null;
     });
   });
 });
