@@ -121,20 +121,38 @@ const waitForOptableEvent = (skipCache = false) => {
 
     // 3. FINALLY: Wait for targeting events
     // Priority: optableResolved (wrapper-manipulated) > optable-targeting:change (raw SDK)
+    const cleanup = () => {
+      window.removeEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
+      window.removeEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
+    };
+
     const resolvedEventListener = (event) => {
       logMessage(`Received ${OPTABLE_RESOLVED_EVENT} event`);
       const targetingData = event.detail;
-      window.removeEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
-      window.removeEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
+      cleanup();
       resolve(targetingData);
     };
 
     const targetingEventListener = (event) => {
       logMessage(`Received ${OPTABLE_TARGETING_EVENT} event`);
-      const targetingData = event.detail;
-      window.removeEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
-      window.removeEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
-      resolve(targetingData);
+
+      // Check if resolved data already exists in localStorage
+      const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
+      if (resolvedData) {
+        try {
+          const parsedData = JSON.parse(resolvedData);
+          logMessage(`Found ${OPTABLE_RESOLVED_KEY} in localStorage after ${OPTABLE_TARGETING_EVENT}`);
+          cleanup();
+          resolve(parsedData);
+          return;
+        } catch (e) {
+          logWarn(`Failed to parse ${OPTABLE_RESOLVED_KEY}`, e);
+        }
+      }
+
+      // No resolved data, use the targeting:change data
+      cleanup();
+      resolve(event.detail);
     };
 
     window.addEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
