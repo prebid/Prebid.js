@@ -11,13 +11,15 @@ const optableLog = prefixLog(LOG_PREFIX);
 const {logMessage, logWarn, logError} = optableLog;
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
 
-// Event names used by the Optable SDK
-/** Event fired when targeting data is available from cache */
-const OPTABLE_CACHE_EVENT = 'optable-cache:targeting';
-/** Event fired when targeting data changes (primary event) */
+// localStorage keys and event names used by the Optable SDK
+/** localStorage key for fallback cache (raw SDK targeting data) */
+const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
+/** Event fired when targeting data changes (raw SDK data) */
 const OPTABLE_TARGETING_EVENT = 'optable-targeting:change';
-/** localStorage key used to store resolved targeting data */
+/** localStorage key used to store resolved targeting data (wrapper-manipulated) */
 const OPTABLE_RESOLVED_KEY = 'OPTABLE_RESOLVED';
+/** Event fired when wrapper-manipulated targeting data is ready */
+const OPTABLE_RESOLVED_EVENT = 'optableResolved';
 
 /**
  * Extracts the parameters for Optable RTD module from the config object passed at instantiation
@@ -54,15 +56,14 @@ export const parseConfig = (moduleConfig) => {
 }
 
 /**
- * Check for cached targeting data from localStorage and set up cache event listener
+ * Check for cached targeting data from localStorage
  * Priority order:
- * 1. localStorage OPTABLE_RESOLVED_KEY - Persisted targeting data from previous page loads
- * 2. OPTABLE_CACHE_EVENT - Brief listener for cache event
- * @param {Function} resolve Promise resolve function to call when cached data is found
- * @returns {Object|null} Cached targeting data if found synchronously, null otherwise (will resolve via event)
+ * 1. localStorage[OPTABLE_RESOLVED_KEY] - Wrapper-manipulated data (most accurate)
+ * 2. localStorage[OPTABLE_CACHE_KEY] - Raw SDK targeting data (fallback)
+ * @returns {Object|null} Cached targeting data if found, null otherwise
  */
-const checkLocalStorageAndCacheEvent = (resolve) => {
-  // 1. Check if targeting event has already fired by checking localStorage
+const checkLocalStorageCache = () => {
+  // 1. Check for wrapper-manipulated resolved data (highest priority)
   const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
   if (resolvedData) {
     try {
@@ -74,23 +75,17 @@ const checkLocalStorageAndCacheEvent = (resolve) => {
     }
   }
 
-  // 2. Set up a brief listener for the cache event
-  const cacheEventListener = (event) => {
-    logMessage(`Received ${OPTABLE_CACHE_EVENT} event`);
-    const targetingData = event.detail;
-    window.removeEventListener(OPTABLE_CACHE_EVENT, cacheEventListener);
-    if (targetingData && targetingData.ortb2) {
-      resolve(targetingData);
+  // 2. Check for fallback cache data (raw SDK data)
+  const cacheData = storage.getDataFromLocalStorage(OPTABLE_CACHE_KEY);
+  if (cacheData) {
+    try {
+      const parsedData = JSON.parse(cacheData);
+      logMessage(`Optable targeting found in fallback cache (${OPTABLE_CACHE_KEY})`);
+      return parsedData;
+    } catch (e) {
+      logWarn(`Failed to parse ${OPTABLE_CACHE_KEY} from localStorage`, e);
     }
-  };
-
-  // Try to listen for cache event briefly
-  window.addEventListener(OPTABLE_CACHE_EVENT, cacheEventListener);
-
-  // Small delay to allow cache event to fire if it's going to
-  setTimeout(() => {
-    window.removeEventListener(OPTABLE_CACHE_EVENT, cacheEventListener);
-  }, 50);
+  }
 
   return null;
 };
@@ -114,8 +109,8 @@ const waitForOptableEvent = (skipCache = false) => {
         return;
       }
 
-      // 2. THEN: Check other cache sources (localStorage + cache event)
-      const cachedData = checkLocalStorageAndCacheEvent(resolve);
+      // 2. THEN: Check localStorage cache sources
+      const cachedData = checkLocalStorageCache();
       if (cachedData) {
         resolve(cachedData);
         return;
@@ -124,17 +119,27 @@ const waitForOptableEvent = (skipCache = false) => {
       logMessage('Cache skipped due to skipCache configuration');
     }
 
-    // 3. FINALLY: Wait for the targeting event
-    const eventListener = (event) => {
-      logMessage(`Received ${OPTABLE_TARGETING_EVENT} event`);
-      // Extract targeting data from event detail
+    // 3. FINALLY: Wait for targeting events
+    // Priority: optableResolved (wrapper-manipulated) > optable-targeting:change (raw SDK)
+    const resolvedEventListener = (event) => {
+      logMessage(`Received ${OPTABLE_RESOLVED_EVENT} event`);
       const targetingData = event.detail;
-      window.removeEventListener(OPTABLE_TARGETING_EVENT, eventListener);
+      window.removeEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
+      window.removeEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
       resolve(targetingData);
     };
 
-    window.addEventListener(OPTABLE_TARGETING_EVENT, eventListener);
-    logMessage(`Waiting for ${OPTABLE_TARGETING_EVENT} event`);
+    const targetingEventListener = (event) => {
+      logMessage(`Received ${OPTABLE_TARGETING_EVENT} event`);
+      const targetingData = event.detail;
+      window.removeEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
+      window.removeEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
+      resolve(targetingData);
+    };
+
+    window.addEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
+    window.addEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
+    logMessage(`Waiting for ${OPTABLE_RESOLVED_EVENT} or ${OPTABLE_TARGETING_EVENT} events`);
   });
 };
 
