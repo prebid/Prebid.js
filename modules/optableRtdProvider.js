@@ -65,10 +65,11 @@ export const parseConfig = (moduleConfig) => {
 const checkLocalStorageCache = () => {
   // 1. Check for wrapper-manipulated resolved data (highest priority)
   const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
+  logMessage(`localStorage[${OPTABLE_RESOLVED_KEY}]: ${resolvedData ? 'present' : 'not found'}`);
   if (resolvedData) {
     try {
       const parsedData = JSON.parse(resolvedData);
-      logMessage(`Optable targeting already resolved (${OPTABLE_RESOLVED_KEY} flag found)`);
+      logMessage(`Using cached wrapper-resolved data from ${OPTABLE_RESOLVED_KEY}`);
       return parsedData;
     } catch (e) {
       logWarn(`Failed to parse ${OPTABLE_RESOLVED_KEY} from localStorage`, e);
@@ -77,16 +78,18 @@ const checkLocalStorageCache = () => {
 
   // 2. Check for fallback cache data (raw SDK data)
   const cacheData = storage.getDataFromLocalStorage(OPTABLE_CACHE_KEY);
+  logMessage(`localStorage[${OPTABLE_CACHE_KEY}]: ${cacheData ? 'present' : 'not found'}`);
   if (cacheData) {
     try {
       const parsedData = JSON.parse(cacheData);
-      logMessage(`Optable targeting found in fallback cache (${OPTABLE_CACHE_KEY})`);
+      logMessage(`Using cached raw SDK data from ${OPTABLE_CACHE_KEY}`);
       return parsedData;
     } catch (e) {
       logWarn(`Failed to parse ${OPTABLE_CACHE_KEY} from localStorage`, e);
     }
   }
 
+  logMessage('No valid cache data found in localStorage');
   return null;
 };
 
@@ -102,9 +105,10 @@ const waitForOptableEvent = (skipCache = false) => {
       // 1. FIRST: Check instance.targetingFromCache() - wrapper has priority and can override cache
       const optableBundle = /** @type {Object} */ (window.optable);
       const instanceData = optableBundle?.instance?.targetingFromCache();
+      logMessage(`SDK instance.targetingFromCache() returned: ${instanceData?.ortb2 ? 'ortb2 data present' : 'no data'}`);
 
       if (instanceData && instanceData.ortb2) {
-        logMessage('Optable SDK already has cached data via targetingFromCache()');
+        logMessage('Resolved targeting from SDK instance cache');
         resolve(instanceData);
         return;
       }
@@ -112,11 +116,12 @@ const waitForOptableEvent = (skipCache = false) => {
       // 2. THEN: Check localStorage cache sources
       const cachedData = checkLocalStorageCache();
       if (cachedData) {
+        logMessage('Resolved targeting from localStorage cache');
         resolve(cachedData);
         return;
       }
     } else {
-      logMessage('Cache skipped due to skipCache configuration');
+      logMessage('skipCache parameter enabled: bypassing all cache sources');
     }
 
     // 3. FINALLY: Wait for targeting events
@@ -127,21 +132,23 @@ const waitForOptableEvent = (skipCache = false) => {
     };
 
     const resolvedEventListener = (event) => {
-      logMessage(`Received ${OPTABLE_RESOLVED_EVENT} event`);
+      logMessage(`Event received: ${OPTABLE_RESOLVED_EVENT} (wrapper-resolved targeting)`);
       const targetingData = event.detail;
       cleanup();
+      logMessage('Resolved targeting from optableResolved event');
       resolve(targetingData);
     };
 
     const targetingEventListener = (event) => {
-      logMessage(`Received ${OPTABLE_TARGETING_EVENT} event`);
+      logMessage(`Event received: ${OPTABLE_TARGETING_EVENT} (raw SDK targeting)`);
 
       // Check if resolved data already exists in localStorage
       const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
+      logMessage(`Checking localStorage[${OPTABLE_RESOLVED_KEY}] after ${OPTABLE_TARGETING_EVENT}: ${resolvedData ? 'present' : 'not found'}`);
       if (resolvedData) {
         try {
           const parsedData = JSON.parse(resolvedData);
-          logMessage(`Found ${OPTABLE_RESOLVED_KEY} in localStorage after ${OPTABLE_TARGETING_EVENT}`);
+          logMessage(`Resolved targeting from ${OPTABLE_RESOLVED_KEY} after ${OPTABLE_TARGETING_EVENT} event`);
           cleanup();
           resolve(parsedData);
           return;
@@ -151,13 +158,14 @@ const waitForOptableEvent = (skipCache = false) => {
       }
 
       // No resolved data, use the targeting:change data
+      logMessage(`Resolved targeting from ${OPTABLE_TARGETING_EVENT} event detail`);
       cleanup();
       resolve(event.detail);
     };
 
     window.addEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
     window.addEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
-    logMessage(`Waiting for ${OPTABLE_RESOLVED_EVENT} or ${OPTABLE_TARGETING_EVENT} events`);
+    logMessage(`Event listeners registered: waiting for ${OPTABLE_RESOLVED_EVENT} or ${OPTABLE_TARGETING_EVENT}`);
   });
 };
 
@@ -174,15 +182,15 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
   let targetingData = await waitForOptableEvent(skipCache);
 
   if (!targetingData || !targetingData.ortb2) {
-    logWarn('No targeting data found');
+    logWarn('defaultHandleRtd: no valid targeting data available (missing ortb2)');
     return;
   }
 
+  logMessage('defaultHandleRtd: merging ortb2 data into global ORTB2 fragments');
   mergeFn(
     reqBidsConfigObj.ortb2Fragments.global,
     targetingData.ortb2,
   );
-  logMessage('Prebid\'s global ORTB2 object after merge: ', reqBidsConfigObj.ortb2Fragments.global);
 };
 
 /**
@@ -213,33 +221,33 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     const {bundleUrl, handleRtd, skipCache} = parseConfig(moduleConfig);
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
+    logMessage(`Configuration: bundleUrl=${bundleUrl ? 'provided' : 'not provided'}, skipCache=${skipCache}, customHandleRtd=${!!handleRtd}`);
 
     if (bundleUrl) {
       // If bundleUrl is present, load the Optable JS bundle
       // by using the loadExternalScript function
-      logMessage('Custom bundle URL found in config: ', bundleUrl);
+      logMessage(`Loading Optable SDK from bundleUrl: ${bundleUrl}`);
 
       // Load Optable JS bundle and merge the data
       loadExternalScript(bundleUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
-        logMessage('Successfully loaded Optable JS bundle');
+        logMessage('Optable SDK loaded successfully from bundleUrl');
         mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep, skipCache).then(callback, callback);
       }, document);
     } else {
       // At this point, we assume that the Optable JS bundle is already
       // present on the page. If it is, we can directly merge the data
       // by passing the callback to the optable.cmd.push function.
-      logMessage('Custom bundle URL not found in config. ' +
-        'Assuming Optable JS bundle is already present on the page');
+      logMessage('No bundleUrl configured: assuming Optable SDK already present on page');
       window.optable = window.optable || { cmd: [] };
       window.optable.cmd.push(() => {
-        logMessage('Optable JS bundle found on the page');
+        logMessage('Optable SDK command queue ready: proceeding with data merge');
         mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep, skipCache).then(callback, callback);
       });
     }
   } catch (error) {
     // If an error occurs, log it and call the callback
     // to continue with the auction
-    logError(error);
+    logError('getBidRequestData error: ', error);
     callback();
   }
 }
@@ -255,10 +263,10 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
 export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) => {
   // Extract `adserverTargeting` and `instance` from the module configuration
   const {adserverTargeting, instance} = parseConfig(moduleConfig);
-  logMessage('Ad Server targeting: ', adserverTargeting);
+  logMessage(`Configuration: adserverTargeting=${adserverTargeting}, instance=${instance || 'default (instance)'}`);
 
   if (!adserverTargeting) {
-    logMessage('Ad server targeting is disabled');
+    logMessage('adserverTargeting disabled in configuration: returning empty targeting data');
     return {};
   }
 
@@ -267,17 +275,20 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
   // Default to 'instance' if not provided
   const instanceKey = instance || 'instance';
   const sdkInstance = window?.optable?.[instanceKey];
+  logMessage(`SDK instance lookup at window.optable.${instanceKey}: ${sdkInstance ? 'found' : 'not found'}`);
   if (!sdkInstance) {
-    logWarn(`No Optable SDK instance found for: ${instanceKey}`);
+    logWarn(`SDK instance not available at window.optable.${instanceKey}`);
     return targetingData;
   }
 
   // Get the Optable targeting data from the cache
   const optableTargetingData = sdkInstance?.targetingKeyValuesFromCache?.() || targetingData;
+  const keyCount = Object.keys(optableTargetingData).length;
+  logMessage(`SDK instance.targetingKeyValuesFromCache() returned ${keyCount} targeting key(s)`);
 
   // If no Optable targeting data is found, return an empty object
-  if (!Object.keys(optableTargetingData).length) {
-    logWarn('No Optable targeting data found');
+  if (!keyCount) {
+    logWarn('No targeting key-values available from SDK cache');
     return targetingData;
   }
 
@@ -301,7 +312,8 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
     }
   });
 
-  logMessage('Optable targeting data: ', targetingData);
+  const finalAdUnitCount = Object.keys(targetingData).length;
+  logMessage(`Returning targeting data for ${finalAdUnitCount} ad unit(s) with merged key-values`);
   return targetingData;
 };
 
