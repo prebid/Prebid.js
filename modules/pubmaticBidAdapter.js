@@ -608,7 +608,7 @@ function optimizeImps(imps, bidderRequest) {
 }
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
-  bootstrapPlayer: function(bid) {
+  bootstrapPlayer: function (bid) {
     const config = {
       code: bid.adUnitCode,
       vastXml: bid.vastXml || null,
