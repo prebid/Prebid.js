@@ -65,11 +65,15 @@ export const parseConfig = (moduleConfig) => {
 const checkLocalStorageCache = () => {
   // 1. Check for wrapper-manipulated resolved data (highest priority)
   const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
-  logMessage(`localStorage[${OPTABLE_RESOLVED_KEY}]: ${resolvedData ? 'present' : 'not found'}`);
+  logMessage(`localStorage[${OPTABLE_RESOLVED_KEY}]: ${resolvedData ? 'EXISTS' : 'NOT FOUND'}`);
   if (resolvedData) {
     try {
       const parsedData = JSON.parse(resolvedData);
-      logMessage(`Using cached wrapper-resolved data from ${OPTABLE_RESOLVED_KEY}`);
+      const eidCount = parsedData?.ortb2?.user?.eids?.length || 0;
+      logMessage(`${OPTABLE_RESOLVED_KEY} has ${eidCount} EIDs`);
+      if (eidCount > 0) {
+        logMessage(`Using cached wrapper-resolved data from ${OPTABLE_RESOLVED_KEY} with ${eidCount} EIDs`);
+      }
       return parsedData;
     } catch (e) {
       logWarn(`Failed to parse ${OPTABLE_RESOLVED_KEY} from localStorage`, e);
@@ -78,11 +82,15 @@ const checkLocalStorageCache = () => {
 
   // 2. Check for fallback cache data (raw SDK data)
   const cacheData = storage.getDataFromLocalStorage(OPTABLE_CACHE_KEY);
-  logMessage(`localStorage[${OPTABLE_CACHE_KEY}]: ${cacheData ? 'present' : 'not found'}`);
+  logMessage(`localStorage[${OPTABLE_CACHE_KEY}]: ${cacheData ? 'EXISTS' : 'NOT FOUND'}`);
   if (cacheData) {
     try {
       const parsedData = JSON.parse(cacheData);
-      logMessage(`Using cached raw SDK data from ${OPTABLE_CACHE_KEY}`);
+      const eidCount = parsedData?.ortb2?.user?.eids?.length || 0;
+      logMessage(`${OPTABLE_CACHE_KEY} has ${eidCount} EIDs`);
+      if (eidCount > 0) {
+        logMessage(`Using cached raw SDK data from ${OPTABLE_CACHE_KEY} with ${eidCount} EIDs`);
+      }
       return parsedData;
     } catch (e) {
       logWarn(`Failed to parse ${OPTABLE_CACHE_KEY} from localStorage`, e);
@@ -99,16 +107,19 @@ const checkLocalStorageCache = () => {
  * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
  */
 const waitForOptableEvent = (skipCache = false) => {
+  const startTime = Date.now();
   return new Promise((resolve) => {
     // If skipCache is true, skip all cached data checks and wait for events
     if (!skipCache) {
       // 1. FIRST: Check instance.targetingFromCache() - wrapper has priority and can override cache
       const optableBundle = /** @type {Object} */ (window.optable);
       const instanceData = optableBundle?.instance?.targetingFromCache();
-      logMessage(`SDK instance.targetingFromCache() returned: ${instanceData?.ortb2 ? 'ortb2 data present' : 'no data'}`);
+      const hasData = instanceData?.ortb2 ? 'ortb2 data present' : 'no data';
+      logMessage(`SDK instance.targetingFromCache() returned: ${hasData}`);
 
       if (instanceData && instanceData.ortb2) {
-        logMessage('Resolved targeting from SDK instance cache');
+        const eidCount = instanceData.ortb2?.user?.eids?.length || 0;
+        logMessage(`Resolved targeting from SDK instance cache with ${eidCount} EIDs`);
         resolve(instanceData);
         return;
       }
@@ -116,7 +127,8 @@ const waitForOptableEvent = (skipCache = false) => {
       // 2. THEN: Check localStorage cache sources
       const cachedData = checkLocalStorageCache();
       if (cachedData) {
-        logMessage('Resolved targeting from localStorage cache');
+        const eidCount = cachedData?.ortb2?.user?.eids?.length || 0;
+        logMessage(`Resolved targeting from localStorage cache with ${eidCount} EIDs`);
         resolve(cachedData);
         return;
       }
@@ -124,23 +136,30 @@ const waitForOptableEvent = (skipCache = false) => {
       logMessage('skipCache parameter enabled: bypassing all cache sources');
     }
 
-    // 3. FINALLY: Wait for targeting events
+    // 3. FINALLY: Wait for targeting events (targeting call will be made by SDK)
     // Priority: optableResolved (wrapper-manipulated) > optable-targeting:change (raw SDK)
+    logMessage('No cached data found - waiting for targeting call from Optable SDK');
+    logMessage('Targeting call is being made by Optable SDK...');
+
     const cleanup = () => {
       window.removeEventListener(OPTABLE_RESOLVED_EVENT, resolvedEventListener);
       window.removeEventListener(OPTABLE_TARGETING_EVENT, targetingEventListener);
     };
 
     const resolvedEventListener = (event) => {
-      logMessage(`Event received: ${OPTABLE_RESOLVED_EVENT} (wrapper-resolved targeting)`);
+      const elapsed = Date.now() - startTime;
+      logMessage(`Event received: ${OPTABLE_RESOLVED_EVENT} (wrapper-resolved targeting) after ${elapsed}ms`);
       const targetingData = event.detail;
+      const eidCount = targetingData?.ortb2?.user?.eids?.length || 0;
+      logMessage(`Targeting call returned ${eidCount} EIDs after ${elapsed}ms`);
       cleanup();
-      logMessage('Resolved targeting from optableResolved event');
+      logMessage(`Resolved targeting from ${OPTABLE_RESOLVED_EVENT} event with ${eidCount} EIDs`);
       resolve(targetingData);
     };
 
     const targetingEventListener = (event) => {
-      logMessage(`Event received: ${OPTABLE_TARGETING_EVENT} (raw SDK targeting)`);
+      const elapsed = Date.now() - startTime;
+      logMessage(`Event received: ${OPTABLE_TARGETING_EVENT} (raw SDK targeting) after ${elapsed}ms`);
 
       // Check if resolved data already exists in localStorage
       const resolvedData = storage.getDataFromLocalStorage(OPTABLE_RESOLVED_KEY);
@@ -148,6 +167,8 @@ const waitForOptableEvent = (skipCache = false) => {
       if (resolvedData) {
         try {
           const parsedData = JSON.parse(resolvedData);
+          const eidCount = parsedData?.ortb2?.user?.eids?.length || 0;
+          logMessage(`Targeting call returned ${eidCount} EIDs after ${elapsed}ms`);
           logMessage(`Resolved targeting from ${OPTABLE_RESOLVED_KEY} after ${OPTABLE_TARGETING_EVENT} event`);
           cleanup();
           resolve(parsedData);
@@ -158,7 +179,9 @@ const waitForOptableEvent = (skipCache = false) => {
       }
 
       // No resolved data, use the targeting:change data
-      logMessage(`Resolved targeting from ${OPTABLE_TARGETING_EVENT} event detail`);
+      const eidCount = event.detail?.ortb2?.user?.eids?.length || 0;
+      logMessage(`Targeting call returned ${eidCount} EIDs after ${elapsed}ms`);
+      logMessage(`Resolved targeting from ${OPTABLE_TARGETING_EVENT} event detail with ${eidCount} EIDs`);
       cleanup();
       resolve(event.detail);
     };
@@ -186,11 +209,35 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
     return;
   }
 
-  logMessage('defaultHandleRtd: merging ortb2 data into global ORTB2 fragments');
+  const eidCount = targetingData.ortb2?.user?.eids?.length || 0;
+  logMessage(`defaultHandleRtd: received targeting data with ${eidCount} EIDs`);
+  logMessage('Merging ortb2 data into global ORTB2 fragments...');
+
   mergeFn(
     reqBidsConfigObj.ortb2Fragments.global,
     targetingData.ortb2,
   );
+
+  logMessage(`EIDs merged into ortb2Fragments.global.user.eids (${eidCount} EIDs)`);
+
+  // Also add to user.ext.eids for additional coverage
+  if (targetingData.ortb2.user?.eids) {
+    const targetORTB2 = reqBidsConfigObj.ortb2Fragments.global;
+    targetORTB2.user = targetORTB2.user ?? {};
+    targetORTB2.user.ext = targetORTB2.user.ext ?? {};
+    targetORTB2.user.ext.eids = targetORTB2.user.ext.eids ?? [];
+
+    logMessage('Also merging Optable EIDs into ortb2.user.ext.eids...');
+
+    // Merge EIDs into user.ext.eids
+    targetingData.ortb2.user.eids.forEach(eid => {
+      targetORTB2.user.ext.eids.push(eid);
+    });
+
+    logMessage(`EIDs also available in ortb2.user.ext.eids (${eidCount} EIDs)`);
+  }
+
+  logMessage(`SUCCESS: ${eidCount} EIDs will be included in bid requests`);
 };
 
 /**
@@ -318,12 +365,13 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
 };
 
 /**
- * Dummy init function
+ *init function
  * @param {Object} config Module configuration
  * @param {boolean} userConsent User consent
  * @returns true
  */
 const init = (config, userConsent) => {
+  logMessage('RTD module initialized');
   return true;
 }
 
