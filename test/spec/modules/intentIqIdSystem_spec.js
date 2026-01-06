@@ -123,6 +123,20 @@ const mockGAM = () => {
   };
 };
 
+const regionCases = [
+  { name: 'no region (default)', region: undefined, expected: 'https://api.intentiq.com' },
+  { name: 'apac', region: 'apac', expected: 'https://api-apac.intentiq.com' },
+  { name: 'emea', region: 'emea', expected: 'https://api-emea.intentiq.com' },
+  { name: 'gdpr', region: 'gdpr', expected: 'https://api-gdpr.intentiq.com' }
+];
+
+const syncRegionCases = [
+  { name: 'default', region: undefined, expected: 'https://sync.intentiq.com' },
+  { name: 'apac', region: 'apac', expected: 'https://sync-apac.intentiq.com' },
+  { name: 'emea', region: 'emea', expected: 'https://sync-emea.intentiq.com' },
+  { name: 'gdpr', region: 'gdpr', expected: 'https://sync-gdpr.intentiq.com' },
+];
+
 describe('IntentIQ tests', function () {
   this.timeout(10000);
   let sandbox;
@@ -906,23 +920,28 @@ describe('IntentIQ tests', function () {
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
     });
 
-    it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', async function() {
-      const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
-      mockConsentHandlers(uspData, gppData, gdprData);
-      const callBackSpy = sinon.spy();
-      const submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
+    // it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', async function() {
+    //   const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
+    //   mockConsentHandlers(uspData, gppData, gdprData);
+    //   const callBackSpy = sinon.spy();
+    //   const submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
 
-      submoduleCallback(callBackSpy);
-      await waitForClientHints();
-      const request = server.requests[0];
+    //   submoduleCallback(callBackSpy);
+    //   await waitForClientHints();
+    //   const request = server.requests[0];
 
-      expect(request.url).to.contain(ENDPOINT_GDPR);
-    });
+    //   expect(request.url).to.contain(ENDPOINT_GDPR);
+    // });
 
     it('should make request to correct address with iiqServerAddress parameter', async function() {
-      defaultConfigParams.params.iiqServerAddress = testAPILink
+      const customParams = {
+        params: {
+          ...defaultConfigParams.params,
+          iiqServerAddress: testAPILink
+        }
+      };
       const callBackSpy = sinon.spy();
-      const submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
+      const submoduleCallback = intentIqIdSubmodule.getId({...customParams}).callback;
 
       submoduleCallback(callBackSpy);
       await waitForClientHints();
@@ -948,6 +967,57 @@ describe('IntentIQ tests', function () {
 
       const request = server.requests[0];
       expect(request.url).to.contain(syncTestAPILink);
+    });
+
+    regionCases.forEach(({ name, region, expected }) => {
+      it(`should use region-specific api endpoint when region is "${name}"`, async function () {
+        mockConsentHandlers(uspData, gppData, gdprData); // gdprApplies = true
+
+        const callBackSpy = sinon.spy();
+        const configWithRegion = {
+          params: {
+            ...defaultConfigParams.params,
+            region
+          }
+        };
+
+        const submoduleCallback = intentIqIdSubmodule.getId(configWithRegion).callback;
+        submoduleCallback(callBackSpy);
+        await waitForClientHints();
+
+        const request = server.requests[0];
+        expect(request.url).to.contain(expected);
+      });
+    });
+
+    syncRegionCases.forEach(({ name, region, expected }) => {
+      it(`should use region-specific sync endpoint when region is "${name}"`, async function () {
+        let wasCallbackCalled = false;
+
+        const callbackConfigParams = {
+          params: {
+            partner,
+            pai,
+            partnerClientIdType,
+            partnerClientId,
+            browserBlackList: 'Chrome',
+            region,
+            callback: () => {
+              wasCallbackCalled = true;
+            }
+          }
+        };
+
+        mockConsentHandlers(uspData, gppData, gdprData);
+
+        intentIqIdSubmodule.getId(callbackConfigParams);
+
+        await waitForClientHints();
+
+        const request = server.requests[0];
+        expect(request.url).to.contain(expected);
+        expect(wasCallbackCalled).to.equal(true);
+      });
     });
   });
 

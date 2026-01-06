@@ -2,6 +2,7 @@ import { expect } from "chai";
 import iiqAnalyticsAnalyticsAdapter from "modules/intentIqAnalyticsAdapter.js";
 import * as utils from "src/utils.js";
 import { server } from "test/mocks/xhr.js";
+import { config } from "src/config.js";
 import { EVENTS } from "src/constants.js";
 import * as events from "src/events.js";
 import sinon from "sinon";
@@ -29,6 +30,8 @@ import {
   gdprDataHandler,
 } from "../../../src/consentHandler.js";
 
+let getConfigStub;
+let userIdConfigForTest;
 const partner = 10;
 const defaultIdentityObject = {
   firstPartyData: {
@@ -64,6 +67,28 @@ const defaultIdentityObject = {
     8: '"Chromium";v="142.0.7444.60", "Google Chrome";v="142.0.7444.60", "Not_A Brand";v="99.0.0.0"',
   },
 };
+const regionCases = [
+  {
+    name: 'default (no region)',
+    region: undefined,
+    expectedEndpoint: 'https://reports.intentiq.com/report'
+  },
+  {
+    name: 'apac',
+    region: 'apac',
+    expectedEndpoint: 'https://reports-apac.intentiq.com/report'
+  },
+  {
+    name: 'emea',
+    region: 'emea',
+    expectedEndpoint: 'https://reports-emea.intentiq.com/report'
+  },
+  {
+    name: 'gdpr',
+    region: 'gdpr',
+    expectedEndpoint: 'https://reports-gdpr.intentiq.com/report'
+  }
+]
 const version = VERSION;
 const REPORT_ENDPOINT = "https://reports.intentiq.com/report";
 const REPORT_ENDPOINT_GDPR = "https://reports-gdpr.intentiq.com/report";
@@ -77,6 +102,22 @@ const getDefaultConfig = () => {
     manualWinReportEnabled: false,
   }
 }
+
+const getUserConfigWithReportingServerAddress = () => [
+  {
+    'name': 'intentIqId',
+    'params': {
+      'partner': partner,
+      'unpack': null,
+    },
+    'storage': {
+      'type': 'html5',
+      'name': 'intentIqId',
+      'expires': 60,
+      'refreshInSeconds': 14400
+    }
+  }
+];
 
 const getWonRequest = () => ({
   bidderCode: "pubmatic",
@@ -131,6 +172,11 @@ describe("IntentIQ tests all", function () {
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, "logError");
     sinon.stub(events, "getEvents").returns([]);
+
+    if (config.getConfig && config.getConfig.restore) {
+      config.getConfig.restore();
+    }
+
     iiqAnalyticsAnalyticsAdapter.initOptions = {
       lsValueInitialized: false,
       partner: null,
@@ -156,6 +202,7 @@ describe("IntentIQ tests all", function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    if (getConfigStub && getConfigStub.restore) getConfigStub.restore();
     if (getWindowSelfStub) getWindowSelfStub.restore();
     if (getWindowTopStub) getWindowTopStub.restore();
     if (getWindowLocationStub) getWindowLocationStub.restore();
@@ -272,27 +319,27 @@ describe("IntentIQ tests all", function () {
     expect(payloadDecoded).to.have.property("adType", externalWinEvent.adType);
   });
 
-  it("should send report to report-gdpr address if gdpr is detected", function () {
-    const gppStub = sinon
-      .stub(gppDataHandler, "getConsentData")
-      .returns({ gppString: '{"key1":"value1","key2":"value2"}' });
-    const uspStub = sinon
-      .stub(uspDataHandler, "getConsentData")
-      .returns("1NYN");
-    const gdprStub = sinon
-      .stub(gdprDataHandler, "getConsentData")
-      .returns({ consentString: "gdprConsent" });
+  // it("should send report to report-gdpr address if gdpr is detected", function () {
+  //   const gppStub = sinon
+  //     .stub(gppDataHandler, "getConsentData")
+  //     .returns({ gppString: '{"key1":"value1","key2":"value2"}' });
+  //   const uspStub = sinon
+  //     .stub(uspDataHandler, "getConsentData")
+  //     .returns("1NYN");
+  //   const gdprStub = sinon
+  //     .stub(gdprDataHandler, "getConsentData")
+  //     .returns({ consentString: "gdprConsent" });
 
-    events.emit(EVENTS.BID_WON, getWonRequest());
+  //   events.emit(EVENTS.BID_WON, getWonRequest());
 
-    expect(server.requests.length).to.be.above(0);
-    const request = server.requests[0];
+  //   expect(server.requests.length).to.be.above(0);
+  //   const request = server.requests[0];
 
-    expect(request.url).to.contain(REPORT_ENDPOINT_GDPR);
-    gppStub.restore();
-    uspStub.restore();
-    gdprStub.restore();
-  });
+  //   expect(request.url).to.contain(REPORT_ENDPOINT_GDPR);
+  //   gppStub.restore();
+  //   uspStub.restore();
+  //   gdprStub.restore();
+  // });
 
   it("should initialize with default configurations", function () {
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized).to.be
@@ -377,6 +424,22 @@ describe("IntentIQ tests all", function () {
     gppStub.restore();
     uspStub.restore();
     gdprStub.restore();
+  });
+
+  regionCases.forEach(({ name, region, expectedEndpoint }) => {
+    it(`should send request to region-specific report endpoint when region is "${name}"`, function () {
+      userIdConfigForTest = getUserConfigWithReportingServerAddress();
+      getConfigStub = sinon.stub(config, "getConfig");
+      getConfigStub.withArgs("userSync.userIds").callsFake(() => userIdConfigForTest);
+
+      enableAnalyticWithSpecialOptions({ region });
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests.length).to.be.above(0);
+      const request = server.requests[0];
+      expect(request.url).to.contain(expectedEndpoint);
+    });
   });
 
   it("should not send request if manualWinReportEnabled is true", function () {
