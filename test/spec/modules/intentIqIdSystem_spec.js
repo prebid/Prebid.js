@@ -611,7 +611,7 @@ describe('IntentIQ tests', function () {
   it('should send AT=20 request and send spd in it', async function () {
     const spdValue = { foo: 'bar', value: 42 };
     const encodedSpd = encodeURIComponent(JSON.stringify(spdValue));
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({pcid: '123', spd: spdValue}));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({pcid: '123', spd: spdValue}));
 
     intentIqIdSubmodule.getId({params: {
       partner: 10,
@@ -629,7 +629,7 @@ describe('IntentIQ tests', function () {
   it('should send AT=20 request and send spd string in it ', async function () {
     const spdValue = 'server provided data';
     const encodedSpd = encodeURIComponent(spdValue);
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({pcid: '123', spd: spdValue}));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({pcid: '123', spd: spdValue}));
 
     intentIqIdSubmodule.getId({params: {
       partner: 10,
@@ -648,7 +648,7 @@ describe('IntentIQ tests', function () {
     const spdValue = { foo: 'bar', value: 42 };
     const encodedSpd = encodeURIComponent(JSON.stringify(spdValue));
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ pcid: '123', spd: spdValue }));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({ pcid: '123', spd: spdValue }));
 
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
@@ -664,7 +664,7 @@ describe('IntentIQ tests', function () {
   it('should send spd string from firstPartyData in localStorage in at=39 request', async function () {
     const spdValue = 'spd string';
     const encodedSpd = encodeURIComponent(spdValue);
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ pcid: '123', spd: spdValue }));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({ pcid: '123', spd: spdValue }));
 
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
@@ -690,7 +690,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true, spd: spdValue })
     );
 
-    const storedLs = readData(FIRST_PARTY_KEY, ['html5', 'cookie'], storage);
+    const storedLs = readData(FIRST_PARTY_KEY + '_' + partner, ['html5', 'cookie'], storage);
     const parsedLs = JSON.parse(storedLs);
 
     expect(storedLs).to.not.be.null;

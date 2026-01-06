@@ -171,7 +171,7 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   url = appendCMPData(url, cmpData);
   url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
   url = handleAdditionalParams(browser, url, 0, configParams.additionalParams);
-  url = appendSPData(url, firstPartyData)
+  url = appendSPData(url, partnerData);
   url += '&source=' + PREBID;
   return url;
 }
@@ -511,7 +511,7 @@ export const intentIqIdSubmodule = {
     url += actualABGroup ? '&testGroup=' + encodeURIComponent(actualABGroup) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
     url = handleAdditionalParams(currentBrowserLowerCase, url, 1, additionalParams);
-    url = appendSPData(url, firstPartyData)
+    url = appendSPData(url, partnerData)
     url += '&source=' + PREBID;
     url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource
     url += '&abtg=' + encodeURIComponent(actualABGroup)
@@ -604,7 +604,7 @@ export const intentIqIdSubmodule = {
 
             if ('spd' in respJson) {
               // server provided data
-              firstPartyData.spd = respJson.spd;
+              partnerData.spd = respJson.spd;
             }
 
             if ('abTestUuid' in respJson) {

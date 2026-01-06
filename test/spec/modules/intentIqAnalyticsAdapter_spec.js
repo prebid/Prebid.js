@@ -33,6 +33,7 @@ import {
 let getConfigStub;
 let userIdConfigForTest;
 const partner = 10;
+const identityName = `iiq_identity_${partner}`
 const defaultIdentityObject = {
   firstPartyData: {
     pcid: "f961ffb1-a0e1-4696-a9d2-a21d815bd344",
@@ -44,8 +45,7 @@ const defaultIdentityObject = {
     sCal: Date.now() - 36000,
     isOptedOut: false,
     pid: "profile",
-    dbsaved: "true",
-    spd: "spd",
+    dbsaved: "true"
   },
   partnerData: {
     abTestUuid: "abTestUuid",
@@ -197,7 +197,7 @@ describe("IntentIQ tests all", function () {
       iiqAnalyticsAnalyticsAdapter.track.restore();
     }
     sinon.spy(iiqAnalyticsAnalyticsAdapter, "track");
-    window[`iiq_identity_${partner}`] = defaultIdentityObject;
+    window[identityName] = utils.deepClone(defaultIdentityObject);
   });
 
   afterEach(function () {
@@ -366,6 +366,9 @@ describe("IntentIQ tests all", function () {
   });
 
   it("should handle BID_WON event with default group configuration", function () {
+    const spdData = "server provided data";
+    const expectedSpdEncoded = encodeURIComponent(spdData);
+    window[identityName].partnerData.spd = spdData;
     const wonRequest = getWonRequest();
 
     events.emit(EVENTS.BID_WON, wonRequest);
@@ -378,7 +381,7 @@ describe("IntentIQ tests all", function () {
     const payload = encodeURIComponent(JSON.stringify([base64String]));
     const expectedUrl = appendVrrefAndFui(
       REPORT_ENDPOINT +
-        `?pid=${partner}&mct=1&iiqid=${defaultIdentityObject.firstPartyData.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&uh=&gdpr=0&spd=spd`,
+        `?pid=${partner}&mct=1&iiqid=${defaultIdentityObject.firstPartyData.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&uh=&gdpr=0&spd=${expectedSpdEncoded}`,
       iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
     const urlWithPayload = expectedUrl + `&payload=${payload}`;
@@ -613,8 +616,9 @@ describe("IntentIQ tests all", function () {
   it("should include spd parameter from LS in report URL", function () {
     const spdObject = { foo: "bar", value: 42 };
     const expectedSpdEncoded = encodeURIComponent(JSON.stringify(spdObject));
-    window[`iiq_identity_${partner}`].firstPartyData.spd =
+    window[identityName].firstPartyData.spd =
       JSON.stringify(spdObject);
+    window[identityName].partnerData.spd = spdObject;
 
     getWindowLocationStub = sinon
       .stub(utils, "getWindowLocation")
@@ -631,7 +635,7 @@ describe("IntentIQ tests all", function () {
   it("should include spd parameter string from LS in report URL", function () {
     const spdData = "server provided data";
     const expectedSpdEncoded = encodeURIComponent(spdData);
-    window[`iiq_identity_${partner}`].firstPartyData.spd = spdData;
+    window[identityName].partnerData.spd = spdData;
 
     getWindowLocationStub = sinon
       .stub(utils, "getWindowLocation")
