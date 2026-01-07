@@ -48,7 +48,8 @@ export const spec = {
     { code: 'adnimation' },
     { code: 'rtbdemand' },
     { code: 'altstar' },
-    { code: 'vaayaMedia' }
+    { code: 'vaayaMedia' },
+    { code: 'performist' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
