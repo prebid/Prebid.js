@@ -315,6 +315,7 @@ function interpretResponse(serverResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['ringieraxelspringer'],
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
