@@ -1,5 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'logicad';
 const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
@@ -11,6 +13,9 @@ export const spec = {
     return !!(bid.params && bid.params.tid);
   },
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const requests = [];
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const request = {
@@ -26,18 +31,30 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidderRequest) {
     serverResponse = serverResponse.body;
+
     const bids = [];
+
     if (!serverResponse || serverResponse.error) {
       return bids;
     }
+
     serverResponse.seatbid.forEach(function (seatbid) {
       bids.push(seatbid.bid);
     })
+
+    const fledgeAuctionConfigs = deepAccess(serverResponse, 'ext.fledgeAuctionConfigs') || [];
+    if (fledgeAuctionConfigs.length) {
+      return {
+        bids,
+        paapi: fledgeAuctionConfigs,
+      };
+    }
+
     return bids;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     if (serverResponses.length > 0 && serverResponses[0].body.userSync &&
-      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type == 'image') {
+      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type === 'image') {
       return [{
         type: 'image',
         url: serverResponses[0].body.userSync.url
@@ -47,22 +64,52 @@ export const spec = {
   },
 };
 
-function newBidRequest(bid, bidderRequest) {
-  return {
-    auctionId: bid.auctionId,
-    bidderRequestId: bid.bidderRequestId,
-    bids: [{
-      adUnitCode: bid.adUnitCode,
-      bidId: bid.bidId,
-      transactionId: bid.transactionId,
-      sizes: bid.sizes,
-      params: bid.params,
-      mediaTypes: bid.mediaTypes
-    }],
+function newBidRequest(bidRequest, bidderRequest) {
+  const bid = {
+    adUnitCode: bidRequest.adUnitCode,
+    bidId: bidRequest.bidId,
+    transactionId: bidRequest.ortb2Imp?.ext?.tid,
+    sizes: bidRequest.sizes,
+    params: bidRequest.params,
+    mediaTypes: bidRequest.mediaTypes,
+  }
+
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
+  if (fledgeEnabled) {
+    const ae = deepAccess(bidRequest, 'ortb2Imp.ext.ae');
+    if (ae) {
+      bid.ae = ae;
+    }
+  }
+
+  const data = {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
+    auctionId: bidRequest.auctionId,
+    bidderRequestId: bidRequest.bidderRequestId,
+    bids: [bid],
     prebidJsVersion: '$prebid.version$',
-    referrer: bidderRequest.refererInfo.referer,
+    // TODO: is 'page' the right value here?
+    referrer: bidderRequest.refererInfo.page,
     auctionStartTime: bidderRequest.auctionStart,
+    eids: bidRequest.userIdAsEids,
   };
+
+  const sua = deepAccess(bidRequest, 'ortb2.device.sua');
+  if (sua) {
+    data.sua = sua;
+  }
+
+  const userData = deepAccess(bidRequest, 'ortb2.user.data');
+  if (userData) {
+    data.userData = userData;
+  }
+
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    data.schain = schain;
+  }
+
+  return data;
 }
 
 registerBidder(spec);

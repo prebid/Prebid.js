@@ -37,7 +37,6 @@ adUnits = [{
                             siteId: '4204204201', /* An ID used to identify a site within a publisher account - required */
                             placementId: '0420420421', /* an ID used to identify the piece of inventory - required - for appnexus test use 13144370. */
 							customData: [{"settings": {}, "targeting": {"key": "value", "key2": ["value1", "value2"]}}],/* optional array with 'targeting' placeholder for passing publisher specific key-values for targeting. */                            
-                            lotameData: {"Profile": {"tpid":"value","pid":"value","Audiences": {"Audience":[{"id":"value"},{"id":"value2"}]}}}, /* optional JSON placeholder for passing Lotame DMP data */
                         }
                     }]
                 }];
@@ -52,7 +51,7 @@ adUnits = [{
                     code: 'id-of-your-video-div',
                     mediaTypes: {
                         video: {
-                            playerSize: [640, 480],
+                            playerSize: [640, 360],
                             mimes: ['video/mp4'],
                             context: 'outstream',
                         }
@@ -64,7 +63,6 @@ adUnits = [{
                             siteId: '4204204201', /* An ID used to identify a site within a publisher account - required */
 							customData: [{"settings": {}, "targeting": { "key": "value", "key2": ["value1", "value2"]}}]
                             placementId: '0440440442', /* an ID used to identify the piece of inventory - required - for unruly test use 0440440442. */
-                            lotameData: {"Profile": {"tpid":"value","pid":"value","Audiences": {"Audience":[{"id":"value"},{"id":"value2"}]}}}, /* optional JSON placeholder for passing Lotame DMP data */
 							video: {
                                 skippable: true, /* optional */
                                 playback_method: ['auto_play_sound_off'], /* optional */
@@ -73,4 +71,43 @@ adUnits = [{
                         }
                     }]
                 }];
+```
+
+
+```
+//Instream Video adUnit
+
+adUnits = [{
+					code: 'video1',
+					mediaTypes: {
+						video: {
+							playerSize: [640, 480],
+							context: 'instream',
+							mimes: ['video/mp4'],
+							protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+							playbackmethod: [2]
+						}
+					},
+					bids: [{
+							bidder: 'ozone',
+							params: {
+								publisherId: 'OZONENUK0001',
+								placementId: '8000000328', // or 999
+								siteId: '4204204201',
+								video: {
+									skippable: true,
+									playback_method: ['auto_play_sound_off']
+								},
+							customData: [{
+							      "settings": {},
+							      "targeting": {
+							          "key": "value",
+								  "key2": ["value1", "value2"]
+								  }
+							}
+							]
+
+							}
+						}]
+				};
 ```

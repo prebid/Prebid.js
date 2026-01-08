@@ -1,19 +1,18 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, getUniqueIdentifierStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
-const BIDDER_URL = 'https://ads.momagic.com/exchange/openrtb25/';
+const BIDDER_URL = 'https://ads-sg.momagic.com/exchange/openrtb25/';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   isBidRequestValid: function (bidRequest) {
-    return (bidRequest.params.site_id && bidRequest.params.bidfloor &&
-    utils.deepAccess(bidRequest, 'mediaTypes.banner') && (utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
+    return (bidRequest.params.site_id &&
+    deepAccess(bidRequest, 'mediaTypes.banner') && (deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -21,11 +20,13 @@ export const spec = {
       return [];
     }
 
-    let queryParams = buildCommonQueryParamsFromBids(validBidRequests, bidderRequest);
+    const queryParams = buildCommonQueryParamsFromBids(validBidRequests, bidderRequest);
 
-    let siteId = utils.deepAccess(validBidRequests[0], 'params.site_id');
+    const siteId = deepAccess(validBidRequests[0], 'params.site_id');
 
-    let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
+    // TODO: should this use auctionId? see #8573
+    // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+    const url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
     return {
       method: 'POST',
@@ -43,10 +44,10 @@ export const spec = {
       return bidResponses;
     }
 
-    let adUnits = serverResponse.seatbid[0].bid;
-    let bidderBid = adUnits[0];
+    const adUnits = serverResponse.seatbid[0].bid;
+    const bidderBid = adUnits[0];
 
-    let responseCPM = parseFloat(bidderBid.price);
+    const responseCPM = parseFloat(bidderBid.price);
     if (responseCPM === 0) {
       return bidResponses;
     }
@@ -54,7 +55,7 @@ export const spec = {
     let responseAd = bidderBid.adm;
 
     if (bidderBid.nurl) {
-      let responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
+      const responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
       responseAd += responseNurl;
     }
 
@@ -94,7 +95,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'http://ads.momagic.com/jsp/usersync.jsp' + gdprParams
+        url: 'https://ads-sg.momagic.com/jsp/usersync.jsp' + gdprParams
       });
     }
     return syncs;
@@ -105,8 +106,8 @@ export const spec = {
 function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
   let adW = 0;
   let adH = 0;
-  let adSizes = Array.isArray(validBidRequests[0].params.sizes) ? validBidRequests[0].params.sizes : validBidRequests[0].sizes;
-  let sizeArrayLength = adSizes.length;
+  const adSizes = Array.isArray(validBidRequests[0].params.sizes) ? validBidRequests[0].params.sizes : validBidRequests[0].sizes;
+  const sizeArrayLength = adSizes.length;
   if (sizeArrayLength === 2 && typeof adSizes[0] === 'number' && typeof adSizes[1] === 'number') {
     adW = adSizes[0];
     adH = adSizes[1];
@@ -115,21 +116,18 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     adH = adSizes[0][1];
   }
 
-  let bidFloor = Number(utils.deepAccess(validBidRequests[0], 'params.bidfloor'));
+  const domain = window.location.host;
+  const page = window.location.host + window.location.pathname + location.search + location.hash;
 
-  let domain = window.location.host;
-  let page = window.location.host + window.location.pathname + location.search + location.hash;
-
-  let defaultParams = {
-    id: utils.getUniqueIdentifierStr(),
+  const defaultParams = {
+    id: getUniqueIdentifierStr(),
     imp: [
       {
         id: validBidRequests[0].bidId,
         banner: {
           w: adW,
           h: adH
-        },
-        bidfloor: bidFloor
+        }
       }
     ],
     site: {
@@ -139,7 +137,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     device: {
       ua: window.navigator.userAgent
     },
-    tmax: config.getConfig('bidderTimeout')
+    tmax: bidderRequest.timeout
   };
 
   return defaultParams;

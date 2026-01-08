@@ -15,25 +15,42 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let bids = [];
+    const bids = [];
     validBidRequests.forEach(bidRequest => {
       bids.push({
         bidId: bidRequest.bidId,
         zoneToken: bidRequest.params.zoneToken,
-        pos: bidRequest.params.pos
+        pos: bidRequest.params.pos,
+        sizes: prepareSizes(bidRequest.sizes)
       })
     })
+
+    const payload = {
+      requestId: bidderRequest.bidderRequestId,
+      bids,
+      referer: bidderRequest.refererInfo.page,
+      schain: validBidRequests[0]?.ortb2?.source?.ext?.schain
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+        consentString: bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    const options = {
+      contentType: 'application/json',
+      customHeaders: {
+        'Rtb-Direct': true
+      }
+    }
 
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids },
-      options: {
-        contentType: 'application/json',
-        customHeaders: {
-          'Rtb-Direct': true
-        }
-      }
+      data: payload,
+      options
     };
   },
 
@@ -48,15 +65,18 @@ export const spec = {
       return [];
     }
 
-    let bids = [];
+    const bids = [];
     prebidResponse.forEach(bidResponse => {
-      let bid = deepClone(bidResponse);
+      const bid = deepClone(bidResponse);
       bid.cpm = parseFloat(bidResponse.cpm);
 
       // banner or video
       if (VIDEO === bid.format) {
         bid.vastXml = bid.ad;
       }
+
+      bid.meta = {};
+      bid.meta.advertiserDomains = bid.adomain || [];
 
       bids.push(bid);
     })
@@ -73,6 +93,10 @@ export const spec = {
     }
     return false;
   }
+}
+
+function prepareSizes(sizes) {
+  return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
 }
 
 registerBidder(spec);

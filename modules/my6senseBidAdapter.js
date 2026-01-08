@@ -1,16 +1,18 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const {registerBidder} = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'my6sense';
 const END_POINT = 'https://hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
 const END_POINT_METHOD = 'POST';
 
 // called first
 function isBidRequestValid(bid) {
-  return !(bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.key);
+  return !(!bid.params || !bid.params.key);
 }
 
 function getUrl(url) {
+  // TODO: this should probably look at refererInfo
   if (!url) {
     url = window.location.href;// "clean" url of current web page
   }
@@ -18,7 +20,7 @@ function getUrl(url) {
   // first look for meta data with property "og:url"
   var metaElements = document.getElementsByTagName('meta');
   for (var i = 0; i < metaElements.length && !canonicalLink; i++) {
-    if (metaElements[i].getAttribute('property') == 'og:url') {
+    if (metaElements[i].getAttribute('property') === 'og:url') {
       canonicalLink = metaElements[i].content;
     }
   }
@@ -108,17 +110,20 @@ function buildGdprServerProperty(bidderRequest) {
   if (bidderRequest && 'gdprConsent' in bidderRequest) {
     gdprObj.gdpr_consent = bidderRequest.gdprConsent.consentString || null;
 
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies == true ? true : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies == false ? false : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies == 1 ? true : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies == 0 ? false : gdprObj.gdpr;
+    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === true ? true : gdprObj.gdpr;
+    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === false ? false : gdprObj.gdpr;
+    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? true : gdprObj.gdpr;
+    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 0 ? false : gdprObj.gdpr;
   }
 
   return gdprObj;
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  let requests = [];
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
+  const requests = [];
 
   if (validBidRequests && validBidRequests.length) {
     validBidRequests.forEach(bidRequest => {
@@ -127,7 +132,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       let debug = false;
 
       if (bidRequest.params) {
-        for (let key in bidRequest.params) {
+        for (const key in bidRequest.params) {
           // loop over params and remove empty/untouched values
           if (bidRequest.params.hasOwnProperty(key)) {
             // if debug we update url string to get core debug version
@@ -137,7 +142,7 @@ function buildRequests(validBidRequests, bidderRequest) {
               continue;
             }
 
-            let fixedObj = fixRequestParamForServer(key, bidRequest.params[key]);
+            const fixedObj = fixRequestParamForServer(key, bidRequest.params[key]);
             bidRequest.params[key] = fixedObj.value;
 
             // if pageUrl is set by user we should update variable for query string param

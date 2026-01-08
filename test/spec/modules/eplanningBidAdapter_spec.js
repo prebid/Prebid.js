@@ -1,6 +1,14 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import {init, getIds} from 'modules/userId/index.js';
+import * as utils from 'src/utils.js';
+import {hook} from '../../../src/hook.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
+import { makeSlot } from '../integration/faker/googletag.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -13,6 +21,7 @@ describe('E-Planning Adapter', function () {
   const CLEAN_ADUNIT_CODE2 = '300x250_1';
   const CLEAN_ADUNIT_CODE = '300x250_0';
   const CLEAN_ADUNIT_CODE_ML = 'adunitco_de';
+  const CLEAN_ADUNIT_CODE_VAST = 'VIDEO_300x250_0';
   const BID_ID = '123456789';
   const BID_ID2 = '987654321';
   const BID_ID3 = '998877665';
@@ -23,22 +32,15 @@ describe('E-Planning Adapter', function () {
   const I_ID = '7854abc56248f873';
   const CRID = '1234567890';
   const TEST_ISV = 'leles.e-planning.net';
+  const ADOMAIN = 'adomain.com';
+  const ADM_VAST = '<VAST version=\"2.0\">\n<Ad id=\"602833\">\n<Wrapper>\n<AdSystem>Acudeo Compatible</AdSystem>\n<VASTAdTagURI>\nhttp://demo.tremormedia.com/proddev/vast/vast_inline_linear.xml\n</VASTAdTagURI>\n<Impression><![CDATA[https://cndigrazia34.devel.e-planning.net:444/eli/4/19911d/6584303d5d0da8bc?i=0123456789012345&fi=0123456789abcdef&pb=<% EXCHANGE_EPBID_49 %>&nfc=1&S=<% SERVER_ID %>&rnd=733663791&bk=0123456789abcdef]]></Impression><Impression>http://myTrackingURL/wrapper/impression</Impression>\n<Creatives>\n<Creative AdID=\"602833\">\n<Linear>\n<TrackingEvents></TrackingEvents>\n</Linear>\n</Creative>\n<Creative AdID=\"602833-Companion\">\n<CompanionAds>\n<Companion width=\"300\" height=\"250\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/300x250_banner1.jpg\n</StaticResource>\n<TrackingEvents>\n<Tracking event=\"creativeView\">\nhttp://myTrackingURL/wrapper/firstCompanionCreativeView\n</Tracking>\n</TrackingEvents>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n<Companion width=\"728\" height=\"90\">\n<StaticResource creativeType=\"image/jpeg\">\nhttp://demo.tremormedia.com/proddev/vast/728x90_banner1.jpg\n</StaticResource>\n<CompanionClickThrough>http://www.tremormedia.com</CompanionClickThrough>\n</Companion>\n</CompanionAds>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n';
+  const ADM_VAST_VV_1 = '<VideoAdServingTemplate xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast_loose.xsd\">test</VideoAdServingTemplate>';
+  const DEFAULT_SIZE_VAST = '640x480';
   const validBid = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
       'ci': CI,
-    },
-    'adUnitCode': ADUNIT_CODE,
-    'sizes': [[300, 250], [300, 600]],
-  };
-  const ML = '1';
-  const validBidMappingLinear = {
-    'bidder': 'eplanning',
-    'bidId': BID_ID,
-    'params': {
-      'ci': CI,
-      'ml': ML,
     },
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[300, 250], [300, 600]],
@@ -51,6 +53,252 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidWithSchain = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'ortb2': {
+      'source': {
+        'ext': {
+          'schain': {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'directseller.com',
+                sid: '00001',
+                rid: 'BidRequest1',
+                hp: 1,
+                name: 'publisher',
+                domain: 'publisher.com'
+              }
+            ]
+          }
+        }
+      }
+    }
+  };
+  const validBidWithSchainNodes = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'ortb2': {
+      'source': {
+        'ext': {
+          'schain': {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'directseller.com',
+                sid: '00001',
+                rid: 'BidRequest1',
+                hp: 1,
+                name: 'publisher',
+                domain: 'publisher.com'
+              },
+              {
+                asi: 'reseller.com',
+                sid: 'aaaaa',
+                rid: 'BidRequest2',
+                hp: 1,
+                name: 'publisher2',
+                domain: 'publisher2.com'
+              },
+              {
+                asi: 'reseller3.com',
+                sid: 'aaaaab',
+                rid: 'BidRequest3',
+                hp: 1,
+                name: 'publisher3',
+                domain: 'publisher3.com'
+              }
+            ]
+          }
+        }
+      }
+    }
+  };
+  const ML = '1';
+  const validBidMappingLinear = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'ml': ML,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const SN = 'spaceName';
+  const validBidSpaceName = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidSpaceNameWithBidFloor = {
+    bidder: 'eplanning',
+    'bidId': BID_ID,
+    params: {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidSpaceOutstreamWithBidFloor = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [300, 600],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceInstreamWithBidFloor = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceOutstream = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [300, 600],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidOutstreamNoSize = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidOutstreamNSizes = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [[300, 600], [400, 500], [500, 500]],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const bidOutstreamInvalidSizes = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': 'invalidSize',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceInstream = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceVastNoContext = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    'mediaTypes': {
+      'video': {
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
   };
   const validBidView = {
     'bidder': 'eplanning',
@@ -95,6 +343,47 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': 'adunit-code',
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBidExistingSizesInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [320, 50], [300, 50]],
+  };
+  const validBidSizesNotExistingInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 70], [160, 600]],
+  };
+  const validBidExistingSizesInPriorityListForDesktop = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 600], [300, 250]],
+    'ext': {
+      'screen': {
+        'w': 1025,
+        'h': 1025
+      }
+    }
+  };
+  const validBidNoSize = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    }
+  };
   const response = {
     body: {
       'sI': {
@@ -107,6 +396,68 @@ describe('E-Planning Adapter', function () {
         'k': CLEAN_ADUNIT_CODE,
         'a': [{
           'adm': ADM,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+  const responseVast = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE_VAST,
+        'a': [{
+          'adm': ADM_VAST,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+  const responseVastVV1 = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE_VAST,
+        'a': [{
+          'adm': ADM_VAST_VV_1,
           'id': '7854abc56248f874',
           'i': I_ID,
           'fi': '7854abc56248f872',
@@ -191,6 +542,39 @@ describe('E-Planning Adapter', function () {
       ]
     }
   };
+  const responseWithAdomain = {
+    body: {
+      'sI': {
+        'k': '12345'
+      },
+      'sec': {
+        'k': 'ROS'
+      },
+      'sp': [{
+        'k': CLEAN_ADUNIT_CODE,
+        'a': [{
+          'adm': ADM,
+          'id': '7854abc56248f874',
+          'i': I_ID,
+          'fi': '7854abc56248f872',
+          'ip': '45621afd87462104',
+          'w': W,
+          'h': H,
+          'crid': CRID,
+          'pr': CPM,
+          'adom': ADOMAIN
+        }],
+      }],
+      'cs': [
+        'http://a-sync-url.com/',
+        {
+          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'ifr': true
+        }
+      ]
+    }
+  };
+
   const responseWithNoSpace = {
     body: {
       'sI': {
@@ -211,7 +595,9 @@ describe('E-Planning Adapter', function () {
   const refererUrl = 'https://localhost';
   const bidderRequest = {
     refererInfo: {
-      referer: refererUrl
+      page: refererUrl,
+      domain: 'localhost',
+      ref: refererUrl,
     },
     gdprConsent: {
       gdprApplies: 1,
@@ -224,6 +610,10 @@ describe('E-Planning Adapter', function () {
     },
     uspConsent: 'consentCcpa'
   };
+
+  before(() => {
+    hook.ready();
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -246,20 +636,45 @@ describe('E-Planning Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [validBid];
+    const bidRequests = [validBid];
+    let sandbox;
+    let getWindowTopStub;
+    let innerWidth;
+    beforeEach(() => {
+      getGlobal().bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
+      sandbox = sinon.createSandbox();
+      getWindowTopStub = sandbox.stub(internal, 'getWindowTop');
+      getWindowTopStub.returns(createWindow(800));
+      resetWinDimensions();
+    });
+
+    afterEach(() => {
+      getGlobal().bidderSettings = {};
+      sandbox.restore();
+    });
+
+    const createWindow = (innerWidth) => {
+      const win = {};
+      win.self = win;
+      win.innerWidth = innerWidth;
+      win.location = {
+        href: 'location'
+      };
+      return win;
+    };
+
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests, bidderRequest).url;
-      expect(url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
       const method = spec.buildRequests(bidRequests, bidderRequest).method;
       expect(method).to.equal('GET');
-    });
-
-    it('should return r parameter with value pbjs', function () {
-      const r = spec.buildRequests(bidRequests, bidderRequest).data.r;
-      expect(r).to.equal('pbjs');
     });
 
     it('should return pbv parameter with value prebid version', function () {
@@ -273,9 +688,35 @@ describe('E-Planning Adapter', function () {
     });
 
     it('should return e parameter with linear mapping attribute with value according to the adunit sizes', function () {
-      let bidRequestsML = [validBidMappingLinear];
+      const bidRequestsML = [validBidMappingLinear];
       const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
       expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600');
+    });
+
+    it('should return e parameter with space name attribute with value according to the adunit sizes', function () {
+      const bidRequestsSN = [validBidSpaceName];
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600');
+    });
+
+    it('should return e parameter with space name attribute with value according to the adunit sizes and bidFloor', function () {
+      const e = spec.buildRequests([validBidSpaceNameWithBidFloor], bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600|' + validBidSpaceNameWithBidFloor.getFloor().floor);
+    });
+
+    it('should return correct e parameter with support vast with one space with size outstream and bidFloor', function () {
+      const data = spec.buildRequests([validBidSpaceOutstreamWithBidFloor], bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1|' + validBidSpaceOutstreamWithBidFloor.getFloor().floor);
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size instream with bidFloor', function () {
+      const bidRequests = [validBidSpaceInstreamWithBidFloor];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1|' + validBidSpaceInstreamWithBidFloor.getFloor().floor);
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
     });
 
     it('should return correct e parameter with more than one adunit', function () {
@@ -295,8 +736,90 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal('300x250_0:300x250,300x600+100x100_0:100x100');
     });
 
+    it('should return correct e parameter with support vast with one space with size outstream', function () {
+      const bidRequests = [validBidSpaceOutstream];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should correctly return the e parameter with n sizes in playerSize', function () {
+      const bidRequests = [validBidOutstreamNSizes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should correctly return the e parameter with invalid sizes in playerSize', function () {
+      const bidRequests = [bidOutstreamInvalidSizes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_' + DEFAULT_SIZE_VAST + '_0:' + DEFAULT_SIZE_VAST + ';1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size default outstream', function () {
+      const bidRequests = [validBidOutstreamNoSize];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size instream', function () {
+      const bidRequests = [validBidSpaceInstream];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size default and vctx default', function () {
+      const bidRequests = [validBidSpaceVastNoContext];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('if 2 bids arrive, one outstream and the other instream, instream has more priority', function () {
+      const bidRequests = [validBidSpaceOutstream, validBidSpaceInstream];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1');
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+    it('if 2 bids arrive, one outstream and another banner, outstream has more priority', function () {
+      const bidRequests = [validBidSpaceOutstream, validBidSpaceName];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space outstream', function () {
+      const bidRequests = [validBidSpaceOutstream, validBidOutstreamNoSize];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1+video_640x480_1:640x480;1');
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+    it('should return sch parameter', function () {
+      let bidRequests = [validBidWithSchain]; let schainExpected; let schain;
+      schain = validBidWithSchain.ortb2.source.ext.schain;
+      schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.deep.equal(schainExpected);
+    });
+    it('should not return sch parameter', function () {
+      const bidRequests = [validBidWithSchainNodes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.equal(undefined);
+    });
     it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
-      let bidRequestsML = [validBidMappingLinear];
+      const bidRequestsML = [validBidMappingLinear];
       const NEW_CODE = ADUNIT_CODE + '2';
       const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE_ML + '2';
       const anotherBid = {
@@ -312,6 +835,23 @@ describe('E-Planning Adapter', function () {
 
       const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
       expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600+' + CLEAN_NEW_CODE + ':100x100');
+    });
+
+    it('should return correct e parameter with space name attribute with more than one adunit', function () {
+      const bidRequestsSN = [validBidSpaceName];
+      const NEW_SN = 'anotherNameSpace';
+      const anotherBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'sn': NEW_SN,
+        },
+        'sizes': [[100, 100]],
+      };
+      bidRequestsSN.push(anotherBid);
+
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600+' + NEW_SN + ':100x100');
     });
 
     it('should return correct e parameter when the adunit has no size', function () {
@@ -343,13 +883,48 @@ describe('E-Planning Adapter', function () {
 
     it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
-      expect(ur).to.equal(bidderRequest.refererInfo.referer);
+      expect(ur).to.equal(bidderRequest.refererInfo.page);
+    });
+
+    it('should return ur parameter without params query string when current window url length is greater than 255', function () {
+      const bidderRequestParams = bidderRequest;
+
+      bidderRequestParams.refererInfo.page = refererUrl + '?param=' + 'x'.repeat(255);
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(refererUrl);
+    });
+
+    it('should return ur parameter with a length of 255 when url length is greater than 255', function () {
+      const bidderRequestParams = bidderRequest;
+      const url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      const refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
+
+      bidderRequestParams.refererInfo.page = refererUrl;
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(url_255_characters);
     });
 
     it('should return fr parameter when there is a referrer', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
       expect(dataRequest.fr).to.equal(refererUrl);
+    });
+    it('should return fr parameter without params query string when ref length is greater than 255', function () {
+      const bidderRequestParams = bidderRequest;
+
+      bidderRequestParams.refererInfo.ref = refererUrl + '?param=' + 'x'.repeat(255);
+      const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
+      expect(fr).to.equal(refererUrl);
+    });
+
+    it('should return fr parameter with a length of 255 when url length is greater than 255', function () {
+      const bidderRequestParams = bidderRequest;
+      const url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      const refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
+
+      bidderRequestParams.refererInfo.ref = refererUrl;
+      const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
+      expect(fr).to.equal(url_255_characters);
     });
 
     it('should return crs parameter with document charset', function () {
@@ -388,6 +963,27 @@ describe('E-Planning Adapter', function () {
       const dataRequest = request.data;
       expect(dataRequest.ccpa).to.equal('consentCcpa');
     });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the mobile priority list of the ad units', function () {
+      const bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('320x50_0:320x50,300x50,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
+      const bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
+      // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
+      getWindowTopStub.returns(createWindow(1025));
+      resetWinDimensions();
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('300x250_0:300x250,300x600,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order as they are sent from the ad units', function () {
+      const bidRequestsPrioritySizes2 = [validBidSizesNotExistingInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes2, bidderRequest).data.e;
+      expect(e).to.equal('970x250_0:970x250,300x70,160x600');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -413,6 +1009,59 @@ describe('E-Planning Adapter', function () {
         creativeId: CRID,
         netRevenue: true,
         currency: 'USD',
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should pass advertiserDomains when present', function () {
+      const bidResponse = spec.interpretResponse(responseWithAdomain, { adUnitToBidId: { [CLEAN_ADUNIT_CODE]: BID_ID } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ad: ADM,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ADOMAIN
+        }
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should correctly map the parameters in the response vast', function () {
+      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID }, data: { vv: 2 } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        vastXml: ADM_VAST,
+        mediaType: VIDEO
+      };
+      expect(bidResponse).to.deep.equal(expectedResponse);
+    });
+
+    it('should correctly map the parameters in the response vast vv 1', function () {
+      const bidResponse = spec.interpretResponse(responseVastVV1, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID }, data: { vv: 1 } })[0];
+      const expectedResponse = {
+        requestId: BID_ID,
+        cpm: CPM,
+        width: W,
+        height: H,
+        ttl: 120,
+        creativeId: CRID,
+        netRevenue: true,
+        currency: 'USD',
+        vastXml: ADM_VAST_VV_1,
+        mediaType: VIDEO
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
@@ -467,18 +1116,35 @@ describe('E-Planning Adapter', function () {
     });
   });
   describe('viewability', function() {
-    let storageIdRender = 'pbsr_' + validBidView.adUnitCode;
-    let storageIdView = 'pbvi_' + validBidView.adUnitCode;
-    let bidRequests = [validBidView];
-    let bidRequestMultiple = [validBidView, validBidView2, validBidView3];
+    const storageIdRender = 'pbsr_' + validBidView.adUnitCode;
+    const storageIdView = 'pbvi_' + validBidView.adUnitCode;
+    const bidRequests = [validBidView];
+    const bidRequestMultiple = [validBidView, validBidView2, validBidView3];
     let getLocalStorageSpy;
     let setDataInLocalStorageSpy;
     let hasLocalStorageStub;
     let clock;
     let element;
     let getBoundingClientRectStub;
-    let sandbox = sinon.sandbox.create();
-    let focusStub;
+    const sandbox = sinon.createSandbox();
+    let intersectionObserverStub;
+    let intersectionCallback;
+
+    function setIntersectionObserverMock(params) {
+      const fakeIntersectionObserver = (stateChange, options) => {
+        intersectionCallback = stateChange;
+        return {
+          unobserve: (element) => {
+            return element;
+          },
+          observe: (element) => {
+            intersectionCallback([{'target': {'id': element.id}, 'isIntersecting': params[element.id].isIntersecting, 'intersectionRatio': params[element.id].ratio, 'boundingClientRect': {'width': params[element.id].width, 'height': params[element.id].height}}]);
+          },
+        };
+      };
+
+      intersectionObserverStub = sandbox.stub(window, 'IntersectionObserver').callsFake(fakeIntersectionObserver);
+    }
     function createElement(id) {
       element = document.createElement('div');
       element.id = id || ADUNIT_CODE_VIEW;
@@ -558,6 +1224,11 @@ describe('E-Planning Adapter', function () {
       });
     }
     beforeEach(function () {
+      getGlobal().bidderSettings = {
+        eplanning: {
+          storageAllowed: true
+        }
+      };
       getLocalStorageSpy = sandbox.spy(storage, 'getDataFromLocalStorage');
       setDataInLocalStorageSpy = sandbox.spy(storage, 'setDataInLocalStorage');
 
@@ -565,11 +1236,9 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(true);
 
       clock = sandbox.useFakeTimers();
-
-      focusStub = sandbox.stub(window.top.document, 'hasFocus');
-      focusStub.returns(true);
     });
     afterEach(function () {
+      getGlobal().bidderSettings = {};
       sandbox.restore();
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);
@@ -583,7 +1252,7 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(false);
       const response = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.notCalled(getLocalStorageSpy);
@@ -593,7 +1262,7 @@ describe('E-Planning Adapter', function () {
     it('should create the url correctly with LocalStorage', function() {
       createElementVisible();
       const response = spec.buildRequests(bidRequests, bidderRequest);
-      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://pbjs.e-planning.net/pbjs/1/' + CI + '/1/localhost/ROS');
 
       expect(response.data.vs).to.equal('F');
 
@@ -609,6 +1278,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementVisible();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}});
       });
       it('when you have a render', function() {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
@@ -646,6 +1316,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementOutOfView();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}});
       });
 
       it('when you have a render', function() {
@@ -671,6 +1342,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       it('should register visibility with more than 50%', function() {
         createPartiallyVisibleElement();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
@@ -679,11 +1351,28 @@ describe('E-Planning Adapter', function () {
       });
       it('you should not register visibility with less than 50%', function() {
         createPartiallyInvisibleElement();
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
+      });
+    });
+    context('when element id is not equal to adunitcode', function() {
+      let respuesta;
+      it('should register visibility with more than 50%', function() {
+        const code = ADUNIT_CODE_VIEW;
+        const divId = 'div-gpt-ad-123';
+        createPartiallyVisibleElement(divId);
+        window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
+        setIntersectionObserverMock({[divId]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
+
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
+        clock.tick(1005);
+
+        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
+        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
     });
     context('when width or height of the element is zero', function() {
@@ -692,6 +1381,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the width is zero but the height is within the range', function() {
         element.style.width = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -700,6 +1390,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 500, 'height': 0}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -709,19 +1400,10 @@ describe('E-Planning Adapter', function () {
       it('if both are zero', function() {
         element.style.height = '0px';
         element.style.width = '0px';
+        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 0, 'height': 0}});
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
-        expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
-        expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
-      });
-    });
-    context('when tab is inactive', function() {
-      it('I should not register if it is not in focus', function() {
-        createElementVisible();
-        focusStub.returns(false);
-        spec.buildRequests(bidRequests, bidderRequest);
-        clock.tick(1005);
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
@@ -756,7 +1438,11 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW);
         createElementVisible(ADUNIT_CODE_VIEW2);
         createElementVisible(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
@@ -769,7 +1455,11 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW);
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
@@ -783,7 +1473,11 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW);
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
-
+        setIntersectionObserverMock({
+          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW2]: {'ratio': 0.3, 'isIntersecting': true, 'width': 200, 'height': 200},
+          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+        });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         expect(storage.getDataFromLocalStorage('pbsr_' + ADUNIT_CODE_VIEW)).to.equal('6');
@@ -794,6 +1488,33 @@ describe('E-Planning Adapter', function () {
         });
         expect('aaa').to.equal(respuesta.data.vs);
       });
+    });
+  });
+  describe('Send eids', function() {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      // TODO: bid adapters should look at request data, not call getGlobal().getUserIds
+      sandbox.stub(getGlobal(), 'getUserIds').callsFake(() => ({
+        pubcid: 'c29cb2ae-769d-42f6-891a-f53cadee823d',
+        tdid: 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
+        id5id: { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }
+      }))
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+    it('should add eids to the request', function() {
+      const bidRequests = [validBidView];
+      const expected_id5id = encodeURIComponent(JSON.stringify({ uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }));
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const dataRequest = request.data;
+
+      expect('D6885E90-2A7A-4E0F-87CB-7734ED1B99A3').to.equal(dataRequest.e_tdid);
+      expect('c29cb2ae-769d-42f6-891a-f53cadee823d').to.equal(dataRequest.e_pubcid);
+      expect(expected_id5id).to.equal(dataRequest.e_id5id);
     });
   });
 });

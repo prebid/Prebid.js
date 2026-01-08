@@ -1,16 +1,56 @@
 
-let path = require('path');
-let _ = require('lodash');
-let resolveFrom = require('resolve-from');
+const path = require('path');
+const _ = require('lodash');
+const resolveFrom = require('resolve-from');
+const MODULES_PATH = path.resolve(__dirname, '../../modules');
+const CREATIVE_PATH = path.resolve(__dirname, '../../creative');
+
+const CODE_EXT = ['.js', '.ts'];
+const IMPORT_EXT = CODE_EXT.join(CODE_EXT);
+
+function isInDirectory(filename, dir) {
+  const rel = path.relative(dir, filename);
+  return rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
 
 function flagErrors(context, node, importPath) {
   let absFileDir = path.dirname(context.getFilename());
-  let absImportPath = path.resolve(absFileDir, importPath);
-
+  let absImportPath;
   try {
-    resolveFrom(absFileDir, importPath);
+    absImportPath = importPath.startsWith('.') ? path.resolve(absFileDir, importPath) : require.resolve(importPath);
   } catch (e) {
+    context.report(node, e.message)
+    return;
+  }
+  const parsedImportPath = path.parse(importPath);
+
+  // don't allow extension-less local imports
+  if (
+    !importPath.match(/^\w+/) &&
+    !IMPORT_EXT.includes(parsedImportPath.ext)
+  ) {
+    context.report(node, `import "${importPath}" should include extension, one of ${CODE_EXT.join(', ')}`);
+  }
+
+  const matching = (CODE_EXT.includes(parsedImportPath.ext) ? CODE_EXT : [parsedImportPath.ext])
+    .filter((ext) => {
+      try {
+        resolveFrom(absFileDir, path.format({
+          name: parsedImportPath.name,
+          dir: parsedImportPath.dir,
+          ext
+        }));
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }).length;
+
+  if (matching === 0) {
     return context.report(node, `import "${importPath}" cannot be resolved`);
+  } else if (matching > 1) {
+    return context.report(node, `import "${importPath}" is ambiguous, both .js and .ts files exists`);
   }
 
   if (
@@ -19,55 +59,29 @@ function flagErrors(context, node, importPath) {
     !context.options[0].some(name => importPath.startsWith(name))
   ) {
     context.report(node, `import "${importPath}" not in import whitelist`);
+  } else if (
+    context?.options?.[0].some(val => val === false) &&
+    path.relative(absFileDir, absImportPath).startsWith('..')
+  ) {
+    context.report(node, `non-local imports are not allowed`)
   } else {
-    let absModulePath = path.resolve(__dirname, '../../modules');
-
-    // don't allow import of any files directly within modules folder or index.js files within modules' sub-folders
-    if (
-      path.dirname(absImportPath) === absModulePath || (
-        absImportPath.startsWith(absModulePath) &&
-        path.basename(absImportPath) === 'index.js'
-      )
-    ) {
-      context.report(node, `import "${importPath}" cannot require module entry point`);
+    // do not allow cross-module imports
+    if (isInDirectory(absImportPath, MODULES_PATH) && (!isInDirectory(absImportPath, absFileDir) || absFileDir === MODULES_PATH)) {
+      context.report(node, `import "${importPath}": importing from modules is not allowed`);
     }
 
-    // don't allow extension-less local imports
-    if (
-      !importPath.match(/^\w+/) &&
-      !['.js', '.json'].includes(path.extname(absImportPath))
-    ) {
-      context.report(node, `import "${importPath}" should include extension as .js or .json`);
+    // do not allow imports into `creative`
+    if (isInDirectory(absImportPath, CREATIVE_PATH) && !isInDirectory(absFileDir, CREATIVE_PATH) && absFileDir !== CREATIVE_PATH) {
+      context.report(node, `import "${importPath}": importing from creative is not allowed`);
+    }
+
+    // do not allow imports outside `creative`
+    if ((isInDirectory(absFileDir, CREATIVE_PATH) || absFileDir === CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
+      context.report(node, `import "${importPath}": importing from outside creative is not allowed`);
     }
   }
 }
 
 module.exports = {
-  rules: {
-    'validate-imports': {
-      meta: {
-        docs: {
-          description: 'validates module imports can be found without custom webpack resolvers, are in module whitelist, and not module entry points'
-        }
-      },
-      create: function(context) {
-        return {
-          "CallExpression[callee.name='require']"(node) {
-            let importPath = _.get(node, ['arguments', 0, 'value']);
-            if (importPath) {
-              flagErrors(context, node, importPath);
-            }
-          },
-          ImportDeclaration(node) {
-            let importPath = node.source.value.trim();
-            flagErrors(context, node, importPath);
-          },
-          "ExportNamedDeclaration[source]"(node) {
-            let importPath = node.source.value.trim();
-            flagErrors(context, node, importPath);
-          }
-        }
-      }
-    }
-  }
-};
+  flagErrors
+}

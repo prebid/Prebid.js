@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/widespaceBidAdapter.js';
-import includes from 'core-js-pure/features/array/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -75,7 +74,10 @@ describe('+widespaceAdatperTest', function () {
       'status': 'ad',
       'ttl': 30,
       'width': 300,
-      'syncPixels': ['https://url1.com/url', 'https://url2.com/url']
+      'syncPixels': ['https://url1.com/url', 'https://url2.com/url'],
+      'meta': {
+        advertiserDomains: ['advertiserdomain.com']
+      }
     }],
     headers: {}
   };
@@ -195,16 +197,12 @@ describe('+widespaceAdatperTest', function () {
     it('-bidRequest options have header type', function () {
       expect(request[0].options.contentType).to.exist;
     });
-
-    it('-cookie test for wsCustomData ', function () {
-      expect(request[0].data.indexOf('hb.cd') > -1).to.equal(true);
-    });
   });
 
   describe('+interpretResponse', function () {
     it('-required params available in response', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
-      let requiredKeys = [
+      const requiredKeys = [
         'requestId',
         'cpm',
         'width',
@@ -214,11 +212,12 @@ describe('+widespaceAdatperTest', function () {
         'netRevenue',
         'ttl',
         'referrer',
-        'ad'
+        'ad',
+        'meta'
       ];
       const resultKeys = Object.keys(result[0]);
       requiredKeys.forEach((key) => {
-        expect(includes(resultKeys, key)).to.equal(true);
+        expect(resultKeys.includes(key)).to.equal(true);
       });
 
       // Each value except referrer should not be empty|null|undefined

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { spec, tryGetPubtag, hasCCPAConsent } from 'modules/nextrollBidAdapter.js';
+import { spec } from 'modules/nextrollBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 describe('nextrollBidAdapter', function() {
   let utilsMock;
@@ -13,7 +14,7 @@ describe('nextrollBidAdapter', function() {
     utilsMock.restore();
   });
 
-  let validBid = {
+  const validBid = {
     bidder: 'nextroll',
     adUnitCode: 'adunit-code',
     bidId: 'bid_id',
@@ -24,12 +25,12 @@ describe('nextrollBidAdapter', function() {
       publisherId: 'publisher_id'
     }
   };
-  let bidWithoutValidId = { id: '' };
-  let bidWithoutId = { params: { zoneId: 'zone1' } };
+  const bidWithoutValidId = { id: '' };
+  const bidWithoutId = { params: { zoneId: 'zone1' } };
 
   describe('nativeBidRequest', () => {
     it('validates native spec', () => {
-      let nativeAdUnit = [{
+      const nativeAdUnit = [{
         bidder: 'nextroll',
         adUnitCode: 'adunit-code',
         bidId: 'bid_id',
@@ -51,10 +52,10 @@ describe('nextrollBidAdapter', function() {
         }
       }];
 
-      let request = spec.buildRequests(nativeAdUnit)
-      let assets = request[0].data.imp.native.request.native.assets
+      const request = spec.buildRequests(nativeAdUnit)
+      const assets = request[0].data.imp.native.request.native.assets
 
-      let excptedAssets = [
+      const excptedAssets = [
         {id: 1, required: 1, title: {len: 80}},
         {id: 2, required: 1, img: {w: 728, h: 90, wmin: 1, hmin: 1, type: 3}},
         {id: 3, required: 1, img: {w: 50, h: 50, wmin: 4, hmin: 3, type: 1}},
@@ -116,6 +117,27 @@ describe('nextrollBidAdapter', function() {
       expect(request.data.imp.ext.zone.id).to.be.equal('zone1');
     });
 
+    it('builds a request with the correct floor object', function () {
+      // bidfloor is defined, getFloor isn't
+      let bid = deepClone(validBid);
+      let request = spec.buildRequests([bid], {})[0];
+      expect(request.data.imp.bidfloor).to.be.equal(1);
+
+      // bidfloor not defined, getFloor not defined
+      bid = deepClone(validBid);
+      bid.params.bidfloor = null;
+      request = spec.buildRequests([bid], {})[0];
+      expect(request.data.imp.bidfloor).to.not.exist;
+
+      // bidfloor defined, getFloor defined, use getFloor
+      const getFloorResponse = { currency: 'USD', floor: 3 };
+      bid = deepClone(validBid);
+      bid.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([bid], {})[0];
+
+      expect(request.data.imp.bidfloor).to.exist.and.to.equal(3);
+    });
+
     it('includes the sizes into the request correctly', function () {
       const bannerObject = spec.buildRequests([validBid], {})[0].data.imp.banner;
 
@@ -134,7 +156,7 @@ describe('nextrollBidAdapter', function() {
   });
 
   describe('interpretResponse', function () {
-    let responseBody = {
+    const responseBody = {
       id: 'bidresponse_id',
       dealId: 'deal_id',
       seatbid: [
@@ -188,15 +210,15 @@ describe('nextrollBidAdapter', function() {
   });
 
   describe('interpret native response', () => {
-    let clickUrl = 'https://clickurl.com/with/some/path'
-    let titleText = 'Some title'
-    let imgW = 300
-    let imgH = 250
-    let imgUrl = 'https://clickurl.com/img.png'
-    let brandText = 'Some Brand'
-    let impUrl = 'https://clickurl.com/imptracker'
+    const clickUrl = 'https://clickurl.com/with/some/path'
+    const titleText = 'Some title'
+    const imgW = 300
+    const imgH = 250
+    const imgUrl = 'https://clickurl.com/img.png'
+    const brandText = 'Some Brand'
+    const impUrl = 'https://clickurl.com/imptracker'
 
-    let responseBody = {
+    const responseBody = {
       body: {
         id: 'bidresponse_id',
         seatbid: [{
@@ -218,12 +240,12 @@ describe('nextrollBidAdapter', function() {
     };
 
     it('Should interpret response', () => {
-      let response = spec.interpretResponse(utils.deepClone(responseBody))
-      let expectedResponse = {
+      const response = spec.interpretResponse(utils.deepClone(responseBody))
+      const expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
-        privacyLink: 'https://info.evidon.com/pub_info/573',
-        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        privacyLink: 'https://app.adroll.com/optout/personalized',
+        privacyIcon: 'https://s.adroll.com/j/ad-choices-small.png',
         title: titleText,
         image: {url: imgUrl, width: imgW, height: imgH},
         sponsoredBy: brandText,
@@ -235,10 +257,10 @@ describe('nextrollBidAdapter', function() {
     })
 
     it('Should interpret all assets', () => {
-      let allAssetsResponse = utils.deepClone(responseBody)
-      let iconUrl = imgUrl + '?icon=true', iconW = 10, iconH = 15
-      let logoUrl = imgUrl + '?logo=true', logoW = 20, logoH = 25
-      let bodyText = 'Some body text'
+      const allAssetsResponse = utils.deepClone(responseBody)
+      const iconUrl = imgUrl + '?icon=true'; const iconW = 10; const iconH = 15
+      const logoUrl = imgUrl + '?logo=true'; const logoW = 20; const logoH = 25
+      const bodyText = 'Some body text'
 
       allAssetsResponse.body.seatbid[0].bid[0].adm.assets.push(...[
         {id: 3, img: {w: iconW, h: iconH, url: iconUrl}},
@@ -246,14 +268,14 @@ describe('nextrollBidAdapter', function() {
         {id: 6, data: {value: bodyText}}
       ])
 
-      let response = spec.interpretResponse(allAssetsResponse)
-      let expectedResponse = {
+      const response = spec.interpretResponse(allAssetsResponse)
+      const expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
         jstracker: [],
         clickTrackers: [],
-        privacyLink: 'https://info.evidon.com/pub_info/573',
-        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        privacyLink: 'https://app.adroll.com/optout/personalized',
+        privacyIcon: 'https://s.adroll.com/j/ad-choices-small.png',
         title: titleText,
         image: {url: imgUrl, width: imgW, height: imgH},
         icon: {url: iconUrl, width: iconW, height: iconH},

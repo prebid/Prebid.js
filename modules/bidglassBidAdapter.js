@@ -1,6 +1,13 @@
-import * as utils from '../src/utils.js';
-// import {config} from 'src/config.js';
+import {_each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'bidglass';
 
@@ -14,13 +21,14 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.adUnitId && !isNaN(parseFloat(bid.params.adUnitId)) && isFinite(bid.params.adUnitId));
+    return !!bid.params.adUnitId; // only adUnitId is required
   },
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests an array of bids
+   * @param {BidderRequest} bidderRequest request by bidder
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     /*
@@ -41,12 +49,12 @@ export const spec = {
     }]
     */
 
-    let imps = [];
-    let getReferer = function() {
+    const imps = [];
+    const getReferer = function() {
       return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
     };
-    let getOrigins = function() {
-      var ori = ['https://' + window.location.hostname];
+    const getOrigins = function() {
+      var ori = [window.location.protocol + '//' + window.location.hostname];
 
       if (window.location.ancestorOrigins) {
         for (var i = 0; i < window.location.ancestorOrigins.length; i++) {
@@ -56,7 +64,7 @@ export const spec = {
         // Derive the parent origin
         var parts = document.referrer.split('/');
 
-        ori.push('https://' + parts[2]);
+        ori.push(parts[0] + '//' + parts[2]);
 
         if (window.parent !== window.top) {
           // Additional unknown origins exist
@@ -67,27 +75,61 @@ export const spec = {
       return ori;
     };
 
-    utils._each(validBidRequests, function(bid) {
-      bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
-      bid.sizes = bid.sizes.filter(size => utils.isArray(size));
+    const bidglass = window['bidglass'];
 
-      // Stuff to send: [bid id, sizes, adUnitId]
+    _each(validBidRequests, function(bid) {
+      bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
+      bid.sizes = bid.sizes.filter(size => isArray(size));
+
+      var adUnitId = getBidIdParameter('adUnitId', bid.params);
+      var options = deepClone(bid.params);
+
+      delete options.adUnitId;
+
+      // Merge externally set targeting params
+      if (typeof bidglass === 'object' && bidglass.getTargeting) {
+        const targeting = bidglass.getTargeting(adUnitId, options.targeting);
+
+        if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting;
+      }
+
+      // Stuff to send: [bid id, sizes, adUnitId, options]
       imps.push({
         bidId: bid.bidId,
         sizes: bid.sizes,
-        adUnitId: utils.getBidIdParameter('adUnitId', bid.params)
+        adUnitId: adUnitId,
+        options: options
       });
     });
 
-    // Stuff to send: page URL
+    // Consent data
+    const gdprConsentObj = bidderRequest && bidderRequest.gdprConsent;
+    const gppConsentObj = bidderRequest && bidderRequest.gppConsent;
+    const gppApplicableSections = gppConsentObj && gppConsentObj.applicableSections;
+    const ortb2Regs = bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs;
+    const ortb2Gpp = ortb2Regs && ortb2Regs.gpp;
+
+    // Build bid request data to be sent to ad server
     const bidReq = {
-      reqId: utils.getUniqueIdentifierStr(),
+      reqId: getUniqueIdentifierStr(),
       imps: imps,
       ref: getReferer(),
-      ori: getOrigins()
+      ori: getOrigins(),
+
+      // GDPR applies? numeric boolean
+      gdprApplies: (gdprConsentObj && gdprConsentObj.gdprApplies) ? 1 : '',
+      // IAB TCF consent string
+      gdprConsent: (gdprConsentObj && gdprConsentObj.consentString) || '',
+
+      // IAB GPP consent string
+      gppString: (gppConsentObj && gppConsentObj.gppString) || ortb2Gpp || '',
+      // GPP Applicable Section IDs
+      gppSid: (isArray(gppApplicableSections) && gppApplicableSections.length)
+        ? gppApplicableSections.join(',')
+        : ((ortb2Gpp && ortb2Regs.gpp_sid) || '')
     };
 
-    let url = 'https://bid.glass/ad/hb.php?' +
+    const url = 'https://bid.glass/ad/hb.php?' +
       `src=$$REPO_AND_VERSION$$`;
 
     return {
@@ -105,25 +147,50 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {ServerRequest} serverRequest The original server request for this bid
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, serverRequest) {
     const bidResponses = [];
+    const bidReq = JSON.parse(serverRequest.data);
 
-    utils._each(serverResponse.body.bidResponses, function(bid) {
-      bidResponses.push({
-        requestId: bid.requestId,
-        cpm: parseFloat(bid.cpm),
-        width: parseInt(bid.width, 10),
-        height: parseInt(bid.height, 10),
-        creativeId: bid.creativeId,
-        dealId: bid.dealId || null,
-        currency: bid.currency || 'USD',
-        mediaType: bid.mediaType || 'banner',
+    _each(serverResponse.body.bidResponses, function(serverBid) {
+      const bidResponse = {
+        requestId: serverBid.requestId,
+        cpm: parseFloat(serverBid.cpm),
+        width: parseInt(serverBid.width, 10),
+        height: parseInt(serverBid.height, 10),
+        creativeId: serverBid.creativeId,
+        dealId: serverBid.dealId || null,
+        currency: serverBid.currency || 'USD',
+        mediaType: serverBid.mediaType || 'banner',
         netRevenue: true,
-        ttl: bid.ttl || 10,
-        ad: bid.ad
-      });
+        ttl: serverBid.ttl || 10,
+        // Replace the &replaceme placeholder in the returned <script> URL with
+        // URL-encoded GDPR/GPP params from the bid request. If no relevant values
+        // are present, &replaceme is removed entirely.
+        ad: serverBid.ad.replace(
+          '&replaceme',
+          () => {
+            const urlEncodedExtras = ['gdprApplies', 'gdprConsent', 'gppString', 'gppSid']
+              .filter(key => bidReq[key] != null)
+              .map(key => `${key}=${encodeURIComponent(bidReq[key])}`)
+              .join('&');
+            return urlEncodedExtras ? ('&' + urlEncodedExtras) : '';
+          }
+        ),
+        meta: {}
+      };
+
+      if (serverBid.meta) {
+        const meta = serverBid.meta;
+
+        if (meta.advertiserDomains && meta.advertiserDomains.length) {
+          bidResponse.meta.advertiserDomains = meta.advertiserDomains;
+        }
+      }
+
+      bidResponses.push(bidResponse);
     });
 
     return bidResponses;

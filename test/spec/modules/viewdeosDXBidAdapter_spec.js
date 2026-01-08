@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/viewdeosDXBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {cloneDeep} from 'lodash';
 
 const ENDPOINT = 'https://ghb.sync.viewdeos.com/auction/';
 
@@ -39,9 +40,9 @@ const SERVER_VIDEO_RESPONSE = {
     'height': 480,
     'cur': 'USD',
     'width': 640,
-    'cpm': 0.9
-  }
-  ]
+    'cpm': 0.9,
+    'adomain': ['a.com']
+  }]
 };
 const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 
@@ -123,7 +124,10 @@ const videoEqResponse = [{
   height: 480,
   width: 640,
   ttl: 3600,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: ['a.com']
+  }
 }];
 
 const displayEqResponse = [{
@@ -136,7 +140,10 @@ const displayEqResponse = [{
   height: 250,
   width: 300,
   ttl: 3600,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: []
+  }
 }];
 
 describe('viewdeosDXBidAdapter', function () {
@@ -170,13 +177,15 @@ describe('viewdeosDXBidAdapter', function () {
 
   describe('user syncs with both types', function () {
     it('should be returned if pixel and iframe enabled', function () {
+      const mockedServerResponse = cloneDeep(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS);
+      mockedServerResponse.cookieURLs = ['link7', 'link8'];
       const syncs = spec.getUserSyncs({
         iframeEnabled: true,
-        pixelEnabled: true
-      }, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+        pixelEnabled: true,
+      }, [{body: mockedServerResponse}]);
 
-      expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
-      expect(syncs.map(s => s.type)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLSTypes);
+      expect(syncs.map(s => s.url)).to.deep.equal(mockedServerResponse.cookieURLs);
+      expect(syncs.map(s => s.type)).to.deep.equal(mockedServerResponse.cookieURLSTypes);
     })
   })
 
@@ -200,16 +209,16 @@ describe('viewdeosDXBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, VIDEO_REQUEST);
+      const bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    let videoBidRequests = [VIDEO_REQUEST];
-    let displayBidRequests = [DISPLAY_REQUEST];
-    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    const videoBidRequests = [VIDEO_REQUEST];
+    const displayBidRequests = [DISPLAY_REQUEST];
+    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
 
     const displayRequest = spec.buildRequests(displayBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});

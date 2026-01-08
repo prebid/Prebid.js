@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/rtbsapeBidAdapter.js';
+import 'src/prebid.js';
 import * as utils from 'src/utils.js';
 import {executeRenderer, Renderer} from 'src/Renderer.js';
 
@@ -17,18 +18,18 @@ describe('rtbsapeBidAdapterTests', function () {
   });
 
   it('buildRequests', function () {
-    let bidRequestData = [{
+    const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'rtbsape',
       params: {placeId: 4321},
       sizes: [[240, 400]]
     }];
-    let bidderRequest = {
+    const bidderRequest = {
       auctionId: '2e208334-cafe-4c2c-b06b-f055ff876852',
       bidderRequestId: '1392d0aa613366',
       refererInfo: {}
     };
-    let request = spec.buildRequests(bidRequestData, bidderRequest);
+    const request = spec.buildRequests(bidRequestData, bidderRequest);
     expect(request.data.auctionId).to.equal('2e208334-cafe-4c2c-b06b-f055ff876852');
     expect(request.data.requestId).to.equal('1392d0aa613366');
     expect(request.data.bids[0].bidId).to.equal('bid1234');
@@ -37,7 +38,7 @@ describe('rtbsapeBidAdapterTests', function () {
 
   describe('interpretResponse', function () {
     it('banner', function () {
-      let serverResponse = {
+      const serverResponse = {
         body: {
           bids: [{
             requestId: 'bid1234',
@@ -46,13 +47,16 @@ describe('rtbsapeBidAdapterTests', function () {
             width: 240,
             height: 400,
             netRevenue: true,
-            ad: 'Ad html'
+            ad: 'Ad html',
+            meta: {
+              advertiserDomains: ['rtb.sape.ru']
+            }
           }]
         }
       };
-      let bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      const bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
       expect(bids).to.have.lengthOf(1);
-      let bid = bids[0];
+      const bid = bids[0];
       expect(bid.cpm).to.equal(2.21);
       expect(bid.currency).to.equal('RUB');
       expect(bid.width).to.equal(240);
@@ -66,7 +70,7 @@ describe('rtbsapeBidAdapterTests', function () {
       let bid;
 
       before(() => {
-        let serverResponse = {
+        const serverResponse = {
           body: {
             bids: [{
               requestId: 'bid1234',
@@ -78,12 +82,13 @@ describe('rtbsapeBidAdapterTests', function () {
               netRevenue: true,
               vastUrl: 'https://cdn-rtb.sape.ru/vast/4321.xml',
               meta: {
+                advertiserDomains: ['rtb.sape.ru'],
                 mediaType: 'video'
               }
             }]
           }
         };
-        let serverRequest = {
+        const serverRequest = {
           data: {
             bids: [{
               bidId: 'bid1234',
@@ -102,7 +107,7 @@ describe('rtbsapeBidAdapterTests', function () {
             }]
           }
         };
-        let bids = spec.interpretResponse(serverResponse, serverRequest);
+        const bids = spec.interpretResponse(serverResponse, serverRequest);
         expect(bids).to.have.lengthOf(1);
         bid = bids[0];
       });
@@ -125,6 +130,7 @@ describe('rtbsapeBidAdapterTests', function () {
         };
 
         executeRenderer(bid.renderer, bid);
+        bid.renderer.callback();
         expect(spy).to.not.equal(false);
         expect(spy.called).to.be.true;
 
@@ -135,6 +141,43 @@ describe('rtbsapeBidAdapterTests', function () {
         expect(spyCall.returnValue[2]).to.be.equal(340);
         expect(spyCall.returnValue[3]).to.be.equal(false);
       });
+    });
+
+    it('skip adomain', function () {
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'bid1234',
+            cpm: 2.21,
+            currency: 'RUB',
+            width: 240,
+            height: 400,
+            netRevenue: true,
+            ad: 'Ad html 1'
+          }, {
+            requestId: 'bid1235',
+            cpm: 2.23,
+            currency: 'RUB',
+            width: 300,
+            height: 250,
+            netRevenue: true,
+            ad: 'Ad html 2',
+            meta: {
+              advertiserDomains: ['rtb.sape.ru']
+            }
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.cpm).to.equal(2.23);
+      expect(bid.currency).to.equal('RUB');
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.requestId).to.equal('bid1235');
+      expect(bid.ad).to.equal('Ad html 2');
     });
   });
 

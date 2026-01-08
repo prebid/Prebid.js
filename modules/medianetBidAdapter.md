@@ -79,17 +79,16 @@ var videoAdUnit = {
   mediaTypes: {
     video: {
       context: "instream",
-      playerSize: [640, 480]
+      playerSize: [640, 480],
+      mimes: ['video/mp4'],
+      placement: 1
     }
   },
   bids: [{
     bidder: 'medianet',
     params: {
       cid: '8CUX0H51C',
-      video: {
-        mimes: ['video/mp4'],
-        placement: 1
-      },
+      crid: '776755783', 
       // Site member is to be used only for testing
       site: {
         page: 'http://smoketesting.net/prebidtest/',
@@ -111,8 +110,10 @@ var videoAdUnit = {
     code: 'video1',
     mediaTypes: {
         video: {
-            context: "outstream",
-            playerSize: [640, 480]
+             context: "outstream",
+             playerSize: [640, 480],
+             mimes: ['video/mp4'],
+             placement: 1
         }
     },
     /**
@@ -128,10 +129,7 @@ var videoAdUnit = {
         bidder: 'medianet',
         params: {
             cid: '8CUX0H51C',
-            video: {
-                mimes: ['video/mp4'],
-                placement: 1
-            },
+            crid: '776755783', 
             // Site member is to be used only for testing
             site: {
                 page: 'http://smoketesting.net/prebidtest/',
@@ -182,4 +180,24 @@ var adUnits = [{
 }];    
 </script>
 <!-- End Prebid Config section -->
+```
 
+# Protected Audience API (FLEDGE)
+
+In order to enable PAAPI auctions follow the instructions below:
+
+1. Add the paapiForGpt and paapi modules to your prebid bundle.
+2. Add the following configuration for the module
+```
+pbjs.que.push(function() {
+  pbjs.setConfig({
+    paapi: {
+      enabled: true,
+      bidders: ['medianet'],
+      defaultForSlots: 1
+    }
+  });
+});
+```
+
+For a detailed guide to enabling PAAPI auctions follow Prebid's documentation on [paapiForGpt](https://docs.prebid.org/dev-docs/modules/paapiForGpt.html)

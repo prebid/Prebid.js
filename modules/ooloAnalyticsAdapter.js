@@ -1,7 +1,8 @@
-import adapter from '../src/AnalyticsAdapter.js'
+import { _each, deepClone, pick, deepSetValue, logError, logInfo } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'
-import CONSTANTS from '../src/constants.json'
-import * as utils from '../src/utils.js'
+import { EVENTS } from '../src/constants.js'
 import { ajax } from '../src/ajax.js'
 import { config } from '../src/config.js'
 
@@ -21,6 +22,7 @@ const prebidVersion = '$prebid.version$'
 const analyticsType = 'endpoint'
 const ADAPTER_CODE = 'oolo'
 const AUCTION_END_SEND_TIMEOUT = 1500
+// TODO: consider using the Prebid-generated page view ID instead of generating a custom one
 export const PAGEVIEW_ID = +generatePageViewId()
 
 const {
@@ -32,7 +34,7 @@ const {
   BID_WON,
   BID_TIMEOUT,
   AD_RENDER_FAILED
-} = CONSTANTS.EVENTS
+} = EVENTS
 
 const SERVER_EVENTS = {
   AUCTION: 'auction',
@@ -50,12 +52,12 @@ const SERVER_BID_STATUS = {
 
 let auctions = {}
 let initOptions = {}
-let eventsQueue = []
+const eventsQueue = []
 
 const onAuctionInit = (args) => {
   const { auctionId, adUnits, timestamp } = args
 
-  let auction = auctions[auctionId] = {
+  const auction = auctions[auctionId] = {
     ...args,
     adUnits: {},
     auctionStart: timestamp,
@@ -64,7 +66,7 @@ const onAuctionInit = (args) => {
 
   handleCustomFields(auction, AUCTION_INIT, args)
 
-  utils._each(adUnits, adUnit => {
+  _each(adUnits, adUnit => {
     auction.adUnits[adUnit.code] = {
       ...adUnit,
       auctionId,
@@ -98,7 +100,7 @@ const onBidResponse = (args) => {
   const { auctionId, adUnitCode } = args
   const auction = auctions[auctionId]
   const bidId = parseBidId(args)
-  let bid = auction.adUnits[adUnitCode].bids[bidId]
+  const bid = auction.adUnits[adUnitCode].bids[bidId]
 
   Object.assign(bid, args, {
     bidStatus: SERVER_BID_STATUS.BID_RECEIVED,
@@ -112,7 +114,7 @@ const onNoBid = (args) => {
   const bidId = parseBidId(args)
   const end = Date.now()
   const auction = auctions[auctionId]
-  let bid = auction.adUnits[adUnitCode].bids[bidId]
+  const bid = auction.adUnits[adUnitCode].bids[bidId]
 
   Object.assign(bid, args, {
     bidStatus: SERVER_BID_STATUS.NO_BID,
@@ -144,10 +146,10 @@ const onBidWon = (args) => {
 }
 
 const onBidTimeout = (args) => {
-  utils._each(args, bid => {
+  _each(args, bid => {
     const { auctionId, adUnitCode } = bid
     const bidId = parseBidId(bid)
-    let bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
+    const bidCache = auctions[auctionId].adUnits[adUnitCode].bids[bidId]
 
     Object.assign(bidCache, bid, {
       bidStatus: SERVER_BID_STATUS.BID_TIMEDOUT,
@@ -172,7 +174,7 @@ const onAuctionEnd = (args) => {
 }
 
 const onAdRenderFailed = (args) => {
-  const data = utils.deepClone(args)
+  const data = deepClone(args)
   data.timestamp = Date.now()
 
   if (data.bid) {
@@ -232,7 +234,7 @@ function handleEvent(eventType, args) {
 }
 
 function sendEvent(eventType, args, isRaw) {
-  let data = utils.deepClone(args)
+  const data = deepClone(args)
 
   Object.assign(data, buildCommonDataProperties(), {
     eventType
@@ -268,7 +270,7 @@ function checkEventsQueue() {
 }
 
 function buildAuctionData(auction) {
-  const auctionData = utils.deepClone(auction)
+  const auctionData = deepClone(auction)
   const keysToRemove = ['adUnitCodes', 'auctionStatus', 'bidderRequests', 'bidsReceived', 'noBids', 'winningBids', 'timestamp', 'config']
 
   keysToRemove.forEach(key => {
@@ -367,12 +369,12 @@ function handleCustomFields(obj, eventType, args) {
     const { pickFields, omitFields } = initOptions.serverConfig.events[eventType]
 
     if (pickFields && obj && args) {
-      Object.assign(obj, utils.pick(args, pickFields))
+      Object.assign(obj, pick(args, pickFields))
     }
 
     if (omitFields && obj && args) {
       omitFields.forEach(field => {
-        utils.deepSetValue(obj, field, undefined)
+        deepSetValue(obj, field, undefined)
       })
     }
   } catch (e) { }
@@ -382,7 +384,7 @@ function handleCustomRawFields(obj, omitRawFields) {
   try {
     if (omitRawFields && obj) {
       omitRawFields.forEach(field => {
-        utils.deepSetValue(obj, field, undefined)
+        deepSetValue(obj, field, undefined)
       })
     }
   } catch (e) { }
@@ -419,7 +421,7 @@ function sendPage() {
       screenHeight: window.screen.height,
       url: window.location.href,
       protocol: window.location.protocol,
-      origin: utils.getOrigin(),
+      origin: getOrigin(),
       referrer: getTopWindowReferrer(),
       pbVersion: prebidVersion,
     }
@@ -432,6 +434,11 @@ function sendPage() {
 function sendHbConfigData() {
   const conf = {}
   const pbjsConfig = config.getConfig()
+  // Check if pbjsConfig.userSync exists and has userIds property
+  if (pbjsConfig.userSync && pbjsConfig.userSync.userIds) {
+    // Delete the userIds property
+    delete pbjsConfig.userSync.userIds;
+  }
 
   Object.keys(pbjsConfig).forEach(key => {
     if (key[0] !== '_') {
@@ -507,7 +514,7 @@ ooloAdapter.enableAnalytics = function (config) {
   initOptions = config ? config.options : {}
 
   if (!initOptions.pid) {
-    utils.logError(buildLogMessage('enableAnalytics missing config object with "pid"'))
+    logError(buildLogMessage('enableAnalytics missing config object with "pid"'))
     return
   }
 
@@ -520,9 +527,9 @@ ooloAdapter.enableAnalytics = function (config) {
     window.addEventListener('load', sendPage)
   }
 
-  utils.logInfo(buildLogMessage('enabled analytics adapter'), config)
+  logInfo(buildLogMessage('enabled analytics adapter'), config)
   ooloAdapter.enableAnalytics = function () {
-    utils.logInfo(buildLogMessage('Analytics adapter already enabled..'))
+    logInfo(buildLogMessage('Analytics adapter already enabled..'))
   }
 }
 

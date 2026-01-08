@@ -29,7 +29,7 @@ DSPx adapter for Prebid.
                     params: {
                         placement: '101',   // [required] info available from your contact with DSPx team
                         /*
-                            bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated 
+                            bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated
                         */
                         /*
                             pfilter: { // [optional]
@@ -57,7 +57,8 @@ DSPx adapter for Prebid.
             bids: [{
                 bidder: 'dspx',
                 params: {
-                    placement: '106'
+                    placement: '106',
+                    vastFormat: 'vast2|vast4' // set vast format
                 }
             }]
         }

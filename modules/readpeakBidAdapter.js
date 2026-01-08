@@ -1,7 +1,8 @@
-import { logError, replaceAuctionPrice, parseUrl } from '../src/utils.js';
+import { logError, replaceAuctionPrice, triggerPixel, isStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { NATIVE } from '../src/mediaTypes.js';
+import { NATIVE, BANNER } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 
@@ -15,36 +16,52 @@ const NATIVE_DEFAULTS = {
 };
 
 const BIDDER_CODE = 'readpeak';
+const GVLID = 290;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
 
-  supportedMediaTypes: [NATIVE],
+  supportedMediaTypes: [NATIVE, BANNER],
 
-  isBidRequestValid: bid =>
-    !!(bid && bid.params && bid.params.publisherId && bid.nativeParams),
+  isBidRequestValid: bid => !!(bid && bid.params && bid.params.publisherId),
 
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests
-        .map(slot => impression(slot))
-        .filter(imp => imp.native != null),
+        .map(slot => impression(slot)),
       site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
       cur: [currency],
       source: {
         fd: 1,
-        tid: bidRequests[0].transactionId,
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           prebid: '$prebid.version$'
         }
       }
     };
+
+    if (bidderRequest.gdprConsent) {
+      request.user = {
+        ext: {
+          consent: bidderRequest.gdprConsent.consentString || ''
+        },
+      };
+      request.regs = {
+        ext: {
+          gdpr: bidderRequest.gdprConsent.gdprApplies !== undefined ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      };
+    }
 
     return {
       method: 'POST',
@@ -53,8 +70,16 @@ export const spec = {
     };
   },
 
-  interpretResponse: (response, request) =>
-    bidResponseAvailable(request, response)
+  interpretResponse: (response, request) => {
+    return bidResponseAvailable(request, response)
+  },
+
+  onBidWon: (bid) => {
+    if (bid.burl && isStr(bid.burl)) {
+      bid.burl = replaceAuctionPrice(bid.burl, bid.cpm);
+      triggerPixel(bid.burl);
+    }
+  },
 };
 
 function bidResponseAvailable(bidRequest, bidResponse) {
@@ -83,10 +108,22 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creativeId: idToBidMap[id].crid,
         ttl: 300,
         netRevenue: true,
-        mediaType: NATIVE,
-        currency: bidResponse.cur,
-        native: nativeResponse(idToImpMap[id], idToBidMap[id])
+        mediaType: idToImpMap[id].native ? NATIVE : BANNER,
+        currency: bidResponse.cur
       };
+      if (idToImpMap[id].native) {
+        bid.native = nativeResponse(idToImpMap[id], idToBidMap[id]);
+      } else if (idToImpMap[id].banner) {
+        bid.ad = idToBidMap[id].adm
+        bid.width = idToBidMap[id].w
+        bid.height = idToBidMap[id].h
+        bid.burl = idToBidMap[id].burl
+      }
+      if (idToBidMap[id].adomain) {
+        bid.meta = {
+          advertiserDomains: idToBidMap[id].adomain
+        }
+      }
       bids.push(bid);
     }
   });
@@ -94,13 +131,28 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 }
 
 function impression(slot) {
-  return {
+  let bidFloorFromModule
+  if (typeof slot.getFloor === 'function') {
+    const floorInfo = slot.getFloor({
+      currency: 'USD',
+      mediaType: 'native',
+      size: '*'
+    });
+    bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
+  }
+  const imp = {
     id: slot.bidId,
-    native: nativeImpression(slot),
-    bidfloor: slot.params.bidfloor || 0,
-    bidfloorcur: slot.params.bidfloorcur || 'USD',
+    bidfloor: bidFloorFromModule || slot.params.bidfloor || 0,
+    bidfloorcur: (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || 'USD',
     tagId: slot.params.tagId || '0'
   };
+
+  if (slot.mediaTypes.native) {
+    imp.native = nativeImpression(slot);
+  } else if (slot.mediaTypes.banner) {
+    imp.banner = bannerImpression(slot);
+  }
+  return imp
 }
 
 function nativeImpression(slot) {
@@ -167,37 +219,40 @@ function titleAsset(id, params, defaultLen) {
 function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
   return params
     ? {
-      id,
-      required: params.required ? 1 : 0,
-      img: {
-        type,
-        wmin: params.wmin || defaultMinWidth,
-        hmin: params.hmin || defaultMinHeight
+        id,
+        required: params.required ? 1 : 0,
+        img: {
+          type,
+          wmin: params.wmin || defaultMinWidth,
+          hmin: params.hmin || defaultMinHeight
+        }
       }
-    }
     : null;
 }
 
 function dataAsset(id, params, type, defaultLen) {
   return params
     ? {
-      id,
-      required: params.required ? 1 : 0,
-      data: {
-        type,
-        len: params.len || defaultLen
+        id,
+        required: params.required ? 1 : 0,
+        data: {
+          type,
+          len: params.len || defaultLen
+        }
       }
-    }
     : null;
 }
 
-function site(bidRequests, bidderRequest) {
-  const url =
-    config.getConfig('pageUrl') ||
-    (bidderRequest &&
-      bidderRequest.refererInfo &&
-      bidderRequest.refererInfo.referer);
+function bannerImpression(slot) {
+  var sizes = slot.mediaTypes.banner.sizes || slot.sizes;
+  return {
+    format: sizes.map((s) => ({ w: s[0], h: s[1] })),
+    w: sizes[0][0],
+    h: sizes[0][1],
+  }
+}
 
+function site(bidRequests, bidderRequest) {
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
@@ -209,12 +264,11 @@ function site(bidRequests, bidderRequest) {
     return {
       publisher: {
         id: pubId.toString(),
-        domain: config.getConfig('publisherDomain')
+        domain: bidderRequest?.refererInfo?.domain,
       },
       id: siteId ? siteId.toString() : pubId.toString(),
-      page: url,
-      domain:
-        (url && parseUrl(url).hostname) || config.getConfig('publisherDomain')
+      page: bidderRequest?.refererInfo?.page,
+      domain: bidderRequest?.refererInfo?.domain
     };
   }
   return undefined;
@@ -289,15 +343,15 @@ function nativeResponse(imp, bid) {
         keys.image =
           asset.img && asset.id === 2
             ? {
-              url: asset.img.url,
-              width: asset.img.w || 750,
-              height: asset.img.h || 500
-            }
+                url: asset.img.url,
+                width: asset.img.w || 750,
+                height: asset.img.h || 500
+              }
             : keys.image;
         keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
       });
       if (nativeAd.link) {
-        keys.clickUrl = encodeURIComponent(nativeAd.link.url);
+        keys.clickUrl = nativeAd.link.url;
       }
       const trackers = nativeAd.imptrackers || [];
       trackers.unshift(replaceAuctionPrice(bid.burl, bid.price));

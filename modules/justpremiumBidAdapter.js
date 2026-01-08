@@ -1,13 +1,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { deepAccess } from '../src/utils.js';
+import { deepAccess, getWinDimensions } from '../src/utils.js';
 
 const BIDDER_CODE = 'justpremium'
+const GVLID = 62
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.7'
-const pixels = []
+const JP_ADAPTER_VERSION = '1.8.3'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   time: 60000,
 
   isBidRequestValid: (bid) => {
@@ -16,21 +17,26 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
-    const dim = getWebsiteDim()
+    const {
+      screen
+    } = getWinDimensions();
+    const ggExt = getGumGumParams()
     const payload = {
       zone: validBidRequests.map(b => {
         return parseInt(b.params.zone)
       }).filter((value, index, self) => {
         return self.indexOf(value) === index
       }),
-      referer: bidderRequest.refererInfo.referer,
-      sw: dim.screenWidth,
-      sh: dim.screenHeight,
-      ww: dim.innerWidth,
-      wh: dim.innerHeight,
+      // TODO: is 'page' the right value here?
+      referer: bidderRequest.refererInfo.page,
+      sw: screen.width,
+      sh: screen.height,
+      ww: getWinDimensions().innerWidth,
+      wh: getWinDimensions().innerHeight,
       c: c,
       id: validBidRequests[0].params.zone,
-      sizes: {}
+      sizes: {},
+      ggExt: ggExt
     }
     validBidRequests.forEach(b => {
       const zone = b.params.zone
@@ -63,6 +69,11 @@ export const spec = {
       jp_adapter: JP_ADAPTER_VERSION
     }
 
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
+    }
+
     const payloadString = JSON.stringify(payload)
 
     return {
@@ -75,12 +86,12 @@ export const spec = {
 
   interpretResponse: (serverResponse, bidRequests) => {
     const body = serverResponse.body
-    let bidResponses = []
+    const bidResponses = []
     bidRequests.bids.forEach(adUnit => {
-      let bid = findBid(adUnit.params, body.bid)
+      const bid = findBid(adUnit.params, body.bid)
       if (bid) {
-        let size = (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes && adUnit.mediaTypes.banner.sizes.length && adUnit.mediaTypes.banner.sizes[0]) || []
-        let bidResponse = {
+        const size = (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes && adUnit.mediaTypes.banner.sizes.length && adUnit.mediaTypes.banner.sizes[0]) || []
+        const bidResponse = {
           requestId: adUnit.bidId,
           creativeId: bid.id,
           width: size[0] || bid.width,
@@ -90,7 +101,15 @@ export const spec = {
           netRevenue: true,
           currency: bid.currency || 'USD',
           ttl: bid.ttl || spec.time,
-          format: bid.format
+          format: bid.format,
+          meta: {
+            advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : []
+          }
+        }
+        if (bid.ext && bid.ext.pg) {
+          bidResponse.adserverTargeting = {
+            'hb_deal_justpremium': 'jp_pg'
+          }
         }
         bidResponses.push(bidResponse)
       }
@@ -98,8 +117,10 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     let url = 'https://pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
+    let pixels = []
+
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') && gdprConsent.gdprApplies && gdprConsent.consentString) {
       url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
     }
@@ -111,6 +132,10 @@ export const spec = {
         type: 'iframe',
         url: url
       })
+    }
+    if (syncOptions.pixelEnabled && serverResponses.length !== 0) {
+      const pxsFromResponse = serverResponses.map(res => res?.body?.pxs).reduce((acc, cur) => acc.concat(cur), []).filter((obj) => obj !== undefined);
+      pixels = [...pixels, ...pxsFromResponse];
     }
     return pixels
   },
@@ -160,7 +185,8 @@ function preparePubCond (bids) {
     const exclude = params.exclude || []
 
     if (allow.length === 0 && exclude.length === 0) {
-      return cond[params.zone] = 1
+      cond[params.zone] = 1
+      return cond[params.zone]
     }
 
     cond[zone] = cond[zone] || [[], {}]
@@ -194,7 +220,7 @@ function preparePubCond (bids) {
   Object.keys(cond).forEach((zone) => {
     if (cond[zone] !== 1 && cond[zone][1].length) {
       cond[zone][0].forEach((r) => {
-        let idx = cond[zone][1].indexOf(r)
+        const idx = cond[zone][1].indexOf(r)
         if (idx > -1) {
           cond[zone][1].splice(idx, 1)
         }
@@ -223,20 +249,19 @@ function arrayUnique (array) {
   return a
 }
 
-function getWebsiteDim () {
-  let top
-  try {
-    top = window.top
-  } catch (e) {
-    top = window
+function getGumGumParams () {
+  if (!window.top) return null
+
+  const urlParams = new URLSearchParams(window.top.location.search)
+  const ggParams = {
+    'ggAdbuyid': urlParams.get('gg_adbuyid'),
+    'ggDealid': urlParams.get('gg_dealid'),
+    'ggEadbuyid': urlParams.get('gg_eadbuyid')
   }
 
-  return {
-    screenWidth: top.screen.width,
-    screenHeight: top.screen.height,
-    innerWidth: top.innerWidth,
-    innerHeight: top.innerHeight
-  }
+  const checkIfEmpty = (obj) => Object.keys(obj).length === 0 ? null : obj
+  const removeNullEntries = (obj) => Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null))
+  return checkIfEmpty(removeNullEntries(ggParams))
 }
 
 registerBidder(spec)

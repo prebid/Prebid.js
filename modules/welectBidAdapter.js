@@ -1,8 +1,15 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'welect';
-const DEFAULT_DOMAIN = 'www.welect.de';
+const WELECT_DOMAIN = 'www.welect.de';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -19,43 +26,60 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     return (
-      utils.deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
+      deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
       !!bid.params.placementId
     );
   },
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - context of the bidder request
+   * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
-    return validBidRequests.map((bidRequest) => {
-      let rawSizes =
-        utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
-        bidRequest.sizes;
-      let size = rawSizes[0];
-
-      let domain = bidRequest.params.domain || DEFAULT_DOMAIN;
-
-      let url = `https://${domain}/api/v2/preflight/by_alias/${bidRequest.params.placementId}`;
-
-      let gdprConsent = null;
-
-      if (bidRequest && bidRequest.gdprConsent) {
-        gdprConsent = {
-          gdpr_consent: {
-            gdprApplies: bidRequest.gdprConsent.gdprApplies,
-            tcString: bidRequest.gdprConsent.gdprConsent,
-          },
-        };
+  buildRequests: function (validBidRequests, bidderRequest) {
+    let catData = null
+    if (bidderRequest?.ortb2?.site) {
+      catData = {
+        pagecat: bidderRequest.ortb2.site.pagecat || [],
+        sectioncat: bidderRequest.ortb2.site.sectioncat || [],
+        sitecat: bidderRequest.ortb2.site.cat || [],
       }
+    }
+
+    let refererInfo = null;
+    if (bidderRequest?.refererInfo) {
+      refererInfo = {
+        domain: bidderRequest.refererInfo.domain,
+        pageurl: bidderRequest.refererInfo.page
+      }
+    }
+
+    let gdprConsent = null;
+    if (bidderRequest?.gdprConsent) {
+      gdprConsent = {
+        gdpr_consent: {
+          gdprApplies: bidderRequest.gdprConsent.gdprApplies,
+          tcString: bidderRequest.gdprConsent.consentString,
+        },
+      };
+    }
+
+    return validBidRequests.map((bidRequest) => {
+      const rawSizes =
+        deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
+        bidRequest.sizes;
+      const size = rawSizes[0];
+
+      const url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`;
 
       const data = {
         width: size[0],
         height: size[1],
         bid_id: bidRequest.bidId,
+        ...catData,
         ...gdprConsent,
+        ...refererInfo,
       };
 
       return {
@@ -84,7 +108,22 @@ export const spec = {
     }
 
     const bidResponses = [];
-    const bidResponse = responseBody.bidResponse;
+    const bidResponse = {
+      requestId: responseBody.bidResponse.requestId,
+      cpm: responseBody.bidResponse.cpm,
+      width: responseBody.bidResponse.width,
+      height: responseBody.bidResponse.height,
+      creativeId: responseBody.bidResponse.creativeId,
+      currency: responseBody.bidResponse.currency,
+      netRevenue: responseBody.bidResponse.netRevenue,
+      ttl: responseBody.bidResponse.ttl,
+      ad: responseBody.bidResponse.ad,
+      vastUrl: responseBody.bidResponse.vastUrl,
+      mediaType: responseBody.bidResponse.mediaType,
+      meta: {
+        advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
+      }
+    };
     bidResponses.push(bidResponse);
     return bidResponses;
   },

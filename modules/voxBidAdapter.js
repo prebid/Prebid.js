@@ -1,22 +1,38 @@
-import * as utils from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import {BANNER, VIDEO} from '../src/mediaTypes.js'
-import find from 'core-js-pure/features/array/find.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {Renderer} from '../src/Renderer.js';
+import {_map, isArray} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
 const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const TTL = 60;
+const GVLID = 206;
 
-function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
+function buildBidRequests(validBidRequests, bidderRequest) {
+  return _map(validBidRequests, function(bid) {
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
+    const floorInfo = bid.getFloor ? bid.getFloor({
+      currency: currency || 'USD'
+    }) : {};
+
+    const params = bid.params;
     const bidRequest = {
-      bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
-      sizes: validBidRequest.sizes,
+      floorInfo,
+      schain: bid?.ortb2?.source?.ext?.schain,
+      userId: bid.userId,
+      bidId: bid.bidId,
+      // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+      transactionId: bid.transactionId,
+      sizes: bid.sizes,
       placement: params.placement,
       placeId: params.placementId,
       imageUrl: params.imageUrl
@@ -24,39 +40,6 @@ function buildBidRequests(validBidRequests) {
 
     return bidRequest;
   })
-}
-
-const outstreamRender = bid => {
-  bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
-      sizes: [bid.width, bid.height],
-      targetId: bid.adUnitCode,
-      rendererOptions: {
-        showBigPlayButton: false,
-        showProgressBar: 'bar',
-        showVolume: false,
-        allowFullscreen: true,
-        skippable: false,
-        content: bid.vastXml
-      }
-    });
-  });
-}
-
-const createRenderer = (bid) => {
-  const renderer = Renderer.install({
-    targetId: bid.adUnitCode,
-    url: VIDEO_RENDERER_URL,
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(outstreamRender);
-  } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
 }
 
 function buildBid(bidData) {
@@ -70,23 +53,22 @@ function buildBid(bidData) {
     netRevenue: true,
     mediaType: BANNER,
     ttl: TTL,
-    content: bidData.content
+    content: bidData.content,
+    meta: {
+      advertiserDomains: bidData.advertiserDomains || []}
   };
 
   if (bidData.placement === 'video') {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
+    const video = bidData.mediaTypes?.video;
 
-    let adUnit = find(auctionManager.getAdUnits(), function (unit) {
-      return unit.transactionId === bidData.transactionId;
-    });
+    if (video) {
+      bid.width = video.playerSize[0][0];
+      bid.height = video.playerSize[0][1];
 
-    if (adUnit) {
-      bid.width = adUnit.mediaTypes.video.playerSize[0][0];
-      bid.height = adUnit.mediaTypes.video.playerSize[0][1];
-
-      if (adUnit.mediaTypes.video.context === 'outstream') {
-        bid.renderer = createRenderer(bid);
+      if (video.context === 'outstream') {
+        bid.renderer = createRenderer(bid, VIDEO_RENDERER_URL);
       }
     }
   } else if (bidData.placement === 'inImage') {
@@ -98,20 +80,6 @@ function buildBid(bidData) {
   }
 
   return bid;
-}
-
-function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
-}
-
-function hasVideoMandatoryParams(mediaTypes) {
-  const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
-
-  const isPlayerSize =
-    !!utils.deepAccess(mediaTypes, 'video.playerSize') &&
-    utils.isArray(utils.deepAccess(mediaTypes, 'video.playerSize'));
-
-  return isHasVideoContext && isPlayerSize;
 }
 
 function wrapInImageBanner(bid, bidData) {
@@ -129,7 +97,7 @@ function wrapInImageBanner(bid, bidData) {
         var s = document.getElementById("prebidrenderer");
         s.onload = function () {
           var _html = "${encodeURIComponent(JSON.stringify(bid))}";
-          window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
+          window._hyb_prebid_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
         }
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
         if (parent.window.frames[window.name]) {
@@ -157,7 +125,7 @@ function wrapBanner(bid, bidData) {
         var s = document.getElementById("prebidrenderer");
         s.onload = function () {
             var _html = "${encodeURIComponent(JSON.stringify(bid))}";
-            window._ao_ssp.registerAds(JSON.parse(decodeURIComponent(_html)));
+            window._hyb_prebid_ssp.registerAds(JSON.parse(decodeURIComponent(_html)));
         }
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
       </script>
@@ -167,6 +135,7 @@ function wrapBanner(bid, bidData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -190,14 +159,16 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
-      bidRequests: buildBidRequests(validBidRequests)
+      bidRequests: buildBidRequests(validBidRequests, bidderRequest)
     };
 
     if (payload.cmp) {
@@ -225,12 +196,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    let bidRequests = JSON.parse(bidRequest.data).bidRequests;
+    const bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
-    if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
-      return utils._map(serverBody.bids, function(bid) {
-        let rawBid = find(bidRequests, function (item) {
+    if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
+      return _map(serverBody.bids, function(bid) {
+        const rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;

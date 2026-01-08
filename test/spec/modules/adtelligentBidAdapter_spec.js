@@ -11,25 +11,28 @@ const EXPECTED_ENDPOINTS = [
   'https://ghb.adtelligent.com/v2/auction/'
 ];
 const aliasEP = {
-  appaloosa: 'https://ghb.hb.appaloosa.media/v2/auction/',
-  appaloosa_publisherSuffix: 'https://ghb.hb.appaloosa.media/v2/auction/',
-  onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
-  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/'
+  'janet_publisherSuffix': 'https://ghb.bidder.jmgads.com/v2/auction/',
+  'streamkey': 'https://ghb.hb.streamkey.net/v2/auction/',
+  'janet': 'https://ghb.bidder.jmgads.com/v2/auction/',
+  'ocm': 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
+  '9dotsmedia': 'https://ghb.platform.audiodots.com/v2/auction/',
+  'indicue': 'https://ghb.console.indicue.com/v2/auction/',
+  'stellormedia': 'https://ghb.ads.stellormedia.com/v2/auction/',
 };
 
-const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
+const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent', ortb2: { source: { ext: { schain: { ver: 1 } } } } };
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
     'aid': 12345
   },
-  'schain': { ver: 1 },
   'userId': { criteo: 2 },
   'mediaTypes': { 'banner': { 'sizes': [300, 250] } },
   'bidderRequestId': '7101db09af0db2',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
+  'ortb2Imp': { 'ext': { 'gpid': '12345/adunit-code' } },
 };
 
 const VIDEO_REQUEST = {
@@ -45,7 +48,8 @@ const VIDEO_REQUEST = {
   'bidderRequestId': '7101db09af0db2',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
-  'bidId': '84ab500420319d'
+  'bidId': '84ab500420319d',
+  'ortb2Imp': { 'ext': { 'gpid': '12345/adunit-code' } },
 };
 
 const ADPOD_REQUEST = {
@@ -78,15 +82,16 @@ const SERVER_VIDEO_RESPONSE = {
     'height': 480,
     'cur': 'USD',
     'width': 640,
-    'cpm': 0.9
-  }
-  ]
+    'cpm': 0.9,
+    'adomain': ['a.com']
+  }]
 };
 const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 const SERVER_DISPLAY_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
     'ad': '<!-- Creative -->',
+    'adUrl': 'adUrl',
     'requestId': '2e41f65424c87c',
     'creative_id': 342516,
     'cmpId': 342516,
@@ -140,6 +145,12 @@ const displayBidderRequest = {
   bids: [{ bidId: '2e41f65424c87c' }]
 };
 
+const ageVerificationData = {
+  id: "123456789123456789",
+  status: "accepted",
+  decisionDate: "2011-10-05T14:48:00.000Z"
+};
+
 const displayBidderRequestWithConsents = {
   bidderCode: 'bidderCode',
   bids: [{ bidId: '2e41f65424c87c' }],
@@ -147,7 +158,18 @@ const displayBidderRequestWithConsents = {
     gdprApplies: true,
     consentString: 'test'
   },
-  uspConsent: 'iHaveIt'
+  gppConsent: {
+    gppString: 'abc12345234',
+    applicableSections: [7, 8]
+  },
+  uspConsent: 'iHaveIt',
+  ortb2: {
+    regs: {
+      ext: {
+        age_verification: ageVerificationData
+      }
+    }
+  }
 };
 
 const videoEqResponse = [{
@@ -160,7 +182,10 @@ const videoEqResponse = [{
   height: 480,
   width: 640,
   ttl: 300,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: ['a.com']
+  }
 }];
 
 const displayEqResponse = [{
@@ -170,10 +195,15 @@ const displayEqResponse = [{
   netRevenue: true,
   currency: 'USD',
   ad: '<!-- Creative -->',
+  adUrl: 'adUrl',
   height: 250,
   width: 300,
   ttl: 300,
-  cpm: 0.9
+  cpm: 0.9,
+  meta: {
+    advertiserDomains: []
+  }
+
 }];
 
 describe('adtelligentBidAdapter', () => {
@@ -239,16 +269,16 @@ describe('adtelligentBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, VIDEO_REQUEST);
+      const bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', () => {
-    let videoBidRequests = [VIDEO_REQUEST];
-    let displayBidRequests = [DISPLAY_REQUEST];
-    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    const videoBidRequests = [VIDEO_REQUEST];
+    const displayBidRequests = [DISPLAY_REQUEST];
+    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
     const displayRequest = spec.buildRequests(displayBidRequests, DEFAULT_ADATPER_REQ);
     const videoRequest = spec.buildRequests(videoBidRequests, DEFAULT_ADATPER_REQ);
     const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, DEFAULT_ADATPER_REQ);
@@ -294,7 +324,9 @@ describe('adtelligentBidAdapter', () => {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
-        Sizes: '480x360,640x480'
+        Sizes: '480x360,640x480',
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code'
       };
       expect(data.BidRequests[0]).to.deep.equal(eq);
     });
@@ -306,7 +338,9 @@ describe('adtelligentBidAdapter', () => {
         CallbackId: '84ab500420319d',
         AdType: 'display',
         Aid: 12345,
-        Sizes: '300x250'
+        Sizes: '300x250',
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code'
       };
 
       expect(data.BidRequests[0]).to.deep.equal(eq);
@@ -318,19 +352,23 @@ describe('adtelligentBidAdapter', () => {
         CallbackId: '84ab500420319d',
         AdType: 'display',
         Aid: 12345,
-        Sizes: '300x250'
+        Sizes: '300x250',
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code'
       }, {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
-        Sizes: '480x360,640x480'
+        Sizes: '480x360,640x480',
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code'
       }]
 
       expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
     });
 
     describe('publisher environment', () => {
-      const sandbox = sinon.sandbox.create();
+      const sandbox = sinon.createSandbox();
       sandbox.stub(config, 'getConfig').callsFake((key) => {
         const config = {
           'coppa': true
@@ -342,6 +380,10 @@ describe('adtelligentBidAdapter', () => {
       it('sets GDPR', () => {
         expect(bidRequestWithPubSettingsData.GDPR).to.be.equal(1);
         expect(bidRequestWithPubSettingsData.GDPRConsent).to.be.equal(displayBidderRequestWithConsents.gdprConsent.consentString);
+      });
+      it('sets GPP flags', () => {
+        expect(bidRequestWithPubSettingsData.GPP).to.be.equal(displayBidderRequestWithConsents.gppConsent.gppString);
+        expect(bidRequestWithPubSettingsData.GPPSid).to.be.equal('7,8');
       });
       it('sets USP', () => {
         expect(bidRequestWithPubSettingsData.USP).to.be.equal(displayBidderRequestWithConsents.uspConsent);
@@ -355,6 +397,9 @@ describe('adtelligentBidAdapter', () => {
       it('sets UserId\'s', () => {
         expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);
       })
+      it('sets AgeVerification', () => {
+        expect(bidRequestWithPubSettingsData.AgeVerification).to.deep.equal(ageVerificationData);
+      });
     })
   });
 
