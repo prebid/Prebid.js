@@ -12,7 +12,6 @@ const CREATIVE_TTL = 300;
 // Host mapping for each bidder code / alias
 const HOSTS = {
   'nuclion': 'nuclion.io',
-  'adryx': 'adryx.io',
   'revantagenuclion': 'revantage.io'
 };
 
