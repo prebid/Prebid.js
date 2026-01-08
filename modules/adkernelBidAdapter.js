@@ -107,7 +107,8 @@ export const spec = {
     {code: 'smartyexchange'},
     {code: 'infinety'},
     {code: 'qohere'},
-    {code: 'blutonic'}
+    {code: 'blutonic'},
+    {code: 'appmonsta', gvlid: 1283}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
