@@ -8,7 +8,7 @@ Maintainer: mg@bidmatic.io
 
 # Description
 
-Adds access to Bidmatic SSP oRTB service. 
+Adds access to Bidmatic SSP oRTB service.
 
 # Sample Ad Unit: For Publishers
 ```
@@ -24,3 +24,9 @@ var adUnits = [{
     }]
 }]
 ```
+
+
+# Testing
+```gulp test-only --file=./test/spec/modules/bidmaticBidAdapter_spec.js```
+```gulp test-coverage --file=./test/spec/modules/bidmaticBidAdapter_spec.js```
+```gulp view-coverage```
