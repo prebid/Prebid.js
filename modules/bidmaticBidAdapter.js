@@ -252,6 +252,11 @@ function getViewableDistance(element) {
   if (!element) return 0;
 
   const elementRect = element.getBoundingClientRect();
+
+  if (!elementRect) {
+    return {distanceToView: 0, elementHeight: 0}
+  }
+
   const viewportHeight = getViewportHeight()
 
   const targetTop = viewportHeight - ((elementRect.height * 0.51) || 0.51);
