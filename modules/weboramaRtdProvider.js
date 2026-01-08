@@ -858,7 +858,7 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = this.#getAdapterNameForAlias(bid.bidder);
 
-    if (bidder == 'appnexus') {
+    if (bidder === 'appnexus') {
       this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
   }
@@ -1004,7 +1004,7 @@ class WeboramaRtdProvider {
 
     if (isStr(value)) {
       return (target) => {
-        return value == coerce(target);
+        return value === coerce(target);
       };
     }
 

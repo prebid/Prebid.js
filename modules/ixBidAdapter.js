@@ -39,8 +39,6 @@ const BIDDER_CODE = 'ix';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
-const BANNER_ENDPOINT_VERSION = 7.2;
-const VIDEO_ENDPOINT_VERSION = 8.1;
 const CENT_TO_DOLLAR_FACTOR = 100;
 const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
@@ -84,10 +82,7 @@ export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   // Update with list of CFTs to be requested from Exchange
-  REQUESTED_FEATURE_TOGGLES: [
-    'pbjs_enable_multiformat',
-    'pbjs_allow_all_eids'
-  ],
+  REQUESTED_FEATURE_TOGGLES: [],
 
   featureToggles: {},
   isFeatureEnabled: function (ft) {
@@ -407,10 +402,10 @@ function _applyFloor(bid, imp, mediaType) {
   }
 
   if (setFloor) {
-    if (mediaType == BANNER) {
+    if (mediaType === BANNER) {
       deepSetValue(imp, 'banner.ext.bidfloor', imp.bidfloor);
       deepSetValue(imp, 'banner.ext.fl', imp.ext.fl);
-    } else if (mediaType == VIDEO) {
+    } else if (mediaType === VIDEO) {
       deepSetValue(imp, 'video.ext.bidfloor', imp.bidfloor);
       deepSetValue(imp, 'video.ext.fl', imp.ext.fl);
     } else {
@@ -448,7 +443,7 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
   // If mtype = video is passed and vastURl is not set, set vastxml
-  if (rawBid.mtype == MEDIA_TYPES.Video && ((rawBid.ext && !rawBid.ext.vasturl) || !rawBid.ext)) {
+  if (Number(rawBid.mtype) === MEDIA_TYPES.Video && ((rawBid.ext && !rawBid.ext.vasturl) || !rawBid.ext)) {
     bid.vastXml = rawBid.adm;
   } else if (rawBid.ext && rawBid.ext.vasturl) {
     bid.vastUrl = rawBid.ext.vasturl;
@@ -465,7 +460,7 @@ function parseBid(rawBid, currency, bidRequest) {
   }
 
   // in the event of a video
-  if ((rawBid.ext && rawBid.ext.vasturl) || rawBid.mtype == MEDIA_TYPES.Video) {
+  if ((rawBid.ext && rawBid.ext.vasturl) || Number(rawBid.mtype) === MEDIA_TYPES.Video) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
@@ -1020,7 +1015,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.ext.externalID = externalID;
 
         // enable fledge auction
-        if (auctionEnvironment == 1) {
+        if (Number(auctionEnvironment) === 1) {
           _bannerImpression.ext.ae = 1;
           _bannerImpression.ext.paapi = paapi;
         }
@@ -1200,7 +1195,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 
   // regulations from ortb2
   if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
-    if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
+    if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp === 'string') {
       deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
     }
 
@@ -1220,7 +1215,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
       if (isArray(pubDsaObj.transparency)) {
         const tpData = [];
         pubDsaObj.transparency.forEach((tpObj) => {
-          if (isPlainObject(tpObj) && isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+          if (isPlainObject(tpObj) && isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
             tpData.push(tpObj);
           }
         });
@@ -1364,7 +1359,7 @@ function removeFromSizes(bannerSizeList, bannerSize) {
 function createNativeImps(validBidRequest, nativeImps) {
   const imp = bidToNativeImp(validBidRequest);
 
-  if (Object.keys(imp).length != 0) {
+  if (Object.keys(imp).length !== 0) {
     nativeImps[validBidRequest.adUnitCode] = {};
     nativeImps[validBidRequest.adUnitCode].ixImps = [];
     nativeImps[validBidRequest.adUnitCode].ixImps.push(imp);
@@ -1386,7 +1381,7 @@ function createNativeImps(validBidRequest, nativeImps) {
  */
 function createVideoImps(validBidRequest, videoImps) {
   const imp = bidToVideoImp(validBidRequest);
-  if (Object.keys(imp).length != 0) {
+  if (Object.keys(imp).length !== 0) {
     videoImps[validBidRequest.adUnitCode] = {};
     videoImps[validBidRequest.adUnitCode].ixImps = [];
     videoImps[validBidRequest.adUnitCode].ixImps.push(imp);
@@ -1633,7 +1628,7 @@ export const spec = {
       }
     }
 
-    if (!isExchangeIdConfigured() && bid.params.siteId == undefined) {
+    if (!isExchangeIdConfigured() && (bid.params.siteId === undefined || bid.params.siteId === null)) {
       logError('IX Bid Adapter: Invalid configuration - either siteId or exchangeId must be configured.');
       return false;
     }
@@ -1755,19 +1750,8 @@ export const spec = {
       allImps.push(nativeImps);
     }
 
-    if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_multiformat')) {
-      reqs.push(...buildRequest(validBidRequests, bidderRequest, combineImps(allImps)));
-    } else {
-      if (Object.keys(bannerImps).length > 0) {
-        reqs.push(...buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
-      }
-      if (Object.keys(videoImps).length > 0) {
-        reqs.push(...buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
-      }
-      if (Object.keys(nativeImps).length > 0) {
-        reqs.push(...buildRequest(validBidRequests, bidderRequest, nativeImps));
-      }
-    }
+    reqs.push(...buildRequest(validBidRequests, bidderRequest, combineImps(allImps)));
+
     return reqs;
   },
 
@@ -1865,7 +1849,7 @@ export const spec = {
     if (serverResponses.length > 0) {
       publisherSyncsPerBidderOverride = deepAccess(serverResponses[0], 'body.ext.publishersyncsperbidderoverride');
     }
-    if (publisherSyncsPerBidderOverride !== undefined && publisherSyncsPerBidderOverride == 0) {
+    if (publisherSyncsPerBidderOverride === 0) {
       return [];
     }
     if (syncOptions.iframeEnabled) {
@@ -1953,7 +1937,7 @@ export function combineImps(imps) {
 export function deduplicateImpExtFields(r) {
   r.imp.forEach((imp, index) => {
     const impExt = imp.ext;
-    if (impExt == undefined) {
+    if (impExt === undefined || impExt === null) {
       return r;
     }
     if (getFormatCount(imp) < 2) {
@@ -1962,12 +1946,12 @@ export function deduplicateImpExtFields(r) {
     Object.keys(impExt).forEach((key) => {
       if (BANNER in imp) {
         const bannerExt = imp.banner.ext;
-        if (bannerExt !== undefined && bannerExt[key] !== undefined && bannerExt[key] == impExt[key]) {
+        if (bannerExt !== undefined && bannerExt[key] !== undefined && bannerExt[key] === impExt[key]) {
           delete r.imp[index].banner.ext[key];
         }
         if (imp.banner.format !== undefined) {
           for (let i = 0; i < imp.banner.format.length; i++) {
-            if (imp.banner.format[i].ext != undefined && imp.banner.format[i].ext[key] != undefined && imp.banner.format[i].ext[key] == impExt[key]) {
+            if (imp.banner.format[i]?.ext?.[key] === impExt[key]) {
               delete r.imp[index].banner.format[i].ext[key];
             }
           }
@@ -1975,14 +1959,14 @@ export function deduplicateImpExtFields(r) {
       }
       if (VIDEO in imp) {
         const videoExt = imp.video.ext;
-        if (videoExt !== undefined && videoExt[key] !== undefined && videoExt[key] == impExt[key]) {
+        if (videoExt !== undefined && videoExt[key] !== undefined && videoExt[key] === impExt[key]) {
           delete r.imp[index].video.ext[key];
         }
       }
 
       if (NATIVE in imp) {
         const nativeExt = imp.native.ext;
-        if (nativeExt !== undefined && nativeExt[key] !== undefined && nativeExt[key] == impExt[key]) {
+        if (nativeExt !== undefined && nativeExt[key] !== undefined && nativeExt[key] === impExt[key]) {
           delete r.imp[index].native.ext[key];
         }
       }
@@ -2001,7 +1985,7 @@ export function deduplicateImpExtFields(r) {
 export function removeSiteIDs(r) {
   r.imp.forEach((imp, index) => {
     const impExt = imp.ext;
-    if (impExt == undefined) {
+    if (impExt === undefined || impExt === null) {
       return r;
     }
     if (getFormatCount(imp) < 2) {
@@ -2075,7 +2059,7 @@ function isValidAuctionConfig(config) {
  * @returns object
  */
 export function addDeviceInfo(r) {
-  if (r.device == undefined) {
+  if (r.device === undefined) {
     r.device = {};
   }
   r.device.h = window.screen.height;

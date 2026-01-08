@@ -39,7 +39,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile, babelPrecomp} = require('./gulp.precompilation.js');
 
-const TEST_CHUNKS = 4;
+const TEST_CHUNKS = 8;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -521,7 +521,7 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeV
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'))
-gulp.task('test-only-nobuild', gulp.series('test-build-logic', testTaskMaker({coverage: true})))
+gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})))
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
 gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
@@ -531,10 +531,16 @@ gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-o
 
 gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
 
+gulp.task('update-codeql', function (done) {
+  import('./fingerprintApis.mjs').then(({updateQueries}) => {
+    updateQueries().then(() => done(), done);
+  })
+})
+
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
-gulp.task('build-release', gulp.series('build', updateCreativeExample, 'update-browserslist', 'setup-npmignore'));
+gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
@@ -548,6 +554,7 @@ gulp.task('default', gulp.series('build'));
 
 gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
 gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
+gulp.task('e2e-test-nobuild', gulp.series(requireNodeVersion(16), e2eTestTaskMaker()))
 
 // other tasks
 gulp.task(bundleToStdout);

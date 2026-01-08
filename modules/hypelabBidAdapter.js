@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { generateUUID, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
@@ -40,7 +41,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
     const floor = getBidFloor(request, request.sizes || []);
-    const dpr = typeof window != 'undefined' ? window.devicePixelRatio : 1;
+    const dpr = typeof window !== 'undefined' ? getDevicePixelRatio(window) : 1;
     const wp = getWalletPresence();
     const wpfs = getWalletProviderFlags();
     const winDimensions = getWinDimensions();
@@ -62,7 +63,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       provider_version: PROVIDER_VERSION,
       provider_name: PROVIDER_NAME,
       location:
-        bidderRequest.refererInfo?.page || typeof window != 'undefined'
+        bidderRequest.refererInfo?.page || typeof window !== 'undefined'
           ? window.location.href
           : '',
       sdk_version: PREBID_VERSION,

@@ -1,8 +1,10 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {ajax} from '../src/ajax.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const BIDDER_CODE = 'axonix';
 const BIDDER_VERSION = '1.0.2';
@@ -80,19 +82,9 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     // device.connectiontype
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
-    let connectionType = 'unknown';
-    let effectiveType = '';
-
-    if (connection) {
-      if (connection.type) {
-        connectionType = connection.type;
-      }
-
-      if (connection.effectiveType) {
-        effectiveType = connection.effectiveType;
-      }
-    }
+    const connection = getConnectionInfo();
+    const connectionType = connection?.type ?? 'unknown';
+    const effectiveType = connection?.effectiveType ?? '';
 
     const requests = validBidRequests.map(validBidRequest => {
       // app/site
@@ -115,7 +107,7 @@ export const spec = {
         effectiveType,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
         bidfloor: getBidFloor(validBidRequest),
-        dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+        dnt: getDNT() ? 1 : 0,
         language: navigator.language,
         prebidVersion: '$prebid.version$',
         screenHeight: screen.height,

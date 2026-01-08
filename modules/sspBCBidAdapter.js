@@ -1,4 +1,5 @@
 import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -165,7 +166,7 @@ const getNotificationPayload = bidData => {
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
-  const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
+  const { connection = {}, userAgentData = {} } = navigator;
   const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
@@ -173,8 +174,8 @@ const applyClientHints = ortbRequest => {
     'CH-Rtt': connection.rtt,
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
-    'CH-DeviceMemory': deviceMemory,
-    'CH-Dpr': W.devicePixelRatio,
+    'CH-DeviceMemory': null,
+    'CH-Dpr': getDevicePixelRatio(W),
     'CH-ViewportWidth': viewport.width,
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,
