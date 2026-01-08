@@ -336,7 +336,7 @@ export const spec = {
     const fullUrl = `${baseUrl}?data=${encodeURIComponent(jsonData)}`;
 
     // adbeta needs credentials omitted to avoid CORS issues, especially in Firefox
-    const useCredentials = !(!!data.ext?.adbeta);
+    const useCredentials = !data.ext?.adbeta;
 
     // Switch to POST if URL exceeds 8k characters
     if (fullUrl.length > 8192) {
