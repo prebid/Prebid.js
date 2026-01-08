@@ -33,7 +33,6 @@ const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const globals = {};
-const itemMaps = {};
 
 /* ----- mguid:start ------ */
 export const COOKIE_KEY_MGUID = '__mguid_';
@@ -177,10 +176,6 @@ function getItems(validBidRequests, bidderRequest) {
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
-      };
-      itemMaps[id] = {
-        req,
-        ret
       };
     }
 
@@ -345,10 +340,9 @@ export const spec = {
     const bidResponses = [];
     for (const bid of bids) {
       const impid = getProperty(bid, 'impid');
-      if (itemMaps[impid]) {
-        const bidId = getProperty(itemMaps[impid], 'req', 'bidId');
+      if (impid) {
         const bidResponse = {
-          requestId: bidId,
+          requestId: getProperty(bid, 'impid'),
           cpm: getProperty(bid, 'price'),
           width: getProperty(bid, 'w'),
           height: getProperty(bid, 'h'),
