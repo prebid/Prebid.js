@@ -139,7 +139,7 @@ function getItems(validBidRequests, bidderRequest) {
     const bidFloor = getBidFloor(req);
     const gpid =
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-      utils.deepAccess(req, 'params.placementId', 0);
+      utils.deepAccess(req, 'params.placementId', '');
 
     const gdprConsent = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -156,7 +156,8 @@ function getItems(validBidRequests, bidderRequest) {
     // if (mediaTypes.native) {}
     // banner广告类型
     if (mediaTypes.banner) {
-      const id = '' + (i + 1);
+      // fix id is not unique where there are multiple requests in the same page
+      const id = getProperty(req, 'bidId') || ('' + (i + 1) + Math.random().toString(36).substring(2, 15));
       ret = {
         id: id,
         bidfloor: bidFloor,
@@ -217,7 +218,7 @@ function getParam(validBidRequests, bidderRequest) {
   const isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
   const isTest = validBidRequests[0].params.test || 0;
-  const auctionId = getProperty(bidderRequest, 'auctionId');
+  const bidderRequestId = getProperty(bidderRequest, 'bidderRequestId');
   const items = getItems(validBidRequests, bidderRequest);
 
   const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
@@ -233,8 +234,7 @@ function getParam(validBidRequests, bidderRequest) {
 
   if (items && items.length) {
     const c = {
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      id: 'mgprebidjs_' + auctionId,
+      id: 'mgprebidjs_' + bidderRequestId,
       test: +isTest,
       at: 1,
       cur: ['USD'],
