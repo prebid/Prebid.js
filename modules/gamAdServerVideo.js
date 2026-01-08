@@ -292,7 +292,21 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
 };
 
 export async function getVastXml(options, localCacheMap = vastLocalCache) {
-  const vastUrl = buildGamVideoUrl(options);
+  let vastUrl = buildGamVideoUrl(options);
+
+  // Adding parameters required by ima
+  if (config.getConfig('cache.useLocal') && window.google?.ima) {
+    vastUrl = new URL(vastUrl);
+    const imaSdkVersion = `h.${window.google.ima.VERSION}`;
+    vastUrl.searchParams.set('omid_p', `Google1/${imaSdkVersion}`);
+    vastUrl.searchParams.set('sdkv', imaSdkVersion);
+    vastUrl.searchParams.set('sdk_apis', '2,7,8');
+    vastUrl.searchParams.set('us_privacy', '1YNY');
+    vastUrl.searchParams.set('vpa', 'auto');
+
+    vastUrl = vastUrl.toString();
+  }
+
   const response = await fetch(vastUrl);
   if (!response.ok) {
     throw new Error('Unable to fetch GAM VAST wrapper');
