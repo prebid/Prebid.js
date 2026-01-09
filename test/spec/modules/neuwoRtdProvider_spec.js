@@ -339,6 +339,9 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "The request URL should include the encoded website URL").to.include(
           encodeURIComponent(conf.params.websiteToAnalyseUrl)
         );
+        expect(request.url, "The request URL should include the product identifier").to.include(
+          "_neuwo_prod=PrebidModule"
+        );
 
         request.respond(
           200,
@@ -1078,6 +1081,110 @@ describe("neuwoRtdModule", function () {
         // Second call should use cache
         neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
         expect(server.requests.length, "Second call should use cached response").to.equal(1);
+      });
+
+      it("should handle concurrent requests by sharing a pending request promise", function (done) {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=concurrent";
+        conf.params.enableCache = true;
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 3) {
+            // All callbacks have been called, now verify the data
+            try {
+              const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
+              const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
+              const contentData3 = bidsConfig3.ortb2Fragments.global.site.content.data[0];
+
+              expect(contentData1, "First config should have Neuwo data").to.exist;
+              expect(contentData2, "Second config should have Neuwo data from pending request").to.exist;
+              expect(contentData3, "Third config should have Neuwo data from pending request").to.exist;
+              expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              expect(contentData3.name, "Third config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Make three concurrent calls before responding to the first request
+        neuwo.getBidRequestData(bidsConfig1, callback, conf, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf, "consent data");
+        neuwo.getBidRequestData(bidsConfig3, callback, conf, "consent data");
+
+        // Only one API request should be made
+        expect(server.requests.length, "Only one API request should be made for concurrent calls").to.equal(1);
+
+        const request = server.requests[0];
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+      });
+
+      it("should transition through all three cache states: pending request, then cached response", function (done) {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=three-stage";
+        conf.params.enableCache = true;
+
+        let callback1and2Count = 0;
+
+        const callback1and2 = () => {
+          callback1and2Count++;
+          if (callback1and2Count === 2) {
+            // Both first and second callbacks have been called
+            // Stage 3: Third request should use cached response (not pending request)
+            neuwo.getBidRequestData(bidsConfig3, () => {
+              try {
+                expect(server.requests.length, "Third call should use cache and not make a new API request").to.equal(1);
+
+                // All three configs should have the same data
+                const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
+                const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
+                const contentData3 = bidsConfig3.ortb2Fragments.global.site.content.data[0];
+
+                expect(contentData1, "First config should have Neuwo data").to.exist;
+                expect(contentData2, "Second config should have Neuwo data from pending request").to.exist;
+                expect(contentData3, "Third config should have Neuwo data from cache").to.exist;
+                expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+                expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+                expect(contentData3.name, "Third config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+                done();
+              } catch (e) {
+                done(e);
+              }
+            }, conf, "consent data");
+          }
+        };
+
+        // Stage 1: First request initiates API call (creates pending request)
+        neuwo.getBidRequestData(bidsConfig1, callback1and2, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        // Stage 2: Second request should attach to pending request before response
+        neuwo.getBidRequestData(bidsConfig2, callback1and2, conf, "consent data");
+        expect(server.requests.length, "Second call should not make a new API request").to.equal(1);
+
+        // Respond to the API request, which populates the cache
+        const request = server.requests[0];
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
       });
     });
 
