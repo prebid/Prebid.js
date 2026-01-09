@@ -318,3 +318,20 @@ Skip building, if the project has already been built:
 ```bash
 npx gulp test-only-nobuild --file=test/spec/modules/neuwoRtdProvider_spec.js
 ```
+
+To generate test coverage report for the Neuwo RTD Module:
+
+```bash
+npx gulp test-coverage --file=test/spec/modules/neuwoRtdProvider_spec.js
+```
+
+After running the coverage command, you can view the HTML report:
+
+```bash
+# Open the coverage report in your browser
+firefox build/coverage/lcov-report/index.html
+# or
+google-chrome build/coverage/lcov-report/index.html
+```
+
+Navigate to `modules/neuwoRtdProvider.js` in the report to see detailed line-by-line coverage with highlighted covered/uncovered lines.
