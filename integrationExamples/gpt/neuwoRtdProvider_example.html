@@ -140,6 +140,20 @@
             const inputStripFragments = document.getElementById("strip-fragments");
             const stripFragments = inputStripFragments ? inputStripFragments.checked : undefined;
 
+            // IAB Taxonomy Filtering Option
+            const inputEnableFiltering = document.getElementById("enable-iab-filtering");
+            const enableIabFiltering = inputEnableFiltering ? inputEnableFiltering.checked : false;
+
+            // Build iabTaxonomyFilters object only if filtering is enabled
+            const iabTaxonomyFilters = enableIabFiltering ? {
+                ContentTier1: { limit: 1, threshold: 0.1 },
+                ContentTier2: { limit: 2, threshold: 0.1 },
+                ContentTier3: { limit: 3, threshold: 0.15 },
+                AudienceTier3: { limit: 3, threshold: 0.2 },
+                AudienceTier4: { limit: 5, threshold: 0.2 },
+                AudienceTier5: { limit: 7, threshold: 0.3 },
+            } : undefined;
+
             pbjs.que.push(function () {
                 pbjs.setConfig({
                     debug: true,
@@ -158,7 +172,8 @@
                                     stripAllQueryParams,
                                     stripQueryParamsForDomains,
                                     stripQueryParams,
-                                    stripFragments
+                                    stripFragments,
+                                    iabTaxonomyFilters,
                                 }
                             }
                         ]
@@ -254,6 +269,23 @@
                 <input type="checkbox" id="strip-fragments" />
                 Strip URL fragments (hash)
             </label>
+        </div>
+
+        <h3>IAB Taxonomy Filtering Options</h3>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="enable-iab-filtering" />
+                Enable IAB taxonomy filtering (limits categories by relevance and count per tier)
+            </label>
+            <div style="margin-left: 20px; margin-top: 5px; color: #666; font-size: 0.9em;">
+                When enabled, uses these hardcoded filters:<br/>
+                • ContentTier1: top 1 (≥10% relevance)<br/>
+                • ContentTier2: top 2 (≥10% relevance)<br/>
+                • ContentTier3: top 3 (≥15% relevance)<br/>
+                • AudienceTier3: top 3 (≥20% relevance)<br/>
+                • AudienceTier4: top 5 (≥20% relevance)<br/>
+                • AudienceTier5: top 7 (≥30% relevance)
+            </div>
         </div>
 
         <button onClick="onSettingsUpdate()">Update</button>
@@ -535,7 +567,8 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
             stripAllQueryParams: document.getElementById("strip-all-query-params")?.checked || false,
             stripQueryParamsForDomains: document.getElementById("strip-query-params-for-domains")?.value || "",
             stripQueryParams: document.getElementById("strip-query-params")?.value || "",
-            stripFragments: document.getElementById("strip-fragments")?.checked || false
+            stripFragments: document.getElementById("strip-fragments")?.checked || false,
+            enableIabFiltering: document.getElementById("enable-iab-filtering")?.checked || false
         };
         localStorage.setItem("neuwoRtdConfig", JSON.stringify(config));
     }
@@ -559,6 +592,7 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
             document.getElementById("enable-cache").checked = config.enableCache !== false;
             document.getElementById("strip-all-query-params").checked = config.stripAllQueryParams;
             document.getElementById("strip-fragments").checked = config.stripFragments;
+            document.getElementById("enable-iab-filtering").checked = config.enableIabFiltering;
         } catch (e) {
             console.error("Error loading saved config:", e);
         }
@@ -578,7 +612,8 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
         const checkboxIds = [
             "enable-cache",
             "strip-all-query-params",
-            "strip-fragments"
+            "strip-fragments",
+            "enable-iab-filtering"
         ];
 
         // Save on text input change

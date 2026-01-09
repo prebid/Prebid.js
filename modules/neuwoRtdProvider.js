@@ -87,6 +87,7 @@ function init(config, userConsent) {
  * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
  * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
  * @param {boolean} [config.params.stripFragments] If true, strips URL fragments (hash).
+ * @param {Object} [config.params.iabTaxonomyFilters] Per-tier filtering configuration for IAB taxonomies.
  * @param {Object} userConsent The user consent object.
  */
 export function getBidRequestData(
@@ -112,6 +113,7 @@ export function getBidRequestData(
     stripQueryParamsForDomains,
     stripQueryParams,
     stripFragments,
+    iabTaxonomyFilters,
   } = config.params;
 
   const rawUrl = websiteToAnalyseUrl || getRefererInfo().page;
@@ -147,7 +149,8 @@ export function getBidRequestData(
     injectIabCategories(
       globalCachedResponse,
       reqBidsConfigObj,
-      iabContentTaxonomyVersion
+      iabContentTaxonomyVersion,
+      iabTaxonomyFilters
     );
     callback();
   } else if (enableCache && pendingRequest) {
@@ -164,7 +167,8 @@ export function getBidRequestData(
           injectIabCategories(
             responseParsed,
             reqBidsConfigObj,
-            iabContentTaxonomyVersion
+            iabContentTaxonomyVersion,
+            iabTaxonomyFilters
           );
         }
       })
@@ -200,7 +204,8 @@ export function getBidRequestData(
               injectIabCategories(
                 responseParsed,
                 reqBidsConfigObj,
-                iabContentTaxonomyVersion
+                iabContentTaxonomyVersion,
+                iabTaxonomyFilters
               );
               resolve(responseParsed);
             } catch (ex) {
@@ -388,17 +393,128 @@ export function buildIabData(marketingCategories, tiers, segtax) {
 }
 
 /**
+ * Filters and limits a single tier's taxonomies based on relevance score and count.
+ *
+ * @param {Array} iabTaxonomies Array of taxonomy objects with ID, label, and relevance
+ * @param {Object} filter Filter configuration for this tier
+ * @returns {Array} Filtered and limited array of taxonomies
+ */
+export function filterIabTaxonomyTier(iabTaxonomies, filter = {}) {
+  if (!Array.isArray(iabTaxonomies) || iabTaxonomies.length === 0) {
+    return iabTaxonomies;
+  }
+
+  const { threshold, limit } = filter;
+  let filtered = [...iabTaxonomies]; // Create copy to avoid mutating original
+
+  // Filter by minimum relevance score
+  if (typeof threshold === "number" && threshold > 0) {
+    filtered = filtered.filter((item) => {
+      const relevance = parseFloat(item?.relevance);
+      return !isNaN(relevance) && relevance >= threshold;
+    });
+  }
+
+  // Sort by relevance (highest first) before limiting
+  filtered = filtered.sort((a, b) => {
+    const relA = parseFloat(a?.relevance) || 0;
+    const relB = parseFloat(b?.relevance) || 0;
+    return relB - relA; // Descending order
+  });
+
+  // Limit count
+  if (typeof limit === "number" && limit > 0) {
+    filtered = filtered.slice(0, limit);
+  }
+
+  return filtered;
+}
+
+/**
+ * Maps tier configuration keys to API response keys.
+ */
+const TIER_KEY_MAP = {
+  ContentTier1: "iab_tier_1",
+  ContentTier2: "iab_tier_2",
+  ContentTier3: "iab_tier_3",
+  AudienceTier3: "iab_audience_tier_3",
+  AudienceTier4: "iab_audience_tier_4",
+  AudienceTier5: "iab_audience_tier_5",
+};
+
+/**
+ * Applies per-tier filtering to all IAB taxonomies.
+ * Filters taxonomies by relevance score and limits the count per tier.
+ *
+ * @param {Object} marketingCategories Marketing Categories returned by Neuwo API.
+ * @param {Object} [tierFilters] Per-tier filter configuration keyed by config tier names (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
+ * @returns {Object} Filtered marketing categories with the same structure as input.
+ */
+export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
+  if (!marketingCategories || typeof marketingCategories !== "object") {
+    return marketingCategories;
+  }
+
+  // If no filters provided, return original data
+  if (!tierFilters || Object.keys(tierFilters).length === 0) {
+    logInfo(
+      MODULE_NAME,
+      "filterIabTaxonomies():",
+      "No filters provided, returning original data"
+    );
+    return marketingCategories;
+  }
+
+  const filtered = {};
+
+  // Iterate through all tiers in the API response
+  Object.keys(marketingCategories).forEach((apiTierKey) => {
+    const tierData = marketingCategories[apiTierKey];
+
+    // Find the corresponding config key for this API tier
+    const configTierKey = Object.keys(TIER_KEY_MAP).find(
+      (key) => TIER_KEY_MAP[key] === apiTierKey
+    );
+
+    // Get filter for this tier (if configured)
+    const filter = configTierKey ? tierFilters[configTierKey] : {};
+
+    // Apply filter if this tier has data
+    if (Array.isArray(tierData)) {
+      filtered[apiTierKey] = filterIabTaxonomyTier(tierData, filter);
+    } else {
+      // Preserve non-array data as-is
+      filtered[apiTierKey] = tierData;
+    }
+  });
+
+  logInfo(
+    MODULE_NAME,
+    "filterIabTaxonomies():",
+    "Filtering results:",
+    "Original:",
+    marketingCategories,
+    "Filtered:",
+    filtered,
+  );
+
+  return filtered;
+}
+
+/**
  * Processes the Neuwo API response to build and inject IAB content and audience categories
  * into the bid request object.
  *
  * @param {Object} responseParsed The parsed JSON response from the Neuwo API.
  * @param {Object} reqBidsConfigObj The bid request configuration object to be modified.
  * @param {string} iabContentTaxonomyVersion The version of the IAB content taxonomy to use for segtax mapping.
+ * @param {Object} [iabTaxonomyFilters] Per-tier filter configuration (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
  */
 function injectIabCategories(
   responseParsed,
   reqBidsConfigObj,
-  iabContentTaxonomyVersion
+  iabContentTaxonomyVersion,
+  iabTaxonomyFilters
 ) {
   const marketingCategories = responseParsed.marketing_categories;
 
@@ -411,10 +527,13 @@ function injectIabCategories(
     return;
   }
 
+  // Apply per-tier filtering
+  const marketingCategoriesFiltered = filterIabTaxonomies(marketingCategories, iabTaxonomyFilters);
+
   // Process content categories
   const contentTiers = ["iab_tier_1", "iab_tier_2", "iab_tier_3"];
   const contentData = buildIabData(
-    marketingCategories,
+    marketingCategoriesFiltered,
     contentTiers,
     IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
       IAB_CONTENT_TAXONOMY_MAP["3.0"]
@@ -426,7 +545,7 @@ function injectIabCategories(
     "iab_audience_tier_4",
     "iab_audience_tier_5",
   ];
-  const audienceData = buildIabData(marketingCategories, audienceTiers, 4);
+  const audienceData = buildIabData(marketingCategoriesFiltered, audienceTiers, 4);
 
   logInfo(
     MODULE_NAME,
