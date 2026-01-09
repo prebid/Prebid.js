@@ -102,7 +102,13 @@ export const spec = {
         adUnit.ChannelID = bid.params.ChannelID;
       }
 
-      const floorInfo = bid.getFloor?.() || {};
+      let floorInfo = {};
+      if (typeof bid.getFloor === 'function') {
+        const mediaType = bid.mediaTypes?.banner ? BANNER : (bid.mediaTypes?.native ? NATIVE : '*');
+        const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
+        const size = sizes.length === 1 ? sizes[0] : '*';
+        floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+      }
       adUnit.floor = floorInfo.floor;
       adUnit.currency = floorInfo.currency;
       adUnits.push(adUnit);
