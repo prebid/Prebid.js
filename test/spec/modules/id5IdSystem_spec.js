@@ -1671,7 +1671,6 @@ describe('ID5 ID System', function () {
       expect(window.id5tags.tags).to.deep.equal(testTags);
     });
 
-
     it('should work with both gamTargetingPrefix and exposeTargeting enabled', async function () {
       // Setup googletag
       const origGoogletag = window.googletag;
