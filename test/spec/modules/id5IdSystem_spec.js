@@ -1499,7 +1499,10 @@ describe('ID5 ID System', function () {
       };
 
       const callTracker = [];
-      const { promise, resolve } = Promise.withResolvers();
+      let resolvePromise;
+      const callbackPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
 
       // Pre-create id5tags with queued functions
       window.id5tags = {
@@ -1508,14 +1511,14 @@ describe('ID5 ID System', function () {
           (tags) => callTracker.push({call: 2, tags: tags}),
           (tags) => {
             callTracker.push({call: 3, tags: tags});
-            resolve();
+            resolvePromise();
           }
         ]
       };
 
       id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
 
-      await promise;
+      await callbackPromise;
 
       // Verify all queued functions were called with the tags
       expect(callTracker).to.have.lengthOf(3);
@@ -1569,20 +1572,23 @@ describe('ID5 ID System', function () {
       const callTracker = [];
 
       // First decode
-      const { promise: firstPromise, resolve: firstResolve } = Promise.withResolvers();
+      let resolveFirstPromise;
+      const firstCallbackPromise = new Promise((resolve) => {
+        resolveFirstPromise = resolve;
+      });
 
       window.id5tags = {
         cmd: [
           (tags) => {
             callTracker.push({call: 'decode', tags: utils.deepClone(tags)});
-            firstResolve();
+            resolveFirstPromise();
           }
         ]
       };
 
       id5System.id5IdSubmodule.decode(firstObj, exposeTargetingConfig);
 
-      await firstPromise;
+      await firstCallbackPromise;
 
       expect(callTracker).to.have.lengthOf(1);
       expect(callTracker[0].tags).to.deep.equal(firstTags);
@@ -1593,17 +1599,20 @@ describe('ID5 ID System', function () {
         'tags': secondTags
       };
 
-      const { promise: secondPromise, resolve: secondResolve } = Promise.withResolvers();
+      let resolveSecondPromise;
+      const secondCallbackPromise = new Promise((resolve) => {
+        resolveSecondPromise = resolve;
+      });
 
       // Update the callback to resolve when called again
       window.id5tags.cmd[0] = (tags) => {
         callTracker.push({call: 'decode', tags: utils.deepClone(tags)});
-        secondResolve();
+        resolveSecondPromise();
       };
 
       id5System.id5IdSubmodule.decode(secondObj, exposeTargetingConfig);
 
-      await secondPromise;
+      await secondCallbackPromise;
 
       // The queued function should be called again with new tags
       expect(callTracker).to.have.lengthOf(2);
@@ -1641,7 +1650,10 @@ describe('ID5 ID System', function () {
       };
 
       const externalCallTracker = [];
-      const { promise, resolve } = Promise.withResolvers();
+      let resolvePromise;
+      const callbackPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
 
       // External script creates id5tags
       window.id5tags = {
@@ -1652,12 +1664,12 @@ describe('ID5 ID System', function () {
       // Add external function
       window.id5tags.cmd.push((tags) => {
         externalCallTracker.push({external: true, tags: tags});
-        resolve();
+        resolvePromise();
       });
 
       id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
 
-      await promise;
+      await callbackPromise;
 
       // External function should be called
       expect(externalCallTracker).to.have.lengthOf(1);
@@ -1689,18 +1701,21 @@ describe('ID5 ID System', function () {
       };
 
       const callTracker = [];
-      const { promise, resolve } = Promise.withResolvers();
+      let resolvePromise;
+      const callbackPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
 
       window.id5tags = {
         cmd: [(tags) => {
           callTracker.push(tags);
-          resolve();
+          resolvePromise();
         }]
       };
 
       id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
 
-      await promise;
+      await callbackPromise;
 
       // Both mechanisms should work
       expect(window.googletag.cmd.length).to.be.at.least(1);
