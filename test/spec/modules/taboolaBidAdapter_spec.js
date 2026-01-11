@@ -2047,32 +2047,34 @@ describe('Taboola Adapter', function () {
     });
 
     describe('buildRequests', function () {
-      it('should build native request without banner imp', function () {
-        const nativeBidRequest = {
-          bidder: 'taboola',
-          params: {
-            publisherId: 'publisherId',
-            tagId: 'native-placement'
-          },
-          ...nativeBidRequestParams,
-          nativeOrtbRequest: {
-            ver: '1.2',
-            assets: [
-              {id: 1, required: 1, title: {len: 150}},
-              {id: 2, required: 1, img: {type: 3, w: 300, h: 250}},
-              {id: 3, required: 1, data: {type: 1}}
-            ]
-          },
-          bidId: utils.generateUUID(),
-          auctionId: utils.generateUUID(),
-        };
+      if (FEATURES.NATIVE) {
+        it('should build native request without banner imp', function () {
+          const nativeBidRequest = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                {id: 1, required: 1, title: {len: 150}},
+                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}},
+                {id: 3, required: 1, data: {type: 1}}
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
 
-        const res = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+          const res = spec.buildRequests([nativeBidRequest], commonBidderRequest);
 
-        expect(res.data.imp[0]).to.not.have.property('banner');
-        expect(res.data.imp[0]).to.have.property('native'); // TODO native isn't added!
-        expect(res.data.imp[0].tagid).to.equal('native-placement');
-      });
+          expect(res.data.imp[0]).to.not.have.property('banner');
+          expect(res.data.imp[0]).to.have.property('native');
+          expect(res.data.imp[0].tagid).to.equal('native-placement');
+        });
+      }
 
       it('should build banner request without native imp', function () {
         const bannerBidRequest = {
@@ -2099,66 +2101,68 @@ describe('Taboola Adapter', function () {
     });
 
     describe('interpretResponse', function () {
-      it('should interpret native response correctly', function () {
-        const nativeBidRequest = {
-          bidder: 'taboola',
-          params: {
-            publisherId: 'publisherId',
-            tagId: 'native-placement'
-          },
-          ...nativeBidRequestParams,
-          nativeOrtbRequest: {
+      if (FEATURES.NATIVE) {
+        it('should interpret native response correctly', function () {
+          const nativeBidRequest = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                {id: 1, required: 1, title: {len: 150}},
+                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const request = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+
+          const nativeAdm = {
             ver: '1.2',
             assets: [
-              {id: 1, required: 1, title: {len: 150}},
-              {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
-            ]
-          },
-          bidId: utils.generateUUID(),
-          auctionId: utils.generateUUID(),
-        };
+              {id: 1, title: {text: 'Native Ad Title'}},
+              {id: 2, img: {url: 'https://example.com/image.jpg', w: 300, h: 250}}
+            ],
+            link: {
+              url: 'https://example.com/click'
+            }
+          };
 
-        const request = spec.buildRequests([nativeBidRequest], commonBidderRequest);
-
-        const nativeAdm = {
-          ver: '1.2',
-          assets: [
-            {id: 1, title: {text: 'Native Ad Title'}},
-            {id: 2, img: {url: 'https://example.com/image.jpg', w: 300, h: 250}}
-          ],
-          link: {
-            url: 'https://example.com/click'
-          }
-        };
-
-        const serverResponse = {
-          body: {
-            id: 'response-id',
-            seatbid: [{
-              bid: [{
-                id: 'bid-id',
-                impid: request.data.imp[0].id,
-                price: 1.5,
-                adm: JSON.stringify(nativeAdm),
-                adomain: ['example.com'],
-                crid: 'creative-id',
-                exp: 300,
-                nurl: 'https://example.com/win'
+          const serverResponse = {
+            body: {
+              id: 'response-id',
+              seatbid: [{
+                bid: [{
+                  id: 'bid-id',
+                  impid: request.data.imp[0].id,
+                  price: 1.5,
+                  adm: JSON.stringify(nativeAdm),
+                  adomain: ['example.com'],
+                  crid: 'creative-id',
+                  exp: 300,
+                  nurl: 'https://example.com/win'
+                }],
+                seat: 'taboola'
               }],
-              seat: 'taboola'
-            }],
-            cur: 'USD'
-          }
-        };
+              cur: 'USD'
+            }
+          };
 
-        const res = spec.interpretResponse(serverResponse, request);
+          const res = spec.interpretResponse(serverResponse, request);
 
-        expect(res).to.be.an('array').with.lengthOf(1);
-        expect(res[0].mediaType).to.equal('native');
-        expect(res[0].native).to.exist;
-        expect(res[0].native.ortb).to.deep.equal(nativeAdm);
-        expect(res[0]).to.not.have.property('ad');
-      });
+          expect(res).to.be.an('array').with.lengthOf(1);
+          expect(res[0].mediaType).to.equal('native');
+          expect(res[0].native).to.exist;
+          expect(res[0].native.ortb).to.deep.equal(nativeAdm);
+          expect(res[0]).to.not.have.property('ad');
+        });
+      }
     });
   });
 })
