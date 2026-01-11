@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
+import {spec, internal, BANNER_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config.js'
 import * as utils from '../../../src/utils.js'
 import {server} from '../../mocks/xhr.js'
@@ -33,7 +33,11 @@ describe('Taboola Adapter', function () {
   })
 
   const displayBidRequestParams = {
-    sizes: [[300, 250], [300, 600]]
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    }
   }
 
   const createBidRequest = () => ({
@@ -270,18 +274,18 @@ describe('Taboola Adapter', function () {
       const expectedData = {
         'imp': [{
           'id': res.data.imp[0].id,
-          'secure': 1,
           'banner': {
             format: [{
-              w: displayBidRequestParams.sizes[0][0],
-              h: displayBidRequestParams.sizes[0][1]
+              w: displayBidRequestParams.mediaTypes.banner.sizes[0][0],
+              h: displayBidRequestParams.mediaTypes.banner.sizes[0][1]
             },
             {
-              w: displayBidRequestParams.sizes[1][0],
-              h: displayBidRequestParams.sizes[1][1]
+              w: displayBidRequestParams.mediaTypes.banner.sizes[1][0],
+              h: displayBidRequestParams.mediaTypes.banner.sizes[1][1]
             }
             ]
           },
+          'secure': 1,
           'tagid': commonBidRequest.params.tagId,
           'bidfloor': null,
           'bidfloorcur': 'USD',
@@ -315,7 +319,7 @@ describe('Taboola Adapter', function () {
         'ext': res.data.ext
       };
 
-      expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
+      expect(res.url).to.equal(`${BANNER_ENDPOINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
       expect(JSON.stringify(res.data)).to.deep.equal(JSON.stringify(expectedData));
       expect(res.data.ext.prebid.version).to.equal('$prebid.version$');
     });
@@ -1980,4 +1984,181 @@ describe('Taboola Adapter', function () {
       });
     });
   })
+
+  describe('native', function () {
+    const commonBidderRequest = {
+      bidderRequestId: 'mock-uuid',
+      refererInfo: {
+        page: 'https://example.com/ref',
+        ref: 'https://ref',
+        domain: 'example.com',
+      },
+      ortb2: {
+        device: {
+          ua: navigator.userAgent,
+        },
+      }
+    };
+
+    const nativeBidRequestParams = {
+      mediaTypes: {
+        native: {
+          title: {required: true, len: 150},
+          image: {required: true, sizes: [300, 250]},
+          sponsoredBy: {required: true}
+        }
+      }
+    };
+
+    describe('isBidRequestValid', function () {
+      it('should return true for valid native bid without sizes', function () {
+        const bid = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId',
+            tagId: 'native-placement'
+          },
+          ...nativeBidRequestParams
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+
+      it('should return false for native bid without publisherId', function () {
+        const bid = {
+          bidder: 'taboola',
+          params: {
+            tagId: 'native-placement'
+          },
+          ...nativeBidRequestParams
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false for native bid without tagId', function () {
+        const bid = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId'
+          },
+          ...nativeBidRequestParams
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+    });
+
+    describe('buildRequests', function () {
+      it('should build native request without banner imp', function () {
+        const nativeBidRequest = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId',
+            tagId: 'native-placement'
+          },
+          ...nativeBidRequestParams,
+          nativeOrtbRequest: {
+            ver: '1.2',
+            assets: [
+              {id: 1, required: 1, title: {len: 150}},
+              {id: 2, required: 1, img: {type: 3, w: 300, h: 250}},
+              {id: 3, required: 1, data: {type: 1}}
+            ]
+          },
+          bidId: utils.generateUUID(),
+          auctionId: utils.generateUUID(),
+        };
+
+        const res = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+
+        expect(res.data.imp[0]).to.not.have.property('banner');
+        expect(res.data.imp[0]).to.have.property('native'); // TODO native isn't added!
+        expect(res.data.imp[0].tagid).to.equal('native-placement');
+      });
+
+      it('should build banner request without native imp', function () {
+        const bannerBidRequest = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId',
+            tagId: 'banner-placement'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          bidId: utils.generateUUID(),
+          auctionId: utils.generateUUID(),
+        };
+
+        const res = spec.buildRequests([bannerBidRequest], commonBidderRequest);
+
+        expect(res.data.imp[0]).to.have.property('banner');
+        expect(res.data.imp[0]).to.not.have.property('native');
+        expect(res.data.imp[0]).to.not.have.property('native');
+      });
+    });
+
+    describe('interpretResponse', function () {
+      it('should interpret native response correctly', function () {
+        const nativeBidRequest = {
+          bidder: 'taboola',
+          params: {
+            publisherId: 'publisherId',
+            tagId: 'native-placement'
+          },
+          ...nativeBidRequestParams,
+          nativeOrtbRequest: {
+            ver: '1.2',
+            assets: [
+              {id: 1, required: 1, title: {len: 150}},
+              {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+            ]
+          },
+          bidId: utils.generateUUID(),
+          auctionId: utils.generateUUID(),
+        };
+
+        const request = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+
+        const nativeAdm = {
+          ver: '1.2',
+          assets: [
+            {id: 1, title: {text: 'Native Ad Title'}},
+            {id: 2, img: {url: 'https://example.com/image.jpg', w: 300, h: 250}}
+          ],
+          link: {
+            url: 'https://example.com/click'
+          }
+        };
+
+        const serverResponse = {
+          body: {
+            id: 'response-id',
+            seatbid: [{
+              bid: [{
+                id: 'bid-id',
+                impid: request.data.imp[0].id,
+                price: 1.5,
+                adm: JSON.stringify(nativeAdm),
+                adomain: ['example.com'],
+                crid: 'creative-id',
+                exp: 300,
+                nurl: 'https://example.com/win'
+              }],
+              seat: 'taboola'
+            }],
+            cur: 'USD'
+          }
+        };
+
+        const res = spec.interpretResponse(serverResponse, request);
+
+        expect(res).to.be.an('array').with.lengthOf(1);
+        expect(res[0].mediaType).to.equal('native');
+        expect(res[0].native).to.exist;
+        expect(res[0].native.ortb).to.deep.equal(nativeAdm);
+        expect(res[0]).to.not.have.property('ad');
+      });
+    });
+  });
 })
