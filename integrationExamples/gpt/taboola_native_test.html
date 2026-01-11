@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <title>Taboola Native Prebid.js Example</title>
+        <script async src="../../build/dev/prebid.js"></script>
+        <style>
+            .native-ad {
+                border: 1px solid #ccc;
+                padding: 15px;
+                max-width: 320px;
+                font-family: Arial, sans-serif;
+            }
+            .native-ad img {
+                max-width: 100%;
+                height: auto;
+            }
+            .native-ad .title {
+                font-size: 16px;
+                font-weight: bold;
+                margin: 10px 0;
+                color: #333;
+            }
+            .native-ad .sponsored {
+                font-size: 12px;
+                color: #666;
+            }
+            .native-ad a {
+                text-decoration: none;
+                color: inherit;
+            }
+        </style>
+        <script>
+            var PREBID_TIMEOUT = 10000;
+
+            var adUnits = [{
+                code: 'native-ad-container',
+                mediaTypes: {
+                    native: {
+                        image: {
+                            required: true,
+                            sizes: [300, 250]
+                        },
+                        title: {
+                            required: true,
+                            len: 140
+                        },
+                        clickUrl: {
+                            required: true
+                        },
+                        sponsoredBy: {
+                            required: false
+                        },
+                        body: {
+                            required: false
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'taboola',
+                    params: {
+                        publisherId: '1317924',
+                        tagId: 'your-tag-id',
+                        pageType: 'article'
+                    }
+                }]
+            }];
+
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            pbjs.que.push(function() {
+                pbjs.addAdUnits(adUnits);
+
+                pbjs.requestBids({
+                    bidsBackHandler: function(bids) {
+                        renderNativeAd();
+                    },
+                    timeout: PREBID_TIMEOUT
+                });
+            });
+
+            function renderNativeAd() {
+                var adUnitCode = 'native-ad-container';
+                var ads = pbjs.getHighestCpmBids(adUnitCode);
+
+                console.log('Highest CPM bids:', ads);
+
+                if (ads && ads.length > 0) {
+                    var ad = ads[0];
+                    console.log('Winning ad:', ad);
+
+                    if (ad.native) {
+                        var native = ad.native;
+                        console.log('Native data:', native);
+
+                        // Get native assets - handle both ortb and legacy format
+                        var ortb = native.ortb || {};
+                        var assets = ortb.assets || [];
+                        var link = ortb.link || {};
+
+                        var title = '';
+                        var imageUrl = '';
+                        var sponsoredBy = '';
+                        var clickUrl = link.url || native.clickUrl || '#';
+
+                        // Parse ORTB assets
+                        assets.forEach(function(asset) {
+                            if (asset.title) {
+                                title = asset.title.text;
+                            }
+                            if (asset.img && asset.img.type === 3) {
+                                imageUrl = asset.img.url;
+                            }
+                            if (asset.data && asset.data.type === 1) {
+                                sponsoredBy = asset.data.value;
+                            }
+                        });
+
+                        // Fallback to legacy format
+                        if (!title && native.title) title = native.title;
+                        if (!imageUrl && native.image && native.image.url) imageUrl = native.image.url;
+                        if (!sponsoredBy && native.sponsoredBy) sponsoredBy = native.sponsoredBy;
+
+                        var container = document.getElementById(adUnitCode);
+                        container.innerHTML =
+                            '<div class="native-ad">' +
+                                '<a href="' + clickUrl + '" target="_blank">' +
+                                    (imageUrl ? '<img src="' + imageUrl + '" alt="' + title + '">' : '') +
+                                    '<div class="title">' + title + '</div>' +
+                                    (sponsoredBy ? '<div class="sponsored">Sponsored by ' + sponsoredBy + '</div>' : '') +
+                                '</a>' +
+                            '</div>';
+
+                        // Fire impression trackers
+                        if (ortb.eventtrackers) {
+                            ortb.eventtrackers.forEach(function(tracker) {
+                                if (tracker.method === 1 && tracker.url) {
+                                    var img = new Image();
+                                    img.src = tracker.url;
+                                }
+                            });
+                        }
+
+                        // Notify Prebid that the ad was shown
+                        pbjs.markWinningBidAsUsed({ adUnitCode: adUnitCode });
+                    } else {
+                        console.log('No native data in bid');
+                        document.getElementById(adUnitCode).innerHTML = '<p>No native data in bid response</p>';
+                    }
+                } else {
+                    console.log('No bids received');
+                    document.getElementById(adUnitCode).innerHTML = '<p>No bids received</p>';
+                }
+            }
+        </script>
+    </head>
+
+    <body>
+        <h2>Taboola Native Prebid.js Example</h2>
+        <h5>Native Ad Container</h5>
+        <div id="native-ad-container">
+            <p>Loading native ad...</p>
+        </div>
+    </body>
+</html>

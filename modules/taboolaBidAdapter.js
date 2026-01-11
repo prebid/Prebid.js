@@ -187,7 +187,6 @@ const converter = ortbConverter({
     const hasBanner = !!context.bidRequest?.mediaTypes?.banner;
     context.mediaType = hasNative && !hasBanner ? NATIVE : BANNER;
 
-    // Unwrap native response - server returns {native: {...}} but ortbConverter expects {...}
     if (context.mediaType === NATIVE) {
       const admObj = safeJSONParse(bid.adm);
       if (admObj?.native) {
