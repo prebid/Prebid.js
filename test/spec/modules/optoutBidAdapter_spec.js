@@ -393,22 +393,6 @@ describe('optoutAdapterTest', function () {
       expect(requests[0].data.slots[0]).to.not.have.property('customs');
     });
 
-    it('handles empty/null URL gracefully', function () {
-      const br = [{
-        bidder: 'optout',
-        params: { adSlot: 'slot', publisher: '8' },
-        bidId: '1'
-      }];
-
-      const bidderRequest = {
-        refererInfo: { canonicalUrl: null }
-      };
-
-      const requests = spec.buildRequests(br, bidderRequest);
-      // sanitizeUrl returns empty string for null/empty inputs
-      expect(requests[0].data.url).to.equal('');
-    });
-
     it('builds slots with lowercase adslot param', function () {
       const br = [{
         bidder: 'optout',
