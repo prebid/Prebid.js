@@ -105,7 +105,7 @@ pbjs.setConfig({
 | `params.stripQueryParamsForDomains` | String[] | No       | `[]`    | List of domains for which to strip **all** query parameters. When a domain matches, all query params are removed for that domain and all its subdomains (e.g., `'example.com'` strips params for both `'example.com'` and `'sub.example.com'`). This option takes precedence over `stripQueryParams` for matching domains. |
 | `params.stripQueryParams`           | String[] | No       | `[]`    | List of specific query parameter names to strip from the URL (e.g., `['utm_source', 'fbclid']`). Other parameters are preserved. Only applies when the domain does not match `stripQueryParamsForDomains`.                                                                                                                 |
 | `params.stripFragments`             | Boolean  | No       | `false` | If `true`, strips URL fragments (hash, e.g., `#section`) from the URL before analysis.                                                                                                                                                                                                                                     |
-| `params.iabTaxonomyFilters`         | Object   | No       |         | Per-tier filtering configuration for IAB taxonomies. Allows filtering by relevance threshold and limiting the count of categories per tier. See [IAB Taxonomy Filtering](#iab-taxonomy-filtering) section below for details.                                                                                                |
+| `params.iabTaxonomyFilters`         | Object   | No       |         | Per-tier filtering configuration for IAB taxonomies. Allows filtering by relevance threshold and limiting the count of categories per tier. See [IAB Taxonomy Filtering](#iab-taxonomy-filtering) section below for details.                                                                                               |
 
 ### API Response Caching
 
@@ -155,19 +155,20 @@ The module provides optional per-tier filtering for IAB taxonomies to control th
 **Filter Configuration:**
 
 Each tier can have two optional parameters:
+
 - `threshold` (Number): Minimum relevance score (0.0 to 1.0). Categories below this threshold are excluded.
 - `limit` (Number): Maximum number of categories to include for this tier (after filtering and sorting by relevance).
 
 **Available Tiers:**
 
-| Tier Name        | Description                  | API Response Key         |
-| :--------------- | :--------------------------- | :----------------------- |
-| `ContentTier1`   | IAB Content Tier 1           | `iab_tier_1`             |
-| `ContentTier2`   | IAB Content Tier 2           | `iab_tier_2`             |
-| `ContentTier3`   | IAB Content Tier 3           | `iab_tier_3`             |
-| `AudienceTier3`  | IAB Audience Tier 3          | `iab_audience_tier_3`    |
-| `AudienceTier4`  | IAB Audience Tier 4          | `iab_audience_tier_4`    |
-| `AudienceTier5`  | IAB Audience Tier 5          | `iab_audience_tier_5`    |
+| Tier Name       | Description         | API Response Key      |
+| :-------------- | :------------------ | :-------------------- |
+| `ContentTier1`  | IAB Content Tier 1  | `iab_tier_1`          |
+| `ContentTier2`  | IAB Content Tier 2  | `iab_tier_2`          |
+| `ContentTier3`  | IAB Content Tier 3  | `iab_tier_3`          |
+| `AudienceTier3` | IAB Audience Tier 3 | `iab_audience_tier_3` |
+| `AudienceTier4` | IAB Audience Tier 4 | `iab_audience_tier_4` |
+| `AudienceTier5` | IAB Audience Tier 5 | `iab_audience_tier_5` |
 
 **Example with IAB taxonomy filtering:**
 
@@ -227,23 +228,27 @@ The Neuwo RTD module enriches bid requests with contextual data that can be acce
 Listen to the `bidRequested` event to access the enriched ORTB2 data. This event fires early in the auction lifecycle and provides direct access to the Neuwo data:
 
 ```javascript
-pbjs.que.push(function() {
-  pbjs.onEvent('bidRequested', function(bidRequest) {
+pbjs.que.push(function () {
+  pbjs.onEvent("bidRequested", function (bidRequest) {
     // The ortb2 data is available directly on the bidRequest
     const ortb2 = bidRequest.ortb2;
 
     // Extract Neuwo-specific data (from www.neuwo.ai provider)
-    const neuwoSiteData = ortb2?.site?.content?.data?.find(d => d.name === 'www.neuwo.ai');
-    const neuwoUserData = ortb2?.user?.data?.find(d => d.name === 'www.neuwo.ai');
+    const neuwoSiteData = ortb2?.site?.content?.data?.find(
+      (d) => d.name === "www.neuwo.ai"
+    );
+    const neuwoUserData = ortb2?.user?.data?.find(
+      (d) => d.name === "www.neuwo.ai"
+    );
 
     // Use the data in the application
-    console.log('Neuwo Site Content:', neuwoSiteData);
-    console.log('Neuwo User Data:', neuwoUserData);
+    console.log("Neuwo Site Content:", neuwoSiteData);
+    console.log("Neuwo User Data:", neuwoUserData);
 
     // Example: Store in a global variable for later use
     window.neuwoData = {
       siteContent: neuwoSiteData,
-      user: neuwoUserData
+      user: neuwoUserData,
     };
   });
 });
