@@ -491,10 +491,10 @@ describe('optoutAdapterTest', function () {
   describe('interpretResponse', function () {
     // Helper to create standard bidRequest structure
     const createBidRequest = (slots) => ({ data: { slots } });
-    
+
     // Helper to create standard serverResponse structure
     const createServerResponse = (bids) => ({ body: { bids } });
-    
+
     // Standard slot and bid for reuse
     const standardSlot = { id: 'slotA', requestId: 'bidA' };
     const standardBid = { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' };
