@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { config } from 'src/config.js';
 import * as gdprUtils from 'src/utils/gdpr.js';
+import * as utils from 'src/utils.js';
 import { spec } from 'modules/optoutBidAdapter.js';
 
 describe('optoutAdapterTest', function () {
@@ -15,6 +16,13 @@ describe('optoutAdapterTest', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optout',
         params: { adSlot: 'prebid_demo', publisher: '8' }
+      })).to.equal(true);
+    });
+
+    it('valid when publisher + adslot (lowercase) exist', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'optout',
+        params: { adslot: 'prebid_demo', publisher: '8' }
       })).to.equal(true);
     });
 
@@ -37,6 +45,14 @@ describe('optoutAdapterTest', function () {
         bidder: 'optout',
         params: {}
       })).to.equal(false);
+    });
+
+    it('invalid when bid is null', function () {
+      expect(spec.isBidRequestValid(null)).to.equal(false);
+    });
+
+    it('invalid when bid is undefined', function () {
+      expect(spec.isBidRequestValid(undefined)).to.equal(false);
     });
   });
 
@@ -268,6 +284,191 @@ describe('optoutAdapterTest', function () {
 
       expect(requests[0].data).to.not.have.property('ortb2');
     });
+
+    it('includes slot id when params.id is explicitly set', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8', id: 'customId123' },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      expect(requests[0].data.slots[0].id).to.equal('customId123');
+    });
+
+    it('handles when validBidRequests is null', function () {
+      const requests = spec.buildRequests(null, {});
+      expect(requests).to.deep.equal([]);
+    });
+
+    it('handles when validBidRequests is not an array', function () {
+      const requests = spec.buildRequests('not-an-array', {});
+      expect(requests).to.deep.equal([]);
+    });
+
+    it('handles when bidderRequest is null', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, null);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data.gdpr).to.equal(0);
+    });
+
+    it('handles when gdprConsent is a non-object truthy value', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = { gdprConsent: 'some-string' };
+      const requests = spec.buildRequests(br, bidderRequest);
+      expect(requests[0].data.gdpr).to.equal(0);
+      expect(requests[0].url).to.match(/optoutadserving\.com\/prebid\/display/);
+    });
+
+    it('merges customs from ortb2.site.ext.data', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = {
+        ortb2: {
+          site: { ext: { data: { siteKey: 'siteValue' } } }
+        }
+      };
+
+      const requests = spec.buildRequests(br, bidderRequest);
+      expect(requests[0].data.customs.siteKey).to.equal('siteValue');
+    });
+
+    it('merges customs from ortb2.app.ext.data', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = {
+        ortb2: {
+          app: { ext: { data: { appKey: 'appValue' } } }
+        }
+      };
+
+      const requests = spec.buildRequests(br, bidderRequest);
+      expect(requests[0].data.customs.appKey).to.equal('appValue');
+    });
+
+    it('merges customs from ortb2.user.ext.data', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = {
+        ortb2: {
+          user: { ext: { data: { userKey: 'userValue' } } }
+        }
+      };
+
+      const requests = spec.buildRequests(br, bidderRequest);
+      expect(requests[0].data.customs.userKey).to.equal('userValue');
+    });
+
+    it('does not include slot.customs when params.customs is empty/undefined', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      expect(requests[0].data.slots[0]).to.not.have.property('customs');
+    });
+
+    it('handles sanitizeUrl with invalid URL gracefully and logs warning', function () {
+      const logWarnSpy = sinon.spy(utils, 'logWarn');
+
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = {
+        refererInfo: { canonicalUrl: 'not-a-valid-url://bad' }
+      };
+
+      const requests = spec.buildRequests(br, bidderRequest);
+      // sanitizeUrl returns empty string on error
+      expect(requests[0].data.url).to.equal('');
+      // Should log a warning about the invalid URL
+      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(logWarnSpy.firstCall.args[0]).to.include('optout: Invalid URL provided');
+    });
+
+    it('builds slots with lowercase adslot param', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adslot: 'lowercase_slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      const slot = requests[0].data.slots[0];
+
+      expect(slot.adSlot).to.equal('lowercase_slot');
+      expect(slot.requestId).to.equal('1');
+    });
+
+    it('normalizes customs with non-object input (returns empty object)', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8', customs: 'not-an-object' },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      expect(requests[0].data.slots[0]).to.not.have.property('customs');
+    });
+
+    it('normalizes customs with undefined input', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8', customs: undefined },
+        bidId: '1'
+      }];
+
+      const requests = spec.buildRequests(br, {});
+      expect(requests[0].data.slots[0]).to.not.have.property('customs');
+    });
+
+    it('handles gdprConsent.consentString as empty when missing', function () {
+      const br = [{
+        bidder: 'optout',
+        params: { adSlot: 'slot', publisher: '8' },
+        bidId: '1'
+      }];
+
+      const bidderRequest = {
+        gdprConsent: {
+          gdprApplies: true,
+          apiVersion: 2
+        }
+      };
+
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(false);
+
+      const requests = spec.buildRequests(br, bidderRequest);
+      expect(requests[0].data.consent).to.equal('');
+    });
   });
 
   describe('buildRequests (GDPR Purpose 1)', function () {
@@ -405,6 +606,272 @@ describe('optoutAdapterTest', function () {
       const out = spec.interpretResponse(serverResponse, bidRequest);
       expect(out).to.deep.equal([]);
     });
+
+    it('drops bids with cpm = 0', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 0, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with negative cpm', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: -1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with NaN cpm', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: NaN, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with cpm = null', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: null, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with width = 0', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: 0, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with negative width', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: -300, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with non-finite width', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: Infinity, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with height = 0', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 0, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with negative height', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: -250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('drops bids with non-finite height', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: Infinity, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('defaults ttl to 300 when missing', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', creativeId: 'c1' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out[0].ttl).to.equal(300);
+    });
+
+    it('passes through optOutExt and meta when present', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'bidA',
+            cpm: 1,
+            currency: 'EUR',
+            width: 300,
+            height: 250,
+            ad: '<div/>',
+            ttl: 300,
+            creativeId: 'c1',
+            optOutExt: { foo: 'bar' },
+            meta: { advertiserDomains: ['example.com'] }
+          }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out[0].optOutExt).to.deep.equal({ foo: 'bar' });
+      expect(out[0].meta).to.deep.equal({ advertiserDomains: ['example.com'] });
+    });
+
+    it('uses requestId as creativeId fallback when creativeId is missing', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'bidA',
+            cpm: 1,
+            currency: 'EUR',
+            width: 300,
+            height: 250,
+            ad: '<div/>',
+            ttl: 300
+            // creativeId intentionally missing
+          }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].creativeId).to.equal('bidA'); // falls back to requestId
+    });
+
+    it('handles when serverResponse is null', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const out = spec.interpretResponse(null, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('handles when serverResponse is undefined', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const out = spec.interpretResponse(undefined, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('handles when serverResponse.body is null', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const out = spec.interpretResponse({ body: null }, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('handles when serverResponse.body is undefined', function () {
+      const bidRequest = {
+        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
+      };
+
+      const out = spec.interpretResponse({ body: undefined }, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
+
+    it('handles when bidRequest.data.slots is missing', function () {
+      const bidRequest = { data: {} };
+
+      const serverResponse = {
+        body: {
+          bids: [{ requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponse, bidRequest);
+      expect(out).to.deep.equal([]);
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -465,6 +932,41 @@ describe('optoutAdapterTest', function () {
       );
 
       expect(out).to.deep.equal([]);
+    });
+
+    it('handles missing consentString gracefully', function () {
+      sinon.stub(gdprUtils, 'hasPurpose1Consent').returns(true);
+
+      const out = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: true }
+      );
+
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].url).to.include('gdpr_consent=');
+    });
+
+    it('handles empty consentString', function () {
+      const out = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: false, consentString: '' }
+      );
+
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].url).to.include('gdpr_consent=');
+    });
+
+    it('handles gdprApplies as non-boolean (converts to 0)', function () {
+      const out = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: 'not-a-boolean', consentString: 'abc' }
+      );
+
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].url).to.include('gdpr=0');
     });
   });
 });
