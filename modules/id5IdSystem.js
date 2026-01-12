@@ -119,7 +119,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {Array<Segment>} [segments] - A list of segments to push to partners. Supported only in multiplexing.
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
  * @property {string} [gamTargetingPrefix] - When set, the GAM targeting tags will be set and use the specified prefix, for example 'id5'.
- * @property {string} [exposeTargeting] - When set, the ID5 targeting consumer mechanism will be enabled.
+ * @property {boolean} [exposeTargeting] - When set, the ID5 targeting consumer mechanism will be enabled.
  */
 
 /**
