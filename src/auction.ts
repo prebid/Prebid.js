@@ -371,7 +371,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         if (bidRequest.alwaysHasCapacity && !config.getConfig('forceMaxRequestsPerOrigin')) {
           return false;
         }
-                
+
         // if we have no previous info on this source just let them through
         if (sourceInfo[source]) {
           if (sourceInfo[source].SRA === false) {

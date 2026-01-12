@@ -595,7 +595,7 @@ const adapterManager = {
             }),
             auctionStart: auctionStart,
             timeout: s2sConfig.timeout,
-            src: S2S.SRC, 
+            src: S2S.SRC,
             refererInfo,
             metrics,
             alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
