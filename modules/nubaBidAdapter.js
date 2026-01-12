@@ -4,7 +4,7 @@ import { isBidRequestValid, buildRequests, interpretResponse } from '../librarie
 
 const BIDDER_CODE = 'nuba';
 
-const AD_URL = 'https://ads.nuba.io/pserver';
+const AD_URL = 'https://ads.nuba.io/pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
