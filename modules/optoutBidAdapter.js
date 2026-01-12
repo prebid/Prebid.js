@@ -173,7 +173,7 @@ export const spec = {
       } else {
         slot.id = adSlotValue;
       }
-      
+
       if (Object.keys(slotCustoms).length) slot.customs = slotCustoms;
       return slot;
     });
