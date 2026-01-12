@@ -27,7 +27,6 @@
   "priceFloors",
   "visxBidAdapter",
   "currency",
-  "justIdSystem",
   "dasBidAdapter",
   "paapi",
   "paapiForGpt",
