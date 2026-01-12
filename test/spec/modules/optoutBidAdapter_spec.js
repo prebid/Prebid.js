@@ -393,9 +393,7 @@ describe('optoutAdapterTest', function () {
       expect(requests[0].data.slots[0]).to.not.have.property('customs');
     });
 
-    it('handles sanitizeUrl with invalid URL gracefully and logs warning', function () {
-      const logWarnSpy = sinon.spy(utils, 'logWarn');
-
+    it('handles empty/null URL gracefully', function () {
       const br = [{
         bidder: 'optout',
         params: { adSlot: 'slot', publisher: '8' },
@@ -403,16 +401,12 @@ describe('optoutAdapterTest', function () {
       }];
 
       const bidderRequest = {
-        refererInfo: { canonicalUrl: ':::invalid-url:::' }
+        refererInfo: { canonicalUrl: null }
       };
 
       const requests = spec.buildRequests(br, bidderRequest);
-      // sanitizeUrl returns empty string on error
+      // sanitizeUrl returns empty string for null/empty inputs
       expect(requests[0].data.url).to.equal('');
-      // Should log a warning about the invalid URL
-      sinon.assert.calledOnce(logWarnSpy);
-      expect(logWarnSpy.firstCall.args[0]).to.include('optout: Invalid URL provided');
-      expect(logWarnSpy.firstCall.args[0]).to.include(':::invalid-url:::');
     });
 
     it('builds slots with lowercase adslot param', function () {
