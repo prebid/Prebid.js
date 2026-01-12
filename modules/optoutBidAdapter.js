@@ -1,23 +1,38 @@
-import { deepAccess } from '../src/utils.js';
+import { deepAccess, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'optout';
 const GVLID = 227;
+const DEFAULT_TTL = 300;
+const DEFAULT_CURRENCY = 'EUR';
 
+/**
+ * Sanitizes a URL by removing query parameters and fragments to prevent data leakage
+ * @param {string} rawUrl - The URL to sanitize
+ * @returns {string} Sanitized URL (origin + pathname) or empty string if invalid
+ */
 function sanitizeUrl(rawUrl) {
-  if (!rawUrl) return rawUrl;
+  if (!rawUrl) return '';
   try {
     const u = new URL(rawUrl, deepAccess(window, 'location.href'));
     // Avoid leaking query params / fragments
     return `${u.origin}${u.pathname}`;
   } catch (e) {
     // If it's not a valid URL, return an empty string to avoid leaking potentially sensitive data
+    logWarn(`${BIDDER_CODE}: Invalid URL provided: ${rawUrl}`);
     return '';
   }
 }
 
+/**
+ * Gets the domain/URL from bidderRequest with fallbacks
+ * Priority: canonicalUrl > page > window.location.href
+ * @param {Object} bidderRequest - The bidder request object
+ * @returns {string} Sanitized domain URL
+ */
 function getDomain(bidderRequest) {
   const fromCanonical = deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
   if (fromCanonical) return sanitizeUrl(fromCanonical);
@@ -29,10 +44,14 @@ function getDomain(bidderRequest) {
   return sanitizeUrl(href);
 }
 
+/**
+ * Gets currency configuration from Prebid config
+ * @returns {Object} Currency config object with adServerCurrency and granularityMultiplier
+ */
 function getCurrency() {
-  let cur = config.getConfig('currency');
-  if (cur === undefined) {
-    cur = { adServerCurrency: 'EUR', granularityMultiplier: 1 };
+  const cur = config.getConfig('currency');
+  if (!cur) {
+    return { adServerCurrency: DEFAULT_CURRENCY, granularityMultiplier: 1 };
   }
   return cur;
 }
@@ -88,13 +107,25 @@ function normalizeCustoms(input) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  supportedMediaTypes: [BANNER],
 
+  /**
+   * Determines if a bid request is valid
+   * @param {Object} bid - The bid to validate
+   * @returns {boolean} True if valid, false otherwise
+   */
   isBidRequestValid: function (bid) {
     const params = bid && bid.params;
     const adSlot = params && (params.adSlot || params.adslot);
     return !!(params && params.publisher && adSlot);
   },
 
+  /**
+   * Builds bid requests from valid bid requests
+   * @param {Array} validBidRequests - Array of valid bid requests
+   * @param {Object} bidderRequest - The bidder request object
+   * @returns {Array} Array containing the bid request object
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!Array.isArray(validBidRequests) || validBidRequests.length === 0) {
       return [];
@@ -127,15 +158,20 @@ export const spec = {
 
     const slots = validBidRequests.map((b) => {
       const slotCustoms = normalizeCustoms(b?.params?.customs);
+      const adSlotValue = b.params.adSlot || b.params.adslot;
 
       const slot = {
-        adSlot: b.params.adSlot,
+        adSlot: adSlotValue,
         requestId: b.bidId,
       };
 
+      // Use explicit id if provided, otherwise use adSlot value
       if (b.params && b.params.id != null) {
         slot.id = String(b.params.id);
+      } else {
+        slot.id = adSlotValue;
       }
+      
       if (Object.keys(slotCustoms).length) slot.customs = slotCustoms;
       return slot;
     });
@@ -176,6 +212,12 @@ export const spec = {
     ];
   },
 
+  /**
+   * Interprets the server response and returns valid bids
+   * @param {Object} serverResponse - The server response object
+   * @param {Object} bidRequest - The original bid request
+   * @returns {Array} Array of valid bid objects
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     const body = serverResponse?.body;
 
@@ -221,8 +263,8 @@ export const spec = {
           width: w,
           height: h,
           ad: bid.ad,
-          ttl: Number(bid.ttl) || 300,
-          creativeId: bid.creativeId,
+          ttl: Number(bid.ttl) || DEFAULT_TTL,
+          creativeId: bid.creativeId || String(bid.requestId),
           netRevenue: true,
           optOutExt: bid.optOutExt,
           meta: bid.meta
@@ -231,17 +273,25 @@ export const spec = {
       .filter(Boolean);
   },
 
+  /**
+   * Returns user sync pixels/iframes based on consent
+   * @param {Object} syncOptions - Sync options from Prebid
+   * @param {Array} responses - Server responses
+   * @param {Object} gdprConsent - GDPR consent data
+   * @returns {Array} Array of user sync objects
+   */
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (!gdprConsent || typeof gdprConsent !== 'object') return [];
 
-    const gdpr =
-      typeof gdprConsent.gdprApplies === 'boolean'
-        ? Number(gdprConsent.gdprApplies)
-        : 0;
+    const gdprApplies = typeof gdprConsent.gdprApplies === 'boolean'
+      ? gdprConsent.gdprApplies
+      : false;
+
+    const gdpr = gdprApplies ? 1 : 0;
 
     if (
       syncOptions.iframeEnabled &&
-      (!gdprConsent.gdprApplies || hasPurpose1Consent(gdprConsent))
+      (!gdprApplies || hasPurpose1Consent(gdprConsent))
     ) {
       return [
         {
