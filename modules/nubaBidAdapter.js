@@ -12,8 +12,7 @@ export const spec = {
 
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
-  interpretResponse,
-  getUserSyncs: () => {},
+  interpretResponse
 };
 
 registerBidder(spec);
