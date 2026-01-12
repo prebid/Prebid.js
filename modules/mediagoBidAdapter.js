@@ -290,7 +290,6 @@ function getParam(validBidRequests, bidderRequest) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
    *
