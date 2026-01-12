@@ -510,24 +510,26 @@ describe('optoutAdapterTest', function () {
   });
 
   describe('interpretResponse', function () {
-    it('maps bids correctly using slot id or requestId', function () {
-      const bidRequest = {
-        data: {
-          slots: [
-            { id: 'slotA', requestId: 'bidA' },
-            { id: 'slotB', requestId: 'bidB' }
-          ]
-        }
-      };
+    // Helper to create standard bidRequest structure
+    const createBidRequest = (slots) => ({ data: { slots } });
+    
+    // Helper to create standard serverResponse structure
+    const createServerResponse = (bids) => ({ body: { bids } });
+    
+    // Standard slot and bid for reuse
+    const standardSlot = { id: 'slotA', requestId: 'bidA' };
+    const standardBid = { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' };
 
-      const serverResponse = {
-        body: {
-          bids: [
-            { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', ttl: 300, creativeId: 'c1' },
-            { requestId: 'slotB', cpm: 2, currency: 'EUR', width: 728, height: 90, ad: '<div/>', ttl: 300, creativeId: 'c2' }
-          ]
-        }
-      };
+    it('maps bids correctly using slot id or requestId', function () {
+      const bidRequest = createBidRequest([
+        { id: 'slotA', requestId: 'bidA' },
+        { id: 'slotB', requestId: 'bidB' }
+      ]);
+
+      const serverResponse = createServerResponse([
+        { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', ttl: 300, creativeId: 'c1' },
+        { requestId: 'slotB', cpm: 2, currency: 'EUR', width: 728, height: 90, ad: '<div/>', ttl: 300, creativeId: 'c2' }
+      ]);
 
       const out = spec.interpretResponse(serverResponse, bidRequest);
       expect(out).to.have.lengthOf(2);
@@ -535,17 +537,10 @@ describe('optoutAdapterTest', function () {
     });
 
     it('filters bids whose requestId does not map to a sent slot/requestId', function () {
-      const bidRequest = {
-        data: {
-          slots: [{ id: 'slotA', requestId: 'bidA' }]
-        }
-      };
-
-      const serverResponse = {
-        body: {
-          bids: [{ requestId: 'unknown', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', ttl: 300, creativeId: 'c1' }]
-        }
-      };
+      const bidRequest = createBidRequest([standardSlot]);
+      const serverResponse = createServerResponse([
+        { requestId: 'unknown', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>', ttl: 300, creativeId: 'c1' }
+      ]);
 
       const out = spec.interpretResponse(serverResponse, bidRequest);
       expect(out).to.deep.equal([]);
@@ -553,12 +548,7 @@ describe('optoutAdapterTest', function () {
 
     it('supports serverResponse.body as an array (defensive parsing)', function () {
       // This also verifies numeric coercion is robust if server returns strings.
-      const bidRequest = {
-        data: {
-          slots: [{ id: 'slotA', requestId: 'bidA' }]
-        }
-      };
-
+      const bidRequest = createBidRequest([standardSlot]);
       const serverResponse = {
         body: [{ requestId: 'bidA', cpm: '1.2', currency: 'EUR', width: '300', height: '250', ad: '<div/>', ttl: '120', creativeId: 'c1' }]
       };
@@ -570,38 +560,24 @@ describe('optoutAdapterTest', function () {
     });
 
     it('drops bids with missing/invalid requestId', function () {
-      const bidRequest = {
-        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
-      };
-
-      const serverResponse = {
-        body: {
-          bids: [
-            { requestId: null, cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' },
-            { /* missing requestId */ cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }
-          ]
-        }
-      };
+      const bidRequest = createBidRequest([standardSlot]);
+      const serverResponse = createServerResponse([
+        { requestId: null, cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' },
+        { /* missing requestId */ cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' }
+      ]);
 
       const out = spec.interpretResponse(serverResponse, bidRequest);
       expect(out).to.deep.equal([]);
     });
 
     it('drops incomplete bids missing required fields', function () {
-      const bidRequest = {
-        data: { slots: [{ id: 'slotA', requestId: 'bidA' }] }
-      };
-
-      const serverResponse = {
-        body: {
-          bids: [
-            { requestId: 'bidA', cpm: 1, /* currency missing */ width: 300, height: 250, ad: '<div/>' },
-            { requestId: 'bidA', cpm: 1, currency: 'EUR', /* width missing */ height: 250, ad: '<div/>' },
-            { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, /* height missing */ ad: '<div/>' },
-            { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250 /* ad missing */ }
-          ]
-        }
-      };
+      const bidRequest = createBidRequest([standardSlot]);
+      const serverResponse = createServerResponse([
+        { requestId: 'bidA', cpm: 1, /* currency missing */ width: 300, height: 250, ad: '<div/>' },
+        { requestId: 'bidA', cpm: 1, currency: 'EUR', /* width missing */ height: 250, ad: '<div/>' },
+        { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, /* height missing */ ad: '<div/>' },
+        { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250 /* ad missing */ }
+      ]);
 
       const out = spec.interpretResponse(serverResponse, bidRequest);
       expect(out).to.deep.equal([]);

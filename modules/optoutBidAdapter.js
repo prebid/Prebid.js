@@ -19,7 +19,9 @@ function sanitizeUrl(rawUrl) {
   try {
     const u = new URL(rawUrl, deepAccess(window, 'location.href'));
     // Avoid leaking query params / fragments
-    return `${u.origin}${u.pathname}`;
+    const sanitized = `${u.origin}${u.pathname}`;
+    // Ensure we never return null or undefined as a string
+    return sanitized && sanitized !== 'null' && sanitized !== 'undefined' ? sanitized : '';
   } catch (e) {
     // If it's not a valid URL, return an empty string to avoid leaking potentially sensitive data
     logWarn(`${BIDDER_CODE}: Invalid URL provided: ${rawUrl}`);
