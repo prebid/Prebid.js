@@ -403,15 +403,16 @@ describe('optoutAdapterTest', function () {
       }];
 
       const bidderRequest = {
-        refererInfo: { canonicalUrl: 'not-a-valid-url://bad' }
+        refererInfo: { canonicalUrl: ':::invalid-url:::' }
       };
 
       const requests = spec.buildRequests(br, bidderRequest);
       // sanitizeUrl returns empty string on error
       expect(requests[0].data.url).to.equal('');
       // Should log a warning about the invalid URL
-      expect(logWarnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledOnce(logWarnSpy);
       expect(logWarnSpy.firstCall.args[0]).to.include('optout: Invalid URL provided');
+      expect(logWarnSpy.firstCall.args[0]).to.include(':::invalid-url:::');
     });
 
     it('builds slots with lowercase adslot param', function () {
