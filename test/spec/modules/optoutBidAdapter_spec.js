@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { config } from 'src/config.js';
 import * as gdprUtils from 'src/utils/gdpr.js';
-import * as utils from 'src/utils.js';
 import { spec } from 'modules/optoutBidAdapter.js';
 
 describe('optoutAdapterTest', function () {
