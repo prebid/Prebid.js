@@ -1,416 +1,166 @@
 # LocID User ID Submodule
 
-The LocID User ID submodule provides ORTB2-first identity solutions for display advertising with deterministic holdout for lift measurement. **Version 2.0** is first-party only with no remote calls.
-
 ## Overview
 
-LocID offers two identity generation strategies:
-- **Publisher**: Use existing LocID values provided by the publisher  
-- **Device**: Generate and persist first-party device IDs (default)
+The LocID User ID submodule retrieves a LocID from a configured first-party endpoint, honors applicable privacy framework processing restrictions when present, persists the identifier using Prebid's storage framework, and exposes the ID to bidders via the standard EIDs interface.
 
-The module follows privacy-safe practices with no PII collection, no fingerprinting, respects consent frameworks, and includes deterministic A/B testing with exposure logging.
+LocID is a geospatial identifier provided by Digital Envoy. The endpoint is a publisher-controlled, first-party or on-premises service operated by the publisher, GrowthCode, or Digital Envoy. The endpoint derives location information server-side. The browser module does not transmit IP addresses.
 
-## Key Features (v2.0)
-
-✅ **ORTB2-first**: Injects identity signals into `ortb2.user.ext.data`  
-✅ **First-party only**: No remote endpoints or third-party calls  
-✅ **Deterministic holdout**: 90/10 split for lift measurement  
-✅ **Exposure logging**: Best-effort beacon/fetch logging for analytics  
-✅ **Non-blocking**: Error handling ensures auctions never fail  
-✅ **Consent-safe**: Full GDPR, CCPA, and GPP support
-
-## Module Configuration
-
-### Basic Configuration
+## Configuration
 
 ```javascript
 pbjs.setConfig({
   userSync: {
     userIds: [{
-      name: 'locId',
+      name: 'locid',
       params: {
-        source: 'device', // 'publisher' or 'device' (default)
-        // Holdout configuration (optional)
-        holdoutOverride: undefined, // 'forceControl', 'forceTreatment', or undefined for 90/10 split
-        // Exposure logging (optional)
-        loggingEndpoint: 'https://your-analytics-endpoint.com/log'
+        endpoint: 'https://id.example.com/locid'
       },
       storage: {
-        type: 'localStorage', // 'localStorage', 'cookie', or 'localStorage&cookie'
+        type: 'html5',
         name: '_locid',
-        expires: 30, // days
-        refreshInSeconds: 86400 // 24 hours
+        expires: 7
       }
     }]
   }
 });
 ```
 
-### Publisher Source Configuration
+## Parameters
 
-Use when you have existing LocID values to provide directly:
+| Parameter               | Type    | Required | Default                 | Description                                                    |
+| ----------------------- | ------- | -------- | ----------------------- | -------------------------------------------------------------- |
+| `endpoint`              | String  | Yes      | –                       | First-party LocID endpoint (see Endpoint Requirements below)   |
+| `altId`                 | String  | No       | –                       | Alternative identifier appended as `?alt_id=` query parameter  |
+| `timeoutMs`             | Number  | No       | `800`                   | Request timeout in milliseconds                                |
+| `withCredentials`       | Boolean | No       | `false`                 | Whether to include credentials on the request                  |
+| `apiKey`                | String  | No       | –                       | API key passed via the `x-api-key` request header              |
+| `requirePrivacySignals` | Boolean | No       | `false`                 | If `true`, requires privacy signals to be present              |
+| `privacyMode`           | String  | No       | `'allowWithoutSignals'` | `'allowWithoutSignals'` or `'requireSignals'`                  |
 
-```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'publisher'
-      },
-      value: 'your-existing-locid-value'
-      // No storage needed for publisher source
-    }]
-  }
-});
+### Endpoint Requirements
+
+The `endpoint` parameter must point to a **first-party proxy** or **on-premises service**—not the raw LocID Encrypt API directly.
+
+The LocID Encrypt API (`GET /encrypt?ip=<IP>&alt_id=<ALT_ID>`) requires the client IP address as a parameter. Since browsers cannot reliably determine their own public IP, a server-side proxy is required to:
+
+1. Receive the request from the browser
+2. Extract the client IP from the incoming connection
+3. Forward the request to the LocID Encrypt API with the IP injected
+4. Return the response (`tx_cloc`, `stable_cloc`) to the browser
+
+This architecture ensures the browser never transmits IP addresses and the LocID service receives accurate location data.
+
+If you configure `altId`, the module appends it as `?alt_id=<value>` to the endpoint URL. Your proxy can then forward this to the LocID API.
+
+### CORS Configuration
+
+If your endpoint is on a different origin or you set `withCredentials: true`, ensure your server returns appropriate CORS headers:
+
+```http
+Access-Control-Allow-Origin: <your-origin>
+Access-Control-Allow-Credentials: true
 ```
 
-### Device Source Configuration
+When using `withCredentials`, the server cannot use `Access-Control-Allow-Origin: *`; it must specify the exact origin.
 
-Generates and persists first-party device identifiers:
+### Storage Configuration
 
-```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'device'
-      },
-      storage: {
-        type: 'localStorage&cookie', // Fallback from localStorage to cookie
-        name: '_locid',
-        expires: 30,
-        refreshInSeconds: 86400 // Refresh daily
-      }
-    }]
-  }
-});
-```
+| Parameter | Required | Description      |
+| --------- | -------- | ---------------- |
+| `type`    | Yes      | `'html5'`        |
+| `name`    | Yes      | Storage key name |
+| `expires` | No       | TTL in days      |
 
-## ORTB2 Data Output
+## Operation Flow
 
-LocID automatically injects the following into `ortb2.user.ext.data`:
-
-```javascript
-{
-  "locid_confidence": 1.0,           // ID confidence (constant 1.0 in v2.0)
-  "locid_stability_days": 15,        // Days since ID was first stored  
-  "locid_audiences": []              // Audience segments (empty in v2.0)
-}
-```
-
-**Holdout Behavior:**
-- 90% of users (treatment): Get ORTB2 data injection + exposure logging
-- 10% of users (control): Get no ORTB2 data + control logging
-- Deterministic assignment based on `hash(locid) mod 10`
-
-## Storage Configuration
-
-### Storage Types
-- `localStorage`: HTML5 localStorage only
-- `cookie`: HTTP cookies only  
-- `localStorage&cookie`: Try localStorage first, fallback to cookies
-- `cookie&localStorage`: Try cookies first, fallback to localStorage
-
-### Storage Parameters
-- `name`: Storage key name (default: `_locid`)
-- `expires`: Expiration in days (default: 30)
-- `refreshInSeconds`: Time before refresh in seconds (default: 86400)
-
-## Exposure Logging for Lift Measurement
-
-LocID logs exposure data for A/B testing analysis when `loggingEndpoint` is configured:
-
-```javascript
-// Example log payload sent via navigator.sendBeacon()
-{
-  "auction_id": "abc123",
-  "is_holdout": false,
-  "locid_present": true,
-  "signals_emitted": 3,
-  "signal_names": ["locid_confidence", "locid_stability_days", "locid_audiences"],
-  "timestamp": 1640995200000
-}
-```
-
-**Fallback Strategy:**
-1. `navigator.sendBeacon()` (preferred)
-2. `fetch()` with `keepalive: true` 
-3. Skip logging (never blocks)
-
-## GAM Integration
-
-### PPID (Publisher Provided ID) Integration
-
-Configure LocID to output GAM-compatible PPID format:
-
-```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'device',
-        gam: {
-          enabled: true,
-          mode: 'ppid',
-          key: 'locid',
-          maxLen: 150
-        }
-      },
-      storage: { /* storage config */ }
-    }]
-  }
-});
-```
-
-Then wire into GAM in your page:
-
-```javascript
-// Wait for LocID to be available
-pbjs.getUserIds((userIds) => {
-  if (userIds.locId && userIds._gam && userIds._gam.ppid) {
-    googletag.cmd.push(() => {
-      googletag.pubads().setPublisherProvidedId({
-        source: 'locid.com',
-        value: userIds._gam.ppid
-      });
-    });
-  }
-});
-
-// Or check before ad requests
-googletag.cmd.push(() => {
-  const userIds = pbjs.getUserIds();
-  if (userIds.locId && userIds._gam && userIds._gam.ppid) {
-    googletag.pubads().setPublisherProvidedId({
-      source: 'locid.com', 
-      value: userIds._gam.ppid
-    });
-  }
-  // Define ad slots and display ads
-});
-```
-
-### Encrypted Signals Integration (Future)
-
-Configure for GAM encrypted signals:
-
-```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'device',
-        gam: {
-          enabled: true,
-          mode: 'encryptedSignal',
-          key: 'locid_encrypted'
-        }
-      },
-      storage: { /* storage config */ }
-    }]
-  }
-});
-```
-
-Publisher integration snippet:
-
-```javascript
-// Wait for LocID encrypted signal
-pbjs.getUserIds((userIds) => {
-  if (userIds.locId && userIds._gam && userIds._gam.encryptedSignal) {
-    googletag.cmd.push(() => {
-      googletag.pubads().setEncryptedSignalProviders([{
-        id: 'locid.com',
-        signalSource: userIds._gam.encryptedSignal
-      }]);
-    });
-  }
-});
-```
+1. The module checks Prebid storage for an existing LocID.
+2. If no valid ID is present, it issues a GET request to the configured endpoint.
+3. The endpoint determines the user's location server-side and returns an encrypted LocID.
+4. The module extracts `tx_cloc` from the response, falling back to `stable_cloc` if needed.
+5. The ID is cached according to the configured storage settings.
+6. The ID is included in bid requests via the EIDs array.
 
 ## Consent Handling
 
-LocID respects privacy consent frameworks:
+LocID operates under Legitimate Interest (LI). By default, the module proceeds when no privacy framework signals are present. When privacy signals exist, they are enforced. Privacy frameworks can only stop LocID via global processing restrictions; they do not enable it.
 
-### GDPR/TCF
-- When GDPR applies and consent is missing/denied, storage operations are skipped
-- ID generation still works for `source: 'publisher'` (no storage required)
-- Publisher-provided IDs can still be passed through when legally permissible
+### Legal Basis and IP-Based Identifiers
 
-### US Privacy (CCPA)
-- Detects US Privacy opt-out signal (`1Y--`)
-- Skips storage operations when opt-out is detected
-- ID generation continues for non-storage sources
+LocID is derived from IP-based geolocation. Because IP addresses are transient and shared, there is no meaningful IP-level choice to express. Privacy frameworks are only consulted to honor rare, publisher- or regulator-level instructions to stop all processing. When such a global processing restriction is signaled, LocID respects it by returning `undefined`.
 
-### GPP (Global Privacy Platform)
-- Monitors GPP signals for opt-out indicators
-- Respects child-sensitive data consent requirements
-- Integrates with Prebid's consent management
+### Default Behavior (allowWithoutSignals)
 
-### Example with Consent Handling
+- **No privacy signals present**: Module proceeds and fetches the ID
+- **Privacy signals present**: Enforcement rules apply (see below)
+
+### Strict Mode (requireSignals)
+
+Set `requirePrivacySignals: true` or `privacyMode: 'requireSignals'` to require privacy signals:
 
 ```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'device'
-      },
-      storage: {
-        type: 'localStorage',
-        name: '_locid',
-        expires: 30
-      }
-    }]
-  }
-});
-
-// LocID will automatically:
-// 1. Check GDPR consent status
-// 2. Check US Privacy opt-out
-// 3. Check GPP signals
-// 4. Only store IDs when consent allows
-// 5. Generate IDs regardless (for immediate use)
-```
-
-## Bidder Integration
-
-LocID automatically provides standardized userId and EID formats:
-
-### userId Object
-```javascript
-{
-  locId: "550e8400-e29b-41d4-a716-446655440000"
+params: {
+  endpoint: 'https://id.example.com/locid',
+  requirePrivacySignals: true
 }
 ```
 
-### EID Format
+In strict mode, the module returns `undefined` if no privacy signals are present.
+
+### Privacy Signal Enforcement
+
+When privacy signals **are** present, the module does not fetch or return an ID if any of the following apply:
+
+- GDPR applies AND CMP artifacts are present, but required framework data is missing (no consent string)
+- GDPR applies and vendor permission is not granted for gvlid 3384 (when vendorData is available)
+- The US Privacy string indicates a global processing restriction (third character is 'Y')
+- GPP signals indicate an applicable processing restriction
+
+When GDPR applies but `vendorData` is not available in the consent object, the module logs a warning and proceeds. This allows operation in environments where TCF vendor data is not yet parsed, but publishers should verify vendor permissions are being enforced upstream.
+
+### Privacy Signals Detection
+
+The module considers privacy signals "present" if any of the following exist:
+
+- `consentString` (TCF consent string from CMP)
+- `vendorData` (TCF vendor data from CMP)
+- `uspConsent` (US Privacy string)
+- `gppConsent` (GPP consent data)
+- Data from `uspDataHandler` or `gppDataHandler`
+
+**Important:** `gdprApplies` alone does NOT constitute a privacy signal. A publisher may indicate GDPR jurisdiction without having a CMP installed. TCF framework data is only required when actual CMP artifacts (`consentString` or `vendorData`) are present. This supports Legitimate Interest-based operation in deployments without a full TCF implementation.
+
+## EID Output
+
+When available, the LocID is exposed as:
+
 ```javascript
 {
   source: "locid.com",
   uids: [{
-    id: "550e8400-e29b-41d4-a716-446655440000",
-    atype: 1
+    id: "<locid-value>",
+    atype: 3384
   }]
 }
 ```
 
-## Advanced Configuration Examples
+## Identifier Type vs Vendor ID
 
-### Multi-Storage with Refresh Logic
-```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'device'
-      },
-      storage: {
-        type: 'localStorage&cookie',
-        name: '_locid_primary',
-        expires: 30,
-        refreshInSeconds: 3600 // Refresh every hour
-      }
-    }]
-  }
-});
-```
+This module uses two numeric identifiers:
 
-### Holdout Override for Testing
-```javascript
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'locId',
-      params: {
-        source: 'device',
-        holdoutOverride: 'forceTreatment', // Force into treatment for testing
-        loggingEndpoint: 'https://your-analytics.com/log'
-      },
-      storage: {
-        type: 'localStorage',
-        name: '_locid_test',
-        expires: 30
-      }
-    }]
-  }
-});
-```
+- **`gvlid: 3384`** — The IAB TCF Global Vendor List ID for Digital Envoy. This identifies the vendor for consent purposes under the Transparency and Consent Framework.
+- **`atype: 3384`** — The OpenRTB Extended Identifiers (EID) `atype` field. LocID's technical documentation specifies `3384` as the required atype value for demand partner recognition in the bidstream.
 
-## Troubleshooting
-
-### Enable Debug Logging
-LocID uses Prebid's standard logging. Enable with:
+## Debugging
 
 ```javascript
-pbjs.setConfig({
-  debug: true
-});
+pbjs.getUserIds().locid
+pbjs.refreshUserIds()
+localStorage.getItem('_locid')
 ```
 
-Look for log messages prefixed with "LocID:" in the browser console.
+## Validation Checklist
 
-### Common Issues
-
-**Issue**: No ORTB2 data appearing
-- **Check**: Verify user is not in holdout control group (check `holdoutOverride`)
-- **Check**: Ensure valid consent exists (GDPR/CCPA/GPP)
-- **Check**: Console for LocID error messages about ID generation
-
-**Issue**: ID not persisting
-- **Check**: Verify storage configuration is correct
-- **Check**: Check browser's privacy settings allow localStorage/cookies
-- **Check**: Verify consent status (GDPR/CCPA/GPP)
-
-**Issue**: Exposure logging not working
-- **Check**: Verify `loggingEndpoint` is configured correctly
-- **Check**: Check browser developer tools Network tab for beacon/fetch calls
-- **Check**: Ensure endpoint accepts POST requests with JSON data
-
-**Issue**: GAM integration not working
-- **Check**: Verify GAM configuration has `enabled: true`
-- **Check**: Ensure GPT integration code runs after Prebid user ID resolution
-- **Check**: Confirm userIds object has both `locId` and `_gam` properties
-
-### Console Commands for Testing
-
-```javascript
-// Check current LocID value
-pbjs.getUserIds();
-
-// Force refresh user IDs
-pbjs.refreshUserIds();
-
-// Check stored values (browser dev tools)
-localStorage.getItem('_locid'); // For localStorage
-document.cookie; // For cookies
-
-// Clear stored ID for testing
-localStorage.removeItem('_locid');
-```
-
-## Extension Points for Future Features
-
-The LocID module is designed with extension points for:
-
-1. **Video Support**: EID configurations can be extended for video-specific sources
-2. **CTV Integration**: Additional endpoints and storage mechanisms for Connected TV
-3. **Enhanced GAM Signals**: Expanded encrypted signal formats and processing
-4. **Real-time Updates**: WebSocket or Server-Sent Events for dynamic ID updates
-
-## Module Implementation Reference
-
-Reference implementation: **AMX ID System** (`modules/amxIdSystem.js`)
-
-Key design patterns followed:
-- Storage manager usage with proper consent checks
-- Configurable endpoint calls with timeout handling  
-- localStorage and cookie fallback logic
-- EID format standardization
-- Comprehensive error handling and logging
+- [ ] EID is present in bid requests when no processing restriction is signaled
+- [ ] No network request occurs when a global processing restriction is signaled
+- [ ] Stored IDs are reused across page loads

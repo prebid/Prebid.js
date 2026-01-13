@@ -5,361 +5,376 @@
  * @requires module:modules/userId
  */
 
-import { logInfo, logWarn, logError, generateUUID, mergeDeep } from '../src/utils.js';
+import { logWarn, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 
 const MODULE_NAME = 'locid';
-const LOG_PREFIX = 'LocID: ';
-const STORAGE_KEY = '_locid';
-const DEFAULT_EXPIRATION_DAYS = 30;
-const DEFAULT_REFRESH_SECONDS = 86400; // 24 hours
-const HOLDOUT_RATE = 0.1; // 10% control group
+const LOG_PREFIX = 'LocID:';
+const DEFAULT_TIMEOUT_MS = 800;
+const DEFAULT_EID_SOURCE = 'locid.com';
+// OpenRTB EID atype: 3384 = LocID vendor identifier for demand partner recognition
+const DEFAULT_EID_ATYPE = 3384;
+// IAB TCF Global Vendor List ID for Digital Envoy
+const GVLID = 3384;
+const MAX_ID_LENGTH = 512;
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
-
-function createLogger(logger, prefix) {
-  return function (...args) {
-    logger(prefix + ' ', ...args);
+/**
+ * Normalizes privacy mode config to a boolean flag.
+ * Supports both requirePrivacySignals (boolean) and privacyMode (string enum).
+ * @param {Object} params - config.params
+ * @returns {boolean} true if privacy signals are required, false otherwise
+ */
+function shouldRequirePrivacySignals(params) {
+  if (params?.requirePrivacySignals === true) {
+    return true;
   }
+  if (params?.privacyMode === 'requireSignals') {
+    return true;
+  }
+  // Default: allowWithoutSignals
+  return false;
 }
 
-const _logInfo = createLogger(logInfo, LOG_PREFIX);
-const _logWarn = createLogger(logWarn, LOG_PREFIX);
-const _logError = createLogger(logError, LOG_PREFIX);
+/**
+ * Checks if any privacy signals are present in consentData or data handlers.
+ *
+ * IMPORTANT: gdprApplies alone does NOT count as a privacy signal.
+ * A publisher may set gdprApplies=true without having a CMP installed.
+ * We only consider GDPR signals "present" when actual consent framework
+ * artifacts exist (consentString, vendorData). This supports LI-based
+ * operation where no TCF consent string is required.
+ *
+ * "Signals present" means ANY of the following are available:
+ * - consentString or gdpr.consentString (indicates CMP provided framework data)
+ * - vendorData or gdpr.vendorData (indicates CMP provided vendor data)
+ * - uspConsent (US Privacy string)
+ * - gppConsent (GPP consent data)
+ * - Data from gppDataHandler or uspDataHandler
+ *
+ * @param {Object} consentData - The consent data object passed to getId
+ * @returns {boolean} true if any privacy signals are present
+ */
+function hasPrivacySignals(consentData) {
+  // Check GDPR-related signals (flat and nested)
+  // NOTE: gdprApplies alone is NOT a signal - it just indicates jurisdiction.
+  // A signal requires actual CMP artifacts (consentString or vendorData).
+  if (consentData?.consentString || consentData?.gdpr?.consentString) {
+    return true;
+  }
+  if (consentData?.vendorData || consentData?.gdpr?.vendorData) {
+    return true;
+  }
+
+  // Check USP consent
+  if (consentData?.uspConsent) {
+    return true;
+  }
+
+  // Check GPP consent
+  if (consentData?.gppConsent) {
+    return true;
+  }
+
+  // Check data handlers
+  const uspFromHandler = uspDataHandler.getConsentData();
+  if (uspFromHandler) {
+    return true;
+  }
+
+  const gppFromHandler = gppDataHandler.getConsentData();
+  if (gppFromHandler) {
+    return true;
+  }
+
+  return false;
+}
 
 function isValidId(id) {
-  return typeof id === 'string' && id.length > 0 && id.length <= 256;
+  return typeof id === 'string' && id.length > 0 && id.length <= MAX_ID_LENGTH;
 }
 
-function simpleHash(str) {
-  let hash = 0;
-  if (str.length === 0) return hash;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+/**
+ * Reads a vendor flag from flags collection.
+ * Supports plain object lookup (flags[id]) or function lookup (flags(id)).
+ * @param {Object|Function} flags - The consents or legitimateInterests collection
+ * @param {number} id - The vendor ID to look up
+ * @returns {boolean|undefined} The flag value, or undefined if not accessible
+ */
+function readVendorFlag(flags, id) {
+  if (typeof flags === 'function') {
+    return flags(id);
   }
-  return Math.abs(hash);
+  if (flags && typeof flags === 'object') {
+    return flags[id];
+  }
+  return undefined;
 }
 
-function isInHoldout(id, config) {
-  const holdoutOverride = config?.params?.holdoutOverride;
-  if (holdoutOverride === 'forceControl') return true;
-  if (holdoutOverride === 'forceTreatment') return false;
+/**
+ * Checks if vendor permission (consent or legitimate interest) is granted for our gvlid.
+ * Returns true if permission is granted, false if denied, undefined if cannot be determined.
+ */
+function checkVendorPermission(vendorData) {
+  if (!vendorData) {
+    return undefined;
+  }
 
-  if (!id) return false; // never treat "no id" as control
+  const vendor = vendorData.vendor;
+  if (!vendor) {
+    return undefined;
+  }
 
-  // Deterministic holdout based on hash(id) mod 10
-  const hash = simpleHash(id);
-  return (hash % 10) < Math.round(HOLDOUT_RATE * 10);
+  // TCF v2: Check vendor consent (purpose 1 typically required for identifiers)
+  const vendorConsent = readVendorFlag(vendor.consents, GVLID);
+  if (vendorConsent === true) {
+    return true;
+  }
+
+  // TCF v2: Check legitimate interest as fallback
+  const vendorLI = readVendorFlag(vendor.legitimateInterests, GVLID);
+  if (vendorLI === true) {
+    return true;
+  }
+
+  // vendorData.vendor exists but no permission found, deny
+  return false;
 }
 
-function hasValidConsent(consentData) {
-  if (consentData?.gdpr?.gdprApplies === true) {
-    if (!consentData.gdpr.consentString || consentData.gdpr.consentString.length === 0) {
-      _logWarn('GDPR applies but no consent string provided, skipping storage operations');
+/**
+ * Checks privacy framework signals. Returns true if ID operations are allowed.
+ *
+ * LocID operates under Legitimate Interest and does not require a TCF consent
+ * string when no privacy framework is present. When privacy signals exist,
+ * vendor permission is enforced.
+ *
+ * @param {Object} consentData - The consent data object from Prebid
+ * @param {Object} params - config.params for privacy mode settings
+ * @returns {boolean} true if ID operations are allowed
+ */
+function hasValidConsent(consentData, params) {
+  const requireSignals = shouldRequirePrivacySignals(params);
+  const signalsPresent = hasPrivacySignals(consentData);
+
+  // B) If privacy signals are NOT present
+  if (!signalsPresent) {
+    if (requireSignals) {
+      logWarn(LOG_PREFIX, 'Privacy signals required but none present');
       return false;
+    }
+    // Default: allow operation without privacy signals (LI-based operation)
+    return true;
+  }
+
+  // A) Privacy signals ARE present - enforce existing logic exactly
+  //
+  // Note: We only reach this point if actual CMP artifacts exist (consentString
+  // or vendorData). gdprApplies alone does not trigger this path - see
+  // hasPrivacySignals() for rationale. This supports LI-based operation where
+  // a publisher may indicate GDPR jurisdiction without having a CMP.
+
+  // Check GDPR - support both flat and nested shapes
+  const gdprApplies = consentData?.gdprApplies === true || consentData?.gdpr?.gdprApplies === true;
+  const consentString = consentData?.consentString || consentData?.gdpr?.consentString;
+  const vendorData = consentData?.vendorData || consentData?.gdpr?.vendorData;
+
+  if (gdprApplies) {
+    // When GDPR applies AND we have CMP signals, require consentString
+    if (!consentString || consentString.length === 0) {
+      logWarn(LOG_PREFIX, 'GDPR framework data missing consent string');
+      return false;
+    }
+
+    // Check vendor-level permission if vendorData is available
+    const vendorPermission = checkVendorPermission(vendorData);
+    if (vendorPermission === false) {
+      logWarn(LOG_PREFIX, 'GDPR framework indicates vendor permission restriction for gvlid', GVLID);
+      return false;
+    }
+    if (vendorPermission === undefined) {
+      logWarn(LOG_PREFIX, 'GDPR vendorData not available; vendor permission check skipped');
     }
   }
 
-  const uspData = uspDataHandler.getConsentData();
+  // Check USP consent
+  const uspData = consentData?.uspConsent ?? uspDataHandler.getConsentData();
   if (uspData && uspData.length >= 3 && uspData.charAt(2) === 'Y') {
-    _logWarn('US Privacy opt-out detected, skipping storage operations');
+    logWarn(LOG_PREFIX, 'US Privacy framework processing restriction detected');
     return false;
   }
 
-  const gppData = gppDataHandler.getConsentData();
+  // Check GPP consent
+  const gppData = consentData?.gppConsent ?? gppDataHandler.getConsentData();
   if (gppData?.applicableSections?.includes(7) &&
       gppData?.parsedSections?.usnat?.KnownChildSensitiveDataConsents?.includes(1)) {
-    _logWarn('GPP indicates opt-out, skipping storage operations');
+    logWarn(LOG_PREFIX, 'GPP usnat KnownChildSensitiveDataConsents processing restriction detected');
     return false;
   }
 
   return true;
 }
 
-function getStoredId(config) {
-  const storageConfig = config.storage;
-  if (!storageConfig) return null;
-
-  let storedValue = null;
-  const storageKey = storageConfig.name || STORAGE_KEY;
-
-  if (storageConfig.type === 'localStorage' || storageConfig.type === 'localStorage&cookie') {
-    if (storage.localStorageIsEnabled()) {
-      storedValue = storage.getDataFromLocalStorage(storageKey);
-    }
-  }
-
-  if (!storedValue && (storageConfig.type === 'cookie' || storageConfig.type === 'localStorage&cookie')) {
-    if (storage.cookiesAreEnabled()) {
-      storedValue = storage.getCookie(storageKey);
-    }
-  }
-
-  if (storedValue) {
-    try {
-      const parsed = JSON.parse(storedValue);
-      if (parsed.id && parsed.timestamp) {
-        const now = Date.now();
-        const expireTime = parsed.timestamp + ((storageConfig.expires || DEFAULT_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000);
-
-        if (now < expireTime) {
-          const refreshTime = parsed.timestamp + ((storageConfig.refreshInSeconds || DEFAULT_REFRESH_SECONDS) * 1000);
-          return {
-            id: parsed.id,
-            timestamp: parsed.timestamp,
-            shouldRefresh: now > refreshTime
-          };
-        } else {
-          _logInfo('Stored ID has expired');
-        }
-      }
-    } catch (e) {
-      _logWarn('Failed to parse stored ID', e);
-    }
-  }
-
-  return null;
-}
-
-function storeId(config, id, consentData) {
-  if (!hasValidConsent(consentData)) {
-    return;
-  }
-
-  const storageConfig = config.storage;
-  if (!storageConfig) {
-    _logWarn('No storage configuration provided, ID will not be persisted');
-    return;
-  }
-
-  const storageKey = storageConfig.name || STORAGE_KEY;
-  const storageValue = JSON.stringify({
-    id: id,
-    timestamp: Date.now()
-  });
-
-  const expireDays = storageConfig.expires || DEFAULT_EXPIRATION_DAYS;
-
-  if (storageConfig.type === 'localStorage' || storageConfig.type === 'localStorage&cookie') {
-    if (storage.localStorageIsEnabled()) {
-      storage.setDataInLocalStorage(storageKey, storageValue);
-      _logInfo('ID stored in localStorage');
-    }
-  }
-
-  if (storageConfig.type === 'cookie' || storageConfig.type === 'localStorage&cookie') {
-    if (storage.cookiesAreEnabled()) {
-      const expires = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000).toUTCString();
-      storage.setCookie(storageKey, storageValue, expires);
-      _logInfo('ID stored in cookie');
-    }
-  }
-}
-
-function generateDeviceId() {
-  return generateUUID();
-}
-
-function logExposure(data, config) {
-  const endpoint = config?.params?.loggingEndpoint;
-  if (!endpoint) return;
+/**
+ * Extracts LocID from endpoint response.
+ * Primary: tx_cloc, Fallback: stable_cloc
+ */
+function extractLocIdFromResponse(response) {
+  if (!response) return null;
 
   try {
-    ajax(endpoint, null, JSON.stringify(data), {
-      method: 'POST',
-      contentType: 'application/json'
-    });
+    const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+
+    // Primary: tx_cloc
+    if (isValidId(parsed.tx_cloc)) {
+      return parsed.tx_cloc;
+    }
+
+    // Fallback: stable_cloc
+    if (isValidId(parsed.stable_cloc)) {
+      return parsed.stable_cloc;
+    }
+
+    logWarn(LOG_PREFIX, 'Could not extract valid LocID from response');
+    return null;
   } catch (e) {
-    // Never throw - logging is best effort
+    logError(LOG_PREFIX, 'Error parsing endpoint response:', e.message);
+    return null;
   }
 }
 
-function formatGamOutput(id, config) {
-  const gamConfig = config.params?.gam;
-  if (!gamConfig || !gamConfig.enabled) {
-    return null;
+/**
+ * Builds the request URL, appending altId if configured.
+ * Preserves URL fragments by appending query params before the hash.
+ */
+function buildRequestUrl(endpoint, altId) {
+  if (!altId) {
+    return endpoint;
   }
 
-  const maxLen = gamConfig.maxLen || 150;
-  const truncatedId = id.length > maxLen ? id.substring(0, maxLen) : id;
+  // Split on hash to preserve fragment
+  const hashIndex = endpoint.indexOf('#');
+  let base = endpoint;
+  let fragment = '';
 
-  const result = {
-    key: gamConfig.key || 'locid'
+  if (hashIndex !== -1) {
+    base = endpoint.substring(0, hashIndex);
+    fragment = endpoint.substring(hashIndex);
+  }
+
+  const separator = base.includes('?') ? '&' : '?';
+  return `${base}${separator}alt_id=${encodeURIComponent(altId)}${fragment}`;
+}
+
+/**
+ * Fetches LocID from the configured endpoint (GET only).
+ */
+function fetchLocIdFromEndpoint(config, callback) {
+  const params = config?.params || {};
+  const endpoint = params.endpoint;
+  const timeoutMs = params.timeoutMs || DEFAULT_TIMEOUT_MS;
+
+  if (!endpoint) {
+    logError(LOG_PREFIX, 'No endpoint configured');
+    callback(undefined);
+    return;
+  }
+
+  const requestUrl = buildRequestUrl(endpoint, params.altId);
+
+  const requestOptions = {
+    method: 'GET',
+    contentType: 'application/json',
+    withCredentials: params.withCredentials === true,
+    timeout: timeoutMs
   };
 
-  if (gamConfig.mode === 'ppid') {
-    result.ppid = truncatedId;
-  } else if (gamConfig.mode === 'encryptedSignal') {
-    result.encryptedSignal = truncatedId;
+  // Add x-api-key header if apiKey is configured
+  if (params.apiKey) {
+    requestOptions.customHeaders = {
+      'x-api-key': params.apiKey
+    };
   }
 
-  return result;
+  let callbackFired = false;
+  const safeCallback = (result) => {
+    if (!callbackFired) {
+      callbackFired = true;
+      callback(result);
+    }
+  };
+
+  const onSuccess = (response) => {
+    const locId = extractLocIdFromResponse(response);
+    safeCallback(locId || undefined);
+  };
+
+  const onError = (error) => {
+    logWarn(LOG_PREFIX, 'Request failed:', error);
+    safeCallback(undefined);
+  };
+
+  try {
+    ajax(requestUrl, { success: onSuccess, error: onError }, null, requestOptions);
+  } catch (e) {
+    logError(LOG_PREFIX, 'Error initiating request:', e.message);
+    safeCallback(undefined);
+  }
 }
 
 export const locIdSubmodule = {
   name: MODULE_NAME,
+  gvlid: GVLID,
 
-  gvlid: undefined, // module does not register a GVL ID; consent gating handled internally
+  /**
+   * Decode stored value into userId object.
+   */
+  decode(value) {
+    const id = typeof value === 'object' ? value?.id : value;
+    if (isValidId(id)) {
+      return { locid: id };
+    }
+    return undefined;
+  },
 
-  decode(value, config) {
-    try {
-      if (!isValidId(value)) {
-        _logWarn('Invalid stored value for decode:', value);
-        return undefined;
-      }
+  /**
+   * Get the LocID from endpoint.
+   * Returns {id} for sync or {callback} for async per Prebid patterns.
+   */
+  getId(config, consentData, storedId) {
+    const params = config?.params || {};
 
-      // Check holdout - return nothing if user is in control group
-      if (isInHoldout(value, config)) {
-        _logInfo('User in holdout control group, not returning ID');
-        return undefined;
-      }
-
-      const result = { locid: value };
-
-      const gamOutput = formatGamOutput(value, config);
-      if (gamOutput) {
-        result._gam = gamOutput;
-      }
-
-      _logInfo('LocID decode returned:', result);
-      return result;
-    } catch (e) {
-      _logError('Error in LocID decode:', e);
+    // Check privacy restrictions first
+    if (!hasValidConsent(consentData, params)) {
       return undefined;
     }
-  },
 
-  getId(config, consentData, storedId) {
-    try {
-      _logInfo('LocID getId called with config:', config);
-
-      // Check consent first
-      if (!hasValidConsent(consentData)) {
-        _logInfo('No valid consent, skipping LocID generation');
-        return;
-      }
-
-      const params = config?.params || {};
-      const source = params.source || 'device'; // Default to device if not specified
-
-      if (source === 'publisher') {
-        const providedId = storedId || params.value;
-        if (providedId && isValidId(providedId)) {
-          _logInfo('Using publisher-provided ID');
-          return { id: providedId };
-        } else {
-          _logWarn('Publisher source specified but no valid ID provided');
-          return;
-        }
-      }
-
-      const stored = getStoredId(config);
-      if (stored && !stored.shouldRefresh) {
-        _logInfo('Using stored ID (no refresh needed)');
-        return { id: stored.id };
-      }
-
-      if (source === 'device') {
-        const newId = generateDeviceId();
-        _logInfo('Generated new device ID');
-
-        storeId(config, newId, consentData);
-
-        return { id: newId };
-      }
-
-      // Endpoint source removed - first-party only
-      if (source === 'endpoint') {
-        _logWarn('Endpoint source no longer supported - LocID is first-party only');
-        return;
-      }
-
-      _logError('Unknown LocID source:', source);
-    } catch (e) {
-      _logError('Error in LocID getId:', e);
-      // Fail open - don't block auctions
+    // Reuse valid stored ID
+    const existingId = typeof storedId === 'string' ? storedId : storedId?.id;
+    if (existingId && isValidId(existingId)) {
+      return { id: existingId };
     }
+
+    // Return callback for async endpoint fetch
+    return {
+      callback: (callback) => {
+        fetchLocIdFromEndpoint(config, callback);
+      }
+    };
   },
 
-  extendId(config, consentData, storedId) {
-    try {
-      _logInfo('LocID extendId called for ORTB2 injection');
-
-      // Get the current ID
-      const idResult = this.getId(config, consentData, storedId);
-      if (!idResult?.id) {
-        _logInfo('No LocID available for ORTB2 injection');
-        return;
-      }
-
-      const locId = idResult.id;
-      const isHoldout = isInHoldout(locId, config);
-
-      // Calculate stability days from stored timestamp
-      const stored = getStoredId(config);
-      const stabilityDays = stored?.timestamp
-        ? Math.max(0, Math.floor((Date.now() - stored.timestamp) / (24 * 60 * 60 * 1000)))
-        : 0;
-
-      // Prepare ORTB2 data
-      const ortb2Data = {
-        locid_confidence: 1.0, // Constant for v1
-        locid_stability_days: stabilityDays,
-        locid_audiences: [] // Empty for v1
-      };
-
-      // Log exposure for lift measurement
-      const auctionId = config?.auctionId || 'unknown';
-      const exposureLog = {
-        auction_id: auctionId,
-        is_holdout: isHoldout,
-        locid_present: !isHoldout,
-        signals_emitted: isHoldout ? 0 : Object.keys(ortb2Data).length,
-        signal_names: isHoldout ? [] : Object.keys(ortb2Data),
-        timestamp: Date.now()
-      };
-
-      logExposure(exposureLog, config);
-
-      // Don't inject ORTB2 data if user is in holdout
-      if (isHoldout) {
-        _logInfo('User in holdout, skipping ORTB2 injection');
-        return;
-      }
-
-      // Safely merge into ORTB2 user.ext.data
-      const currentOrtb2 = config.ortb2 || {};
-      const updatedOrtb2 = mergeDeep({}, currentOrtb2, {
-        user: {
-          ext: {
-            data: ortb2Data
-          }
-        }
-      });
-
-      _logInfo('Injecting LocID ORTB2 data:', ortb2Data);
-      return { ortb2: updatedOrtb2 };
-    } catch (e) {
-      _logError('Error in LocID extendId:', e);
-      // Fail open - don't block auctions
-    }
-  },
-
+  /**
+   * EID configuration following standard Prebid shape.
+   */
   eids: {
     locid: {
-      source: 'locid.com',
-      atype: 1,
+      source: DEFAULT_EID_SOURCE,
+      atype: DEFAULT_EID_ATYPE,
       getValue: function(data) {
-        return data;
+        return typeof data === 'string' ? data : data?.locid;
       }
     }
   }
 };
 
-submodule(MODULE_TYPE_UID, locIdSubmodule);
+submodule('userId', locIdSubmodule);
