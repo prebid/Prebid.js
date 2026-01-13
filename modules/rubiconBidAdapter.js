@@ -427,7 +427,6 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
-        'o_ae',
         'o_cdep',
         'rp_floor',
         'rp_secure',
@@ -545,15 +544,11 @@ export const spec = {
       data['ppuid'] = configUserId;
     }
 
-    if (bidRequest?.ortb2Imp?.ext?.ae) {
-      data['o_ae'] = 1;
-    }
     // If the bid request contains a 'mobile' property under 'ortb2.site', add it to 'data' as 'p_site.mobile'.
     if (typeof bidRequest?.ortb2?.site?.mobile === 'number') {
       data['p_site.mobile'] = bidRequest.ortb2.site.mobile
     }
 
-    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest?.ortb2?.user?.ext?.eids) {
       bidRequest.ortb2.user.ext.eids.forEach(({ source, uids = [], inserter, matcher, mm, ext = {} }) => {
@@ -655,7 +650,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
+   * @return {*} An array of bids
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -760,15 +755,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
 
-    const fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
-      return { config, bidId: config.bidId }
-    });
-
-    if (fledgeAuctionConfigs) {
-      return { bids, paapi: fledgeAuctionConfigs };
-    } else {
-      return bids;
-    }
+    return bids;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (syncOptions.iframeEnabled) {
@@ -1061,27 +1048,6 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
-  }
-}
-
-function addDesiredSegtaxes(bidderRequest, target) {
-  if (rubiConf.readTopics === false) {
-    return;
-  }
-  const iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
-  const vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
-  const userData = bidderRequest.ortb2?.user?.data || [];
-  const siteData = bidderRequest.ortb2?.site?.content?.data || [];
-  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
-  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
-}
-
-function iterateOverSegmentData(target, char, segments) {
-  return (topic) => {
-    const taxonomy = Number(topic.ext?.segtax);
-    if (segments.includes(taxonomy)) {
-      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
-    }
   }
 }
 

@@ -31,8 +31,7 @@ const BIDDER_CODE = 'connatix';
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
-const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
-const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
+const CNX_IDS_LOCAL_STORAGE_KEY = 'cnx_user_ids';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
 const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collection_updated';
@@ -197,23 +196,16 @@ export function hasQueryParams(url) {
   }
 }
 
-export function saveOnAllStorages(name, value, expirationTimeMs) {
-  const date = new Date();
-  date.setTime(date.getTime() + expirationTimeMs);
-  const expires = `expires=${date.toUTCString()}`;
-  storage.setCookie(name, JSON.stringify(value), expires);
+export function saveInLocalStorage(name, value) {
   storage.setDataInLocalStorage(name, JSON.stringify(value));
   cnxIdsValues = value;
 }
 
-export function readFromAllStorages(name) {
-  const fromCookie = storage.getCookie(name);
+export function readFromLocalStorage(name) {
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
-
-  const parsedCookie = fromCookie ? JSON.parse(fromCookie) : undefined;
   const parsedLocalStorage = fromLocalStorage ? JSON.parse(fromLocalStorage) : undefined;
 
-  return parsedCookie || parsedLocalStorage || undefined;
+  return parsedLocalStorage || undefined;
 }
 
 export const spec = {
@@ -261,7 +253,7 @@ export const spec = {
     const bidRequests = _getBidRequests(validBidRequests);
     let userIds;
     try {
-      userIds = readFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY) || cnxIdsValues;
+      userIds = readFromLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY) || cnxIdsValues;
     } catch (error) {
       userIds = cnxIdsValues;
     }
@@ -364,7 +356,7 @@ export const spec = {
 
       if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
         if (data) {
-          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
+          saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
         }
       }
     }, true)
