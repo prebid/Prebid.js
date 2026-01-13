@@ -201,7 +201,7 @@ jobs:
 
       - name: 'Save coverage result'
         if: ${{ steps.coverage.outputs.coverage }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
           path: ./build/coverage
