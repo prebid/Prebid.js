@@ -224,7 +224,7 @@ jobs:
           name: ${{ needs.build.outputs.built-key }}
 
       - name: Download coverage results
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: ./build/coverage
           pattern: coverage-partial-${{ inputs.test-cmd }}-*
