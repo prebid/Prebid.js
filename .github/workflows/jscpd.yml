@@ -44,11 +44,11 @@ jobs:
 
     - name: Fetch base branch for comparison
       run: |
-        git fetch origin ${{ github.base_ref }}
+        git fetch origin refs/heads/${{ github.base_ref }}
 
     - name: Get changed files
       run: |
-        git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+        git diff --name-only FETCH_HEAD...HEAD > changed_files.txt
         cat changed_files.txt
 
     - name: List generated files (debug)
