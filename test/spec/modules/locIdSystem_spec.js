@@ -534,7 +534,7 @@ describe('LocID System', () => {
     });
 
     it('should proceed when gdprApplies=true with empty consentString (no CMP artifact)', () => {
-      // Empty consentString is not a valid CMP artifact - treated as no signal
+      // Empty consentString is falsy, so it is treated as not present and does not count as a CMP artifact.
       const consentData = {
         gdprApplies: true,
         consentString: ''
@@ -574,7 +574,7 @@ describe('LocID System', () => {
       expect(ajaxStub.called).to.be.false;
     });
 
-    it('should proceed when gdprApplies=false even in strict mode', () => {
+    it('should deny when gdprApplies=false and strict mode is enabled (gdprApplies alone is not a signal)', () => {
       // gdprApplies=false alone is not a signal, so strict mode blocks
       const strictConfig = {
         params: {
