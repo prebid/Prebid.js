@@ -496,7 +496,6 @@ describe('optoutAdapterTest', function () {
 
     // Standard slot and bid for reuse
     const standardSlot = { id: 'slotA', requestId: 'bidA' };
-    const standardBid = { requestId: 'bidA', cpm: 1, currency: 'EUR', width: 300, height: 250, ad: '<div/>' };
 
     it('maps bids correctly using slot id or requestId', function () {
       const bidRequest = createBidRequest([
