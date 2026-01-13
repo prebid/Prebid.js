@@ -28,15 +28,17 @@ pbjs.setConfig({
 
 ## Parameters
 
-| Parameter               | Type    | Required | Default                 | Description                                                    |
-| ----------------------- | ------- | -------- | ----------------------- | -------------------------------------------------------------- |
-| `endpoint`              | String  | Yes      | –                       | First-party LocID endpoint (see Endpoint Requirements below)   |
-| `altId`                 | String  | No       | –                       | Alternative identifier appended as `?alt_id=` query parameter  |
-| `timeoutMs`             | Number  | No       | `800`                   | Request timeout in milliseconds                                |
-| `withCredentials`       | Boolean | No       | `false`                 | Whether to include credentials on the request                  |
-| `apiKey`                | String  | No       | –                       | API key passed via the `x-api-key` request header              |
-| `requirePrivacySignals` | Boolean | No       | `false`                 | If `true`, requires privacy signals to be present              |
-| `privacyMode`           | String  | No       | `'allowWithoutSignals'` | `'allowWithoutSignals'` or `'requireSignals'`                  |
+| Parameter               | Type    | Required | Default                 | Description                                                  |
+| ----------------------- | ------- | -------- | ----------------------- | ------------------------------------------------------------ |
+| `endpoint`              | String  | Yes      | –                       | First-party LocID endpoint (see Endpoint Requirements below) |
+| `altId`                 | String  | No       | –                       | Alternative identifier appended as `?alt_id=` query param    |
+| `timeoutMs`             | Number  | No       | `800`                   | Request timeout in milliseconds                              |
+| `withCredentials`       | Boolean | No       | `false`                 | Whether to include credentials on the request                |
+| `apiKey`                | String  | No       | –                       | API key passed via the `x-api-key` request header            |
+| `requirePrivacySignals` | Boolean | No       | `false`                 | If `true`, requires privacy signals to be present            |
+| `privacyMode`           | String  | No       | `'allowWithoutSignals'` | `'allowWithoutSignals'` or `'requireSignals'`                |
+
+**Note on privacy configuration:** `privacyMode` is the preferred high-level setting for new integrations. `requirePrivacySignals` exists for backwards compatibility with integrators who prefer a simple boolean. If `requirePrivacySignals: true` is set, it takes precedence.
 
 ### Endpoint Requirements
 
@@ -111,7 +113,7 @@ In strict mode, the module returns `undefined` if no privacy signals are present
 
 When privacy signals **are** present, the module does not fetch or return an ID if any of the following apply:
 
-- GDPR applies AND CMP artifacts are present, but required framework data is missing (no consent string)
+- GDPR applies and vendorData is present, but consentString is missing or empty
 - GDPR applies and vendor permission is not granted for gvlid 3384 (when vendorData is available)
 - The US Privacy string indicates a global processing restriction (third character is 'Y')
 - GPP signals indicate an applicable processing restriction
@@ -149,7 +151,7 @@ When available, the LocID is exposed as:
 This module uses two numeric identifiers:
 
 - **`gvlid: 3384`** — The IAB TCF Global Vendor List ID for Digital Envoy. This identifies the vendor for consent purposes under the Transparency and Consent Framework.
-- **`atype: 3384`** — The OpenRTB Extended Identifiers (EID) `atype` field. LocID's technical documentation specifies `3384` as the required atype value for demand partner recognition in the bidstream.
+- **`atype: 3384`** — The OpenRTB Extended Identifiers (EID) `atype` field. Vendor-specific atype values >500 are valid per OpenRTB 2.6. LocID's technical documentation specifies `3384` as the required atype value for demand partner recognition in the bidstream.
 
 ## Debugging
 

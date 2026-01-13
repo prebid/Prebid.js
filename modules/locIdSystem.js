@@ -14,7 +14,8 @@ const MODULE_NAME = 'locid';
 const LOG_PREFIX = 'LocID:';
 const DEFAULT_TIMEOUT_MS = 800;
 const DEFAULT_EID_SOURCE = 'locid.com';
-// OpenRTB EID atype: 3384 = LocID vendor identifier for demand partner recognition
+// OpenRTB EID atype: 3384 = LocID vendor identifier for demand partner recognition.
+// Vendor-specific atype values >500 are valid per OpenRTB 2.6 Extended Identifiers spec.
 const DEFAULT_EID_ATYPE = 3384;
 // IAB TCF Global Vendor List ID for Digital Envoy
 const GVLID = 3384;
@@ -23,10 +24,17 @@ const MAX_ID_LENGTH = 512;
 /**
  * Normalizes privacy mode config to a boolean flag.
  * Supports both requirePrivacySignals (boolean) and privacyMode (string enum).
+ *
+ * Precedence: requirePrivacySignals (if true) takes priority over privacyMode.
+ * - privacyMode is the preferred high-level setting for new integrations.
+ * - requirePrivacySignals exists for backwards compatibility with integrators
+ *   who prefer a simple boolean.
+ *
  * @param {Object} params - config.params
  * @returns {boolean} true if privacy signals are required, false otherwise
  */
 function shouldRequirePrivacySignals(params) {
+  // requirePrivacySignals=true takes precedence (backwards compatibility)
   if (params?.requirePrivacySignals === true) {
     return true;
   }
@@ -197,14 +205,14 @@ function hasValidConsent(consentData, params) {
     }
   }
 
-  // Check USP consent
+  // Check USP for processing restriction
   const uspData = consentData?.uspConsent ?? uspDataHandler.getConsentData();
   if (uspData && uspData.length >= 3 && uspData.charAt(2) === 'Y') {
     logWarn(LOG_PREFIX, 'US Privacy framework processing restriction detected');
     return false;
   }
 
-  // Check GPP consent
+  // Check GPP for processing restriction
   const gppData = consentData?.gppConsent ?? gppDataHandler.getConsentData();
   if (gppData?.applicableSections?.includes(7) &&
       gppData?.parsedSections?.usnat?.KnownChildSensitiveDataConsents?.includes(1)) {

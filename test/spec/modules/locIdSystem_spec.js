@@ -67,6 +67,12 @@ describe('LocID System', () => {
       const longId = 'a'.repeat(513);
       expect(locIdSubmodule.decode(longId)).to.be.undefined;
     });
+
+    it('should accept ID at exactly MAX_ID_LENGTH (512 characters)', () => {
+      const maxLengthId = 'a'.repeat(512);
+      const result = locIdSubmodule.decode(maxLengthId);
+      expect(result).to.deep.equal({ locid: maxLengthId });
+    });
   });
 
   describe('getId', () => {
@@ -384,6 +390,21 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback(() => done());
+    });
+
+    it('should return undefined via callback when endpoint is empty string', (done) => {
+      const config = {
+        params: {
+          endpoint: ''
+        }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.undefined;
+        expect(ajaxStub.called).to.be.false;
+        done();
+      });
     });
   });
 
