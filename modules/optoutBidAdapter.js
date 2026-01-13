@@ -68,7 +68,7 @@ function getCurrency() {
  * Returns a new object (never mutates input).
  */
 function normalizeCustoms(input) {
-  if (!input || typeof input !== 'object') {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return {};
   }
 
