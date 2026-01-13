@@ -237,7 +237,7 @@ export function validateRules(rule, consentData, currentModule, gvlId, params = 
     return true;
   }
   const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
-  const deferS2Sbidders = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders;
+  const deferS2Sbidders = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders && !gvlId;
   const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
   return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || deferS2Sbidders || vendor);
 }
