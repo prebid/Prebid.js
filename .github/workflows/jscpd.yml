@@ -1,9 +1,12 @@
 name: Check for Duplicated Code
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - master
+
+permissions:
+  pull-requests: write
 
 jobs:
   check-duplication:
@@ -13,17 +16,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
       with:
-        fetch-depth: 0  # Fetch all history for all branches
-        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
 
     - name: Set up Node.js
       uses: actions/setup-node@v6
       with:
         node-version: '20'
 
-    - name: Install dependencies
-      run: |
-        npm install -g jscpd diff-so-fancy
+    - name: Install jscpd
+      run: npm install -g jscpd
 
     - name: Create jscpd config file
       run: |
@@ -35,19 +36,20 @@ jobs:
           ],
           "output": "./",
           "pattern": "**/*.js",
-          "ignore": "**/*spec.js"        
+          "ignore": "**/*spec.js"
         }' > .jscpd.json
 
     - name: Run jscpd on entire codebase
       run: jscpd
 
-    - name: Fetch base and target branches
+    - name: Fetch base branch for comparison
       run: |
-        git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
-        git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge:refs/remotes/pull/${{ github.event.pull_request.number }}/merge
+        git fetch origin ${{ github.base_ref }}
 
-    - name: Get the diff
-      run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge > changed_files.txt
+    - name: Get changed files
+      run: |
+        git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+        cat changed_files.txt
 
     - name: List generated files (debug)
       run: ls -l
@@ -101,7 +103,7 @@ jobs:
           const filteredReport = JSON.parse(fs.readFileSync('filtered-jscpd-report.json', 'utf8'));
           let comment = "Whoa there, partner! 🌵🤠 We wrangled some duplicated code in your PR:\n\n";
           function link(dup) {
-             return `https://github.com/${{ github.event.repository.full_name }}/blob/${{ github.event.pull_request.head.sha }}/${dup.name}#L${dup.start + 1}-L${dup.end - 1}`
+             return `https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}/${dup.name}#L${dup.start + 1}-L${dup.end - 1}`
           }
           filteredReport.forEach(duplication => {
             const firstFile = duplication.firstFile;
