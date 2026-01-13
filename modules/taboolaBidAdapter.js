@@ -26,7 +26,6 @@ const TGID_COOKIE_KEY = 't_gid';
 const TGID_PT_COOKIE_KEY = 't_pt_gid';
 const TBLA_ID_COOKIE_KEY = 'tbla_id';
 export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
-export const refreshState = {};
 
 /**
  *  extract User Id by that order:
@@ -99,37 +98,6 @@ export const internal = {
   getReferrer: (refererInfo = {}) => {
     return refererInfo?.ref || getWindowSelf().document.referrer;
   }
-}
-
-export function getRefreshInfo(adUnitCode) {
-  const now = Date.now();
-  const state = refreshState[adUnitCode];
-
-  if (!state) {
-    refreshState[adUnitCode] = {
-      count: 1,
-      first: now,
-      last: now
-    };
-    return {
-      count: 1,
-      first: now,
-      sinceLastSeconds: null,
-      sinceFirstSeconds: 0
-    };
-  }
-
-  const sinceLastSeconds = Math.round((now - state.last) / 1000);
-  const sinceFirstSeconds = Math.round((now - state.first) / 1000);
-  state.count++;
-  state.last = now;
-
-  return {
-    count: state.count,
-    first: state.first,
-    sinceLastSeconds,
-    sinceFirstSeconds
-  };
 }
 
 export function detectBot() {
@@ -491,12 +459,14 @@ function fillTaboolaImpData(bid, imp) {
   }
   if (bid.adUnitCode) {
     deepSetValue(imp, 'ext.prebid.adUnitCode', bid.adUnitCode);
-    const refreshInfo = getRefreshInfo(bid.adUnitCode);
-    deepSetValue(imp, 'ext.prebid.refresh', refreshInfo);
   }
   if (bid.adUnitId) {
     deepSetValue(imp, 'ext.prebid.adUnitId', bid.adUnitId);
   }
+
+  deepSetValue(imp, 'ext.prebid.bidRequestsCount', bid.bidRequestsCount);
+  deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
+  deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
 
   const elementSignals = getElementSignals(bid.adUnitCode);
   if (elementSignals) {

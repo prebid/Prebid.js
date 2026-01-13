@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility, refreshState, getRefreshInfo} from 'modules/taboolaBidAdapter.js';
+import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config.js'
 import * as utils from '../../../src/utils.js'
 import {server} from '../../mocks/xhr.js'
@@ -1911,7 +1911,7 @@ describe('Taboola Adapter', function () {
       });
     });
 
-    describe('Refresh tracking in buildRequests', function () {
+    describe('Prebid counters in buildRequests', function () {
       const defaultBidRequest = {
         bidder: 'taboola',
         params: {
@@ -1919,7 +1919,10 @@ describe('Taboola Adapter', function () {
           tagId: 'placement name'
         },
         bidId: 'test-bid-id',
-        adUnitCode: 'refresh-test-ad-unit',
+        adUnitCode: 'test-ad-unit',
+        bidRequestsCount: 3,
+        bidderRequestsCount: 2,
+        bidderWinsCount: 1,
         sizes: [[300, 250]]
       };
 
@@ -1933,140 +1936,47 @@ describe('Taboola Adapter', function () {
         }
       };
 
-      beforeEach(function () {
-        Object.keys(refreshState).forEach(key => delete refreshState[key]);
+      it('should include bidRequestsCount in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(3);
       });
 
-      describe('getRefreshInfo function', function () {
-        it('should return count=1 and sinceLastSeconds=null for first request', function () {
-          const adUnitCode = 'first-request-test';
-          const result = getRefreshInfo(adUnitCode);
-
-          expect(result.count).to.equal(1);
-          expect(result.sinceLastSeconds).to.be.null;
-          expect(result.sinceFirstSeconds).to.equal(0);
-          expect(result.first).to.be.a('number');
-        });
-
-        it('should increment count on subsequent requests', function () {
-          const adUnitCode = 'increment-test';
-
-          const first = getRefreshInfo(adUnitCode);
-          expect(first.count).to.equal(1);
-
-          const second = getRefreshInfo(adUnitCode);
-          expect(second.count).to.equal(2);
-
-          const third = getRefreshInfo(adUnitCode);
-          expect(third.count).to.equal(3);
-        });
-
-        it('should track different ad units independently', function () {
-          const adUnit1 = 'independent-test-1';
-          const adUnit2 = 'independent-test-2';
-
-          const first1 = getRefreshInfo(adUnit1);
-          const first2 = getRefreshInfo(adUnit2);
-
-          expect(first1.count).to.equal(1);
-          expect(first2.count).to.equal(1);
-
-          const second1 = getRefreshInfo(adUnit1);
-          expect(second1.count).to.equal(2);
-          expect(refreshState[adUnit2].count).to.equal(1);
-        });
-
-        it('should calculate time differences for subsequent requests', function () {
-          const adUnitCode = 'time-diff-test';
-          const now = Date.now();
-
-          // Manually set the state to simulate time passing
-          refreshState[adUnitCode] = {
-            count: 1,
-            first: now - 10000, // 10 seconds ago
-            last: now - 5000    // 5 seconds ago
-          };
-
-          const result = getRefreshInfo(adUnitCode);
-
-          expect(result.count).to.equal(2);
-          expect(result.sinceLastSeconds).to.be.at.least(4); // Allow for timing variance
-          expect(result.sinceLastSeconds).to.be.at.most(6);
-          expect(result.sinceFirstSeconds).to.be.at.least(9);
-          expect(result.sinceFirstSeconds).to.be.at.most(11);
-        });
-
-        it('should preserve the first timestamp across refreshes', function () {
-          const adUnitCode = 'preserve-first-test';
-
-          const first = getRefreshInfo(adUnitCode);
-          const firstTimestamp = first.first;
-
-          const second = getRefreshInfo(adUnitCode);
-          expect(second.first).to.equal(firstTimestamp);
-
-          const third = getRefreshInfo(adUnitCode);
-          expect(third.first).to.equal(firstTimestamp);
-        });
+      it('should include bidderRequestsCount in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(2);
       });
 
-      describe('refresh info in buildRequests', function () {
-        it('should include refresh info in imp.ext.prebid.refresh', function () {
-          const bidRequest = {
-            ...defaultBidRequest,
-            adUnitCode: 'build-request-refresh-test'
-          };
-          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      it('should include bidderWinsCount in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(1);
+      });
 
-          expect(res.data.imp[0].ext.prebid.refresh).to.exist;
-          expect(res.data.imp[0].ext.prebid.refresh.count).to.equal(1);
-          expect(res.data.imp[0].ext.prebid.refresh.sinceLastSeconds).to.be.null;
-          expect(res.data.imp[0].ext.prebid.refresh.sinceFirstSeconds).to.equal(0);
-          expect(res.data.imp[0].ext.prebid.refresh.first).to.be.a('number');
-        });
+      it('should include all Prebid counters for multiple impressions', function () {
+        const bidRequest1 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-1',
+          adUnitCode: 'ad-unit-1',
+          bidRequestsCount: 5,
+          bidderRequestsCount: 4,
+          bidderWinsCount: 2
+        };
+        const bidRequest2 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-2',
+          adUnitCode: 'ad-unit-2',
+          bidRequestsCount: 2,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0
+        };
+        const res = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
 
-        it('should increment refresh count on subsequent builds for same ad unit', function () {
-          const bidRequest = {
-            ...defaultBidRequest,
-            adUnitCode: 'build-request-increment-test'
-          };
+        expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(5);
+        expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(4);
+        expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(2);
 
-          const res1 = spec.buildRequests([bidRequest], commonBidderRequest);
-          expect(res1.data.imp[0].ext.prebid.refresh.count).to.equal(1);
-
-          const res2 = spec.buildRequests([bidRequest], commonBidderRequest);
-          expect(res2.data.imp[0].ext.prebid.refresh.count).to.equal(2);
-
-          const res3 = spec.buildRequests([bidRequest], commonBidderRequest);
-          expect(res3.data.imp[0].ext.prebid.refresh.count).to.equal(3);
-        });
-
-        it('should track refresh independently for multiple ad units in same request', function () {
-          const bidRequest1 = {
-            ...defaultBidRequest,
-            bidId: 'bid-1',
-            adUnitCode: 'multi-ad-unit-test-1'
-          };
-          const bidRequest2 = {
-            ...defaultBidRequest,
-            bidId: 'bid-2',
-            adUnitCode: 'multi-ad-unit-test-2'
-          };
-
-          const res = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
-
-          expect(res.data.imp[0].ext.prebid.refresh.count).to.equal(1);
-          expect(res.data.imp[1].ext.prebid.refresh.count).to.equal(1);
-
-          // Second request - only refresh first ad unit
-          const res2 = spec.buildRequests([bidRequest1], commonBidderRequest);
-          expect(res2.data.imp[0].ext.prebid.refresh.count).to.equal(2);
-
-          // Third request - both ad units
-          const res3 = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
-          expect(res3.data.imp[0].ext.prebid.refresh.count).to.equal(3);
-          expect(res3.data.imp[1].ext.prebid.refresh.count).to.equal(2);
-        });
+        expect(res.data.imp[1].ext.prebid.bidRequestsCount).to.equal(2);
+        expect(res.data.imp[1].ext.prebid.bidderRequestsCount).to.equal(1);
+        expect(res.data.imp[1].ext.prebid.bidderWinsCount).to.equal(0);
       });
     });
   })
