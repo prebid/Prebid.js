@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 jobs:
   check-duplication:
@@ -114,12 +112,17 @@ jobs:
             comment += `- [\`${firstFile.name}\`](${link(firstFile)}) has ${lines} duplicated lines with [\`${secondFile.name}\`](${link(secondFile)})\n`;
           });
           comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Please move the common code from both files into a library and import it in each. We hate that we have to mention this, however, commits designed to hide from this utility by renaming variables or reordering an object are poor conduct. We will not look upon them kindly! Keep up the great work! 🚀";
-          github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+          fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
             issue_number: context.issue.number,
             body: comment
-          });
+          }))
+
+    - name: Upload comment data
+      if: env.filtered_report_exists == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: comment
+        path: ${{ runner.temp }}/comment.json
 
     - name: Fail if duplications are found
       if: env.filtered_report_exists == 'true'
