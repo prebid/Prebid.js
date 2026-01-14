@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -56,7 +56,7 @@ jobs:
 
     - name: Upload unfiltered jscpd report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: unfiltered-jscpd-report
         path: ./jscpd-report.json
@@ -89,7 +89,7 @@ jobs:
 
     - name: Upload filtered jscpd report
       if: env.filtered_report_exists == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: filtered-jscpd-report
         path: ./filtered-jscpd-report.json
