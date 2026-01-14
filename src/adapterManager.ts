@@ -505,18 +505,27 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
+    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    const allowedBidders = new Set();
+
     adUnits.forEach(au => {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+        isS2S: serverBidders.includes(bid.bidder) && !clientBidders.includes(bid.bidder)
+      })))
+      au.bids.forEach(bid => {
+        allowedBidders.add(bid.bidder);
+      });
       incrementRequestsCounter(au.code);
     });
 
-    adUnits = setupAdUnitMediaTypes(adUnits, labels);
+    clientBidders = clientBidders.filter(bidder => allowedBidders.has(bidder));
+    serverBidders = serverBidders.filter(bidder => allowedBidders.has(bidder));
 
-    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
     if (config.getConfig('bidderSequence') === RANDOM) {
       clientBidders = shuffle(clientBidders);
