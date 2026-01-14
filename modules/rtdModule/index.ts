@@ -156,6 +156,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
+  const verifiers = [];
 
   if (!relevantSubModules.length) {
     return exitHook();
@@ -166,7 +167,9 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
 
   relevantSubModules.forEach(sm => {
     const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
-    sm.getBidRequestData({...reqBidsConfigObj, ortb2Fragments: fpdGuard}, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    verifiers.push(fpdGuard.verify);
+    reqBidsConfigObj.ortb2Fragments = fpdGuard.obj;
+    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
   function onGetBidRequestDataCallback() {
@@ -187,6 +190,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
     isDone = true;
     clearTimeout(waitTimeout);
+    verifiers.forEach(fn => fn());
     fn.call(this, reqBidsConfigObj);
   }
 });

@@ -4,7 +4,6 @@ import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
 import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
-import {BOL_LIKE_USER_AGENTS} from '../libraries/userAgentUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -411,12 +410,12 @@ function cmerRender(bid) {
 }
 
 /**
- * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies OR it's bot-like traffic.
+ * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies.
  * Data extracted from navigator's userAgent
  * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
  */
 function skipSync(gdprConsent) {
-  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent) || isBotLikeTraffic();
+  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent);
 }
 
 /**
@@ -424,15 +423,6 @@ function skipSync(gdprConsent) {
  */
 function gdprApplies(gdprConsent) {
   return gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies;
-}
-
-/**
- * Check if the user agent is bot-like
- * @returns {boolean}
- */
-function isBotLikeTraffic() {
-  const botPattern = new RegExp(BOL_LIKE_USER_AGENTS.join('|'), 'i');
-  return botPattern.test(navigator.userAgent);
 }
 
 registerBidder(spec);

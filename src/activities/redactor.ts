@@ -134,7 +134,7 @@ function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
     },
     {
       name: ACTIVITY_TRANSMIT_TID,
-      paths: ['ortb2Imp.ext.tid', 'ortb2Imp.ext.tidSource'],
+      paths: ['ortb2Imp.ext.tid'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed)
     }
   ].map(redactRule)
@@ -178,7 +178,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
     },
     {
       name: ACTIVITY_TRANSMIT_TID,
-      paths: ['source.tid', 'source.ext.tidSource'],
+      paths: ['source.tid'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed),
     }
   ].map(redactRule);
@@ -214,11 +214,6 @@ declare module '../config' {
      * privacy concern. Since version 8 they are disabled by default, and can be re-enabled with this flag.
      */
     enableTIDs?: boolean;
-    /**
-     * When enabled alongside enableTIDs, bidders receive a consistent source.tid for an auction rather than
-     * bidder-specific values.
-     */
-    consistentTIDs?: boolean;
   }
 }
 // by default, TIDs are off since version 8

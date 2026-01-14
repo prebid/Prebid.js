@@ -500,20 +500,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "qohere",
-      "aliasOf": "adkernel",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "blutonic",
-      "aliasOf": "adkernel",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -677,13 +663,6 @@
       "componentType": "bidder",
       "componentName": "adndeal5",
       "aliasOf": "adnuntius",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "adocean",
-      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -942,13 +921,6 @@
     {
       "componentType": "bidder",
       "componentName": "bidsmind",
-      "aliasOf": "adverxo",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "harrenmedia",
       "aliasOf": "adverxo",
       "gvlid": null,
       "disclosureURL": null
@@ -1931,13 +1903,6 @@
       "componentName": "deepintent",
       "aliasOf": null,
       "gvlid": 541,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "defineMedia",
-      "aliasOf": null,
-      "gvlid": 440,
       "disclosureURL": null
     },
     {
@@ -3589,7 +3554,7 @@
       "componentType": "bidder",
       "componentName": "pgamssp",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1353,
       "disclosureURL": null
     },
     {

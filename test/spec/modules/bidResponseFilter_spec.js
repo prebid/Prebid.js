@@ -3,12 +3,11 @@ import {
   BID_ADV_DOMAINS_REJECTION_REASON,
   BID_ATTR_REJECTION_REASON,
   BID_CATEGORY_REJECTION_REASON,
-  BID_MEDIA_TYPE_REJECTION_REASON,
-  MODULE_NAME,
-  reset
-} from '../../../modules/bidResponseFilter/index.js';
-import { addBidResponse } from '../../../src/auction.js';
-import { config } from '../../../src/config.js';
+  init,
+  MODULE_NAME
+  , reset} from '../../../modules/bidResponseFilter/index.js';
+import {config} from '../../../src/config.js';
+import {addBidResponse} from '../../../src/auction.js';
 
 describe('bidResponseFilter', () => {
   let mockAuctionIndex
@@ -57,19 +56,11 @@ describe('bidResponseFilter', () => {
       badv: [], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
     });
 
-    mockAuctionIndex.getBidRequest = () => ({
-      mediaTypes: {
-        banner: {}
-      },
-      ortb2Imp: {}
-    })
-
     const bid = {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'EXAMPLE-CAT-ID',
-        attr: 'attr',
-        mediaType: 'banner'
+        attr: 'attr'
       }
     };
 
@@ -147,17 +138,9 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'BANNED_CAT1',
-        attr: 'valid_attr',
-        mediaType: 'banner',
+        attr: 'valid_attr'
       }
     };
-
-    mockAuctionIndex.getBidRequest = () => ({
-      mediaTypes: {
-        banner: {}
-      },
-      ortb2Imp: {}
-    })
 
     mockAuctionIndex.getOrtb2 = () => ({
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
@@ -176,8 +159,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: undefined,
-        attr: 'valid_attr',
-        mediaType: 'banner'
+        attr: 'valid_attr'
       }
     };
 
@@ -185,53 +167,10 @@ describe('bidResponseFilter', () => {
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
     });
 
-    mockAuctionIndex.getBidRequest = () => ({
-      mediaTypes: {
-        banner: {}
-      },
-      ortb2Imp: {}
-    })
-
     config.setConfig({[MODULE_NAME]: {cat: {blockUnknown: false}}});
 
     addBidResponseHook(call, 'adcode', bid, () => {
-    }, mockAuctionIndex);
-    sinon.assert.calledOnce(call);
-  });
-
-  it('should reject bid for meta.mediaType not present on adunit', () => {
-    const reject = sinon.stub();
-    const call = sinon.stub();
-    const bid = {
-      meta: {
-        advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
-        primaryCatId: 'VALID_CAT',
-        attr: 6,
-        mediaType: 'audio'
-      },
-    };
-
-    mockAuctionIndex.getOrtb2 = () => ({
-      badv: [], bcat: []
     });
-
-    mockAuctionIndex.getBidRequest = () => ({
-      ortb2Imp: {
-        banner: {
-        },
-        video: {
-        },
-      }
-    })
-
-    mockAuctionIndex.getBidRequest = () => ({
-      mediaTypes: {
-        banner: {},
-      },
-      ortb2Imp: {}
-    })
-
-    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
-    sinon.assert.calledWith(reject, BID_MEDIA_TYPE_REJECTION_REASON);
+    sinon.assert.calledOnce(call);
   });
 })

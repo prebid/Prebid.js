@@ -505,7 +505,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
 }
 
 const addExtenstionParams = (req, bidderRequest) => {
-  const { profId, verId, wiid } = conf;
+  const { profId, verId, wiid, transactionId } = conf;
   req.ext = {
     epoch: new Date().getTime(), // Sending epoch timestamp in request.ext object
     wrapper: {
@@ -513,6 +513,7 @@ const addExtenstionParams = (req, bidderRequest) => {
       version: verId ? parseInt(verId) : undefined,
       wiid: wiid,
       wv: '$$REPO_AND_VERSION$$',
+      transactionId,
       wp: 'pbjs',
       biddercode: bidderRequest?.bidderCode
     },
@@ -826,6 +827,7 @@ export const spec = {
       originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
       _handleCustomParams(bid.params, conf);
+      conf.transactionId = bid.ortb2Imp?.ext?.tid;
       const { bcat, acat } = bid.params;
       if (bcat) {
         blockedIabCategories = blockedIabCategories.concat(bcat);

@@ -276,7 +276,7 @@ describe('redactor', () => {
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
-      testPropertiesAreRemoved(() => redactor.bidRequest, ['ortb2Imp.ext.tid', 'ortb2Imp.ext.tidSource'], allowed);
+      testPropertiesAreRemoved(() => redactor.bidRequest, ['ortb2Imp.ext.tid'], allowed);
     })
   });
 
@@ -290,7 +290,7 @@ describe('redactor', () => {
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
-      testPropertiesAreRemoved(() => redactor.ortb2, ['source.tid', 'source.ext.tidSource'], allowed);
+      testPropertiesAreRemoved(() => redactor.ortb2, ['source.tid'], allowed);
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_PRECISE_GEO, (allowed) => {

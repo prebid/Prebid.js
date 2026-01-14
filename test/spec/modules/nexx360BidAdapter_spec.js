@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-  spec, STORAGE, getNexx360LocalStorage, getGzipSetting,
+  spec, STORAGE, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
 import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
@@ -32,11 +32,6 @@ describe('Nexx360 bid adapter tests', () => {
       }],
     },
   };
-
-  it('We test getGzipSettings', () => {
-    const output = getGzipSetting();
-    expect(output).to.be.a('boolean');
-  });
 
   describe('isBidRequestValid()', () => {
     let bannerBid;
@@ -100,12 +95,12 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
-      expect(output).to.be.eql(null);
+      expect(output).to.be.eql(false);
     });
     after(() => {
       sandbox.restore()
     });
-  });
+  })
 
   describe('getNexx360LocalStorage enabled but nothing', () => {
     before(() => {
@@ -120,7 +115,7 @@ describe('Nexx360 bid adapter tests', () => {
     after(() => {
       sandbox.restore()
     });
-  });
+  })
 
   describe('getNexx360LocalStorage enabled but wrong payload', () => {
     before(() => {
@@ -130,7 +125,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
-      expect(output).to.be.eql(null);
+      expect(output).to.be.eql(false);
     });
     after(() => {
       sandbox.restore()
@@ -160,7 +155,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('We test if we get the amxId', () => {
       const output = getAmxId(STORAGE, 'nexx360');
-      expect(output).to.be.eql(null);
+      expect(output).to.be.eql(false);
     });
     after(() => {
       sandbox.restore()
@@ -308,9 +303,6 @@ describe('Nexx360 bid adapter tests', () => {
                 },
                 nexx360: {
                   tagId: 'luvxjvgn',
-                  adUnitName: 'header-ad',
-                  adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
-                  divId: 'div-1',
                 },
                 adUnitName: 'header-ad',
                 adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
@@ -332,7 +324,6 @@ describe('Nexx360 bid adapter tests', () => {
                 divId: 'div-2-abcd',
                 nexx360: {
                   placement: 'testPlacement',
-                  divId: 'div-2-abcd',
                   allBids: true,
                 },
               },
@@ -344,10 +335,8 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '7.1',
-            localStorage: { amxId: 'abcdef'},
-            sessionId: requestContent.ext.sessionId,
-            requestCounter: 0,
+            bidderVersion: '6.3',
+            localStorage: { amxId: 'abcdef'}
           },
           cur: [
             'USD',
@@ -575,7 +564,6 @@ describe('Nexx360 bid adapter tests', () => {
                     mediaType: 'outstream',
                     ssp: 'appnexus',
                     adUnitCode: 'div-1',
-                    divId: 'div-1',
                   },
                 },
               ],
@@ -597,7 +585,6 @@ describe('Nexx360 bid adapter tests', () => {
         creativeId: '97517771',
         currency: 'USD',
         netRevenue: true,
-        divId: 'div-1',
         ttl: 120,
         mediaType: 'video',
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },

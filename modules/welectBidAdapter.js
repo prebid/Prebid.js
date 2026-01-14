@@ -119,7 +119,6 @@ export const spec = {
       ttl: responseBody.bidResponse.ttl,
       ad: responseBody.bidResponse.ad,
       vastUrl: responseBody.bidResponse.vastUrl,
-      mediaType: responseBody.bidResponse.mediaType,
       meta: {
         advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
       }

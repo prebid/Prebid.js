@@ -43,7 +43,7 @@ export const spec = {
         ...buildStoredRequest(bid),
       };
 
-      // GDPR
+      // GDPR: If available, include GDPR signals in the request
       if (bidderRequest && bidderRequest.gdprConsent) {
         deepSetValue(
           requestData,
@@ -57,7 +57,7 @@ export const spec = {
         );
       }
 
-      // GPP
+      // GPP: If available, include GPP data in regs.ext
       if (bidderRequest && bidderRequest.gpp) {
         deepSetValue(requestData, 'regs.ext.gpp', bidderRequest.gpp);
       }
@@ -65,12 +65,12 @@ export const spec = {
         deepSetValue(requestData, 'regs.ext.gpp_sid', bidderRequest.gppSids);
       }
 
-      // US Privacy
+      // US Privacy: If available, include US Privacy signal in regs.ext
       if (bidderRequest && bidderRequest.usPrivacy) {
         deepSetValue(requestData, 'regs.ext.us_privacy', bidderRequest.usPrivacy);
       }
 
-      // User IDs
+      // If user IDs are available, add them under user.ext.eids
       if (bid.userIdAsEids) {
         deepSetValue(requestData, 'user.ext.eids', bid.userIdAsEids);
       }
@@ -95,26 +95,17 @@ export const spec = {
       seatbid.bid.forEach((bid) => {
         const impId = bid.impid; // Unique identifier matching getImp(bid).id
 
-        // --- MINIMAL CHANGE START ---
-        // Build meta object and propagate advertiser domains for hb_adomain
+        // Build meta object with adomain and networkId, preserving any existing data
         const meta = deepAccess(bid, 'ext.prebid.meta', {}) || {};
-        // Read ORTB adomain; normalize to array of clean strings
-        let advertiserDomains = deepAccess(bid, 'adomain', []);
-        advertiserDomains = Array.isArray(advertiserDomains)
-          ? advertiserDomains
-            .filter(Boolean)
-            .map(d => String(d).toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').trim())
-          : [];
-        if (advertiserDomains.length > 0) {
-          meta.advertiserDomains = advertiserDomains; // <-- Prebid uses this to set hb_adomain
+        const adomain = deepAccess(bid, 'adomain', []);
+        if (adomain.length > 0) {
+          meta.adomain = adomain;
         }
         const networkId = deepAccess(bid, 'ext.prebid.meta.networkId');
         if (networkId) {
           meta.networkId = networkId;
         }
-        // Keep writing back for completeness (preserves existing behavior)
         deepSetValue(bid, 'ext.prebid.meta', meta);
-        // --- MINIMAL CHANGE END ---
 
         const currentBidResponse = {
           requestId: impId, // Using imp.id as the unique request identifier
@@ -126,7 +117,7 @@ export const spec = {
           currency: serverResponse.body.cur,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
-          meta: meta, // includes advertiserDomains now
+          meta: meta,
         };
 
         // For each imp, only keep the bid with the highest CPM

@@ -37,7 +37,6 @@ describe('Optimera RTD score file URL is properly set for v0', () => {
       }]
     };
     optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
     optimeraRTD.setScores();
     expect(optimeraRTD.apiVersion).to.equal('v0');
     expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
@@ -55,7 +54,6 @@ describe('Optimera RTD score file URL is properly set for v0', () => {
       }]
     };
     optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
     optimeraRTD.setScores();
     expect(optimeraRTD.apiVersion).to.equal('v0');
     expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
@@ -74,7 +72,6 @@ describe('Optimera RTD score file URL is properly set for v0', () => {
       }]
     };
     optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
     optimeraRTD.setScores();
     expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
   });
@@ -94,7 +91,6 @@ describe('Optimera RTD score file URL is properly set for v1', () => {
       }]
     };
     optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
     optimeraRTD.setScores();
     expect(optimeraRTD.apiVersion).to.equal('v1');
     expect(optimeraRTD.scoresURL).to.equal('https://v1.oapi26b.com/api/products/scores?c=9999&h=localhost:9876&p=/context.html&s=de');

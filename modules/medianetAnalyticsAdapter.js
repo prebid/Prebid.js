@@ -397,9 +397,6 @@ function addS2sInfo(auctionObj, bidderRequests) {
 
       bidObjs.forEach((bidObj) => {
         bidObj.serverLatencyMillis = bidderRequest.serverResponseTimeMs;
-        bidObj.pbsExt = Object.fromEntries(
-          Object.entries(bidderRequest.pbsExt || {}).filter(([key]) => key !== 'debug')
-        );
         const serverError = deepAccess(bidderRequest, `serverErrors.0`);
         if (serverError && bidObj.status !== BID_SUCCESS) {
           bidObj.status = PBS_ERROR_STATUS_START + serverError.code;
@@ -622,10 +619,7 @@ function auctionInitHandler(eventType, auction) {
     });
 
   // addUidData
-  let userIds;
-  if (typeof getGlobal().getUserIds === 'function') {
-    userIds = getGlobal().getUserIds();
-  }
+  const userIds = deepAccess(auction.bidderRequests, '0.bids.0.userId');
   if (isPlainObject(userIds)) {
     const enabledUids = mnetGlobals.configuration.enabledUids || [];
     auctionObj.availableUids = Object.keys(userIds).sort();
