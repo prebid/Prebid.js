@@ -21,7 +21,6 @@ describe('Optable RTD Submodule', function () {
         bundleUrl: 'https://cdn.optable.co/bundle.js',
         adserverTargeting: true,
         handleRtd: config.params.handleRtd,
-        skipCache: false,
       });
     });
 
@@ -49,17 +48,6 @@ describe('Optable RTD Submodule', function () {
 
     it('returns null handleRtd if handleRtd is not a function', function () {
       expect(parseConfig({params: {handleRtd: 'notAFunction'}}).handleRtd).to.be.null;
-    });
-
-    it('defaults skipCache to false if missing', function () {
-      expect(parseConfig(
-        {params: {bundleUrl: 'https://cdn.optable.co/bundle.js'}}
-      ).skipCache).to.be.false;
-    });
-
-    it('parses skipCache correctly when set to true', function () {
-      const config = {params: {skipCache: true}};
-      expect(parseConfig(config).skipCache).to.be.true;
     });
   });
 
@@ -129,61 +117,6 @@ describe('Optable RTD Submodule', function () {
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
     });
-
-    it('skips cache when skipCache is true and waits for events', async function () {
-      const cachedData = {ortb2: {user: {ext: {optable: 'cachedData'}}}};
-      const eventData = {ortb2: {user: {ext: {optable: 'eventData'}}}};
-      window.optable.instance.targetingFromCache.returns(cachedData);
-
-      // Dispatch event with targeting data after a short delay
-      setTimeout(() => {
-        const event = new CustomEvent('optable-targeting:change', {
-          detail: eventData
-        });
-        window.dispatchEvent(event);
-      }, 10);
-
-      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, true);
-      // Should use event data, not cached data
-      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, eventData.ortb2)).to.be.true;
-      expect(window.optable.instance.targetingFromCache.called).to.be.false;
-    });
-
-    it('skips cache when instance cache has empty eids and waits for events', async function () {
-      const cachedDataWithEmptyEids = {ortb2: {user: {eids: []}}};
-      const eventData = {ortb2: {user: {eids: [{source: 'optable.co', uids: [{id: 'test-id'}]}]}}};
-      window.optable.instance.targetingFromCache.returns(cachedDataWithEmptyEids);
-
-      // Dispatch event with targeting data after a short delay
-      setTimeout(() => {
-        const event = new CustomEvent('optable-targeting:change', {
-          detail: eventData
-        });
-        window.dispatchEvent(event);
-      }, 10);
-
-      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
-      // Should use event data, not cached data with empty eids
-      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, eventData.ortb2)).to.be.true;
-    });
-
-    it('skips cache when instance cache has no eids and waits for events', async function () {
-      const cachedDataWithNoEids = {ortb2: {user: {}}};
-      const eventData = {ortb2: {user: {eids: [{source: 'optable.co', uids: [{id: 'test-id'}]}]}}};
-      window.optable.instance.targetingFromCache.returns(cachedDataWithNoEids);
-
-      // Dispatch event with targeting data after a short delay
-      setTimeout(() => {
-        const event = new CustomEvent('optable-targeting:change', {
-          detail: eventData
-        });
-        window.dispatchEvent(event);
-      }, 10);
-
-      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
-      // Should use event data, not cached data without eids
-      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, eventData.ortb2)).to.be.true;
-    });
   });
 
   describe('mergeOptableData', function () {
@@ -202,19 +135,13 @@ describe('Optable RTD Submodule', function () {
     it('calls handleRtdFn synchronously if it is a regular function', async function () {
       handleRtdFn = sinon.spy();
       await mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn);
-      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn, false)).to.be.true;
+      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn)).to.be.true;
     });
 
     it('calls handleRtdFn asynchronously if it is an async function', async function () {
       handleRtdFn = sinon.stub().resolves();
       await mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn);
-      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn, false)).to.be.true;
-    });
-
-    it('passes skipCache parameter to handleRtdFn', async function () {
-      handleRtdFn = sinon.spy();
-      await mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn, true);
-      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn, true)).to.be.true;
+      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn)).to.be.true;
     });
   });
 
