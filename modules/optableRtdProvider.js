@@ -73,8 +73,10 @@ const checkLocalStorageCache = () => {
       logMessage(`${OPTABLE_RESOLVED_KEY} has ${eidCount} EIDs`);
       if (eidCount > 0) {
         logMessage(`Using cached wrapper-resolved data from ${OPTABLE_RESOLVED_KEY} with ${eidCount} EIDs`);
+        return parsedData;
+      } else {
+        logMessage(`Skipping ${OPTABLE_RESOLVED_KEY} cache: empty eids - will wait for targeting event`);
       }
-      return parsedData;
     } catch (e) {
       logWarn(`Failed to parse ${OPTABLE_RESOLVED_KEY} from localStorage`, e);
     }
@@ -90,8 +92,10 @@ const checkLocalStorageCache = () => {
       logMessage(`${OPTABLE_CACHE_KEY} has ${eidCount} EIDs`);
       if (eidCount > 0) {
         logMessage(`Using cached raw SDK data from ${OPTABLE_CACHE_KEY} with ${eidCount} EIDs`);
+        return parsedData;
+      } else {
+        logMessage(`Skipping ${OPTABLE_CACHE_KEY} cache: empty eids - will wait for targeting event`);
       }
-      return parsedData;
     } catch (e) {
       logWarn(`Failed to parse ${OPTABLE_CACHE_KEY} from localStorage`, e);
     }
@@ -119,9 +123,14 @@ const waitForOptableEvent = (skipCache = false) => {
 
       if (instanceData && instanceData.ortb2) {
         const eidCount = instanceData.ortb2?.user?.eids?.length || 0;
-        logMessage(`Resolved targeting from SDK instance cache with ${eidCount} EIDs`);
-        resolve(instanceData);
-        return;
+        logMessage(`SDK instance.targetingFromCache() has ${eidCount} EIDs`);
+        if (eidCount > 0) {
+          logMessage(`Resolved targeting from SDK instance cache with ${eidCount} EIDs`);
+          resolve(instanceData);
+          return;
+        } else {
+          logMessage('Skipping SDK instance cache: empty eids - will wait for targeting event');
+        }
       }
 
       // 2. THEN: Check localStorage cache sources

@@ -148,6 +148,42 @@ describe('Optable RTD Submodule', function () {
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, eventData.ortb2)).to.be.true;
       expect(window.optable.instance.targetingFromCache.called).to.be.false;
     });
+
+    it('skips cache when instance cache has empty eids and waits for events', async function () {
+      const cachedDataWithEmptyEids = {ortb2: {user: {eids: []}}};
+      const eventData = {ortb2: {user: {eids: [{source: 'optable.co', uids: [{id: 'test-id'}]}]}}};
+      window.optable.instance.targetingFromCache.returns(cachedDataWithEmptyEids);
+
+      // Dispatch event with targeting data after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: eventData
+        });
+        window.dispatchEvent(event);
+      }, 10);
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      // Should use event data, not cached data with empty eids
+      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, eventData.ortb2)).to.be.true;
+    });
+
+    it('skips cache when instance cache has no eids and waits for events', async function () {
+      const cachedDataWithNoEids = {ortb2: {user: {}}};
+      const eventData = {ortb2: {user: {eids: [{source: 'optable.co', uids: [{id: 'test-id'}]}]}}};
+      window.optable.instance.targetingFromCache.returns(cachedDataWithNoEids);
+
+      // Dispatch event with targeting data after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: eventData
+        });
+        window.dispatchEvent(event);
+      }, 10);
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      // Should use event data, not cached data without eids
+      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, eventData.ortb2)).to.be.true;
+    });
   });
 
   describe('mergeOptableData', function () {
