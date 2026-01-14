@@ -16,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Download artifact'
+        id: download
         uses: actions/github-script@v8
         with:
+          result-encoding: string
           script: |
             let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
                owner: context.repo.owner,
@@ -27,6 +29,9 @@ jobs:
             let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name == "comment"
             })[0];
+            if (matchArtifact == null) {
+              return "false"
+            }
             let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
@@ -40,18 +45,21 @@ jobs:
               fs.mkdirSync(temp);
             }
             fs.writeFileSync(path.join(temp, 'comment.zip'), Buffer.from(download.data));
+            return "true";
 
       - name: 'Unzip artifact'
+        if: ${{ steps.download.outputs.result == 'true' }}
         run: unzip "${{ runner.temp }}/artifacts/comment.zip" -d "${{ runner.temp }}/artifacts"
 
       - name: 'Comment on PR'
+        if: ${{ steps.download.outputs.result == 'true' }}
         uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
             const temp = '${{ runner.temp }}/artifacts';
-            const {issue_number, comment} = JSON.parse(fs.readFileSync(path.join(temp, 'comment'))); 
+            const {issue_number, comment} = JSON.parse(fs.readFileSync(path.join(temp, 'comment.json'))); 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
