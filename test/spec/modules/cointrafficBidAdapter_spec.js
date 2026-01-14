@@ -9,7 +9,7 @@ import * as utils from 'src/utils.js'
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
-const ENDPOINT_URL = 'https://apps.adsgravity.io/v1/request/prebid';
+const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -20,13 +20,9 @@ describe('cointrafficBidAdapter', function () {
         placementId: 'testPlacementId'
       },
       adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [
-            [300, 250]
-          ],
-        },
-      },
+      sizes: [
+        [300, 250]
+      ],
       bidId: 'bidId12345',
       bidderRequestId: 'bidderRequestId12345',
       auctionId: 'auctionId12345'
@@ -46,13 +42,9 @@ describe('cointrafficBidAdapter', function () {
           placementId: 'testPlacementId'
         },
         adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [
-              [300, 250]
-            ],
-          },
-        },
+        sizes: [
+          [300, 250]
+        ],
         bidId: 'bidId12345',
         bidderRequestId: 'bidderRequestId12345',
         auctionId: 'auctionId12345'
@@ -63,13 +55,9 @@ describe('cointrafficBidAdapter', function () {
           placementId: 'testPlacementId'
         },
         adUnitCode: 'adunit-code2',
-        mediaTypes: {
-          banner: {
-            sizes: [
-              [300, 250]
-            ],
-          },
-        },
+        sizes: [
+          [300, 250]
+        ],
         bidId: 'bidId67890"',
         bidderRequestId: 'bidderRequestId67890',
         auctionId: 'auctionId12345'

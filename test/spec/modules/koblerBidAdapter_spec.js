@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/koblerBidAdapter.js';
+import {pageViewId, spec} from 'modules/koblerBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -7,7 +7,7 @@ import {getRefererInfo} from 'src/refererDetection.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
-function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}, pageViewId) {
+function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}) {
   const gdprConsent = {
     consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
     apiVersion: 2,
@@ -21,8 +21,7 @@ function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}, p
     refererInfo: {
       page: pageUrl || 'example.com'
     },
-    gdprConsent: gdprConsent,
-    pageViewId
+    gdprConsent: gdprConsent
   };
 }
 
@@ -260,17 +259,15 @@ describe('KoblerAdapter', function () {
       const testUrl = 'kobler.no';
       const auctionId1 = '8319af54-9795-4642-ba3a-6f57d6ff9100';
       const auctionId2 = 'e19f2d0c-602d-4969-96a1-69a22d483f47';
-      const pageViewId1 = '2949ce3c-2c4d-4b96-9ce0-8bf5aa0bb416';
-      const pageViewId2 = '6c449b7d-c9b0-461d-8cc7-ce0a8da58349';
       const timeout = 5000;
       const validBidRequests = [createValidBidRequest()];
-      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl, {}, pageViewId1);
-      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl, {}, pageViewId2);
+      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl);
+      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl);
 
       const openRtbRequest1 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest1).data);
-      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId1);
+      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId);
       const openRtbRequest2 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest2).data);
-      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId2);
+      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId);
     });
 
     it('should read data from valid bid requests', function () {
@@ -443,7 +440,6 @@ describe('KoblerAdapter', function () {
     });
 
     it('should create whole OpenRTB request', function () {
-      const pageViewId = 'aa9f0b20-a642-4d0e-acb5-e35805253ef7';
       const validBidRequests = [
         createValidBidRequest(
           {
@@ -487,8 +483,7 @@ describe('KoblerAdapter', function () {
               }
             }
           }
-        },
-        pageViewId
+        }
       );
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);

@@ -1,4 +1,4 @@
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/navigatorData/dnt.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -18,6 +18,7 @@ const getConfig = config.getConfig;
 const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
 const refreshes = {};
 const placementCounters = {};
+const pageViewId = generateUUID();
 const pageViewStart = new Date().getTime();
 let auctionCounter = 0;
 
@@ -42,7 +43,7 @@ export const spec = {
         site: deepAccess(bidRequests, '0.params.site'),
         sessionId: getSessionId(),
         counter: auctionCounter++,
-        pageViewId: bidderRequest.pageViewId,
+        pageViewId: pageViewId,
         pageViewStart: pageViewStart,
         gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),

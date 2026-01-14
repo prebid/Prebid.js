@@ -400,18 +400,11 @@ function autoFillParams(bid) {
     bid.params.site = adgGlobalConf.siteId.split(':')[1];
   }
 
-  if (!bid.params.placement) {
-    let p = deepAccess(bid, 'ortb2Imp.ext.data.adg_rtd.placement', '');
-    if (!p) {
-      // Use ortb2Imp.ext.data.placement for backward compatibility.
-      p = deepAccess(bid, 'ortb2Imp.ext.data.placement', '');
-    }
-
-    // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
-    if (!p && bid.params.useAdUnitCodeAsPlacement === true) {
-      p = bid.adUnitCode;
-    }
-    bid.params.placement = p;
+  // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
+  // In Prebid.js 9, `placement` should be defined in ortb2Imp and the `useAdUnitCodeAsPlacement` param should be removed
+  bid.params.placement = deepAccess(bid, 'ortb2Imp.ext.data.placement', bid.params.placement);
+  if (!bid.params.placement && (adgGlobalConf.useAdUnitCodeAsPlacement === true || bid.params.useAdUnitCodeAsPlacement === true)) {
+    bid.params.placement = bid.adUnitCode;
   }
 
   bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.divId', bid.params.adUnitElementId);
@@ -717,7 +710,7 @@ export const spec = {
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
       return {
         method: 'POST',
-        url: `${ENDPOINT}?orgid=${organizationId}`,
+        url: ENDPOINT,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,
@@ -745,7 +738,7 @@ export const spec = {
           usIfr: canSyncWithIframe
         },
         options: {
-          endpointCompression: true
+          contentType: 'text/plain'
         }
       };
     });

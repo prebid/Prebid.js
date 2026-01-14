@@ -1,5 +1,4 @@
 const shared = require('./wdio.shared.conf.js');
-const process = require('process');
 
 const browsers = Object.fromEntries(
   Object.entries(require('./browsers.json'))
@@ -29,7 +28,7 @@ function getCapabilities() {
         osVersion: browser.os_version,
         networkLogs: true,
         consoleLogs: 'verbose',
-        buildName: process.env.BROWSERSTACK_BUILD_NAME
+        buildName: `Prebidjs E2E (${browser.browser} ${browser.browser_version}) ${new Date().toLocaleString()}`
       },
       acceptInsecureCerts: true,
     });

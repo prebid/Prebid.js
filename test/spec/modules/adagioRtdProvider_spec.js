@@ -507,7 +507,7 @@ describe('Adagio Rtd Provider', function () {
       expect(ortb2ImpExt.adunit_position).equal('');
     });
 
-    describe('set the ortb2Imp.ext.data.adg_rtd.placement', function() {
+    describe('update the ortb2Imp.ext.data.placement if not present', function() {
       const config = {
         name: SUBMODULE_NAME,
         params: {
@@ -516,20 +516,7 @@ describe('Adagio Rtd Provider', function () {
         }
       };
 
-      it('set the adg_rtd.placement value from the adUnit[].bids adagio.params.placement value', function() {
-        const placement = 'placement-value';
-
-        const configCopy = utils.deepClone(config);
-
-        const bidRequest = utils.deepClone(bidReqConfig);
-        bidRequest.adUnits[0].bids[0].params.placement = placement;
-
-        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
-        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
-        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.placement).to.equal(placement);
-      });
-
-      it('fallback on the adUnit.code value to set the adg_rtd.placement value', function() {
+      it('update the placement value with the adUnit.code value', function() {
         const configCopy = utils.deepClone(config);
         configCopy.params.placementSource = PLACEMENT_SOURCES.ADUNITCODE;
 
@@ -537,10 +524,10 @@ describe('Adagio Rtd Provider', function () {
 
         adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
         expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
-        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.placement).to.equal('div-gpt-ad-1460505748561-0');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal('div-gpt-ad-1460505748561-0');
       });
 
-      it('fallback on the the gpid value to set the adg_rtd.placement value ', function() {
+      it('update the placement value with the gpid value', function() {
         const configCopy = utils.deepClone(config);
         configCopy.params.placementSource = PLACEMENT_SOURCES.GPID;
 
@@ -550,16 +537,29 @@ describe('Adagio Rtd Provider', function () {
 
         adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
         expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
-        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.placement).to.equal(gpid);
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal(gpid);
       });
 
-      it('it does not populate `ortb2Imp.ext.data.adg_rtd.placement` if no fallback', function() {
+      it('update the placement value the legacy adUnit[].bids adagio.params.placement value', function() {
+        const placement = 'placement-value';
+
+        const configCopy = utils.deepClone(config);
+
+        const bidRequest = utils.deepClone(bidReqConfig);
+        bidRequest.adUnits[0].bids[0].params.placement = placement;
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal(placement);
+      });
+
+      it('it does not populate `ortb2Imp.ext.data.placement` if no fallback', function() {
         const configCopy = utils.deepClone(config);
         const bidRequest = utils.deepClone(bidReqConfig);
 
         adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
         expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
-        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.placement).to.not.exist;
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.not.exist;
       });
 
       it('ensure we create the `ortb2Imp` object if it does not exist', function() {
@@ -571,7 +571,7 @@ describe('Adagio Rtd Provider', function () {
 
         adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
         expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
-        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.placement).to.equal('div-gpt-ad-1460505748561-0');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal('div-gpt-ad-1460505748561-0');
       });
     });
   });

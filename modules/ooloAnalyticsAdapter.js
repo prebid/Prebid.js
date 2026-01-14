@@ -22,7 +22,6 @@ const prebidVersion = '$prebid.version$'
 const analyticsType = 'endpoint'
 const ADAPTER_CODE = 'oolo'
 const AUCTION_END_SEND_TIMEOUT = 1500
-// TODO: consider using the Prebid-generated page view ID instead of generating a custom one
 export const PAGEVIEW_ID = +generatePageViewId()
 
 const {

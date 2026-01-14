@@ -199,7 +199,7 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    if (request?.user?.ext?.eids?.length > 0) {
+    if (request?.user?.ext?.eids.length > 0) {
       request.user.ext.eids.forEach(eid => {
         if (eid.source === 'adserver.org') {
           eid.rti_partner = 'TDID';
@@ -397,7 +397,7 @@ function isNotEmptyString(value) {
 function checkOptionalParams(bidRequest, fieldName, expectedType) {
   const value = bidRequest?.params?.[fieldName];
   // allow false, but not undefined, null or empty string
-  if (value !== undefined && value !== null && value !== '') {
+  if (value !== undefined || value !== null || value !== '') {
     const actualType = typeof value;
     if (actualType === expectedType) {
       return true;
@@ -452,10 +452,13 @@ function formatRequest(payload, bidderRequest) {
   }
 
   // check if member is defined in the bid params
-  const matchingBid = ((bidderRequest?.bids) || []).find(bid => bid.params && bid.params.member && isNumber(bid.params.member));
-  if (matchingBid) {
-    endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'member_id=' + matchingBid.params.member;
+  const memberId = ((bidderRequest?.bids) || []).find(bid => bid.params && bid.params.member && isNumber(bid.params.member));
+  if (memberId) {
+    endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'member_id=' + memberId;
   }
+
+  // temporary setting
+  endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'eqt=1';
 
   if (getParameterByName("apn_test").toUpperCase() === "TRUE") {
     options.customHeaders = {

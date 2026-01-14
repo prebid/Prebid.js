@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/suimBidAdapter.js';
 
-const ENDPOINT = 'https://ad.suimad.com/bid';
-const SYNC_URL = 'https://ad.suimad.com/usersync';
+const ENDPOINT = 'https://bid.suimad.com/api/v1/prebids';
+const SYNC_URL = 'https://bid.suimad.com/api/v1/logs/usersync';
 
 describe('SuimAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -81,7 +81,7 @@ describe('SuimAdapter', function () {
 
   describe('interpretResponse', function () {
     const bidResponse = {
-      requestId: '22a91eced2e93a',
+      bidId: '22a91eced2e93a',
       cpm: 300,
       currency: 'JPY',
       width: 300,
@@ -115,7 +115,7 @@ describe('SuimAdapter', function () {
       const result = spec.interpretResponse({ body: bidResponse }, bidderRequests);
       expect(result).to.have.lengthOf(1);
       expect(result[0]).to.deep.equal({
-        requestId: bidResponse.requestId,
+        requestId: bidResponse.bid,
         cpm: 300,
         currency: 'JPY',
         width: 300,

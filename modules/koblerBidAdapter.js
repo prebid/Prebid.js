@@ -1,5 +1,6 @@
 import {
   deepAccess,
+  generateUUID,
   getWindowSelf,
   isArray,
   isStr,
@@ -13,6 +14,8 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const additionalData = new WeakMap();
+
+export const pageViewId = generateUUID();
 
 export function setAdditionalData(obj, key, value) {
   const prevValue = additionalData.get(obj) || {};
@@ -182,7 +185,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       kobler: {
         tcf_purpose_2_given: purpose2Given,
         tcf_purpose_3_given: purpose3Given,
-        page_view_id: bidderRequest.pageViewId
+        page_view_id: pageViewId
       }
     }
   };

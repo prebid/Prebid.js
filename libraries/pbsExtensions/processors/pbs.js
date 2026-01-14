@@ -1,5 +1,5 @@
 import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
-import {isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
+import {deepAccess, isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
 import {extPrebidMediaType} from './mediaType.js';
 import {setRequestExtPrebidAliases} from './aliases.js';
 import {setImpBidParams} from './params.js';
@@ -7,7 +7,6 @@ import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
 import {addEventTrackers} from './eventTrackers.js';
-import {setRequestExtPrebidPageViewIds} from './pageViewIds.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -22,11 +21,7 @@ export const PBS_PROCESSORS = {
     extPrebidAliases: {
       // sets ext.prebid.aliases
       fn: setRequestExtPrebidAliases
-    },
-    extPrebidPageViewIds: {
-      // sets ext.prebid.page_view_ids
-      fn: setRequestExtPrebidPageViewIds
-    },
+    }
   },
   [IMP]: {
     params: {
@@ -87,36 +82,20 @@ export const PBS_PROCESSORS = {
   },
   [RESPONSE]: {
     serverSideStats: {
-      // updates bidderRequest and bidRequests with fields from response.ext
-      // - bidder-scoped for 'errors' and 'responsetimemillis'
-      // - copy-as-is for all other fields
+      // updates bidderRequest and bidRequests with serverErrors from ext.errors and serverResponseTimeMs from ext.responsetimemillis
       fn(response, ortbResponse, context) {
-        const bidder = context.bidderRequest?.bidderCode;
-        const ext = ortbResponse?.ext;
-        if (!ext) return;
-
-        const FIELD_MAP = {
+        Object.entries({
           errors: 'serverErrors',
           responsetimemillis: 'serverResponseTimeMs'
-        };
-
-        Object.entries(ext).forEach(([field, extValue]) => {
-          if (FIELD_MAP[field]) {
-            // Skip mapped fields if no bidder
-            if (!bidder) return;
-            const value = extValue?.[bidder];
-            if (value !== undefined) {
-              const clientName = FIELD_MAP[field];
-              context.bidderRequest[clientName] = value;
-              context.bidRequests?.forEach(bid => {
-                bid[clientName] = value;
-              });
-            }
-          } else if (extValue !== undefined) {
-            context.bidderRequest.pbsExt = context.bidderRequest.pbsExt || {};
-            context.bidderRequest.pbsExt[field] = extValue;
+        }).forEach(([serverName, clientName]) => {
+          const value = deepAccess(ortbResponse, `ext.${serverName}.${context.bidderRequest.bidderCode}`);
+          if (value) {
+            context.bidderRequest[clientName] = value;
+            context.bidRequests.forEach(bid => {
+              bid[clientName] = value;
+            });
           }
-        });
+        })
       }
     },
   }

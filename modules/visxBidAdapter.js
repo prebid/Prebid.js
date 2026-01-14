@@ -311,10 +311,6 @@ function buildImpObject(bid) {
     impObject.ext.bidder.adslotExists = _isAdSlotExists(adUnitCode);
   }
 
-  if (bid.ortb2Imp?.ext?.gpid) {
-    impObject.ext.gpid = bid.ortb2Imp.ext.gpid;
-  }
-
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
   }
