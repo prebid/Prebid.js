@@ -59,10 +59,10 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const temp = '${{ runner.temp }}/artifacts';
-            const {issue_number, comment} = JSON.parse(fs.readFileSync(path.join(temp, 'comment.json'))); 
+            const {issue_number, body} = JSON.parse(fs.readFileSync(path.join(temp, 'comment.json'))); 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issue_number,
-              body: comment
+              issue_number,
+              body
             });

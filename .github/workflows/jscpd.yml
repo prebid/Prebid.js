@@ -94,7 +94,7 @@ jobs:
         name: filtered-jscpd-report
         path: ./filtered-jscpd-report.json
 
-    - name: Post GitHub comment
+    - name: Generate PR comment
       if: env.filtered_report_exists == 'true'
       uses: actions/github-script@v8
       with:
