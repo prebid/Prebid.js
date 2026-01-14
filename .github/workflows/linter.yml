@@ -51,7 +51,7 @@ jobs:
         uses: actions/github-script@v8
         id: comment
         with:
-          output-encoding: string
+          result-encoding: string
           script: |
             const fs = require('fs');
             const path = require('path');
