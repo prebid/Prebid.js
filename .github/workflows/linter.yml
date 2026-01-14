@@ -116,7 +116,7 @@ jobs:
             }
 
       - name: Upload comment data
-        if: ${{ steps.comment.output.result == 'true' }}
+        if: ${{ steps.comment.outputs.result == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: comment
