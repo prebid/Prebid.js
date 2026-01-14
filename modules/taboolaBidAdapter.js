@@ -183,9 +183,8 @@ const converter = ortbConverter({
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const hasNative = !!context.bidRequest?.mediaTypes?.native;
-    const hasBanner = !!context.bidRequest?.mediaTypes?.banner;
-    context.mediaType = hasNative && !hasBanner ? NATIVE : BANNER;
+    const { mediaType } = getMediaType(context.bidRequest);
+    context.mediaType = mediaType;
 
     if (context.mediaType === NATIVE) {
       const admObj = safeJSONParse(bid.adm);
@@ -220,8 +219,7 @@ export const spec = {
     if (!hasPublisherAndTag) {
       return false;
     }
-    const hasBanner = !!bidRequest.mediaTypes?.banner;
-    const hasNative = !!bidRequest.mediaTypes?.native;
+    const { hasBanner, hasNative } = getMediaType(bidRequest);
     return hasBanner || hasNative;
   },
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -233,8 +231,8 @@ export const spec = {
       context: { auctionId }
     });
     const {publisherId} = bidRequest.params;
-    const isNative = !!bidRequest.mediaTypes?.native;
-    const baseUrl = isNative ? NATIVE_ENDPOINT_URL : BANNER_ENDPOINT_URL;
+    const { mediaType } = getMediaType(bidRequest);
+    const baseUrl = mediaType === NATIVE ? NATIVE_ENDPOINT_URL : BANNER_ENDPOINT_URL;
     const url = baseUrl + '?publisher=' + publisherId;
 
     return {
@@ -453,15 +451,16 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
 
 function fillTaboolaImpData(bid, imp) {
   const {tagId, position} = bid.params;
-  const bannerSizes = bid.mediaTypes?.banner?.sizes;
-  if (bannerSizes) {
-    imp.banner = getBanners(bannerSizes, position);
+  const { mediaType, hasBanner } = getMediaType(bid);
+  if (hasBanner) {
+    imp.banner = getBanners(bid.mediaTypes.banner.sizes, position);
   }
-  imp.tagid = tagId;
 
+  imp.tagid = tagId;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: CURRENCY,
+      mediaType: mediaType,
       size: '*'
     });
     if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
@@ -515,6 +514,16 @@ function getSizes(sizes) {
       }
     })
   }
+}
+
+function getMediaType(bidRequest) {
+  const hasBanner = !!bidRequest?.mediaTypes?.banner?.sizes;
+  const hasNative = !!bidRequest?.mediaTypes?.native;
+  return {
+    hasBanner,
+    hasNative,
+    mediaType: hasNative && !hasBanner ? NATIVE : BANNER
+  };
 }
 
 registerBidder(spec);
