@@ -33,14 +33,14 @@ jobs:
       - name: Checkout code (PR)
         id: checkout-pr
         if: ${{ github.event_name == 'pull_request_target' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
 
       - name: Checkout code (push)
         id: checkout-push
         if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Commit info
         id: info
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Restore source
         uses: ./.github/actions/load
         with:
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Restore source
         uses: ./.github/actions/load
