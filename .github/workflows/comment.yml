@@ -3,6 +3,7 @@ on:
   workflow_run:
     workflows:
       - Check for Duplicated Code
+      - Check for linter warnings / exceptions
     types:
       - completed
 
