@@ -25,6 +25,17 @@ userIdAsEids = [
         }]
     },
 
+    // Note: While many User ID modules use common atype values (e.g. 1 or 3),
+    // some identity providers require a vendor-specific atype for recognition.
+    // LocID uses atype 3384 as required for demand partner recognition.
+    {
+        source: 'locid.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3384
+        }]
+    },
+
     {
         source: 'adserver.org',
         uids: [{

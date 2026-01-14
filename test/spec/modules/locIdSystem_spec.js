@@ -24,7 +24,7 @@ describe('LocID System', () => {
 
   describe('module properties', () => {
     it('should expose correct module name', () => {
-      expect(locIdSubmodule.name).to.equal('locid');
+      expect(locIdSubmodule.name).to.equal('locId');
     });
 
     it('should have gvlid set to Digital Envoy IAB TCF vendor ID', () => {
@@ -33,28 +33,30 @@ describe('LocID System', () => {
 
     it('should have eids configuration with correct defaults', () => {
       expect(locIdSubmodule.eids).to.be.an('object');
-      expect(locIdSubmodule.eids.locid).to.be.an('object');
-      expect(locIdSubmodule.eids.locid.source).to.equal('locid.com');
+      expect(locIdSubmodule.eids.locId).to.be.an('object');
+      expect(locIdSubmodule.eids.locId.source).to.equal('locid.com');
       // atype 3384 = LocID vendor identifier for demand partner recognition
-      expect(locIdSubmodule.eids.locid.atype).to.equal(3384);
+      expect(locIdSubmodule.eids.locId.atype).to.equal(3384);
     });
 
     it('should have getValue function that extracts ID', () => {
-      const getValue = locIdSubmodule.eids.locid.getValue;
+      const getValue = locIdSubmodule.eids.locId.getValue;
       expect(getValue('test-id')).to.equal('test-id');
-      expect(getValue({ locid: 'test-id' })).to.equal('test-id');
+      expect(getValue({ id: 'id-shape' })).to.equal('id-shape');
+      expect(getValue({ locId: 'test-id' })).to.equal('test-id');
+      expect(getValue({ locid: 'legacy-id' })).to.equal('legacy-id');
     });
   });
 
   describe('decode', () => {
     it('should decode valid ID correctly', () => {
       const result = locIdSubmodule.decode(TEST_ID);
-      expect(result).to.deep.equal({ locid: TEST_ID });
+      expect(result).to.deep.equal({ locId: TEST_ID });
     });
 
     it('should decode ID passed as object', () => {
       const result = locIdSubmodule.decode({ id: TEST_ID });
-      expect(result).to.deep.equal({ locid: TEST_ID });
+      expect(result).to.deep.equal({ locId: TEST_ID });
     });
 
     it('should return undefined for invalid values', () => {
@@ -71,7 +73,7 @@ describe('LocID System', () => {
     it('should accept ID at exactly MAX_ID_LENGTH (512 characters)', () => {
       const maxLengthId = 'a'.repeat(512);
       const result = locIdSubmodule.decode(maxLengthId);
-      expect(result).to.deep.equal({ locid: maxLengthId });
+      expect(result).to.deep.equal({ locId: maxLengthId });
     });
   });
 
@@ -651,6 +653,15 @@ describe('LocID System', () => {
 
     it('should return undefined on US Privacy processing restriction and not call ajax', () => {
       const consentData = {
+        usp: '1YY-'
+      };
+      const result = locIdSubmodule.getId(config, consentData);
+      expect(result).to.be.undefined;
+      expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should return undefined on legacy US Privacy processing restriction and not call ajax', () => {
+      const consentData = {
         uspConsent: '1YY-'
       };
       const result = locIdSubmodule.getId(config, consentData);
@@ -659,6 +670,22 @@ describe('LocID System', () => {
     });
 
     it('should return undefined on GPP processing restriction and not call ajax', () => {
+      const consentData = {
+        gpp: {
+          applicableSections: [7],
+          parsedSections: {
+            usnat: {
+              KnownChildSensitiveDataConsents: [1]
+            }
+          }
+        }
+      };
+      const result = locIdSubmodule.getId(config, consentData);
+      expect(result).to.be.undefined;
+      expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should return undefined on legacy GPP processing restriction and not call ajax', () => {
       const consentData = {
         gppConsent: {
           applicableSections: [7],

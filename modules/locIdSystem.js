@@ -10,7 +10,7 @@ import { submodule } from '../src/hook.js';
 import { gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 
-const MODULE_NAME = 'locid';
+const MODULE_NAME = 'locId';
 const LOG_PREFIX = 'LocID:';
 const DEFAULT_TIMEOUT_MS = 800;
 const DEFAULT_EID_SOURCE = 'locid.com';
@@ -45,6 +45,20 @@ function shouldRequirePrivacySignals(params) {
   return false;
 }
 
+function getUspConsent(consentData) {
+  if (consentData && consentData.usp != null) {
+    return consentData.usp;
+  }
+  return consentData?.uspConsent;
+}
+
+function getGppConsent(consentData) {
+  if (consentData && consentData.gpp != null) {
+    return consentData.gpp;
+  }
+  return consentData?.gppConsent;
+}
+
 /**
  * Checks if any privacy signals are present in consentData or data handlers.
  *
@@ -57,8 +71,8 @@ function shouldRequirePrivacySignals(params) {
  * "Signals present" means ANY of the following are available:
  * - consentString or gdpr.consentString (indicates CMP provided framework data)
  * - vendorData or gdpr.vendorData (indicates CMP provided vendor data)
- * - uspConsent (US Privacy string)
- * - gppConsent (GPP consent data)
+ * - usp or uspConsent (US Privacy string)
+ * - gpp or gppConsent (GPP consent data)
  * - Data from gppDataHandler or uspDataHandler
  *
  * @param {Object} consentData - The consent data object passed to getId
@@ -76,12 +90,14 @@ function hasPrivacySignals(consentData) {
   }
 
   // Check USP consent
-  if (consentData?.uspConsent) {
+  const uspConsent = getUspConsent(consentData);
+  if (uspConsent) {
     return true;
   }
 
   // Check GPP consent
-  if (consentData?.gppConsent) {
+  const gppConsent = getGppConsent(consentData);
+  if (gppConsent) {
     return true;
   }
 
@@ -206,14 +222,14 @@ function hasValidConsent(consentData, params) {
   }
 
   // Check USP for processing restriction
-  const uspData = consentData?.uspConsent ?? uspDataHandler.getConsentData();
+  const uspData = getUspConsent(consentData) ?? uspDataHandler.getConsentData();
   if (uspData && uspData.length >= 3 && uspData.charAt(2) === 'Y') {
     logWarn(LOG_PREFIX, 'US Privacy framework processing restriction detected');
     return false;
   }
 
   // Check GPP for processing restriction
-  const gppData = consentData?.gppConsent ?? gppDataHandler.getConsentData();
+  const gppData = getGppConsent(consentData) ?? gppDataHandler.getConsentData();
   if (gppData?.applicableSections?.includes(7) &&
       gppData?.parsedSections?.usnat?.KnownChildSensitiveDataConsents?.includes(1)) {
     logWarn(LOG_PREFIX, 'GPP usnat KnownChildSensitiveDataConsents processing restriction detected');
@@ -332,6 +348,7 @@ function fetchLocIdFromEndpoint(config, callback) {
 
 export const locIdSubmodule = {
   name: MODULE_NAME,
+  aliasName: 'locid',
   gvlid: GVLID,
 
   /**
@@ -340,7 +357,7 @@ export const locIdSubmodule = {
   decode(value) {
     const id = typeof value === 'object' ? value?.id : value;
     if (isValidId(id)) {
-      return { locid: id };
+      return { locId: id };
     }
     return undefined;
   },
@@ -375,11 +392,14 @@ export const locIdSubmodule = {
    * EID configuration following standard Prebid shape.
    */
   eids: {
-    locid: {
+    locId: {
       source: DEFAULT_EID_SOURCE,
       atype: DEFAULT_EID_ATYPE,
       getValue: function(data) {
-        return typeof data === 'string' ? data : data?.locid;
+        if (typeof data === 'string') {
+          return data;
+        }
+        return data?.id ?? data?.locId ?? data?.locid;
       }
     }
   }

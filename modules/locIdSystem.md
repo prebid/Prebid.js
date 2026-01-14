@@ -12,7 +12,7 @@ LocID is a geospatial identifier provided by Digital Envoy. The endpoint is a pu
 pbjs.setConfig({
   userSync: {
     userIds: [{
-      name: 'locid',
+      name: 'locId',
       params: {
         endpoint: 'https://id.example.com/locid'
       },
@@ -126,8 +126,8 @@ The module considers privacy signals "present" if any of the following exist:
 
 - `consentString` (TCF consent string from CMP)
 - `vendorData` (TCF vendor data from CMP)
-- `uspConsent` (US Privacy string)
-- `gppConsent` (GPP consent data)
+- `usp` or `uspConsent` (US Privacy string)
+- `gpp` or `gppConsent` (GPP consent data)
 - Data from `uspDataHandler` or `gppDataHandler`
 
 **Important:** `gdprApplies` alone does NOT constitute a privacy signal. A publisher may indicate GDPR jurisdiction without having a CMP installed. TCF framework data is only required when actual CMP artifacts (`consentString` or `vendorData`) are present. This supports Legitimate Interest-based operation in deployments without a full TCF implementation.
@@ -156,7 +156,7 @@ This module uses two numeric identifiers:
 ## Debugging
 
 ```javascript
-pbjs.getUserIds().locid
+pbjs.getUserIds().locId
 pbjs.refreshUserIds()
 localStorage.getItem('_locid')
 ```
