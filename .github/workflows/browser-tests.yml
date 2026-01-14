@@ -27,7 +27,7 @@ jobs:
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name:  Restore working directory
         uses: ./.github/actions/load
         with:
