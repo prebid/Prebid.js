@@ -52,7 +52,7 @@ export const spec = {
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
-        cpuc: (typeof window.navigator !== 'undefined' ? window.navigator.hardwareConcurrency : null),
+        cpuc: null,
         kws: bid.params.keywords,
         schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
@@ -291,7 +291,9 @@ function raiGetResolution() {
 
 function raiSetPbAdSlot(bid) {
   let pbAdSlot = '';
-  if (deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') != null) {
+  if (deepAccess(bid, 'ortb2Imp.ext.gpid') != null) {
+    pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.gpid')
+  } else if (deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') != null) {
     pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot')
   }
   return pbAdSlot

@@ -1,8 +1,9 @@
-import { getDNT } from '../libraries/navigatorData/dnt.js';
-import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize, isEmpty } from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
+import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -27,88 +28,6 @@ const BIDDER_CODE = 'mediaforce';
 const GVLID = 671;
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
 const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop';
-const NATIVE_ID_MAP = {};
-const NATIVE_PARAMS = {
-  title: {
-    id: 1,
-    name: 'title'
-  },
-  icon: {
-    id: 2,
-    type: 1,
-    name: 'img'
-  },
-  image: {
-    id: 3,
-    type: 3,
-    name: 'img'
-  },
-  body: {
-    id: 4,
-    name: 'data',
-    type: 2
-  },
-  sponsoredBy: {
-    id: 5,
-    name: 'data',
-    type: 1
-  },
-  cta: {
-    id: 6,
-    type: 12,
-    name: 'data'
-  },
-  body2: {
-    id: 7,
-    name: 'data',
-    type: 10
-  },
-  rating: {
-    id: 8,
-    name: 'data',
-    type: 3
-  },
-  likes: {
-    id: 9,
-    name: 'data',
-    type: 4
-  },
-  downloads: {
-    id: 10,
-    name: 'data',
-    type: 5
-  },
-  displayUrl: {
-    id: 11,
-    name: 'data',
-    type: 11
-  },
-  price: {
-    id: 12,
-    name: 'data',
-    type: 6
-  },
-  salePrice: {
-    id: 13,
-    name: 'data',
-    type: 7
-  },
-  address: {
-    id: 14,
-    name: 'data',
-    type: 9
-  },
-  phone: {
-    id: 15,
-    name: 'data',
-    type: 8
-  }
-};
-
-Object.keys(NATIVE_PARAMS).forEach((key) => {
-  NATIVE_ID_MAP[NATIVE_PARAMS[key].id] = key;
-});
-
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const DEFAULT_CURRENCY = 'USD'
 
@@ -175,7 +94,7 @@ export const spec = {
             validImp = true;
             break;
           case NATIVE:
-            impObj.native = createNativeRequest(bid);
+            impObj.native = buildNativeRequest(bid.nativeParams);
             validImp = true;
             break;
           case VIDEO:
@@ -275,7 +194,7 @@ export const spec = {
           adm = null;
         }
         if (ext?.native) {
-          bid.native = parseNative(ext.native);
+          bid.native = parseNativeResponse(ext.native);
           bid.mediaType = NATIVE;
         } else if (adm?.trim().startsWith('<?xml') || adm?.includes('<VAST')) {
           bid.vastXml = adm;
@@ -328,76 +247,6 @@ function createBannerRequest(bid) {
     r.format = format
   }
   return r
-}
-
-function parseNative(native) {
-  const {assets, link, imptrackers, jstracker} = native;
-  const result = {
-    clickUrl: link.url,
-    clickTrackers: link.clicktrackers || [],
-    impressionTrackers: imptrackers || [],
-    javascriptTrackers: jstracker ? [jstracker] : []
-  };
-
-  (assets || []).forEach((asset) => {
-    const {id, img, data, title} = asset;
-    const key = NATIVE_ID_MAP[id];
-    if (key) {
-      if (!isEmpty(title)) {
-        result.title = title.text
-      } else if (!isEmpty(img)) {
-        result[key] = {
-          url: img.url,
-          height: img.h,
-          width: img.w
-        }
-      } else if (!isEmpty(data)) {
-        result[key] = data.value;
-      }
-    }
-  });
-
-  return result;
-}
-
-function createNativeRequest(bid) {
-  const assets = [];
-  if (bid.nativeParams) {
-    Object.keys(bid.nativeParams).forEach((key) => {
-      if (NATIVE_PARAMS[key]) {
-        const {name, type, id} = NATIVE_PARAMS[key];
-        const assetObj = type ? {type} : {};
-        let {len, sizes, required, aspect_ratios: aRatios} = bid.nativeParams[key];
-        if (len) {
-          assetObj.len = len;
-        }
-        if (aRatios && aRatios[0]) {
-          aRatios = aRatios[0];
-          const wmin = aRatios.min_width || 0;
-          const hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-          assetObj.wmin = wmin;
-          assetObj.hmin = hmin;
-        }
-        if (sizes && sizes.length) {
-          sizes = [].concat(...sizes);
-          assetObj.w = sizes[0];
-          assetObj.h = sizes[1];
-        }
-        const asset = {required: required ? 1 : 0, id};
-        asset[name] = assetObj;
-        assets.push(asset);
-      }
-    });
-  }
-  return {
-    ver: '1.2',
-    request: {
-      assets: assets,
-      context: 1,
-      plcmttype: 1,
-      ver: '1.2'
-    }
-  }
 }
 
 function createVideoRequest(bid) {
