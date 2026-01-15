@@ -1,5 +1,4 @@
 function isDntValue(value) {
-  // codex bot: preserve numeric DNT signals.
   if (value === 1 || value === '1') {
     return true;
   }
