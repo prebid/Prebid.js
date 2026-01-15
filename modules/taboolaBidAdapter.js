@@ -7,7 +7,6 @@ import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {isWebdriverEnabled} from '../libraries/webdriver/webdriver.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js';
 import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
@@ -104,7 +103,6 @@ export function detectBot() {
   try {
     return {
       detected: !!(
-        isWebdriverEnabled() ||
         window.__nightmare ||
         window.callPhantom ||
         window._phantom ||
