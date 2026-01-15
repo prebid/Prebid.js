@@ -118,7 +118,7 @@ jobs:
 
   browserstack-tests:
     needs: setup
-    if: ${{ needs.setup.outputs.bstack-key }}
+    if: ${{ needs.setup.outputs.bstack-key && secrets.BROWSERSTACK_USER_NAME }}
     name: "Browserstack tests"
     uses:
       ./.github/workflows/run-tests.yml
