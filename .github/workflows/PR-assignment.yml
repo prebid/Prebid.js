@@ -45,7 +45,7 @@ jobs:
             const props = await getProps({
               github, 
               context, 
-              prNo: ${{ github.event.pull_request.number }},
+              prNo,
               reviewerTeam: '${{ vars.REVIEWER_TEAM }}',
               engTeam: '${{ vars.ENG_TEAM }}',
               authReviewTeam: '${{ vars.AUTH_REVIEWER_TEAM }}'
