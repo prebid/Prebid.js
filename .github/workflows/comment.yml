@@ -16,6 +16,9 @@ jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Retrieve comment data
         uses: ./.github/actions/unzip-artifact
         with:
