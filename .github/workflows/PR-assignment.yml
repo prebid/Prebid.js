@@ -1,8 +1,10 @@
 name: Assign PR reviewers
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-
+  workflow_run:
+    workflows:
+      - Compile dependencies.json for PR assignment checks
+    types:
+      - completed
 jobs:
   assign_reviewers:
     name: Assign reviewers
@@ -15,17 +17,10 @@ jobs:
         with:
           app-id: ${{ vars.PR_BOT_ID }}
           private-key: ${{ secrets.PR_BOT_PEM }}
-
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Download dependencies.json
+        uses: ./.github/actions/unzip-artifact
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
-
-      - name: Install dependencies
-        uses: ./.github/actions/npm-ci
-      - name: Build
-        run: |
-          npx gulp build
+          name: dependencies.json
       - name: Install s3 client
         run: |
           npm install @aws-sdk/client-s3
@@ -35,6 +30,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ vars.PR_BOT_AWS_AK }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PR_BOT_AWS_SAK }}
+          DEPENDENCIES_JSON: ${{ runner.temp }}/artifacts/dependencies.json
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |

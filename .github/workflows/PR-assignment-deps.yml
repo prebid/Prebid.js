@@ -1,0 +1,26 @@
+name: Compile dependencies.json for PR assignment checks
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  generate_deps:
+    name: Generate dependencies.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Build
+        run: |
+          npx gulp build
+      - name: Upload dependencies.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependencies.json
+          path: ./build/dist/dependencies.json

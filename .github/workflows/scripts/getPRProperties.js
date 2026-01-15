@@ -25,7 +25,7 @@ function extractVendor(chunkName) {
 }
 
 const getLibraryRefs = (() => {
-  const deps = require('../../../build/dist/dependencies.json');
+  const deps = require(process.env.DEPENDENCIES_JSON);
   const refs = {};
   return function (libraryName) {
     if (!refs.hasOwnProperty(libraryName)) {
