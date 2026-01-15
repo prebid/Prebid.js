@@ -68,6 +68,8 @@ describe('adbroBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
       expect(serverRequest.url).to.exist;
       expect(serverRequest.url).to.equal('https://prebid.adbro.me/pbjs?placementId=1234');
+      expect(serverRequest.options).to.exist;
+      expect(serverRequest.options.endpointCompression).to.be.true;
       expect(serverRequest.data).to.exist;
     });
 
