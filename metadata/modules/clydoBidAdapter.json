@@ -4,15 +4,8 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "das",
+      "componentName": "clydo",
       "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ringieraxelspringer",
-      "aliasOf": "das",
       "gvlid": null,
       "disclosureURL": null
     }
