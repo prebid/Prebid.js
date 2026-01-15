@@ -23,6 +23,10 @@ jobs:
         uses: ./.github/actions/unzip-artifact
         with:
           name: dependencies.json
+      - name: Download PR info
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: prInfo
       - name: Install s3 client
         run: |
           npm install @aws-sdk/client-s3
@@ -37,6 +41,7 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const getProps = require('./.github/workflows/scripts/getPRProperties.js')
+            const { prNo }  = JSON.parse(fs.readFileSync('${{runner.temp}}/artifacts/prInfo.json'));
             const props = await getProps({
               github, 
               context, 

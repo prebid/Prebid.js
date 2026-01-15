@@ -25,7 +25,7 @@ function extractVendor(chunkName) {
 }
 
 const getLibraryRefs = (() => {
-  const deps = require(process.env.DEPENDENCIES_JSON);
+  const deps = JSON.parse(fs.readFileSync(process.env.DEPENDENCIES_JSON));
   const refs = {};
   return function (libraryName) {
     if (!refs.hasOwnProperty(libraryName)) {
