@@ -40,6 +40,7 @@ jobs:
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
+            const fs = require('fs');
             const getProps = require('./.github/workflows/scripts/getPRProperties.js')
             const { prNo }  = JSON.parse(fs.readFileSync('${{runner.temp}}/artifacts/prInfo.json'));
             const props = await getProps({
