@@ -26,7 +26,7 @@ jobs:
           path: ./build/dist/dependencies.json
       - name: Generate PR info
         run: |
-          echo "{ prNo: ${{ github.event.pull_request.number }} }" >> ${{ runner.temp}}/prInfo.json
+          echo "{ "prNo": ${{ github.event.pull_request.number }} }" >> ${{ runner.temp}}/prInfo.json
       - name: Upload PR info
         uses: actions/upload-artifact@v4
         with:
