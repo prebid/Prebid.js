@@ -1,4 +1,9 @@
 /**
+ * This file is licensed under the Apache 2.0 license.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+/**
  * This module adds LocID to the User ID module
  * The {@link module:modules/userId} module is required.
  * @module modules/locIdSystem
@@ -231,7 +236,7 @@ function hasValidConsent(consentData, params) {
   // Check GPP for processing restriction
   const gppData = getGppConsent(consentData) ?? gppDataHandler.getConsentData();
   if (gppData?.applicableSections?.includes(7) &&
-      gppData?.parsedSections?.usnat?.KnownChildSensitiveDataConsents?.includes(1)) {
+    gppData?.parsedSections?.usnat?.KnownChildSensitiveDataConsents?.includes(1)) {
     logWarn(LOG_PREFIX, 'GPP usnat KnownChildSensitiveDataConsents processing restriction detected');
     return false;
   }
@@ -395,7 +400,7 @@ export const locIdSubmodule = {
     locId: {
       source: DEFAULT_EID_SOURCE,
       atype: DEFAULT_EID_ATYPE,
-      getValue: function(data) {
+      getValue: function (data) {
         if (typeof data === 'string') {
           return data;
         }

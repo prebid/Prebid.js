@@ -1,3 +1,8 @@
+/**
+ * This file is licensed under the Apache 2.0 license.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 import { locIdSubmodule } from 'modules/locIdSystem.js';
 import * as ajax from 'src/ajax.js';
 import { uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
