@@ -3,6 +3,10 @@ description: Download and unzip artifact from a triggering workflow
 inputs:
   name:
     description: Artifact name
+outputs:
+  exists:
+    description: true if the artifact was found
+    value: ${{ steps.download.outputs.result }}
 
 runs:
   using: 'composite'

@@ -20,12 +20,13 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Retrieve comment data
+        id: get-comment
         uses: ./.github/actions/unzip-artifact
         with:
           name: comment
 
       - name: 'Comment on PR'
-        if: ${{ steps.download.outputs.result == 'true' }}
+        if: ${{ steps.get-comment.outputs.exists == 'true' }}
         uses: actions/github-script@v8
         with:
           script: |
