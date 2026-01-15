@@ -7,6 +7,7 @@ on:
       - completed
 jobs:
   assign_reviewers:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Assign reviewers
     runs-on: ubuntu-latest
 
