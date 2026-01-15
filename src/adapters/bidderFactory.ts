@@ -157,6 +157,7 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     uspConsent: null | ConsentData[typeof CONSENT_USP],
     gppConsent: null | ConsentData[typeof CONSENT_GPP]
   ) => ({ type: SyncType, url: string })[];
+  alwaysHasCapacity?: boolean;
 }
 
 export type BidAdapter = {

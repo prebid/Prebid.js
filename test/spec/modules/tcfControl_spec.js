@@ -404,6 +404,48 @@ describe('gdpr enforcement', function () {
         expectAllow(allowed, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
       })
     });
+
+    it('should allow S2S bidder when deferS2Sbidders is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: [],
+            deferS2Sbidders: true
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.vendor.consents = {};
+      consent.vendorData.vendor.legitimateInterests = {};
+      consent.vendorData.purpose.consents['2'] = true;
+
+      const s2sBidderParams = activityParams(MODULE_TYPE_BIDDER, 's2sBidder', {isS2S: true});
+      expectAllow(true, fetchBidsRule(s2sBidderParams));
+    });
+
+    it('should not make exceptions for client bidders when deferS2Sbidders is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: [],
+            deferS2Sbidders: true
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.vendor.consents = {};
+      consent.vendorData.vendor.legitimateInterests = {};
+      consent.vendorData.purpose.consents['2'] = true;
+
+      const clientBidderParams = activityParams(MODULE_TYPE_BIDDER, 'clientBidder');
+      expectAllow(false, fetchBidsRule(clientBidderParams));
+    });
   });
 
   describe('reportAnalyticsRule', () => {
@@ -880,7 +922,8 @@ describe('gdpr enforcement', function () {
       purpose: 'basicAds',
       enforcePurpose: true,
       enforceVendor: true,
-      vendorExceptions: []
+      vendorExceptions: [],
+      deferS2Sbidders: false
     }];
     beforeEach(function () {
       sandbox = sinon.createSandbox();
@@ -926,7 +969,8 @@ describe('gdpr enforcement', function () {
         purpose: 'basicAds',
         enforcePurpose: false,
         enforceVendor: true,
-        vendorExceptions: ['bidderA']
+        vendorExceptions: ['bidderA'],
+        deferS2Sbidders: false
       }
       setEnforcementConfig({
         gdpr: {
