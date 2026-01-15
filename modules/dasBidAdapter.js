@@ -298,6 +298,11 @@ function interpretResponse(serverResponse) {
         },
       };
 
+      const targeting = bid.ext?.targeting;
+      if (targeting) {
+        bidResponse.adserverTargeting = targeting;
+      }
+
       if (bid.mtype === 1) {
         bidResponse.mediaType = BANNER;
         bidResponse.ad = bid.adm;
