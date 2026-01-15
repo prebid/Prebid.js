@@ -77,6 +77,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 45,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  alwaysHasCapacity: true,
 
   /**
    * @param bidRequests
