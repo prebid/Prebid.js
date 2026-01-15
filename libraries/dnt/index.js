@@ -1,5 +1,16 @@
+function isDntValue(value) {
+  // codex bot: preserve numeric DNT signals.
+  if (value === 1 || value === '1') {
+    return true;
+  }
+
+  return typeof value === 'string' && value.toLowerCase() === 'yes';
+}
+
 function _getDNT(win) {
-  return win.navigator.doNotTrack === '1' || win.doNotTrack === '1' || win.navigator.msDoNotTrack === '1' || win.navigator.doNotTrack?.toLowerCase?.() === 'yes';
+  return isDntValue(win.navigator.doNotTrack) ||
+    isDntValue(win.doNotTrack) ||
+    isDntValue(win.navigator.msDoNotTrack);
 }
 
 export function getDNT(win = window) {

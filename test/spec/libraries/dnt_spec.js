@@ -6,6 +6,13 @@ describe('dnt helper', () => {
     win = {};
   });
 
+  it('should treat numeric DNT values as enabled', () => {
+    win.navigator = {doNotTrack: 1, msDoNotTrack: 1};
+    win.doNotTrack = 1;
+
+    expect(getDNT(win)).to.be.true;
+  });
+
   [
     'top',
     'doNotTrack',
