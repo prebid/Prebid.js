@@ -656,6 +656,7 @@ const adapterManager = {
         timeout: cbTimeout,
         refererInfo,
         metrics,
+        src: 'client',
         alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
       });
       if (!adapter) {
