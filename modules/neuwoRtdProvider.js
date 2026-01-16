@@ -25,17 +25,21 @@ export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Cached API response to avoid redundant requests.
 let globalCachedResponse;
+// In-flight request promise to prevent duplicate API calls during the same request cycle.
+let pendingRequest;
 
 /**
- * Clears the cached API response. Primarily used for testing.
+ * Clears the cached API response and pending request. Primarily used for testing.
  * @private
  */
 export function clearCache() {
   globalCachedResponse = undefined;
+  pendingRequest = undefined;
 }
 
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
 // Based on https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--category-taxonomies-
+// prettier-ignore
 const IAB_CONTENT_TAXONOMY_MAP = {
   "1.0": 1,
   "2.0": 2,
@@ -53,14 +57,14 @@ const IAB_CONTENT_TAXONOMY_MAP = {
  * @returns {boolean} `true` if the module is configured correctly, otherwise `false`.
  */
 function init(config, userConsent) {
-  logInfo(MODULE_NAME, "init:", config, userConsent);
+  logInfo(MODULE_NAME, "init():", config, userConsent);
   const params = config?.params || {};
   if (!params.neuwoApiUrl) {
-    logError(MODULE_NAME, "init:", "Missing Neuwo Edge API Endpoint URL");
+    logError(MODULE_NAME, "init():", "Missing Neuwo Edge API Endpoint URL");
     return false;
   }
   if (!params.neuwoApiToken) {
-    logError(MODULE_NAME, "init:", "Missing Neuwo API Token missing");
+    logError(MODULE_NAME, "init():", "Missing Neuwo API Token missing");
     return false;
   }
   return true;
@@ -83,10 +87,21 @@ function init(config, userConsent) {
  * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
  * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
  * @param {boolean} [config.params.stripFragments] If true, strips URL fragments (hash).
+ * @param {Object} [config.params.iabTaxonomyFilters] Per-tier filtering configuration for IAB taxonomies.
  * @param {Object} userConsent The user consent object.
  */
-export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  logInfo(MODULE_NAME, "getBidRequestData:", "starting getBidRequestData", config);
+export function getBidRequestData(
+  reqBidsConfigObj,
+  callback,
+  config,
+  userConsent
+) {
+  logInfo(
+    MODULE_NAME,
+    "getBidRequestData():",
+    "starting getBidRequestData",
+    config
+  );
 
   const {
     websiteToAnalyseUrl,
@@ -98,6 +113,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     stripQueryParamsForDomains,
     stripQueryParams,
     stripFragments,
+    iabTaxonomyFilters,
   } = config.params;
 
   const rawUrl = websiteToAnalyseUrl || getRefererInfo().page;
@@ -105,42 +121,130 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     stripAllQueryParams,
     stripQueryParamsForDomains,
     stripQueryParams,
-    stripFragments
+    stripFragments,
   });
   const pageUrl = encodeURIComponent(processedUrl);
   // Adjusted for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?')
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
   const neuwoApiUrlFull =
-    neuwoApiUrl + joiner + ["token=" + neuwoApiToken, "url=" + pageUrl].join("&");
+    neuwoApiUrl +
+    joiner +
+    [
+      "token=" + neuwoApiToken,
+      "url=" + pageUrl,
+      "_neuwo_prod=PrebidModule",
+    ].join("&");
 
-  const success = (response) => {
-    logInfo(MODULE_NAME, "getBidRequestData:", "Neuwo API raw response:", response);
-    try {
-      const responseParsed = JSON.parse(response);
-
-      if (enableCache) {
-        globalCachedResponse = responseParsed;
-      }
-
-      injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
-    } catch (ex) {
-      logError(MODULE_NAME, "getBidRequestData:", "Error while processing Neuwo API response", ex);
-    }
-    callback();
-  };
-
-  const error = (err) => {
-    logError(MODULE_NAME, "getBidRequestData:", "AJAX error:", err);
-    callback();
-  };
-
+  // Cache flow: cached response -> pending request -> new request
+  // Each caller gets their own callback invoked when data is ready.
   if (enableCache && globalCachedResponse) {
-    logInfo(MODULE_NAME, "getBidRequestData:", "Using cached response:", globalCachedResponse);
-    injectIabCategories(globalCachedResponse, reqBidsConfigObj, iabContentTaxonomyVersion);
+    // Previous request succeeded - use cached response immediately
+    logInfo(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "Cache System:",
+      "Using cached response:",
+      globalCachedResponse
+    );
+    injectIabCategories(
+      globalCachedResponse,
+      reqBidsConfigObj,
+      iabContentTaxonomyVersion,
+      iabTaxonomyFilters
+    );
     callback();
+  } else if (enableCache && pendingRequest) {
+    // Another caller started a request - wait for it instead of making a duplicate
+    logInfo(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "Cache System:",
+      "Waiting for pending request"
+    );
+    pendingRequest
+      .then((responseParsed) => {
+        if (responseParsed) {
+          injectIabCategories(
+            responseParsed,
+            reqBidsConfigObj,
+            iabContentTaxonomyVersion,
+            iabTaxonomyFilters
+          );
+        }
+      })
+      .finally(() => callback());
   } else {
-    logInfo(MODULE_NAME, "getBidRequestData:", "Calling Neuwo API Endpoint: ", neuwoApiUrlFull);
-    ajax(neuwoApiUrlFull, { success, error }, null);
+    // First request or cache disabled - make the API call
+    logInfo(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "Cache System:",
+      "Calling Neuwo API Endpoint:",
+      neuwoApiUrlFull
+    );
+
+    const requestPromise = new Promise((resolve) => {
+      ajax(
+        neuwoApiUrlFull,
+        {
+          success: (response) => {
+            logInfo(
+              MODULE_NAME,
+              "getBidRequestData():",
+              "success():",
+              "Neuwo API raw response:",
+              response
+            );
+            try {
+              const responseParsed = JSON.parse(response);
+              // Cache response
+              if (enableCache) {
+                globalCachedResponse = responseParsed;
+              }
+              injectIabCategories(
+                responseParsed,
+                reqBidsConfigObj,
+                iabContentTaxonomyVersion,
+                iabTaxonomyFilters
+              );
+              resolve(responseParsed);
+            } catch (ex) {
+              logError(
+                MODULE_NAME,
+                "getBidRequestData():",
+                "success():",
+                "Error parsing Neuwo API response:",
+                ex
+              );
+              resolve(null);
+            }
+          },
+          error: (err) => {
+            logError(
+              MODULE_NAME,
+              "getBidRequestData():",
+              "error():",
+              "AJAX error:",
+              err
+            );
+            resolve(null);
+          },
+        },
+        null
+      );
+    });
+
+    if (enableCache) {
+      // Store promise so concurrent callers can wait on it
+      pendingRequest = requestPromise;
+      // Clear after settling so failed requests can be retried
+      requestPromise.finally(() => {
+        pendingRequest = undefined;
+      });
+    }
+
+    // Signal this caller's auction to proceed once request completes
+    requestPromise.finally(() => callback());
   }
 }
 
@@ -160,14 +264,23 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
  * @returns {string} The cleaned URL.
  */
 export function cleanUrl(url, options = {}) {
-  const { stripAllQueryParams, stripQueryParamsForDomains, stripQueryParams, stripFragments } = options;
+  const {
+    stripAllQueryParams,
+    stripQueryParamsForDomains,
+    stripQueryParams,
+    stripFragments,
+  } = options;
 
   if (!url) {
-    logInfo(MODULE_NAME, "cleanUrl:", "Empty or null URL provided, returning as-is");
+    logInfo(
+      MODULE_NAME,
+      "cleanUrl():",
+      "Empty or null URL provided, returning as-is"
+    );
     return url;
   }
 
-  logInfo(MODULE_NAME, "cleanUrl:", "Input URL:", url, "Options:", options);
+  logInfo(MODULE_NAME, "cleanUrl():", "Input URL:", url, "Options:", options);
 
   try {
     const urlObj = new URL(url);
@@ -175,21 +288,24 @@ export function cleanUrl(url, options = {}) {
     // Strip fragments if requested
     if (stripFragments === true) {
       urlObj.hash = "";
-      logInfo(MODULE_NAME, "cleanUrl:", "Stripped fragment from URL");
+      logInfo(MODULE_NAME, "cleanUrl():", "Stripped fragment from URL");
     }
 
     // Option 1: Strip all query params unconditionally
     if (stripAllQueryParams === true) {
       urlObj.search = "";
       const cleanedUrl = urlObj.toString();
-      logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+      logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl);
       return cleanedUrl;
     }
 
     // Option 2: Strip all query params for specific domains
-    if (Array.isArray(stripQueryParamsForDomains) && stripQueryParamsForDomains.length > 0) {
+    if (
+      Array.isArray(stripQueryParamsForDomains) &&
+      stripQueryParamsForDomains.length > 0
+    ) {
       const hostname = urlObj.hostname;
-      const shouldStripForDomain = stripQueryParamsForDomains.some(domain => {
+      const shouldStripForDomain = stripQueryParamsForDomains.some((domain) => {
         // Support exact match or subdomain match
         return hostname === domain || hostname.endsWith("." + domain);
       });
@@ -197,7 +313,7 @@ export function cleanUrl(url, options = {}) {
       if (shouldStripForDomain) {
         urlObj.search = "";
         const cleanedUrl = urlObj.toString();
-        logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+        logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl);
         return cleanedUrl;
       }
     }
@@ -208,21 +324,25 @@ export function cleanUrl(url, options = {}) {
     // - "??" is treated as query parameter with key "?" and value ""
     if (Array.isArray(stripQueryParams) && stripQueryParams.length > 0) {
       const queryParams = urlObj.searchParams;
-      logInfo(MODULE_NAME, "cleanUrl:", `Query parameters to strip: ${stripQueryParams}`);
-      stripQueryParams.forEach(param => {
+      logInfo(
+        MODULE_NAME,
+        "cleanUrl():",
+        `Query parameters to strip: ${stripQueryParams}`
+      );
+      stripQueryParams.forEach((param) => {
         queryParams.delete(param);
       });
       urlObj.search = queryParams.toString();
       const cleanedUrl = urlObj.toString();
-      logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+      logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl);
       return cleanedUrl;
     }
 
     const finalUrl = urlObj.toString();
-    logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", finalUrl);
+    logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", finalUrl);
     return finalUrl;
   } catch (e) {
-    logError(MODULE_NAME, "cleanUrl:", "Error cleaning URL:", e);
+    logError(MODULE_NAME, "cleanUrl():", "Error cleaning URL:", e);
     return url;
   }
 }
@@ -273,40 +393,182 @@ export function buildIabData(marketingCategories, tiers, segtax) {
 }
 
 /**
+ * Filters and limits a single tier's taxonomies based on relevance score and count.
+ *
+ * @param {Array} iabTaxonomies Array of taxonomy objects with ID, label, and relevance
+ * @param {Object} filter Filter configuration for this tier
+ * @returns {Array} Filtered and limited array of taxonomies
+ */
+export function filterIabTaxonomyTier(iabTaxonomies, filter = {}) {
+  if (!Array.isArray(iabTaxonomies) || iabTaxonomies.length === 0) {
+    return iabTaxonomies;
+  }
+
+  const { threshold, limit } = filter;
+  let filtered = [...iabTaxonomies]; // Create copy to avoid mutating original
+
+  // Filter by minimum relevance score
+  if (typeof threshold === "number" && threshold > 0) {
+    filtered = filtered.filter((item) => {
+      const relevance = parseFloat(item?.relevance);
+      return !isNaN(relevance) && relevance >= threshold;
+    });
+  }
+
+  // Sort by relevance (highest first) before limiting
+  filtered = filtered.sort((a, b) => {
+    const relA = parseFloat(a?.relevance) || 0;
+    const relB = parseFloat(b?.relevance) || 0;
+    return relB - relA; // Descending order
+  });
+
+  // Limit count
+  if (typeof limit === "number" && limit > 0) {
+    filtered = filtered.slice(0, limit);
+  }
+
+  return filtered;
+}
+
+/**
+ * Maps tier configuration keys to API response keys.
+ */
+const TIER_KEY_MAP = {
+  ContentTier1: "iab_tier_1",
+  ContentTier2: "iab_tier_2",
+  ContentTier3: "iab_tier_3",
+  AudienceTier3: "iab_audience_tier_3",
+  AudienceTier4: "iab_audience_tier_4",
+  AudienceTier5: "iab_audience_tier_5",
+};
+
+/**
+ * Applies per-tier filtering to all IAB taxonomies.
+ * Filters taxonomies by relevance score and limits the count per tier.
+ *
+ * @param {Object} marketingCategories Marketing Categories returned by Neuwo API.
+ * @param {Object} [tierFilters] Per-tier filter configuration keyed by config tier names (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
+ * @returns {Object} Filtered marketing categories with the same structure as input.
+ */
+export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
+  if (!marketingCategories || typeof marketingCategories !== "object") {
+    return marketingCategories;
+  }
+
+  // If no filters provided, return original data
+  if (!tierFilters || Object.keys(tierFilters).length === 0) {
+    logInfo(
+      MODULE_NAME,
+      "filterIabTaxonomies():",
+      "No filters provided, returning original data"
+    );
+    return marketingCategories;
+  }
+
+  const filtered = {};
+
+  // Iterate through all tiers in the API response
+  Object.keys(marketingCategories).forEach((apiTierKey) => {
+    const tierData = marketingCategories[apiTierKey];
+
+    // Find the corresponding config key for this API tier
+    const configTierKey = Object.keys(TIER_KEY_MAP).find(
+      (key) => TIER_KEY_MAP[key] === apiTierKey
+    );
+
+    // Get filter for this tier (if configured)
+    const filter = configTierKey ? tierFilters[configTierKey] : {};
+
+    // Apply filter if this tier has data
+    if (Array.isArray(tierData)) {
+      filtered[apiTierKey] = filterIabTaxonomyTier(tierData, filter);
+    } else {
+      // Preserve non-array data as-is
+      filtered[apiTierKey] = tierData;
+    }
+  });
+
+  logInfo(
+    MODULE_NAME,
+    "filterIabTaxonomies():",
+    "Filtering results:",
+    "Original:",
+    marketingCategories,
+    "Filtered:",
+    filtered,
+  );
+
+  return filtered;
+}
+
+/**
  * Processes the Neuwo API response to build and inject IAB content and audience categories
  * into the bid request object.
  *
  * @param {Object} responseParsed The parsed JSON response from the Neuwo API.
  * @param {Object} reqBidsConfigObj The bid request configuration object to be modified.
  * @param {string} iabContentTaxonomyVersion The version of the IAB content taxonomy to use for segtax mapping.
+ * @param {Object} [iabTaxonomyFilters] Per-tier filter configuration (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
  */
-function injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion) {
+function injectIabCategories(
+  responseParsed,
+  reqBidsConfigObj,
+  iabContentTaxonomyVersion,
+  iabTaxonomyFilters
+) {
   const marketingCategories = responseParsed.marketing_categories;
 
   if (!marketingCategories) {
-    logError(MODULE_NAME, "injectIabCategories:", "No Marketing Categories in Neuwo API response.");
-    return
+    logError(
+      MODULE_NAME,
+      "injectIabCategories():",
+      "No Marketing Categories in Neuwo API response."
+    );
+    return;
   }
+
+  // Apply per-tier filtering
+  const marketingCategoriesFiltered = filterIabTaxonomies(marketingCategories, iabTaxonomyFilters);
 
   // Process content categories
   const contentTiers = ["iab_tier_1", "iab_tier_2", "iab_tier_3"];
   const contentData = buildIabData(
-    marketingCategories,
+    marketingCategoriesFiltered,
     contentTiers,
-    IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] || IAB_CONTENT_TAXONOMY_MAP["3.0"]
+    IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
+      IAB_CONTENT_TAXONOMY_MAP["3.0"]
   );
 
   // Process audience categories
-  const audienceTiers = ["iab_audience_tier_3", "iab_audience_tier_4", "iab_audience_tier_5"];
-  const audienceData = buildIabData(marketingCategories, audienceTiers, 4);
+  const audienceTiers = [
+    "iab_audience_tier_3",
+    "iab_audience_tier_4",
+    "iab_audience_tier_5",
+  ];
+  const audienceData = buildIabData(marketingCategoriesFiltered, audienceTiers, 4);
 
-  logInfo(MODULE_NAME, "injectIabCategories:", "contentData structure:", contentData);
-  logInfo(MODULE_NAME, "injectIabCategories:", "audienceData structure:", audienceData);
+  logInfo(
+    MODULE_NAME,
+    "injectIabCategories():",
+    "contentData structure:",
+    contentData
+  );
+  logInfo(
+    MODULE_NAME,
+    "injectIabCategories():",
+    "audienceData structure:",
+    audienceData
+  );
 
   injectOrtbData(reqBidsConfigObj, "site.content.data", [contentData]);
   injectOrtbData(reqBidsConfigObj, "user.data", [audienceData]);
 
-  logInfo(MODULE_NAME, "injectIabCategories:", "post-injection bidsConfig", reqBidsConfigObj);
+  logInfo(
+    MODULE_NAME,
+    "injectIabCategories():",
+    "post-injection bidsConfig",
+    reqBidsConfigObj
+  );
 }
 
 export const neuwoRtdModule = {
