@@ -32,17 +32,12 @@ import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {storageCallbacks} from './storageManager.js';
-import adapterManager, {
-  type AliasBidderOptions,
-  type BidRequest,
-  getS2SBidderSet
-} from './adapterManager.js';
+import adapterManager, {type AliasBidderOptions, type BidRequest, getS2SBidderSet} from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
-import type {EventHandler, EventIDs, Event} from "./events.js";
+import type {Event, EventHandler, EventIDs} from "./events.js";
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {type Defer, defer, PbPromise} from './utils/promise.js';
-import {pbYield} from './utils/yield.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
@@ -66,9 +61,10 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
-import {ORTB_AUDIO_PARAMS, fillAudioDefaults} from './audio.ts';
+import {fillAudioDefaults, ORTB_AUDIO_PARAMS} from './audio.ts';
 
 import {getGlobalVarName} from "./buildOptions.ts";
+import {yieldAll} from "./utils/yield.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -654,8 +650,7 @@ type RenderAdOptions = {
  * @param  id adId of the bid to render
  * @param options
  */
-async function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
-  await pbYield();
+function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
   renderAdDirect(doc, id, options);
 }
 addApiMethod('renderAd', renderAd);
@@ -1240,18 +1235,21 @@ function quePush(command) {
   })
 }
 
-async function _processQueue(queue) {
-  for (const cmd of queue) {
-    if (typeof cmd.called === 'undefined') {
-      try {
-        cmd.call();
-        cmd.called = true;
-      } catch (e) {
-        logError('Error processing command :', 'prebid.js', e);
-      }
+function runCommand(cmd) {
+  if (typeof cmd.called === 'undefined') {
+    try {
+      cmd.call();
+      cmd.called = true;
+    } catch (e) {
+      logError('Error processing command :', 'prebid.js', e);
     }
-    await pbYield();
   }
+}
+function _processQueue(queue, cb?) {
+  yieldAll(
+    () => getGlobal().yield ?? true,
+    queue.map(cmd => () => runCommand(cmd)), cb
+  );
 }
 
 /**
@@ -1263,12 +1261,11 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, a
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
-  try {
-    await _processQueue(pbjsInstance.que);
-    await _processQueue(pbjsInstance.cmd);
-  } finally {
-    queSetupComplete.resolve();
-  }
+  _processQueue(pbjsInstance.que, () => {
+    _processQueue(pbjsInstance.cmd, () => {
+      queSetupComplete.resolve();
+    });
+  });
 })
 addApiMethod('processQueue', processQueue, false);
 
