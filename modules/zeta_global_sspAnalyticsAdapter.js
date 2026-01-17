@@ -6,7 +6,7 @@ import {EVENTS} from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
-import {BANNER, VIDEO} from "../src/mediaTypes";
+import {BANNER, VIDEO} from "../src/mediaTypes.js";
 
 const ZETA_GVL_ID = 833;
 const ADAPTER_CODE = 'zeta_global_ssp';
