@@ -6,17 +6,16 @@ describe('PanxoBidAdapter', function () {
   const PROPERTY_KEY = 'abc123def456';
   const USER_ID = 'test-user-id-12345';
 
-  let localStorageIsEnabledStub;
-  let getDataFromLocalStorageStub;
+  // Mock storage.getDataFromLocalStorage
+  let getDataStub;
 
   beforeEach(function () {
-    localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
-    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns(USER_ID);
+    getDataStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    getDataStub.withArgs('panxo_uid').returns(USER_ID);
   });
 
   afterEach(function () {
-    localStorageIsEnabledStub.restore();
-    getDataFromLocalStorageStub.restore();
+    getDataStub.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -69,35 +68,36 @@ describe('PanxoBidAdapter', function () {
     }];
 
     it('should build a valid OpenRTB request', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
 
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.include('panxo-sys.com/openrtb/2.5/bid');
-      expect(request.url).to.include(`key=${PROPERTY_KEY}`);
-      expect(request.data).to.be.an('object');
+      expect(requests).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.include('panxo-sys.com/openrtb/2.5/bid');
+      expect(requests[0].url).to.include(`key=${PROPERTY_KEY}`);
+      expect(requests[0].data).to.be.an('object');
     });
 
     it('should include user.buyeruid from localStorage', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
 
-      expect(request.data.user).to.be.an('object');
-      expect(request.data.user.buyeruid).to.equal(USER_ID);
+      expect(requests[0].data.user).to.be.an('object');
+      expect(requests[0].data.user.buyeruid).to.equal(USER_ID);
     });
 
     it('should build correct impressions', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
 
-      expect(request.data.imp).to.be.an('array');
-      expect(request.data.imp[0].id).to.equal('bid-id-1');
-      expect(request.data.imp[0].banner.format).to.have.lengthOf(2);
-      expect(request.data.imp[0].tagid).to.equal('ad-unit-1');
+      expect(requests[0].data.imp).to.be.an('array');
+      expect(requests[0].data.imp[0].id).to.equal('bid-id-1');
+      expect(requests[0].data.imp[0].banner.format).to.have.lengthOf(2);
+      expect(requests[0].data.imp[0].tagid).to.equal('ad-unit-1');
     });
 
     it('should return empty array when panxo_uid is not found', function () {
-      getDataFromLocalStorageStub.returns(null);
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      getDataStub.withArgs('panxo_uid').returns(null);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
 
-      expect(request).to.be.an('array').that.is.empty;
+      expect(requests).to.be.an('array').that.is.empty;
     });
 
     it('should include GDPR consent when available', function () {
@@ -108,10 +108,10 @@ describe('PanxoBidAdapter', function () {
           consentString: 'CO-test-consent-string'
         }
       };
-      const request = spec.buildRequests(validBidRequests, gdprBidderRequest);
+      const requests = spec.buildRequests(validBidRequests, gdprBidderRequest);
 
-      expect(request.data.regs.ext.gdpr).to.equal(1);
-      expect(request.data.user.ext.consent).to.equal('CO-test-consent-string');
+      expect(requests[0].data.regs.ext.gdpr).to.equal(1);
+      expect(requests[0].data.user.ext.consent).to.equal('CO-test-consent-string');
     });
 
     it('should include USP consent when available', function () {
@@ -119,23 +119,29 @@ describe('PanxoBidAdapter', function () {
         ...bidderRequest,
         uspConsent: '1YNN'
       };
-      const request = spec.buildRequests(validBidRequests, uspBidderRequest);
+      const requests = spec.buildRequests(validBidRequests, uspBidderRequest);
 
-      expect(request.data.regs.ext.us_privacy).to.equal('1YNN');
+      expect(requests[0].data.regs.ext.us_privacy).to.equal('1YNN');
     });
 
     it('should include schain when available', function () {
       const schainBidderRequest = {
         ...bidderRequest,
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{ asi: 'example.com', sid: '12345', hp: 1 }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [{ asi: 'example.com', sid: '12345', hp: 1 }]
+              }
+            }
+          }
         }
       };
-      const request = spec.buildRequests(validBidRequests, schainBidderRequest);
+      const requests = spec.buildRequests(validBidRequests, schainBidderRequest);
 
-      expect(request.data.source.ext.schain).to.deep.equal(schainBidderRequest.schain);
+      expect(requests[0].data.source.ext.schain).to.deep.equal(schainBidderRequest.ortb2.source.ext.schain);
     });
 
     it('should use floor from getFloor function', function () {
@@ -143,9 +149,33 @@ describe('PanxoBidAdapter', function () {
         ...validBidRequests[0],
         getFloor: () => ({ currency: 'USD', floor: 1.50 })
       }];
-      const request = spec.buildRequests(bidWithFloor, bidderRequest);
+      const requests = spec.buildRequests(bidWithFloor, bidderRequest);
 
-      expect(request.data.imp[0].bidfloor).to.equal(1.50);
+      expect(requests[0].data.imp[0].bidfloor).to.equal(1.50);
+    });
+
+    it('should split requests by different propertyKeys', function () {
+      const multiPropertyBids = [
+        {
+          bidder: 'panxo',
+          bidId: 'bid-id-1',
+          adUnitCode: 'ad-unit-1',
+          params: { propertyKey: 'property-a' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        },
+        {
+          bidder: 'panxo',
+          bidId: 'bid-id-2',
+          adUnitCode: 'ad-unit-2',
+          params: { propertyKey: 'property-b' },
+          mediaTypes: { banner: { sizes: [[728, 90]] } }
+        }
+      ];
+      const requests = spec.buildRequests(multiPropertyBids, bidderRequest);
+
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].url).to.include('key=property-a');
+      expect(requests[1].url).to.include('key=property-b');
     });
   });
 
@@ -253,6 +283,7 @@ describe('PanxoBidAdapter', function () {
         cpm: 2.50
       };
 
+      // Mock document.createElement
       const imgStub = { src: '', style: {} };
       const createElementStub = sinon.stub(document, 'createElement').returns(imgStub);
       const appendChildStub = sinon.stub(document.body, 'appendChild');

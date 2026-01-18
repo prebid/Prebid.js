@@ -1,5 +1,7 @@
 /**
  * @module panxoBidAdapter
+ * @description Panxo Bid Adapter for Prebid.js - AI-referred traffic monetization
+ * @requires Panxo Signal script (cdn.panxo-sys.com) loaded before Prebid
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -17,9 +19,11 @@ const NET_REVENUE = true;
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-function getPanxoUserId() {
-  if (storage.localStorageIsEnabled()) {
+export function getPanxoUserId() {
+  try {
     return storage.getDataFromLocalStorage(USER_ID_KEY);
+  } catch (e) {
+    // storageManager handles errors internally
   }
   return null;
 }
@@ -56,11 +60,13 @@ function getFloorPrice(bid, size) {
 function buildUser(panxoUid, bidderRequest) {
   const user = { buyeruid: panxoUid };
 
+  // GDPR consent
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (gdprConsent && gdprConsent.consentString) {
     user.ext = { consent: gdprConsent.consentString };
   }
 
+  // First Party Data - user
   const fpd = deepAccess(bidderRequest, 'ortb2.user');
   if (isPlainObject(fpd)) {
     user.ext = { ...user.ext, ...fpd.ext };
@@ -73,22 +79,26 @@ function buildUser(panxoUid, bidderRequest) {
 function buildRegs(bidderRequest) {
   const regs = { ext: {} };
 
+  // GDPR
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (gdprConsent) {
     regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
 
+  // CCPA / US Privacy
   const uspConsent = deepAccess(bidderRequest, 'uspConsent');
   if (uspConsent) {
     regs.ext.us_privacy = uspConsent;
   }
 
+  // GPP
   const gppConsent = deepAccess(bidderRequest, 'gppConsent');
   if (gppConsent) {
     regs.ext.gpp = gppConsent.gppString;
     regs.ext.gpp_sid = gppConsent.applicableSections;
   }
 
+  // COPPA
   const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
   if (coppa) {
     regs.coppa = 1;
@@ -120,6 +130,7 @@ function buildSite(bidderRequest) {
     ref: deepAccess(bidderRequest, 'refererInfo.ref') || ''
   };
 
+  // First Party Data - site
   const fpd = deepAccess(bidderRequest, 'ortb2.site');
   if (isPlainObject(fpd)) {
     Object.assign(site, {
@@ -140,7 +151,8 @@ function buildSource(bidderRequest) {
     tid: deepAccess(bidderRequest, 'ortb2.source.tid') || bidderRequest.auctionId
   };
 
-  const schain = deepAccess(bidderRequest, 'schain');
+  // Supply Chain (schain) - read from ortb2 where Prebid normalizes it
+  const schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
   if (isPlainObject(schain)) {
     source.ext = { schain: schain };
   }
@@ -172,49 +184,67 @@ export const spec = {
       return [];
     }
 
-    const propertyKey = deepAccess(validBidRequests[0], 'params.propertyKey');
+    // Group bids by propertyKey to handle multiple properties on same page
+    const bidsByPropertyKey = {};
+    validBidRequests.forEach(bid => {
+      const key = deepAccess(bid, 'params.propertyKey');
+      if (!bidsByPropertyKey[key]) {
+        bidsByPropertyKey[key] = [];
+      }
+      bidsByPropertyKey[key].push(bid);
+    });
 
-    const impressions = validBidRequests.map((bid) => {
-      const banner = buildBanner(bid);
-      if (!banner) return null;
+    // Build one request per propertyKey
+    const requests = [];
+    Object.keys(bidsByPropertyKey).forEach(propertyKey => {
+      const bidsForKey = bidsByPropertyKey[propertyKey];
 
-      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes') || [];
-      const primarySize = sizes[0] || [300, 250];
-      const ortb2Imp = deepAccess(bid, 'ortb2Imp.ext');
+      const impressions = bidsForKey.map((bid) => {
+        const banner = buildBanner(bid);
+        if (!banner) return null;
 
-      return {
-        id: bid.bidId,
-        banner: banner,
-        bidfloor: getFloorPrice(bid, primarySize),
-        bidfloorcur: DEFAULT_CURRENCY,
-        secure: 1,
-        tagid: bid.adUnitCode,
-        ext: ortb2Imp || undefined
+        const sizes = deepAccess(bid, 'mediaTypes.banner.sizes') || [];
+        const primarySize = sizes[0] || [300, 250];
+
+        // Include ortb2Imp if available
+        const ortb2Imp = deepAccess(bid, 'ortb2Imp.ext');
+
+        return {
+          id: bid.bidId,
+          banner: banner,
+          bidfloor: getFloorPrice(bid, primarySize),
+          bidfloorcur: DEFAULT_CURRENCY,
+          secure: 1,
+          tagid: bid.adUnitCode,
+          ext: ortb2Imp || undefined
+        };
+      }).filter(Boolean);
+
+      if (impressions.length === 0) return;
+
+      const openrtbRequest = {
+        id: bidderRequest.bidderRequestId,
+        imp: impressions,
+        site: buildSite(bidderRequest),
+        device: buildDevice(),
+        user: buildUser(panxoUid, bidderRequest),
+        regs: buildRegs(bidderRequest),
+        source: buildSource(bidderRequest),
+        at: 1,
+        cur: [DEFAULT_CURRENCY],
+        tmax: bidderRequest.timeout || 1000
       };
-    }).filter(Boolean);
 
-    if (impressions.length === 0) return [];
+      requests.push({
+        method: 'POST',
+        url: `${ENDPOINT_URL}?key=${encodeURIComponent(propertyKey)}&source=prebid`,
+        data: openrtbRequest,
+        options: { contentType: 'application/json', withCredentials: false },
+        bidderRequest: bidderRequest
+      });
+    });
 
-    const openrtbRequest = {
-      id: bidderRequest.bidderRequestId,
-      imp: impressions,
-      site: buildSite(bidderRequest),
-      device: buildDevice(),
-      user: buildUser(panxoUid, bidderRequest),
-      regs: buildRegs(bidderRequest),
-      source: buildSource(bidderRequest),
-      at: 1,
-      cur: [DEFAULT_CURRENCY],
-      tmax: bidderRequest.timeout || 1000
-    };
-
-    return {
-      method: 'POST',
-      url: `${ENDPOINT_URL}?key=${encodeURIComponent(propertyKey)}&source=prebid`,
-      data: openrtbRequest,
-      options: { contentType: 'application/json', withCredentials: false },
-      bidderRequest: bidderRequest
-    };
+    return requests;
   },
 
   interpretResponse(serverResponse, request) {
@@ -266,6 +296,7 @@ export const spec = {
     if (syncOptions.pixelEnabled) {
       let syncUrl = SYNC_URL + '?source=prebid';
 
+      // GDPR
       if (gdprConsent) {
         syncUrl += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
         if (gdprConsent.consentString) {
@@ -273,10 +304,12 @@ export const spec = {
         }
       }
 
+      // US Privacy
       if (uspConsent) {
         syncUrl += `&us_privacy=${encodeURIComponent(uspConsent)}`;
       }
 
+      // GPP
       if (gppConsent) {
         if (gppConsent.gppString) {
           syncUrl += `&gpp=${encodeURIComponent(gppConsent.gppString)}`;
