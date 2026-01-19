@@ -87,7 +87,34 @@ describe('Richaudience adapter tests', function () {
     bidId: '2c7c8e9c900244',
     ortb2Imp: {
       ext: {
-        gpid: '/19968336/header-bid-tag-1#example-2',
+        gpid: '/19968336/header-bid-tag-1#example-2'
+      }
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250], [300, 600], [728, 90], [970, 250]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site',
+      keywords: 'key1=value1;key2=value2'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_NEW_SIZES_PBADSLOT = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    ortb2Imp: {
+      ext: {
         data: {
           pbadslot: '/19968336/header-bid-tag-1#example-2'
         }
@@ -403,7 +430,6 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('timeout').and.to.equal(600);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
     expect(typeof requestContent.scr_rsl === 'string')
-    expect(typeof requestContent.cpuc === 'number')
     expect(typeof requestContent.gpid === 'string')
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })
@@ -803,7 +829,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('should pass schain', function () {
-    let schain = {
+    const schain = {
       'ver': '1.0',
       'complete': 1,
       'nodes': [{
@@ -817,18 +843,24 @@ describe('Richaudience adapter tests', function () {
       }]
     }
 
-    DEFAULT_PARAMS_NEW_SIZES[0].schain = {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [{
-        'asi': 'richaudience.com',
-        'sid': '00001',
-        'hp': 1
-      }, {
-        'asi': 'richaudience-2.com',
-        'sid': '00002',
-        'hp': 1
-      }]
+    DEFAULT_PARAMS_NEW_SIZES[0].ortb2 = {
+      source: {
+        ext: {
+          schain: {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [{
+              'asi': 'richaudience.com',
+              'sid': '00001',
+              'hp': 1
+            }, {
+              'asi': 'richaudience-2.com',
+              'sid': '00002',
+              'hp': 1
+            }]
+          }
+        }
+      }
     }
 
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
@@ -857,8 +889,19 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.dsa.transparency[0]).to.have.property('domain').and.to.equal('richaudience.com');
   })
 
-  it('should pass gpid', function () {
+  it('should pass gpid with gpid', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_GPID, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('gpid').and.to.equal('/19968336/header-bid-tag-1#example-2');
+  })
+  it('should pass gpid with pbadslot', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_PBADSLOT, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
@@ -1264,7 +1307,7 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
       })
 
-      var syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
         applicableSections: [7]
       },
@@ -1276,7 +1319,7 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
       })
 
-      var syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
+      syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
         applicableSections: [7, 5]
       },

@@ -539,7 +539,7 @@ describe('contxtful bid adapter', function () {
     });
   });
 
-  let bidRequests =
+  const bidRequests =
     [
       {
         bidder: 'contxtful',
@@ -579,7 +579,7 @@ describe('contxtful bid adapter', function () {
       }
     ];
 
-  let expectedReceptivityData = {
+  const expectedReceptivityData = {
     rx: RX_FROM_API,
     params: {
       ev: VERSION,
@@ -587,7 +587,7 @@ describe('contxtful bid adapter', function () {
     },
   };
 
-  let bidderRequest = {
+  const bidderRequest = {
     refererInfo: {
       ref: 'https://my-referer-custom.com',
     },
@@ -747,15 +747,15 @@ describe('contxtful bid adapter', function () {
     });
 
     it('will contains the receptivity value within the ortb2.user.data with contxtful name', () => {
-      let obtained_receptivity_data = bidRequest.data.ortb2.user.data.filter(function (userData) {
-        return userData.name == 'contxtful';
+      const obtained_receptivity_data = bidRequest.data.ortb2.user.data.filter(function (userData) {
+        return userData.name === 'contxtful';
       });
       expect(obtained_receptivity_data.length).to.equal(1);
       expect(obtained_receptivity_data[0].ext).to.deep.equal(expectedReceptivityData);
     });
 
     it('will contains ortb2Imp of the bid request within the ortb2.imp.ext', () => {
-      let first_imp = bidRequest.data.ortb2.imp[0];
+      const first_imp = bidRequest.data.ortb2.imp[0];
       expect(first_imp.ext).not.to.be.undefined;
       expect(first_imp.ext.tid).to.equal('t-id-test-1');
       expect(first_imp.ext.gpid).to.equal('gpid-id-unitest-1');
@@ -763,7 +763,7 @@ describe('contxtful bid adapter', function () {
   });
 
   describe('valid bid request with no floor module', () => {
-    let noFloorsBidRequests =
+    const noFloorsBidRequests =
       [
         {
           bidder: 'contxtful',

@@ -1,0 +1,51 @@
+{
+  "README": {
+    "componentType": "moduleType as passed to getStorageManager",
+    "componentName": "moduleName as passed to getStorageManager",
+    "moduleName": "actual module name (file name sans extension) that invokes getStorageManager; prebid-core is a special case"
+  },
+  "components": [
+    {
+      "componentType": "prebid",
+      "componentName": "fpdEnrichment",
+      "moduleName": "prebid-core",
+      "disclosureURL": "local://prebid/probes.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "debugging",
+      "moduleName": "prebid-core",
+      "disclosureURL": "local://prebid/debugging.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "debugging",
+      "moduleName": "debugging",
+      "disclosureURL": "local://prebid/debugging.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "topicsFpd",
+      "moduleName": "topicsFpdModule",
+      "disclosureURL": "local://prebid/topicsFpdModule.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "FPDValidation",
+      "moduleName": "validationFpdModule",
+      "disclosureURL": "local://prebid/sharedId-optout.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "categoryTranslation",
+      "moduleName": "categoryTranslation",
+      "disclosureURL": "local://prebid/categoryTranslation.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "userId",
+      "moduleName": "userId",
+      "disclosureURL": "local://prebid/userId-optout.json"
+    }
+  ]
+}

@@ -75,8 +75,9 @@ export const spec = {
           query[prop] = bid.params.customParams[prop];
         }
       }
-      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
-        query.schain = createSchainString(bid.schain);
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain && isPlainObject(schain) && Array.isArray(schain.nodes)) {
+        query.schain = createSchainString(schain);
       }
 
       const iabContent = getContentObject(bid);
@@ -173,7 +174,7 @@ export const spec = {
       }
 
       const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
-        return bidRequest.params.adslotId == bidResponse.id;
+        return String(bidRequest.params.adslotId) === String(bidResponse.id);
       });
 
       if (matchedBid) {
@@ -194,7 +195,7 @@ export const spec = {
           creativeId: '' + matchedBid.id,
           dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
-          netRevenue: false,
+          netRevenue: matchedBid.netRevenue,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
@@ -420,7 +421,8 @@ function createSchainString(schain) {
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : '';
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
   const nodesString = schain.nodes.reduce((acc, node) => {
-    return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
+    acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`;
+    return acc;
   }, '');
   return `${ver},${complete}${nodesString}`;
 }

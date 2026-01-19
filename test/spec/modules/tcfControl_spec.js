@@ -25,16 +25,17 @@ import {
 } from '../../../src/activities/modules.js';
 import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
-import 'src/prebid.js';
+import {requestBids} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 import {activityParams} from '../../../src/activities/activityParams.js';
+import { checkIfCredentialsAllowed } from '../../../modules/tcfControl.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
   let logWarnSpy;
   let gdprDataHandlerStub;
-  let staticConfig = {
+  const staticConfig = {
     cmpApi: 'static',
     timeout: 7500,
     consentData: {
@@ -125,11 +126,15 @@ describe('gdpr enforcement', function () {
   });
 
   after(function () {
-    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    requestBids.getHooks().remove();
   })
 
   function expectAllow(allow, ruleResult) {
-    allow ? expect(ruleResult).to.not.exist : sinon.assert.match(ruleResult, {allow: false});
+    if (allow) {
+      expect(ruleResult).to.not.exist;
+    } else {
+      sinon.assert.match(ruleResult, {allow: false});
+    }
   }
 
   beforeEach(() => {
@@ -399,6 +404,48 @@ describe('gdpr enforcement', function () {
         expectAllow(allowed, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
       })
     });
+
+    it('should allow S2S bidder when deferS2Sbidders is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: [],
+            deferS2Sbidders: true
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.vendor.consents = {};
+      consent.vendorData.vendor.legitimateInterests = {};
+      consent.vendorData.purpose.consents['2'] = true;
+
+      const s2sBidderParams = activityParams(MODULE_TYPE_BIDDER, 's2sBidder', {isS2S: true});
+      expectAllow(true, fetchBidsRule(s2sBidderParams));
+    });
+
+    it('should not make exceptions for client bidders when deferS2Sbidders is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: [],
+            deferS2Sbidders: true
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.vendor.consents = {};
+      consent.vendorData.vendor.legitimateInterests = {};
+      consent.vendorData.purpose.consents['2'] = true;
+
+      const clientBidderParams = activityParams(MODULE_TYPE_BIDDER, 'clientBidder');
+      expectAllow(false, fetchBidsRule(clientBidderParams));
+    });
   });
 
   describe('reportAnalyticsRule', () => {
@@ -452,16 +499,8 @@ describe('gdpr enforcement', function () {
       expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
-    it('should return deny when purpose 4 consent is withheld', () => {
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'personalizedAds',
-            enforcePurpose: true,
-            enforceVendor: true,
-          }]
-        }
-      });
+    it('should return deny by default when purpose 4 consent is withheld', () => {
+      setEnforcementConfig({});
       Object.assign(gvlids, {
         mockBidder: 123
       });
@@ -883,7 +922,8 @@ describe('gdpr enforcement', function () {
       purpose: 'basicAds',
       enforcePurpose: true,
       enforceVendor: true,
-      vendorExceptions: []
+      vendorExceptions: [],
+      deferS2Sbidders: false
     }];
     beforeEach(function () {
       sandbox = sinon.createSandbox();
@@ -929,7 +969,8 @@ describe('gdpr enforcement', function () {
         purpose: 'basicAds',
         enforcePurpose: false,
         enforceVendor: true,
-        vendorExceptions: ['bidderA']
+        vendorExceptions: ['bidderA'],
+        deferS2Sbidders: false
       }
       setEnforcementConfig({
         gdpr: {
@@ -1096,5 +1137,28 @@ describe('gdpr enforcement', function () {
         expect(getGvlidFromAnalyticsAdapter('analytics')).to.not.be.ok;
       });
     });
+  })
+  describe('checkIfCredentialsAllowed', () => {
+    it('should not allow access credentials for lack of purpose consent 1', () => {
+      const logWarn = sinon.spy(utils, 'logWarn');
+      const rules = [{
+        purpose: 'storage',
+        enforcePurpose: true,
+        enforceVendor: false
+      }]
+      setEnforcementConfig({gdpr: {rules}});
+      const consent = setupConsentData({gdprApplies: false});
+      consent.vendorData.purpose.consents['1'] = false;
+      const nextSpy = sinon.spy();
+      const options = {
+        withCredentials: true
+      }
+
+      checkIfCredentialsAllowed(nextSpy, options);
+
+      sinon.assert.calledWith(nextSpy, {withCredentials: false});
+      expect(logWarn.calledOnce).to.equal(true);
+      logWarn.restore();
+    })
   })
 });

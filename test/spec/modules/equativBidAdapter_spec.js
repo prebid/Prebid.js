@@ -1,5 +1,7 @@
 import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
+import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
 
 describe('Equativ bid adapter tests', () => {
   let sandBox;
@@ -109,6 +111,7 @@ describe('Equativ bid adapter tests', () => {
     privacy: 1,
     ver: '1.2',
   };
+
   const DEFAULT_NATIVE_BID_REQUESTS = [
     {
       adUnitCode: 'equativ_native_42',
@@ -466,11 +469,19 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      const request = spec.buildRequests([ DEFAULT_BANNER_BID_REQUESTS[0] ], bidRequest)[0];
+      const request = spec.buildRequests([DEFAULT_BANNER_BID_REQUESTS[0]], bidRequest)[0];
 
       expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
 
       getDataFromLocalStorageStub.restore();
+    });
+
+    it('should pass prebid version as ext.equativprebidjsversion param', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
     });
 
     it('should build a video request properly under normal circumstances', () => {
@@ -579,7 +590,7 @@ describe('Equativ bid adapter tests', () => {
       delete missingRequiredVideoRequest.mediaTypes.video.mimes;
       delete missingRequiredVideoRequest.mediaTypes.video.placement;
 
-      const bidRequests = [ missingRequiredVideoRequest ];
+      const bidRequests = [missingRequiredVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -599,7 +610,7 @@ describe('Equativ bid adapter tests', () => {
           video: {}
         }
       };
-      const bidRequests = [ emptyVideoRequest ];
+      const bidRequests = [emptyVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -641,7 +652,7 @@ describe('Equativ bid adapter tests', () => {
             native: {}
           }
         };
-        const bidRequests = [ emptyNativeRequest ];
+        const bidRequests = [emptyNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
@@ -661,7 +672,7 @@ describe('Equativ bid adapter tests', () => {
 
         // removing just "assets" for this test
         delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // this value comes from native.js, part of the ortbConverter library
@@ -686,7 +697,7 @@ describe('Equativ bid adapter tests', () => {
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
 
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
@@ -887,108 +898,46 @@ describe('Equativ bid adapter tests', () => {
   });
 
   describe('getUserSyncs', () => {
-    let setDataInLocalStorageStub;
+    let handleCookieSyncStub;
 
-    beforeEach(() => setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage'));
-
-    afterEach(() => setDataInLocalStorageStub.restore());
-
-    it('should return empty array if iframe sync not enabled', () => {
-      const syncs = spec.getUserSyncs({}, SAMPLE_RESPONSE);
-      expect(syncs).to.deep.equal([]);
+    beforeEach(() => {
+      handleCookieSyncStub = sinon.stub(equativUtils, 'handleCookieSync');
+    });
+    afterEach(() => {
+      handleCookieSyncStub.restore();
     });
 
-    it('should retrieve and save user pid', (done) => {
-      spec.getUserSyncs(
+    it('should call handleCookieSync with correct parameters and return its result', () => {
+      const expectedResult = [
+        { type: 'iframe', url: 'https://sync.example.com' },
+      ];
+
+      handleCookieSyncStub.returns(expectedResult)
+
+      const result = spec.getUserSyncs({ iframeEnabled: true },
+        SAMPLE_RESPONSE,
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+
+      sinon.assert.calledWithMatch(
+        handleCookieSyncStub,
         { iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } },
+        sinon.match.number,
+        sinon.match.object
       );
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: '7767825890726'
-        },
-        origin: 'https://apps.smartadserver.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.calledOnce).to.be.true;
-        expect(setDataInLocalStorageStub.calledWith('eqt_pid', '7767825890726')).to.be.true;
-        done();
-      });
+      expect(result).to.deep.equal(expectedResult);
     });
 
-    it('should not save user pid coming from incorrect origin', (done) => {
-      spec.getUserSyncs(
-        { iframeEnabled: true },
+    it('should return an empty array if handleCookieSync returns an empty array', () => {
+      handleCookieSyncStub.returns([]);
+
+      const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
-      );
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
 
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: '7767825890726'
-        },
-        origin: 'https://another-origin.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.notCalled).to.be.true;
-        done();
-      });
-    });
-
-    it('should not save empty pid', (done) => {
-      spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
-      );
-
-      window.dispatchEvent(new MessageEvent('message', {
-        data: {
-          action: 'getConsent',
-          pid: ''
-        },
-        origin: 'https://apps.smartadserver.com',
-        source: window
-      }));
-
-      setTimeout(() => {
-        expect(setDataInLocalStorageStub.notCalled).to.be.true;
-        done();
-      });
-    });
-
-    it('should return array including iframe cookie sync object (gdprApplies=true)', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: true }
-      );
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=1&'
-      });
-    });
-
-    it('should return array including iframe cookie sync object (gdprApplies=false)', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        SAMPLE_RESPONSE,
-        { gdprApplies: false }
-      );
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=0&'
-      });
+      expect(result).to.deep.equal([]);
     });
   });
 
@@ -1042,6 +991,105 @@ describe('Equativ bid adapter tests', () => {
       const result = spec.interpretResponse(response, request);
 
       expect(result.bids[0]).to.have.property('ttl').that.eq(120);
+    });
+
+    describe('outstream', () => {
+      const bidId = 'abcd1234';
+
+      const bidRequests = [{
+        bidId,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream'
+          }
+        },
+        params: {
+          networkId: 111
+        }
+      }];
+
+      it('should add renderer', () => {
+        const request = spec.buildRequests(
+          bidRequests,
+          {
+            bidderCode: 'equativ',
+            bids: bidRequests
+          }
+        )[0];
+
+        const response = {
+          body: {
+            seatbid: [
+              {
+                bid: [{ mtype: 2 }]
+              }
+            ]
+          }
+        };
+
+        const impIdMap = getImpIdMap();
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+        const bid = spec.interpretResponse(response, request).bids[0];
+
+        expect(bid).to.have.property('renderer');
+        expect(bid.renderer).to.be.instanceof(Renderer);
+        expect(bid.renderer.url).eq('https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js');
+      });
+
+      it('should initialize and set renderer', () => {
+        const fakeRenderer = {
+          push: (cb) => cb(),
+          setRender: sinon.stub()
+        };
+
+        const installStub = sandBox.stub(Renderer, 'install').returns(fakeRenderer);
+        const renderAdStub = sandBox.stub();
+
+        window.EquativVideoOutstream = { renderAd: renderAdStub };
+
+        const request = spec.buildRequests(
+          bidRequests,
+          {
+            bidderCode: 'equativ',
+            bids: bidRequests
+          }
+        )[0];
+
+        expect(installStub.notCalled).to.be.true;
+        expect(fakeRenderer.setRender.notCalled).to.be.true;
+
+        const response = {
+          body: {
+            seatbid: [
+              {
+                bid: [{
+                  mtype: 2,
+                  renderer: fakeRenderer
+                }]
+              }
+            ]
+          }
+        };
+
+        const impIdMap = getImpIdMap();
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+
+        const bid = spec.interpretResponse(response, request).bids[0];
+
+        expect(installStub.calledOnce).to.be.true;
+        expect(fakeRenderer.setRender.calledOnce).to.be.true;
+
+        const renderFn = fakeRenderer.setRender.firstCall.args[0];
+
+        renderFn(bid);
+
+        expect(renderAdStub.calledOnce).to.be.true;
+        expect(renderAdStub.firstCall.args[0]).to.have.property('slotId');
+        expect(renderAdStub.firstCall.args[0]).to.have.property('vast');
+      });
     });
   });
 

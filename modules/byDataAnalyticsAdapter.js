@@ -11,6 +11,7 @@ import { ajax } from '../src/ajax.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'
@@ -234,7 +235,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua["brv"] = info.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
-    ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
+    ua['tz'] = getTimeZone();
   }
   var signedToken = getJWToken(ua);
   payload['visitor_data'] = signedToken;
@@ -320,7 +321,7 @@ ascAdapter.dataProcess = function (t) {
 
 ascAdapter.sendPayload = function (data) {
   var obj = { 'records': [{ 'value': data }] };
-  let strJSON = JSON.stringify(obj);
+  const strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 }
 

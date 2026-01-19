@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { deepSetValue, replaceAuctionPrice, deepClone, deepAccess } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getUserSyncs } from '../libraries/vizionikUtils/vizionikUtils.js';
 
 const BIDDER_CODE = 'vistars';
 const DEFAULT_ENDPOINT = 'ex-asr.vistarsagency.com';
@@ -35,14 +35,14 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    let valid = bid.params.source;
+    const valid = bid.params.source;
 
     return !!valid;
   },
 
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
-      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
       return {
         method: 'POST',
         url: `https://${endpoint}/bid?source=${bid.params.source}`,
@@ -66,7 +66,7 @@ export const spec = {
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
-      if (bid.meta.advertiserDomains.length == 0) {
+      if (bid.meta.advertiserDomains.length === 0) {
         bid.meta.advertiserDomains.push(ADOMAIN);
       }
 
@@ -76,34 +76,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-
-    if (!hasPurpose1Consent(gdprConsent)) {
-      return syncs;
-    }
-
-    let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
-    if (typeof gdprConsent?.gdprApplies === 'boolean') {
-      params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `//${SYNC_ENDPOINT}/match/sp.ifr?${params}`
-      });
-    }
-
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: `//${SYNC_ENDPOINT}/match/sp?${params}`
-      });
-    }
-
-    return syncs;
-  },
+  getUserSyncs: getUserSyncs(SYNC_ENDPOINT),
 
   supportedMediaTypes: [ BANNER, VIDEO ]
 }

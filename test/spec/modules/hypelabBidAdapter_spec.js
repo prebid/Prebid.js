@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { server } from '../../mocks/xhr';
-import { getWinDimensions } from '../../../src/utils';
-import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
+import { server } from '../../mocks/xhr.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 
 import {
   mediaSize,
@@ -13,6 +13,7 @@ import {
 } from 'modules/hypelabBidAdapter.js';
 
 import { BANNER } from 'src/mediaTypes.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const mockValidBidRequest = {
   bidder: 'hypelab',
@@ -177,7 +178,7 @@ describe('hypelabBidAdapter', function () {
       expect(data.dpr).to.be.a('number');
       expect(data.location).to.be.a('string');
       expect(data.floor).to.equal(null);
-      expect(data.dpr).to.equal(1);
+      expect(data.dpr).to.equal(getDevicePixelRatio());
       expect(data.wp).to.deep.equal({
         ada: false,
         bnb: false,
@@ -194,15 +195,15 @@ describe('hypelabBidAdapter', function () {
       });
       const winDimensions = getWinDimensions();
       expect(data.vp).to.deep.equal([
-      Math.max(
-        winDimensions?.document.documentElement.clientWidth || 0,
-        winDimensions?.innerWidth || 0
-      ),
-      Math.max(
-        winDimensions?.document.documentElement.clientHeight || 0,
-        winDimensions?.innerHeight || 0
-      ),
-    ]);
+        Math.max(
+          winDimensions?.document.documentElement.clientWidth || 0,
+          winDimensions?.innerWidth || 0
+        ),
+        Math.max(
+          winDimensions?.document.documentElement.clientHeight || 0,
+          winDimensions?.innerHeight || 0
+        ),
+      ]);
       expect(data.pp).to.deep.equal(null);
     });
 
@@ -281,7 +282,7 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('callbacks', () => {
-    let bid = {};
+    const bid = {};
     let reportStub;
 
     beforeEach(() => (reportStub = sinon.stub(spec, 'report')));
