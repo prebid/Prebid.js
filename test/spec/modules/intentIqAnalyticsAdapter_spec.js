@@ -5,6 +5,7 @@ import { server } from "test/mocks/xhr.js";
 import { config } from "src/config.js";
 import { EVENTS } from "src/constants.js";
 import * as events from "src/events.js";
+import { getGlobal } from "../../../src/prebidGlobal.js";
 import sinon from "sinon";
 import {
   REPORTER_ID,
@@ -317,6 +318,54 @@ describe("IntentIQ tests all", function () {
 
     expect(server.requests.length).to.be.above(0);
     expect(payloadDecoded).to.have.property("adType", externalWinEvent.adType);
+  });
+
+  it("should get pos from pbjs.adUnits when BID_WON has no pos", function () {
+    const pbjs = getGlobal();
+    const prevAdUnits = pbjs.adUnits;
+
+    pbjs.adUnits = Array.isArray(pbjs.adUnits) ? pbjs.adUnits : [];
+    pbjs.adUnits.push({ code: "myVideoAdUnit", mediaTypes: { video: { pos: 777 } } });
+
+    enableAnalyticWithSpecialOptions({ manualWinReportEnabled: false });
+
+    events.emit(EVENTS.BID_WON, {
+      ...getWonRequest(),
+      adUnitCode: "myVideoAdUnit",
+      mediaType: "video"
+    });
+
+    const request = server.requests[0];
+    const payloadEncoded = new URL(request.url).searchParams.get("payload");
+    const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    expect(payloadDecoded.pos).to.equal(777);
+
+    pbjs.adUnits = prevAdUnits;
+  });
+
+  it("should get pos from reportExternalWin when present", function () {
+    enableAnalyticWithSpecialOptions({ manualWinReportEnabled: true });
+
+    const winPos = 999;
+
+    window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({
+      adUnitCode: "myVideoAdUnit",
+      bidderCode: "appnexus",
+      cpm: 1.5,
+      currency: "USD",
+      mediaType: "video",
+      size: "300x250",
+      status: "rendered",
+      auctionId: "auc123",
+      pos: winPos
+    });
+
+    const request = server.requests[0];
+    const payloadEncoded = new URL(request.url).searchParams.get("payload");
+    const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    expect(payloadDecoded.pos).to.equal(winPos);
   });
 
   // it("should send report to report-gdpr address if gdpr is detected", function () {

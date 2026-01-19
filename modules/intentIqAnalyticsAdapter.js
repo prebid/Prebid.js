@@ -7,6 +7,7 @@ import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js'
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { appendVrrefAndFui, getReferrer } from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
+import { getUnitPosition } from '../libraries/intentIqUtils/getUnitPosition.js';
 import {
   VERSION,
   PREBID,
@@ -16,10 +17,12 @@ import { reportingServerAddress } from '../libraries/intentIqUtils/intentIqConfi
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { gamPredictionReport } from '../libraries/intentIqUtils/gamPredictionReport.js';
 import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'iiqAnalytics';
 const analyticsType = 'endpoint';
 const prebidVersion = '$prebid.version$';
+const pbjs = getGlobal();
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 let globalName;
 let identityGlobalName;
@@ -343,6 +346,15 @@ function prepareData(data, result) {
   }
   if (data.status) {
     result.status = data.status;
+  }
+  if (data.size) {
+    result.size = data.size;
+  }
+  if (typeof data.pos === 'number') {
+    result.pos = data.pos;
+  } else if (data.adUnitCode) {
+    const pos = getUnitPosition(pbjs, data.adUnitCode);
+    if (typeof pos === 'number') result.pos = pos;
   }
 
   result.prebidAuctionId = data.auctionId || data.prebidAuctionId;
