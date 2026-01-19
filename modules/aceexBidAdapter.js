@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
-    buildRequestsBase,
-    buildPlacementProcessingFunction,
+  buildRequestsBase,
+  buildPlacementProcessingFunction,
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 import { replaceAuctionPrice, deepAccess } from '../src/utils.js';
@@ -41,7 +41,7 @@ export const spec = {
     return base;
   },
 
-   interpretResponse: (serverResponse, bidRequest) => {
+  interpretResponse: (serverResponse, bidRequest) => {
     if (!serverResponse || !serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) return [];
 
     const repackedBids = [];
@@ -68,7 +68,7 @@ export const spec = {
           requestId: bid.id,
           ttl: 1200,
           meta: {
-            advertiserDomains: [ bid.adomain ]
+            advertiserDomains: [bid.adomain]
           },
         };
 
@@ -86,7 +86,7 @@ export const spec = {
 
             const { assets, imptrackers, link } = nativeResponse;
             repackedBid.native = {
-                ortb: { assets, imptrackers, link },
+              ortb: { assets, imptrackers, link },
             };
             break;
 
