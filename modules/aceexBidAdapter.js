@@ -42,7 +42,7 @@ export const spec = {
   },
 
    interpretResponse: (serverResponse, bidRequest) => {
-    if (!serverResponse || !serverResponse.body) return [];
+    if (!serverResponse || !serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) return [];
 
     const repackedBids = [];
 
@@ -68,7 +68,7 @@ export const spec = {
           requestId: bid.id,
           ttl: 1200,
           meta: {
-            advertiserDomains: [ 'aaa.com' ]
+            advertiserDomains: [ bid.adomain ]
           },
         };
 
