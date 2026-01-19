@@ -19,46 +19,30 @@ ortb2: {
       // IAB Content Taxonomy data is injected here
       data: [{
         name: "www.neuwo.ai",
-        segment: [{
-            id: "274",
-            name: "Home & Garden",
-          },
-          {
-            id: "42",
-            name: "Books and Literature",
-          },
-          {
-            id: "210",
-            name: "Food & Drink",
-          },
+        segment: [
+          { id: "274" },
+          { id: "42" },
+          { id: "210" },
         ],
         ext: {
           segtax: 7,
         },
-      }, ],
+      }],
     },
   },
   user: {
     // IAB Audience Taxonomy data is injected here
     data: [{
       name: "www.neuwo.ai",
-      segment: [{
-          id: "49",
-          name: "Demographic | Gender | Female |",
-        },
-        {
-          id: "161",
-          name: "Demographic | Marital Status | Married |",
-        },
-        {
-          id: "6",
-          name: "Demographic | Age Range | 30-34 |",
-        },
+      segment: [
+        { id: "49" },
+        { id: "161" },
+        { id: "6" },
       ],
       ext: {
         segtax: 4,
       },
-    }, ],
+    }],
   },
 }
 ```

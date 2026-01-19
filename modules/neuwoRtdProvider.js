@@ -380,10 +380,9 @@ export function buildIabData(marketingCategories, tiers, segtax) {
     if (Array.isArray(tierData)) {
       tierData.forEach((item) => {
         const ID = item?.ID;
-        const label = item?.label;
 
-        if (ID && label) {
-          data.segment.push({ id: ID, name: label });
+        if (ID) {
+          data.segment.push({ id: ID });
         }
       });
     }

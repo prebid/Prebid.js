@@ -150,14 +150,8 @@ describe("neuwoRtdModule", function () {
       const expected = {
         name: neuwo.DATA_PROVIDER,
         segment: [
-          {
-            id: "274",
-            name: "Home & Garden",
-          },
-          {
-            id: "216",
-            name: "Cooking",
-          },
+          { id: "274" },
+          { id: "216" },
         ],
         ext: {
           segtax,
@@ -175,18 +169,9 @@ describe("neuwoRtdModule", function () {
       const expected = {
         name: neuwo.DATA_PROVIDER,
         segment: [
-          {
-            id: "49",
-            name: "Demographic | Gender | Female |",
-          },
-          {
-            id: "127",
-            name: "Demographic | Household Data | 1 Child |",
-          },
-          {
-            id: "98",
-            name: "Demographic | Household Data | Parents with Children |",
-          },
+          { id: "49" },
+          { id: "127" },
+          { id: "98" },
         ],
         ext: {
           segtax,
@@ -243,7 +228,6 @@ describe("neuwoRtdModule", function () {
         segment: [
           {
             id: "216",
-            name: "Cooking",
           },
         ],
         ext: {
@@ -261,7 +245,6 @@ describe("neuwoRtdModule", function () {
       // Overwrite iab_tier_1 with various malformed objects
       marketingCategories.iab_tier_1 = [
         { ID: "274", label: "Valid Object" },
-        { ID: "999" }, // Missing 'label' property
         { label: "Another Label" }, // Missing 'ID' property
         null, // A null value
         "just-a-string", // A string primitive
@@ -276,11 +259,9 @@ describe("neuwoRtdModule", function () {
         segment: [
           {
             id: "274",
-            name: "Valid Object",
           },
           {
             id: "216",
-            name: "Cooking",
           },
         ],
         ext: {
@@ -362,9 +343,9 @@ describe("neuwoRtdModule", function () {
           "The first segment ID should match the API response"
         ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
         expect(
-          contentData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].label);
+          contentData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].ID);
       });
     });
 
@@ -407,9 +388,9 @@ describe("neuwoRtdModule", function () {
           "The first segment ID should match the API response"
         ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
         expect(
-          contentData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].label);
+          contentData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].ID);
       });
     });
 
@@ -452,9 +433,9 @@ describe("neuwoRtdModule", function () {
           "The first segment ID should match the API response"
         ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
         expect(
-          contentData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].label);
+          contentData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].ID);
       });
     });
 
@@ -496,9 +477,9 @@ describe("neuwoRtdModule", function () {
           "The first segment ID should match the API response"
         ).to.equal(apiResponse.marketing_categories.iab_audience_tier_3[0].ID);
         expect(
-          userData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_audience_tier_4[0].label);
+          userData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse.marketing_categories.iab_audience_tier_4[0].ID);
       });
     });
 
