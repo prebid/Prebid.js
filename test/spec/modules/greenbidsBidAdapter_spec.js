@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, ENDPOINT_URL } from 'modules/greenbidsBidAdapter.js';
 import { getScreenOrientation } from 'src/utils.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';
 
 describe('greenbidsBidAdapter', () => {
@@ -277,7 +278,7 @@ describe('greenbidsBidAdapter', () => {
     it('should add pixelRatio info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const pixelRatio = window.top.devicePixelRatio
+      const pixelRatio = getDevicePixelRatio()
 
       expect(payload.devicePixelRatio).to.exist;
       expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);

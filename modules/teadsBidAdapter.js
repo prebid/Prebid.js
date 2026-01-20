@@ -1,9 +1,11 @@
 import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation} from '../src/utils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 import {getHLen} from '../libraries/navigatorData/navigatorData.js';
 import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -64,15 +66,15 @@ export const spec = {
       pageReferrer: document.referrer,
       pageTitle: getPageTitle().slice(0, 300),
       pageDescription: getPageDescription().slice(0, 300),
-      networkBandwidth: getConnectionDownLink(window.navigator),
-      networkQuality: getNetworkQuality(window.navigator),
+      networkBandwidth: getConnectionDownLink(),
+      networkQuality: getNetworkQuality(),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       domComplexity: getDomComplexity(document),
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
-      devicePixelRatio: topWindow.devicePixelRatio,
+      devicePixelRatio: getDevicePixelRatio(topWindow),
       screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
@@ -256,12 +258,13 @@ function getPageDescription() {
   return (element && element.content) || '';
 }
 
-function getConnectionDownLink(nav) {
-  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+function getConnectionDownLink() {
+  const connection = getConnectionInfo();
+  return connection?.downlink != null ? connection.downlink.toString() : '';
 }
 
-function getNetworkQuality(navigator) {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+function getNetworkQuality() {
+  const connection = getConnectionInfo();
 
   return connection?.effectiveType ?? '';
 }
