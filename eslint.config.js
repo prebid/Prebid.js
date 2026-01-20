@@ -111,6 +111,7 @@ module.exports = [
       'no-console': 'error',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
+      'prebid/no-restricted-load-external-script': 'error',
       'no-restricted-syntax': [
         'error',
         {
