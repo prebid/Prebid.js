@@ -37,6 +37,10 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/tncIdSystem.js',
   'modules/ftrackIdSystem.js',
   'modules/id5IdSystem.js',
+  // Test files
+  '**/*spec.js',
+  '**/*spec.ts',
+  '**/test/**/*',
 ];
 
 module.exports = APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS;

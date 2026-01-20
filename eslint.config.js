@@ -9,6 +9,7 @@ const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
 const {getSourceFolders} = require('./gulpHelpers.js');
+const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = require('./plugins/eslint/approvedLoadExternalScriptPaths.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -111,7 +112,18 @@ module.exports = [
       'no-console': 'error',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
-      'prebid/no-restricted-load-external-script': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/src/adloader.js', '**/src/adloader'],
+              importNames: ['loadExternalScript'],
+              message: 'loadExternalScript can only be imported in approved files. See plugins/eslint/approvedLoadExternalScriptPaths.js for the list of approved paths.'
+            }
+          ]
+        }
+      ],
       'no-restricted-syntax': [
         'error',
         {
@@ -272,6 +284,19 @@ module.exports = [
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-this-alias': 'off',
       '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
+  // Override: allow loadExternalScript import in approved files
+  {
+    files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.map(p => {
+      // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs)$/)) {
+        return `${p}/**/*.{js,ts,mjs}`;
+      }
+      return p;
+    }),
+    rules: {
+      'no-restricted-imports': 'off',
     }
   },
 ]
