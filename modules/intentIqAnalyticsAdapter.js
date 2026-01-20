@@ -5,7 +5,7 @@ import { ajax } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
-import { appendVrrefAndFui, getReferrer } from '../libraries/intentIqUtils/getRefferer.js';
+import { appendVrrefAndFui, getCurrentUrl, getRelevantRefferer } from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import { getUnitPosition } from '../libraries/intentIqUtils/getUnitPosition.js';
 import {
@@ -270,9 +270,10 @@ function getRandom(start, end) {
 
 export function preparePayload(data) {
   const result = getDefaultDataObject();
+  const fullUrl = getCurrentUrl();
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
-  result[PARAMS_NAMES.referrer] = getReferrer();
+  result[PARAMS_NAMES.referrer] = getRelevantRefferer(iiqAnalyticsAnalyticsAdapter.initOptions.domainName, fullUrl);
   result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.clientType] = iiqAnalyticsAnalyticsAdapter.initOptions.clientType;
   result[PARAMS_NAMES.siteId] = iiqAnalyticsAnalyticsAdapter.initOptions.siteId;
