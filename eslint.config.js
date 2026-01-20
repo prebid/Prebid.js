@@ -286,7 +286,7 @@ module.exports = [
       '@typescript-eslint/no-require-imports': 'off'
     }
   },
-  // Override: allow loadExternalScript import in approved files
+  // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
   {
     files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.map(p => {
       // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
@@ -294,9 +294,9 @@ module.exports = [
         return `${p}/**/*.{js,ts,mjs}`;
       }
       return p;
-    }),
+    }).filter(p => !p.includes('BidAdapter.js')), // Exclude BidAdapters - they have their own restrictions
     rules: {
-      'no-restricted-imports': 'off',
+      'no-restricted-imports': 'off', // Allow loadExternalScript import in approved non-BidAdapter files
     }
   },
 ]
