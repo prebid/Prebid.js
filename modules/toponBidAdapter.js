@@ -10,7 +10,7 @@ const GVLID = 1305;
 const ENDPOINT = "https://web-rtb.anyrtb.com/ortb/prebid";
 const DEFAULT_TTL = 360;
 const USER_SYNC_URL = "https://pb.anyrtb.com/pb/page/prebidUserSyncs.html";
-const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sync";
+const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sdk_sync";
 
 let lastPubid;
 

@@ -195,6 +195,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   gdprConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
   uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
   gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
+  alwaysHasCapacity?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -544,25 +545,39 @@ const adapterManager = {
       }
     })();
 
+    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    const allowedBidders = new Set();
+
     adUnits.forEach(au => {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
+
       // filter out bidders that cannot participate in the auction
       au.bids = au.bids.filter((bid) => {
+        if (!bid.bidder) {
+          return true;
+        }
         const [ortb2] = mergeBidderFpd(auctionId, bid.bidder);
-        return !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+        const isS2S = serverBidders.includes(bid.bidder) && !clientBidders.includes(bid.bidder);
+        return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
           bid,
           ortb2,
           adUnit: au,
-          auctionId
-        }))
-      })
+          auctionId,
+          isS2S
+        }));
+      });
+      au.bids.forEach(bid => {
+        allowedBidders.add(bid.bidder);
+      });
       incrementRequestsCounter(au.code);
     });
 
+    clientBidders = clientBidders.filter(bidder => allowedBidders.has(bidder));
+    serverBidders = serverBidders.filter(bidder => allowedBidders.has(bidder));
+
     adUnits = setupAdUnitMediaTypes(adUnits, labels);
-    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
 
     if (config.getConfig('bidderSequence') === RANDOM) {
       clientBidders = shuffle(clientBidders);
@@ -622,6 +637,7 @@ const adapterManager = {
             src: S2S.SRC,
             refererInfo,
             metrics,
+            alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -651,6 +667,7 @@ const adapterManager = {
       const bidderRequestId = generateUUID();
       const pageViewId = getPageViewIdForBidder(bidderCode);
       const metrics = auctionMetrics.fork();
+      const adapter = _bidderRegistry[bidderCode];
       const bidderRequest = addOrtb2({
         bidderCode,
         auctionId,
@@ -669,8 +686,8 @@ const adapterManager = {
         timeout: cbTimeout,
         refererInfo,
         metrics,
+        alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
       });
-      const adapter = _bidderRegistry[bidderCode];
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
       }
