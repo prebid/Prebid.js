@@ -162,6 +162,7 @@ function buildSource(bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1527,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid(bid) {
