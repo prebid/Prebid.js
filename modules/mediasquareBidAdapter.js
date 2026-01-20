@@ -195,7 +195,6 @@ export const spec = {
           const data = burl.data ?? null;
           const method = (burl.method ?? "GET").toUpperCase();
           ajax(url, null, data ? JSON.stringify(data) : null, {method: method, withCredentials: true});
-          
         });
         return true;
       }
