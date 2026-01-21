@@ -161,11 +161,10 @@ export function objectGuard(rules) {
       if (obj == null || typeof obj !== 'object') return obj;
       if (visited.has(obj)) return obj;
       visited.add(obj);
-      if (Array.isArray(obj)) {
-        return obj.map((item) => deref(item, visited));
-      } else {
-        return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, deref(v, visited)]));
-      }
+      Object.keys(obj).forEach(k => {
+        obj[k] = deref(obj[k], visited);
+      })
+      return obj;
     }
 
     const proxy = new Proxy(obj, {

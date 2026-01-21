@@ -143,6 +143,20 @@ describe('objectGuard', () => {
       expect(guard).to.eql({
         prop: val
       })
+    });
+
+    it('should allow for deferred modification', () => {
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      const prop = {};
+      guard.prop = prop;
+      prop.val = 'foo';
+      expect(obj).to.eql({
+        prop: {
+          val: 'foo'
+        }
+      })
+
     })
 
     it('should reject conflicting rules', () => {
