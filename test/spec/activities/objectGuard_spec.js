@@ -120,7 +120,7 @@ describe('objectGuard', () => {
       expect(obj.foo).to.eql({nested: 'item'});
     });
 
-    it('should handle circular references', () => {
+    it('should handle circular references in guarded properties', () => {
       applies = false;
       const obj = {
         foo: {}
@@ -133,6 +133,17 @@ describe('objectGuard', () => {
         }
       });
     });
+
+    it('should handle circular references in unguarded properties', () => {
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      const val = {};
+      val.circular = val;
+      guard.prop = val;
+      expect(guard).to.eql({
+        prop: val
+      })
+    })
 
     it('should reject conflicting rules', () => {
       const crule = {...rule, paths: ['outer']};

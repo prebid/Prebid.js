@@ -156,13 +156,16 @@ export function objectGuard(rules) {
      *
      * where the `set` proxy trap would get an already proxied object as argument.
      */
-    function deref(obj) {
+    function deref(obj, visited = new Set()) {
       if (cache.has(obj?.[TARGET])) return obj[TARGET];
+      if (obj == null || typeof obj !== 'object') return obj;
+      if (visited.has(obj)) return obj;
+      visited.add(obj);
       if (Array.isArray(obj)) {
-        return obj.map(deref);
-      } else if (obj != null && typeof obj === 'object') {
-        return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, deref(v)]));
-      } else return obj;
+        return obj.map((item) => deref(item, visited));
+      } else {
+        return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, deref(v, visited)]));
+      }
     }
 
     const proxy = new Proxy(obj, {
