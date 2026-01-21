@@ -8,7 +8,7 @@
 
 ## Description
 
-The WURFL RTD module enriches Prebid.js bid requests with comprehensive device detection data, helping publishers maximize ad revenue through better device targeting. Publishers typically see improved CPM performance, particularly for mobile traffic where device signals provide valuable bidding context.
+The WURFL RTD module enriches Prebid.js bid requests with comprehensive device detection data.
 
 The WURFL RTD module relies on localStorage caching and local client-side detection, providing instant device enrichment on every page load.
 
