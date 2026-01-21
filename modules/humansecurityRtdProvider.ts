@@ -10,7 +10,7 @@
 import { submodule } from '../src/hook.js';
 import { prefixLog, generateUUID, getWindowSelf } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal, PrebidJS } from '../src/prebidGlobal.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { AllConsentData } from '../src/consentHandler.ts';
@@ -30,13 +30,35 @@ declare module './rtdModule/spec.ts' {
   }
 }
 
+interface HumanSecurityImpl {
+  connect(
+    pbjs: PrebidJS,
+    callback: (m: string) => void | null,
+    config: RTDProviderConfig<'humansecurity'>
+  ): void;
+
+  getBidRequestData(
+    reqBidsConfigObj: StartAuctionOptions,
+    callback: () => void,
+    config: RTDProviderConfig<'humansecurity'>,
+    userConsent: AllConsentData
+  ): void;
+
+  onAuctionInitEvent(
+    pbjs: PrebidJS,
+    auctionDetails: AuctionProperties,
+    config: RTDProviderConfig<'humansecurity'>,
+    userConsent: AllConsentData
+  ): void;
+}
+
 const SUBMODULE_NAME = 'humansecurity' as const;
 const SCRIPT_URL = 'https://sonar.script.ac/prebid/rtd.js';
 const MODULE_VERSION = 1;
 
 const { logWarn, logError } = prefixLog(`[${SUBMODULE_NAME}]:`);
 
-let implRef: any = null;
+let implRef: HumanSecurityImpl | null = null;
 let clientId: string = '';
 let verbose: boolean = false;
 let sessionId: string = '';
@@ -79,7 +101,7 @@ const getImpl = () => {
 
   // Attempt to resolve from window by session ID
   const wnd = getWindowSelf();
-  const impl = wnd[`sonar_${sessionId}`];
+  const impl: HumanSecurityImpl = wnd[`sonar_${sessionId}`];
 
   if (typeof impl !== 'object' || typeof impl.connect !== 'function') {
     verbose && logWarn('onload', 'Unable to access the implementation script');

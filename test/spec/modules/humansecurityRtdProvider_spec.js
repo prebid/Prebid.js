@@ -10,10 +10,7 @@ const {
   SUBMODULE_NAME,
   SCRIPT_URL,
   main,
-  load,
-  onImplLoaded,
-  onImplMessage,
-  onGetBidRequestData
+  load
 } = __TEST__;
 
 describe('humansecurity RTD module', function () {
@@ -23,20 +20,20 @@ describe('humansecurity RTD module', function () {
   const sonarStubId = `sonar_${stubUuid}`;
   const stubWindow = { [sonarStubId]: undefined };
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'getWindowSelf').returns(stubWindow);
     sandbox.stub(utils, 'generateUUID').returns(stubUuid);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({ domain: 'example.com' });
   });
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
   describe('Initialization step', function () {
     let sandbox2;
     let connectSpy;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.createSandbox();
       connectSpy = sandbox.spy();
       // Once the impl script is loaded, it registers the API using session ID
@@ -47,7 +44,7 @@ describe('humansecurity RTD module', function () {
     });
 
     it('should connect to the implementation script once it loads', function () {
-      load({ });
+      load({});
 
       expect(loadExternalScriptStub.calledOnce).to.be.true;
       const callback = loadExternalScriptStub.getCall(0).args[3];
@@ -73,12 +70,17 @@ describe('humansecurity RTD module', function () {
     });
 
     it('should insert implementation script', () => {
-      load({ });
+      load({});
 
       expect(loadExternalScriptStub.calledOnce).to.be.true;
 
       const args = loadExternalScriptStub.getCall(0).args;
       expect(args[0]).to.include(`${SCRIPT_URL}?r=example.com`);
+      const mvMatch = args[0].match(/[?&]mv=([^&]+)/);
+      expect(mvMatch).to.not.equal(null);
+      const mvValue = Number(mvMatch[1]);
+      expect(Number.isFinite(mvValue)).to.equal(true);
+      expect(mvValue).to.be.greaterThan(0);
       expect(args[2]).to.be.equal(SUBMODULE_NAME);
       expect(args[3]).to.be.a('function');
       expect(args[4]).to.be.equal(null);
@@ -95,10 +97,10 @@ describe('humansecurity RTD module', function () {
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Submodule execution', function () {
     let sandbox2;
     let submoduleStub;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.createSandbox();
       submoduleStub = sandbox2.stub(hook, 'submodule');
     });
@@ -138,7 +140,7 @@ describe('humansecurity RTD module', function () {
 
     it('should commence initialization on default initialization', function () {
       const { init } = getModule();
-      expect(init({ })).to.equal(true);
+      expect(init({})).to.equal(true);
       expect(loadExternalScriptStub.calledOnce).to.be.true;
     });
   });
