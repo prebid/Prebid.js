@@ -58,15 +58,15 @@ This module is configured as part of the `realTimeData.dataProviders` object.
 ```javascript
 pbjs.setConfig({
   realTimeData: {
-    auctionDelay: 500, // Value can be adjusted based on the needs
+    auctionDelay: 500, // Value can be adjusted based on the needs. Recommended to start with value `500`
     dataProviders: [
       {
         name: "NeuwoRTDModule",
-        waitForIt: true,
+        waitForIt: true, // Recommended to be set to `true`
         params: {
           neuwoApiUrl: "<Your Neuwo Edge API Endpoint URL>",
           neuwoApiToken: "<Your Neuwo API Token>",
-          iabContentTaxonomyVersion: "3.0",
+          iabContentTaxonomyVersion: "2.2",
           enableCache: true, // Default: true. Caches API responses to avoid redundant requests
         },
       },
@@ -83,7 +83,7 @@ pbjs.setConfig({
 | `params`                            | Object   | Yes      |         | Container for module-specific parameters.                                                                                                                                                                                                                                                                                  |
 | `params.neuwoApiUrl`                | String   | Yes      |         | The endpoint URL for the Neuwo Edge API.                                                                                                                                                                                                                                                                                   |
 | `params.neuwoApiToken`              | String   | Yes      |         | Your unique API token provided by Neuwo.                                                                                                                                                                                                                                                                                   |
-| `params.iabContentTaxonomyVersion`  | String   | No       | `'3.0'` | Specifies the version of the IAB Content Taxonomy to be used. Supported values: `'2.2'`, `'3.0'`.                                                                                                                                                                                                                          |
+| `params.iabContentTaxonomyVersion`  | String   | No       | `'2.2'` | Specifies the version of the IAB Content Taxonomy to be used. Supported values: `'1.0'`, `'2.2'`, `'3.0'`.                                                                                                                                                                                                                 |
 | `params.enableCache`                | Boolean  | No       | `true`  | If `true`, caches API responses to avoid redundant requests for the same page during the session. Set to `false` to disable caching and make a fresh API call on every bid request.                                                                                                                                        |
 | `params.stripAllQueryParams`        | Boolean  | No       | `false` | If `true`, strips all query parameters from the URL before analysis. Takes precedence over other stripping options.                                                                                                                                                                                                        |
 | `params.stripQueryParamsForDomains` | String[] | No       | `[]`    | List of domains for which to strip **all** query parameters. When a domain matches, all query params are removed for that domain and all its subdomains (e.g., `'example.com'` strips params for both `'example.com'` and `'sub.example.com'`). This option takes precedence over `stripQueryParams` for matching domains. |
@@ -104,15 +104,15 @@ The module provides optional URL cleaning capabilities to strip query parameters
 ```javascript
 pbjs.setConfig({
   realTimeData: {
-    auctionDelay: 500, // Value can be adjusted based on the needs
+    auctionDelay: 500, // Value can be adjusted based on the needs. Recommended to start with value `500`
     dataProviders: [
       {
         name: "NeuwoRTDModule",
-        waitForIt: true,
+        waitForIt: true, // Recommended to be set to `true`
         params: {
           neuwoApiUrl: "<Your Neuwo Edge API Endpoint URL>",
           neuwoApiToken: "<Your Neuwo API Token>",
-          iabContentTaxonomyVersion: "3.0",
+          iabContentTaxonomyVersion: "2.2",
 
           // Option 1: Strip all query parameters from the URL
           stripAllQueryParams: true,
@@ -134,7 +134,7 @@ pbjs.setConfig({
 
 ### IAB Taxonomy Filtering
 
-The module provides optional per-tier filtering for IAB taxonomies to control the quantity and quality of categories injected into bid requests. This allows you to limit categories based on their relevance score and restrict the maximum number of categories per tier.
+The module provides optional per-tier filtering for IAB taxonomies to control the quantity and quality of categories injected into bid requests. This allows you to limit categories based on their relevance score and restrict the maximum number of categories per tier. Filtering is performed server-side, which means only the filtered categories are returned in the response. This reduces bandwidth and improves performance.
 
 **Filter Configuration:**
 
@@ -145,29 +145,29 @@ Each tier can have two optional parameters:
 
 **Available Tiers:**
 
-| Tier Name       | Description         | API Response Key      |
-| :-------------- | :------------------ | :-------------------- |
-| `ContentTier1`  | IAB Content Tier 1  | `iab_tier_1`          |
-| `ContentTier2`  | IAB Content Tier 2  | `iab_tier_2`          |
-| `ContentTier3`  | IAB Content Tier 3  | `iab_tier_3`          |
-| `AudienceTier3` | IAB Audience Tier 3 | `iab_audience_tier_3` |
-| `AudienceTier4` | IAB Audience Tier 4 | `iab_audience_tier_4` |
-| `AudienceTier5` | IAB Audience Tier 5 | `iab_audience_tier_5` |
+| Tier Name       | Description         | IAB Taxonomy                         |
+| :-------------- | :------------------ | :----------------------------------- |
+| `ContentTier1`  | IAB Content Tier 1  | Based on configured taxonomy version |
+| `ContentTier2`  | IAB Content Tier 2  | Based on configured taxonomy version |
+| `ContentTier3`  | IAB Content Tier 3  | Based on configured taxonomy version |
+| `AudienceTier3` | IAB Audience Tier 3 | IAB Audience Taxonomy 1.1 (segtax 4) |
+| `AudienceTier4` | IAB Audience Tier 4 | IAB Audience Taxonomy 1.1 (segtax 4) |
+| `AudienceTier5` | IAB Audience Tier 5 | IAB Audience Taxonomy 1.1 (segtax 4) |
 
 **Example with IAB taxonomy filtering:**
 
 ```javascript
 pbjs.setConfig({
   realTimeData: {
-    auctionDelay: 500,
+    auctionDelay: 500, // Value can be adjusted based on the needs. Recommended to start with value `500`
     dataProviders: [
       {
         name: "NeuwoRTDModule",
-        waitForIt: true,
+        waitForIt: true, // Recommended to be set to `true`
         params: {
           neuwoApiUrl: "<Your Neuwo Edge API Endpoint URL>",
           neuwoApiToken: "<Your Neuwo API Token>",
-          iabContentTaxonomyVersion: "3.0",
+          iabContentTaxonomyVersion: "2.2",
 
           // Filter IAB taxonomies by tier
           iabTaxonomyFilters: {
@@ -195,13 +195,6 @@ pbjs.setConfig({
   },
 });
 ```
-
-**How it works:**
-
-1. Categories are first filtered by the `threshold` value (if specified)
-2. Remaining categories are sorted by relevance score in descending order (highest first)
-3. The top N categories are selected based on the `limit` value (if specified)
-4. Tiers without filters configured will use all categories returned by the API
 
 ## Accessing Neuwo Data Outside Prebid.js
 
@@ -324,3 +317,5 @@ google-chrome build/coverage/lcov-report/index.html
 ```
 
 Navigate to `modules/neuwoRtdProvider.js` in the report to see detailed line-by-line coverage with highlighted covered/uncovered lines.
+
+> Version **2.0.0**
