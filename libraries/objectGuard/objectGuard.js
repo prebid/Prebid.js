@@ -162,7 +162,10 @@ export function objectGuard(rules) {
       if (visited.has(obj)) return obj;
       visited.add(obj);
       Object.keys(obj).forEach(k => {
-        obj[k] = deref(obj[k], visited);
+        const sub = deref(obj[k], visited);
+        if (sub !== obj[k]) {
+          obj[k] = sub;
+        }
       })
       return obj;
     }

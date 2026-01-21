@@ -155,8 +155,18 @@ describe('objectGuard', () => {
         prop: {
           val: 'foo'
         }
-      })
+      });
+    });
 
+    it('should not choke on immutable objects', () => {
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      guard.prop = Object.freeze({val: 'foo'});
+      expect(obj).to.eql({
+        prop: {
+          val: 'foo'
+        }
+      })
     })
 
     it('should reject conflicting rules', () => {
