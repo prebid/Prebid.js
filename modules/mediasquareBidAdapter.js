@@ -139,8 +139,8 @@ export const spec = {
             bidResponse['mediasquare'][param] = value[param];
           }
         });
-        if ('burl' in value) {
-          bidResponse['mediasquare']['burl'] = value['burl'];
+        if ('burls' in value) {
+          bidResponse['mediasquare']['burls'] = value['burls'];
         }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
@@ -187,9 +187,9 @@ export const spec = {
     const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
 
     if (bid.hasOwnProperty('mediasquare')) {
-      // if burl then fire tracking pixels and exit
-      if (bid.mediasquare.hasOwnProperty('burl') && Array.isArray(bid.mediasquare.burl) && bid.mediasquare.burl.length > 0) {
-        bid.mediasquare.burl.forEach(burl => {
+      // if burls then fire tracking pixels and exit
+      if (bid.mediasquare.hasOwnProperty('burls') && Array.isArray(bid.mediasquare.burls) && bid.mediasquare.burls.length > 0) {
+        bid.mediasquare.burls.forEach(burl => {
           const url = burl && burl.url;
           if (!url) return;
           const data = burl.data ?? null;
