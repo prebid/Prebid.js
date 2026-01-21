@@ -752,7 +752,7 @@ describe('IntentIQ tests', function () {
       expect(result).to.equal('unknown');
     });
 
-    it("Should call the server for new partner if FPD has been updated by other partner, and 24 hours have not yet passed.", async () => {
+    it("Should call the server for new partner if FPD has been updated by other partner, and 72 hours have not yet passed.", async () => {
       const allowedStorage = ['html5']
       const newPartnerId = 12345
       const FPD = {
@@ -773,7 +773,7 @@ describe('IntentIQ tests', function () {
       expect(request.url).contain("ProfilesEngineServlet?at=39") // server was called
     })
 
-    it("Should NOT call the server if FPD has been updated user Opted Out, and 24 hours have not yet passed.", async () => {
+    it("Should NOT call the server if FPD has been updated user Opted Out, and 72 hours have not yet passed.", async () => {
       const allowedStorage = ['html5']
       const newPartnerId = 12345
       const FPD = {

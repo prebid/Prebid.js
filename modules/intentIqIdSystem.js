@@ -20,7 +20,7 @@ import {
   EMPTY,
   GVLID,
   VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
-  HOURS_24, CH_KEYS
+  HOURS_72, CH_KEYS
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import { SYNC_KEY } from '../libraries/intentIqUtils/getSyncKey.js';
 import { iiqPixelServerAddress, getIiqServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
@@ -454,7 +454,7 @@ export const intentIqIdSubmodule = {
     if (!shouldCallServer) {
       if (!hasPartnerData && !firstPartyData.isOptedOut) {
         shouldCallServer = true;
-      } else shouldCallServer = Date.now() > firstPartyData.sCal + HOURS_24;
+      } else shouldCallServer = Date.now() > firstPartyData.sCal + HOURS_72;
     }
 
     if (firstPartyData.isOptedOut) {
@@ -545,7 +545,7 @@ export const intentIqIdSubmodule = {
             if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
             if ('cttl' in respJson) {
               partnerData.cttl = respJson.cttl;
-            } else partnerData.cttl = HOURS_24;
+            } else partnerData.cttl = HOURS_72;
 
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
