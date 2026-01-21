@@ -1,5 +1,6 @@
 /**
  * @module neuwoRtdProvider
+ * @version 2.0.0
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -7,7 +8,7 @@
  * This module is a Prebid.js Real-Time Data (RTD) provider that integrates with the Neuwo API.
  *
  * It fetches contextual marketing categories (IAB content and audience) for the current page from the Neuwo API.
- * The retrieved data is then injected into the bid request as OpenRTB (ORTB2)`site.content.data`
+ * The retrieved data is then injected into the bid request as OpenRTB (ORTB2) `site.content.data`
  * and `user.data` fragments, making it available for bidders to use in their decisioning process.
  *
  * @see {@link https://docs.prebid.org/dev-docs/add-rtd-submodule.html} for more information on development of Prebid.js RTD modules.
@@ -22,6 +23,9 @@ import { deepSetValue, logError, logInfo, mergeDeep } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
 export const DATA_PROVIDER = "www.neuwo.ai";
+
+// Default IAB Content Taxonomy version
+const DEFAULT_IAB_CONTENT_TAXONOMY_VERSION = "2.2";
 
 // Cached API response to avoid redundant requests.
 let globalCachedResponse;
@@ -73,6 +77,9 @@ function init(config, userConsent) {
 /**
  * Fetches contextual data from the Neuwo API and enriches the bid request object with IAB categories.
  * Uses cached response if available to avoid redundant API calls.
+ * Automatically detects API capabilities from the endpoint URL format:
+ * - URLs containing "/v1/iab" use POST requests with server-side filtering
+ * - Other URLs use GET requests with client-side filtering (legacy support)
  *
  * @param {Object} reqBidsConfigObj The bid request configuration object.
  * @param {function} callback The callback function to continue the auction.
@@ -81,13 +88,13 @@ function init(config, userConsent) {
  * @param {string} config.params.neuwoApiUrl The Neuwo API endpoint URL.
  * @param {string} config.params.neuwoApiToken The Neuwo API authentication token.
  * @param {string} [config.params.websiteToAnalyseUrl] Optional URL to analyze instead of current page.
- * @param {string} [config.params.iabContentTaxonomyVersion] IAB content taxonomy version (default: "3.0").
- * @param {boolean} [config.params.enableCache=true] If true, caches API responses to avoid redundant requests (default: true).
+ * @param {string} [config.params.iabContentTaxonomyVersion="2.2"] IAB Content Taxonomy version.
+ * @param {boolean} [config.params.enableCache=true] If true, caches API responses to avoid redundant requests.
  * @param {boolean} [config.params.stripAllQueryParams] If true, strips all query parameters from the URL.
  * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
  * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
  * @param {boolean} [config.params.stripFragments] If true, strips URL fragments (hash).
- * @param {Object} [config.params.iabTaxonomyFilters] Per-tier filtering configuration for IAB taxonomies.
+ * @param {Object} [config.params.iabTaxonomyFilters] Per-tier filtering configuration for IAB Taxonomies.
  * @param {Object} userConsent The user consent object.
  */
 export function getBidRequestData(
@@ -107,7 +114,7 @@ export function getBidRequestData(
     websiteToAnalyseUrl,
     neuwoApiUrl,
     neuwoApiToken,
-    iabContentTaxonomyVersion,
+    iabContentTaxonomyVersion = DEFAULT_IAB_CONTENT_TAXONOMY_VERSION,
     enableCache = true,
     stripAllQueryParams,
     stripQueryParamsForDomains,
@@ -124,16 +131,33 @@ export function getBidRequestData(
     stripFragments,
   });
   const pageUrl = encodeURIComponent(processedUrl);
-  // Adjusted for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?')
+  const contentSegtax =
+    IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
+    IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION];
+
+  // Detect API version from URL
+  const isV2Api = neuwoApiUrl.includes("/v1/iab");
+
+  // Build IAB filter configuration
+  const iabFilterConfig = buildIabFilterConfig(
+    iabTaxonomyFilters,
+    contentSegtax
+  );
+
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
-  const neuwoApiUrlFull =
-    neuwoApiUrl +
-    joiner +
-    [
-      "token=" + neuwoApiToken,
-      "url=" + pageUrl,
-      "_neuwo_prod=PrebidModule",
-    ].join("&");
+  const urlParams = [
+    "token=" + neuwoApiToken,
+    "url=" + pageUrl,
+    "_neuwo_prod=PrebidModule",
+  ];
+
+  // Request both IAB Content Taxonomy (based on config) and IAB Audience Taxonomy (segtax 4)
+  if (isV2Api) {
+    urlParams.push("iabVersions=" + contentSegtax);
+    urlParams.push("iabVersions=4"); // IAB Audience 1.1
+  }
+
+  const neuwoApiUrlFull = neuwoApiUrl + joiner + urlParams.join("&");
 
   // Cache flow: cached response -> pending request -> new request
   // Each caller gets their own callback invoked when data is ready.
@@ -149,8 +173,7 @@ export function getBidRequestData(
     injectIabCategories(
       globalCachedResponse,
       reqBidsConfigObj,
-      iabContentTaxonomyVersion,
-      iabTaxonomyFilters
+      iabContentTaxonomyVersion
     );
     callback();
   } else if (enableCache && pendingRequest) {
@@ -167,8 +190,7 @@ export function getBidRequestData(
           injectIabCategories(
             responseParsed,
             reqBidsConfigObj,
-            iabContentTaxonomyVersion,
-            iabTaxonomyFilters
+            iabContentTaxonomyVersion
           );
         }
       })
@@ -180,7 +202,8 @@ export function getBidRequestData(
       "getBidRequestData():",
       "Cache System:",
       "Calling Neuwo API Endpoint:",
-      neuwoApiUrlFull
+      neuwoApiUrlFull,
+      ...(isV2Api ? ["Body:", iabFilterConfig] : [])
     );
 
     const requestPromise = new Promise((resolve) => {
@@ -196,16 +219,31 @@ export function getBidRequestData(
               response
             );
             try {
-              const responseParsed = JSON.parse(response);
+              let responseParsed = JSON.parse(response);
+
+              if (!isV2Api) {
+                // Apply per-tier filtering to V1 format
+                const filteredMarketingCategories = filterIabTaxonomies(
+                  responseParsed.marketing_categories,
+                  iabTaxonomyFilters
+                );
+
+                // Transform filtered V1 response to unified internal format
+                responseParsed = transformV1ResponseToV2(
+                  { marketing_categories: filteredMarketingCategories },
+                  contentSegtax
+                );
+              }
+
               // Cache response
               if (enableCache) {
                 globalCachedResponse = responseParsed;
               }
+
               injectIabCategories(
                 responseParsed,
                 reqBidsConfigObj,
-                iabContentTaxonomyVersion,
-                iabTaxonomyFilters
+                iabContentTaxonomyVersion
               );
               resolve(responseParsed);
             } catch (ex) {
@@ -230,7 +268,10 @@ export function getBidRequestData(
             resolve(null);
           },
         },
-        null
+        isV2Api ? JSON.stringify(iabFilterConfig) : null,
+        isV2Api
+          ? { method: "POST", contentType: "application/json" }
+          : undefined
       );
     });
 
@@ -361,28 +402,32 @@ export function injectOrtbData(reqBidsConfigObj, path, data) {
 }
 
 /**
- * Builds an IAB category data object for use in OpenRTB.
+ * Builds an IAB category data object for OpenRTB injection.
+ * Dynamically processes all tiers present in the response data.
  *
- * @param {Object} marketingCategories Marketing Categories returned by Neuwo API.
- * @param {string[]} tiers The tier keys to extract from marketingCategories.
- * @param {number} segtax The IAB taxonomy version Id.
- * @returns {Object} The constructed data object.
+ * @param {Object} tierData The tier data keyed by tier numbers (e.g., {"1": [...], "2": [...], "3": [...]}).
+ * @param {number} segtax The IAB Taxonomy segtax ID.
+ * @returns {Object} The OpenRTB data object with name, segment array, and ext.segtax.
  */
-export function buildIabData(marketingCategories, tiers, segtax) {
+export function buildIabData(tierData, segtax) {
   const data = {
     name: DATA_PROVIDER,
     segment: [],
     ext: { segtax },
   };
 
-  tiers.forEach((tier) => {
-    const tierData = marketingCategories?.[tier];
-    if (Array.isArray(tierData)) {
-      tierData.forEach((item) => {
-        const ID = item?.ID;
+  // Handle null, undefined, or non-object tierData
+  if (!tierData || typeof tierData !== "object") {
+    return data;
+  }
 
-        if (ID) {
-          data.segment.push({ id: ID });
+  // Process ALL tier keys present in tierData
+  Object.keys(tierData).forEach((tierKey) => {
+    const segments = tierData[tierKey];
+    if (Array.isArray(segments)) {
+      segments.forEach((item) => {
+        if (item?.id) {
+          data.segment.push({ id: item.id });
         }
       });
     }
@@ -392,11 +437,13 @@ export function buildIabData(marketingCategories, tiers, segtax) {
 }
 
 /**
+ * v1 API specific
  * Filters and limits a single tier's taxonomies based on relevance score and count.
+ * Used for client-side filtering with legacy endpoints.
  *
- * @param {Array} iabTaxonomies Array of taxonomy objects with ID, label, and relevance
- * @param {Object} filter Filter configuration for this tier
- * @returns {Array} Filtered and limited array of taxonomies
+ * @param {Array} iabTaxonomies Array of IAB Taxonomy Segments objects with ID, label, and relevance.
+ * @param {Object} filter Filter configuration with optional threshold and limit properties.
+ * @returns {Array} Filtered and limited array of taxonomies, sorted by relevance (highest first).
  */
 export function filterIabTaxonomyTier(iabTaxonomies, filter = {}) {
   if (!Array.isArray(iabTaxonomies) || iabTaxonomies.length === 0) {
@@ -442,11 +489,12 @@ const TIER_KEY_MAP = {
 };
 
 /**
- * Applies per-tier filtering to all IAB taxonomies.
+ * v1 API specific
+ * Applies per-tier filtering to IAB taxonomies (client-side filtering for legacy endpoints).
  * Filters taxonomies by relevance score and limits the count per tier.
  *
- * @param {Object} marketingCategories Marketing Categories returned by Neuwo API.
- * @param {Object} [tierFilters] Per-tier filter configuration keyed by config tier names (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
+ * @param {Object} marketingCategories Marketing categories from legacy API response.
+ * @param {Object} [tierFilters] Per-tier filter configuration with human-readable tier names (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
  * @returns {Object} Filtered marketing categories with the same structure as input.
  */
 export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
@@ -494,57 +542,157 @@ export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
     "Original:",
     marketingCategories,
     "Filtered:",
-    filtered,
+    filtered
   );
 
   return filtered;
 }
 
 /**
- * Processes the Neuwo API response to build and inject IAB content and audience categories
- * into the bid request object.
+ * v1 API specific
+ * Transforms legacy API response format to unified internal format.
+ * Converts marketing_categories structure to segtax-based structure for consistent processing.
  *
- * @param {Object} responseParsed The parsed JSON response from the Neuwo API.
- * @param {Object} reqBidsConfigObj The bid request configuration object to be modified.
- * @param {string} iabContentTaxonomyVersion The version of the IAB content taxonomy to use for segtax mapping.
- * @param {Object} [iabTaxonomyFilters] Per-tier filter configuration (e.g., {ContentTier1: {limit: 3, threshold: 0.75}}).
+ * Legacy format: { marketing_categories: { iab_tier_1: [...], iab_audience_tier_3: [...] } }
+ * Unified format: { "6": { "1": [...], "2": [...] }, "4": { "3": [...], "4": [...] } }
+ *
+ * @param {Object} v1Response The legacy API response with marketing_categories structure.
+ * @param {number} contentSegtax The segtax ID for content taxonomies (determined by iabContentTaxonomyVersion).
+ * @returns {Object} Unified format response keyed by segtax and tier numbers.
  */
-function injectIabCategories(
+export function transformV1ResponseToV2(v1Response, contentSegtax) {
+  const marketingCategories = v1Response?.marketing_categories || {};
+  const contentSegtaxStr = String(contentSegtax);
+  const result = {};
+
+  // Content tiers → segtax from config
+  result[contentSegtaxStr] = {};
+  if (marketingCategories.iab_tier_1) {
+    result[contentSegtaxStr]["1"] = transformSegmentsV1ToV2(
+      marketingCategories.iab_tier_1
+    );
+  }
+  if (marketingCategories.iab_tier_2) {
+    result[contentSegtaxStr]["2"] = transformSegmentsV1ToV2(
+      marketingCategories.iab_tier_2
+    );
+  }
+  if (marketingCategories.iab_tier_3) {
+    result[contentSegtaxStr]["3"] = transformSegmentsV1ToV2(
+      marketingCategories.iab_tier_3
+    );
+  }
+
+  // Audience tiers → segtax 4
+  result["4"] = {};
+  if (marketingCategories.iab_audience_tier_3) {
+    result["4"]["3"] = transformSegmentsV1ToV2(
+      marketingCategories.iab_audience_tier_3
+    );
+  }
+  if (marketingCategories.iab_audience_tier_4) {
+    result["4"]["4"] = transformSegmentsV1ToV2(
+      marketingCategories.iab_audience_tier_4
+    );
+  }
+  if (marketingCategories.iab_audience_tier_5) {
+    result["4"]["5"] = transformSegmentsV1ToV2(
+      marketingCategories.iab_audience_tier_5
+    );
+  }
+
+  return result;
+}
+
+/**
+ * v1 API specific
+ * Transforms segment objects from legacy format to unified format.
+ * Maps field names from legacy API response to unified internal representation.
+ *
+ * Legacy format: { ID: "123", label: "Category Name", relevance: "0.95" }
+ * Unified format: { id: "123", name: "Category Name", relevance: "0.95" }
+ *
+ * @param {Array} segments Array of legacy segment objects with ID, label, relevance.
+ * @returns {Array} Array of unified format segment objects with id, name, relevance.
+ */
+export function transformSegmentsV1ToV2(segments) {
+  if (!Array.isArray(segments)) return [];
+  return segments.map((seg) => ({
+    id: seg.ID,
+    name: seg.label,
+    relevance: seg.relevance,
+  }));
+}
+
+/**
+ * Builds IAB filter configuration from publisher settings.
+ * Converts human-readable tier names to segtax-based structure for API communication.
+ *
+ * Input format:  { ContentTier1: { limit: 3, threshold: 0.5 }, AudienceTier3: { limit: 5 } }
+ * Output format: { "6": { "1": { limit: 3, threshold: 0.5 } }, "4": { "3": { limit: 5 } } }
+ *
+ * @param {Object} iabTaxonomyFilters Publisher's tier filter configuration using human-readable tier names.
+ * @param {number} contentSegtax The segtax ID for content taxonomies (determined by iabContentTaxonomyVersion).
+ * @returns {Object} Filter configuration in segtax-based structure.
+ */
+export function buildIabFilterConfig(iabTaxonomyFilters, contentSegtax) {
+  const TIER_TO_SEGTAX = {
+    ContentTier1: { segtax: contentSegtax, tier: "1" },
+    ContentTier2: { segtax: contentSegtax, tier: "2" },
+    ContentTier3: { segtax: contentSegtax, tier: "3" },
+    AudienceTier3: { segtax: 4, tier: "3" },
+    AudienceTier4: { segtax: 4, tier: "4" },
+    AudienceTier5: { segtax: 4, tier: "5" },
+  };
+
+  const body = {};
+  Object.entries(iabTaxonomyFilters || {}).forEach(([tierName, filter]) => {
+    const mapping = TIER_TO_SEGTAX[tierName];
+    if (mapping) {
+      const segtaxKey = String(mapping.segtax);
+      if (!body[segtaxKey]) body[segtaxKey] = {};
+      body[segtaxKey][mapping.tier] = filter;
+    }
+  });
+  return body;
+}
+
+/**
+ * Processes the Neuwo API response and injects IAB Content and Audience Segments into the bid request.
+ * Extracts Segments from the response and injects them into ORTB2 structure.
+ *
+ * Response format: { "6": { "1": [{id, name}], "2": [...] }, "4": { "3": [...], "4": [...] } }
+ * - Content taxonomies are injected into ortb2.site.content.data
+ * - Audience taxonomies are injected into ortb2.user.data
+ *
+ * Only injects data if segments exist to avoid adding empty data structures.
+ *
+ * @param {Object} responseParsed The parsed API response.
+ * @param {Object} reqBidsConfigObj The bid request configuration object to be enriched.
+ * @param {string} iabContentTaxonomyVersion The IAB Content Taxonomy version for segtax mapping.
+ */
+export function injectIabCategories(
   responseParsed,
   reqBidsConfigObj,
-  iabContentTaxonomyVersion,
-  iabTaxonomyFilters
+  iabContentTaxonomyVersion
 ) {
-  const marketingCategories = responseParsed.marketing_categories;
-
-  if (!marketingCategories) {
-    logError(
-      MODULE_NAME,
-      "injectIabCategories():",
-      "No Marketing Categories in Neuwo API response."
-    );
+  if (!responseParsed || typeof responseParsed !== "object") {
+    logError(MODULE_NAME, "injectIabCategories():", "Invalid response format");
     return;
   }
 
-  // Apply per-tier filtering
-  const marketingCategoriesFiltered = filterIabTaxonomies(marketingCategories, iabTaxonomyFilters);
-
-  // Process content categories
-  const contentTiers = ["iab_tier_1", "iab_tier_2", "iab_tier_3"];
-  const contentData = buildIabData(
-    marketingCategoriesFiltered,
-    contentTiers,
+  const contentSegtax =
     IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
-      IAB_CONTENT_TAXONOMY_MAP["3.0"]
-  );
+    IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION];
+  const contentSegtaxStr = String(contentSegtax);
 
-  // Process audience categories
-  const audienceTiers = [
-    "iab_audience_tier_3",
-    "iab_audience_tier_4",
-    "iab_audience_tier_5",
-  ];
-  const audienceData = buildIabData(marketingCategoriesFiltered, audienceTiers, 4);
+  // Extract IAB Content Taxonomy data for the configured version
+  const contentTiers = responseParsed[contentSegtaxStr] || {};
+  const contentData = buildIabData(contentTiers, contentSegtax);
+
+  // Extract IAB Audience Taxonomy data
+  const audienceTiers = responseParsed["4"] || {};
+  const audienceData = buildIabData(audienceTiers, 4);
 
   logInfo(
     MODULE_NAME,
@@ -559,15 +707,24 @@ function injectIabCategories(
     audienceData
   );
 
-  injectOrtbData(reqBidsConfigObj, "site.content.data", [contentData]);
-  injectOrtbData(reqBidsConfigObj, "user.data", [audienceData]);
+  // Only inject data if there are actual segments
+  if (contentData.segment.length > 0 || audienceData.segment.length > 0) {
+    injectOrtbData(reqBidsConfigObj, "site.content.data", [contentData]);
+    injectOrtbData(reqBidsConfigObj, "user.data", [audienceData]);
 
-  logInfo(
-    MODULE_NAME,
-    "injectIabCategories():",
-    "post-injection bidsConfig",
-    reqBidsConfigObj
-  );
+    logInfo(
+      MODULE_NAME,
+      "injectIabCategories():",
+      "post-injection bidsConfig",
+      reqBidsConfigObj
+    );
+  } else {
+    logInfo(
+      MODULE_NAME,
+      "injectIabCategories():",
+      "No segments to inject, skipping data injection"
+    );
+  }
 }
 
 export const neuwoRtdModule = {
