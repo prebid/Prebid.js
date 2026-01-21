@@ -10,12 +10,20 @@ The Neuwo RTD provider fetches real-time contextual data from the Neuwo API. Whe
 
 This data is then added to the bid request by populating the OpenRTB 2.x objects `ortb2.site.content.data` (for IAB Content Taxonomy) and `ortb2.user.data` (for IAB Audience Taxonomy). This enrichment allows bidders to leverage Neuwo's contextual analysis for more precise targeting and decision-making.
 
+Additionally, when enabled, the module populates OpenRTB 2.5 category fields (`ortb2.site.cat`, `ortb2.site.sectioncat`, `ortb2.site.pagecat`, `ortb2.site.content.cat`) with IAB Content Taxonomy 1.0 segments.
+
 Here is an example scheme of the data injected into the `ortb2` object by our module:
 
 ```javascript
 ortb2: {
   site: {
+    // OpenRTB 2.5 category fields (IAB Content Taxonomy 1.0)
+    cat: ["IAB12", "IAB12-3", "IAB12-5"],
+    sectioncat: ["IAB12", "IAB12-3", "IAB12-5"],
+    pagecat: ["IAB12", "IAB12-3", "IAB12-5"],
     content: {
+      // OpenRTB 2.5 category field (IAB Content Taxonomy 1.0)
+      cat: ["IAB12", "IAB12-3", "IAB12-5"],
       // IAB Content Taxonomy data is injected here
       data: [{
         name: "www.neuwo.ai",
@@ -25,7 +33,7 @@ ortb2: {
           { id: "210" },
         ],
         ext: {
-          segtax: 7,
+          segtax: 6,
         },
       }],
     },
@@ -68,6 +76,7 @@ pbjs.setConfig({
           neuwoApiToken: "<Your Neuwo API Token>",
           iabContentTaxonomyVersion: "2.2",
           enableCache: true, // Default: true. Caches API responses to avoid redundant requests
+          enableOrtb25Fields: true, // Default: true.
         },
       },
     ],
@@ -77,23 +86,60 @@ pbjs.setConfig({
 
 **Parameters**
 
-| Name                                | Type     | Required | Default | Description                                                                                                                                                                                                                                                                                                                |
-| :---------------------------------- | :------- | :------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                              | String   | Yes      |         | The name of the module, which is `NeuwoRTDModule`.                                                                                                                                                                                                                                                                         |
-| `params`                            | Object   | Yes      |         | Container for module-specific parameters.                                                                                                                                                                                                                                                                                  |
-| `params.neuwoApiUrl`                | String   | Yes      |         | The endpoint URL for the Neuwo Edge API.                                                                                                                                                                                                                                                                                   |
-| `params.neuwoApiToken`              | String   | Yes      |         | Your unique API token provided by Neuwo.                                                                                                                                                                                                                                                                                   |
-| `params.iabContentTaxonomyVersion`  | String   | No       | `'2.2'` | Specifies the version of the IAB Content Taxonomy to be used. Supported values: `'1.0'`, `'2.2'`, `'3.0'`.                                                                                                                                                                                                                 |
-| `params.enableCache`                | Boolean  | No       | `true`  | If `true`, caches API responses to avoid redundant requests for the same page during the session. Set to `false` to disable caching and make a fresh API call on every bid request.                                                                                                                                        |
-| `params.stripAllQueryParams`        | Boolean  | No       | `false` | If `true`, strips all query parameters from the URL before analysis. Takes precedence over other stripping options.                                                                                                                                                                                                        |
-| `params.stripQueryParamsForDomains` | String[] | No       | `[]`    | List of domains for which to strip **all** query parameters. When a domain matches, all query params are removed for that domain and all its subdomains (e.g., `'example.com'` strips params for both `'example.com'` and `'sub.example.com'`). This option takes precedence over `stripQueryParams` for matching domains. |
-| `params.stripQueryParams`           | String[] | No       | `[]`    | List of specific query parameter names to strip from the URL (e.g., `['utm_source', 'fbclid']`). Other parameters are preserved. Only applies when the domain does not match `stripQueryParamsForDomains`.                                                                                                                 |
-| `params.stripFragments`             | Boolean  | No       | `false` | If `true`, strips URL fragments (hash, e.g., `#section`) from the URL before analysis.                                                                                                                                                                                                                                     |
-| `params.iabTaxonomyFilters`         | Object   | No       |         | Per-tier filtering configuration for IAB taxonomies. Allows filtering by relevance threshold and limiting the count of categories per tier. See [IAB Taxonomy Filtering](#iab-taxonomy-filtering) section below for details.                                                                                               |
+| Name                                | Type     | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                |
+| :---------------------------------- | :------- | :------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                              | String   | Yes      |         | The name of the module, which is `NeuwoRTDModule`.                                                                                                                                                                                                                                                                                                                         |
+| `params`                            | Object   | Yes      |         | Container for module-specific parameters.                                                                                                                                                                                                                                                                                                                                  |
+| `params.neuwoApiUrl`                | String   | Yes      |         | The endpoint URL for the Neuwo Edge API.                                                                                                                                                                                                                                                                                                                                   |
+| `params.neuwoApiToken`              | String   | Yes      |         | Your unique API token provided by Neuwo.                                                                                                                                                                                                                                                                                                                                   |
+| `params.iabContentTaxonomyVersion`  | String   | No       | `'2.2'` | Specifies the version of the IAB Content Taxonomy to be used. Supported values: `'1.0'`, `'2.2'`, `'3.0'`.                                                                                                                                                                                                                                                                 |
+| `params.enableCache`                | Boolean  | No       | `true`  | If `true`, caches API responses to avoid redundant requests for the same page during the session. Set to `false` to disable caching and make a fresh API call on every bid request.                                                                                                                                                                                        |
+| `params.enableOrtb25Fields`         | Boolean  | No       | `true`  | If `true`, populates OpenRTB 2.5 category fields (`ortb2.site.cat`, `ortb2.site.sectioncat`, `ortb2.site.pagecat`, `ortb2.site.content.cat`) with IAB Content Taxonomy 1.0 segments. See [OpenRTB 2.5 Category Fields](#openrtb-25-category-fields) section below for details.                                                                                             |
+| `params.stripAllQueryParams`        | Boolean  | No       | `false` | If `true`, strips all query parameters from the URL before analysis. Takes precedence over other stripping options.                                                                                                                                                                                                                                                        |
+| `params.stripQueryParamsForDomains` | String[] | No       | `[]`    | List of domains for which to strip **all** query parameters. When a domain matches, all query params are removed for that domain and all its subdomains (e.g., `'example.com'` strips params for both `'example.com'` and `'sub.example.com'`). This option takes precedence over `stripQueryParams` for matching domains.                                                 |
+| `params.stripQueryParams`           | String[] | No       | `[]`    | List of specific query parameter names to strip from the URL (e.g., `['utm_source', 'fbclid']`). Other parameters are preserved. Only applies when the domain does not match `stripQueryParamsForDomains`.                                                                                                                                                                 |
+| `params.stripFragments`             | Boolean  | No       | `false` | If `true`, strips URL fragments (hash, e.g., `#section`) from the URL before analysis.                                                                                                                                                                                                                                                                                     |
+| `params.iabTaxonomyFilters`         | Object   | No       |         | Per-tier filtering configuration for IAB taxonomies. Allows filtering by relevance threshold and limiting the count of categories per tier. Filters configured for `ContentTier1` and `ContentTier2` are automatically applied to IAB Content Taxonomy 1.0 when `enableOrtb25Fields` is `true`. See [IAB Taxonomy Filtering](#iab-taxonomy-filtering) section for details. |
 
 ### API Response Caching
 
 By default, the module caches API responses during the page session to optimise performance and reduce redundant API calls. This behaviour can be disabled by setting `enableCache: false` if needed for dynamic content scenarios.
+
+### OpenRTB 2.5 Category Fields
+
+The module supports populating OpenRTB 2.5 category fields with IAB Content Taxonomy 1.0 segments. This feature is enabled by default and provides additional contextual signals to bidders through standard OpenRTB fields.
+
+**Category Fields Populated:**
+
+- `ortb2.site.cat` - Array of IAB Content Taxonomy 1.0 category IDs
+- `ortb2.site.sectioncat` - Array of IAB Content Taxonomy 1.0 category IDs
+- `ortb2.site.pagecat` - Array of IAB Content Taxonomy 1.0 category IDs
+- `ortb2.site.content.cat` - Array of IAB Content Taxonomy 1.0 category IDs
+
+**Result Example:**
+
+With `enableOrtb25Fields: true`, the module injects:
+
+```javascript
+ortb2: {
+  site: {
+    // OpenRTB 2.5 category fields
+    cat: ["IAB12", "IAB12-3", "IAB12-5"],
+    sectioncat: ["IAB12", "IAB12-3", "IAB12-5"],
+    pagecat: ["IAB12", "IAB12-3", "IAB12-5"],
+    content: {
+      // OpenRTB 2.5 category field
+      cat: ["IAB12", "IAB12-3", "IAB12-5"],
+      // Standard content data
+      data: [{
+        name: "www.neuwo.ai",
+        segment: [{ id: "274" }, { id: "42" }],
+        ext: { segtax: 6 }
+      }]
+    }
+  }
+}
+```
 
 ### URL Cleaning Options
 
@@ -196,6 +242,10 @@ pbjs.setConfig({
 });
 ```
 
+**OpenRTB 2.5 Category Fields Filtering**
+
+When `iabTaxonomyFilters` are configured, the same filters applied to `ContentTier1` and `ContentTier2` are automatically applied to IAB Content Taxonomy 1.0 data used for these fields. Note that IAB Content Taxonomy 1.0 only has tiers 1 and 2, so `ContentTier3` filters are ignored for these fields.
+
 ## Accessing Neuwo Data Outside Prebid.js
 
 The Neuwo RTD module enriches bid requests with contextual data that can be accessed in application code for analytics, targeting, integration with Google Ad Manager as [Publisher Provided Signals (PPS)](https://support.google.com/admanager/answer/15287325) or other purposes. The enriched data is available through Prebid.js events.
@@ -218,14 +268,24 @@ pbjs.que.push(function () {
       (d) => d.name === "www.neuwo.ai"
     );
 
+    // Extract OpenRTB 2.5 category fields (if enableOrtb25Fields is true)
+    const categoryFields = {
+      siteCat: ortb2?.site?.cat,
+      siteSectioncat: ortb2?.site?.sectioncat,
+      sitePagecat: ortb2?.site?.pagecat,
+      contentCat: ortb2?.site?.content?.cat,
+    };
+
     // Use the data in the application
     console.log("Neuwo Site Content:", neuwoSiteData);
     console.log("Neuwo User Data:", neuwoUserData);
+    console.log("OpenRTB 2.5 Category Fields:", categoryFields);
 
     // Example: Store in a global variable for later use
     window.neuwoData = {
       siteContent: neuwoSiteData,
       user: neuwoUserData,
+      categoryFields: categoryFields,
     };
   });
 });
@@ -318,4 +378,14 @@ google-chrome build/coverage/lcov-report/index.html
 
 Navigate to `modules/neuwoRtdProvider.js` in the report to see detailed line-by-line coverage with highlighted covered/uncovered lines.
 
-> Version **2.0.0**
+## Building for Production
+
+To generate minified code for production use:
+
+```bash
+npx gulp build --modules=rtdModule,neuwoRtdProvider
+```
+
+This command creates optimised, minified code typically used on websites.
+
+> Version **2.1.0**
