@@ -812,6 +812,172 @@ describe('InsticatorBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
       expect(data.site.publisher).to.not.an('object');
     });
+
+    it('should include publisherId as query parameter in endpoint URL', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: '86dd03a1-053f-4e3e-90e7-389070a0c62c'
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.include('publisherId=86dd03a1-053f-4e3e-90e7-389070a0c62c');
+    });
+
+    it('should not include publisherId query param if publisherId is not present', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      // Ensure no publisherId in params
+      delete tempBiddRequest.params.publisherId;
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.not.include('publisherId');
+    });
+
+    it('should not include publisherId query param if publisherId is empty string', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: ''
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.not.include('publisherId');
+    });
+
+    it('should include publisherId query param with custom endpoint URL', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: 'test-publisher-123',
+        bid_endpoint_request_url: 'https://custom.endpoint.com/v1/bid'
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.equal('https://custom.endpoint.com/v1/bid?publisherId=test-publisher-123');
+    });
+
+    // ORTB 2.6 Ad Pod video params tests
+    describe('Ad Pod video params', function () {
+      it('should include Ad Pod params when present in video mediaType', function () {
+        const adPodBidRequest = {
+          ...bidRequest,
+          mediaTypes: {
+            video: {
+              mimes: ['video/mp4', 'video/mpeg'],
+              w: 640,
+              h: 480,
+              podid: 'pod-123',
+              podseq: 1,
+              poddur: 300,
+              slotinpod: 1,
+              mincpmpersec: 0.02,
+              maxseq: 5,
+              rqddurs: [15, 30, 60],
+            },
+          },
+        };
+        const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
+        const data = JSON.parse(requests[0].data);
+
+        expect(data.imp[0].video).to.have.property('podid', 'pod-123');
+        expect(data.imp[0].video).to.have.property('podseq', 1);
+        expect(data.imp[0].video).to.have.property('poddur', 300);
+        expect(data.imp[0].video).to.have.property('slotinpod', 1);
+        expect(data.imp[0].video).to.have.property('mincpmpersec', 0.02);
+        expect(data.imp[0].video).to.have.property('maxseq', 5);
+        expect(data.imp[0].video).to.have.property('rqddurs').that.deep.equals([15, 30, 60]);
+      });
+
+      it('should map adPodDurationSec to poddur', function () {
+        const adPodBidRequest = {
+          ...bidRequest,
+          mediaTypes: {
+            video: {
+              mimes: ['video/mp4'],
+              w: 640,
+              h: 480,
+              adPodDurationSec: 120,
+            },
+          },
+        };
+        const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
+        const data = JSON.parse(requests[0].data);
+
+        expect(data.imp[0].video).to.have.property('poddur', 120);
+      });
+
+      it('should map durationRangeSec to rqddurs', function () {
+        const adPodBidRequest = {
+          ...bidRequest,
+          mediaTypes: {
+            video: {
+              mimes: ['video/mp4'],
+              w: 640,
+              h: 480,
+              durationRangeSec: [15, 30, 45],
+            },
+          },
+        };
+        const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
+        const data = JSON.parse(requests[0].data);
+
+        expect(data.imp[0].video).to.have.property('rqddurs').that.deep.equals([15, 30, 45]);
+      });
+
+      it('should not include invalid Ad Pod params', function () {
+        const adPodBidRequest = {
+          ...bidRequest,
+          mediaTypes: {
+            video: {
+              mimes: ['video/mp4'],
+              w: 640,
+              h: 480,
+              podid: '', // invalid - empty string
+              podseq: -1, // invalid - negative
+              poddur: 0, // invalid - zero
+              slotinpod: 5, // invalid - not in [-1, 0, 1, 2]
+              mincpmpersec: -0.5, // invalid - negative
+              maxseq: 0, // invalid - zero
+              rqddurs: [0, -15], // invalid - contains non-positive values
+            },
+          },
+        };
+        const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
+        const data = JSON.parse(requests[0].data);
+
+        expect(data.imp[0].video).to.not.have.property('podid');
+        expect(data.imp[0].video).to.not.have.property('podseq');
+        expect(data.imp[0].video).to.not.have.property('poddur');
+        expect(data.imp[0].video).to.not.have.property('slotinpod');
+        expect(data.imp[0].video).to.not.have.property('mincpmpersec');
+        expect(data.imp[0].video).to.not.have.property('maxseq');
+        expect(data.imp[0].video).to.not.have.property('rqddurs');
+      });
+
+      it('should validate slotinpod accepts valid values [-1, 0, 1, 2]', function () {
+        [-1, 0, 1, 2].forEach(slotValue => {
+          const adPodBidRequest = {
+            ...bidRequest,
+            mediaTypes: {
+              video: {
+                mimes: ['video/mp4'],
+                w: 640,
+                h: 480,
+                slotinpod: slotValue,
+              },
+            },
+          };
+          const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
+          const data = JSON.parse(requests[0].data);
+
+          expect(data.imp[0].video).to.have.property('slotinpod', slotValue);
+        });
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -929,7 +1095,7 @@ describe('InsticatorBidAdapter', function () {
         cpm: 0.5,
         currency: 'USD',
         netRevenue: true,
-        ttl: 60,
+        ttl: 300, // MAX(60, 300) = 300 with new TTL logic
         width: 300,
         height: 200,
         mediaType: 'banner',
@@ -937,7 +1103,9 @@ describe('InsticatorBidAdapter', function () {
         adUnitCode: 'adunit-code-1',
         meta: {
           advertiserDomains: ['test1.com'],
-          test: 1
+          test: 1,
+          seat: 'some-dsp',
+          dsp: 'some-dsp'
         }
       },
       {
@@ -953,7 +1121,9 @@ describe('InsticatorBidAdapter', function () {
         meta: {
           advertiserDomains: [
             'test2.com'
-          ]
+          ],
+          seat: 'some-dsp',
+          dsp: 'some-dsp'
         },
         ad: 'adm2',
         adUnitCode: 'adunit-code-2',
@@ -971,7 +1141,9 @@ describe('InsticatorBidAdapter', function () {
         meta: {
           advertiserDomains: [
             'test3.com'
-          ]
+          ],
+          seat: 'some-dsp',
+          dsp: 'some-dsp'
         },
         ad: 'adm3',
         adUnitCode: 'adunit-code-3',
@@ -995,6 +1167,324 @@ describe('InsticatorBidAdapter', function () {
       const response = Object.assign({}, bidResponse);
       delete response.body.seatbid;
       expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
+
+    // ORTB 2.6 Response Fields Tests
+    describe('ORTB 2.6 response fields', function () {
+      const ortb26BidRequests = {
+        method: 'POST',
+        url: 'https://ex.ingage.tech/v1/openrtb',
+        options: {
+          contentType: 'application/json',
+          withCredentials: true,
+        },
+        data: '',
+        bidderRequest: {
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+          timeout: 300,
+          bids: [
+            {
+              bidder: 'insticator',
+              params: {
+                adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+              },
+              adUnitCode: 'adunit-code-1',
+              sizes: [[300, 250]],
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              },
+              bidId: 'bid1',
+            }
+          ]
+        }
+      };
+
+      it('should map category (cat) to meta.primaryCatId and meta.secondaryCatIds', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                cat: ['IAB1', 'IAB2-1', 'IAB3'],
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse.meta).to.have.property('primaryCatId', 'IAB1');
+        expect(bidResponse.meta).to.have.property('secondaryCatIds').that.deep.equals(['IAB2-1', 'IAB3']);
+      });
+
+      it('should map single category without secondaryCatIds', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                cat: ['IAB1'],
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse.meta).to.have.property('primaryCatId', 'IAB1');
+        expect(bidResponse.meta).to.not.have.property('secondaryCatIds');
+      });
+
+      it('should map seat to meta.seat and meta.dsp', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-seat-123',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                adomain: ['test.com'],
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse.meta).to.have.property('seat', 'dsp-seat-123');
+        expect(bidResponse.meta).to.have.property('dsp', 'dsp-seat-123');
+      });
+
+      it('should map creative attributes (attr) to meta.attr', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                attr: [1, 2, 3],
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse.meta).to.have.property('attr').that.deep.equals([1, 2, 3]);
+      });
+
+      it('should map dealid to bidResponse.dealId', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                dealid: 'deal-abc-123',
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse).to.have.property('dealId', 'deal-abc-123');
+      });
+
+      it('should map billing URL (burl) to bidResponse.burl', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                burl: 'https://billing.example.com/win?price=${AUCTION_PRICE}',
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse).to.have.property('burl', 'https://billing.example.com/win?price=${AUCTION_PRICE}');
+      });
+
+      it('should map video duration (dur) to bidResponse.video.durationSeconds', function () {
+        const videoBidRequests = {
+          ...ortb26BidRequests,
+          bidderRequest: {
+            ...ortb26BidRequests.bidderRequest,
+            bids: [{
+              ...ortb26BidRequests.bidderRequest.bids[0],
+              mediaTypes: {
+                video: {
+                  mimes: ['video/mp4'],
+                  playerSize: [[640, 480]],
+                }
+              }
+            }]
+          }
+        };
+
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 640,
+                h: 480,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                dur: 30,
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, videoBidRequests)[0];
+
+        expect(bidResponse).to.have.property('video');
+        expect(bidResponse.video).to.have.property('durationSeconds', 30);
+      });
+
+      it('should use MAX of bid.exp and BID_TTL for ttl', function () {
+        // When bid.exp (60) is less than BID_TTL (300), use 300
+        const responseWithLowExp = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                exp: 60,
+              }]
+            }]
+          }
+        };
+        const bidResponseLow = spec.interpretResponse(responseWithLowExp, ortb26BidRequests)[0];
+        expect(bidResponseLow.ttl).to.equal(300); // MAX(60, 300) = 300
+
+        // When bid.exp (600) is greater than BID_TTL (300), use 600
+        const responseWithHighExp = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                exp: 600,
+              }]
+            }]
+          }
+        };
+        const bidResponseHigh = spec.interpretResponse(responseWithHighExp, ortb26BidRequests)[0];
+        expect(bidResponseHigh.ttl).to.equal(600); // MAX(600, 300) = 600
+      });
+
+      it('should default ttl to BID_TTL when bid.exp is not provided', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                // no exp field
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+        expect(bidResponse.ttl).to.equal(300); // MAX(0, 300) = 300
+      });
+
+      it('should include all ORTB 2.6 fields in a single response', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'full-dsp',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 2.5,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                adomain: ['advertiser.com'],
+                cat: ['IAB1', 'IAB2'],
+                attr: [1, 2],
+                dealid: 'premium-deal',
+                burl: 'https://billing.example.com/win',
+                exp: 450,
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        // Check all ORTB 2.6 fields
+        expect(bidResponse.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+        expect(bidResponse.meta.primaryCatId).to.equal('IAB1');
+        expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB2']);
+        expect(bidResponse.meta.seat).to.equal('full-dsp');
+        expect(bidResponse.meta.dsp).to.equal('full-dsp');
+        expect(bidResponse.meta.attr).to.deep.equal([1, 2]);
+        expect(bidResponse.dealId).to.equal('premium-deal');
+        expect(bidResponse.burl).to.equal('https://billing.example.com/win');
+        expect(bidResponse.ttl).to.equal(450); // MAX(450, 300) = 450
+      });
     });
   });
 
@@ -1209,6 +1699,55 @@ describe('InsticatorBidAdapter', function () {
       expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser');
       expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser');
       expect(bidResponse.ext.dsa).to.have.property('adrender', 1);
+    });
+  });
+
+  describe('onBidWon', function () {
+    let triggerPixelStub;
+
+    beforeEach(function () {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function () {
+      triggerPixelStub.restore();
+    });
+
+    it('should call triggerPixel with burl when bid has burl', function () {
+      const bid = {
+        requestId: 'bid1',
+        cpm: 1.5,
+        burl: 'https://billing.example.com/win?price=${AUCTION_PRICE}'
+      };
+
+      spec.onBidWon(bid);
+
+      expect(triggerPixelStub.calledOnce).to.be.true;
+      expect(triggerPixelStub.calledWith('https://billing.example.com/win?price=${AUCTION_PRICE}')).to.be.true;
+    });
+
+    it('should not call triggerPixel when bid has no burl', function () {
+      const bid = {
+        requestId: 'bid1',
+        cpm: 1.5
+        // no burl
+      };
+
+      spec.onBidWon(bid);
+
+      expect(triggerPixelStub.called).to.be.false;
+    });
+
+    it('should not call triggerPixel when burl is empty string', function () {
+      const bid = {
+        requestId: 'bid1',
+        cpm: 1.5,
+        burl: ''
+      };
+
+      spec.onBidWon(bid);
+
+      expect(triggerPixelStub.called).to.be.false;
     });
   });
 });

@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions, triggerPixel} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'insticator';
@@ -29,7 +29,16 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
   'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
-  'api': (value) => isArrayOfNums(value)};
+  'api': (value) => isArrayOfNums(value),
+  // Ad Pod specific parameters (ORTB 2.6)
+  'podid': (value) => typeof value === 'string' && value.length > 0,
+  'podseq': (value) => isInteger(value) && value >= 0,
+  'poddur': (value) => isInteger(value) && value > 0,
+  'slotinpod': (value) => isInteger(value) && [-1, 0, 1, 2].includes(value),
+  'mincpmpersec': (value) => typeof value === 'number' && value > 0,
+  'maxseq': (value) => isInteger(value) && value > 0,
+  'rqddurs': (value) => isArrayOfNums(value) && value.every(v => v > 0),
+};
 
 const ORTB_SITE_FIRST_PARTY_DATA = {
   'cat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
@@ -114,11 +123,11 @@ function buildVideo(bidRequest) {
 
   const optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
-    if (bidRequestVideo[param] && OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
+    if (bidRequestVideo[param] != null && OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
       optionalParams[param] = bidRequestVideo[param];
     }
     // remove invalid optional params from bidder specific overrides
-    if (videoBidderParams[param] && !OPTIONAL_VIDEO_PARAMS[param](videoBidderParams[param])) {
+    if (videoBidderParams[param] != null && !OPTIONAL_VIDEO_PARAMS[param](videoBidderParams[param])) {
       delete videoBidderParams[param];
     }
   }
@@ -133,6 +142,17 @@ function buildVideo(bidRequest) {
 
   if (context !== undefined) {
     optionalParams['context'] = context;
+  }
+
+  // Map Prebid.js adpod fields to ORTB 2.6 video fields
+  const adPodDurationSec = deepAccess(bidRequest, 'mediaTypes.video.adPodDurationSec');
+  if (adPodDurationSec && isInteger(adPodDurationSec) && adPodDurationSec > 0) {
+    optionalParams['poddur'] = adPodDurationSec;
+  }
+
+  const durationRangeSec = deepAccess(bidRequest, 'mediaTypes.video.durationRangeSec');
+  if (durationRangeSec && isArrayOfNums(durationRangeSec) && durationRangeSec.length > 0) {
+    optionalParams['rqddurs'] = durationRangeSec;
   }
 
   const videoObj = {
@@ -442,7 +462,7 @@ function buildRequest(validBidRequests, bidderRequest) {
   return req;
 }
 
-function buildBid(bid, bidderRequest) {
+function buildBid(bid, bidderRequest, seatbid) {
   const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
   let meta = {}
 
@@ -454,17 +474,42 @@ function buildBid(bid, bidderRequest) {
     meta.advertiserDomains = bid.adomain
   }
 
+  // ORTB 2.6: Add category support
+  if (bid.cat && Array.isArray(bid.cat) && bid.cat.length > 0) {
+    meta.primaryCatId = bid.cat[0];
+    if (bid.cat.length > 1) {
+      meta.secondaryCatIds = bid.cat.slice(1);
+    }
+  }
+
+  // ORTB 2.6: Add seat/dsp from seatbid
+  if (seatbid && seatbid.seat) {
+    meta.seat = seatbid.seat;
+    meta.dsp = seatbid.seat;
+  }
+
+  // ORTB 2.6: Add creative attributes
+  if (bid.attr && Array.isArray(bid.attr)) {
+    meta.attr = bid.attr;
+  }
+
   let mediaType = 'banner';
   if (bid.adm && bid.adm.includes('<VAST')) {
     mediaType = 'video';
   }
+
+  // TTL: Use MAX of bid.exp and BID_TTL to ensure minimum 5 minutes
+  const configTTL = config.getConfig('insticator.bidTTL') || BID_TTL;
+  const bidExp = bid.exp || 0;
+  const ttl = Math.max(bidExp, configTTL);
+
   const bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
     currency: 'USD',
     netRevenue: true,
-    ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
+    ttl: ttl,
     width: bid.w,
     height: bid.h,
     mediaType: mediaType,
@@ -473,8 +518,24 @@ function buildBid(bid, bidderRequest) {
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
 
+  // ORTB 2.6: Add deal ID
+  if (bid.dealid) {
+    bidResponse.dealId = bid.dealid;
+  }
+
+  // ORTB 2.6: Add billing URL for win notification
+  if (bid.burl) {
+    bidResponse.burl = bid.burl;
+  }
+
   if (mediaType === 'video') {
     bidResponse.vastXml = bid.adm;
+
+    // ORTB 2.6: Add video duration for adpod support
+    if (bid.dur && isInteger(bid.dur) && bid.dur > 0) {
+      bidResponse.video = bidResponse.video || {};
+      bidResponse.video.durationSeconds = bid.dur;
+    }
   }
 
   // Inticator bid adaptor only returns `vastXml` for video bids. No VastUrl or videoCache.
@@ -493,7 +554,7 @@ function buildBid(bid, bidderRequest) {
 }
 
 function buildBidSet(seatbid, bidderRequest) {
-  return seatbid.bid.map((bid) => buildBid(bid, bidderRequest));
+  return seatbid.bid.map((bid) => buildBid(bid, bidderRequest, seatbid));
 }
 
 function validateSize(size) {
@@ -652,6 +713,14 @@ export const spec = {
       if (deepAccess(validBidRequests[0], 'params.bid_endpoint_request_url')) {
         endpointUrl = deepAccess(validBidRequests[0], 'params.bid_endpoint_request_url').replace(/^http:/, 'https:');
       }
+
+      // Add publisherId as query parameter if present
+      const publisherId = deepAccess(validBidRequests[0], 'params.publisherId');
+      if (publisherId) {
+        const urlObj = new URL(endpointUrl);
+        urlObj.searchParams.set('publisherId', publisherId);
+        endpointUrl = urlObj.toString();
+      }
     }
 
     if (validBidRequests.length > 0) {
@@ -703,6 +772,13 @@ export const spec = {
     }
 
     return syncs;
+  },
+
+  onBidWon: function (bid) {
+    // ORTB 2.6: Trigger billing URL on bid won
+    if (bid.burl) {
+      triggerPixel(bid.burl);
+    }
   },
 };
 
