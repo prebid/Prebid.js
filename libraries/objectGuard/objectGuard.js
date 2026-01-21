@@ -139,14 +139,35 @@ export function objectGuard(rules) {
     return true;
   }
 
+  const TARGET = Symbol('TARGET');
+
   function mkGuard(obj, tree, final, applies, cache = new WeakMap()) {
     // If this object is already proxied, return the cached proxy
     if (cache.has(obj)) {
       return cache.get(obj);
     }
 
+    /**
+     * Dereference (possibly nested) proxies to their underlying objects.
+     *
+     * This is to accommodate usage patterns like:
+     *
+     * guardedObject.property = [...guardedObject.property, additionalData];
+     *
+     * where the `set` proxy trap would get an already proxied object as argument.
+     */
+    function deref(obj) {
+      if (cache.has(obj?.[TARGET])) return obj[TARGET];
+      if (Array.isArray(obj)) {
+        return obj.map(deref);
+      } else if (obj != null && typeof obj === 'object') {
+        return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, deref(v)]));
+      } else return obj;
+    }
+
     const proxy = new Proxy(obj, {
       get(target, prop, receiver) {
+        if (prop === TARGET) return target;
         const val = Reflect.get(target, prop, receiver);
         if (final && val != null && typeof val === 'object') {
           // a parent property has write protect rules, keep guarding
@@ -175,6 +196,7 @@ export function objectGuard(rules) {
             return true;
           }
         }
+        newValue = deref(newValue);
         if (tree.children?.hasOwnProperty(prop)) {
           // apply all (possibly nested) write protect rules
           const curValue = Reflect.get(target, prop, receiver);
