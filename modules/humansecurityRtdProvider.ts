@@ -8,7 +8,7 @@
  * @requires module:modules/realTimeData
  */
 import { submodule } from '../src/hook.js';
-import { prefixLog, generateUUID, getWindowSelf, } from '../src/utils.js';
+import { prefixLog, generateUUID, getWindowSelf } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { loadExternalScript } from '../src/adloader.js';
