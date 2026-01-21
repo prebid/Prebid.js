@@ -62,7 +62,7 @@ const load = (config: RTDProviderConfig<'humansecurity'>) => {
   // Once loaded, the implementation script will publish an API using
   // the session ID value it was given in data attributes
   const scriptAttrs = { 'data-sid': sessionId };
-  const scriptUrl = `${SCRIPT_URL}?r=${refDomain}${clientId ? `&c=${clientId}` : ''}${MODULE_VERSION ? `&mv=${MODULE_VERSION}` : ''}`;
+  const scriptUrl = `${SCRIPT_URL}?r=${refDomain}${clientId ? `&c=${clientId}` : ''}&mv=${MODULE_VERSION}`;
 
   loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => onImplLoaded(config), null, scriptAttrs);
 }
@@ -117,7 +117,11 @@ const getBidRequestData = (
   userConsent: AllConsentData
 ) => {
   const impl = getImpl();
-  if (!impl || typeof impl.getBidRequestData !== 'function') return;
+  if (!impl || typeof impl.getBidRequestData !== 'function') {
+    // Implementation not available; continue auction by invoking the callback.
+    callback();
+    return;
+  }
 
   impl.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
 }
