@@ -962,6 +962,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "alchemyx",
+      "aliasOf": "adverxo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adxcg",
       "aliasOf": null,
       "gvlid": null,
@@ -1301,6 +1308,13 @@
       "componentName": "appush",
       "aliasOf": null,
       "gvlid": 879,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "aps",
+      "aliasOf": null,
+      "gvlid": 793,
       "disclosureURL": null
     },
     {
