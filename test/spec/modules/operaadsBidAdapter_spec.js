@@ -217,7 +217,7 @@ describe('Opera Ads Bid Adapter', function () {
         const bidRequest = bidRequests[i];
 
         expect(req.method).to.equal('POST');
-        expect(req.url).to.equal('https://s.adx.opera.com/ortb/v2/' +
+        expect(req.url).to.equal('https://s.oa.opera.com/ortb/v2/' +
           bidRequest.params.publisherId + '?ep=' + bidRequest.params.endpointId);
 
         expect(req.options).to.be.an('object');
@@ -546,8 +546,8 @@ describe('Opera Ads Bid Adapter', function () {
                   'id': '003004d9c05c6bc7fec0',
                   'impid': '22c4871113f461',
                   'price': 1.04,
-                  'nurl': 'https://s.adx.opera.com/win',
-                  'lurl': 'https://s.adx.opera.com/loss',
+                  'nurl': 'https://s.oa.opera.com/win',
+                  'lurl': 'https://s.oa.opera.com/loss',
                   'adm': '<img src="https://res.adx.opera.com/xxx.jpeg" width="300" height="250" />',
                   'adomain': [
                     'opera.com',
@@ -628,8 +628,8 @@ describe('Opera Ads Bid Adapter', function () {
                   'id': '003004d9c05c6bc7fec0',
                   'impid': '22c4871113f461',
                   'price': 1.04,
-                  'nurl': 'https://s.adx.opera.com/win',
-                  'lurl': 'https://s.adx.opera.com/loss',
+                  'nurl': 'https://s.oa.opera.com/win',
+                  'lurl': 'https://s.oa.opera.com/loss',
                   'adm': '<VAST version="2.0"><Ad id="static"><InLine><AdSystem>Static VAST Template</AdSystem><AdTitle>Static VAST Tag</AdTitle><Impression>http://example.com/pixel.gif?asi=[ADSERVINGID]</Impression><Creatives><Creative><Linear><Duration>00:00:08</Duration><TrackingEvents><Tracking event="start">http://example.com/pixel.gif</Tracking><Tracking event="firstQuartile">http://example.com/pixel.gif</Tracking><Tracking event="midpoint">http://example.com/pixel.gif</Tracking><Tracking event="thirdQuartile">http://example.com/pixel.gif</Tracking><Tracking event="complete">http://example.com/pixel.gif</Tracking><Tracking event="pause">http://example.com/pixel.gif</Tracking><Tracking event="mute">http://example.com/pixel.gif</Tracking><Tracking event="fullscreen">http://example.com/pixel.gif</Tracking></TrackingEvents><VideoClicks><ClickThrough>http://www.jwplayer.com/</ClickThrough><ClickTracking>http://example.com/pixel.gif?r=[REGULATIONS]&gdpr=[GDPRCONSENT]&pu=[PAGEURL]&da=[DEVICEUA]</ClickTracking></VideoClicks><MediaFiles><MediaFile type="video/mp4" bitrate="300" width="480" height="270"> http://example.com/uploads/myPrerollVideo.mp4</MediaFile></MediaFiles><Icons><Icon program="AdChoices" height="16" width="16" xPosition="right" yPosition="top"><StaticResource creativeType="image/png"> https://example.com/adchoices-sm.png</StaticResource><Iconclicks><IconClickThrough>https://sample-url.com</IconClickThrough></IconClicks></Icon></Icons></Linear></Creative></Creatives></InLine></Ad></VAST>',
                   'adomain': [
                     'opera.com',
@@ -698,8 +698,8 @@ describe('Opera Ads Bid Adapter', function () {
                   'id': '003004d9c05c6bc7fec0',
                   'impid': '22c4871113f461',
                   'price': 1.04,
-                  'nurl': 'https://s.adx.opera.com/win',
-                  'lurl': 'https://s.adx.opera.com/loss',
+                  'nurl': 'https://s.oa.opera.com/win',
+                  'lurl': 'https://s.oa.opera.com/loss',
                   'adm': '{"native":{"ver":"1.1","assets":[{"id":1,"required":1,"title":{"text":"The first personal browser"}},{"id":2,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":720,"h":1280}},{"id":3,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":60,"h":60}},{"id":4,"required":1,"data":{"value":"Download Opera","len":14}},{"id":5,"required":1,"data":{"value":"Opera","len":5}},{"id":6,"required":1,"data":{"value":"Download","len":8}}],"link":{"url":"https://www.opera.com/mobile/opera","clicktrackers":["https://thirdpart-click.tracker.com","https://t-odx.op-mobile.opera.com/click"]},"imptrackers":["https://thirdpart-imp.tracker.com","https://t-odx.op-mobile.opera.com/impr"],"jstracker":"<script src=\\"https://t-odx.op-mobile.opera.com/jstracker\\"></script>"}}',
                   'adomain': [
                     'opera.com',
@@ -782,7 +782,7 @@ describe('Opera Ads Bid Adapter', function () {
       }
       const userSyncPixels = spec.getUserSyncs(syncOptions)
       expect(userSyncPixels).to.have.lengthOf(1);
-      expect(userSyncPixels[0].url).to.equal('https://s.adx.opera.com/usersync/page')
+      expect(userSyncPixels[0].url).to.equal('https://s.oa.opera.com/usersync/page')
     });
   });
 
