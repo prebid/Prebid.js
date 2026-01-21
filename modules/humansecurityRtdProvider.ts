@@ -54,6 +54,7 @@ const load = (config: RTDProviderConfig<'humansecurity'>) => {
 
   // Load/reset the state
   verbose = !!config?.params?.verbose;
+  implRef = null;
   sessionId = generateUUID();
 
   // Get the best domain possible here, it still might be null
@@ -152,7 +153,10 @@ const subModule: RtdProviderSpecWithHooks<'humansecurity'> = ({
       load(config);
       return true;
     } catch (err) {
-      logError('init', err.message);
+      const message = (err && typeof err === 'object' && 'message' in err)
+        ? (err as any).message
+        : String(err);
+      logError('init', message);
       return false;
     }
   },
