@@ -125,6 +125,10 @@
             const inputEnableCache = document.getElementById("enable-cache");
             const enableCache = inputEnableCache ? inputEnableCache.checked : undefined;
 
+            // OpenRTB 2.5 Category Fields Option
+            const inputEnableOrtb25Fields = document.getElementById("enable-ortb25-fields");
+            const enableOrtb25Fields = inputEnableOrtb25Fields ? inputEnableOrtb25Fields.checked : true;
+
             // URL Stripping Options
             const inputStripAllQueryParams = document.getElementById("strip-all-query-params");
             const stripAllQueryParams = inputStripAllQueryParams ? inputStripAllQueryParams.checked : undefined;
@@ -169,6 +173,7 @@
                                     websiteToAnalyseUrl,
                                     iabContentTaxonomyVersion,
                                     enableCache,
+                                    enableOrtb25Fields,
                                     stripAllQueryParams,
                                     stripQueryParamsForDomains,
                                     stripQueryParams,
@@ -245,6 +250,14 @@
             <label>
                 <input type="checkbox" id="enable-cache" checked />
                 Enable API response caching (default: enabled)
+            </label>
+        </div>
+
+        <h3>OpenRTB 2.5 Category Fields</h3>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="enable-ortb25-fields" checked />
+                Enable OpenRTB 2.5 category fields (default: enabled)
             </label>
         </div>
 
@@ -334,6 +347,9 @@
         <h3>Neuwo User Data</h3>
         <pre id="neuwo-user-data"
             style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data.</pre>
+        <h3>Neuwo OpenRTB 2.5 Category Fields (IAB Content Taxonomy 1.0) Data</h3>
+        <pre id="neuwo-ortb25-fields"
+            style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data (requires enableOrtb25Fields and /v1/iab endpoint).</pre>
     </div>
 
     <div>
@@ -385,14 +401,23 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
                 const neuwoSiteData = siteContentData?.find(d => d.name === "www.neuwo.ai");
                 const neuwoUserData = userData?.find(d => d.name === "www.neuwo.ai");
 
+                // Extract OpenRTB 2.5 category fields
+                const ortb25Fields = {
+                    "site.cat": ortb2?.site?.cat,
+                    "site.sectioncat": ortb2?.site?.sectioncat,
+                    "site.pagecat": ortb2?.site?.pagecat,
+                    "site.content.cat": ortb2?.site?.content?.cat
+                };
+
                 // Store in global variable for later use
                 neuwoData = {
                     siteContent: neuwoSiteData,
-                    user: neuwoUserData
+                    user: neuwoUserData,
+                    ortb25Fields: ortb25Fields
                 };
                 console.log("Neuwo data stored in global \"neuwoData\" variable:", neuwoData);
 
-                updateDisplayElements(neuwoSiteData, neuwoUserData)
+                updateDisplayElements(neuwoSiteData, neuwoUserData, ortb25Fields)
             } else {
                 console.warn("No ortb2 data found in bidRequest. This may indicate the RTD module has not enriched the bid request yet.");
             }
@@ -400,9 +425,11 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
     });
 
     // Helper to update display elements
-    function updateDisplayElements(neuwoSiteData, neuwoUserData) {
+    function updateDisplayElements(neuwoSiteData, neuwoUserData, ortb25Fields) {
         const siteDataEl = document.getElementById("neuwo-site-data");
         const userDataEl = document.getElementById("neuwo-user-data");
+        const ortb25El = document.getElementById("neuwo-ortb25-fields");
+
         if (siteDataEl) {
             siteDataEl.textContent = neuwoSiteData
                 ? JSON.stringify(neuwoSiteData, null, 2)
@@ -412,6 +439,12 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
             userDataEl.textContent = neuwoUserData
                 ? JSON.stringify(neuwoUserData, null, 2)
                 : "No Neuwo user data found in response.";
+        }
+        if (ortb25El && ortb25Fields) {
+            const hasData = Object.values(ortb25Fields).some(val => val && val.length > 0);
+            ortb25El.textContent = hasData
+                ? JSON.stringify(ortb25Fields, null, 2)
+                : "No OpenRTB 2.5 category fields found (requires enableOrtb25Fields=true and /v1/iab endpoint).";
         }
     }
 
@@ -564,6 +597,7 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
             websiteToAnalyseUrl: document.getElementById("website-to-analyse-url")?.value || "",
             iabContentTaxonomyVersion: document.getElementById("iab-content-taxonomy-version")?.value || "",
             enableCache: document.getElementById("enable-cache")?.checked !== false,
+            enableOrtb25Fields: document.getElementById("enable-ortb25-fields")?.checked !== false,
             stripAllQueryParams: document.getElementById("strip-all-query-params")?.checked || false,
             stripQueryParamsForDomains: document.getElementById("strip-query-params-for-domains")?.value || "",
             stripQueryParams: document.getElementById("strip-query-params")?.value || "",
@@ -590,6 +624,7 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
 
             // Restore checkboxes
             document.getElementById("enable-cache").checked = config.enableCache !== false;
+            document.getElementById("enable-ortb25-fields").checked = config.enableOrtb25Fields !== false;
             document.getElementById("strip-all-query-params").checked = config.stripAllQueryParams;
             document.getElementById("strip-fragments").checked = config.stripFragments;
             document.getElementById("enable-iab-filtering").checked = config.enableIabFiltering;
@@ -611,6 +646,7 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
 
         const checkboxIds = [
             "enable-cache",
+            "enable-ortb25-fields",
             "strip-all-query-params",
             "strip-fragments",
             "enable-iab-filtering"
