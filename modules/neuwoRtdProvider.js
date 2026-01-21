@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.0.0
+ * @version 2.1.0
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -10,6 +10,8 @@
  * It fetches contextual marketing categories (IAB content and audience) for the current page from the Neuwo API.
  * The retrieved data is then injected into the bid request as OpenRTB (ORTB2) `site.content.data`
  * and `user.data` fragments, making it available for bidders to use in their decisioning process.
+ * Additionally, when enabled, the module populates OpenRTB 2.5 category fields (`ortb2.site.cat`,
+ * `ortb2.site.sectioncat`, `ortb2.site.pagecat`, `ortb2.site.content.cat`) with IAB Content Taxonomy 1.0 segments.
  *
  * @see {@link https://docs.prebid.org/dev-docs/add-rtd-submodule.html} for more information on development of Prebid.js RTD modules.
  * @see {@link https://docs.prebid.org/features/firstPartyData.html} for more information on Prebid.js First Party Data.
@@ -19,7 +21,13 @@
 import { ajax } from "../src/ajax.js";
 import { submodule } from "../src/hook.js";
 import { getRefererInfo } from "../src/refererDetection.js";
-import { deepSetValue, logError, logInfo, mergeDeep } from "../src/utils.js";
+import {
+  deepSetValue,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+} from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
 export const DATA_PROVIDER = "www.neuwo.ai";
@@ -90,6 +98,7 @@ function init(config, userConsent) {
  * @param {string} [config.params.websiteToAnalyseUrl] Optional URL to analyze instead of current page.
  * @param {string} [config.params.iabContentTaxonomyVersion="2.2"] IAB Content Taxonomy version.
  * @param {boolean} [config.params.enableCache=true] If true, caches API responses to avoid redundant requests.
+ * @param {boolean} [config.params.enableOrtb25Fields=true] If true, populates OpenRTB 2.5 category fields (site.cat, site.sectioncat, site.pagecat, site.content.cat) with IAB Content Taxonomy 1.0 segments.
  * @param {boolean} [config.params.stripAllQueryParams] If true, strips all query parameters from the URL.
  * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
  * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
@@ -116,6 +125,7 @@ export function getBidRequestData(
     neuwoApiToken,
     iabContentTaxonomyVersion = DEFAULT_IAB_CONTENT_TAXONOMY_VERSION,
     enableCache = true,
+    enableOrtb25Fields = true,
     stripAllQueryParams,
     stripQueryParamsForDomains,
     stripQueryParams,
@@ -138,10 +148,20 @@ export function getBidRequestData(
   // Detect API version from URL
   const isV2Api = neuwoApiUrl.includes("/v1/iab");
 
+  // Warn if OpenRTB 2.5 feature enabled with legacy API
+  if (enableOrtb25Fields && !isV2Api) {
+    logWarn(
+      MODULE_NAME,
+      "getBidRequestData():",
+      "OpenRTB 2.5 category fields are only supported with /v1/iab endpoint"
+    );
+  }
+
   // Build IAB filter configuration
   const iabFilterConfig = buildIabFilterConfig(
     iabTaxonomyFilters,
-    contentSegtax
+    contentSegtax,
+    enableOrtb25Fields
   );
 
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
@@ -155,6 +175,11 @@ export function getBidRequestData(
   if (isV2Api) {
     urlParams.push("iabVersions=" + contentSegtax);
     urlParams.push("iabVersions=4"); // IAB Audience 1.1
+
+    // Request IAB 1.0 for OpenRTB 2.5 fields if feature enabled
+    if (enableOrtb25Fields) {
+      urlParams.push("iabVersions=1"); // IAB Content 1.0
+    }
   }
 
   const neuwoApiUrlFull = neuwoApiUrl + joiner + urlParams.join("&");
@@ -173,7 +198,8 @@ export function getBidRequestData(
     injectIabCategories(
       globalCachedResponse,
       reqBidsConfigObj,
-      iabContentTaxonomyVersion
+      iabContentTaxonomyVersion,
+      enableOrtb25Fields
     );
     callback();
   } else if (enableCache && pendingRequest) {
@@ -190,7 +216,8 @@ export function getBidRequestData(
           injectIabCategories(
             responseParsed,
             reqBidsConfigObj,
-            iabContentTaxonomyVersion
+            iabContentTaxonomyVersion,
+            enableOrtb25Fields
           );
         }
       })
@@ -243,7 +270,8 @@ export function getBidRequestData(
               injectIabCategories(
                 responseParsed,
                 reqBidsConfigObj,
-                iabContentTaxonomyVersion
+                iabContentTaxonomyVersion,
+                enableOrtb25Fields
               );
               resolve(responseParsed);
             } catch (ex) {
@@ -402,23 +430,18 @@ export function injectOrtbData(reqBidsConfigObj, path, data) {
 }
 
 /**
- * Builds an IAB category data object for OpenRTB injection.
- * Dynamically processes all tiers present in the response data.
+ * Extracts all segment IDs from tier data into a flat array.
+ * Used for populating OpenRTB 2.5 category fields and building IAB data objects.
  *
- * @param {Object} tierData The tier data keyed by tier numbers (e.g., {"1": [...], "2": [...], "3": [...]}).
- * @param {number} segtax The IAB Taxonomy segtax ID.
- * @returns {Object} The OpenRTB data object with name, segment array, and ext.segtax.
+ * @param {Object} tierData The tier data keyed by tier numbers (e.g., {"1": [{id: "IAB12"}], "2": [...]}).
+ * @returns {Array<string>} Flat array of segment IDs (e.g., ["IAB12", "IAB12-3", "IAB12-5"]).
  */
-export function buildIabData(tierData, segtax) {
-  const data = {
-    name: DATA_PROVIDER,
-    segment: [],
-    ext: { segtax },
-  };
+export function extractCategoryIds(tierData) {
+  const ids = [];
 
   // Handle null, undefined, or non-object tierData
   if (!tierData || typeof tierData !== "object") {
-    return data;
+    return ids;
   }
 
   // Process ALL tier keys present in tierData
@@ -427,13 +450,30 @@ export function buildIabData(tierData, segtax) {
     if (Array.isArray(segments)) {
       segments.forEach((item) => {
         if (item?.id) {
-          data.segment.push({ id: item.id });
+          ids.push(item.id);
         }
       });
     }
   });
 
-  return data;
+  return ids;
+}
+
+/**
+ * Builds an IAB category data object for OpenRTB injection.
+ * Dynamically processes all tiers present in the response data.
+ *
+ * @param {Object} tierData The tier data keyed by tier numbers (e.g., {"1": [...], "2": [...], "3": [...]}).
+ * @param {number} segtax The IAB Taxonomy segtax ID.
+ * @returns {Object} The OpenRTB data object with name, segment array, and ext.segtax.
+ */
+export function buildIabData(tierData, segtax) {
+  const ids = extractCategoryIds(tierData);
+  return {
+    name: DATA_PROVIDER,
+    segment: ids.map((id) => ({ id })),
+    ext: { segtax },
+  };
 }
 
 /**
@@ -633,9 +673,14 @@ export function transformSegmentsV1ToV2(segments) {
  *
  * @param {Object} iabTaxonomyFilters Publisher's tier filter configuration using human-readable tier names.
  * @param {number} contentSegtax The segtax ID for content taxonomies (determined by iabContentTaxonomyVersion).
+ * @param {boolean} [enableOrtb25Fields=true] If true, also applies filters to IAB COntent Taxonomy 1.0 (segtax 1) for OpenRTB 2.5 category fields.
  * @returns {Object} Filter configuration in segtax-based structure.
  */
-export function buildIabFilterConfig(iabTaxonomyFilters, contentSegtax) {
+export function buildIabFilterConfig(
+  iabTaxonomyFilters,
+  contentSegtax,
+  enableOrtb25Fields = true
+) {
   const TIER_TO_SEGTAX = {
     ContentTier1: { segtax: contentSegtax, tier: "1" },
     ContentTier2: { segtax: contentSegtax, tier: "2" },
@@ -654,6 +699,28 @@ export function buildIabFilterConfig(iabTaxonomyFilters, contentSegtax) {
       body[segtaxKey][mapping.tier] = filter;
     }
   });
+
+  // Apply same filters to IAB 1.0 (segtax 1) for OpenRTB 2.5 fields
+  // Note: IAB 1.0 only has tiers 1 and 2 (tier 3 will be ignored if configured)
+  if (enableOrtb25Fields && iabTaxonomyFilters) {
+    const segtax1Config = {};
+
+    // Apply ContentTier1 filters to segtax 1, tier 1
+    if (iabTaxonomyFilters.ContentTier1) {
+      segtax1Config["1"] = iabTaxonomyFilters.ContentTier1;
+    }
+
+    // Apply ContentTier2 filters to segtax 1, tier 2
+    if (iabTaxonomyFilters.ContentTier2) {
+      segtax1Config["2"] = iabTaxonomyFilters.ContentTier2;
+    }
+
+    // Only add segtax 1 config if there are filters
+    if (Object.keys(segtax1Config).length > 0) {
+      body["1"] = segtax1Config;
+    }
+  }
+
   return body;
 }
 
@@ -664,17 +731,20 @@ export function buildIabFilterConfig(iabTaxonomyFilters, contentSegtax) {
  * Response format: { "6": { "1": [{id, name}], "2": [...] }, "4": { "3": [...], "4": [...] } }
  * - Content taxonomies are injected into ortb2.site.content.data
  * - Audience taxonomies are injected into ortb2.user.data
+ * - If enableOrtb25Fields is true, IAB 1.0 segments are injected into OpenRTB 2.5 category fields
  *
  * Only injects data if segments exist to avoid adding empty data structures.
  *
  * @param {Object} responseParsed The parsed API response.
  * @param {Object} reqBidsConfigObj The bid request configuration object to be enriched.
  * @param {string} iabContentTaxonomyVersion The IAB Content Taxonomy version for segtax mapping.
+ * @param {boolean} [enableOrtb25Fields=true] If true, populates OpenRTB 2.5 category fields with IAB Content Taxonomy 1.0 segments.
  */
 export function injectIabCategories(
   responseParsed,
   reqBidsConfigObj,
-  iabContentTaxonomyVersion
+  iabContentTaxonomyVersion,
+  enableOrtb25Fields = true
 ) {
   if (!responseParsed || typeof responseParsed !== "object") {
     logError(MODULE_NAME, "injectIabCategories():", "Invalid response format");
@@ -724,6 +794,33 @@ export function injectIabCategories(
       "injectIabCategories():",
       "No segments to inject, skipping data injection"
     );
+  }
+
+  // Inject OpenRTB 2.5 category fields if feature enabled
+  if (enableOrtb25Fields) {
+    const iab10Tiers = responseParsed["1"] || {}; // Segtax 1 = IAB Content 1.0
+    const categoryIds = extractCategoryIds(iab10Tiers); // ["IAB12", "IAB12-3", ...]
+
+    if (categoryIds.length > 0) {
+      // Inject same array into all four OpenRTB 2.5 category fields
+      injectOrtbData(reqBidsConfigObj, "site.cat", categoryIds);
+      injectOrtbData(reqBidsConfigObj, "site.sectioncat", categoryIds);
+      injectOrtbData(reqBidsConfigObj, "site.pagecat", categoryIds);
+      injectOrtbData(reqBidsConfigObj, "site.content.cat", categoryIds);
+
+      logInfo(
+        MODULE_NAME,
+        "injectIabCategories():",
+        "Injected OpenRTB 2.5 category fields:",
+        categoryIds
+      );
+    } else {
+      logInfo(
+        MODULE_NAME,
+        "injectIabCategories():",
+        "No IAB 1.0 segments available for OpenRTB 2.5 fields"
+      );
+    }
   }
 }
 
