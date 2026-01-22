@@ -117,7 +117,7 @@ describe('aceexBidAdapter', function () {
               w: 300,
               adm: '<div>price=1.23</div>',
               nurl: 'https://win.example.com?c=1.23',
-              adomain: 'test.com'
+              adomain: [ 'test.com' ]
             }]
           }]
         }
