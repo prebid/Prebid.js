@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions, triggerPixel} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'insticator';
@@ -523,9 +523,14 @@ function buildBid(bid, bidderRequest, seatbid) {
     bidResponse.dealId = bid.dealid;
   }
 
-  // ORTB 2.6: Add billing URL for win notification
+  // ORTB 2.6: Add billing URL for billing notification
   if (bid.burl) {
     bidResponse.burl = bid.burl;
+  }
+
+  // ORTB 2.6: Add notice URL for win notification
+  if (bid.nurl) {
+    bidResponse.nurl = bid.nurl;
   }
 
   if (mediaType === 'video') {
@@ -772,13 +777,6 @@ export const spec = {
     }
 
     return syncs;
-  },
-
-  onBidWon: function (bid) {
-    // ORTB 2.6: Trigger billing URL on bid won
-    if (bid.burl) {
-      triggerPixel(bid.burl);
-    }
   },
 };
 

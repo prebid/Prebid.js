@@ -1343,6 +1343,29 @@ describe('InsticatorBidAdapter', function () {
         expect(bidResponse).to.have.property('burl', 'https://billing.example.com/win?price=${AUCTION_PRICE}');
       });
 
+      it('should map notice URL (nurl) to bidResponse.nurl', function () {
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 300,
+                h: 250,
+                adm: 'adm1',
+                nurl: 'https://win.example.com/notify?price=${AUCTION_PRICE}',
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+
+        expect(bidResponse).to.have.property('nurl', 'https://win.example.com/notify?price=${AUCTION_PRICE}');
+      });
+
       it('should map video duration (dur) to bidResponse.video.durationSeconds', function () {
         const videoBidRequests = {
           ...ortb26BidRequests,
@@ -1699,55 +1722,6 @@ describe('InsticatorBidAdapter', function () {
       expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser');
       expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser');
       expect(bidResponse.ext.dsa).to.have.property('adrender', 1);
-    });
-  });
-
-  describe('onBidWon', function () {
-    let triggerPixelStub;
-
-    beforeEach(function () {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
-    });
-
-    afterEach(function () {
-      triggerPixelStub.restore();
-    });
-
-    it('should call triggerPixel with burl when bid has burl', function () {
-      const bid = {
-        requestId: 'bid1',
-        cpm: 1.5,
-        burl: 'https://billing.example.com/win?price=${AUCTION_PRICE}'
-      };
-
-      spec.onBidWon(bid);
-
-      expect(triggerPixelStub.calledOnce).to.be.true;
-      expect(triggerPixelStub.calledWith('https://billing.example.com/win?price=${AUCTION_PRICE}')).to.be.true;
-    });
-
-    it('should not call triggerPixel when bid has no burl', function () {
-      const bid = {
-        requestId: 'bid1',
-        cpm: 1.5
-        // no burl
-      };
-
-      spec.onBidWon(bid);
-
-      expect(triggerPixelStub.called).to.be.false;
-    });
-
-    it('should not call triggerPixel when burl is empty string', function () {
-      const bid = {
-        requestId: 'bid1',
-        cpm: 1.5,
-        burl: ''
-      };
-
-      spec.onBidWon(bid);
-
-      expect(triggerPixelStub.called).to.be.false;
     });
   });
 });
