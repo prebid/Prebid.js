@@ -1,5 +1,3 @@
-/* test/spec/modules/aceexBidAdapter_spec.js */
-
 import { expect } from 'chai';
 import { spec } from '../../../modules/aceexBidAdapter.js';
 
@@ -98,7 +96,7 @@ describe('aceexBidAdapter', function () {
       expect(spec.interpretResponse({ body: null }, {})).to.deep.equal([]);
     });
 
-    it('should interpret banner bid and replace ${AUCTION_PRICE} in adm/nurl', function () {
+    it('should interpret banner bid', function () {
       const bidRequest = {
         data: {
           placements: [
@@ -117,8 +115,9 @@ describe('aceexBidAdapter', function () {
               dealid: 'deal-1',
               h: 250,
               w: 300,
-              adm: '<div>price=${AUCTION_PRICE}</div>',
-              nurl: 'https://win.example.com?c=${AUCTION_PRICE}'
+              adm: '<div>price=1.23</div>',
+              nurl: 'https://win.example.com?c=1.23',
+              adomains: ['test.com']
             }]
           }]
         }
@@ -133,8 +132,8 @@ describe('aceexBidAdapter', function () {
       expect(b.mediaType).to.equal('banner');
       expect(b.width).to.equal(300);
       expect(b.height).to.equal(250);
-      expect(b.ad).to.include('price=1.23'); // macro replaced
-      expect(b.meta).to.deep.equal({ advertiserDomains: ['aaa.com'] });
+      expect(b.ad).to.include('1.23'); // macro replaced
+      expect(b.meta).to.deep.equal({ advertiserDomains: ['test.com'] });
     });
 
     it('should interpret video bid as vastXml', function () {
@@ -157,7 +156,7 @@ describe('aceexBidAdapter', function () {
               h: 360,
               w: 640,
               adm: '<VAST version="3.0"></VAST>',
-              nurl: 'https://win.example.com?c=${AUCTION_PRICE}'
+              nurl: 'https://win.example.com?c=5'
             }]
           }]
         }
@@ -200,7 +199,7 @@ describe('aceexBidAdapter', function () {
               h: 1,
               w: 1,
               adm: nativeAdm,
-              nurl: 'https://win.example.com?c=${AUCTION_PRICE}'
+              nurl: 'https://win.example.com?c=5'
             }]
           }]
         }

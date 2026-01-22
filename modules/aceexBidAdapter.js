@@ -5,7 +5,7 @@ import {
   buildPlacementProcessingFunction,
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
-import { replaceAuctionPrice, deepAccess } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'aceex';
 const GVLID = 1387;
@@ -47,13 +47,7 @@ export const spec = {
     const repackedBids = [];
 
     serverResponse.body.seatbid.forEach(seatbidItem => {
-      const parsedBid = seatbidItem.bid.map((bidItem) => ({
-        ...bidItem,
-        adm: replaceAuctionPrice(bidItem.adm, bidItem.price),
-        nurl: replaceAuctionPrice(bidItem.nurl, bidItem.price)
-      }));
-
-      parsedBid.forEach((bid) => {
+      seatbidItem.bid.forEach((bid) => {
         const originalPlacement = bidRequest.data.placements?.find(pl => pl.bidId === bid.id);
 
         const repackedBid = {
