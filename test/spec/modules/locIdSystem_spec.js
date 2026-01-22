@@ -42,8 +42,8 @@ describe('LocID System', () => {
       expect(locIdSubmodule.eids).to.be.an('object');
       expect(locIdSubmodule.eids.locId).to.be.an('object');
       expect(locIdSubmodule.eids.locId.source).to.equal('locid.com');
-      // atype 3384 = LocID vendor identifier for demand partner recognition
-      expect(locIdSubmodule.eids.locId.atype).to.equal(3384);
+      // atype 1 = device identifier per OpenRTB 2.6 Extended Identifiers spec
+      expect(locIdSubmodule.eids.locId.atype).to.equal(1);
     });
 
     it('should have getValue function that extracts ID', () => {

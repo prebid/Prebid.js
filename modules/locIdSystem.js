@@ -19,9 +19,8 @@ const MODULE_NAME = 'locId';
 const LOG_PREFIX = 'LocID:';
 const DEFAULT_TIMEOUT_MS = 800;
 const DEFAULT_EID_SOURCE = 'locid.com';
-// OpenRTB EID atype: 3384 = LocID vendor identifier for demand partner recognition.
-// Vendor-specific atype values >500 are valid per OpenRTB 2.6 Extended Identifiers spec.
-const DEFAULT_EID_ATYPE = 3384;
+// OpenRTB EID atype: 1 = device identifier per OpenRTB 2.6 Extended Identifiers spec
+const DEFAULT_EID_ATYPE = 1;
 // IAB TCF Global Vendor List ID for Digital Envoy
 const GVLID = 3384;
 const MAX_ID_LENGTH = 512;

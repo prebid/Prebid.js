@@ -141,7 +141,7 @@ When available, the LocID is exposed as:
   source: "locid.com",
   uids: [{
     id: "<locid-value>",
-    atype: 3384
+    atype: 1
   }]
 }
 ```
@@ -151,7 +151,7 @@ When available, the LocID is exposed as:
 This module uses two numeric identifiers:
 
 - **`gvlid: 3384`** — The IAB TCF Global Vendor List ID for Digital Envoy. This identifies the vendor for consent purposes under the Transparency and Consent Framework.
-- **`atype: 3384`** — The OpenRTB Extended Identifiers (EID) `atype` field. Vendor-specific atype values >500 are valid per OpenRTB 2.6. LocID's technical documentation specifies `3384` as the required atype value for demand partner recognition in the bidstream.
+- **`atype: 1`** — The OpenRTB Extended Identifiers (EID) `atype` field indicating a device-based identifier per OpenRTB 2.6.
 
 ## Debugging
 
