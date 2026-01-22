@@ -1169,6 +1169,21 @@ describe('InsticatorBidAdapter', function () {
       expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
     });
 
+    it('should return empty response for 204 No Content (undefined body)', function () {
+      const response = { body: undefined };
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
+
+    it('should return empty response for 204 No Content (null body)', function () {
+      const response = { body: null };
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
+
+    it('should return empty response for empty object body', function () {
+      const response = { body: {} };
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
+
     // ORTB 2.6 Response Fields Tests
     describe('ORTB 2.6 response fields', function () {
       const ortb26BidRequests = {
