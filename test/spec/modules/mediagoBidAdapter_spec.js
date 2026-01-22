@@ -200,7 +200,7 @@ describe('mediago:BidAdapterTests', function () {
             bid: [
               {
                 id: '6e28cfaf115a354ea1ad8e1304d6d7b8',
-                impid: '1',
+                impid: '54d73f19c9d47a',
                 price: 0.087581,
                 adm: adm,
                 cid: '1339145',

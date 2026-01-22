@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -303,8 +304,7 @@ function getUserSyncUrlByRegion() {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = getTimeZone().split('/')[0];
 
     switch (region) {
       case 'Europe':
