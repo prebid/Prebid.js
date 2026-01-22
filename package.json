@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "10.21.0-pre",
+  "version": "10.23.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -53,11 +53,11 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.16.5",
+    "@babel/eslint-parser": "^7.28.6",
     "@babel/plugin-transform-runtime": "^7.27.4",
     "@babel/register": "^7.28.3",
     "@chiragrupani/karma-chromium-edge-launcher": "^2.4.1",
-    "@eslint/compat": "^1.3.1",
+    "@eslint/compat": "^1.4.1",
     "@types/google-publisher-tag": "^1.20250210.0",
     "@wdio/browserstack-service": "^9.19.1",
     "@wdio/cli": "^9.19.1",
@@ -105,6 +105,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-opera-launcher": "^1.0.0",
     "karma-safari-launcher": "^1.0.0",
+    "karma-safarinative-launcher": "^1.1.0",
     "karma-script-launcher": "^1.0.0",
     "karma-sinon": "^1.0.5",
     "karma-sourcemap-loader": "^0.4.0",
@@ -134,7 +135,7 @@
     "videojs-playlist": "^5.2.0",
     "webdriver": "^9.19.2",
     "webdriverio": "^9.18.4",
-    "webpack": "^5.102.1",
+    "webpack": "^5.103.0",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-manifest-plugin": "^5.0.1",
     "webpack-stream": "^7.0.0",
@@ -142,9 +143,8 @@
   },
   "dependencies": {
     "@babel/core": "^7.28.4",
-    "@babel/plugin-transform-runtime": "^7.18.9",
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-typescript": "^7.26.0",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@babel/runtime": "^7.28.3",
     "core-js": "^3.45.1",
     "crypto-js": "^4.2.0",
@@ -157,7 +157,6 @@
     "iab-adcom": "^1.0.6",
     "iab-native": "^1.0.0",
     "iab-openrtb": "^1.0.1",
-    "karma-safarinative-launcher": "^1.1.0",
     "klona": "^2.0.6",
     "live-connect-js": "^7.2.0"
   },

@@ -364,8 +364,11 @@ function buildRequestObject(bid) {
     reqObj.mediatype = bid.mediaTypes.native;
   }
 
+  reqObj.ext = reqObj.ext || {};
+
   if (deepAccess(bid, 'ortb2Imp.ext')) {
-    reqObj.ext = bid.ortb2Imp.ext;
+    Object.assign(reqObj.ext, bid.ortb2Imp.ext);
+    reqObj.ext.ortb2Imp = bid.ortb2Imp;
   }
 
   reqObj.id = getBidIdParameter('bidId', bid);

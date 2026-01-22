@@ -61,6 +61,7 @@ const ALIASES = [
   { code: 'glomexbidder', gvlid: 967 },
   { code: 'pubxai', gvlid: 1485 },
   { code: 'ybidder', gvlid: 1253 },
+  { code: 'netads', gvlid: 965 },
 ];
 
 export const STORAGE = getStorageManager({
