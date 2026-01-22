@@ -112,18 +112,6 @@ module.exports = [
       'no-console': 'error',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/src/adloader.js', '**/src/adloader'],
-              importNames: ['loadExternalScript'],
-              message: 'loadExternalScript can only be imported in approved files. See plugins/eslint/approvedLoadExternalScriptPaths.js for the list of approved paths.'
-            }
-          ]
-        }
-      ],
       'no-restricted-syntax': [
         'error',
         {
@@ -133,6 +121,14 @@ module.exports = [
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
           message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+        {
+          selector: "CallExpression[callee.name='loadExternalScript']",
+          message: 'loadExternalScript can only be called in approved files. See plugins/eslint/approvedLoadExternalScriptPaths.js for the list of approved paths.'
+        },
+        {
+          selector: "CallExpression[callee.type='MemberExpression'][callee.property.name='loadExternalScript']",
+          message: 'loadExternalScript can only be called in approved files. See plugins/eslint/approvedLoadExternalScriptPaths.js for the list of approved paths.'
         },
       ],
 
@@ -294,9 +290,20 @@ module.exports = [
         return `${p}/**/*.{js,ts,mjs}`;
       }
       return p;
-    }).filter(p => !p.includes('BidAdapter.js')), // Exclude BidAdapters - they have their own restrictions
+    }),
     rules: {
-      'no-restricted-imports': 'off', // Allow loadExternalScript import in approved non-BidAdapter files
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
+          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+        {
+          selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
+          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+        // Note: loadExternalScript restrictions removed here - approved files can use it
+      ],
     }
   },
 ]
