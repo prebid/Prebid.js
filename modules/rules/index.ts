@@ -35,7 +35,7 @@ function getGlobalRandom(auctionId: string, auctionIndex: AuctionIndex = auction
 
 const unregisterFunctions: Array<() => void> = []
 
-let moduleConfig: ModuleConfig = {
+let moduleConfig: ShapingRulesConfig = {
   endpoint: {
     method: 'GET',
     url: ''
@@ -52,7 +52,7 @@ const delayedAuctions = timeoutQueue();
 
 let rulesConfig: RulesConfig = null;
 
-interface ModuleConfig {
+interface ShapingRulesConfig {
   endpoint?: {
     url: string;
     method: string;
@@ -98,6 +98,12 @@ interface RulesConfig {
   ruleSets: RuleSet[];
   timestamp: string;
   enabled: boolean;
+}
+
+declare module '../../src/config' {
+  interface Config {
+    shapingRules?: ShapingRulesConfig;
+  }
 }
 
 export function evaluateConfig(config: RulesConfig, auctionId: string) {
@@ -389,7 +395,7 @@ export const requestBidsHook = timedAuctionHook('rules', function requestBidsHoo
   }
 });
 
-function init(config: ModuleConfig) {
+function init(config: ShapingRulesConfig) {
   moduleConfig = config;
   registerActivities();
   auctionManager.onExpiry(auction => {
