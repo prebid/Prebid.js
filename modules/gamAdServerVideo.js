@@ -28,6 +28,7 @@ import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
 import {getGlobalVarName} from '../src/buildOptions.js';
+import { uspDataHandler } from '../src/consentHandler.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -297,8 +298,7 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   const adUnit = options.adUnit;
   const video = adUnit?.mediaTypes?.video;
   const sdkApis = (video?.api || []).join(',');
-  const usPrivacy = options.bid?.uspConsent || '';
-
+  const usPrivacy = uspDataHandler.getConsentData?.();
   // Adding parameters required by ima
   if (config.getConfig('cache.useLocal') && window.google?.ima) {
     vastUrl = new URL(vastUrl);
