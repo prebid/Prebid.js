@@ -132,7 +132,7 @@ describe('aceexBidAdapter', function () {
       expect(b.mediaType).to.equal('banner');
       expect(b.width).to.equal(300);
       expect(b.height).to.equal(250);
-      expect(b.ad).to.include('1.23'); 
+      expect(b.ad).to.include('1.23');
       expect(b.meta.advertiserDomains[0]).to.equal('test.com');
     });
 
