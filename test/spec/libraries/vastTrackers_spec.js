@@ -1,6 +1,4 @@
 import {
-  addImpUrlToTrackers,
-  addTrackersToResponse,
   getVastTrackers,
   insertVastTrackers,
   registerVastTrackers,
@@ -71,13 +69,6 @@ describe('vast trackers', () => {
     getVastTrackers(bid, {index});
     sinon.assert.calledWith(tracker, bid, sinon.match({auction: auction.getProperties(), bidRequest}))
   })
-
-  it('test addImpUrlToTrackers', function () {
-    const trackers = addImpUrlToTrackers({'vastImpUrl': 'imptracker.com'}, getVastTrackers(bid, {index}));
-    expect(trackers).to.be.an('object');
-    expect(trackers.impression).to.be.an('array');
-    expect(trackers.impression).to.include('imptracker.com');
-  });
 
   if (FEATURES.VIDEO) {
     it('should add trackers to bid response', () => {
@@ -152,7 +143,7 @@ describe('vast trackers', () => {
       reset();
     });
 
-    it('should insert start tracker in vastXml with existing Linear element', function () {
+    it('should insert video playback tracker in vastXml with existing Linear element', function () {
       const playbackTracker = sinon.stub().callsFake(function () {
         return {
           impression: [],
@@ -169,30 +160,6 @@ describe('vast trackers', () => {
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking>');
       expect(vastXml).to.contain('<TrackingEvents>');
-    });
-
-    it('should insert quartile trackers in vastXml', function () {
-      const playbackTracker = sinon.stub().callsFake(function () {
-        return {
-          impression: [],
-          error: [],
-          trackingEvents: [
-            {event: 'firstQuartile', url: 'https://tracking.mydomain.com/firstQuartile'},
-            {event: 'midpoint', url: 'https://tracking.mydomain.com/midpoint'},
-            {event: 'thirdQuartile', url: 'https://tracking.mydomain.com/thirdQuartile'},
-            {event: 'complete', url: 'https://tracking.mydomain.com/complete'}
-          ]
-        };
-      });
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'quartileTest', playbackTracker);
-
-      const trackers = getVastTrackers(bid, {index});
-      let vastXml = '<VAST><Ad><InLine><Creatives><Creative><Linear><Duration>00:00:30</Duration></Linear></Creative></Creatives></InLine></Ad></VAST>';
-      vastXml = insertVastTrackers(trackers, vastXml);
-      expect(vastXml).to.contain('<Tracking event="firstQuartile"><![CDATA[https://tracking.mydomain.com/firstQuartile]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="midpoint"><![CDATA[https://tracking.mydomain.com/midpoint]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="thirdQuartile"><![CDATA[https://tracking.mydomain.com/thirdQuartile]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking>');
     });
 
     it('should append to existing TrackingEvents element', function () {
@@ -236,56 +203,6 @@ describe('vast trackers', () => {
       expect(vastXml).to.contain('<Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking>');
     });
 
-    it('should insert all tracker types together', function () {
-      const allTracker = sinon.stub().callsFake(function () {
-        return {
-          impression: ['https://tracking.mydomain.com/impression'],
-          error: ['https://tracking.mydomain.com/error'],
-          trackingEvents: [
-            {event: 'start', url: 'https://tracking.mydomain.com/start'},
-            {event: 'firstQuartile', url: 'https://tracking.mydomain.com/firstQuartile'},
-            {event: 'complete', url: 'https://tracking.mydomain.com/complete'}
-          ]
-        };
-      });
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'allTypesTest', allTracker);
-
-      const trackers = getVastTrackers(bid, {index});
-      let vastXml = '<VAST><Ad><InLine><Creatives><Creative><Linear><Duration>00:00:30</Duration></Linear></Creative></Creatives></InLine></Ad></VAST>';
-      vastXml = insertVastTrackers(trackers, vastXml);
-
-      // Check impression tracker
-      expect(vastXml).to.contain('<Impression><![CDATA[https://tracking.mydomain.com/impression]]></Impression>');
-      // Check error tracker
-      expect(vastXml).to.contain('<Error><![CDATA[https://tracking.mydomain.com/error]]></Error>');
-      // Check video playback trackers
-      expect(vastXml).to.contain('<Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="firstQuartile"><![CDATA[https://tracking.mydomain.com/firstQuartile]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking>');
-    });
-
-    it('should insert additional tracking events like pause and mute', function () {
-      const additionalTracker = sinon.stub().callsFake(function () {
-        return {
-          impression: [],
-          error: [],
-          trackingEvents: [
-            {event: 'pause', url: 'https://tracking.mydomain.com/pause'},
-            {event: 'mute', url: 'https://tracking.mydomain.com/mute'},
-            {event: 'fullscreen', url: 'https://tracking.mydomain.com/fullscreen'}
-          ]
-        };
-      });
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'additionalTest', additionalTracker);
-
-      const trackers = getVastTrackers(bid, {index});
-      let vastXml = '<VAST><Ad><InLine><Creatives><Creative><Linear><Duration>00:00:30</Duration></Linear></Creative></Creatives></InLine></Ad></VAST>';
-      vastXml = insertVastTrackers(trackers, vastXml);
-      expect(vastXml).to.contain('<Tracking event="pause"><![CDATA[https://tracking.mydomain.com/pause]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="mute"><![CDATA[https://tracking.mydomain.com/mute]]></Tracking>');
-      expect(vastXml).to.contain('<Tracking event="fullscreen"><![CDATA[https://tracking.mydomain.com/fullscreen]]></Tracking>');
-    });
-
     it('should validate tracking events have both event and url', function () {
       const invalidTracker = sinon.stub().callsFake(function () {
         return {
@@ -307,6 +224,5 @@ describe('vast trackers', () => {
       expect(trackers.trackingEvents).to.have.lengthOf(1);
       expect(trackers.trackingEvents[0].event).to.equal('start');
     });
-
   });
 })

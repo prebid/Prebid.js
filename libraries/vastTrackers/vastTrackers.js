@@ -68,7 +68,7 @@ export function insertVastTrackers(trackers, vastXml) {
   try {
     if (wrappers.length) {
       wrappers.forEach(wrapper => {
-        if (isArray(trackers.impression)) {
+        if (isArray(trackers.impression) && trackers.impression.length) {
           trackers.impression.forEach(trackingUrl => {
             const impression = doc.createElement('Impression');
             impression.appendChild(doc.createCDATASection(trackingUrl));
@@ -76,7 +76,7 @@ export function insertVastTrackers(trackers, vastXml) {
           });
         }
 
-        if (isArray(trackers.error)) {
+        if (isArray(trackers.error) && trackers.error.length) {
           trackers.error.forEach(trackingUrl => {
             const errorElement = doc.createElement('Error');
             errorElement.appendChild(doc.createCDATASection(trackingUrl));
@@ -84,7 +84,7 @@ export function insertVastTrackers(trackers, vastXml) {
           });
         }
 
-        if (isArray(trackers.trackingEvents)) {
+        if (isArray(trackers.trackingEvents) && trackers.trackingEvents.length) {
           insertLinearTrackingEvents(doc, wrapper, trackers.trackingEvents);
         }
       });
@@ -209,23 +209,4 @@ function isValidTrackingEvent(tracker) {
   return isPlainObject(tracker) &&
          isStr(tracker.event) && !isEmptyStr(tracker.event) &&
          isStr(tracker.url) && !isEmptyStr(tracker.url);
-}
-
-export function addImpUrlToTrackers(bid, trackers) {
-  if (bid.vastImpUrl) {
-    if (!trackers) {
-      trackers = {
-        impression: [],
-        error: [],
-        trackingEvents: []
-      };
-    }
-    if (!trackers.impression) {
-      trackers.impression = [];
-    }
-    if (!trackers.impression.includes(bid.vastImpUrl)) {
-      trackers.impression.push(bid.vastImpUrl);
-    }
-  }
-  return trackers;
 }

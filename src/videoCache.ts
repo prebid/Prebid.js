@@ -65,17 +65,17 @@ function wrapURI(uri: string, trackers?: VastTrackers) {
     trackingEventsXml = `<Creative><Linear><TrackingEvents>${trackingTags}</TrackingEvents></Linear></Creative>`;
   }
 
-  return `<VAST version="3.0">
-    <Ad>
-      <Wrapper>
-        <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[${uri}]]></VASTAdTagURI>
-        ${impressions}
-        ${errors}
-        <Creatives>${trackingEventsXml}</Creatives>
-      </Wrapper>
-    </Ad>
-  </VAST>`;
+  return '<VAST version="3.0">' +
+    '<Ad>' +
+    '<Wrapper>' +
+    '<AdSystem>prebid.org wrapper</AdSystem>' +
+    '<VASTAdTagURI><![CDATA[' + uri + ']]></VASTAdTagURI>' +
+    impressions +
+    errors +
+    '<Creatives>' + trackingEventsXml + '</Creatives>' +
+    '</Wrapper>' +
+    '</Ad>' +
+    '</VAST>';
 }
 
 declare module './bidfactory' {
