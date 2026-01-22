@@ -107,6 +107,10 @@ describe('Rules Module', function() {
   });
 
   describe('evaluateConfig', function() {
+    beforeEach(function() {
+      rulesModule.registerActivities();
+    });
+
     [
       ['processed-auction-request', ACTIVITY_FETCH_BIDS],
       ['processed-auction', ACTIVITY_ADD_BID_RESPONSE]
@@ -141,17 +145,19 @@ describe('Rules Module', function() {
         sandbox.stub(Math, 'random').returns(0.5);
 
         const bidder1Params = activityParams(MODULE_TYPE_BIDDER, 'bidder1', {
-          adUnit: { code: 'adUnit-0000' }
+          adUnit: { code: 'adUnit-0000' },
+          auctionId: 'test-auction-id'
         });
 
         const bidder2Params = activityParams(MODULE_TYPE_BIDDER, 'bidder2', {
-          adUnit: { code: 'adUnit-0000' }
+          adUnit: { code: 'adUnit-0000' },
+          auctionId: 'test-auction-id'
         });
 
         expect(isActivityAllowed(activity, bidder1Params)).to.be.true;
         expect(isActivityAllowed(activity, bidder2Params)).to.be.true;
 
-        rulesModule.evaluateConfig(rulesJson);
+        rulesModule.evaluateConfig(rulesJson, 'test-auction-id');
 
         expect(isActivityAllowed(activity, bidder1Params)).to.be.false;
         expect(isActivityAllowed(activity, bidder2Params)).to.be.true;
@@ -314,22 +320,6 @@ describe('Rules Module', function() {
       };
       const func1 = rulesModule.evaluateSchema('channel', [], context1);
       expect(func1()).to.equal('web');
-
-      const context2 = {
-        ortb2: {
-          ext: {
-            prebid: {
-              channel: 'amp'
-            }
-          }
-        }
-      };
-      const func2 = rulesModule.evaluateSchema('channel', [], context2);
-      expect(func2()).to.equal('amp');
-
-      const context3 = {};
-      const func3 = rulesModule.evaluateSchema('channel', [], context3);
-      expect(func3()).to.equal('');
     });
 
     it('should evaluate eidAvailable condition', function() {

@@ -467,7 +467,7 @@ export const addBidResponse = ignoreCallbackArg(hook('async', function(adUnitCod
   } else if (!isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, bid.bidder || bid.bidderCode, {
     bid,
     ortb2: auctionManager.index.getOrtb2(bid),
-    adUnit: auctionManager.index.getAdUnit(bid)
+    adUnit: auctionManager.index.getAdUnit(bid),
   }))) {
     reject(REJECTION_REASON.BIDDER_DISALLOWED);
   } else {
