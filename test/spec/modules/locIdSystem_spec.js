@@ -15,12 +15,14 @@ const TEST_ENDPOINT = 'https://id.example.com/locid';
 describe('LocID System', () => {
   let sandbox;
   let ajaxStub;
+  let ajaxBuilderStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     sandbox.stub(uspDataHandler, 'getConsentData').returns(null);
     sandbox.stub(gppDataHandler, 'getConsentData').returns(null);
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub();
+    ajaxBuilderStub = sandbox.stub(ajax, 'ajaxBuilder').returns(ajaxStub);
   });
 
   afterEach(() => {
@@ -250,7 +252,6 @@ describe('LocID System', () => {
 
     it('should use default timeout of 800ms when timeoutMs is not configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        expect(options.timeout).to.equal(800);
         callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
       });
 
@@ -261,12 +262,14 @@ describe('LocID System', () => {
       };
 
       const result = locIdSubmodule.getId(config, {});
-      result.callback(() => done());
+      result.callback(() => {
+        expect(ajaxBuilderStub.calledWith(800)).to.be.true;
+        done();
+      });
     });
 
     it('should use custom timeout when timeoutMs is configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        expect(options.timeout).to.equal(1500);
         callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
       });
 
@@ -278,7 +281,10 @@ describe('LocID System', () => {
       };
 
       const result = locIdSubmodule.getId(config, {});
-      result.callback(() => done());
+      result.callback(() => {
+        expect(ajaxBuilderStub.calledWith(1500)).to.be.true;
+        done();
+      });
     });
 
     it('should always use GET method', (done) => {

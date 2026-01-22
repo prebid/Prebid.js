@@ -13,7 +13,7 @@
 import { logWarn, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
+import { ajaxBuilder } from '../src/ajax.js';
 
 const MODULE_NAME = 'locId';
 const LOG_PREFIX = 'LocID:';
@@ -314,8 +314,7 @@ function fetchLocIdFromEndpoint(config, callback) {
   const requestOptions = {
     method: 'GET',
     contentType: 'application/json',
-    withCredentials: params.withCredentials === true,
-    timeout: timeoutMs
+    withCredentials: params.withCredentials === true
   };
 
   // Add x-api-key header if apiKey is configured
@@ -344,6 +343,7 @@ function fetchLocIdFromEndpoint(config, callback) {
   };
 
   try {
+    const ajax = ajaxBuilder(timeoutMs);
     ajax(requestUrl, { success: onSuccess, error: onError }, null, requestOptions);
   } catch (e) {
     logError(LOG_PREFIX, 'Error initiating request:', e.message);
