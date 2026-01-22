@@ -294,15 +294,23 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
 export async function getVastXml(options, localCacheMap = vastLocalCache) {
   let vastUrl = buildGamVideoUrl(options);
 
+  const adUnit = options.adUnit;
+  const video = adUnit?.mediaTypes?.video;
+  const sdkApis = (video?.api || []).join(',');
+  const usPrivacy = options.bid?.uspConsent || '';
+
   // Adding parameters required by ima
   if (config.getConfig('cache.useLocal') && window.google?.ima) {
     vastUrl = new URL(vastUrl);
     const imaSdkVersion = `h.${window.google.ima.VERSION}`;
     vastUrl.searchParams.set('omid_p', `Google1/${imaSdkVersion}`);
     vastUrl.searchParams.set('sdkv', imaSdkVersion);
-    vastUrl.searchParams.set('sdk_apis', '2,7,8');
-    vastUrl.searchParams.set('us_privacy', '1YNY');
-    vastUrl.searchParams.set('vpa', 'auto');
+    if (sdkApis) {
+      vastUrl.searchParams.set('sdk_apis', sdkApis);
+    }
+    if (usPrivacy) {
+      vastUrl.searchParams.set('us_privacy', usPrivacy);
+    }
 
     vastUrl = vastUrl.toString();
   }
