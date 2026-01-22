@@ -514,6 +514,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "appmonsta",
+      "aliasOf": "adkernel",
+      "gvlid": 1283,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -955,6 +962,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "alchemyx",
+      "aliasOf": "adverxo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adxcg",
       "aliasOf": null,
       "gvlid": null,
@@ -1014,6 +1028,13 @@
       "componentName": "alkimi",
       "aliasOf": null,
       "gvlid": 1169,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "allegro",
+      "aliasOf": null,
+      "gvlid": 1493,
       "disclosureURL": null
     },
     {
@@ -1287,6 +1308,13 @@
       "componentName": "appush",
       "aliasOf": null,
       "gvlid": 879,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "aps",
+      "aliasOf": null,
+      "gvlid": 793,
       "disclosureURL": null
     },
     {
@@ -1718,6 +1746,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "clydo",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "codefuel",
       "aliasOf": null,
       "gvlid": null,
@@ -1917,6 +1952,20 @@
       "componentName": "dailymotion",
       "aliasOf": null,
       "gvlid": 573,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "das",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ringieraxelspringer",
+      "aliasOf": "das",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2838,6 +2887,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "performist",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "oveeo",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3345,6 +3408,13 @@
       "componentName": "ybidder",
       "aliasOf": "nexx360",
       "gvlid": 1253,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "netads",
+      "aliasOf": "nexx360",
+      "gvlid": 965,
       "disclosureURL": null
     },
     {
@@ -3933,13 +4003,6 @@
       "componentName": "ra",
       "aliasOf": "richaudience",
       "gvlid": 108,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ringieraxelspringer",
-      "aliasOf": null,
-      "gvlid": null,
       "disclosureURL": null
     },
     {
