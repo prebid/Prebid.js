@@ -117,7 +117,7 @@ describe('aceexBidAdapter', function () {
               w: 300,
               adm: '<div>price=1.23</div>',
               nurl: 'https://win.example.com?c=1.23',
-              adomain: ['test.com']
+              adomain: 'test.com'
             }]
           }]
         }
@@ -132,8 +132,8 @@ describe('aceexBidAdapter', function () {
       expect(b.mediaType).to.equal('banner');
       expect(b.width).to.equal(300);
       expect(b.height).to.equal(250);
-      expect(b.ad).to.include('1.23'); // macro replaced
-      expect(b.meta).to.deep.equal({ advertiserDomains: ['test.com'] });
+      expect(b.ad).to.include('1.23'); 
+      expect(b.meta.advertiserDomains[0]).to.equal('test.com');
     });
 
     it('should interpret video bid as vastXml', function () {

@@ -62,7 +62,7 @@ export const spec = {
           requestId: bid.id,
           ttl: 1200,
           meta: {
-            advertiserDomains: [bid.adomain]
+            advertiserDomains: bid.adomain
           },
         };
 
