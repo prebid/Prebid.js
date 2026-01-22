@@ -117,7 +117,7 @@ describe('aceexBidAdapter', function () {
               w: 300,
               adm: '<div>price=1.23</div>',
               nurl: 'https://win.example.com?c=1.23',
-              adomains: ['test.com']
+              adomain: ['test.com']
             }]
           }]
         }
@@ -157,7 +157,7 @@ describe('aceexBidAdapter', function () {
               w: 640,
               adm: '<VAST version="3.0"></VAST>',
               nurl: 'https://win.example.com?c=5',
-              adomains: ['test.com']
+              adomain: ['test.com']
             }]
           }]
         }
@@ -201,7 +201,7 @@ describe('aceexBidAdapter', function () {
               w: 1,
               adm: nativeAdm,
               nurl: 'https://win.example.com?c=5',
-              adomains: ['test.com']
+              adomain: ['test.com']
             }]
           }]
         }
@@ -233,8 +233,8 @@ describe('aceexBidAdapter', function () {
       const serverResponse = {
         body: {
           seatbid: [
-            { bid: [{ id: 'b1', price: 1, crid: 'c1', dealid: 'd1', h: 250, w: 300, adm: '<div/>', nurl: '', adomains: ['test.com'] }] },
-            { bid: [{ id: 'b2', price: 2, crid: 'c2', dealid: 'd2', h: 360, w: 640, adm: '<VAST/>', nurl: '', adomains: ['test.com'] }] }
+            { bid: [{ id: 'b1', price: 1, crid: 'c1', dealid: 'd1', h: 250, w: 300, adm: '<div/>', nurl: '', adomain: ['test.com'] }] },
+            { bid: [{ id: 'b2', price: 2, crid: 'c2', dealid: 'd2', h: 360, w: 640, adm: '<VAST/>', nurl: '', adomain: ['test.com'] }] }
           ]
         }
       };
