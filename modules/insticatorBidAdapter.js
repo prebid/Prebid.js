@@ -496,8 +496,16 @@ function buildBid(bid, bidderRequest, seatbid) {
     meta.attr = bid.attr;
   }
 
+  // Determine media type using multiple signals
   let mediaType = 'banner';
-  if (bid.adm && bid.adm.includes('<VAST')) {
+
+  // 1. Check ORTB 2.6 mtype first (most reliable)
+  if (bid.mtype === 2) {
+    mediaType = 'video';
+  } else if (bid.mtype === 1) {
+    mediaType = 'banner';
+  // 2. Fall back to content detection (case-insensitive)
+  } else if (bid.adm && bid.adm.toLowerCase().includes('<vast') && !bid.adm.toLowerCase().includes('<script')) {
     mediaType = 'video';
   }
 
@@ -516,7 +524,7 @@ function buildBid(bid, bidderRequest, seatbid) {
     height: bid.h,
     mediaType: mediaType,
     ad: bid.adm,
-    adUnitCode: originalBid.adUnitCode,
+    adUnitCode: originalBid?.adUnitCode,
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
 
@@ -561,8 +569,7 @@ function buildBid(bid, bidderRequest, seatbid) {
 }
 
 function buildBidSet(seatbid, bidderRequest) {
-  return seatbid.bid
-    .map((bid) => buildBid(bid, bidderRequest, seatbid));
+  return seatbid.bid.map((bid) => buildBid(bid, bidderRequest, seatbid));
 }
 
 function validateSize(size) {

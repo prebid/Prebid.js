@@ -1560,6 +1560,119 @@ describe('InsticatorBidAdapter', function () {
         expect(bidResponse.burl).to.equal('https://billing.example.com/win');
         expect(bidResponse.ttl).to.equal(300); // MIN(450, 300) = 300 - bid.exp is upper bound
       });
+
+      // Media Type Detection Tests
+      describe('media type detection', function () {
+        it('should detect video using mtype=2 (ORTB 2.6 standard)', function () {
+          const response = {
+            body: {
+              id: '22edbae2733bf6',
+              seatbid: [{
+                seat: 'dsp-1',
+                bid: [{
+                  impid: 'bid1',
+                  crid: 'crid1',
+                  price: 1.0,
+                  w: 300,
+                  h: 250,
+                  adm: 'some non-vast content',
+                  mtype: 2, // video
+                }]
+              }]
+            }
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('video');
+        });
+
+        it('should detect banner using mtype=1 (ORTB 2.6 standard)', function () {
+          const response = {
+            body: {
+              id: '22edbae2733bf6',
+              seatbid: [{
+                seat: 'dsp-1',
+                bid: [{
+                  impid: 'bid1',
+                  crid: 'crid1',
+                  price: 1.0,
+                  w: 300,
+                  h: 250,
+                  adm: '<VAST version="4.0"></VAST>', // VAST content but mtype says banner
+                  mtype: 1, // banner
+                }]
+              }]
+            }
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('banner');
+        });
+
+        it('should detect video using case-insensitive VAST detection', function () {
+          const response = {
+            body: {
+              id: '22edbae2733bf6',
+              seatbid: [{
+                seat: 'dsp-1',
+                bid: [{
+                  impid: 'bid1',
+                  crid: 'crid1',
+                  price: 1.0,
+                  w: 300,
+                  h: 250,
+                  adm: '<vast version="4.0"><Ad></Ad></vast>', // lowercase vast
+                  // no mtype
+                }]
+              }]
+            }
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('video');
+        });
+
+        it('should default to banner when no video signals present', function () {
+          const response = {
+            body: {
+              id: '22edbae2733bf6',
+              seatbid: [{
+                seat: 'dsp-1',
+                bid: [{
+                  impid: 'bid1',
+                  crid: 'crid1',
+                  price: 1.0,
+                  w: 300,
+                  h: 250,
+                  adm: '<div>banner ad</div>',
+                  // no mtype, no VAST
+                }]
+              }]
+            }
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('banner');
+        });
+
+        it('should detect banner when VAST-like content is inside script tag', function () {
+          const response = {
+            body: {
+              id: '22edbae2733bf6',
+              seatbid: [{
+                seat: 'dsp-1',
+                bid: [{
+                  impid: 'bid1',
+                  crid: 'crid1',
+                  price: 1.0,
+                  w: 300,
+                  h: 250,
+                  adm: '<script>var vast = "<VAST version=4.0></VAST>";</script><div>banner</div>',
+                  // no mtype
+                }]
+              }]
+            }
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('banner');
+        });
+      });
     });
   });
 
