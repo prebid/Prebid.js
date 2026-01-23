@@ -366,6 +366,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         let requests = 1;
         const source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC) ? 's2s'
           : bidRequest.bidderCode;
+
+        // if the bidder has alwaysHasCapacity flag set and forceMaxRequestsPerOrigin is false, don't check capacity
+        if (bidRequest.alwaysHasCapacity && !config.getConfig('forceMaxRequestsPerOrigin')) {
+          return false;
+        }
+
         // if we have no previous info on this source just let them through
         if (sourceInfo[source]) {
           if (sourceInfo[source].SRA === false) {
