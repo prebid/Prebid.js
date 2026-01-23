@@ -57,7 +57,7 @@ const defaultIdentityObject = {
     profile: "profile",
     wsrvcll: true,
   },
-  clientHints: {
+  clientHints: JSON.stringify({
     0: '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
     1: "?0",
     2: '"macOS"',
@@ -66,7 +66,7 @@ const defaultIdentityObject = {
     6: '"15.6.1"',
     7: "?0",
     8: '"Chromium";v="142.0.7444.60", "Google Chrome";v="142.0.7444.60", "Not_A Brand";v="99.0.0.0"',
-  },
+  }),
 };
 const regionCases = [
   {
@@ -368,28 +368,6 @@ describe("IntentIQ tests all", function () {
     expect(payloadDecoded.pos).to.equal(winPos);
   });
 
-  // it("should send report to report-gdpr address if gdpr is detected", function () {
-  //   const gppStub = sinon
-  //     .stub(gppDataHandler, "getConsentData")
-  //     .returns({ gppString: '{"key1":"value1","key2":"value2"}' });
-  //   const uspStub = sinon
-  //     .stub(uspDataHandler, "getConsentData")
-  //     .returns("1NYN");
-  //   const gdprStub = sinon
-  //     .stub(gdprDataHandler, "getConsentData")
-  //     .returns({ consentString: "gdprConsent" });
-
-  //   events.emit(EVENTS.BID_WON, getWonRequest());
-
-  //   expect(server.requests.length).to.be.above(0);
-  //   const request = server.requests[0];
-
-  //   expect(request.url).to.contain(REPORT_ENDPOINT_GDPR);
-  //   gppStub.restore();
-  //   uspStub.restore();
-  //   gdprStub.restore();
-  // });
-
   it("should initialize with default configurations", function () {
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized).to.be
       .false;
@@ -430,7 +408,7 @@ describe("IntentIQ tests all", function () {
     const payload = encodeURIComponent(JSON.stringify([base64String]));
     const expectedUrl = appendVrrefAndFui(
       REPORT_ENDPOINT +
-        `?pid=${partner}&mct=1&iiqid=${defaultIdentityObject.firstPartyData.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&uh=&gdpr=0&spd=${expectedSpdEncoded}`,
+      `?pid=${partner}&mct=1&iiqid=${defaultIdentityObject.firstPartyData.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&uh=${encodeURIComponent(window[identityName].clientHints)}&gdpr=0&spd=${expectedSpdEncoded}`,
       iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
     const urlWithPayload = expectedUrl + `&payload=${payload}`;
