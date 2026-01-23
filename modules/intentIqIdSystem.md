@@ -56,7 +56,7 @@ Please find below list of parameters that could be used in configuring Intent IQ
 | params. ABTestingConfigurationSource| Optional | String | Determines how AB group will be defined. Possible values: `"IIQServer"` – group defined by IIQ server, `"percentage"` – generated group based on abPercentage, `"group"` – define group based on value provided by partner. | `IIQServer` |
 | params.abPercentage | Optional | Number | Percentage for A/B testing group. Default value is `95` | `95` |
 | params.group | Optional | String | Define group provided by partner, possible values: `"A"`, `"B"` | `"A"` |
-| region  | Optional | String | Optional region identifier used to automatically build server endpoints. When specified, region-specific endpoints will be used. (`gdpr`,`emea`, `apac`) | `"gdpr"` |
+| params.region  | Optional | String | Optional region identifier used to automatically build server endpoints. When specified, region-specific endpoints will be used. (`gdpr`,`emea`, `apac`) | `"gdpr"` |
 | params.additionalParams | Optional | Array | This parameter allows sending additional custom key-value parameters with specific destination logic (sync, VR, winreport). Each custom parameter is defined as an object in the array. | `[ { parameterName: “abc”, parameterValue: 123, destination: [1,1,0] } ]` |
 | params.additionalParams [0].parameterName | Required | String | Name of the custom parameter. This will be sent as a query parameter. | `"abc"` |
 | params.additionalParams [0].parameterValue | Required | String / Number | Value to assign to the parameter. | `123` |
