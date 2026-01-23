@@ -920,19 +920,6 @@ describe('IntentIQ tests', function () {
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
     });
 
-    // it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', async function() {
-    //   const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
-    //   mockConsentHandlers(uspData, gppData, gdprData);
-    //   const callBackSpy = sinon.spy();
-    //   const submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
-
-    //   submoduleCallback(callBackSpy);
-    //   await waitForClientHints();
-    //   const request = server.requests[0];
-
-    //   expect(request.url).to.contain(ENDPOINT_GDPR);
-    // });
-
     it('should make request to correct address with iiqServerAddress parameter', async function() {
       const customParams = {
         params: {
