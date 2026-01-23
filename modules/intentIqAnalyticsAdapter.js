@@ -157,7 +157,7 @@ function receivePartnerData() {
       return false
     }
     iiqAnalyticsAnalyticsAdapter.initOptions.fpid = FPD
-    const { partnerData, clientsHints = '', actualABGroup } = window[identityGlobalName]
+    const { partnerData, clientHints = '', actualABGroup } = window[identityGlobalName]
 
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.dataIdsInitialized = true;
@@ -174,7 +174,7 @@ function receivePartnerData() {
     if (actualABGroup) {
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = actualABGroup;
     }
-    iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints;
+    iiqAnalyticsAnalyticsAdapter.initOptions.clientHints = clientHints;
   } catch (e) {
     logError(e);
     return false;
@@ -445,12 +445,11 @@ function constructFullUrl(data) {
         '&source=' +
         PREBID +
         '&uh=' +
-        encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints) +
+        encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.clientHints) +
         (cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
         (cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
         (cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1' : '&gdpr=0');
   url = appendSPData(url, partnerData);
-  url = appendSPData(url, iiqAnalyticsAnalyticsAdapter.initOptions.fpid);
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
 
   if (reportMethod === 'POST') {

@@ -45,11 +45,8 @@ pbjs.enableAnalytics({
     provider: 'iiqAnalytics',
     options: {
         partner: 1177538,
-        manualWinReportEnabled: false,
-        reportMethod: "GET",
-        adUnitConfig: 1,
+        ABTestingConfigurationSource: 'IIQServer',
         domainName: "currentDomain.com",
-        gamPredictReporting: false
     }
 });
 ```

@@ -72,6 +72,7 @@ pbjs.setConfig({
                 partner: 123456,     // valid partner id
                 timeoutInMillis: 500,
                 browserBlackList: "chrome",
+                ABTestingConfigurationSource: 'IIQServer',
                 callback: (data) => {...}, // your logic here
                 groupChanged: (group) => console.log('Group is', group),
                 domainName: "currentDomain.com",
