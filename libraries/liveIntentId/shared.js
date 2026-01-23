@@ -1,6 +1,7 @@
 import {UID1_EIDS} from '../uid1Eids/uid1Eids.js';
 import {UID2_EIDS} from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
+import { coppaDataHandler } from '../../src/adapterManager.js';
 import { isNumber } from '../../src/utils.js'
 
 export const PRIMARY_IDS = ['libp'];
@@ -13,8 +14,15 @@ export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true };
 export const DEFAULT_TREATMENT_RATE = 0.95;
 
 export function parseRequestedAttributes(overrides) {
+  function renameAttribute(attribute) {
+    if (attribute === 'fpid') {
+      return 'idCookie';
+    } else {
+      return attribute;
+    };
+  }
   function createParameterArray(config) {
-    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
+    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [renameAttribute(k)] : []);
   }
   if (typeof overrides === 'object') {
     return createParameterArray({...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides});
@@ -109,6 +117,14 @@ function composeIdObject(value) {
 
   if (value.sovrn) {
     result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.idCookie) {
+    if (!coppaDataHandler.getCoppa()) {
+      result.lipb = { ...result.lipb, fpid: value.idCookie };
+      result.fpid = { 'id': value.idCookie };
+    }
+    delete result.lipb.idCookie;
   }
 
   if (value.thetradedesk) {

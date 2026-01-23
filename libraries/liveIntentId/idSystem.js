@@ -88,6 +88,7 @@ function initializeLiveConnect(configParams) {
   }
 
   configParams = configParams || {};
+  const fpidConfig = configParams.fpid || {};
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
@@ -118,6 +119,10 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
+
+  liveConnectConfig.idCookie = {};
+  liveConnectConfig.idCookie.name = fpidConfig.name;
+  liveConnectConfig.idCookie.strategy = fpidConfig.strategy == 'html5' ? 'localStorage' : fpidConfig.strategy;
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
