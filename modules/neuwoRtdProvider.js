@@ -298,7 +298,7 @@ export function getBidRequestData(
         },
         isV2Api ? JSON.stringify(iabFilterConfig) : null,
         isV2Api
-          ? { method: "POST", contentType: "application/json" }
+          ? { method: "POST", contentType: "text/plain" }
           : undefined
       );
     });
