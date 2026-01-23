@@ -1,21 +1,22 @@
 import {expect} from 'chai';
 import {
-  getGPTSlotsForAdUnits,
   filters,
+  getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
   sortByDealAndPriceBucketOrCpm,
   targeting as targetingInstance
 } from 'src/targeting.js';
 import {config} from 'src/config.js';
 import {createBidReceived} from 'test/fixtures/fixtures.js';
-import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
+import {DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS} from 'src/constants.js';
 import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
-import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
+import {hook, setupBeforeHookFnOnce} from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 import {getGlobal} from '../../../../src/prebidGlobal.js';
+import { getAdUnitBidLimitMap } from '../../../../src/targeting.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -425,6 +426,28 @@ describe('targeting tests', function () {
       });
     });
 
+    function expectHbVersion(expectation) {
+      const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1']);
+      Object.values(targeting).forEach(tgMap => expectation(tgMap['hb_ver']));
+    }
+
+    it('will include hb_ver by default', () => {
+      expectHbVersion(version => {
+        expect(version).to.exist;
+      })
+    })
+
+    it('will include hb_ver based on puc.version config', () => {
+      config.setConfig({
+        targetingControls: {
+          version: 'custom-version'
+        }
+      })
+      expectHbVersion(version => {
+        expect(version).to.eql('custom-version');
+      })
+    })
+
     it('will enforce a limit on the number of auction keys when auctionKeyMaxChars setting is active', function () {
       config.setConfig({
         targetingControls: {
@@ -452,6 +475,17 @@ describe('targeting tests', function () {
       expect(logWarnStub.calledTwice).to.be.true;
       expect(logErrorStub.calledOnce).to.be.true;
     });
+
+    it('will not filter hb_ver if any other targeting is set', () => {
+      config.setConfig({
+        targetingControls: {
+          auctionKeyMaxChars: 150
+        }
+      })
+      const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1']);
+      expect(targeting['/123456/header-bid-tag-1']).to.deep.equal({});
+      expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_ver');
+    })
 
     it('does not include adunit targeting for ad units that are not requested', () => {
       sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
@@ -513,6 +547,12 @@ describe('targeting tests', function () {
       });
 
       it('selects the top n number of bids when enableSendAllBids is true and and bitLimit is set', function () {
+        let getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+          {
+            code: '/123456/header-bid-tag-0',
+          },
+        ]));
+
         config.setConfig({
           sendBidsControl: {
             bidLimit: 1
@@ -520,8 +560,9 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
+        getAdUnitsStub.restore();
         expect(limitedBids.length).to.equal(1);
       });
 
@@ -533,7 +574,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
 
         expect(limitedBids.length).to.equal(2);
       });
@@ -546,11 +587,52 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        const limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
+
+        expect(limitedBids.length).to.equal(2);
+      });
+
+      it('getHighestCpmBidsFromBidPool calculates bids limit properly when bidLimit is a map', function () {
+        const bidLimit = {
+          'adunit1': 2
+        };
+        const bids = [
+          { ...bid1, bidderCode: 'rubicon', adUnitCode: 'adunit1' },
+          { ...bid2, bidderCode: 'appnexus', adUnitCode: 'adunit1' },
+          { ...bid3, bidderCode: 'dgads', adUnitCode: 'adunit1' },
+        ];
+
+        const limitedBids = getHighestCpmBidsFromBidPool(bids, getHighestCpm, bidLimit);
 
         expect(limitedBids.length).to.equal(2);
       });
     });
+
+    it('getAdUnitBidLimitMap returns correct map of adUnitCode to bidLimit', function() {
+      enableSendAllBids = true;
+      let getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+        {
+          code: 'adunit1',
+          bidLimit: 2
+        },
+        {
+          code: 'adunit2',
+          bidLimit: 5
+        },
+        {
+          code: 'adunit3'
+        }
+      ]));
+
+      const adUnitBidLimitMap = getAdUnitBidLimitMap(['adunit1', 'adunit2', 'adunit3'], 0);
+
+      expect(adUnitBidLimitMap).to.deep.equal({
+        'adunit1': 2,
+        'adunit2': 5,
+        'adunit3': undefined
+      });
+      getAdUnitsStub.restore();
+    })
 
     describe('targetingControls.allowZeroCpmBids', function () {
       let bid4;
@@ -775,13 +857,14 @@ describe('targeting tests', function () {
 
         // Rubicon wins bid and has deal, but alwaysIncludeDeals is false, so only top bid plus deal_id
         // appnexus does not get sent since alwaysIncludeDeals is not defined
-        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+        sinon.assert.match(targeting['/123456/header-bid-tag-0'], {
           'hb_deal_rubicon': '1234',
           'hb_deal': '1234',
           'hb_pb': '0.53',
           'hb_adid': '148018fe5e',
           'hb_bidder': 'rubicon',
-          'foobar': '300x250'
+          'foobar': '300x250',
+          'hb_deal_appnexus': sinon.match(val => typeof val === 'undefined'),
         });
       });
 
@@ -796,13 +879,14 @@ describe('targeting tests', function () {
 
         // Rubicon wins bid and has deal, but alwaysIncludeDeals is false, so only top bid plus deal_id
         // appnexus does not get sent since alwaysIncludeDeals is false
-        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+        sinon.assert.match(targeting['/123456/header-bid-tag-0'], {
           'hb_deal_rubicon': '1234', // This is just how it works before this PR, always added no matter what for winner if they have deal
           'hb_deal': '1234',
           'hb_pb': '0.53',
           'hb_adid': '148018fe5e',
           'hb_bidder': 'rubicon',
-          'foobar': '300x250'
+          'foobar': '300x250',
+          'hb_deal_appnexus': sinon.match(val => typeof val === 'undefined')
         });
       });
 
@@ -816,7 +900,7 @@ describe('targeting tests', function () {
 
         // Rubicon wins bid and has a deal, so all KVPs for them are passed (top plus bidder specific)
         // Appnexus had deal so passed through
-        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+        sinon.assert.match(targeting['/123456/header-bid-tag-0'], {
           'hb_deal_rubicon': '1234',
           'hb_deal': '1234',
           'hb_pb': '0.53',
@@ -856,7 +940,7 @@ describe('targeting tests', function () {
         // Pubmatic wins but no deal. So only top bid KVPs for them is sent
         // Rubicon has a dealId so passed through
         // Appnexus has a dealId so passed through
-        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+        sinon.assert.match(targeting['/123456/header-bid-tag-0'], {
           'hb_bidder': 'pubmatic',
           'hb_adid': '111111',
           'hb_pb': '3.0',
@@ -902,7 +986,7 @@ describe('targeting tests', function () {
 
         // Pubmatic wins but no deal. But enableSendAllBids is true.
         // So Pubmatic is passed through
-        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+        sinon.assert.match(targeting['/123456/header-bid-tag-0'], {
           'hb_bidder': 'pubmatic',
           'hb_adid': '111111',
           'hb_pb': '3.0',
@@ -1004,7 +1088,7 @@ describe('targeting tests', function () {
       // we should only get the targeting data for the one requested adunit
       expect(Object.keys(targeting).length).to.equal(1);
 
-      const sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+      const sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') !== -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
 

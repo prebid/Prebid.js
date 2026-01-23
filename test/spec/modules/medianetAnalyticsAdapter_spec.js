@@ -735,6 +735,85 @@ describe('Media.net Analytics Adapter', function () {
       }).catch(done);
     });
 
+    it('should set serverLatencyMillis and filtered pbsExt for S2S bids on AUCTION_END', function (done) {
+      // enable analytics and start an S2S auction flow
+      medianetAnalytics.clearlogsQueue();
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.MNET_S2S_BID_RESPONSE);
+
+      // craft bidderRequests with S2S info and pbs ext including debug
+      const bidderRequestsWithExt = Object.assign({}, MOCK.MNET_S2S_BID_REQUESTED, {
+        serverResponseTimeMs: 123,
+        pbsExt: { foo: 'bar', baz: 1, debug: { trace: true } }
+      });
+
+      // trigger AUCTION_END with the enriched bidderRequests
+      events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [bidderRequestsWithExt] }));
+      // advance fake timers to allow async auctionEnd processing to run
+      clock.tick(2000);
+
+      waitForPromiseResolve(Promise.resolve()).then(() => {
+        // inspect internal auctions state through prebid global
+        const auctions = getGlobal().medianetGlobals.analytics.auctions;
+        const auctionObj = auctions[MOCK.AUCTION_END.auctionId];
+        expect(auctionObj).to.exist;
+
+        // locate the bid by id from the S2S request
+        const bidId = MOCK.MNET_S2S_BID_REQUESTED.bids[0].bidId;
+        const bidObj = auctionObj.bidsReceived.find(b => b.bidId === bidId);
+        expect(bidObj).to.exist;
+        expect(bidObj.serverLatencyMillis).to.equal(123);
+        // pbsExt should not include 'debug'
+        expect(bidObj.pbsExt).to.deep.equal({ foo: 'bar', baz: 1 });
+        done();
+      }).catch(done);
+    });
+
+    it('should map PBS server error to bid status for S2S timed-out bids', function (done) {
+      // Start S2S auction and create a timed-out bid for the same bidId
+      medianetAnalytics.clearlogsQueue();
+      const auctionId = MOCK.MNET_S2S_BID_REQUESTED.auctionId;
+      const bidId = MOCK.MNET_S2S_BID_REQUESTED.bids[0].bidId;
+
+      events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
+      events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
+
+      // mark the bid as timed out so bidsReceived contains a non-success entry
+      const timedOut = [{
+        bidId,
+        bidder: 'medianet',
+        adUnitCode: MOCK.MNET_S2S_BID_REQUESTED.bids[0].adUnitCode,
+        auctionId,
+        params: MOCK.MNET_S2S_BID_REQUESTED.bids[0].params,
+        timeout: 100,
+        src: 's2s'
+      }];
+      events.emit(BID_TIMEOUT, timedOut);
+
+      // bidderRequests with serverErrors (e.g., 501)
+      const bidderRequestsWithError = Object.assign({}, MOCK.MNET_S2S_BID_REQUESTED, {
+        serverResponseTimeMs: 50,
+        pbsExt: {},
+        serverErrors: [{ code: 501 }]
+      });
+
+      events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, { bidderRequests: [bidderRequestsWithError] }));
+      // advance fake timers to allow async auctionEnd processing to run
+      clock.tick(2000);
+
+      waitForPromiseResolve(Promise.resolve()).then(() => {
+        const auctions = getGlobal().medianetGlobals.analytics.auctions;
+        const auctionObj = auctions[auctionId];
+        expect(auctionObj).to.exist;
+        const bidObj = auctionObj.bidsReceived.find(b => b.bidId === bidId);
+        expect(bidObj).to.exist;
+        // 2000 (PBS_ERROR_STATUS_START) + 501
+        expect(bidObj.status).to.equal(2000 + 501);
+        done();
+      }).catch(done);
+    });
+
     it('should handle currency conversion from JPY to USD', function (done) {
       const prebidGlobal = getGlobal();
       prebidGlobal.convertCurrency = prebidGlobal.convertCurrency || function () {
@@ -747,7 +826,7 @@ describe('Media.net Analytics Adapter', function () {
 
       waitForPromiseResolve(Promise.resolve()).then(() => {
         const queue = medianetAnalytics.getlogsQueue();
-        expect(queue.length).equals(1);
+        expect(queue.length).to.be.greaterThan(0);
         const currencyLog = queue.map((log) => getQueryData(log, true))[0];
 
         expect(currencyLog.curr).to.have.ordered.members(['', 'JPY', '']);

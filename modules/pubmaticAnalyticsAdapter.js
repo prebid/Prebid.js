@@ -1,4 +1,4 @@
-import { isArray, logError, logWarn, pick } from '../src/utils.js';
+import { isArray, logError, logWarn, pick, isFn } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { BID_STATUS, STATUS, REJECTION_REASON } from '../src/constants.js';
@@ -93,7 +93,8 @@ function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
   return ajax(url, null, body, { method });
 };
 
-function copyRequiredBidDetails(bid) {
+function copyRequiredBidDetails(bid, bidRequest) {
+  // First check if bid has mediaTypes/sizes, otherwise fallback to bidRequest
   return pick(bid, [
     'bidder',
     'bidderCode',
@@ -191,11 +192,12 @@ function isOWPubmaticBid(adapterName) {
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
       return true;
     }
+    return false;
   })
 }
 
 function getAdUnit(adUnits, adUnitId) {
-  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
+  return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID === adUnitId) || (adUnit.code === adUnitId))[0];
 }
 
 function getTgId() {
@@ -231,6 +233,7 @@ function getFeatureLevelDetails(auctionCache) {
 
 function getListOfIdentityPartners() {
   const namespace = getGlobal();
+  if (!isFn(namespace.getUserIds)) return;
   const publisherProvidedEids = namespace.getConfig("ortb2.user.eids") || [];
   const availableUserIds = namespace.getUserIds() || {};
   const identityModules = namespace.getConfig('userSync')?.userIds || [];
@@ -423,6 +426,15 @@ const eventHandlers = {
     if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
       if (bid.params) {
         args.params = bid.params;
+      }
+      if (bid.adUnit) {
+        // Specifically check for mediaTypes and dimensions
+        if (!args.mediaTypes && bid.adUnit.mediaTypes) {
+          args.mediaTypes = bid.adUnit.mediaTypes;
+        }
+        if (!args.sizes && bid.adUnit.dimensions) {
+          args.sizes = bid.adUnit.dimensions;
+        }
       }
       bid = copyRequiredBidDetails(args);
       cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);

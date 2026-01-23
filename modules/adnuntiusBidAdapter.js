@@ -1,8 +1,17 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, isArray, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {
+  convertObjectToArray,
+  deepAccess,
+  deepClone,
+  getUnixTimestampFromNow,
+  getWinDimensions,
+  isArray,
+  isEmpty,
+  isStr
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -218,6 +227,7 @@ const targetingTool = (function() {
           segments.push(...userdat.segment.map((segment) => {
             if (isStr(segment)) return segment;
             if (isStr(segment.id)) return segment.id;
+            return undefined;
           }).filter((seg) => !!seg));
         }
       });
@@ -292,10 +302,6 @@ export const spec = {
       const flag = gdprApplies ? '1' : '0'
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
-    }
-    const win = getWindowTop() || window;
-    if (win.screen && win.screen.availHeight) {
-      queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
     }
 
     const { innerWidth, innerHeight } = getWinDimensions();

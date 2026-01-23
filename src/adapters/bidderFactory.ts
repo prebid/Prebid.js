@@ -157,6 +157,7 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
     uspConsent: null | ConsentData[typeof CONSENT_USP],
     gppConsent: null | ConsentData[typeof CONSENT_GPP]
   ) => ({ type: SyncType, url: string })[];
+  alwaysHasCapacity?: boolean;
 }
 
 export type BidAdapter = {
@@ -571,7 +572,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
 
         if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
-            const url = new URL(request.url, window.location.origin);
+            const url = new URL(request.url);
             if (!url.searchParams.has('gzip')) {
               url.searchParams.set('gzip', '1');
             }

@@ -44,6 +44,7 @@ export class Uid2ApiClient {
   ResponseToRefreshResult(response) {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
+      if (response.status === 'optout') { return { status: response.status, identity: 'optout' }; }
       return response;
     } else { return prependMessage(`Response didn't contain a valid status`); }
   }
@@ -770,12 +771,6 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
       }).catch((e) => { logError('error refreshing token: ', e); });
     } };
   }
-  // If should refresh (but don't need to), refresh in the background.
-  if (Date.now() > newestAvailableToken.refresh_from) {
-    logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn)
-      .catch((e) => { logError('error refreshing token in background: ', e); });
-  }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
@@ -784,6 +779,23 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     tokens.originalIdentity = storedTokens?.originalIdentity;
   }
   storageManager.storeValue(tokens);
+
+  // If should refresh (but don't need to), refresh in the background.
+  // Return both immediate id and callback so idObj gets updated when refresh completes.
+  if (Date.now() > newestAvailableToken.refresh_from) {
+    logInfo(`Refreshing token in background with low priority.`);
+    const refreshPromise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    return {
+      id: tokens,
+      callback: (cb) => {
+        refreshPromise.then((refreshedTokens) => {
+          logInfo('Background token refresh completed, updating ID.', refreshedTokens);
+          cb(refreshedTokens);
+        }).catch((e) => { logError('error refreshing token in background: ', e); });
+      }
+    };
+  }
+
   return { id: tokens };
 }
 

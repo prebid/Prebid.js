@@ -89,8 +89,8 @@ describe('advangelistsBidAdapter', function () {
         bidRequests.forEach(bid => {
           const _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER);
           advangelistsbidreq.bids[bid.bidId] = {mediaTypes: _mediaTypes,
-            w: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][0] : bid.mediaTypes[_mediaTypes].playerSize[0],
-            h: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
+            w: _mediaTypes === BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][0] : bid.mediaTypes[_mediaTypes].playerSize[0],
+            h: _mediaTypes === BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
 
           };
         });
