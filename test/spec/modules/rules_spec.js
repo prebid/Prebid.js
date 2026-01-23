@@ -162,9 +162,57 @@ describe('Rules Module', function() {
         expect(isActivityAllowed(activity, bidder1Params)).to.be.false;
         expect(isActivityAllowed(activity, bidder2Params)).to.be.true;
       });
+
+      it(`should include only bidder when it matches bidders list for ${stage} stage`, function() {
+        const rulesJson = {
+          enabled: true,
+          timestamp: '1234567890',
+          ruleSets: [{
+            name: 'testRuleSet',
+            stage: stage,
+            version: '1.0',
+            modelGroups: [{
+              weight: 100,
+              selected: true,
+              analyticsKey: 'testAnalyticsKey',
+              schema: [{ function: 'adUnitCode', args: [] }],
+              rules: [{
+                conditions: ['adUnit-0000'],
+                results: [{
+                  function: 'includeBidders',
+                  args: [{
+                    bidders: ['bidder1'],
+                    analyticsValue: 'included'
+                  }]
+                }]
+              }]
+            }]
+          }]
+        };
+
+        sandbox.stub(Math, 'random').returns(0.5);
+
+        const bidder1Params = activityParams(MODULE_TYPE_BIDDER, 'bidder1', {
+          adUnit: { code: 'adUnit-0000' },
+          auctionId: 'test-auction-id'
+        });
+
+        const bidder2Params = activityParams(MODULE_TYPE_BIDDER, 'bidder2', {
+          adUnit: { code: 'adUnit-0000' },
+          auctionId: 'test-auction-id'
+        });
+
+        expect(isActivityAllowed(activity, bidder1Params)).to.be.true;
+        expect(isActivityAllowed(activity, bidder2Params)).to.be.true;
+
+        rulesModule.evaluateConfig(rulesJson, 'test-auction-id');
+
+        expect(isActivityAllowed(activity, bidder1Params)).to.be.true;
+        expect(isActivityAllowed(activity, bidder2Params)).to.be.false;
+      });
     });
 
-    it('should execute default rules when provided', function() {
+    it('should execute default rules when provided and no rules match', function() {
       const setLabelsStub = sandbox.stub(analyticsAdapter, 'setLabels');
       const rulesJson = {
         enabled: true,
@@ -177,13 +225,16 @@ describe('Rules Module', function() {
             weight: 100,
             selected: true,
             analyticsKey: 'testAnalyticsKey',
-            schema: [],
+            schema: [{
+              function: 'percent',
+              args: [5]
+            }],
             default: [{
               function: 'logAtag',
               args: { analyticsValue: 'default-allow' }
             }],
             rules: [{
-              conditions: ['*'],
+              conditions: ['true'],
               results: [{
                 function: 'excludeBidders',
                 args: [{
@@ -199,6 +250,12 @@ describe('Rules Module', function() {
       sandbox.stub(Math, 'random').returns(0.5);
       const auctionId = 'test-auction-id';
       rulesModule.evaluateConfig(rulesJson, auctionId);
+
+      const bidder1Params = activityParams(MODULE_TYPE_BIDDER, 'bidder1', {
+        auctionId
+      });
+
+      expect(isActivityAllowed(ACTIVITY_FETCH_BIDS, bidder1Params)).to.be.true;
 
       expect(setLabelsStub.calledWith({ [auctionId + '-testAnalyticsKey']: 'default-allow' })).to.be.true;
 

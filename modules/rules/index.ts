@@ -12,6 +12,143 @@ import { getHook } from "../../src/hook.ts";
 import { generateUUID, logError, logInfo, logWarn } from "../../src/utils.ts";
 import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
+/**
+ * Configuration interface for the shaping rules module.
+ */
+interface ShapingRulesConfig {
+  /**
+   * Endpoint configuration for fetching rules from a remote server.
+   * If not provided, rules must be provided statically via the `rules` property.
+   */
+  endpoint?: {
+    /** URL endpoint to fetch rules configuration from */
+    url: string;
+    /** HTTP method to use for fetching rules (currently only 'GET' is supported) */
+    method: string;
+  };
+  /**
+   * Static rules configuration object.
+   * If provided, rules will be used directly without fetching from endpoint.
+   * Takes precedence over endpoint configuration.
+   */
+  rules?: RulesConfig;
+  /**
+   * Delay in milliseconds to wait for rules to be fetched before starting the auction.
+   * If rules are not loaded within this delay, the auction will proceed anyway.
+   * Default: 0 (no delay)
+   */
+  auctionDelay?: number;
+  /**
+   * Custom schema evaluator functions to extend the default set of evaluators.
+   * Keys are function names, values are evaluator functions that take args and context,
+   * and return a function that evaluates to a value when called.
+   */
+  extraSchemaEvaluators?: {
+    [key: string]: (args: any[], context: any) => () => any;
+  };
+}
+
+/**
+ * Schema function definition used to compute values.
+ */
+interface ModelGroupSchema {
+  /** Function name inside the schema */
+  function: string;
+  /** Arguments for the schema function */
+  args: any[];
+}
+
+/**
+ * Model group configuration for A/B testing with different rule configurations.
+ * Only one object within the group is chosen based on weight.
+ */
+interface ModelGroup {
+  /** Determines selection probability; only one object within the group is chosen */
+  weight: number;
+  /** Indicates whether this model group is selected (set automatically based on weight) */
+  selected: boolean;
+  /** Optional key used to produce aTags, identifying experiments or optimization targets */
+  analyticsKey: string;
+  /** Version identifier for analytics */
+  version: string;
+  /**
+   * Optional array of functions used to compute values.
+   * Without it, only the default rule is applied.
+   */
+  schema: ModelGroupSchema[];
+  /**
+   * Optional rule array; if absent, only the default rule is used.
+   * Each rule has conditions that must be met and results that are triggered.
+   */
+  rules: [{
+    /** Conditions that must be met for the rule to apply */
+    condition: string[];
+    /** Resulting actions triggered when conditions are met */
+    results: [
+      {
+        /** Function defining the result action */
+        function: string;
+        /** Arguments for the result function */
+        args: any[];
+      }
+    ];
+  }];
+  /**
+   * Default results object used if errors occur or when no schema or rules are defined.
+   * Exists outside the rules array for structural clarity.
+   */
+  default?: Array<{
+    /** Function defining the default result action */
+    function: string;
+    /** Arguments for the default result function */
+    args: any;
+  }>;
+}
+
+/**
+ * Independent set of rules that can be applied to a specific stage of the auction.
+ */
+interface RuleSet {
+  /** Human-readable name of the ruleset */
+  name: string;
+  /**
+   * Indicates which module stage the ruleset applies to.
+   * Can be either `processed-auction-request` or `processed-auction`
+   */
+  stage: string;
+  /** Version identifier for the ruleset */
+  version: string;
+  /**
+   * Optional timestamp of the last update (ISO 8601 format: `YYYY-MM-DDThh:mm:ss[.sss][Z or ±hh:mm]`)
+   */
+  timestamp?: string;
+  /**
+   * One or more model groups for A/B testing with different rule configurations.
+   * Allows A/B testing with different rule configurations.
+   */
+  modelGroups: ModelGroup[];
+}
+
+/**
+ * Main configuration object for the shaping rules module.
+ */
+interface RulesConfig {
+  /** Version identifier for the rules configuration */
+  version: string;
+  /** One or more independent sets of rules */
+  ruleSets: RuleSet[];
+  /** Optional timestamp of the last update (ISO 8601 format: `YYYY-MM-DDThh:mm:ss[.sss][Z or ±hh:mm]`) */
+  timestamp: string;
+  /** Enables or disables the module. Default: `true` */
+  enabled: boolean;
+}
+
+declare module '../../src/config' {
+  interface Config {
+    shapingRules?: ShapingRulesConfig;
+  }
+}
+
 const MODULE_NAME = 'shapingRules';
 
 const globalRandomStore = new WeakMap<{ auctionId: string }, number>();
@@ -51,60 +188,6 @@ let rulesLoaded = false;
 const delayedAuctions = timeoutQueue();
 
 let rulesConfig: RulesConfig = null;
-
-interface ShapingRulesConfig {
-  endpoint?: {
-    url: string;
-    method: string;
-  };
-  rules?: RulesConfig;
-  auctionDelay?: number;
-  extraSchemaEvaluators?: {
-    [key: string]: (args: any[], context: any) => () => any;
-  };
-}
-
-interface ModelGroupSchema {
-  function: string;
-  args: any[];
-}
-
-interface ModelGroup {
-  weight: number;
-  selected: boolean;
-  analyticsKey: string;
-  version: string;
-  schema: ModelGroupSchema[];
-  rules: [{
-    condition: string[];
-    results: [
-      { args: any[]; function: string }
-    ];
-  }];
-  default?: Array<{
-    function: string;
-    args: any;
-  }>;
-}
-interface RuleSet {
-  name: string;
-  stage: string;
-  version: string;
-  modelGroups: ModelGroup[];
-}
-
-interface RulesConfig {
-  version: string;
-  ruleSets: RuleSet[];
-  timestamp: string;
-  enabled: boolean;
-}
-
-declare module '../../src/config' {
-  interface Config {
-    shapingRules?: ShapingRulesConfig;
-  }
-}
 
 export function evaluateConfig(config: RulesConfig, auctionId: string) {
   if (!config || !config.ruleSets) {
@@ -157,27 +240,16 @@ export function assignModelGroups(rulesets: RuleSet[]) {
   }
 }
 
-function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, defaultRules?) {
-  if (defaultRules) {
-    for (const result of defaultRules) {
-      const registerResult = evaluateFunction(result.function, result.args || [], [], [], stage, analyticsKey, auctionId);
-      if (!registerResult) {
-        logError(`${MODULE_NAME}: Unknown result function ${result.function}`);
-        continue;
-      }
-      registerResult();
-    }
-  }
-  for (const rule of rules) {
-    for (const result of rule.results) {
-      const registerResult = evaluateFunction(result.function, result.args || [], schema, rule.conditions, stage, analyticsKey, auctionId);
-      if (!registerResult) {
-        logError(`${MODULE_NAME}: Unknown result function ${result.function}`);
-        continue;
-      }
-      registerResult();
-    }
-  }
+function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, defaultResults?) {
+  const modelGroupConfig = auctionConfigStore.get(auctionId) || [];
+  modelGroupConfig.push({
+    rules,
+    schema,
+    stage,
+    analyticsKey,
+    defaultResults,
+  });
+  auctionConfigStore.set(auctionId, modelGroupConfig);
 }
 
 const schemaEvaluators = {
@@ -268,27 +340,6 @@ export function evaluateSchema(func, args, context) {
   return () => null;
 }
 
-function evaluateFunction(func, args, schema, conditions, stage, analyticsKey, auctionId) {
-  switch (func) {
-    case 'excludeBidders':
-    case 'includeBidders':
-      return () => {
-        const existing = auctionConfigStore.get(auctionId) || [];
-        auctionConfigStore.set(auctionId, [
-          ...existing,
-          {func, args, schema, conditions, stage}
-        ]);
-      }
-    case 'logAtag':
-      return () => {
-        // @todo: is that enough?
-        setLabels({ [auctionId + '-' + analyticsKey]: args.analyticsValue });
-      }
-    default:
-      return () => null;
-  }
-}
-
 function evaluateCondition(condition, func) {
   switch (condition) {
     case '*':
@@ -339,33 +390,47 @@ export function registerActivities() {
         if (!auctionId) return;
 
         const checkConditions = ({schema, conditions, stage}) => {
-          if (stages[activity] !== stage) {
-            return false;
-          }
-
           for (const [index, schemaEntry] of schema.entries()) {
             const schemaFunction = evaluateSchema(schemaEntry.function, schemaEntry.args || [], params);
-            if (!evaluateCondition(conditions[index], schemaFunction)) {
-              return false;
+            if (evaluateCondition(conditions[index], schemaFunction)) {
+              return true;
             }
           }
-          return true;
+          return false;
         }
 
-        let rules = auctionConfigStore.get(auctionId) || [];
-        // filtering rules by conditions
-        rules = rules.filter(rule => checkConditions(rule));
-        if (!rules.length) {
-          return;
+        const results = [];
+        let modelGroups = auctionConfigStore.get(auctionId) || [];
+        modelGroups = modelGroups.filter(modelGroup => modelGroup.stage === stages[activity]);
+
+        // evaluate applicable results for each model group
+        for (const modelGroup of modelGroups) {
+          // find first rule that matches conditions
+          const selectedRule = modelGroup.rules.find(rule => checkConditions({...rule, schema: modelGroup.schema}));
+          if (selectedRule) {
+            results.push(...selectedRule.results);
+          } else if (Array.isArray(modelGroup.defaultResults)) {
+            const defaults = modelGroup.defaultResults.map(result => ({...result, analyticsKey: modelGroup.analyticsKey}));
+            results.push(...defaults);
+          }
         }
+
+        // set analytics labels for logAtag results
+        results
+          .filter(result => result.function === 'logAtag')
+          .forEach((result) => {
+            setLabels({ [auctionId + '-' + result.analyticsKey]: result.args.analyticsValue });
+          });
 
         // verify current bidder against applicable rules
-        const allow = rules.every(({args, func}) => {
-          return args.every(({bidders}) => {
-            const bidderIncluded = bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
-            return func === 'excludeBidders' ? !bidderIncluded : bidderIncluded;
+        const allow = results
+          .filter(result => ['excludeBidders', 'includeBidders'].includes(result.function))
+          .every((result) => {
+            return result.args.every(({bidders}) => {
+              const bidderIncluded = bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
+              return result.function === 'excludeBidders' ? !bidderIncluded : bidderIncluded;
+            });
           });
-        });
 
         if (!allow) {
           return { allow, reason: `Bidder ${params.bid?.bidder} excluded by rules module` };

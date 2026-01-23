@@ -98,12 +98,12 @@
         {
           "schema": [
             {
-              "function": "deviceCountry"
+              "function": "deviceCountry", "args": ["USA"]
             }
           ],
           "rules": [
             {
-              "conditions": ["JPN"],
+              "conditions": ["true"],
               "results": [
                 {
                   "function": "excludeBidders",
