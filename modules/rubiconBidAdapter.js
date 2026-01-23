@@ -739,6 +739,13 @@ export const spec = {
           [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
         }
 
+        if (ad.bid_cat && ad.bid_cat.length) {
+          bid.meta.primaryCatId = ad.bid_cat[0];
+          if (ad.bid_cat.length > 1) {
+            bid.meta.secondaryCatIds = ad.bid_cat.slice(1);
+          }
+        }
+
         // add server-side targeting
         bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
           .reduce((memo, item) => {
