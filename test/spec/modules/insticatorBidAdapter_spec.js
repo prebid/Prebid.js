@@ -1095,7 +1095,7 @@ describe('InsticatorBidAdapter', function () {
         cpm: 0.5,
         currency: 'USD',
         netRevenue: true,
-        ttl: 300, // MAX(60, 300) = 300 with new TTL logic
+        ttl: 60, // MIN(60, 300) = 60 - bid.exp is upper bound
         width: 300,
         height: 200,
         mediaType: 'banner',
@@ -1104,8 +1104,7 @@ describe('InsticatorBidAdapter', function () {
         meta: {
           advertiserDomains: ['test1.com'],
           test: 1,
-          seat: 'some-dsp',
-          dsp: 'some-dsp'
+          seat: 'some-dsp'
         }
       },
       {
@@ -1122,8 +1121,7 @@ describe('InsticatorBidAdapter', function () {
           advertiserDomains: [
             'test2.com'
           ],
-          seat: 'some-dsp',
-          dsp: 'some-dsp'
+          seat: 'some-dsp'
         },
         ad: 'adm2',
         adUnitCode: 'adunit-code-2',
@@ -1142,8 +1140,7 @@ describe('InsticatorBidAdapter', function () {
           advertiserDomains: [
             'test3.com'
           ],
-          seat: 'some-dsp',
-          dsp: 'some-dsp'
+          seat: 'some-dsp'
         },
         ad: 'adm3',
         adUnitCode: 'adunit-code-3',
@@ -1265,7 +1262,7 @@ describe('InsticatorBidAdapter', function () {
         expect(bidResponse.meta).to.not.have.property('secondaryCatIds');
       });
 
-      it('should map seat to meta.seat and meta.dsp', function () {
+      it('should map seat to meta.seat', function () {
         const response = {
           body: {
             id: '22edbae2733bf6',
@@ -1286,7 +1283,6 @@ describe('InsticatorBidAdapter', function () {
         const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
         expect(bidResponse.meta).to.have.property('seat', 'dsp-seat-123');
-        expect(bidResponse.meta).to.have.property('dsp', 'dsp-seat-123');
       });
 
       it('should map creative attributes (attr) to meta.attr', function () {
@@ -1421,8 +1417,50 @@ describe('InsticatorBidAdapter', function () {
         expect(bidResponse.video).to.have.property('durationSeconds', 30);
       });
 
-      it('should use MAX of bid.exp and BID_TTL for ttl', function () {
-        // When bid.exp (60) is less than BID_TTL (300), use 300
+      it('should not set video.context when original request is not adpod', function () {
+        const instreamBidRequests = {
+          ...ortb26BidRequests,
+          bidderRequest: {
+            ...ortb26BidRequests.bidderRequest,
+            bids: [{
+              ...ortb26BidRequests.bidderRequest.bids[0],
+              mediaTypes: {
+                video: {
+                  mimes: ['video/mp4'],
+                  playerSize: [[640, 480]],
+                  context: 'instream',
+                }
+              }
+            }]
+          }
+        };
+
+        const response = {
+          body: {
+            id: '22edbae2733bf6',
+            seatbid: [{
+              seat: 'dsp-1',
+              bid: [{
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 1.0,
+                w: 640,
+                h: 480,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                dur: 30,
+              }]
+            }]
+          }
+        };
+        const bidResponse = spec.interpretResponse(response, instreamBidRequests)[0];
+
+        expect(bidResponse).to.have.property('video');
+        expect(bidResponse.video).to.have.property('durationSeconds', 30);
+        expect(bidResponse.video).to.not.have.property('context');
+      });
+
+      it('should use MIN of bid.exp and BID_TTL for ttl (bid.exp is upper bound)', function () {
+        // When bid.exp (60) is less than BID_TTL (300), use 60
         const responseWithLowExp = {
           body: {
             id: '22edbae2733bf6',
@@ -1441,9 +1479,9 @@ describe('InsticatorBidAdapter', function () {
           }
         };
         const bidResponseLow = spec.interpretResponse(responseWithLowExp, ortb26BidRequests)[0];
-        expect(bidResponseLow.ttl).to.equal(300); // MAX(60, 300) = 300
+        expect(bidResponseLow.ttl).to.equal(60); // MIN(60, 300) = 60
 
-        // When bid.exp (600) is greater than BID_TTL (300), use 600
+        // When bid.exp (600) is greater than BID_TTL (300), use 300
         const responseWithHighExp = {
           body: {
             id: '22edbae2733bf6',
@@ -1462,7 +1500,7 @@ describe('InsticatorBidAdapter', function () {
           }
         };
         const bidResponseHigh = spec.interpretResponse(responseWithHighExp, ortb26BidRequests)[0];
-        expect(bidResponseHigh.ttl).to.equal(600); // MAX(600, 300) = 600
+        expect(bidResponseHigh.ttl).to.equal(300); // MIN(600, 300) = 300
       });
 
       it('should default ttl to BID_TTL when bid.exp is not provided', function () {
@@ -1484,7 +1522,7 @@ describe('InsticatorBidAdapter', function () {
           }
         };
         const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
-        expect(bidResponse.ttl).to.equal(300); // MAX(0, 300) = 300
+        expect(bidResponse.ttl).to.equal(300); // defaults to configTTL when no bid.exp
       });
 
       it('should include all ORTB 2.6 fields in a single response', function () {
@@ -1517,11 +1555,10 @@ describe('InsticatorBidAdapter', function () {
         expect(bidResponse.meta.primaryCatId).to.equal('IAB1');
         expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB2']);
         expect(bidResponse.meta.seat).to.equal('full-dsp');
-        expect(bidResponse.meta.dsp).to.equal('full-dsp');
         expect(bidResponse.meta.attr).to.deep.equal([1, 2]);
         expect(bidResponse.dealId).to.equal('premium-deal');
         expect(bidResponse.burl).to.equal('https://billing.example.com/win');
-        expect(bidResponse.ttl).to.equal(450); // MAX(450, 300) = 450
+        expect(bidResponse.ttl).to.equal(300); // MIN(450, 300) = 300 - bid.exp is upper bound
       });
     });
   });

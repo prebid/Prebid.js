@@ -5,7 +5,7 @@ import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, d
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'insticator';
-const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
+const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb';
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
@@ -152,7 +152,10 @@ function buildVideo(bidRequest) {
 
   const durationRangeSec = deepAccess(bidRequest, 'mediaTypes.video.durationRangeSec');
   if (durationRangeSec && isArrayOfNums(durationRangeSec) && durationRangeSec.length > 0) {
-    optionalParams['rqddurs'] = durationRangeSec;
+    const validDurations = durationRangeSec.filter(v => v > 0);
+    if (validDurations.length > 0) {
+      optionalParams['rqddurs'] = validDurations;
+    }
   }
 
   const videoObj = {
@@ -464,6 +467,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 
 function buildBid(bid, bidderRequest, seatbid) {
   const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
+
   let meta = {}
 
   if (bid.ext && bid.ext.meta) {
@@ -482,10 +486,9 @@ function buildBid(bid, bidderRequest, seatbid) {
     }
   }
 
-  // ORTB 2.6: Add seat/dsp from seatbid
+  // ORTB 2.6: Add seat from seatbid
   if (seatbid && seatbid.seat) {
     meta.seat = seatbid.seat;
-    meta.dsp = seatbid.seat;
   }
 
   // ORTB 2.6: Add creative attributes
@@ -498,10 +501,9 @@ function buildBid(bid, bidderRequest, seatbid) {
     mediaType = 'video';
   }
 
-  // TTL: Use MAX of bid.exp and BID_TTL to ensure minimum 5 minutes
+  // TTL: Use bid.exp as upper bound if provided, otherwise use configTTL
   const configTTL = config.getConfig('insticator.bidTTL') || BID_TTL;
-  const bidExp = bid.exp || 0;
-  const ttl = Math.max(bidExp, configTTL);
+  const ttl = bid.exp && bid.exp > 0 ? Math.min(bid.exp, configTTL) : configTTL;
 
   const bidResponse = {
     requestId: bid.impid,
@@ -559,7 +561,8 @@ function buildBid(bid, bidderRequest, seatbid) {
 }
 
 function buildBidSet(seatbid, bidderRequest) {
-  return seatbid.bid.map((bid) => buildBid(bid, bidderRequest, seatbid));
+  return seatbid.bid
+    .map((bid) => buildBid(bid, bidderRequest, seatbid));
 }
 
 function validateSize(size) {
@@ -719,9 +722,9 @@ export const spec = {
         endpointUrl = deepAccess(validBidRequests[0], 'params.bid_endpoint_request_url').replace(/^http:/, 'https:');
       }
 
-      // Add publisherId as query parameter if present
+      // Add publisherId as query parameter if present and non-empty
       const publisherId = deepAccess(validBidRequests[0], 'params.publisherId');
-      if (publisherId) {
+      if (publisherId && publisherId.trim() !== '') {
         const urlObj = new URL(endpointUrl);
         urlObj.searchParams.set('publisherId', publisherId);
         endpointUrl = urlObj.toString();
@@ -729,6 +732,8 @@ export const spec = {
     }
 
     if (validBidRequests.length > 0) {
+      const ortbRequest = buildRequest(validBidRequests, bidderRequest);
+
       requests.push({
         method: 'POST',
         url: endpointUrl,
@@ -736,7 +741,7 @@ export const spec = {
           contentType: 'application/json',
           withCredentials: true,
         },
-        data: JSON.stringify(buildRequest(validBidRequests, bidderRequest)),
+        data: JSON.stringify(ortbRequest),
         bidderRequest,
       });
     }
@@ -747,11 +752,22 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const bidderRequest = request.bidderRequest;
     const body = serverResponse.body;
-    if (!body || body.id !== bidderRequest.bidderRequestId) {
-      logError('insticator: response id does not match bidderRequestId');
+
+    // Handle 204 No Content or empty response body (valid "no bid" scenario)
+    if (!body || !body.id) {
       return [];
     }
 
+    // Validate response ID matches request ID
+    if (body.id !== bidderRequest.bidderRequestId) {
+      logError('insticator: response id does not match bidderRequestId', {
+        responseId: body.id,
+        bidderRequestId: bidderRequest.bidderRequestId
+      });
+      return [];
+    }
+
+    // No seatbid means no bids (valid scenario)
     if (!body.seatbid) {
       return [];
     }
@@ -760,7 +776,9 @@ export const spec = {
       buildBidSet(seatbid, bidderRequest)
     );
 
-    return bidsets.reduce((a, b) => a.concat(b), []);
+    const finalBids = bidsets.reduce((a, b) => a.concat(b), []);
+
+    return finalBids;
   },
 
   getUserSyncs: function (options, responses) {
