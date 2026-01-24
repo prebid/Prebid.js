@@ -56,7 +56,7 @@ export function getPlacementPositionUtils() {
           return {top: getBoundingClientRect(frame).top};
         }
       }
-    } catch (_error) {
+    } catch (_e) {
       return {top: 0};
     }
     return {top: 0};

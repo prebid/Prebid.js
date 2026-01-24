@@ -683,7 +683,6 @@ describe('placementPositionInfo', function () {
         sizes: [[300, 250]]
       });
 
-
       assert.strictEqual(result.DistanceToView, -300);
     });
 
