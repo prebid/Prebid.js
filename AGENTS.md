@@ -31,6 +31,7 @@ This file contains instructions for the Codex agent and its friends when working
 - Always include the string 'codex' or 'agent' in any branch you create. If you instructed to not do that, always include the string 'perbid'.
 - Do not submit pr's with changes to creative.html or creative.js
 - Read CONTRIBUTING.md and PR_REVIEW.md for additional context
+- Use the guidelines at PR_REVIEW.md when doing PR reviews. Make all your comments and code suggestions on the PR itself instead of in linked tasks when commenting in a PR review.
 
 ## Testing
 - When you modify or add source or test files, run only the affected unit tests.

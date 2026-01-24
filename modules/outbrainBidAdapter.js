@@ -219,6 +219,7 @@ export const spec = {
         }
         return bidObject;
       }
+      return null;
     }).filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
@@ -414,7 +415,7 @@ function isValidVideoRequest(bid) {
     return false;
   }
 
-  if (videoAdUnit.context == '') {
+  if (videoAdUnit.context === '') {
     return false;
   }
 

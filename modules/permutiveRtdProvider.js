@@ -9,6 +9,8 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js';
 
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
@@ -30,7 +32,9 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleNam
 function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
 
-  return true
+  const enforceVendorConsent = deepAccess(moduleConfig, 'params.enforceVendorConsent')
+
+  return hasPurposeConsent(userConsent, [1], enforceVendorConsent)
 }
 
 function liftIntoParams(params) {
@@ -86,6 +90,7 @@ export function getModuleConfig(customModuleConfig) {
       maxSegs: 500,
       acBidders: [],
       overwrites: {},
+      enforceVendorConsent: false,
     },
   },
   permutiveModuleConfig,
@@ -466,6 +471,8 @@ let permutiveSDKInRealTime = false
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: "https://assets.permutive.app/tcf/tcf.json",
+  gvlid: VENDORLESS_GVLID,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     const completeBidRequestData = () => {
       logger.logInfo(`Request data updated`)

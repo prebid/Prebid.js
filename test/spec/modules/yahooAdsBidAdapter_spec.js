@@ -270,9 +270,9 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       let iframeCount = 0;
       let imageCount = 0;
       pixelObjects.forEach(pixelObject => {
-        if (pixelObject.type == 'iframe') {
+        if (pixelObject.type === 'iframe') {
           iframeCount++;
-        } else if (pixelObject.type == 'image') {
+        } else if (pixelObject.type === 'image') {
           imageCount++;
         }
       });
@@ -694,7 +694,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         const user = data.user;
         expect(user[param]).to.be.a('object');
-        expect(user[param]).to.be.deep.include({[param]: {a: '123', b: '456'}});
+        // Properties from ortb2.user.ext should be merged into user.ext, not nested
+        expect(user[param]).to.be.deep.include({a: '123', b: '456'});
       });
     });
 
