@@ -1,0 +1,442 @@
+<!--
+  Mediago Bid Adapter Test Page
+  Used to verify that the ID uniqueness issue has been resolved when there are multiple ad units
+  This page creates multiple ad units to test the ID generation logic
+-->
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mediago Bid Adapter Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .ad-container {
+            border: 2px solid #ccc;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        .ad-container h3 {
+            margin-top: 0;
+        }
+        .debug-info {
+            background: #e8f4f8;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-info h4 {
+            margin-top: 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 5000;
+        var PREBID_TIMEOUT = 3000;
+
+        // Create multiple ad units to test ID uniqueness
+        var adUnits = [
+            {
+                code: 'mediago-ad-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]]
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        gpid: 'test_gpid_1'
+                    }
+                },
+                bids: [{
+                    bidder: 'mediago',
+                    params: {
+                        token: '', // Please replace with your actual token
+                        publisher: '',
+                        bidfloor: 0.1  // Set bidfloor to 0.1
+                    }
+                }]
+            },
+            {
+                code: 'mediago-ad-2',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]]
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        gpid: 'test_gpid_2'
+                    }
+                },
+                bids: [{
+                    bidder: 'mediago',
+                    params: {
+                        token: '', // Please replace with your actual token
+                        publisher: '',
+                        bidfloor: 0.1  // Set bidfloor to 0.1
+                    }
+                }]
+            },
+            {
+                code: 'mediago-ad-3',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[728, 90]]
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        gpid: 'test_gpid_3'
+                    }
+                },
+                bids: [{
+                    bidder: 'mediago',
+                    params: {
+                        token: '', // Please replace with your actual token
+                        publisher: '',
+                        bidfloor: 0.1  // Set bidfloor to 0.1
+                    }
+                }]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        // Store request information for debugging
+        var requestLogs = [];
+
+        // Intercept AJAX requests to view sent data
+        var originalOpen = XMLHttpRequest.prototype.open;
+        var originalSend = XMLHttpRequest.prototype.send;
+
+        XMLHttpRequest.prototype.open = function(method, url, ...args) {
+            this._url = url;
+            this._method = method;
+            return originalOpen.apply(this, [method, url, ...args]);
+        };
+
+        XMLHttpRequest.prototype.send = function(data) {
+            if (this._url && this._url.includes('mediago.io')) {
+                try {
+                    var requestData = JSON.parse(data);
+                    requestLogs.push({
+                        url: this._url,
+                        method: this._method,
+                        data: requestData,
+                        timestamp: new Date().toISOString()
+                    });
+                    console.log('Mediago Request:', requestData);
+                    
+                    // Check if IDs in imp array are unique
+                    if (requestData.imp && Array.isArray(requestData.imp)) {
+                        var ids = requestData.imp.map(imp => imp.id).filter(Boolean);
+                        var uniqueIds = [...new Set(ids)];
+                        var isUnique = ids.length === uniqueIds.length;
+                        
+                        console.log('ID Uniqueness Check:');
+                        console.log('  Total IDs:', ids.length);
+                        console.log('  Unique IDs:', uniqueIds.length);
+                        console.log('  Is Unique:', isUnique ? '✓ Yes' : '✗ No');
+                        console.log('  ID List:', ids);
+                        
+                        if (!isUnique) {
+                            console.warn('Warning: Duplicate IDs found!', ids);
+                        }
+                        
+                        updateDebugInfo(requestData, isUnique, ids, uniqueIds);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse request data:', e);
+                }
+            }
+            
+            // Listen for response
+            this.addEventListener('load', function() {
+                if (this._url && this._url.includes('mediago.io')) {
+                    try {
+                        var response = JSON.parse(this.responseText);
+                        console.log('Mediago Response:', response);
+                        updateResponseInfo(response);
+                    } catch (e) {
+                        console.error('Failed to parse response data:', e);
+                    }
+                }
+            });
+            
+            return originalSend.apply(this, [data]);
+        };
+
+        function updateDebugInfo(requestData, isUnique, ids, uniqueIds) {
+            var debugDiv = document.getElementById('debug-info');
+            if (!debugDiv) return;
+            
+            var html = '<h4>Request Debug Info</h4>';
+            html += '<p><strong>Time:</strong> ' + new Date().toLocaleString() + '</p>';
+            html += '<p><strong>ID Uniqueness:</strong> <span style="color: ' + (isUnique ? 'green' : 'red') + '">' + (isUnique ? '✓ Pass' : '✗ Fail') + '</span></p>';
+            html += '<p><strong>Total IDs:</strong> ' + ids.length + '</p>';
+            html += '<p><strong>Unique IDs:</strong> ' + uniqueIds.length + '</p>';
+            html += '<p><strong>ID List:</strong></p>';
+            html += '<ul>';
+            ids.forEach((id, index) => {
+                var isDup = ids.indexOf(id) !== ids.lastIndexOf(id);
+                html += '<li style="color: ' + (isDup ? 'red' : 'black') + '">';
+                html += 'Ad Unit ' + (index + 1) + ': <code>' + id + '</code>';
+                if (isDup) html += ' <strong>(Duplicate!)</strong>';
+                html += '</li>';
+            });
+            html += '</ul>';
+            
+            html += '<p><strong>Request Data (imp section):</strong></p>';
+            html += '<pre>' + JSON.stringify(requestData.imp, null, 2) + '</pre>';
+            
+            debugDiv.innerHTML = html;
+        }
+
+        function updateResponseInfo(response) {
+            var responseDiv = document.getElementById('response-info');
+            if (!responseDiv) return;
+            
+            var html = '<h4>Response Info</h4>';
+            html += '<p><strong>Time:</strong> ' + new Date().toLocaleString() + '</p>';
+            if (response.seatbid && response.seatbid.length > 0) {
+                html += '<p><strong>Number of bids returned:</strong> ' + response.seatbid[0].bid.length + '</p>';
+                html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+            } else {
+                html += '<p>No valid response received</p>';
+            }
+            
+            responseDiv.innerHTML = html;
+        }
+
+    </script>
+</head>
+
+<body>
+    <h1>Mediago Bid Adapter Test Page</h1>
+    <p>This page is used to verify that the ID uniqueness issue has been resolved when there are multiple ad units</p>
+    
+    <div>
+        <button onclick="runAuction()">Run Auction</button>
+        <button onclick="clearDebug()">Clear Debug Info</button>
+    </div>
+
+    <div class="debug-info" id="debug-info">
+        <h4>Waiting for request...</h4>
+        <p>Click the "Run Auction" button to start testing</p>
+    </div>
+
+    <div class="debug-info" id="response-info">
+        <h4>Waiting for response...</h4>
+    </div>
+
+    <div class="ad-container">
+        <h3>Ad Unit 1 (300x250) - mpu_left</h3>
+        <div id="mediago-ad-1" style="width: 300px; height: 250px; background: #f0f0f0; border: 1px dashed #999; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0;">
+            <p>Ad Unit 1 - mpu_left</p>
+        </div>
+    </div>
+
+    <div class="ad-container">
+        <h3>Ad Unit 2 (300x250)</h3>
+        <div id="mediago-ad-2" style="width: 300px; height: 250px; background: #f0f0f0; border: 1px dashed #999; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0;">
+            <p>Ad Unit 2</p>
+        </div>
+    </div>
+
+    <div class="ad-container">
+        <h3>Ad Unit 3 (728x90)</h3>
+        <div id="mediago-ad-3" style="width: 728px; height: 90px; background: #f0f0f0; border: 1px dashed #999; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0;">
+            <p>Ad Unit 3</p>
+        </div>
+    </div>
+
+    <script>
+        var adUnitsAdded = false; // Track if adUnits have been added
+
+        function runAuction() {
+            console.log('Starting auction...');
+            
+            pbjs.que.push(function() {
+                console.log('Prebid.js loaded');
+                
+                // Set pageUrl and ortb2 site configuration to simulate other site
+                // pageUrl will override Prebid's referrer detection
+                // pbjs.setConfig({
+                //     pageUrl: 'https://www.dailymail.co.uk/home/index.html',
+                //     ortb2: {
+                //         site: {
+                //             domain: 'www.dailymail.co.uk',
+                //             page: 'https://www.dailymail.co.uk/home/index.html',
+                //             ref: 'https://www.dailymail.co.uk/home/index.html',
+                //             name: 'Daily Mail'
+                //         }
+                //     }
+                // });
+                
+                // console.log('Set pageUrl config:', pbjs.getConfig('pageUrl'));
+                // console.log('Set ortb2.site:', pbjs.getConfig('ortb2.site'));
+                // Only add adUnits once, on first call
+                if (!adUnitsAdded) {
+                    console.log('Adding ad units:', adUnits);
+                    pbjs.addAdUnits(adUnits);
+                    adUnitsAdded = true;
+                } else {
+                    console.log('Refreshing existing ad units');
+                }
+                
+                // For refresh, use adUnitCodes to specify which ad units to refresh
+                var adUnitCodes = adUnits.map(function(unit) { return unit.code; });
+                
+                pbjs.requestBids({
+                    adUnitCodes: adUnitCodes, // Specify which ad units to request bids for
+                    bidsBackHandler: function(bids, timedOut, auctionId) {
+                        console.log('Auction completed:', {bids, timedOut, auctionId});
+                        var summaryDiv = document.getElementById('debug-info');
+                        if (summaryDiv) {
+                            summaryDiv.innerHTML += '<hr><h4>Auction Results Summary</h4>';
+                            summaryDiv.innerHTML += '<p>Received ' + (bids ? Object.keys(bids).length : 0) + ' bid responses</p>';
+                            summaryDiv.innerHTML += '<p>Timed Out: ' + (timedOut ? 'Yes' : 'No') + '</p>';
+                            summaryDiv.innerHTML += '<p>Auction ID: ' + (auctionId || 'N/A') + '</p>';
+                            if (bids) {
+                                summaryDiv.innerHTML += '<pre>' + JSON.stringify(bids, null, 2) + '</pre>';
+                            }
+                        }
+                        
+                        // Wait a bit for Prebid to process bids, then render
+                        setTimeout(function() {
+                            renderAds();
+                        }, 100);
+                    },
+                    timeout: PREBID_TIMEOUT
+                });
+            });
+        }
+
+        function renderAds() {
+            console.log('Rendering ads...');
+            
+            // Get the highest CPM bids for each ad unit (simplified approach from basic_noadserver.html)
+            var winners = pbjs.getHighestCpmBids();
+            console.log('Winning bids:', winners);
+            
+            if (!winners || winners.length === 0) {
+                console.log('No winning bids to render');
+                var allBids = pbjs.getBidResponses();
+                console.log('Available bids:', allBids);
+                
+                var debugDiv = document.getElementById('debug-info');
+                if (debugDiv) {
+                    debugDiv.innerHTML += '<hr><p style="color: orange;"><strong>No winning bids to render</strong></p>';
+                    if (allBids) {
+                        debugDiv.innerHTML += '<p>All bid responses: <pre>' + JSON.stringify(allBids, null, 2) + '</pre></p>';
+                    }
+                }
+                return;
+            }
+            
+            // Render each winning bid (simplified approach)
+            winners.forEach(function(winningBid) {
+                if (winningBid && winningBid.adId) {
+                    renderOne(winningBid);
+                }
+            });
+        }
+
+        // Simplified render function based on basic_noadserver.html
+        function renderOne(winningBid) {
+            var adUnitCode = winningBid.adUnitCode;
+            var div = document.getElementById(adUnitCode);
+            
+            console.log('Rendering ad for:', adUnitCode, 'adId:', winningBid.adId, 'cpm:', winningBid.cpm);
+            
+            if (div) {
+                // Clear the placeholder content
+                div.innerHTML = '';
+                
+                // Create iframe for ad rendering (simplified - no setTimeout needed)
+                var iframe = document.createElement('iframe');
+                iframe.frameBorder = '0';
+                iframe.scrolling = 'no';
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.style.padding = '0';
+                iframe.style.margin = '0';
+                div.appendChild(iframe);
+                
+                // Render directly (as in basic_noadserver.html)
+                try {
+                    var iframeDoc = iframe.contentWindow.document;
+                    // Remove default padding/margin from iframe document and body
+                    if (iframeDoc.documentElement) {
+                        iframeDoc.documentElement.style.margin = '0';
+                        iframeDoc.documentElement.style.padding = '0';
+                    }
+                    if (iframeDoc.body) {
+                        iframeDoc.body.style.margin = '0';
+                        iframeDoc.body.style.padding = '0';
+                    }
+                    pbjs.renderAd(iframeDoc, winningBid.adId);
+                    console.log('Successfully rendered ad for:', adUnitCode);
+                    
+                    // Update debug info
+                    var debugDiv = document.getElementById('debug-info');
+                    if (debugDiv) {
+                        debugDiv.innerHTML += '<hr><p style="color: green;"><strong>Rendered ad for ' + adUnitCode + '</strong></p>';
+                        debugDiv.innerHTML += '<p>Ad ID: ' + winningBid.adId + ', CPM: ' + winningBid.cpm + '</p>';
+                    }
+                } catch (e) {
+                    console.error('Failed to render ad for', adUnitCode, ':', e);
+                    div.innerHTML = '<p style="color: red;">Failed to render ad: ' + e.message + '</p>';
+                }
+            } else {
+                console.warn('Ad unit div not found:', adUnitCode);
+            }
+        }
+
+        function clearDebug() {
+            document.getElementById('debug-info').innerHTML = '<h4>Debug info cleared</h4>';
+            document.getElementById('response-info').innerHTML = '<h4>Response info cleared</h4>';
+            requestLogs = [];
+            
+            // Clear ad containers
+            ['mediago-ad-1', 'mediago-ad-2', 'mediago-ad-3'].forEach(function(id) {
+                var div = document.getElementById(id);
+                if (div) {
+                    div.innerHTML = '<p>Ad Unit ' + id.replace('mediago-ad-', '') + '</p>';
+                }
+            });
+        }
+
+        // Auto-run once after page load (optional)
+        // window.addEventListener('load', function() {
+        //     setTimeout(runAuction, 1000);
+        // });
+    </script>
+</body>
+
+</html>
+

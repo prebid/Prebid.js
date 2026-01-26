@@ -1,9 +1,12 @@
 name: Check for linter warnings / exceptions
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - master
+
+permissions:
+  contents: read
 
 jobs:
   check-linter:
@@ -16,7 +19,7 @@ jobs:
           node-version: '20'
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha }}
@@ -46,7 +49,9 @@ jobs:
 
       - name: Compare them and post comment if necessary
         uses: actions/github-script@v8
+        id: comment
         with:
+          result-encoding: string
           script: |
             const fs = require('fs');
             const path = require('path');
@@ -101,10 +106,18 @@ jobs:
             const comment = mkComment(mkDiff(base, pr));
             
             if (comment) {
-              github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+              fs.writeFileSync("${{ runner.temp }}/comment.json", JSON.stringify({
                 issue_number: context.issue.number,
                 body: comment
-              });
+              }))
+              return "true";
+            } else {
+              return "false";
             }
+
+      - name: Upload comment data
+        if: ${{ steps.comment.outputs.result == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: comment
+          path: ${{ runner.temp }}/comment.json
