@@ -740,7 +740,7 @@ function canAccessTopWindow() {
 }
 
 function isStage(bidderRequest) {
-  return !!bidderRequest.refererInfo?.referer?.includes('pb_force_a');
+  return !!bidderRequest.refererInfo?.page?.includes('pb_force_a');
 }
 
 function getAdserverUrl(path, stage) {
