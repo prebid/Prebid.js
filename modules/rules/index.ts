@@ -9,7 +9,7 @@ import { AuctionIndex } from "../../src/auctionIndex.js";
 import { auctionManager } from "../../src/auctionManager.js";
 import { config } from "../../src/config.ts";
 import { getHook } from "../../src/hook.ts";
-import { generateUUID, logError, logInfo, logWarn } from "../../src/utils.ts";
+import { generateUUID, logInfo, logWarn } from "../../src/utils.ts";
 import { timedAuctionHook } from "../../src/utils/perfMetrics.ts";
 
 /**
@@ -202,42 +202,57 @@ export function evaluateConfig(config: RulesConfig, auctionId: string) {
 
   const stageRules = config.ruleSets;
 
-  assignModelGroups(stageRules || []);
+  const modelGroupsWithStage = getAssignedModelGroups(stageRules || []);
 
-  for (const ruleSet of stageRules) {
-    const modelGroup = ruleSet.modelGroups?.find(group => group.selected);
+  for (const { modelGroups, stage } of modelGroupsWithStage) {
+    const modelGroup = modelGroups.find(group => group.selected);
     if (!modelGroup) continue;
-    evaluateRules(modelGroup.rules || [], modelGroup.schema || [], ruleSet.stage, modelGroup.analyticsKey, auctionId, modelGroup.default);
+    evaluateRules(modelGroup.rules || [], modelGroup.schema || [], stage, modelGroup.analyticsKey, auctionId, modelGroup.default);
   }
 }
 
-export function assignModelGroups(rulesets: RuleSet[]) {
-  for (const ruleset of rulesets) {
-    const { modelGroups } = ruleset;
-    if (!modelGroups?.length) continue;
+export function getAssignedModelGroups(rulesets: RuleSet[]): Array<{ modelGroups: ModelGroup[], stage: string }> {
+  return rulesets.flatMap(ruleset => {
+    const { modelGroups, stage } = ruleset;
+    if (!modelGroups?.length) {
+      return [];
+    }
 
-    const weightSum = modelGroups.reduce(
-      (sum, group) => sum + (group.weight ?? 100),
-      0
-    );
-
-    let randomValue = Math.random() * weightSum;
-
-    for (const group of modelGroups) {
-      group.selected = false;
-      // 100 is default weight if not specified
+    // Calculate cumulative weights for proper weighted random selection
+    let cumulativeWeight = 0;
+    const groupsWithCumulativeWeights = modelGroups.map(group => {
       const groupWeight = group.weight ?? 100;
-      if (randomValue < groupWeight) {
-        group.selected = true;
-        break;
-      }
-      randomValue -= groupWeight;
+      cumulativeWeight += groupWeight;
+      return {
+        group,
+        cumulativeWeight
+      };
+    });
+
+    const weightSum = cumulativeWeight;
+    // Generate random value in range [0, weightSum)
+    // This ensures each group gets probability proportional to its weight
+    const randomValue = Math.random() * weightSum;
+
+    // Find first group where cumulative weight >= randomValue
+    let selectedIndex = groupsWithCumulativeWeights.findIndex(({ cumulativeWeight }) => randomValue < cumulativeWeight);
+
+    // Fallback: if no group was selected (shouldn't happen, but safety check)
+    if (selectedIndex === -1) {
+      selectedIndex = modelGroups.length - 1;
     }
 
-    if (!modelGroups.some(g => g.selected)) {
-      modelGroups[modelGroups.length - 1].selected = true;
-    }
-  }
+    // Create new model groups array with selected flag
+    const newModelGroups = modelGroups.map((group, index) => ({
+      ...group,
+      selected: index === selectedIndex
+    }));
+
+    return {
+      modelGroups: newModelGroups,
+      stage
+    };
+  });
 }
 
 function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, defaultResults?) {

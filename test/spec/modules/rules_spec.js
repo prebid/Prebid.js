@@ -35,7 +35,7 @@ describe('Rules Module', function() {
     rulesModule.reset();
   });
 
-  describe('assignModelGroups', function() {
+  describe('getAssignedModelGroups', function() {
     it('should select model group based on weights', function() {
       const rulesets = [{
         name: 'testRuleSet',
@@ -59,10 +59,13 @@ describe('Rules Module', function() {
       // randomValue = 0.15 * 100 = 15, 15 < 50 so first group selected
       sandbox.stub(Math, 'random').returns(0.15);
 
-      rulesModule.assignModelGroups(rulesets);
+      const result = rulesModule.getAssignedModelGroups(rulesets);
 
-      // Verify that first model group was selected
-      expect(rulesets[0].modelGroups[0].selected).to.be.true;
+      // Verify that first model group was selected in the returned result
+      expect(result[0].modelGroups[0].selected).to.be.true;
+      expect(result[0].modelGroups[1].selected).to.be.false;
+      // Verify original was not mutated
+      expect(rulesets[0].modelGroups[0].selected).to.be.false;
       expect(rulesets[0].modelGroups[1].selected).to.be.false;
     });
 
@@ -93,16 +96,172 @@ describe('Rules Module', function() {
 
       // Mock Math.random to return value that selects last group
       // randomValue = 0.85 * 300 = 255
-      // First group: 255 >= 100, not selected, randomValue = 255 - 100 = 155
-      // Second group: 155 >= 100, not selected, randomValue = 155 - 100 = 55
-      // Third group: 55 < 100, selected!
+      // Cumulative weights: [100, 200, 300]
+      // First group: 255 < 100? No
+      // Second group: 255 < 200? No
+      // Third group: 255 < 300? Yes, selected!
       sandbox.stub(Math, 'random').returns(0.85);
 
-      rulesModule.assignModelGroups(rulesets);
+      const result = rulesModule.getAssignedModelGroups(rulesets);
 
+      expect(result[0].modelGroups[0].selected).to.be.false;
+      expect(result[0].modelGroups[1].selected).to.be.false;
+      expect(result[0].modelGroups[2].selected).to.be.true;
+      // Verify original was not mutated
       expect(rulesets[0].modelGroups[0].selected).to.be.false;
       expect(rulesets[0].modelGroups[1].selected).to.be.false;
-      expect(rulesets[0].modelGroups[2].selected).to.be.true;
+      expect(rulesets[0].modelGroups[2].selected).to.be.false;
+    });
+
+    it('should select correctly regardless of weight order (descending)', function() {
+      const rulesets = [{
+        name: 'testRuleSet',
+        stage: 'processed-auction-request',
+        modelGroups: [{
+          weight: 100, // largest first
+          selected: false,
+          analyticsKey: 'testKey1',
+          schema: [],
+          rules: []
+        }, {
+          weight: 50, // medium
+          selected: false,
+          analyticsKey: 'testKey2',
+          schema: [],
+          rules: []
+        }, {
+          weight: 25, // smallest last
+          selected: false,
+          analyticsKey: 'testKey3',
+          schema: [],
+          rules: []
+        }]
+      }];
+
+      // randomValue = 0.3 * 175 = 52.5
+      // Cumulative weights: [100, 150, 175]
+      // First group: 52.5 < 100? Yes, selected!
+      sandbox.stub(Math, 'random').returns(0.3);
+
+      const result = rulesModule.getAssignedModelGroups(rulesets);
+
+      expect(result[0].modelGroups[0].selected).to.be.true;
+      expect(result[0].modelGroups[1].selected).to.be.false;
+      expect(result[0].modelGroups[2].selected).to.be.false;
+    });
+
+    it('should select correctly regardless of weight order (mixed)', function() {
+      const rulesets = [{
+        name: 'testRuleSet',
+        stage: 'processed-auction-request',
+        modelGroups: [{
+          weight: 30, // medium
+          selected: false,
+          analyticsKey: 'testKey1',
+          schema: [],
+          rules: []
+        }, {
+          weight: 100, // largest in middle
+          selected: false,
+          analyticsKey: 'testKey2',
+          schema: [],
+          rules: []
+        }, {
+          weight: 20, // smallest last
+          selected: false,
+          analyticsKey: 'testKey3',
+          schema: [],
+          rules: []
+        }]
+      }];
+
+      // randomValue = 0.6 * 150 = 90
+      // Cumulative weights: [30, 130, 150]
+      // First group: 90 < 30? No
+      // Second group: 90 < 130? Yes, selected!
+      sandbox.stub(Math, 'random').returns(0.6);
+
+      const result = rulesModule.getAssignedModelGroups(rulesets);
+
+      expect(result[0].modelGroups[0].selected).to.be.false;
+      expect(result[0].modelGroups[1].selected).to.be.true;
+      expect(result[0].modelGroups[2].selected).to.be.false;
+    });
+
+    it('should select last group when randomValue is in last range', function() {
+      const rulesets = [{
+        name: 'testRuleSet',
+        stage: 'processed-auction-request',
+        modelGroups: [{
+          weight: 10,
+          selected: false,
+          analyticsKey: 'testKey1',
+          schema: [],
+          rules: []
+        }, {
+          weight: 20,
+          selected: false,
+          analyticsKey: 'testKey2',
+          schema: [],
+          rules: []
+        }, {
+          weight: 70, // largest weight
+          selected: false,
+          analyticsKey: 'testKey3',
+          schema: [],
+          rules: []
+        }]
+      }];
+
+      // randomValue = 0.8 * 100 = 80
+      // Cumulative weights: [10, 30, 100]
+      // First group: 80 < 10? No
+      // Second group: 80 < 30? No
+      // Third group: 80 < 100? Yes, selected!
+      sandbox.stub(Math, 'random').returns(0.8);
+
+      const result = rulesModule.getAssignedModelGroups(rulesets);
+
+      expect(result[0].modelGroups[0].selected).to.be.false;
+      expect(result[0].modelGroups[1].selected).to.be.false;
+      expect(result[0].modelGroups[2].selected).to.be.true;
+    });
+
+    it('should select first group when randomValue is very small', function() {
+      const rulesets = [{
+        name: 'testRuleSet',
+        stage: 'processed-auction-request',
+        modelGroups: [{
+          weight: 10, // smallest
+          selected: false,
+          analyticsKey: 'testKey1',
+          schema: [],
+          rules: []
+        }, {
+          weight: 50,
+          selected: false,
+          analyticsKey: 'testKey2',
+          schema: [],
+          rules: []
+        }, {
+          weight: 40,
+          selected: false,
+          analyticsKey: 'testKey3',
+          schema: [],
+          rules: []
+        }]
+      }];
+
+      // randomValue = 0.01 * 100 = 1
+      // Cumulative weights: [10, 60, 100]
+      // First group: 1 < 10? Yes, selected!
+      sandbox.stub(Math, 'random').returns(0.01);
+
+      const result = rulesModule.getAssignedModelGroups(rulesets);
+
+      expect(result[0].modelGroups[0].selected).to.be.true;
+      expect(result[0].modelGroups[1].selected).to.be.false;
+      expect(result[0].modelGroups[2].selected).to.be.false;
     });
   });
 
