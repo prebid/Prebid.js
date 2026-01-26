@@ -12,6 +12,7 @@ export const GVLID = "1323";
 export const VERSION = 0.33;
 export const PREBID = "pbjs";
 export const HOURS_24 = 86400000;
+export const HOURS_72 = HOURS_24 * 3;
 
 export const INVALID_ID = "INVALID_ID";
 
