@@ -448,11 +448,11 @@ function buildPostbid() {
 }
 
 function startIntegServer(dev = false) {
-  const args = ['./test/fake-server/index.js', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`];
+  const args = ['index.mjs', `--port=${INTEG_SERVER_PORT}`, `--host=${INTEG_SERVER_HOST}`];
   if (dev) {
     args.push('--dev=true')
   }
-  const srv = spawn('node', args);
+  const srv = spawn('node', args, {cwd: './test/integ-server'});
   srv.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
   });
