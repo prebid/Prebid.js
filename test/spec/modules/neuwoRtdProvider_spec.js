@@ -392,20 +392,20 @@ describe("neuwoRtdModule", function () {
     });
   });
 
-  describe("buildIabFilterConfig", function () {
-    it("should return empty object when no filters provided", function () {
-      const result = neuwo.buildIabFilterConfig(null, 6);
-      expect(result, "should return empty object for null filters").to.deep.equal({});
+  describe("buildFilterQueryParams", function () {
+    it("should return empty array when no filters provided", function () {
+      const result = neuwo.buildFilterQueryParams(null, 6);
+      expect(result, "should return empty array for null filters").to.deep.equal([]);
     });
 
-    it("should return empty object when filters parameter is undefined", function () {
-      const result = neuwo.buildIabFilterConfig(undefined, 6);
-      expect(result, "should return empty object for undefined filters").to.deep.equal({});
+    it("should return empty array when filters parameter is undefined", function () {
+      const result = neuwo.buildFilterQueryParams(undefined, 6);
+      expect(result, "should return empty array for undefined filters").to.deep.equal([]);
     });
 
-    it("should return empty object when filters is empty object", function () {
-      const result = neuwo.buildIabFilterConfig({}, 6);
-      expect(result, "should return empty object for empty filters").to.deep.equal({});
+    it("should return empty array when filters is empty object", function () {
+      const result = neuwo.buildFilterQueryParams({}, 6);
+      expect(result, "should return empty array for empty filters").to.deep.equal([]);
     });
 
     it("should convert ContentTier1 filter correctly", function () {
@@ -413,14 +413,11 @@ describe("neuwoRtdModule", function () {
         ContentTier1: { limit: 3, threshold: 0.5 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should have segtax key").to.have.property("6");
-      expect(result["6"], "should have tier key").to.have.property("1");
-      expect(result["6"]["1"], "should preserve filter properties").to.deep.equal({
-        limit: 3,
-        threshold: 0.5
-      });
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.have.lengthOf(2);
     });
 
     it("should convert ContentTier2 filter correctly", function () {
@@ -428,12 +425,11 @@ describe("neuwoRtdModule", function () {
         ContentTier2: { limit: 5, threshold: 0.6 }
       };
       const contentSegtax = 7;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should have segtax key").to.have.property("7");
-      expect(result["7"], "should have tier key").to.have.property("2");
-      expect(result["7"]["2"], "should have limit property").to.have.property("limit", 5);
-      expect(result["7"]["2"], "should have threshold property").to.have.property("threshold", 0.6);
+      expect(result).to.include("filter_7_2_limit=5");
+      expect(result).to.include("filter_7_2_threshold=0.6");
+      expect(result).to.have.lengthOf(2);
     });
 
     it("should convert ContentTier3 filter correctly", function () {
@@ -441,12 +437,11 @@ describe("neuwoRtdModule", function () {
         ContentTier3: { limit: 4, threshold: 0.8 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should have segtax key").to.have.property("6");
-      expect(result["6"], "should have tier key").to.have.property("3");
-      expect(result["6"]["3"], "should have limit property").to.have.property("limit", 4);
-      expect(result["6"]["3"], "should have threshold property").to.have.property("threshold", 0.8);
+      expect(result).to.include("filter_6_3_limit=4");
+      expect(result).to.include("filter_6_3_threshold=0.8");
+      expect(result).to.have.lengthOf(2);
     });
 
     it("should convert AudienceTier3 filter correctly", function () {
@@ -454,12 +449,11 @@ describe("neuwoRtdModule", function () {
         AudienceTier3: { limit: 2, threshold: 0.9 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should use segtax 4 for audience").to.have.property("4");
-      expect(result["4"], "should have tier key").to.have.property("3");
-      expect(result["4"]["3"], "should have limit property").to.have.property("limit", 2);
-      expect(result["4"]["3"], "should have threshold property").to.have.property("threshold", 0.9);
+      expect(result).to.include("filter_4_3_limit=2");
+      expect(result).to.include("filter_4_3_threshold=0.9");
+      expect(result).to.have.lengthOf(2);
     });
 
     it("should convert AudienceTier4 filter correctly", function () {
@@ -467,12 +461,11 @@ describe("neuwoRtdModule", function () {
         AudienceTier4: { limit: 10, threshold: 0.85 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should use segtax 4 for audience").to.have.property("4");
-      expect(result["4"], "should have tier key").to.have.property("4");
-      expect(result["4"]["4"], "should have limit property").to.have.property("limit", 10);
-      expect(result["4"]["4"], "should have threshold property").to.have.property("threshold", 0.85);
+      expect(result).to.include("filter_4_4_limit=10");
+      expect(result).to.include("filter_4_4_threshold=0.85");
+      expect(result).to.have.lengthOf(2);
     });
 
     it("should convert AudienceTier5 filter correctly", function () {
@@ -480,12 +473,11 @@ describe("neuwoRtdModule", function () {
         AudienceTier5: { limit: 7, threshold: 0.95 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should use segtax 4 for audience").to.have.property("4");
-      expect(result["4"], "should have tier key").to.have.property("5");
-      expect(result["4"]["5"], "should have limit property").to.have.property("limit", 7);
-      expect(result["4"]["5"], "should have threshold property").to.have.property("threshold", 0.95);
+      expect(result).to.include("filter_4_5_limit=7");
+      expect(result).to.include("filter_4_5_threshold=0.95");
+      expect(result).to.have.lengthOf(2);
     });
 
     it("should handle multiple content tiers with same segtax", function () {
@@ -495,13 +487,12 @@ describe("neuwoRtdModule", function () {
         ContentTier3: { threshold: 0.7 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax, false);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should have single segtax key").to.have.all.keys("6");
-      expect(result["6"], "should have all three tier keys").to.have.all.keys("1", "2", "3");
-      expect(result["6"]["1"], "tier 1 should be correct").to.deep.equal({ limit: 3 });
-      expect(result["6"]["2"], "tier 2 should be correct").to.deep.equal({ limit: 5 });
-      expect(result["6"]["3"], "tier 3 should be correct").to.deep.equal({ threshold: 0.7 });
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_2_limit=5");
+      expect(result).to.include("filter_6_3_threshold=0.7");
+      expect(result).to.have.lengthOf(3);
     });
 
     it("should handle multiple audience tiers", function () {
@@ -510,13 +501,12 @@ describe("neuwoRtdModule", function () {
         AudienceTier4: { limit: 4 },
         AudienceTier5: { threshold: 0.85 }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result, "should have segtax 4 key").to.have.all.keys("4");
-      expect(result["4"], "should have all three tier keys").to.have.all.keys("3", "4", "5");
-      expect(result["4"]["3"], "tier 3 should be correct").to.deep.equal({ limit: 2 });
-      expect(result["4"]["4"], "tier 4 should be correct").to.deep.equal({ limit: 4 });
-      expect(result["4"]["5"], "tier 5 should be correct").to.deep.equal({ threshold: 0.85 });
+      expect(result).to.include("filter_4_3_limit=2");
+      expect(result).to.include("filter_4_4_limit=4");
+      expect(result).to.include("filter_4_5_threshold=0.85");
+      expect(result).to.have.lengthOf(3);
     });
 
     it("should handle both content and audience tiers together", function () {
@@ -527,13 +517,15 @@ describe("neuwoRtdModule", function () {
         AudienceTier4: { threshold: 0.8 }
       };
       const contentSegtax = 6;
-      const result = neuwo.buildIabFilterConfig(filters, contentSegtax, false);
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-      expect(result, "should have both segtax keys").to.have.all.keys("6", "4");
-      expect(result["6"], "content segtax should have two tiers").to.have.all.keys("1", "2");
-      expect(result["4"], "audience segtax should have two tiers").to.have.all.keys("3", "4");
-      expect(result["6"]["1"]).to.deep.equal({ limit: 3, threshold: 0.5 });
-      expect(result["4"]["3"]).to.deep.equal({ limit: 2, threshold: 0.9 });
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.include("filter_6_2_limit=5");
+      expect(result).to.include("filter_4_3_limit=2");
+      expect(result).to.include("filter_4_3_threshold=0.9");
+      expect(result).to.include("filter_4_4_threshold=0.8");
+      expect(result).to.have.lengthOf(6);
     });
 
     it("should use different content segtax values correctly", function () {
@@ -542,14 +534,14 @@ describe("neuwoRtdModule", function () {
       };
 
       // Test with segtax 6 (IAB 2.2)
-      const result6 = neuwo.buildIabFilterConfig(filters, 6);
-      expect(result6, "should use segtax 6").to.have.property("6");
-      expect(result6, "should not have segtax 7").to.not.have.property("7");
+      const result6 = neuwo.buildFilterQueryParams(filters, 6, false);
+      expect(result6).to.include("filter_6_1_limit=3");
+      expect(result6).to.not.include("filter_7_1_limit=3");
 
       // Test with segtax 7 (IAB 3.0)
-      const result7 = neuwo.buildIabFilterConfig(filters, 7);
-      expect(result7, "should use segtax 7").to.have.property("7");
-      expect(result7, "should not have segtax 6").to.not.have.property("6");
+      const result7 = neuwo.buildFilterQueryParams(filters, 7, false);
+      expect(result7).to.include("filter_7_1_limit=3");
+      expect(result7).to.not.include("filter_6_1_limit=3");
     });
 
     it("should ignore unknown tier names", function () {
@@ -558,44 +550,44 @@ describe("neuwoRtdModule", function () {
         UnknownTier: { limit: 10 },
         InvalidTier99: { threshold: 0.5 }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6, false);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result, "should only have segtax 6").to.have.all.keys("6");
-      expect(result["6"], "should only have tier 1").to.have.all.keys("1");
-      expect(result["6"]["1"]).to.deep.equal({ limit: 3 });
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.have.lengthOf(1);
     });
 
     it("should handle filters with only limit property", function () {
       const filters = {
         ContentTier1: { limit: 5 }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["6"]["1"], "should only have limit property").to.deep.equal({ limit: 5 });
-      expect(result["6"]["1"], "should not have threshold").to.not.have.property("threshold");
+      expect(result).to.include("filter_6_1_limit=5");
+      expect(result).to.not.include.match(/filter_6_1_threshold/);
+      expect(result).to.have.lengthOf(1);
     });
 
     it("should handle filters with only threshold property", function () {
       const filters = {
         AudienceTier3: { threshold: 0.75 }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["4"]["3"], "should only have threshold property").to.deep.equal({ threshold: 0.75 });
-      expect(result["4"]["3"], "should not have limit").to.not.have.property("limit");
+      expect(result).to.include("filter_4_3_threshold=0.75");
+      expect(result).to.not.include.match(/filter_4_3_limit/);
+      expect(result).to.have.lengthOf(1);
     });
 
     it("should handle filters with additional custom properties", function () {
       const filters = {
         ContentTier1: { limit: 3, threshold: 0.5, customProp: "value" }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["6"]["1"], "should preserve all properties").to.deep.equal({
-        limit: 3,
-        threshold: 0.5,
-        customProp: "value"
-      });
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.include("filter_6_1_customProp=value");
+      expect(result).to.have.lengthOf(3);
     });
 
     it("should handle empty filter objects for tiers", function () {
@@ -603,91 +595,94 @@ describe("neuwoRtdModule", function () {
         ContentTier1: {},
         AudienceTier3: {}
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6, false);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["6"]["1"], "should create empty object for content tier").to.deep.equal({});
-      expect(result["4"]["3"], "should create empty object for audience tier").to.deep.equal({});
+      expect(result).to.have.lengthOf(0);
     });
 
-    it("should handle null limit value", function () {
+    it("should not include null limit value", function () {
       const filters = {
         ContentTier1: { limit: null, threshold: 0.5 }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6, false);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["6"]["1"], "should preserve null limit").to.have.property("limit", null);
-      expect(result["6"]["1"], "should preserve threshold").to.have.property("threshold", 0.5);
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.have.lengthOf(1);
     });
 
-    it("should handle undefined limit value", function () {
+    it("should not include undefined limit value", function () {
       const filters = {
         ContentTier1: { limit: undefined, threshold: 0.5 }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6, false);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["6"]["1"], "should preserve undefined limit").to.have.property("limit", undefined);
-      expect(result["6"]["1"], "should preserve threshold").to.have.property("threshold", 0.5);
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.have.lengthOf(1);
     });
 
-    it("should handle null threshold value", function () {
+    it("should not include null threshold value", function () {
       const filters = {
         AudienceTier3: { limit: 5, threshold: null }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6, false);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["4"]["3"], "should preserve limit").to.have.property("limit", 5);
-      expect(result["4"]["3"], "should preserve null threshold").to.have.property("threshold", null);
+      expect(result).to.include("filter_4_3_limit=5");
+      expect(result).to.have.lengthOf(1);
     });
 
-    it("should handle undefined threshold value", function () {
+    it("should not include undefined threshold value", function () {
       const filters = {
         AudienceTier3: { limit: 5, threshold: undefined }
       };
-      const result = neuwo.buildIabFilterConfig(filters, 6, false);
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
 
-      expect(result["4"]["3"], "should preserve limit").to.have.property("limit", 5);
-      expect(result["4"]["3"], "should preserve undefined threshold").to.have.property("threshold", undefined);
+      expect(result).to.include("filter_4_3_limit=5");
+      expect(result).to.have.lengthOf(1);
     });
 
     // OpenRTB 2.5 Feature Tests
     describe("with enableOrtb25Fields enabled (default)", function () {
-      it("should add IAB 1.0 filters when ContentTier1 filter is provided", function () {
+      it("should add IAB 1.0 filter params when ContentTier1 filter is provided", function () {
         const filters = {
           ContentTier1: { limit: 3, threshold: 0.5 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
 
-        expect(result, "should have both segtax 6 and segtax 1").to.have.all.keys("6", "1");
-        expect(result["6"]["1"], "segtax 6 tier 1 should be correct").to.deep.equal({ limit: 3, threshold: 0.5 });
-        expect(result["1"]["1"], "segtax 1 tier 1 should be correct").to.deep.equal({ limit: 3, threshold: 0.5 });
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_1_threshold=0.5");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_1_1_threshold=0.5");
+        expect(result).to.have.lengthOf(4);
       });
 
-      it("should add IAB 1.0 filters when ContentTier2 filter is provided", function () {
+      it("should add IAB 1.0 filter params when ContentTier2 filter is provided", function () {
         const filters = {
           ContentTier2: { limit: 5, threshold: 0.6 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
 
-        expect(result, "should have both segtax 6 and segtax 1").to.have.all.keys("6", "1");
-        expect(result["6"]["2"], "segtax 6 tier 2 should be correct").to.deep.equal({ limit: 5, threshold: 0.6 });
-        expect(result["1"]["2"], "segtax 1 tier 2 should be correct").to.deep.equal({ limit: 5, threshold: 0.6 });
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_6_2_threshold=0.6");
+        expect(result).to.include("filter_1_2_limit=5");
+        expect(result).to.include("filter_1_2_threshold=0.6");
+        expect(result).to.have.lengthOf(4);
       });
 
-      it("should add IAB 1.0 filters for both ContentTier1 and ContentTier2", function () {
+      it("should add IAB 1.0 filter params for both ContentTier1 and ContentTier2", function () {
         const filters = {
           ContentTier1: { limit: 3 },
           ContentTier2: { limit: 5 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
 
-        expect(result, "should have both segtax 6 and segtax 1").to.have.all.keys("6", "1");
-        expect(result["6"], "segtax 6 should have tiers 1 and 2").to.have.all.keys("1", "2");
-        expect(result["1"], "segtax 1 should have tiers 1 and 2").to.have.all.keys("1", "2");
-        expect(result["1"]["1"]).to.deep.equal({ limit: 3 });
-        expect(result["1"]["2"]).to.deep.equal({ limit: 5 });
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_1_2_limit=5");
+        expect(result).to.have.lengthOf(4);
       });
 
       it("should NOT add ContentTier3 filter to IAB 1.0 (only tiers 1-2 exist)", function () {
@@ -697,11 +692,15 @@ describe("neuwoRtdModule", function () {
           ContentTier3: { threshold: 0.7 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
 
-        expect(result["6"], "segtax 6 should have all three tiers").to.have.all.keys("1", "2", "3");
-        expect(result["1"], "segtax 1 should only have tiers 1 and 2").to.have.all.keys("1", "2");
-        expect(result["1"], "segtax 1 should NOT have tier 3").to.not.have.property("3");
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_6_3_threshold=0.7");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_1_2_limit=5");
+        expect(result).to.not.include.match(/filter_1_3/);
+        expect(result).to.have.lengthOf(5);
       });
 
       it("should NOT add audience tier filters to IAB 1.0", function () {
@@ -709,46 +708,49 @@ describe("neuwoRtdModule", function () {
           AudienceTier3: { limit: 2 },
           AudienceTier4: { limit: 4 }
         };
-        const result = neuwo.buildIabFilterConfig(filters, 6);
+        const result = neuwo.buildFilterQueryParams(filters, 6);
 
-        expect(result, "should only have segtax 4 (no segtax 1)").to.have.all.keys("4");
-        expect(result, "should not have segtax 1 for audience filters").to.not.have.property("1");
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.include("filter_4_4_limit=4");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(2);
       });
 
-      it("should add IAB 1.0 filters alongside audience filters", function () {
+      it("should add IAB 1.0 filter params alongside audience filters", function () {
         const filters = {
           ContentTier1: { limit: 3 },
           AudienceTier3: { limit: 2 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
 
-        expect(result, "should have segtax 6, 1, and 4").to.have.all.keys("6", "1", "4");
-        expect(result["6"]["1"]).to.deep.equal({ limit: 3 });
-        expect(result["1"]["1"]).to.deep.equal({ limit: 3 });
-        expect(result["4"]["3"]).to.deep.equal({ limit: 2 });
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.have.lengthOf(3);
       });
 
-      it("should not add segtax 1 when no content filters are provided", function () {
+      it("should not add segtax 1 params when no content filters are provided", function () {
         const filters = {
           AudienceTier3: { limit: 2 }
         };
-        const result = neuwo.buildIabFilterConfig(filters, 6);
+        const result = neuwo.buildFilterQueryParams(filters, 6);
 
-        expect(result, "should only have segtax 4").to.have.all.keys("4");
-        expect(result, "should not have segtax 1").to.not.have.property("1");
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(1);
       });
 
-      it("should not add segtax 1 when filters is empty", function () {
-        const result = neuwo.buildIabFilterConfig({}, 6);
+      it("should not add segtax 1 params when filters is empty", function () {
+        const result = neuwo.buildFilterQueryParams({}, 6);
 
-        expect(result, "should return empty object").to.deep.equal({});
+        expect(result).to.deep.equal([]);
       });
 
-      it("should not add segtax 1 when filters is null", function () {
-        const result = neuwo.buildIabFilterConfig(null, 6);
+      it("should not add segtax 1 params when filters is null", function () {
+        const result = neuwo.buildFilterQueryParams(null, 6);
 
-        expect(result, "should return empty object").to.deep.equal({});
+        expect(result).to.deep.equal([]);
       });
 
       it("should work with different content segtax values", function () {
@@ -757,25 +759,27 @@ describe("neuwoRtdModule", function () {
         };
 
         // Test with segtax 7 (IAB 3.0)
-        const result7 = neuwo.buildIabFilterConfig(filters, 7);
-        expect(result7, "should have segtax 7 and 1").to.have.all.keys("7", "1");
-        expect(result7["7"]["1"]).to.deep.equal({ limit: 3 });
-        expect(result7["1"]["1"]).to.deep.equal({ limit: 3 });
+        const result7 = neuwo.buildFilterQueryParams(filters, 7);
+        expect(result7).to.include("filter_7_1_limit=3");
+        expect(result7).to.include("filter_1_1_limit=3");
+        expect(result7).to.have.lengthOf(2);
       });
     });
 
     describe("with enableOrtb25Fields disabled", function () {
-      it("should not add IAB 1.0 filters when disabled", function () {
+      it("should not add IAB 1.0 filter params when disabled", function () {
         const filters = {
           ContentTier1: { limit: 3, threshold: 0.5 },
           ContentTier2: { limit: 5 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax, false);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-        expect(result, "should only have segtax 6").to.have.all.keys("6");
-        expect(result, "should not have segtax 1").to.not.have.property("1");
-        expect(result["6"], "segtax 6 should have tiers 1 and 2").to.have.all.keys("1", "2");
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_1_threshold=0.5");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(3);
       });
 
       it("should work correctly with all tier types when disabled", function () {
@@ -786,10 +790,14 @@ describe("neuwoRtdModule", function () {
           AudienceTier3: { limit: 2 }
         };
         const contentSegtax = 6;
-        const result = neuwo.buildIabFilterConfig(filters, contentSegtax, false);
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
 
-        expect(result, "should have segtax 6 and 4 only").to.have.all.keys("6", "4");
-        expect(result, "should not have segtax 1").to.not.have.property("1");
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_6_3_threshold=0.7");
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(4);
       });
     });
   });
@@ -1301,7 +1309,7 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "PI should include iabVersions parameter for segtax 4").to.include(
           "iabVersions=4"
         );
-        expect(request.method, "API should use POST method").to.equal("POST");
+        expect(request.method, "API should use GET method").to.equal("GET");
 
         request.respond(
           200,
@@ -1359,7 +1367,7 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "API should include iabVersions parameter for segtax 4").to.include(
           "iabVersions=4"
         );
-        expect(request.method, "API should use POST method").to.equal("POST");
+        expect(request.method, "API should use GET method").to.equal("GET");
 
         request.respond(
           200,
@@ -1417,7 +1425,7 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "API should include iabVersions parameter for segtax 4").to.include(
           "iabVersions=4"
         );
-        expect(request.method, "API should use POST method").to.equal("POST");
+        expect(request.method, "API should use GET method").to.equal("GET");
 
         request.respond(
           200,
@@ -1463,7 +1471,7 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "The request URL should include the encoded website URL").to.include(
           encodeURIComponent(conf.params.websiteToAnalyseUrl)
         );
-        expect(request.method, "API should use POST method").to.equal("POST");
+        expect(request.method, "API should use GET method").to.equal("GET");
 
         request.respond(
           200,
@@ -1555,7 +1563,7 @@ describe("neuwoRtdModule", function () {
           expect(contentData, "should have content data").to.exist;
         });
 
-        it("should send IAB 1.0 filter configuration in request body", function () {
+        it("should send IAB 1.0 filter configuration in URL parameters", function () {
           const apiResponse = {
             "1": {
               "1": [{ id: "IAB12" }],
@@ -1575,11 +1583,8 @@ describe("neuwoRtdModule", function () {
           neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
 
           const request = server.requests[0];
-          const requestBody = JSON.parse(request.requestBody);
-          expect(requestBody, "should have filter for segtax 1").to.have.property("1");
-          expect(requestBody["1"], "should have tier 1 filter").to.deep.equal({ "1": { limit: 2 } });
-          expect(requestBody, "should have filter for segtax 6").to.have.property("6");
-          expect(requestBody["6"], "should have tier 1 filter for segtax 6").to.deep.equal({ "1": { limit: 2 } });
+          expect(request.url, "should have filter for segtax 1 tier 1").to.include("filter_1_1_limit=2");
+          expect(request.url, "should have filter for segtax 6 tier 1").to.include("filter_6_1_limit=2");
 
           request.respond(
             200,
@@ -1635,7 +1640,7 @@ describe("neuwoRtdModule", function () {
           expect(contentData, "should still have content data").to.exist;
         });
 
-        it("should not send IAB 1.0 filters in request body", function () {
+        it("should not send IAB 1.0 filters in URL parameters", function () {
           const bidsConfig = bidsConfiglike();
           const conf = config();
           conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
@@ -1647,10 +1652,10 @@ describe("neuwoRtdModule", function () {
 
           neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
           const request = server.requests[0];
-          const requestBody = JSON.parse(request.requestBody);
 
-          expect(requestBody, "should not have segtax 1 filters").to.not.have.property("1");
-          expect(requestBody, "should have segtax 6 filters").to.have.property("6");
+          expect(request.url, "should not have segtax 1 filters").to.not.match(/filter_1_/);
+          expect(request.url, "should have segtax 6 filters").to.include("filter_6_1_limit=3");
+          expect(request.url, "should have segtax 6 tier 2 filters").to.include("filter_6_2_limit=5");
         });
       });
     });

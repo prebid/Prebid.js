@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.1.0
+ * @version 2.2.0
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -157,13 +157,6 @@ export function getBidRequestData(
     );
   }
 
-  // Build IAB filter configuration
-  const iabFilterConfig = buildIabFilterConfig(
-    iabTaxonomyFilters,
-    contentSegtax,
-    enableOrtb25Fields
-  );
-
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
   const urlParams = [
     "token=" + neuwoApiToken,
@@ -179,6 +172,16 @@ export function getBidRequestData(
     // Request IAB 1.0 for OpenRTB 2.5 fields if feature enabled
     if (enableOrtb25Fields) {
       urlParams.push("iabVersions=1"); // IAB Content 1.0
+    }
+
+    // Add flattened filter parameters to URL for GET request
+    const filterParams = buildFilterQueryParams(
+      iabTaxonomyFilters,
+      contentSegtax,
+      enableOrtb25Fields
+    );
+    if (filterParams.length > 0) {
+      urlParams.push(...filterParams);
     }
   }
 
@@ -229,8 +232,7 @@ export function getBidRequestData(
       "getBidRequestData():",
       "Cache System:",
       "Calling Neuwo API Endpoint:",
-      neuwoApiUrlFull,
-      ...(isV2Api ? ["Body:", iabFilterConfig] : [])
+      neuwoApiUrlFull
     );
 
     const requestPromise = new Promise((resolve) => {
@@ -295,11 +297,7 @@ export function getBidRequestData(
             );
             resolve(null);
           },
-        },
-        isV2Api ? JSON.stringify(iabFilterConfig) : null,
-        isV2Api
-          ? { method: "POST", contentType: "text/plain" }
-          : undefined
+        }
       );
     });
 
@@ -665,22 +663,29 @@ export function transformSegmentsV1ToV2(segments) {
 }
 
 /**
- * Builds IAB filter configuration from publisher settings.
- * Converts human-readable tier names to segtax-based structure for API communication.
- *
- * Input format:  { ContentTier1: { limit: 3, threshold: 0.5 }, AudienceTier3: { limit: 5 } }
- * Output format: { "6": { "1": { limit: 3, threshold: 0.5 } }, "4": { "3": { limit: 5 } } }
+ * Builds flattened query parameters from IAB taxonomy filters.
+ * Converts human-readable tier names directly to query parameter format for GET requests.
  *
  * @param {Object} iabTaxonomyFilters Publisher's tier filter configuration using human-readable tier names.
  * @param {number} contentSegtax The segtax ID for content taxonomies (determined by iabContentTaxonomyVersion).
- * @param {boolean} [enableOrtb25Fields=true] If true, also applies filters to IAB COntent Taxonomy 1.0 (segtax 1) for OpenRTB 2.5 category fields.
- * @returns {Object} Filter configuration in segtax-based structure.
+ * @param {boolean} [enableOrtb25Fields=true] If true, also applies filters to IAB Content Taxonomy 1.0 (segtax 1) for OpenRTB 2.5 category fields.
+ * @returns {Array<string>} Array of query parameter strings (e.g., ["filter_6_1_limit=3", "filter_6_1_threshold=0.5"]).
+ *
+ * @example
+ * Input:  { ContentTier1: { limit: 3, threshold: 0.5 }, AudienceTier3: { limit: 2 } }, contentSegtax=6
+ * Output: ["filter_6_1_limit=3", "filter_6_1_threshold=0.5", "filter_4_3_limit=2"]
  */
-export function buildIabFilterConfig(
+export function buildFilterQueryParams(
   iabTaxonomyFilters,
   contentSegtax,
   enableOrtb25Fields = true
 ) {
+  const params = [];
+
+  if (!iabTaxonomyFilters || typeof iabTaxonomyFilters !== "object") {
+    return params;
+  }
+
   const TIER_TO_SEGTAX = {
     ContentTier1: { segtax: contentSegtax, tier: "1" },
     ContentTier2: { segtax: contentSegtax, tier: "2" },
@@ -690,38 +695,46 @@ export function buildIabFilterConfig(
     AudienceTier5: { segtax: 4, tier: "5" },
   };
 
-  const body = {};
-  Object.entries(iabTaxonomyFilters || {}).forEach(([tierName, filter]) => {
+  // Build query params from tier mappings
+  Object.entries(iabTaxonomyFilters).forEach(([tierName, filter]) => {
     const mapping = TIER_TO_SEGTAX[tierName];
-    if (mapping) {
-      const segtaxKey = String(mapping.segtax);
-      if (!body[segtaxKey]) body[segtaxKey] = {};
-      body[segtaxKey][mapping.tier] = filter;
+    if (mapping && filter && typeof filter === "object") {
+      const segtax = mapping.segtax;
+      const tier = mapping.tier;
+
+      // Add each filter property (limit, threshold) as a query parameter
+      Object.keys(filter).forEach((prop) => {
+        const value = filter[prop];
+        if (value !== undefined && value !== null) {
+          params.push(`filter_${segtax}_${tier}_${prop}=${value}`);
+        }
+      });
     }
   });
 
   // Apply same filters to IAB 1.0 (segtax 1) for OpenRTB 2.5 fields
   // Note: IAB 1.0 only has tiers 1 and 2 (tier 3 will be ignored if configured)
-  if (enableOrtb25Fields && iabTaxonomyFilters) {
-    const segtax1Config = {};
-
-    // Apply ContentTier1 filters to segtax 1, tier 1
+  if (enableOrtb25Fields) {
     if (iabTaxonomyFilters.ContentTier1) {
-      segtax1Config["1"] = iabTaxonomyFilters.ContentTier1;
+      Object.keys(iabTaxonomyFilters.ContentTier1).forEach((prop) => {
+        const value = iabTaxonomyFilters.ContentTier1[prop];
+        if (value !== undefined && value !== null) {
+          params.push(`filter_1_1_${prop}=${value}`);
+        }
+      });
     }
 
-    // Apply ContentTier2 filters to segtax 1, tier 2
     if (iabTaxonomyFilters.ContentTier2) {
-      segtax1Config["2"] = iabTaxonomyFilters.ContentTier2;
-    }
-
-    // Only add segtax 1 config if there are filters
-    if (Object.keys(segtax1Config).length > 0) {
-      body["1"] = segtax1Config;
+      Object.keys(iabTaxonomyFilters.ContentTier2).forEach((prop) => {
+        const value = iabTaxonomyFilters.ContentTier2[prop];
+        if (value !== undefined && value !== null) {
+          params.push(`filter_1_2_${prop}=${value}`);
+        }
+      });
     }
   }
 
-  return body;
+  return params;
 }
 
 /**
