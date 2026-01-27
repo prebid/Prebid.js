@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import { EVENTS, STATUS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {includes as strIncludes} from '../src/polyfill.js';
+
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
@@ -155,7 +155,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               bidResponse.responseTimestamp = args.responseTimestamp;
               bidResponse.bidForSize = args.size;
               for (const [adserverTargetingKey, adserverTargetingValue] of Object.entries(args.adserverTargeting)) {
-                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !strIncludes(adserverTargetingKey, ele))) {
+                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !adserverTargetingKey.includes(ele))) {
                   bidResponse['adserverTargeting-' + adserverTargetingKey] = adserverTargetingValue;
                 }
               }

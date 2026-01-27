@@ -31,7 +31,7 @@ export const STORAGE_KEY = '_im_str'
 
 /**
  * Helpers object
- * @type {{getExtParamsFromBid(*): {impactify: {appId}}, createOrtbImpVideoObj(*): {context: string, playerSize: [number,number], id: string, mimes: [string]}, getDeviceType(): (number), createOrtbImpBannerObj(*, *): {format: [], id: string}}}
+ * @type {Object}
  */
 const helpers = {
   getExtParamsFromBid(bid) {
@@ -247,9 +247,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @param {bidderRequest} - the bidding request
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - the bidding request
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
@@ -363,7 +363,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     ajax(`${LOGGER_URI}/prebid/won`, null, JSON.stringify(bid), {
@@ -376,7 +376,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function (data) {
     ajax(`${LOGGER_URI}/prebid/timeout`, null, JSON.stringify(data[0]), {

@@ -1,8 +1,7 @@
-import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
+import {_map, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {find} from '../src/polyfill.js';
+import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -42,39 +41,6 @@ function buildBidRequests(validBidRequests) {
   })
 }
 
-const outstreamRender = bid => {
-  bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
-      sizes: [bid.width, bid.height],
-      targetId: bid.adUnitCode,
-      rendererOptions: {
-        showBigPlayButton: false,
-        showProgressBar: 'bar',
-        showVolume: false,
-        allowFullscreen: true,
-        skippable: false,
-        content: bid.vastXml
-      }
-    });
-  });
-}
-
-const createRenderer = (bid) => {
-  const renderer = Renderer.install({
-    targetId: bid.adUnitCode,
-    url: RENDERER_URL,
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(outstreamRender);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
-}
-
 function buildBid(bidData) {
   const bid = {
     requestId: bidData.bidId,
@@ -86,8 +52,7 @@ function buildBid(bidData) {
     netRevenue: true,
     ttl: TTL,
     meta: {
-      advertiserDomains: bidData.advertiserDomains || [],
-    }
+      advertiserDomains: bidData.advertiserDomains || []}
   };
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {
@@ -101,7 +66,7 @@ function buildBid(bidData) {
       bid.height = video.playerSize[0][1];
 
       if (video.context === 'outstream') {
-        bid.renderer = createRenderer(bid);
+        bid.renderer = createRenderer(bid, RENDERER_URL);
       }
     }
   } else if (bidData.placement === PLACEMENT_TYPE_IN_IMAGE) {
@@ -137,20 +102,6 @@ function buildBid(bidData) {
   }
 
   return bid;
-}
-
-function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
-}
-
-function hasVideoMandatoryParams(mediaTypes) {
-  const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
-
-  const isPlayerSize =
-    !!deepAccess(mediaTypes, 'video.playerSize') &&
-    isArray(deepAccess(mediaTypes, 'video.playerSize'));
-
-  return isHasVideoContext && isPlayerSize;
 }
 
 function wrapAd(bid, bidData) {
@@ -203,8 +154,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
@@ -244,7 +196,7 @@ export const spec = {
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
-        let rawBid = find(bidRequests, function (item) {
+        let rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;

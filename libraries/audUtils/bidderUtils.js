@@ -1,5 +1,4 @@
 import {
-  deepAccess,
   deepSetValue,
   generateUUID,
   logError
@@ -74,7 +73,7 @@ const formatResponse = (bidResponse, mediaType, assets) => {
   let responseArray = [];
   if (bidResponse) {
     try {
-      let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
+      let bidResp = bidResponse?.body?.seatbid ?? [];
       if (bidResp && bidResp[0] && bidResp[0].bid) {
         bidResp[0].bid.forEach(bidReq => {
           let response = {};
@@ -150,7 +149,7 @@ const getBannerDetails = (bidReq) => {
 }
 // Function to get floor price
 const getFloorPrice = (bidReq) => {
-  let bidfloor = deepAccess(bidReq, 'params.bid_floor', 0);
+  let bidfloor = bidReq?.params?.bid_floor ?? 0;
   return bidfloor;
 }
 // Function to get site object

@@ -198,7 +198,7 @@ describe('invibesBidAdapter:', function () {
     };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {

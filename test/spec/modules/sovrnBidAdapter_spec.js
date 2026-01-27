@@ -763,7 +763,8 @@ describe('sovrnBidAdapter', function() {
       nurl: '',
       adm: '<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>',
       h: 480,
-      w: 640
+      w: 640,
+      mtype: 2
     }
     const bannerBid = {
       id: 'a_403370_332fdb9b064040ddbec05891bd13ab28',
@@ -773,7 +774,8 @@ describe('sovrnBidAdapter', function() {
       nurl: '<!-- NURL -->',
       adm: '<!-- Creative -->',
       h: 90,
-      w: 728
+      w: 728,
+      mtype: 1
     }
 
     beforeEach(function () {
@@ -787,6 +789,71 @@ describe('sovrnBidAdapter', function() {
           }]
         }
       }
+    })
+
+    it('Should return the bid response of correct type when nurl is missing', function () {
+      const expectedResponse = {
+        requestId: '263c448586f5a1',
+        cpm: 0.45882675,
+        width: 728,
+        height: 90,
+        creativeId: 'creativelycreatedcreativecreative',
+        dealId: null,
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: 'banner',
+        ttl: 60000,
+        meta: { advertiserDomains: [] },
+        ad: decodeURIComponent(`<!-- Creative -->`)
+      }
+
+      response = {
+        body: {
+          id: '37386aade21a71',
+          seatbid: [{
+            bid: [{
+              ...bannerBid,
+              nurl: ''
+            }]
+          }]
+        }
+      }
+
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
+    })
+
+    it('Should return the bid response of correct type when nurl is present', function () {
+      const expectedResponse = {
+        requestId: '263c448586f5a1',
+        cpm: 0.45882675,
+        width: 728,
+        height: 90,
+        creativeId: 'creativelycreatedcreativecreative',
+        dealId: null,
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: 'banner',
+        ttl: 60000,
+        meta: { advertiserDomains: [] },
+        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
+      }
+
+      response = {
+        body: {
+          id: '37386aade21a71',
+          seatbid: [{
+            bid: [{
+              ...bannerBid
+            }]
+          }]
+        }
+      }
+
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
     })
 
     it('should get the correct bid response', function () {
@@ -1072,7 +1139,8 @@ describe('sovrnBidAdapter', function() {
               nurl: '',
               adm: bidAdm,
               h: 480,
-              w: 640
+              w: 640,
+              mtype: 2
             }]
           }]
         }

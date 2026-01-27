@@ -181,7 +181,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       });
       it('it merges response data', function () {
         const callback = sinon.spy();
-        
+
         iasSubModule.getBidRequestData({
           adUnits: [
             {code: 'adunit-1'},
@@ -201,7 +201,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targeting1['adunit-2']['adt']).to.be.eq('veryLow');
         expect(targeting1['adunit-2']['fr']).to.be.eq('false');
         expect(targeting1['adunit-2']['ias_id']).to.be.eq('id2');
-        
+
         iasSubModule.getBidRequestData({
           adUnits: [
             {code: 'adunit-2'},

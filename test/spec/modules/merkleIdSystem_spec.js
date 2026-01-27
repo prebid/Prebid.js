@@ -81,7 +81,7 @@ describe('Merkle System', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sinon.stub(utils, 'logInfo');
       sinon.stub(utils, 'logWarn');
       sinon.stub(utils, 'logError');
@@ -171,7 +171,7 @@ describe('Merkle System', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sinon.stub(utils, 'logInfo');
       sinon.stub(utils, 'logWarn');
       sinon.stub(utils, 'logError');

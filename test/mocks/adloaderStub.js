@@ -1,4 +1,3 @@
-
 import * as adloader from 'src/adloader.js';
 
 // this export is for adloader's tests against actual implementation

@@ -1,5 +1,8 @@
+import * as utils from '../../../src/utils.js';
 import { expect } from 'chai';
 import { spec } from 'modules/mobilefuseBidAdapter.js';
+import { config } from '../../../src/config.js';
+import { userSync } from '../../../src/userSync.js';
 
 const bidRequest = {
   bidder: 'mobilefuse',
@@ -80,6 +83,50 @@ describe('mobilefuseBidAdapter', function () {
     expect(regs.gpp_sid).to.deep.equal([7]);
   });
 
+  describe('should include ifsync in the request', function () {
+    let sandbox;
+    let utilsMock;
+
+    beforeEach(() => {
+      utilsMock = sinon.mock(utils);
+      sandbox = sinon.createSandbox();
+      utilsMock = sandbox.mock(utils);
+    });
+
+    afterEach(() => {
+      utilsMock.restore();
+      sandbox.restore();
+    });
+
+    it('the ifsync flag should be false for user-sync iframe disabled', function () {
+      sandbox.stub(config, 'getConfig')
+        .withArgs('userSync')
+        .returns({ syncEnabled: true });
+
+      sandbox.stub(userSync, 'canBidderRegisterSync')
+        .withArgs('iframe', 'mobilefuse')
+        .returns(false);
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const ext = request.data.ext.prebid.mobilefuse;
+      expect(ext.ifsync).to.equal(false);
+    });
+
+    it('the ifsync flag should be true for user-sync iframe enabled', function () {
+      sandbox.stub(config, 'getConfig')
+        .withArgs('userSync')
+        .returns({ syncEnabled: true });
+
+      sandbox.stub(userSync, 'canBidderRegisterSync')
+        .withArgs('iframe', 'mobilefuse')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const ext = request.data.ext.prebid.mobilefuse;
+      expect(ext.ifsync).to.equal(true);
+    });
+  });
+
   it('should interpret the response correctly', function () {
     const request = spec.buildRequests([bidRequest], bidderRequest);
     const bid = spec.interpretResponse(serverResponse, request)[0];
@@ -90,7 +137,7 @@ describe('mobilefuseBidAdapter', function () {
     expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
   });
 
-  it('should return user syncs with proper query params', function () {
+  it('should return user syncs with proper query params when iframe sync is enabled', function () {
     const syncs = spec.getUserSyncs(
       {iframeEnabled: true},
       [],
@@ -105,5 +152,33 @@ describe('mobilefuseBidAdapter', function () {
     expect(sync.url).to.include('https://mfx.mobilefuse.com/usync');
     expect(sync.url).to.include('gpp=GPP_CONSENT_STRING');
     expect(sync.url).to.include('gpp_sid=7');
+  });
+
+  it('should return pixel user syncs when iframe sync is disabled', function () {
+    const response = {
+      body: {
+        ...serverResponse.body,
+        ext: {
+          syncs: [
+            'https://abc.com/pixel?id=123',
+            'https://xyz.com/pixel?id=456',
+          ]
+        }
+      }
+    };
+
+    const syncs = spec.getUserSyncs(
+      {iframeEnabled: false},
+      [response],
+      null,
+      bidderRequest.uspConsent,
+      bidderRequest.gppConsent,
+    );
+
+    expect(syncs).to.be.an('array').that.has.lengthOf(2);
+    expect(syncs[0].type).to.equal('image');
+    expect(syncs[0].url).to.equal('https://abc.com/pixel?id=123');
+    expect(syncs[1].type).to.equal('image');
+    expect(syncs[1].url).to.equal('https://xyz.com/pixel?id=456');
   });
 });

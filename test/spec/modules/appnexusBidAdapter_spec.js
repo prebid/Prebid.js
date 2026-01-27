@@ -1632,30 +1632,6 @@ describe('AppNexusAdapter', function () {
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          tdid: 'sample-userid',
-          uid2: { id: 'sample-uid2-value' },
-          criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid',
-          pubProvidedId: [{
-            source: 'puburl.com',
-            uids: [{
-              id: 'pubid1',
-              atype: 1,
-              ext: {
-                stype: 'ppuid'
-              }
-            }]
-          }, {
-            source: 'puburl2.com',
-            uids: [{
-              id: 'pubid2'
-            }, {
-              id: 'pubid2-123'
-            }]
-          }]
-        },
         userIdAsEids: [{
           source: 'adserver.org',
           uids: [{ id: 'sample-userid' }]

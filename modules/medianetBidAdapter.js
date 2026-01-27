@@ -465,9 +465,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
-   * @param {BidderRequests} bidderRequests
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {Object} bidderRequests
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequests) {
     // convert Native ORTB definition to old-style prebid native definition
@@ -540,7 +540,7 @@ export const spec = {
   },
 
   /**
-   * @param {TimedOutBid} timeoutData
+   * @param {Bid} bid
    */
   onBidWon: (bid) => {
     try {

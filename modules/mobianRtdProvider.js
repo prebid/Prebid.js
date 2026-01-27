@@ -36,7 +36,7 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
  */
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
-
+const MOBIAN_TCF_ID = 1348;
 export const AP_VALUES = 'apValues';
 export const CATEGORIES = 'categories';
 export const EMOTIONS = 'emotions';
@@ -220,7 +220,8 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
 export const mobianBrandSafetySubmodule = {
   name: 'mobianBrandSafety',
   init: init,
-  getBidRequestData: getBidRequestData
+  getBidRequestData: getBidRequestData,
+  gvlid: MOBIAN_TCF_ID
 };
 
 submodule('realTimeData', mobianBrandSafetySubmodule);

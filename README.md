@@ -256,6 +256,21 @@ gulp build-bundle-dev --modules=bidderA,module1,...
 
 The results will be in build/dev/prebid.js.
 
+## ES5 Output Support
+
+For compatibility with older parsers or environments that require ES5 syntax, you can generate ES5-compatible output using the `--ES5` flag:
+
+```bash
+gulp build-bundle-dev --modules=bidderA,module1,... --ES5
+```
+
+This will:
+- Transpile all code to ES5 syntax using CommonJS modules
+- Target browsers: IE11+, Chrome 50+, Firefox 50+, Safari 10+
+- Ensure compatibility with older JavaScript parsers
+
+**Note:** Without the `--ES5` flag, the build will use modern ES6+ syntax by default for better performance and smaller bundle sizes.
+
 ## Test locally
 
 To lint the code:

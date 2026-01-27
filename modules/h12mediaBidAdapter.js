@@ -1,4 +1,4 @@
-import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
+import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
@@ -219,8 +219,10 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const D = window.top.document;
-    return [D.body.offsetWidth, Math.max(D.body.scrollHeight, D.documentElement.scrollHeight, D.body.offsetHeight, D.documentElement.offsetHeight, D.body.clientHeight, D.documentElement.clientHeight)]
+    const {document: {documentElement, body}} = getWinDimensions();
+    const width = body.clientWidth;
+    const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
+    return [width, height];
   } catch (t) {
     return [-1, -1]
   }

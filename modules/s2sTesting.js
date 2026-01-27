@@ -1,5 +1,4 @@
 import {PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet} from '../src/adapterManager.js';
-import {find} from '../src/polyfill.js';
 import {getBidderCodes, logWarn} from '../src/utils.js';
 
 const {CLIENT, SERVER} = PARTITIONS;
@@ -87,7 +86,7 @@ function isTestingServerOnly(s2sConfig) {
 }
 
 const adUnitsContainServerRequests = (adUnits, s2sConfig) => Boolean(
-  find(adUnits, adUnit => find(adUnit.bids, bid => (
+  ((adUnits) || []).find(adUnit => ((adUnit.bids) || []).find(bid => (
     bid.bidSource ||
     (s2sConfig.bidderControl && s2sConfig.bidderControl[bid.bidder])
   ) && bid.finalSource === SERVER))

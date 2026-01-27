@@ -6,6 +6,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import { EVENTS } from '../src/constants.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { collectUtmTagData, trimAdUnit, trimBid, trimBidderRequest } from '../libraries/asteriobidUtils/asteriobidUtils.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
@@ -24,7 +25,6 @@ var _startAuction = 0;
 var _bidRequestTimeout = 0;
 let flushInterval;
 var pmAnalyticsEnabled = false;
-const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
 const {width: x, height: y} = getViewportSize();
 
@@ -75,36 +75,6 @@ prebidmanagerAnalytics.disableAnalytics = function () {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
-function collectUtmTagData() {
-  let newUtm = false;
-  let pmUtmTags = {};
-  try {
-    utmTags.forEach(function (utmKey) {
-      let utmValue = getParameterByName(utmKey);
-      if (utmValue !== '') {
-        newUtm = true;
-      }
-      pmUtmTags[utmKey] = utmValue;
-    });
-    if (newUtm === false) {
-      utmTags.forEach(function (utmKey) {
-        let itemValue = storage.getDataFromLocalStorage(`pm_${utmKey}`);
-        if (itemValue && itemValue.length !== 0) {
-          pmUtmTags[utmKey] = itemValue;
-        }
-      });
-    } else {
-      utmTags.forEach(function (utmKey) {
-        storage.setDataInLocalStorage(`pm_${utmKey}`, pmUtmTags[utmKey]);
-      });
-    }
-  } catch (e) {
-    logError(`${analyticsName} Error`, e);
-    pmUtmTags['error_utm'] = 1;
-  }
-  return pmUtmTags;
-}
-
 function collectPageInfo() {
   const pageInfo = {
     domain: window.location.hostname,
@@ -126,7 +96,7 @@ function flush() {
       ver: _VERSION,
       bundleId: initOptions.bundleId,
       events: _eventQueue,
-      utmTags: collectUtmTagData(),
+      utmTags: collectUtmTagData(storage, getParameterByName, logError, analyticsName),
       pageInfo: collectPageInfo(),
     };
 
@@ -154,44 +124,6 @@ function flush() {
       _pageView
     ];
   }
-}
-
-function trimAdUnit(adUnit) {
-  if (!adUnit) return adUnit;
-  const res = {};
-  res.code = adUnit.code;
-  res.sizes = adUnit.sizes;
-  return res;
-}
-
-function trimBid(bid) {
-  if (!bid) return bid;
-  const res = {};
-  res.auctionId = bid.auctionId;
-  res.bidder = bid.bidder;
-  res.bidderRequestId = bid.bidderRequestId;
-  res.bidId = bid.bidId;
-  res.crumbs = bid.crumbs;
-  res.cpm = bid.cpm;
-  res.currency = bid.currency;
-  res.mediaTypes = bid.mediaTypes;
-  res.sizes = bid.sizes;
-  res.transactionId = bid.transactionId;
-  res.adUnitCode = bid.adUnitCode;
-  res.bidRequestsCount = bid.bidRequestsCount;
-  res.serverResponseTimeMs = bid.serverResponseTimeMs;
-  return res;
-}
-
-function trimBidderRequest(bidderRequest) {
-  if (!bidderRequest) return bidderRequest;
-  const res = {};
-  res.auctionId = bidderRequest.auctionId;
-  res.auctionStart = bidderRequest.auctionStart;
-  res.bidderRequestId = bidderRequest.bidderRequestId;
-  res.bidderCode = bidderRequest.bidderCode;
-  res.bids = bidderRequest.bids && bidderRequest.bids.map(trimBid);
-  return res;
 }
 
 function handleEvent(eventType, eventArgs) {

@@ -21,7 +21,7 @@ describe('Geolocation RTD Provider', function () {
   });
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {

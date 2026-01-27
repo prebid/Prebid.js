@@ -6,7 +6,7 @@
  * @module modules/adlooxRtdProvider
  * @requires module:modules/realTimeData
  * @requires module:modules/adlooxAnalyticsAdapter
- * @optional module:modules/intersectionRtdProvider
+ * @see module:modules/intersectionRtdProvider (optional)
  */
 
 /* eslint prebid/validate-imports: "off" */

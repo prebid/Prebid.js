@@ -1918,7 +1918,7 @@ let VALID_BID_REQUEST = [{
 describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(window.top, 'innerHeight').value(780)
     sandbox.stub(window.top, 'innerWidth').value(440)
     sandbox.stub(window.top, 'scrollY').value(100)

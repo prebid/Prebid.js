@@ -1,4 +1,3 @@
-import { find } from '../../src/polyfill.js';
 import { vastXmlEditorFactory } from '../../libraries/video/shared/vastXmlEditor.js';
 import { generateUUID } from '../../src/utils.js';
 
@@ -86,7 +85,7 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   verifier.trackBid = function (bid, globalAdUnits) {
     const adIdOverride = superTrackBid(bid);
     let { vastXml, vastUrl, adId, adUnitCode } = bid;
-    const adUnit = find(globalAdUnits, adUnit => adUnitCode === adUnit.code);
+    const adUnit = ((globalAdUnits) || []).find(adUnit => adUnitCode === adUnit.code);
     const videoConfig = adUnit && adUnit.video;
     const adServerConfig = videoConfig && videoConfig.adServer;
     const trackingConfig = adServerConfig && adServerConfig.tracking;

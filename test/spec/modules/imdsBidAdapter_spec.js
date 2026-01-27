@@ -1144,7 +1144,7 @@ describe('imdsBidAdapter ', function () {
     });
 
     it('should not include videoCacheKey property on the returned response when cache url is present in the config', function () {
-      let sandbox = sinon.sandbox.create();
+      let sandbox = sinon.createSandbox();
       let serverRespVideo = {
         body: {
           id: 'abcd1234',

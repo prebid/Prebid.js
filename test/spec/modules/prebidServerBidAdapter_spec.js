@@ -1,10 +1,10 @@
- 
 import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
   resetSyncedStatus,
   validateConfig,
-  s2sDefaultConfig
+  s2sDefaultConfig,
+  processPBSRequest
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, {PBS_ADAPTER_NAME} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
@@ -12,7 +12,7 @@ import {deepAccess, deepClone, mergeDeep} from 'src/utils.js';
 import {ajax} from 'src/ajax.js';
 import {config} from 'src/config.js';
 import * as events from 'src/events.js';
-import { EVENTS } from 'src/constants.js';
+import { EVENTS, DEBUG_MODE } from 'src/constants.js';
 import {server} from 'test/mocks/xhr.js';
 import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
@@ -682,7 +682,7 @@ describe('S2S Adapter', function () {
       let sandbox, ortb2Fragments, redactorMocks, s2sReq;
 
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         redactorMocks = {};
         sandbox.stub(redactor, 'redactor').callsFake((params) => {
           if (!redactorMocks.hasOwnProperty(params.component)) {
@@ -859,7 +859,7 @@ describe('S2S Adapter', function () {
           it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
             adapter.callBids({...REQUEST, requestBidsTimeout: maxTimeout / 2}, BID_REQUESTS, addBidResponse, done, ajax);
             const req = JSON.parse(server.requests[0].requestBody);
-            expect(req.tmax).to.eql(maxTimeout / 2 * 0.75);
+            expect(req.tmax).to.eql(Math.floor(maxTimeout / 2 * 0.75));
           })
         })
       })
@@ -933,6 +933,23 @@ describe('S2S Adapter', function () {
       expect(server.requests.length).to.equal(0);
     });
 
+    it('filters ad units without bidders when filterBidderlessCalls is true', function () {
+      const cfg = {...CONFIG, filterBidderlessCalls: true};
+      config.setConfig({s2sConfig: cfg});
+
+      const badReq = utils.deepClone(REQUEST);
+      badReq.s2sConfig = cfg;
+      badReq.ad_units = [{...REQUEST.ad_units[0], bids: [{bidder: null}]}];
+
+      const badBidderRequest = utils.deepClone(BID_REQUESTS);
+      badBidderRequest[0].bidderCode = null;
+      badBidderRequest[0].bids = [{...badBidderRequest[0].bids[0], bidder: null}];
+
+      adapter.callBids(badReq, badBidderRequest, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
     if (FEATURES.VIDEO) {
       it('should add outstream bc renderer exists on mediatype', function () {
         config.setConfig({ s2sConfig: CONFIG });
@@ -963,7 +980,59 @@ describe('S2S Adapter', function () {
         expect(requestBid.imp[0].video.context).to.be.undefined;
       });
     }
+    describe('gzip compression', function () {
+      let gzipStub, gzipSupportStub, getParamStub, debugStub;
+      beforeEach(function() {
+        gzipStub = sinon.stub(utils, 'compressDataWithGZip').resolves('compressed');
+        gzipSupportStub = sinon.stub(utils, 'isGzipCompressionSupported');
+        getParamStub = sinon.stub(utils, 'getParameterByName');
+        debugStub = sinon.stub(utils, 'debugTurnedOn');
+      });
 
+      afterEach(function() {
+        gzipStub.restore();
+        gzipSupportStub.restore();
+        getParamStub.restore();
+        debugStub.restore();
+      });
+
+      it('should gzip payload when enabled and supported', function(done) {
+        const s2sCfg = Object.assign({}, CONFIG, {endpointCompression: true});
+        config.setConfig({s2sConfig: s2sCfg});
+        const req = utils.deepClone(REQUEST);
+        req.s2sConfig = s2sCfg;
+        gzipSupportStub.returns(true);
+        getParamStub.withArgs(DEBUG_MODE).returns('false');
+        debugStub.returns(false);
+
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+
+        setTimeout(() => {
+          expect(gzipStub.calledOnce).to.be.true;
+          expect(server.requests[0].url).to.include('gzip=1');
+          expect(server.requests[0].requestBody).to.equal('compressed');
+          done();
+        });
+      });
+
+      it('should not gzip when debug mode is enabled', function(done) {
+        const s2sCfg = Object.assign({}, CONFIG, {endpointCompression: true});
+        config.setConfig({s2sConfig: s2sCfg});
+        const req = utils.deepClone(REQUEST);
+        req.s2sConfig = s2sCfg;
+        gzipSupportStub.returns(true);
+        getParamStub.withArgs(DEBUG_MODE).returns('true');
+        debugStub.returns(true);
+
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+
+        setTimeout(() => {
+          expect(gzipStub.called).to.be.false;
+          expect(server.requests[0].url).to.not.include('gzip=1');
+          done();
+        });
+      });
+    });
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });

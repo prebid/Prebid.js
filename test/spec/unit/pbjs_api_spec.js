@@ -15,7 +15,6 @@ import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import {resetAuctionState} from 'src/auction.js';
 import {registerBidder} from 'src/adapters/bidderFactory.js';
-import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.js';
 import $$PREBID_GLOBAL$$, {startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -218,7 +217,7 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     mockFpdEnrichments(sandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
@@ -1006,7 +1005,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
-    let targeting; 
+    let targeting;
 
     beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
@@ -1023,7 +1022,6 @@ describe('Unit: Prebid Module', function () {
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-      
       slots.forEach(function(slot) {
         targeting = {};
         slot.getTargetingKeys().map(function (key) {
@@ -1760,7 +1758,7 @@ describe('Unit: Prebid Module', function () {
   describe('requestBids', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();
@@ -3704,7 +3702,7 @@ describe('Unit: Prebid Module', function () {
         winningBid = targeting.getWinningBids(adUnitCode)[0];
         auction.getAuctionId = function() { return winningBid.auctionId };
         sandbox.stub(events, 'emit');
-        markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
+        markedBid = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids.find(
           bid => bid.adId === winningBid.adId);
       })
 
@@ -3756,7 +3754,7 @@ describe('Unit: Prebid Module', function () {
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
-        const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
+        const markedBid = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids.find(
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.not.equal(BID_STATUS.RENDERED);
@@ -3874,15 +3872,18 @@ describe('Unit: Prebid Module', function () {
 
   describe('getAllPrebidWinningBids', function () {
     let auctionManagerStub;
+    let logWarnSpy;
     beforeEach(function () {
       auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
+      logWarnSpy = sandbox.spy(utils, 'logWarn');
     });
 
     afterEach(function () {
       auctionManagerStub.restore();
+      logWarnSpy.restore();
     });
 
-    it('should return prebid auction winning bids', function () {
+    it('should warn and return prebid auction winning bids', function () {
       let bidsReceived = [
         createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'targetingSet', requestId: 'reqid-1'}),
         createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2', requestId: 'reqid-2'}),
@@ -3892,8 +3893,9 @@ describe('Unit: Prebid Module', function () {
       auctionManagerStub.returns(bidsReceived)
       let bids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();
 
-      expect(bids.length).to.equal(1); sandbox
+      expect(bids.length).to.equal(1);
       expect(bids[0].adId).to.equal('adid-1');
+      sinon.assert.calledOnce(logWarnSpy);
     });
   });
 

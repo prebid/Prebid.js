@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { server } from '../../mocks/xhr';
+import { getWinDimensions } from '../../../src/utils';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
 
 import {
   mediaSize,
@@ -100,17 +102,23 @@ const mockBidRequest = {
     bidRequestsCount: 1,
     bidderRequestsCount: 1,
     bidderWinsCount: 0,
+    floor: null,
+    dpr: 1,
+    wp: { ada: false, bnb: false, eth: false, sol: false, tron: false },
+    wpfs: { ada: [], bnb: [], eth: [], sol: [], tron: [] },
+    vp: [1920, 1080],
+    pp: [240, 360],
   },
   bidId: '2e02b562f700ae',
 };
 
 describe('hypelabBidAdapter', function () {
   describe('mediaSize', function () {
-    describe('when given an invalid media object', function () {
+    it('when given an invalid media object', function () {
       expect(mediaSize({})).to.eql({ width: 0, height: 0 });
     });
 
-    describe('when given a valid media object', function () {
+    it('when given a valid media object', function () {
       expect(
         mediaSize({ creative_set: { image: { width: 728, height: 90 } } })
       ).to.eql({ width: 728, height: 90 });
@@ -118,29 +126,35 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    describe('when given an invalid bid request', function () {
+    it('when given an invalid bid request', function () {
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
 
-    describe('when given a valid bid request', function () {
+    it('when given a valid bid request', function () {
       expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
     });
   });
 
   describe('Bidder code valid', function () {
-    expect(spec.code).to.equal(BIDDER_CODE);
+    it('should match BIDDER_CODE', function () {
+      expect(spec.code).to.equal(BIDDER_CODE);
+    });
   });
 
   describe('Media types valid', function () {
-    expect(spec.supportedMediaTypes).to.contain(BANNER);
+    it('should contain BANNER', function () {
+      expect(spec.supportedMediaTypes).to.contain(BANNER);
+    });
   });
 
   describe('Bid request valid', function () {
-    expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
+    it('should validate correctly', function () {
+      expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
+    });
   });
 
   describe('buildRequests', () => {
-    describe('returns a valid request', function () {
+    it('returns a valid request', function () {
       const result = spec.buildRequests(
         mockValidBidRequests,
         mockBidderRequest
@@ -163,9 +177,36 @@ describe('hypelabBidAdapter', function () {
       expect(data.dpr).to.be.a('number');
       expect(data.location).to.be.a('string');
       expect(data.floor).to.equal(null);
+      expect(data.dpr).to.equal(1);
+      expect(data.wp).to.deep.equal({
+        ada: false,
+        bnb: false,
+        eth: false,
+        sol: false,
+        tron: false,
+      });
+      expect(data.wpfs).to.deep.equal({
+        ada: [],
+        bnb: [],
+        eth: [],
+        sol: [],
+        tron: [],
+      });
+      const winDimensions = getWinDimensions();
+      expect(data.vp).to.deep.equal([
+      Math.max(
+        winDimensions?.document.documentElement.clientWidth || 0,
+        winDimensions?.innerWidth || 0
+      ),
+      Math.max(
+        winDimensions?.document.documentElement.clientHeight || 0,
+        winDimensions?.innerHeight || 0
+      ),
+    ]);
+      expect(data.pp).to.deep.equal(null);
     });
 
-    describe('should set uuid to the first id in userIdAsEids', () => {
+    it('should set uuid to the first id in userIdAsEids', () => {
       mockValidBidRequests[0].userIdAsEids = [
         {
           source: 'pubcid.org',
@@ -196,7 +237,7 @@ describe('hypelabBidAdapter', function () {
   });
 
   describe('interpretResponse', () => {
-    describe('successfully interpret a valid response', function () {
+    it('successfully interpret a valid response', function () {
       const result = spec.interpretResponse(mockServerResponse, mockBidRequest);
 
       expect(result).to.be.an('array');
@@ -217,7 +258,7 @@ describe('hypelabBidAdapter', function () {
       expect(data.meta.advertiserDomains[0]).to.be.a('string');
     });
 
-    describe('should return a blank array if cpm is not set', () => {
+    it('should return a blank array if cpm is not set', () => {
       mockServerResponse.body.data.cpm = undefined;
       const result = spec.interpretResponse(mockServerResponse, mockBidRequest);
       expect(result).to.eql([]);

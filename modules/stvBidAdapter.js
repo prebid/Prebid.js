@@ -1,7 +1,7 @@
 import {deepAccess, logMessage} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {includes} from '../src/polyfill.js';
+
 import {
   handleSyncUrls,
   isBannerRequest,
@@ -101,7 +101,7 @@ export const spec = {
       if (mediaTypesInfo[VIDEO] !== undefined) {
         let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
-          .filter(key => includes(Object.keys(VIDEO_ORTB_PARAMS), key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
+          .filter(key => Object.keys(VIDEO_ORTB_PARAMS).includes(key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
           .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
       }
       if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }
@@ -191,43 +191,48 @@ function serializeSChain(schain) {
 function serializeUids(bidRequest) {
   let uids = [];
 
-  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  if (bidRequest.userIdAsEids === undefined || !Array.isArray(bidRequest.userIdAsEids)) {
+    return '';
+  }
+
+  let buids = {};
+  bidRequest.userIdAsEids.forEach((src) => (buids[deepAccess(src, 'source')] = deepAccess(src, 'uids.0')));
+
+  let id5 = deepAccess(buids['id5-sync.com'], 'id');
   if (id5) {
     uids.push(encodeURIComponent('id5:' + id5));
-    let id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    let id5Linktype = deepAccess(buids['id5-sync.com'], 'ext.linkType');
     if (id5Linktype) {
       uids.push(encodeURIComponent('id5_linktype:' + id5Linktype));
     }
   }
-  let netId = deepAccess(bidRequest, 'userId.netId');
+  let netId = deepAccess(buids['netid.de'], 'id');
   if (netId) {
     uids.push(encodeURIComponent('netid:' + netId));
   }
-  let uId2 = deepAccess(bidRequest, 'userId.uid2.id');
+  let uId2 = deepAccess(buids['uidapi.com'], 'id');
   if (uId2) {
     uids.push(encodeURIComponent('uid2:' + uId2));
   }
-  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  let sharedId = deepAccess(buids['pubcid.org'], 'id');
   if (sharedId) {
     uids.push(encodeURIComponent('sharedid:' + sharedId));
   }
-  let liverampId = deepAccess(bidRequest, 'userId.idl_env');
+  let liverampId = deepAccess(buids['liveramp.com'], 'id');
   if (liverampId) {
     uids.push(encodeURIComponent('liverampid:' + liverampId));
   }
-  let criteoId = deepAccess(bidRequest, 'userId.criteoId');
+  let criteoId = deepAccess(buids['criteo.com'], 'id');
   if (criteoId) {
     uids.push(encodeURIComponent('criteoid:' + criteoId));
   }
-  // documentation missing...
-  let utiqId = deepAccess(bidRequest, 'userId.utiq.id');
+  let utiqId = deepAccess(buids['utiq.com'], 'id');
   if (utiqId) {
     uids.push(encodeURIComponent('utiq:' + utiqId));
-  } else {
-    utiqId = deepAccess(bidRequest, 'userId.utiq');
-    if (utiqId) {
-      uids.push(encodeURIComponent('utiq:' + utiqId));
-    }
+  }
+  let euidId = deepAccess(buids['euid.eu'], 'id');
+  if (euidId) {
+    uids.push(encodeURIComponent('euid:' + euidId));
   }
 
   return uids.join(',');

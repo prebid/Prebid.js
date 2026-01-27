@@ -289,6 +289,27 @@ describe('Adspirit Bidder Spec', function () {
     });
   });
 
+  // getEids function
+    describe('getEids', function () {
+    it('should return userIdAsEids when present', function () {
+      const bidRequest = {
+        userIdAsEids: [
+          {
+            source: 'pubcid.org',
+            uids: [{ id: 'test-pubcid', atype: 1 }]
+          }
+        ]
+      };
+      const result = spec.getEids(bidRequest);
+      expect(result).to.deep.equal(bidRequest.userIdAsEids);
+    });
+
+    it('should return an empty array when userIdAsEids is missing', function () {
+      const bidRequest = {};
+      const result = spec.getEids(bidRequest);
+      expect(result).to.deep.equal([]);
+    });
+  });
   // interpretResponse
   describe('interpretResponse', function () {
     const validBidRequestMock = {

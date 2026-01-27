@@ -2,7 +2,6 @@ import { config } from '../../src/config.js';
 import {
   isFn,
   isStr,
-  deepAccess,
   getWindowTop,
   triggerPixel
 } from '../../src/utils.js';
@@ -28,7 +27,7 @@ function isBidResponseValid(bid) {
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
+    return bid?.params?.bidFloor ?? 0;
   }
 
   try {
@@ -154,7 +153,7 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
 }
 
 export function bidWinReport (bid) {
-  const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+  const cpm = bid?.adserverTargeting?.hb_pb || '';
   if (isStr(bid.nurl) && bid.nurl !== '') {
     bid.nurl = bid.nurl.replace(/\${AUCTION_PRICE}/, cpm);
     triggerPixel(bid.nurl);

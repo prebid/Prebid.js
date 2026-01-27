@@ -230,9 +230,6 @@ export const spec = {
     if (validBidRequests[0].userIdAsEids && validBidRequests[0].userIdAsEids.length > 0) {
       // Standard ORTB structure
       deepSetValue(payload, 'user.eids', validBidRequests[0].userIdAsEids);
-    } else if (validBidRequests[0].userId && Object.keys(validBidRequests[0].userId).length > 0) {
-      // Fallback to non-ortb structure
-      deepSetValue(payload, 'user.ext.userId', validBidRequests[0].userId);
     }
 
     return {

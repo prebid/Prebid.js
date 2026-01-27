@@ -87,3 +87,16 @@ export function defineStorageType(params) {
   const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
   return filteredArr.length ? filteredArr : ['html5'];
 }
+
+/**
+ * Parse json if possible, else return null
+ * @param data
+ */
+export function tryParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (err) {
+    logError(err);
+    return null;
+  }
+}

@@ -713,14 +713,13 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.user).to.deep.equal({
         ext: {
-          ...ortb2.user.ext,
-          uids: bidRequests[0].userId
+          ...ortb2.user.ext
         }
       });
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.0.3'
+        adapterversion: '2.0.4'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -775,15 +774,6 @@ describe('OguryBidAdapter', () => {
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data.site.id).to.be.an('undefined');
-    });
-
-    it('should not set user.ext.uids when userId is not present', () => {
-      const bidderRequest = utils.deepClone(bidderRequestBase);
-      const validBidRequests = bidderRequest.bids;
-      delete validBidRequests[0].userId;
-
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request.data.user.ext.uids).to.be.an('undefined');
     });
 
     it('should handle bidFloor undefined', () => {
@@ -941,10 +931,10 @@ describe('OguryBidAdapter', () => {
 
       const bid = { nurl: 'http://url.co/win' };
 
-      expect(ortbConverterProps.bidResponse(buildBidResponseSpy, utils.deepClone(bid), {})).to.deep.equal({ 
+      expect(ortbConverterProps.bidResponse(buildBidResponseSpy, utils.deepClone(bid), {})).to.deep.equal({
         ...bidResponse,
         currency: 'USD',
-        nurl: bid.nurl 
+        nurl: bid.nurl
       });
 
       sinon.assert.calledWith(buildBidResponseSpy, {}, {});

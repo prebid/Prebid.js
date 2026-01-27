@@ -332,7 +332,7 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should not exceed max url length', () => {
-        const longString = new Array(8000).join('a');
+        const longString = Array(8000).join('a');
         const localWindow = utils.getWindowTop();
 
         const originalTitle = localWindow.document.title;
@@ -356,7 +356,7 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should only shortcut properties rather then completely remove it', () => {
-        const longString = new Array(8000).join('a');
+        const longString = Array(8000).join('a');
         const localWindow = utils.getWindowTop();
 
         const originalTitle = localWindow.document.title;

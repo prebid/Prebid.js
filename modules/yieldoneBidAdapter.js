@@ -25,7 +25,7 @@ const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstvi
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
-/** @type BidderSpec */
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
@@ -135,7 +135,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    * @param {ServerResponse} serverResponse - A successful response from the server.
-   * @param {BidRequest} bidRequests
+   * @param {BidRequest} bidRequest
    * @returns {Bid[]} - An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
@@ -349,7 +349,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
 
 /**
  * Create render for outstream video.
- * @param {Object} serverResponse.body -
+ * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
 function newRenderer(response) {
@@ -380,7 +380,7 @@ function outstreamRender(bid) {
 
 /**
  * Create render for cmer outstream video.
- * @param {Object} serverResponse.body -
+ * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
 function newCmerRenderer(response) {

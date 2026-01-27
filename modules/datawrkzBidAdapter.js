@@ -45,7 +45,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {BidRequest[]} validBidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {*} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {

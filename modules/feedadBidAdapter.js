@@ -90,7 +90,7 @@ const VERSION = '1.0.6';
 
 /**
  * @typedef {object} FeedAdServerResponse
- * @augments ServerResponse
+ * @augments {Object}
  * @inner
  *
  * @property {FeedAdApiBidResponse[]} body - the body of a FeedAd server response
@@ -185,8 +185,8 @@ function isValidPlacementId(placementId) {
 
 /**
  * Checks if the given media types contain unsupported settings
- * @param {MediaTypes} mediaTypes - the media types to check
- * @return {MediaTypes} the unsupported settings, empty when all types are supported
+ * @param {Object} mediaTypes - the media types to check
+ * @return {Object} the unsupported settings, empty when all types are supported
  */
 function filterSupportedMediaTypes(mediaTypes) {
   return {
@@ -198,7 +198,7 @@ function filterSupportedMediaTypes(mediaTypes) {
 
 /**
  * Checks if the given media types are empty
- * @param {MediaTypes} mediaTypes - the types to check
+ * @param {Object} mediaTypes - the types to check
  * @return {boolean} true if the types are empty
  */
 function isMediaTypesEmpty(mediaTypes) {

@@ -321,7 +321,7 @@ describe('topics', () => {
     describe('caching', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       })
 
       afterEach(() => {

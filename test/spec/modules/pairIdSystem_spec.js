@@ -6,7 +6,7 @@ describe('pairId', function () {
   let logInfoStub;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logInfoStub = sandbox.stub(utils, 'logInfo');
   });
   afterEach(() => {

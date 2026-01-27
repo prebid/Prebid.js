@@ -1,4 +1,3 @@
-
 import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -181,8 +180,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -290,7 +290,8 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {ServerResponse} response A successful response from the server.
+   * @param {Object} request
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (response, request) {
@@ -863,18 +864,15 @@ function _logMessage(textValue, objectValue) {
   logMessage(LOG_PREFIX + textValue, objectValue);
 }
 
-
 function _logInfo(textValue, objectValue) {
   objectValue = objectValue || '';
   logInfo(LOG_PREFIX + textValue, objectValue);
 }
 
-
 function _logWarn(textValue, objectValue) {
   objectValue = objectValue || '';
   logWarn(LOG_PREFIX + textValue, objectValue);
 }
-
 
 function _logError(textValue, objectValue) {
   objectValue = objectValue || '';
@@ -947,9 +945,9 @@ function _getEndpointURL(bid) {
 /**
  *
  * @param {object} key
- * @param {object}} value
+ * @param {object} value
  * @param {object} datatype
- * @returns
+ * @returns {*}
  */
 function _checkParamDataType(key, value, datatype) {
   var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;

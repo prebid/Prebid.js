@@ -1174,7 +1174,7 @@ describe('sizeMappingV2', function () {
     });
   });
 
-  describe('getFilteredMediaTypes(mediaTypes)', function () {    
+  describe('getFilteredMediaTypes(mediaTypes)', function () {
     beforeEach(function () {
       utils.resetWinDimensions();
       sinon

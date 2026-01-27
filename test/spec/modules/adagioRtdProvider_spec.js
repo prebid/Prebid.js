@@ -5,7 +5,7 @@ import {
   storage,
 } from 'modules/adagioRtdProvider.js';
 import * as utils from 'src/utils.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { expect } from 'chai';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
@@ -39,7 +39,7 @@ describe('Adagio Rtd Provider', function () {
   let clock;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
   });
 
@@ -106,13 +106,13 @@ describe('Adagio Rtd Provider', function () {
     it('load an external script if localStorageIsEnabled is enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true)
       adagioRtdSubmodule.init(config);
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('do not load an external script if localStorageIsEnabled is disabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false)
       adagioRtdSubmodule.init(config);
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
 
     describe('store session data in localStorage', function () {

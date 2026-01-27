@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import {find} from 'src/polyfill.js';
 import { spec } from 'modules/mediakeysBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
@@ -247,7 +246,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].native.request.plcmttype).to.equal(1);
         expect(data.imp[0].native.request.assets.length).to.equal(6);
         // find the asset body
-        const bodyAsset = find(data.imp[0].native.request.assets, asset => asset.id === 6);
+        const bodyAsset = data.imp[0].native.request.assets.find(asset => asset.id === 6);
         expect(bodyAsset.data.type).to.equal(2);
       });
 

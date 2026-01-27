@@ -49,7 +49,7 @@ import {
   DUMMY_BIDDER,
   ERROR_CONFIG_FETCH,
   ERROR_CONFIG_JSON_PARSE,
-  GET_ENDPOINT,
+  GET_ENDPOINT_RA,
   GLOBAL_VENDOR_ID,
   LOG_APPR,
   LOG_RA,
@@ -57,13 +57,12 @@ import {
   NOBID_AFTER_AUCTION,
   PBS_ERROR_STATUS_START,
   POST_ENDPOINT,
-  SEND_ALL_BID_PROP,
   SUCCESS_AFTER_AUCTION,
   TIMEOUT_AFTER_AUCTION,
   VIDEO_CONTEXT,
   VIDEO_UUID_PENDING,
   WINNING_AUCTION_MISSING_ERROR,
-  WINNING_BID_ABSENT_ERROR, ERROR_IWB_BID_MISSING
+  WINNING_BID_ABSENT_ERROR, ERROR_IWB_BID_MISSING, POST_ENDPOINT_RA
 } from '../libraries/medianetUtils/constants.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -156,9 +155,9 @@ function initConfiguration(eventType, configuration) {
 // ======================[ LOGGING AND TRACKING ]===========================
 function doLogging(auctionObj, adUnitCode, logType, bidObj) {
   const queryParams = getQueryString(auctionObj, adUnitCode, logType, bidObj);
-  // Use the generated queryParams for logging
-  const payload = getLoggingPayload(queryParams);
-  firePostLog(POST_ENDPOINT, payload);
+  const loggingHost = (logType === LOG_RA) ? POST_ENDPOINT_RA : POST_ENDPOINT;
+  const payload = getLoggingPayload(queryParams, logType);
+  firePostLog(loggingHost, payload);
   auctionObj.adSlots[adUnitCode].logged[logType] = true;
 }
 
@@ -216,7 +215,7 @@ function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
     return [
       {
         event: 'impressions',
-        url: `${GET_ENDPOINT}?${getLoggingPayload(queryParams)}`,
+        url: `${GET_ENDPOINT_RA}?${getLoggingPayload(queryParams, LOG_RA)}`,
       },
     ];
   } catch (e) {
@@ -332,8 +331,6 @@ function isHigher(newBid, currentBid = {}) {
 }
 
 function markWinningBidsAndImpressionStatus(auctionObj) {
-  const sendAllBidsEnabled = config.getConfig(SEND_ALL_BID_PROP) === true;
-
   const updatePsiBid = (winner, adUnitCode, winnersAdIds) => {
     const psiBidObj = findBidObj(auctionObj.psiBids, 'adUnitCode', adUnitCode);
     if (!psiBidObj) {
@@ -354,15 +351,12 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
   };
 
   const markValidBidsAsWinners = (winnersAdIds) => {
-    if (!sendAllBidsEnabled) {
-      return;
-    }
     winnersAdIds.forEach((adId) => {
-      const sendAllWinnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
-      if (sendAllWinnerBid) {
-        sendAllWinnerBid.iwb = 1;
-      }
-    });
+        const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
+        if (winnerBid) {
+          winnerBid.iwb = 1;
+        }
+      });
   };
 
   const checkWinnersForIwb = (winner, winningBidObj) => {

@@ -111,7 +111,6 @@ export function injectTopics(topics, bidsConfig) {
   logInfo('NeuwoRTDModule', 'injectTopics: post-injection bidsConfig', bidsConfig)
 }
 
-
 const D_IAB_ID = { // Content Taxonomy version 2.0 final release November 2017 [sic] (Taxonomy ID Mapping, IAB versions 2.0 - 2.2)
   'IAB19-1': '603', 'IAB6-1': '193', 'IAB5-2': '133', 'IAB20-1': '665', 'IAB20-2': '656', 'IAB23-2': '454', 'IAB3-2': '102', 'IAB20-3': '672', 'IAB8-5': '211',
   'IAB8-18': '211', 'IAB7-4': '288', 'IAB7-5': '233', 'IAB17-12': '484', 'IAB19-3': '608', 'IAB21-1': '442', 'IAB9-2': '248', 'IAB15-1': '456', 'IAB9-17': '265', 'IAB20-4': '658',
@@ -156,7 +155,7 @@ export function convertSegment(segment) {
 
 /**
  * map array of objects to segments
- * @param {Array[{ID: string}]} normalizable
+ * @param {Array<{ID: string}>} normalizable
  * @returns array of IAB "segments"
  */
 export function pickSegments(normalizable) {

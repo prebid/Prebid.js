@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import * as events from 'src/events.js';
 import { EVENTS } from '../../../src/constants.js';
-import {loadExternalScript} from 'src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import {
   qortexSubmodule as module,
   addContextToRequests,
@@ -164,7 +164,7 @@ describe('qortexRtdProvider', () => {
       const config = cloneDeep(validModuleConfig);
       config.params.tagConfig = validTagConfig;
       expect(module.init(config)).to.be.true;
-      expect(loadExternalScript.calledOnce).to.be.true;
+      expect(loadExternalScriptStub.calledOnce).to.be.true;
     })
   })
 

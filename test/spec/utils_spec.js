@@ -25,7 +25,7 @@ describe('Utils', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
 
     afterEach(function () {
@@ -882,22 +882,30 @@ describe('Utils', function () {
   });
 
   describe('insertElement', function () {
+    let doc;
+
+    beforeEach(function () {
+      doc = document.implementation.createHTMLDocument('insertElementTest');
+    });
+
     it('returns a node at the top of the target by default', function () {
-      const toInsert = document.createElement('div');
-      const target = document.getElementsByTagName('body')[0];
-      const inserted = utils.insertElement(toInsert, document, 'body');
+      const toInsert = doc.createElement('div');
+      const target = doc.getElementsByTagName('body')[0];
+      const inserted = utils.insertElement(toInsert, doc, 'body');
       expect(inserted).to.equal(target.firstChild);
     });
+
     it('returns a node at bottom of target if 4th argument is true', function () {
-      const toInsert = document.createElement('div');
-      const target = document.getElementsByTagName('html')[0];
-      const inserted = utils.insertElement(toInsert, document, 'html', true);
+      const toInsert = doc.createElement('div');
+      const target = doc.getElementsByTagName('html')[0];
+      const inserted = utils.insertElement(toInsert, doc, 'html', true);
       expect(inserted).to.equal(target.lastChild);
     });
+
     it('returns a node at top of the head if no target is given', function () {
-      const toInsert = document.createElement('div');
-      const target = document.getElementsByTagName('head')[0];
-      const inserted = utils.insertElement(toInsert);
+      const toInsert = doc.createElement('div');
+      const target = doc.getElementsByTagName('head')[0];
+      const inserted = utils.insertElement(toInsert, doc);
       expect(inserted).to.equal(target.firstChild);
     });
   });
@@ -1325,16 +1333,16 @@ describe('Utils', function () {
     it('should compress data correctly when CompressionStream is available', async () => {
       const data = JSON.stringify({ test: 'data' });
       const compressedData = await utils.compressDataWithGZip(data);
-  
+
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
       expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
     });
-  
+
     it('should handle non-string input by stringifying it', async () => {
       const nonStringData = { test: 'data' };
       const compressedData = await utils.compressDataWithGZip(nonStringData);
-  
+
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
       expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));

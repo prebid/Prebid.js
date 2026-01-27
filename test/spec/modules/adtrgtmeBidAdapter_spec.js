@@ -6,7 +6,7 @@ const DEFAULT_SID = '1220291391';
 const DEFAULT_ZID = '1836455615';
 const DEFAULT_PIXEL_URL = 'https://cdn.adtarget.me/libs/1x1.gif';
 const DEFAULT_BANNER_URL = 'https://cdn.adtarget.me/libs/banner/300x250.jpg';
-const BIDDER_VERSION = '1.0.6';
+const BIDDER_VERSION = '1.0.7';
 const PREBIDJS_VERSION = '$prebid.version$';
 
 const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
@@ -268,7 +268,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       };
       bidRequest.schain = globalSchain;
       const data = spec.buildRequests(validBR, bidderRequest)[0].data;
-      const schain = data.source.ext.schain;
+      const schain = data.source.schain;
       expect(schain.nodes.length).to.equal(1);
       expect(schain).to.equal(globalSchain);
     });
@@ -566,10 +566,8 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
 
       expect(data.regs).to.deep.equal({
-        ext: {
           'us_privacy': '',
           gdpr: 1
-        }
       });
 
       expect(data.cur).to.deep.equal(['USD']);

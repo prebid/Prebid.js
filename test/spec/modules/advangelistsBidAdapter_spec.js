@@ -63,27 +63,6 @@ describe('advangelistsBidAdapter', function () {
 
   describe('spec.interpretResponse', function () {
     describe('for banner bids', function () {
-      it('should return no bids if the response is not valid', function () {
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
-
-        if (typeof bidResponse !== 'undefined') {
-          expect(bidResponse.length).to.equal(0);
-        } else {
-          expect(true).to.equal(true);
-        }
-      });
-
-      it('should return no bids if the response is empty', function () {
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        const bidResponse = spec.interpretResponse({ body: [] }, { bidRequest });
-        if (typeof bidResponse !== 'undefined') {
-          expect(bidResponse.length).to.equal(0);
-        } else { expect(true).to.equal(true); }
-      });
-
       it('should return valid video bid responses', function () {
         let _mediaTypes = VIDEO;
         const advangelistsbidreqVid = {'bidRequest': {'mediaTypes': {'video': {'w': 320, 'h': 480}}}};

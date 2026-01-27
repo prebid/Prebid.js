@@ -246,12 +246,13 @@ describe('Prebid Video', function () {
         }
       }
     };
-    const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+    let auctionResults;
 
     beforeEach(() => {
       gamSubmoduleMock.getAdTagUrl.resetHistory();
       videoCoreMock.setAdTagUrl.resetHistory();
       adQueueCoordinatorMock.queueAd.resetHistory();
+      auctionResults = { adUnits: [ expectedAdUnit, {} ] };
     });
 
     let beforeBidRequestCallback;
@@ -277,6 +278,20 @@ describe('Prebid Video', function () {
       expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedAdUnit);
       expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[1]).is.equal(expectedAdTag);
     });
+
+    it('should not choke when there are no bids', () => {
+      const pbGlobal = Object.assign({}, pbGlobalMock, {
+        requestBids,
+        getHighestCpmBids: () => []
+      });
+      auctionResults.adUnits[1].video = {divId: 'other-div'};
+      pbVideoFactory(null, getConfig, pbGlobal, pbEvents);
+      beforeBidRequestCallback(() => {}, {});
+      return auctionEndCallback(auctionResults)
+        .then(() => {
+          sinon.assert.notCalled(gamSubmoduleMock.getAdTagUrl);
+        });
+    })
 
     it('should load ad tag when ad server returns ad tag', function () {
       const expectedAdTag = 'resulting ad tag';

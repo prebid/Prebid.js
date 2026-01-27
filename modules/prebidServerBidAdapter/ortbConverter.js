@@ -62,7 +62,7 @@ const PBS_CONVERTER = ortbConverter({
       let {s2sBidRequest} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
-      request.tmax = s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout);
+      request.tmax = Math.floor(s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout));
       request.ext.tmaxmax = request.ext.tmaxmax || s2sBidRequest.requestBidsTimeout;
 
       [request.app, request.dooh, request.site].forEach(section => {

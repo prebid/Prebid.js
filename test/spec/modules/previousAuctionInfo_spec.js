@@ -155,10 +155,10 @@ describe('previous auction info', () => {
         ],
         timestamp: Date.now(),
       };
-    
+
       config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
       previousAuctionInfo.onAuctionEndHandler(auctionDetailsWithRejectedBid);
-    
+
       const stored = previousAuctionInfo.auctionState['testBidder1'][0];
       expect(stored).to.include({
         bidId: 'bid456',

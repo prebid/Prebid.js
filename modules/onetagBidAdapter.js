@@ -3,7 +3,6 @@
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
@@ -185,7 +184,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const { context, adUnitCode } = find(requestData.bids, (item) =>
+      const { context, adUnitCode } = ((requestData.bids) || []).find((item) =>
         item.bidId === bid.requestId &&
         item.type === VIDEO
       );
@@ -209,8 +208,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      paapi: fledgeAuctionConfigs,
-    }
+      paapi: fledgeAuctionConfigs}
   } else {
     return bids;
   }
@@ -303,7 +301,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.3'
+      adapter: '1.1.4'
     }
   };
 }
@@ -478,23 +476,23 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor !== 'function') return [];
-  const getFloorObject = (size) => {
-    const floorData = bidRequest.getFloor({
-      currency: 'EUR',
-      mediaType: mediaType || '*',
-      size: size || '*'
-    }) || {};
+    const getFloorObject = (size) => {
+      const floorData = bidRequest.getFloor({
+        currency: 'EUR',
+        mediaType: mediaType || '*',
+        size: size || null
+      }) || {};
 
-    return {
-      ...floorData,
-      size: size ? deepClone(size) : undefined,
-      floor: floorData.floor != null ? floorData.floor : null
-    };
+      return {
+        ...floorData,
+        size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
+        floor: floorData.floor != null ? floorData.floor : null
+      };
   };
+
   if (Array.isArray(sizes) && sizes.length > 0) {
     return sizes.map(size => getFloorObject([size.width, size.height]));
-  }
-  return [getFloorObject('*')];
+  } return [getFloorObject(null)];
 }
 
 export function isSchainValid(schain) {

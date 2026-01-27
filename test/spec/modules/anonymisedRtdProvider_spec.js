@@ -1,6 +1,6 @@
 import {config} from 'src/config.js';
 import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('anonymisedRtdProvider', function() {
   let getDataFromLocalStorageStub;
@@ -44,7 +44,7 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
     it('should not load external script when params.tagConfig.clientId is not set', function () {
       const rtdConfig = {
@@ -53,14 +53,14 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
     it('should not load external script when params.tagConfig is not defined', function () {
       const rtdConfig = {
         params: {}
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
     it('should not load external script when params.tagConfig.clientId is empty string', function () {
       const rtdConfig = {
@@ -71,7 +71,7 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
     it('should not load external script when params.tagConfig.clientId is not a string', function () {
       const rtdConfig = {
@@ -82,7 +82,7 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
     it('should load external script with correct attributes', function () {
       const rtdConfig = {
@@ -98,8 +98,8 @@ describe('anonymisedRtdProvider', function() {
         idw_client_id: 'testId'
       };
 
-      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
-      expect(loadExternalScript.args[0][5]).to.deep.equal(expectedTagConfig);
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
+      expect(loadExternalScriptStub.args[0][5]).to.deep.equal(expectedTagConfig);
     });
     it('should not load external script when it is already loaded', function () {
       const rtdConfig = {
@@ -113,7 +113,7 @@ describe('anonymisedRtdProvider', function() {
       script.src = 'https://static.anonymised.io/light/loader.js?random=quary';
       document.body.appendChild(script);
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
     it('should load external script from tagUrl when it is set', function () {
       const rtdConfig = {
@@ -127,7 +127,7 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       const expected = 'https://example.io/loader.js';
 
-      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
     });
     it('should not load external script from tagUrl when it is already loaded', function () {
       const rtdConfig = {
@@ -142,7 +142,7 @@ describe('anonymisedRtdProvider', function() {
       script.src = 'https://example.io/loader.js';
       document.body.appendChild(script);
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScript.called).to.be.false;
+      expect(loadExternalScriptStub.called).to.be.false;
     });
   });
 

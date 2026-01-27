@@ -65,7 +65,7 @@ describe('lemmaDigitalBidAdapter', function () {
       code: 'video1',
       mediaTypes: {
         video: {
-          playerSize: [640, 480],
+          playerSize: [[640, 480]],
           context: 'instream'
         }
       },
@@ -216,7 +216,7 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('Endpoint checking', function () {
         let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('https://bid.lemmadigital.com/lemma/servad?pid=1001&aid=1');
+        expect(request.url).to.equal('https://pbidj.lemmamedia.com/lemma/servad?pid=1001&aid=1');
         expect(request.method).to.equal('POST');
       });
       it('Request params check', function () {
@@ -254,7 +254,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.device).to.equal(undefined);
       });
       it('Set content from config, set site.content', function () {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -294,7 +294,7 @@ describe('lemmaDigitalBidAdapter', function () {
             },
           }
         }];
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -459,8 +459,8 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0]['video']['mimes'][1]).to.equal(videoBidRequests[0].params.video['mimes'][1]);
         expect(data.imp[0]['video']['minduration']).to.equal(videoBidRequests[0].params.video['minduration']);
         expect(data.imp[0]['video']['maxduration']).to.equal(videoBidRequests[0].params.video['maxduration']);
-        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
-        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][0]);
+        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][1]);
         expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].schain);
       });
       describe('setting imp.floor using floorModule', function () {
@@ -571,7 +571,7 @@ describe('lemmaDigitalBidAdapter', function () {
       let sandbox, utilsMock, newVideoRequest;
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.spy(utils, 'logWarn');
         newVideoRequest = utils.deepClone(videoBidRequests);
       });
@@ -594,8 +594,8 @@ describe('lemmaDigitalBidAdapter', function () {
         let request = spec.buildRequests(newVideoRequest);
         let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
-        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
-        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][0]);
+        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][1]);
         expect(data.imp[0]['video']['battr']).to.equal(undefined);
       });
     });
@@ -603,7 +603,7 @@ describe('lemmaDigitalBidAdapter', function () {
       const syncurl_iframe = 'https://sync.lemmadigital.com/js/usersync.html?pid=1001';
       let sandbox;
       beforeEach(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       });
       afterEach(function () {
         sandbox.restore();

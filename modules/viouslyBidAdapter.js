@@ -2,7 +2,10 @@ import { deepAccess, logError, parseUrl, parseSizesInput, triggerPixel } from '.
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'viously';
 const GVLID = 1028;
@@ -182,7 +185,7 @@ export const spec = {
     if (responseBody.ads && responseBody.ads.length > 0) {
       responseBody.ads.forEach(function(bidResponse) {
         if (bidResponse.bid) {
-          let bidRequest = find(requests.data.placements, bid => bid.bid_id === bidResponse.bid_id);
+          let bidRequest = ((requests.data.placements) || []).find(bid => bid.bid_id === bidResponse.bid_id);
 
           if (bidRequest) {
             let sizes = bidResponse.size.split('x');

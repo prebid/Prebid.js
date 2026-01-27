@@ -50,7 +50,7 @@ function init(moduleConfig, userConsent) {
 /**
  * Create and return ORTB2 object with segtax and segments
  * @param {number} segtax
- * @param {Array} segmentIds
+ * @param {Array} segment
  * @param {number} maxTier
  * @return {Array}
  */
@@ -106,7 +106,7 @@ export function generatePersonaOrtbDataObject(segtax, personaIds) {
 
 /**
  * Generates checksum
- * @param {string} url
+ * @param {string} stringValue
  * @returns {string}
  */
 export function generateChecksum(stringValue) {

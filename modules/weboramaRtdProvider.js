@@ -389,6 +389,9 @@ class WeboramaRtdProvider {
    * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.consents
    * @param {?Object} gdpr.vendorData.vendor
    * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.consents
+   * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.legitimateInterests
+   * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.legitimateInterests
+   * @param {?Object.<number, boolean>} gdpr.vendorData.publisher.restrictions
    * @return {boolean}
    */
 
@@ -397,18 +400,50 @@ class WeboramaRtdProvider {
       return true;
     }
 
-    if (
-      deepAccess(gdpr, 'vendorData.vendor.consents') &&
-      deepAccess(gdpr, 'vendorData.purpose.consents')
-    ) {
-      return (
-        gdpr.vendorData.vendor.consents[GVLID] === true && // check weborama vendor id
-        gdpr.vendorData.purpose.consents[1] === true && // info storage access
-        gdpr.vendorData.purpose.consents[3] === true && // create personalized ads
-        gdpr.vendorData.purpose.consents[4] === true && // select personalized ads
-        gdpr.vendorData.purpose.consents[5] === true && // create personalized content
-        gdpr.vendorData.purpose.consents[6] === true
-      ); // select personalized content
+    const vendorConsents = deepAccess(gdpr, 'vendorData.vendor.consents');
+    const vendorLegitimateInterests = deepAccess(gdpr, 'vendorData.vendor.legitimateInterests');
+    const purposeConsents = deepAccess(gdpr, 'vendorData.purpose.consents');
+    const purposeLegitimateInterests = deepAccess(gdpr, 'vendorData.purpose.legitimateInterests');
+    const publisherRestrictions = deepAccess(gdpr, 'vendorData.publisher.restrictions');
+
+    const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
+    const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);
+
+    const allPurposeIDs = new Set([...consentPurposeIDSet, ...legitimateInterestPurposeIDSet]);
+
+    for (const purposeID of allPurposeIDs) {
+      if (publisherRestrictions?.[purposeID]?.[GVLID] === 0) {
+        return false;
+      }
+    }
+
+    for (const purposeID of legitimateInterestPurposeIDSet) {
+      if (publisherRestrictions?.[purposeID]?.[GVLID] === 1) {
+        legitimateInterestPurposeIDSet.delete(purposeID);
+        consentPurposeIDSet.add(purposeID);
+      }
+    }
+
+    if (consentPurposeIDSet.size > 0) {
+      if (!vendorConsents[GVLID]) {
+        return false;
+      }
+      for (const purposeID of consentPurposeIDSet) {
+        if (!purposeConsents[purposeID]) {
+          return false;
+        }
+      }
+    }
+
+    if (legitimateInterestPurposeIDSet.size > 0) {
+      if (!vendorLegitimateInterests[GVLID]) {
+        return false;
+      }
+      for (const purposeID of legitimateInterestPurposeIDSet) {
+        if (!purposeLegitimateInterests[purposeID]) {
+          return false;
+        }
+      }
     }
 
     return true;

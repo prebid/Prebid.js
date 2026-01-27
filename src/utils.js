@@ -1,6 +1,6 @@
 import {config} from './config.js';
 import {klona} from 'klona/json';
-import {includes} from './polyfill.js';
+
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -875,12 +875,12 @@ export function isValidMediaTypes(mediaTypes) {
 
   const types = Object.keys(mediaTypes);
 
-  if (!types.every(type => includes(SUPPORTED_MEDIA_TYPES, type))) {
+  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
     return false;
   }
 
   if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
-    return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
+    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
   }
 
   return true;

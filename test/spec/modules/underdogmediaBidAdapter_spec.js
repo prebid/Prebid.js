@@ -292,9 +292,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -311,18 +308,12 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         },
         {
           adUnitCode: 'div-gpt-ad-2460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '3a378b833cdef4',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -338,18 +329,12 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         },
         {
           adUnitCode: 'div-gpt-ad-3460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '4088f04e07c2a1',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -365,9 +350,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }
         ];
 
@@ -383,9 +365,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -402,18 +381,12 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         },
         {
           adUnitCode: 'div-gpt-ad-2460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '3a378b833cdef4',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -429,18 +402,12 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         },
         {
           adUnitCode: 'div-gpt-ad-3460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '4088f04e07c2a1',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -456,9 +423,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }
         ];
 
@@ -476,9 +440,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -495,9 +456,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -511,9 +469,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -525,9 +480,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -541,9 +493,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -556,9 +505,6 @@ describe('UnderdogMedia adapter', function () {
             siteId: '12143',
             productId: 'standard'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -572,9 +518,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -587,9 +530,6 @@ describe('UnderdogMedia adapter', function () {
             siteId: '12143',
             productId: 'adhesion'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -603,9 +543,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -617,9 +554,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -633,9 +567,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -652,18 +583,12 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         },
         {
           adUnitCode: 'div-gpt-ad-2460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '3a378b833cdef4',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -679,18 +604,12 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         },
         {
           adUnitCode: 'div-gpt-ad-3460505748561-0',
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '4088f04e07c2a1',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -706,9 +625,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }
         ];
 
@@ -784,9 +700,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -803,14 +716,15 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [{ id: 'sample-user-id' }]
+          }]
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
-        expect(request.data.userIds.pubcid).to.equal('ba6cbf43-abc0-4d61-b14f-e10f605b74d7');
+        expect(request.data.userIds.pubcid).to.equal('sample-user-id');
       });
 
       it('pubcid should be undefined if it does not exist', function () {
@@ -835,9 +749,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -851,9 +762,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -870,14 +778,15 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
+          userIdAsEids: [{
+            source: 'adserver.org',
+            uids: [{ id: 'sample-user-id' }]
+          }]
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
 
-        expect(request.data.userIds.unifiedId).to.equal('7a9fc5a2-346d-4502-826e-017a9badf5f3');
+        expect(request.data.userIds.unifiedId).to.equal('sample-user-id');
       });
 
       it('unifiedId should be undefined if tdid does not exist', function () {
@@ -886,9 +795,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -918,9 +824,6 @@ describe('UnderdogMedia adapter', function () {
           auctionId: 'dfa93f1f-6ecc-4d75-8725-f5cb92307658',
           bidId: '2dbc995ad299c',
           bidder: 'underdogmedia',
-          crumbs: {
-            pubcid: 'ba6cbf43-abc0-4d61-b14f-e10f605b74d7'
-          },
           mediaTypes: {
             banner: {
               sizes: [
@@ -937,9 +840,6 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          userId: {
-            tdid: '7a9fc5a2-346d-4502-826e-017a9badf5f3'
-          }
         }];
 
         const request = spec.buildRequests(bidRequests, bidderRequest);

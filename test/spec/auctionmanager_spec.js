@@ -14,7 +14,6 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
@@ -845,7 +844,7 @@ describe('auctionmanager.js', function () {
 
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({adUnits});
-      stubCallAdapters.reset();
+      stubCallAdapters.resetHistory();
       auction.callBids();
       await auction.requestsDone;
     })
@@ -1249,7 +1248,7 @@ describe('auctionmanager.js', function () {
         it('should use renderers on bid response', () => {
           auction.callBids();
 
-          const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode === ADUNIT_CODE);
+          const addedBid = auction.getBidsReceived().find(bid => bid.adUnitCode === ADUNIT_CODE);
           assert.equal(addedBid.renderer.url, 'renderer.js');
         });
 
@@ -1693,7 +1692,7 @@ describe('auctionmanager.js', function () {
       assert.equal(auctionBidRequests.length > 0, true);
       assert.equal(Array.isArray(auctionBidRequests[0].bids), true);
 
-      const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
+      const bid = auctionBidRequests[0].bids.find(bid => bid.adUnitCode === ADUNIT_CODE);
       assert.equal(typeof bid !== 'undefined', true);
     });
   });
@@ -1845,7 +1844,7 @@ describe('auctionmanager.js', function () {
   describe('addWinningBid', () => {
     let auction, bid, adUnits, sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(adapterManager, 'callBidWonBidder');
       sandbox.stub(adapterManager, 'triggerBilling')
       adUnits = [{code: 'au1'}, {code: 'au2'}]
@@ -2103,7 +2102,7 @@ describe('auctionmanager.js', function () {
         });
 
         beforeEach(() => {
-          onBidRejected.reset();
+          onBidRejected.resetHistory();
           bid = mockBid({bidderCode: BIDDER_CODE});
           bidRequests = [
             mockBidRequest(bid),

@@ -14,7 +14,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 var BIDDER_CODE = 'lemmadigital';
 var LOG_WARN_PREFIX = 'LEMMADIGITAL: ';
-var ENDPOINT = 'https://bid.lemmadigital.com/lemma/servad';
+var ENDPOINT = 'https://pbidj.lemmamedia.com/lemma/servad';
 var USER_SYNC = 'https://sync.lemmadigital.com/js/usersync.html?';
 var DEFAULT_CURRENCY = 'USD';
 var AUCTION_TYPE = 2;
@@ -62,8 +62,9 @@ export var spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests.length === 0) {
@@ -547,7 +548,7 @@ export var spec = {
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
       var params = bid ? bid.params : null;
       var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
-      var sizes = bid.mediaTypes.video ? bid.mediaTypes.video.playerSize : []
+      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : []
       if (sizes && sizes.length > 0) {
         vObj = {};
         if (videoData) {

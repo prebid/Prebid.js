@@ -14,6 +14,7 @@ import {
 } from 'modules/permutiveRtdProvider.js'
 import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
+import { permutiveIdentityManagerIdSubmodule } from '../../../modules/permutiveIdentityManagerIdSystem'
 
 describe('permutiveRtdProvider', function () {
   beforeEach(function () {
@@ -407,6 +408,52 @@ describe('permutiveRtdProvider', function () {
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
         expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
         expect(bidderConfig[bidder].user.keywords).to.deep.equal(keywords)
+      })
+    })
+    it('should deduplicate keywords', function () {
+      const moduleConfig = getConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const segmentsData = transformedTargeting()
+
+      // Includes to the existing keywords all segments for `p_standard` and `p_standard_aud`
+      // which will be also present in the new bid: they should *not* be duplicated
+      const existingKeywords = [
+        'testKeyword',
+        'some_key=some_value',
+        ...segmentsData.ac.map(c => `p_standard=${c}`),
+        ...segmentsData.ssp.cohorts.map(c => `p_standard_aud=${c}`),
+      ]
+
+      const sampleOrtbConfig = {
+        site: { name: 'example' },
+        user: {
+          keywords: existingKeywords.join(','),
+          data: [
+            {
+              name: 'www.dataprovider1.com',
+              ext: { taxonomyname: 'iab_audience_taxonomy' },
+              segment: [{ id: '687' }, { id: '123' }]
+            }
+          ]
+        }
+      }
+
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+      acBidders.forEach(bidder => {
+        const customCohortsData = segmentsData[bidder] || []
+
+        const expectedKeywords = [
+          ...existingKeywords,
+          // both `standard` and `standard_aud` were already included in existing keywords
+          ...customCohortsData.map(c => `permutive=${c}`)
+        ]
+
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal(expectedKeywords.join(','))
       })
     })
     it('should merge ortb2 correctly for ac and ssps', function () {
@@ -895,3 +942,130 @@ function getAdUnits () {
     }
   ]
 }
+
+describe('permutiveIdentityManagerIdSystem', () => {
+  const STORAGE_KEY = 'permutive-prebid-id'
+
+  afterEach(() => {
+    storage.removeDataFromLocalStorage(STORAGE_KEY)
+  })
+
+  describe('decode', () => {
+    it('returns the input unchanged', () => {
+      const input = {
+        id5id: {
+          uid: '0',
+          ext: {
+            abTestingControlGroup: false,
+            linkType: 2,
+            pba: 'somepba'
+          }
+        }
+      }
+      const result = permutiveIdentityManagerIdSubmodule.decode(input)
+      expect(result).to.be.equal(input)
+    })
+  })
+
+  describe('getId', () => {
+    it('returns relevant IDs from localStorage and does not return unexpected IDs', () => {
+      const data = getUserIdData()
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      const expected = {
+        'id': {
+          'id5id': {
+            'uid': '0',
+            'linkType': 0,
+            'ext': {
+              'abTestingControlGroup': false,
+              'linkType': 0,
+              'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+            }
+          }
+        }
+      }
+      expect(result).to.deep.equal(expected)
+    })
+
+    it('returns undefined if no relevant IDs are found in localStorage', () => {
+      storage.setDataInLocalStorage(STORAGE_KEY, '{}')
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      expect(result).to.be.undefined
+    })
+
+    it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
+      const cleanup = setWindowPermutive()
+      try {
+        const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 300}})
+        expect(result).not.to.be.undefined
+        expect(result.id).to.be.undefined
+        expect(result.callback).not.to.be.undefined
+        const expected = {
+          'id5id': {
+            'uid': '0',
+            'linkType': 0,
+            'ext': {
+              'abTestingControlGroup': false,
+              'linkType': 0,
+              'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+            }
+          }
+        }
+        const r = await new Promise(result.callback)
+        expect(r).to.deep.equal(expected)
+      } finally {
+        cleanup()
+      }
+    })
+  })
+})
+
+const setWindowPermutive = () => {
+  // Read from Permutive
+  const backup = window.permutive
+
+  deepSetValue(window, 'permutive.ready', (f) => {
+    setTimeout(() => f(), 5)
+  })
+
+  deepSetValue(window, 'permutive.addons.identity_manager.prebid.onReady', (f) => {
+    setTimeout(() => f(sdkUserIdData()), 5)
+  })
+
+  // Cleanup
+  return () => window.permutive = backup
+}
+
+const sdkUserIdData = () => ({
+  'id5id': {
+    'uid': '0',
+    'linkType': 0,
+    'ext': {
+      'abTestingControlGroup': false,
+      'linkType': 0,
+      'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+    }
+  },
+})
+
+const getUserIdData = () => ({
+  'providers': {
+    'id5id': {
+      'userId': {
+        'uid': '0',
+        'linkType': 0,
+        'ext': {
+          'abTestingControlGroup': false,
+          'linkType': 0,
+          'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+        }
+      }
+    },
+    'fooid': {
+      'userId': {
+        'id': '1'
+      }
+    }
+  }
+})

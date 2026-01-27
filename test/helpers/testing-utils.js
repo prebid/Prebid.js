@@ -1,4 +1,3 @@
- 
 const {expect} = require('chai');
 const DEFAULT_TIMEOUT = 2000;
 const utils = {
@@ -13,7 +12,7 @@ const utils = {
   },
   switchFrame: async function(frameRef) {
     let iframe = await $(frameRef);
-    browser.switchToFrame(iframe);
+    browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
     await browser.url(url);

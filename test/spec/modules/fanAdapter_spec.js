@@ -280,7 +280,7 @@ describe('Freedom Ad Network Bid Adapter', function () {
     let sandbox, ajaxStub;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       ajaxStub = sandbox.stub(ajax, 'ajax');
     });
 

@@ -874,7 +874,7 @@ describe('PubWiseAdapter', function () {
       }
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.spy(utils, 'logWarn');
       });
 

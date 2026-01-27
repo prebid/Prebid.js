@@ -20,7 +20,7 @@ const sidTTLMins_ = 30;
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {(number|null)}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

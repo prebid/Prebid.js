@@ -1,6 +1,6 @@
 import {config} from '../src/config.js';
 import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
 
@@ -112,11 +112,11 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
-            labels.some(label => includes(activeLabels, label))
+            labels.some(label => activeLabels.includes(label))
           )) ||
           (labelAll && (
             labels.reduce((result, label) => !result ? result : (
-              maps.labels[label] || includes(activeLabels, label)
+              maps.labels[label] || activeLabels.includes(label)
             ), true)
           ))
         )

@@ -27,7 +27,6 @@ import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find, includes} from './polyfill.js';
 import {
   getAuctionsCounter,
   getBidderRequestsCounter,
@@ -208,6 +207,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   // don't send empty requests
   adUnitsCopy = adUnitsCopy.filter(adUnit => {
+    if (s2sConfig.filterBidderlessCalls) {
+      if (adUnit.bids.length === 1 && adUnit.bids[0].bidder == null) return false;
+    }
     return adUnit.bids.length !== 0 || adUnit.s2sBid != null;
   });
   return {adUnits: adUnitsCopy, hasModuleBids};
@@ -309,13 +311,24 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
+  function moveUserEidsToExt(o) {
+    const eids = o.user?.eids;
+    if (Array.isArray(eids) && eids.length) {
+      o.user.ext = o.user.ext || {};
+      o.user.ext.eids = [...(o.user.ext.eids || []), ...eids];
+      delete o.user.eids;
+    }
+  }
+
   function addOrtb2(bidderRequest, s2sActivityParams) {
     const redact = dep.redact(
       s2sActivityParams != null
         ? s2sActivityParams
         : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
     );
-    const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+    const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
+    moveUserEidsToExt(merged);
+    const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
       bid.ortb2 = fpd;
@@ -356,8 +369,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
       adUnitsS2SCopy.forEach((adUnitCopy) => {
         let validBids = adUnitCopy.bids.filter((adUnitBid) =>
-          find(bidRequests, request =>
-            find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id)));
+          bidRequests.find(request =>
+            request.bids.find((reqBid) => reqBid.bidId === adUnitBid.bid_id)));
         adUnitCopy.bids = validBids;
       });
 
@@ -523,8 +536,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.VIDEO && adapterManager.videoAdapters.includes(bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.NATIVE && nativeAdapters.includes(bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -536,10 +549,10 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       _bidderRegistry[bidderCode] = bidAdapter;
       GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
-      if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
+      if (FEATURES.VIDEO && supportedMediaTypes.includes('video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && supportedMediaTypes.includes('native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
@@ -561,7 +574,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
       _s2sConfigs.forEach(s2sConfig => {
         if (s2sConfig.bidders && s2sConfig.bidders.length) {
           const s2sBidders = s2sConfig && s2sConfig.bidders;
-          if (!(s2sConfig && includes(s2sBidders, alias))) {
+          if (!(s2sConfig && s2sBidders.includes(alias))) {
             nonS2SAlias.push(bidderCode);
           } else {
             _aliasRegistry[alias] = bidderCode;

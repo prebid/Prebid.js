@@ -126,10 +126,6 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
     }
 
-    if (bidReqs?.[0].userId) {
-      deepSetValue(payload, 'user.ext.ids', bidReqs[0].userId || [])
-    }
-
     if (bidderRequest?.ortb2?.site?.content) {
       deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content)
     }

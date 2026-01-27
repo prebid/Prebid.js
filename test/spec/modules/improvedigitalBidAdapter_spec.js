@@ -224,6 +224,8 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
+      expect(request.options).to.be.an('object');
+      expect(request.options.endpointCompression).to.equal(true);
       expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
       const payload = JSON.parse(request.data);
@@ -258,6 +260,8 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests(updateNativeParams([multiFormatBidRequest]), multiFormatBidderRequest)[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
+      expect(request.options).to.be.an('object');
+      expect(request.options.endpointCompression).to.equal(true);
       expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
       const payload = JSON.parse(request.data);

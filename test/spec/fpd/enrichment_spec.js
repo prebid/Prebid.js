@@ -14,7 +14,7 @@ describe('FPD enrichment', () => {
     hook.ready();
   });
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();
@@ -160,6 +160,7 @@ describe('FPD enrichment', () => {
       });
       return fpd().then(ortb2 => {
         expect(ortb2.site.ext.data.documentLang).to.equal('fr-FR');
+        expect(ortb2.site.content.language).to.equal('fr');
       });
     });
   });
@@ -172,7 +173,7 @@ describe('FPD enrichment', () => {
     testWindows(() => win, () => {
       it('sets w/h', () => {
         const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions');
-        
+
         getWinDimensionsStub.returns({screen: {width: 321, height: 123}});
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {

@@ -6,6 +6,7 @@ import { getStorageManager } from '../src/storageManager.js'
 import { EVENTS } from '../src/constants.js'
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
 import {getRefererInfo} from '../src/refererDetection.js';
+import { collectUtmTagData, trimAdUnit, trimBid, trimBidderRequest } from '../libraries/asteriobidUtils/asteriobidUtils.js'
 
 /**
  * asteriobidAnalyticsAdapter.js - analytics adapter for AsterioBid
@@ -14,7 +15,6 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, mo
 const DEFAULT_EVENT_URL = 'https://endpt.asteriobid.com/endpoint'
 const analyticsType = 'endpoint'
 const analyticsName = 'AsterioBid Analytics'
-const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
 const _VERSION = 1
 
 let ajax = ajaxBuilder(20000)
@@ -60,36 +60,6 @@ asteriobidAnalytics.disableAnalytics = function () {
   asteriobidAnalytics.originDisableAnalytics()
 }
 
-function collectUtmTagData() {
-  let newUtm = false
-  let pmUtmTags = {}
-  try {
-    utmTags.forEach(function (utmKey) {
-      let utmValue = getParameterByName(utmKey)
-      if (utmValue !== '') {
-        newUtm = true
-      }
-      pmUtmTags[utmKey] = utmValue
-    })
-    if (newUtm === false) {
-      utmTags.forEach(function (utmKey) {
-        let itemValue = storage.getDataFromLocalStorage(`pm_${utmKey}`)
-        if (itemValue && itemValue.length !== 0) {
-          pmUtmTags[utmKey] = itemValue
-        }
-      })
-    } else {
-      utmTags.forEach(function (utmKey) {
-        storage.setDataInLocalStorage(`pm_${utmKey}`, pmUtmTags[utmKey])
-      })
-    }
-  } catch (e) {
-    logError(`${analyticsName} Error`, e)
-    pmUtmTags['error_utm'] = 1
-  }
-  return pmUtmTags
-}
-
 function collectPageInfo() {
   const pageInfo = {
     domain: window.location.hostname,
@@ -116,7 +86,7 @@ function flush() {
       ver: _VERSION,
       bundleId: initOptions.bundleId,
       events: eventQueue,
-      utmTags: collectUtmTagData(),
+      utmTags: collectUtmTagData(storage, getParameterByName, logError, analyticsName),
       pageInfo: collectPageInfo(),
       sampling: sampling
     }
@@ -147,44 +117,6 @@ function flush() {
       }
     )
   }
-}
-
-function trimAdUnit(adUnit) {
-  if (!adUnit) return adUnit
-  const res = {}
-  res.code = adUnit.code
-  res.sizes = adUnit.sizes
-  return res
-}
-
-function trimBid(bid) {
-  if (!bid) return bid
-  const res = {}
-  res.auctionId = bid.auctionId
-  res.bidder = bid.bidder
-  res.bidderRequestId = bid.bidderRequestId
-  res.bidId = bid.bidId
-  res.crumbs = bid.crumbs
-  res.cpm = bid.cpm
-  res.currency = bid.currency
-  res.mediaTypes = bid.mediaTypes
-  res.sizes = bid.sizes
-  res.transactionId = bid.transactionId
-  res.adUnitCode = bid.adUnitCode
-  res.bidRequestsCount = bid.bidRequestsCount
-  res.serverResponseTimeMs = bid.serverResponseTimeMs
-  return res
-}
-
-function trimBidderRequest(bidderRequest) {
-  if (!bidderRequest) return bidderRequest
-  const res = {}
-  res.auctionId = bidderRequest.auctionId
-  res.auctionStart = bidderRequest.auctionStart
-  res.bidderRequestId = bidderRequest.bidderRequestId
-  res.bidderCode = bidderRequest.bidderCode
-  res.bids = bidderRequest.bids && bidderRequest.bids.map(trimBid)
-  return res
 }
 
 function handleEvent(eventType, eventArgs) {

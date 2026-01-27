@@ -1,9 +1,13 @@
 import Adapter from '../../src/adapter.js';
 import {
+  compressDataWithGZip,
+  debugTurnedOn,
   deepClone,
   flatten,
   generateUUID,
+  getParameterByName,
   insertUserSyncIframe,
+  isGzipCompressionSupported,
   isNumber,
   isPlainObject,
   isStr,
@@ -14,12 +18,12 @@ import {
   triggerPixel,
   uniques,
 } from '../../src/utils.js';
-import {EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
+import {DEBUG_MODE, EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
-import {includes} from '../../src/polyfill.js';
+
 import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
@@ -66,6 +70,7 @@ let _s2sConfigs;
  * @property {number} [maxBids=1]
  * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  * @property {Object} [syncUrlModifier]
+ * @property {boolean} [filterBidderlessCalls=false] filter out ad units without bidders or storedrequest before sending to PBS
  */
 
 /**
@@ -97,7 +102,8 @@ export const s2sDefaultConfig = {
       {event: 1, methods: [1, 2]}
     ],
   },
-  maxTimeout: 1500
+  maxTimeout: 1500,
+  filterBidderlessCalls: false
 };
 
 config.setDefaults({
@@ -116,7 +122,7 @@ function updateConfigDefaults(s2sConfig) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !includes(optionKeys, vendorKey)) {
+        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !optionKeys.includes(vendorKey)) {
           s2sConfig[vendorKey] = S2S_VENDORS[vendor][vendorKey];
         }
       });
@@ -326,7 +332,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
- * @param {number} timeout: maximum time to wait for rendering in milliseconds
+ * @param {number} timeout maximum time to wait for rendering in milliseconds
  */
 function doBidderSync(type, url, bidder, done, timeout) {
   if (!url) {
@@ -511,43 +517,61 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
   events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
   logInfo('BidRequest: ' + requestData);
   if (request && requestData.requestJson && requestData.endpointUrl) {
-    const networkDone = s2sBidRequest.metrics.startTiming('net');
-    ajax(
-      requestData.endpointUrl,
-      {
-        success: function (response) {
-          networkDone();
-          let result;
-          try {
-            result = JSON.parse(response);
-            const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
-            bids.forEach(onBid);
-            if (paapi) {
-              paapi.forEach(onFledge);
+    const callAjax = (payload, endpointUrl) => {
+      const networkDone = s2sBidRequest.metrics.startTiming('net');
+      ajax(
+        endpointUrl,
+        {
+          success: function (response) {
+            networkDone();
+            let result;
+            try {
+              result = JSON.parse(response);
+              const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+              bids.forEach(onBid);
+              if (paapi) {
+                paapi.forEach(onFledge);
+              }
+            } catch (error) {
+              logError(error);
             }
-          } catch (error) {
-            logError(error);
-          }
-          if (!result || (result.status && includes(result.status, 'Error'))) {
-            logError('error parsing response: ', result ? result.status : 'not valid JSON');
-            onResponse(false, requestedBidders);
-          } else {
-            onResponse(true, requestedBidders, result);
+            if (!result || (result.status && result.status.includes('Error'))) {
+              logError('error parsing response: ', result ? result.status : 'not valid JSON');
+              onResponse(false, requestedBidders);
+            } else {
+              onResponse(true, requestedBidders, result);
+            }
+          },
+          error: function () {
+            networkDone();
+            onError.apply(this, arguments);
           }
         },
-        error: function () {
-          networkDone();
-          onError.apply(this, arguments);
+        payload,
+        {
+          contentType: 'text/plain',
+          withCredentials: true,
+          browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
+          customHeaders: requestData.customHeaders
         }
-      },
-      requestData.requestJson,
-      {
-        contentType: 'text/plain',
-        withCredentials: true,
-        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
-        customHeaders: requestData.customHeaders
-      }
-    );
+      );
+    }
+
+    const enableGZipCompression = s2sBidRequest.s2sConfig.endpointCompression && !requestData.customHeaders['Content-Encoding'];
+    const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+    if (enableGZipCompression && debugMode) {
+      logWarn('Skipping GZIP compression for PBS as debug mode is enabled');
+    }
+
+    if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
+      compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
+        const url = new URL(requestData.endpointUrl);
+        url.searchParams.set('gzip', '1');
+        callAjax(compressedPayload, url.href);
+      });
+    } else {
+      callAjax(requestData.requestJson, requestData.endpointUrl);
+    }
   } else {
     logError('PBS request not made.  Check endpoints.');
   }

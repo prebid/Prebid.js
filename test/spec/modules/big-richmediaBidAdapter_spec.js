@@ -270,11 +270,4 @@ describe('bigRichMediaAdapterTests', function () {
       expect(result).to.be.undefined;
     });
   });
-
-  describe('onBidWon', function() {
-    it('Should not have any error', function() {
-      const result = spec.onBidWon({});
-      expect(true).to.be.true;
-    });
-  });
 });

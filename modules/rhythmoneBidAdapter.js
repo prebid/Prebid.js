@@ -1,4 +1,3 @@
-
 'use strict';
 
 import { deepAccess, getDNT, parseSizesInput, isArray } from '../src/utils.js';
