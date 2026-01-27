@@ -130,7 +130,7 @@ export const spec = {
       payload.site = payload.site || {};
       payload.site.keywords = ortb2SiteKeywords;
     }
-    
+
     const payloadObject = JSON.stringify(payload);
     return {
       method: 'POST',
