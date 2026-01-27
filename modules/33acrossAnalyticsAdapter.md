@@ -49,7 +49,7 @@ by default when Prebid is downloaded. If you are compiling from source,
 this might look something like:
 
 ```sh
-gulp bundle --modules=gptPreAuction,consentManagement,consentManagementGpp,consentManagementUsp,enrichmentFpdModule,gdprEnforcement,33acrossBidAdapter,33acrossIdSystem,33acrossAnalyticsAdapter
+gulp bundle --modules=gptPreAuction,consentManagementTcf,consentManagementGpp,consentManagementUsp,tcfControl,33acrossBidAdapter,33acrossIdSystem,33acrossAnalyticsAdapter
 ```
 
 Enable the 33Across Analytics Adapter in Prebid.js using the analytics provider `33across`

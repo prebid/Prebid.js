@@ -1,4 +1,4 @@
-import {deepAccess, isArray} from '../src/utils.js';
+import {isArray, setOnAny} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -46,7 +46,9 @@ export const spec = {
     const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
-    validBidRequests.forEach(bid => bid.netRevenue = 'net');
+    validBidRequests.forEach(bid => {
+      bid.netRevenue = 'net';
+    });
 
     const imps = validBidRequests.map((bid, idx) => {
       const imp = {
@@ -121,6 +123,7 @@ export const spec = {
         };
         return bidObject;
       }
+      return undefined;
     }).filter(Boolean);
   },
 
@@ -146,15 +149,6 @@ function getDeviceType() {
     return 4; // 'mobile'
   }
   return 2; // 'desktop'
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

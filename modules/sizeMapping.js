@@ -1,10 +1,9 @@
 import {config} from '../src/config.js';
 import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
 
-let installed = false;
 let sizeConfig = [];
 
 /**
@@ -24,18 +23,16 @@ let sizeConfig = [];
  */
 export function setSizeConfig(config) {
   sizeConfig = config;
-  if (!installed) {
-    setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels));
-    installed = true;
-  }
 }
+
+setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels));
 config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
 /**
  * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
  * @param bidOrAdUnit the bidder or adUnit to get label info on
  * @param activeLabels the labels passed to requestBids
- * @returns {LabelDescriptor}
+ * @returns {object}
  */
 export function getLabels(bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
@@ -51,7 +48,7 @@ export function getLabels(bidOrAdUnit, activeLabels) {
  * @returns {boolean}
  */
 export function sizeSupported(size, configs = sizeConfig) {
-  let maps = evaluateSizeConfig(configs);
+  const maps = evaluateSizeConfig(configs);
   if (!maps.shouldFilter) {
     return true;
   }
@@ -66,17 +63,21 @@ if (FEATURES.VIDEO) {
 }
 
 /**
- * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
- * @param {Array<string>} labels Labels specified on adUnit or bidder
- * @param {boolean} labelAll if true, all labels must match to be enabled
- * @param {Array<string>} activeLabels Labels passed in through requestBids
- * @param {object} mediaTypes A mediaTypes object describing the various media types (banner, video, native)
- * @param {Array<Array<number>>} sizes Sizes specified on adUnit (deprecated)
- * @param {Array<SizeConfig>} configs
- * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
+ * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match.
+ *
+ * @param {Object} options - The options object.
+ * @param {Array<string>} [options.labels=[]] - Labels specified on adUnit or bidder.
+ * @param {boolean} [options.labelAll=false] - If true, all labels must match to be enabled.
+ * @param {Array<string>} [options.activeLabels=[]] - Labels passed in through requestBids.
+ * @param {Object} mediaTypes - A mediaTypes object describing the various media types (banner, video, native).
+ * @param {Array<SizeConfig>} configs - An array of SizeConfig objects.
+ * @returns {Object} - An object containing the active status, media types, and filter results.
+ * @returns {boolean} return.active - Whether the media types are active.
+ * @returns {Object} return.mediaTypes - The media types object.
+ * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
 export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
-  let maps = evaluateSizeConfig(configs);
+  const maps = evaluateSizeConfig(configs);
 
   let filtered = false;
   let hasSize = false;
@@ -103,7 +104,7 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null
   }
 
-  let results = {
+  const results = {
     active: (
       !Object.keys(SIZE_PROPS).find(mediaType => mediaTypes.hasOwnProperty(mediaType))
     ) || (
@@ -111,11 +112,11 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
-            labels.some(label => includes(activeLabels, label))
+            labels.some(label => activeLabels.includes(label))
           )) ||
           (labelAll && (
             labels.reduce((result, label) => !result ? result : (
-              maps.labels[label] || includes(activeLabels, label)
+              maps.labels[label] || activeLabels.includes(label)
             ), true)
           ))
         )
@@ -153,7 +154,9 @@ function evaluateSizeConfig(configs) {
         }
         ['labels', 'sizesSupported'].forEach(
           type => (config[type] || []).forEach(
-            thing => results[type][thing] = true
+            thing => {
+              results[type][thing] = true
+            }
           )
         );
       }
@@ -170,7 +173,7 @@ function evaluateSizeConfig(configs) {
 
 export function processAdUnitsForLabels(adUnits, activeLabels) {
   return adUnits.reduce((adUnits, adUnit) => {
-    let {
+    const {
       active,
       mediaTypes,
       filterResults
@@ -189,7 +192,7 @@ export function processAdUnitsForLabels(adUnits, activeLabels) {
       adUnit.mediaTypes = mediaTypes;
 
       adUnit.bids = adUnit.bids.reduce((bids, bid) => {
-        let {
+        const {
           active,
           mediaTypes,
           filterResults

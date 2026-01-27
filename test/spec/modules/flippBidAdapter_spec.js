@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/flippBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-const ENDPOINT = 'https://gateflipp.flippback.com/flyer-locator-service/client_bidding';
+const ENDPOINT = 'https://ads-flipp.com/flyer-locator-service/client_bidding';
 describe('flippAdapter', function () {
   const adapter = newBidder(spec);
 
@@ -25,7 +25,7 @@ describe('flippAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = { siteId: 1234 }
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -99,6 +99,14 @@ describe('flippAdapter', function () {
                 'requestId': '237f4d1a293f99',
                 'cpm': 1.11,
                 'creative': 'Returned from server',
+              },
+              'contents': {
+                'data': {
+                  'customData': {
+                    'compactHeight': 600,
+                    'standardHeight': 1800
+                  }
+                }
               }
             }]
           },
@@ -114,7 +122,7 @@ describe('flippAdapter', function () {
           cpm: 1.11,
           netRevenue: true,
           width: 300,
-          height: 600,
+          height: 1800,
           creativeId: 262838368,
           ttl: 30,
           ad: 'Returned from server',

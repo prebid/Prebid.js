@@ -1,10 +1,25 @@
 import {fillVideoDefaults, isValidVideoBid} from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
+import * as utils from '../../src/utils.js';
+import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
 
 describe('video.js', function () {
+  let sandbox;
+  let utilsMock;
+
   before(() => {
     hook.ready();
+  });
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    utilsMock = sandbox.mock(utils);
+  })
+
+  afterEach(() => {
+    utilsMock.restore();
+    sandbox.restore();
   });
 
   describe('fillVideoDefaults', () => {
@@ -31,7 +46,7 @@ describe('video.js', function () {
       });
     });
     describe('should set plcmt = 2 when', () => {
-      [2, 6].forEach(playbackmethod => {
+      [[2], [6]].forEach(playbackmethod => {
         it(`playbackmethod is "${playbackmethod}"`, () => {
           expect(fillDefaults({playbackmethod})).to.eql({
             playbackmethod,
@@ -74,7 +89,156 @@ describe('video.js', function () {
           expect(fillDefaults(video).plcmt).to.eql(expected);
         })
       })
-    })
+    });
+    describe('video.playerSize', () => {
+      Object.entries({
+        'single size': [1, 2],
+        'single size, wrapped in array': [[1, 2]],
+        'multiple sizes': [[1, 2], [3, 4]]
+      }).forEach(([t, playerSize]) => {
+        it(`should set w/h from playerSize (${t})`, () => {
+          const adUnit = {
+            mediaTypes: {
+              video: {
+                playerSize
+              }
+            }
+          }
+          fillVideoDefaults(adUnit);
+
+          sinon.assert.match(adUnit.mediaTypes.video, {
+            w: 1,
+            h: 2
+          });
+        });
+        it('should not override w/h when they exist', () => {
+          const adUnit = {
+            mediaTypes: {
+              video: {
+                playerSize,
+                w: 123
+              }
+            }
+          }
+          fillVideoDefaults(adUnit);
+          expect(adUnit.mediaTypes.video.w).to.eql(123);
+        })
+      });
+
+      it('should set playerSize from w/h (if they are not defined)', () => {
+        const adUnit = {
+          mediaTypes: {
+            video: {
+              w: 1,
+              h: 2
+            }
+          }
+        }
+        fillVideoDefaults(adUnit);
+        expect(adUnit.mediaTypes.video.playerSize).to.eql([[1, 2]]);
+      });
+      it('should not override playerSize', () => {
+        const adUnit = {
+          mediaTypes: {
+            video: {
+              playerSize: [1, 2],
+              w: 3,
+              h: 4
+            }
+          }
+        }
+        fillVideoDefaults(adUnit);
+        expect(adUnit.mediaTypes.video.playerSize).to.eql([1, 2]);
+      })
+    });
+  })
+
+  describe('validateOrtbVideoFields', () => {
+    it('remove incorrect ortb properties, and keep non ortb ones', () => {
+      sandbox.spy(utils, 'logWarn');
+
+      const mt = {
+        content: 'outstream',
+
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 15,
+        startdelay: 0,
+        maxseq: 0,
+        poddur: 0,
+        protocols: [7],
+        w: 600,
+        h: 480,
+        podid: 'an-id',
+        podseq: 0,
+        rqddurs: [5],
+        placement: 1,
+        plcmt: 1,
+        linearity: 1,
+        skip: 0,
+        skipmin: 3,
+        skipafter: 3,
+        sequence: 0,
+        slotinpod: 0,
+        mincpmpersec: 2.5,
+        battr: [6, 7],
+        maxextended: 0,
+        minbitrate: 800,
+        maxbitrate: 1000,
+        boxingallowed: 1,
+        playbackmethod: [1],
+        playbackend: 1,
+        delivery: [2],
+        pos: 0,
+        api: 6, // -- INVALID
+        companiontype: [1, 2, 3],
+        poddedupe: [1],
+
+        otherOne: 'test',
+      };
+
+      const expected = {...mt};
+      delete expected.api;
+
+      const adUnit = {
+        code: 'adUnitCode',
+        mediaTypes: { video: mt }
+      };
+      validateOrtbFields(adUnit, 'video');
+
+      expect(adUnit.mediaTypes.video).to.eql(expected);
+      sinon.assert.callCount(utils.logWarn, 1);
+    });
+
+    it('Early return when 1st param is not a plain object', () => {
+      sandbox.spy(utils, 'logWarn');
+
+      validateOrtbFields(undefined, 'video');
+      validateOrtbFields([], 'video');
+      validateOrtbFields(null, 'video');
+      validateOrtbFields('hello', 'video');
+      validateOrtbFields(() => {}, 'video');
+
+      sinon.assert.callCount(utils.logWarn, 5);
+    });
+
+    it('Calls onInvalidParam when a property is invalid', () => {
+      const onInvalidParam = sandbox.spy();
+      const adUnit = {
+        code: 'adUnitCode',
+        mediaTypes: {
+          video: {
+            content: 'outstream',
+            mimes: ['video/mp4'],
+            api: 6
+          }
+        }
+      };
+      validateOrtbFields(adUnit, 'video', onInvalidParam);
+
+      sinon.assert.calledOnce(onInvalidParam);
+      sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
+    });
   })
 
   describe('isValidVideoBid', () => {
@@ -172,4 +336,207 @@ describe('video.js', function () {
       expect(valid).to.equal(false);
     });
   })
+
+  describe('syncOrtb2', () => {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
+    let logWarnSpy;
+
+    beforeEach(function () {
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      utils.logWarn.restore();
+    });
+
+    it('should properly sync fields if both present', () => {
+      const adUnit = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5, // should be overwritten with value from ortb2Imp
+            w: 100,
+            h: 200,
+            foo: 'omitted_value' // should be omitted during copying - not part of video obj spec
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minbitrate: 10,
+            maxbitrate: 50,
+            delivery: [1, 2, 3, 4],
+            linearity: 10,
+            bar: 'omitted_value' // should be omitted during copying - not part of video obj spec
+          }
+        }
+      };
+
+      const expected = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            w: 100,
+            h: 200,
+            minbitrate: 10,
+            maxbitrate: 50,
+            delivery: [1, 2, 3, 4],
+            linearity: 10,
+            foo: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            w: 100,
+            h: 200,
+            minbitrate: 10,
+            maxbitrate: 50,
+            delivery: [1, 2, 3, 4],
+            linearity: 10,
+            bar: 'omitted_value'
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'video');
+      expect(adUnit).to.deep.eql(expected);
+
+      assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting linearity');
+    });
+
+    it('should omit sync if video mediaType not present on adUnit', () => {
+      const adUnit = {
+        mediaTypes: {
+          native: {
+            fieldToOmit: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          native: {
+            fieldToOmit2: 'omitted_value'
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'video');
+
+      expect(adUnit.mediaTypes.video).to.be.undefined;
+      expect(adUnit.ortb2Imp.video).to.be.undefined;
+    });
+
+    it('should properly sync if mediaTypes is not present on any of side', () => {
+      const adUnit = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          // lack of video field
+        }
+      };
+
+      const expected1 = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'video');
+      expect(adUnit).to.deep.eql(expected1);
+
+      const adUnit2 = {
+        mediaTypes: {
+          // lack of video field
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value'
+          }
+        }
+      };
+
+      const expected2 = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value',
+          }
+        }
+      };
+
+      syncOrtb2(adUnit2, 'video');
+      expect(adUnit2).to.deep.eql(expected2);
+    });
+
+    it('should not create empty video object on ortb2Imp if there was nothing to copy', () => {
+      const adUnit2 = {
+        mediaTypes: {
+          video: {
+            noOrtbVideoField1: 'value',
+            noOrtbVideoField2: 'value'
+          }
+        },
+        ortb2Imp: {
+          // lack of video field
+        }
+      };
+      syncOrtb2(adUnit2, 'video');
+      expect(adUnit2.ortb2Imp.video).to.be.undefined
+    });
+  });
 });

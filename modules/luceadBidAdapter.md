@@ -1,29 +1,41 @@
-# Overview
+# Lucead Bid Adapter
 
-Module Name: Lucead Bidder Adapter
+- Module Name: Lucead Bidder Adapter
+- Module Type: Bidder Adapter
+- Maintainer: prebid@lucead.com
 
-Module Type: Bidder Adapter
+## Description
 
-Maintainer: prebid@lucead.com
+Module that connects to Lucead demand source.
 
-# Description
+## Adapter configuration
 
-Module that connects to Lucead demand source to fetch bids.
+## Ad units parameters
 
-# Test Parameters
+### Type definition
+
+```typescript
+type Params = {
+    placementId: string;
+    region?: 'eu' | 'us' | 'ap';
+};
 ```
-const adUnits = [
-       {
-           code: 'test-div',
-           sizes: [[300, 250]],
-           bids: [
-               {
-                   bidder: 'lucead',
-                   params: {
-                       placementId: '2',
-                   }
-               }
-           ]
-       }
-   ];
+
+### Example code
+```javascript
+const adUnits=[
+    {
+        code:'test-div',
+        sizes:[[300,250]],
+        bids:[
+            {
+                bidder: 'lucead',
+                params:{
+                    placementId: '1',
+                    region: 'us', // optional: 'eu', 'us', 'ap'
+                }
+            }
+        ]
+    }
+];
 ```

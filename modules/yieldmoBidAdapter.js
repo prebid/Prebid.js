@@ -1,6 +1,8 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isArrayOfNums,
@@ -13,10 +15,9 @@ import {
   parseQueryStringParameters,
   parseUrl
 } from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {find, includes} from '../src/polyfill.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -41,8 +42,6 @@ const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'plcmt', 's
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = getWindowTop();
-const DEFAULT_PLAYBACK_METHOD = 2;
-const DEFAULT_START_DELAY = 0;
 const VAST_TIMEOUT = 15000;
 const MAX_BANNER_REQUEST_URL_LENGTH = 8000;
 const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page_url'];
@@ -74,12 +73,12 @@ export const spec = {
     const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
-    let serverRequests = [];
+    const serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
     const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
-      let serverRequest = {
+      const serverRequest = {
         pbav: '$prebid.version$',
         p: [],
         // TODO: is 'page' the right value here?
@@ -95,7 +94,7 @@ export const spec = {
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
           gpp_sid:
-            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
         }),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
@@ -112,10 +111,9 @@ export const spec = {
 
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
-        serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
-        serverRequest.w = LOCAL_WINDOW.innerWidth;
-        serverRequest.h = LOCAL_WINDOW.innerHeight;
+        serverRequest.w = getWinDimensions().innerWidth;
+        serverRequest.h = getWinDimensions().innerHeight;
       }
 
       const mtp = window.navigator.maxTouchPoints;
@@ -133,14 +131,15 @@ export const spec = {
         }
         const tdid = getId(request, 'tdid');
         if (tdid) {
-          serverRequest.tdid = tdid;
+          serverRequest.tdid = (typeof tdid === 'object') ? tdid.id : tdid;
         }
         const criteoId = getId(request, 'criteoId');
         if (criteoId) {
           serverRequest.cri_prebid = criteoId;
         }
-        if (request.schain) {
-          serverRequest.schain = JSON.stringify(request.schain);
+        const schain = deepAccess(request, 'ortb2.source.ext.schain');
+        if (schain) {
+          serverRequest.schain = JSON.stringify(schain);
         }
         if (deepAccess(request, 'params.lr_env')) {
           serverRequest.ats_envelope = request.params.lr_env;
@@ -177,7 +176,7 @@ export const spec = {
         serverRequest.topics = topicsData;
       }
       if (eids.length) {
-        serverRequest.user = { eids };
+        deepSetValue(serverRequest, 'user.ext.eids', eids);
       };
       serverRequests.push({
         method: 'POST',
@@ -195,7 +194,7 @@ export const spec = {
    * @return {Bid[]} an array of bids
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    let bids = [];
+    const bids = [];
     const data = serverResponse.body;
     if (data.length > 0) {
       data.forEach(response => {
@@ -211,7 +210,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
@@ -257,7 +256,9 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid');
+  const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -274,6 +275,12 @@ function addPlacement(request) {
   }
   if (gpid) {
     placementInfo.gpid = gpid;
+  }
+  if (tagid) {
+    placementInfo.tagid = tagid;
+  }
+  if (divid) {
+    placementInfo.divid = divid;
   }
 
   // get the transaction id for the banner bid.
@@ -318,9 +325,9 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
+  const imp = (deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
 
-  let result = {
+  const result = {
     dealId: response.dealid,
     requestId: imp.id,
     cpm: response.price,
@@ -337,8 +344,7 @@ function createNewVideoBid(response, bidRequest) {
       mediaType: VIDEO,
     },
   };
-
-  if (imp.video.placement && imp.video.placement !== 1) {
+  if (imp.video.plcmt && imp.video.plcmt !== 1) {
     const renderer = Renderer.install({
       url: OUTSTREAM_VIDEO_PLAYER_URL,
       config: {
@@ -349,7 +355,7 @@ function createNewVideoBid(response, bidRequest) {
         allowVpaid: true,
         autoPlay: true,
         preload: true,
-        mute: true
+        mute: true,
       },
       id: imp.tagid,
       loaded: false,
@@ -366,16 +372,6 @@ function createNewVideoBid(response, bidRequest) {
   }
 
   return result;
-}
-
-/**
- * Detects whether dnt is true
- * @returns true if user enabled dnt
- */
-function getDNT() {
-  return (
-    window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
-  );
 }
 
 /**
@@ -407,8 +403,8 @@ function getId(request, idType) {
  * @return Object OpenRTB request object
  */
 function openRtbRequest(bidRequests, bidderRequest) {
-  const schain = bidRequests[0].schain;
-  let openRtbRequest = {
+  const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+  const openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
     tmax: bidderRequest.timeout || 400,
     at: 1,
@@ -455,7 +451,7 @@ function getTopics(bidderRequest) {
   })[0];
 
   if (topicsData) {
-    let topicsObject = {
+    const topicsObject = {
       taxonomy: topicsData.ext.segtax,
       classifier: topicsData.ext.segclass,
       // topics needs to be array of numbers
@@ -471,7 +467,9 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -490,24 +488,30 @@ function openRtbImpression(bidRequest) {
 
   const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
-    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
-    .forEach(param => imp.video[param] = mediaTypesParams[param]);
+    .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
+    .forEach(param => {
+      imp.video[param] = mediaTypesParams[param];
+    });
 
   const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
-    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
-    .forEach(param => imp.video[param] = videoParams[param]);
+    .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
+    .forEach(param => {
+      imp.video[param] = videoParams[param];
+    });
 
   if (imp.video.skippable) {
     imp.video.skip = 1;
     delete imp.video.skippable;
   }
-  if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
-    imp.video.startdelay = DEFAULT_START_DELAY;
-    imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
-  }
   if (gpid) {
     imp.ext.gpid = gpid;
+  }
+  if (tagid) {
+    imp.ext.tagid = tagid;
+  }
+  if (divid) {
+    imp.ext.divid = divid;
   }
   return imp;
 }
@@ -542,7 +546,7 @@ function extractPlayerSize(bidRequest) {
  * @return Object OpenRTB's 'site' object
  */
 function openRtbSite(bidRequest, bidderRequest) {
-  let result = {};
+  const result = {};
 
   const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
   if (!isEmpty(loc)) {
@@ -561,8 +565,10 @@ function openRtbSite(bidRequest, bidderRequest) {
   const siteParams = deepAccess(bidRequest, 'params.site');
   if (siteParams) {
     Object.keys(siteParams)
-      .filter(param => includes(OPENRTB_VIDEO_SITEPARAMS, param))
-      .forEach(param => result[param] = siteParams[param]);
+      .filter(param => OPENRTB_VIDEO_SITEPARAMS.includes(param))
+      .forEach(param => {
+        result[param] = siteParams[param];
+      });
   }
   return result;
 }
@@ -653,19 +659,11 @@ function validateVideoParams(bid) {
     validate('video.mimes', val => isDefined(val), paramRequired);
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
-
-    const placement = validate('video.placement', val => isDefined(val), paramRequired);
-    validate('video.placement', val => val >= 1 && val <= 5, paramInvalid);
-    if (placement === 1) {
-      validate('video.startdelay', val => isDefined(val),
-        (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('video.startdelay', val => isNumber(val), paramInvalid, 'number, ex: 5');
-    }
-
     validate('video.protocols', val => isDefined(val), paramRequired);
 
     validate('video.api', val => isDefined(val), paramRequired);
-    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    // PS-6597 - Allow video.api to be any number greater than 0
+    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
     validate('video.playbackmethod', val => !isDefined(val) || isArrayOfNums(val), paramInvalid,

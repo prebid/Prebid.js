@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec } from 'modules/eskimiBidAdapter.js';
+import {expect} from 'chai';
+import {spec} from 'modules/eskimiBidAdapter.js';
 import * as utils from 'src/utils';
 
 const BANNER_BID = {
@@ -33,7 +33,7 @@ const VIDEO_BID = {
       playbackmethod: [2, 4, 6],
       playerSize: [[1024, 768]],
       protocols: [3, 4, 7, 8, 10],
-      placement: 1,
+      plcmt: 1,
       minduration: 0,
       maxduration: 60,
       startdelay: 0
@@ -117,7 +117,7 @@ const VIDEO_BID_RESPONSE = {
 describe('Eskimi bid adapter', function () {
   describe('isBidRequestValid()', function () {
     it('should accept request if placementId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: 'eskimi',
         params: {
           placementId: 123
@@ -132,7 +132,7 @@ describe('Eskimi bid adapter', function () {
     });
 
     it('should reject requests without params', function () {
-      let bid = {
+      const bid = {
         bidder: 'eskimi',
         params: {}
       };
@@ -155,7 +155,7 @@ describe('Eskimi bid adapter', function () {
           gdprApplies: true,
         }
       });
-      let request = spec.buildRequests([bid], req)[0];
+      const request = spec.buildRequests([bid], req)[0];
 
       const payload = request.data;
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
@@ -165,11 +165,11 @@ describe('Eskimi bid adapter', function () {
     it('should properly forward ORTB blocking params', function () {
       let bid = utils.deepClone(BANNER_BID);
       bid = utils.mergeDeep(bid, {
-        params: { bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example'] },
-        mediaTypes: { banner: { battr: [1] } }
+        params: {bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example']},
+        mediaTypes: {banner: {battr: [1]}}
       });
 
-      let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+      const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
 
       expect(request).to.exist.and.to.be.an('object');
       const payload = request.data;
@@ -193,7 +193,7 @@ describe('Eskimi bid adapter', function () {
       it('should create request data', function () {
         const bid = utils.deepClone(BANNER_BID);
 
-        let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+        const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;
         expect(payload.imp[0]).to.have.property('id', bid.bidId);
@@ -222,7 +222,7 @@ describe('Eskimi bid adapter', function () {
           mimes: ['video/mp4', 'video/x-flv'],
           playbackmethod: [3, 4],
           protocols: [5, 6],
-          placement: 1,
+          plcmt: 1,
           minduration: 0,
           maxduration: 60,
           w: 1024,
@@ -253,7 +253,7 @@ describe('Eskimi bid adapter', function () {
         const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
         const response = utils.deepClone(BANNER_BID_RESPONSE);
 
-        const bids = spec.interpretResponse({ body: response }, request);
+        const bids = spec.interpretResponse({body: response}, request);
         expect(bids).to.be.an('array').that.is.not.empty;
 
         expect(bids[0].mediaType).to.equal('banner');
@@ -273,8 +273,8 @@ describe('Eskimi bid adapter', function () {
       it('should handle empty bid response', function () {
         const bid = utils.deepClone(BANNER_BID);
 
-        let request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
-        const EMPTY_RESP = Object.assign({}, BANNER_BID_RESPONSE, { 'body': {} });
+        const request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
+        const EMPTY_RESP = Object.assign({}, BANNER_BID_RESPONSE, {'body': {}});
         const bids = spec.interpretResponse(EMPTY_RESP, request);
         expect(bids).to.be.empty;
       });
@@ -285,7 +285,7 @@ describe('Eskimi bid adapter', function () {
           const bid = utils.deepClone(VIDEO_BID);
 
           const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
-          const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request);
+          const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
           expect(bids).to.be.an('array').that.is.not.empty;
 
           expect(bids[0].mediaType).to.equal('video');

@@ -3,7 +3,6 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 
 /**
  * Analytics adapter from adxcg.com
@@ -41,7 +40,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
         adxcgAnalyticsAdapter.context.events.bidResponses.push(mapBidResponse(args, eventType));
         break;
       case EVENTS.BID_WON:
-        let outData2 = {bidWons: mapBidWon(args)};
+        const outData2 = {bidWons: mapBidWon(args)};
         send(outData2);
         break;
       case EVENTS.AUCTION_END:
@@ -113,7 +112,7 @@ function mapBidWon (bidResponse) {
 }
 
 function send (data) {
-  let adxcgAnalyticsRequestUrl = buildUrl({
+  const adxcgAnalyticsRequestUrl = buildUrl({
     protocol: 'https',
     hostname: adxcgAnalyticsAdapter.context.host,
     pathname: '/pbrx/v2',
@@ -123,7 +122,7 @@ function send (data) {
       ats: adxcgAnalyticsAdapter.context.auctionTimestamp,
       aav: adxcgAnalyticsVersion,
       iob: intersectionObserverAvailable(window) ? '1' : '0',
-      pbv: getGlobal().version,
+      pbv: '$prebid.version$',
       sz: window.screen.width + 'x' + window.screen.height
     }
   });

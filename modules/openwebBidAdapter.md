@@ -13,7 +13,7 @@ Module that connects to OpenWeb's demand sources.
 
 The OpenWeb adapter requires setup and approval from OpenWeb. Please reach out to monetization@openweb.com to create an OpenWeb account.
 
-The adapter supports Video and Display demand.
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video
@@ -24,8 +24,6 @@ The adapter supports Video and Display demand.
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String |  A unique placement identifier  | "12345678"
 | `testMode` | optional | Boolean |  This activates the test mode  | false
-| `currency` | optional | String | 3 letters currency | "EUR"
-
 
 # Test Parameters
 ```javascript

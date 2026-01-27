@@ -2,7 +2,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logError, logInfo, triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'ampliffy';
-const GVLID = 1258;
 const DEFAULT_ENDPOINT = 'bidder.ampliffy.com';
 const TTL = 600; // Time-to-Live - how long (in seconds) Prebid can use this bid.
 const LOG_PREFIX = 'AmpliffyBidder: ';
@@ -101,7 +100,7 @@ const getCurrentURLEncoded = () => encodeURIComponent(getCurrentURL());
 function getServerURL(server, sizes, iu, queryParams) {
   const random = getCacheBuster();
   const size = sizes[0] + 'x' + sizes[1];
-  let serverURL = '//' + server + '/gampad/ads';
+  const serverURL = '//' + server + '/gampad/ads';
   queryParams.sz = size;
   queryParams.iu = iu;
   queryParams.url = getCurrentURL();
@@ -131,7 +130,7 @@ function interpretResponse(serverResponse, bidRequest) {
   bidResponse.meta = {
     advertiserDomains: [],
   };
-  let xmlStr = serverResponse.body;
+  const xmlStr = serverResponse.body;
   const xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
   const xmlData = parseXML(xml, bidResponse);
   logInfo(LOG_PREFIX + 'Response from: ' + bidRequest.url + ': ' + JSON.stringify(xmlData), bidRequest.bidRequest.adUnitCode);
@@ -219,7 +218,7 @@ function extractCT(xml) {
 function extractCPM(htmlContent, ct, cpm) {
   const cpmMapDiv = htmlContent.querySelectorAll('[cpmMap]')[0];
   if (cpmMapDiv) {
-    let cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
+    const cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
     if ((cpmMapJSON)) {
       if (cpmMapJSON[ct]) {
         cpm = cpmMapJSON[ct];
@@ -278,7 +277,6 @@ function extractTrackingURL(htmlContent, ret) {
   const trackingUrlDiv = htmlContent.querySelectorAll('[bidder-tracking-url]')[0];
   if (trackingUrlDiv) {
     const trackingUrl = trackingUrlDiv.getAttribute('bidder-tracking-url');
-    // eslint-disable-next-line no-console
     logInfo(LOG_PREFIX + 'parseXML: trackingUrl: ', trackingUrl)
     ret.trackingUrl = trackingUrl;
   }
@@ -304,10 +302,8 @@ export function parseXML(xml, bid) {
       ret.userSyncs = extractSyncs(htmlContent);
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     logError(LOG_PREFIX + 'Error parsing XML', e);
   }
-  // eslint-disable-next-line no-console
   logInfo(LOG_PREFIX + 'parseXML RET:', ret);
 
   return ret;
@@ -333,7 +329,7 @@ export function isAllowedToBidUp(html, currentURL) {
       if (excludedURL) {
         const excludedURLsString = domainsMap.getAttribute('excludedURLs');
         if (excludedURLsString !== '') {
-          let excluded = JSON.parse(excludedURLsString);
+          const excluded = JSON.parse(excludedURLsString);
           excluded.forEach((d) => {
             if (currentURL.includes(d)) allowedToPush = false;
           })
@@ -341,7 +337,6 @@ export function isAllowedToBidUp(html, currentURL) {
       }
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     logError(LOG_PREFIX + 'isAllowedToBidUp', e);
   }
   return allowedToPush;
@@ -399,13 +394,11 @@ function onBidWon(bid) {
   }
 }
 function onTimeOut() {
-  // eslint-disable-next-line no-console
   logInfo(LOG_PREFIX + 'TIMEOUT');
 }
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['ampliffy', 'amp', 'videoffy', 'publiffy'],
   supportedMediaTypes: ['video', 'banner'],
   isBidRequestValid,

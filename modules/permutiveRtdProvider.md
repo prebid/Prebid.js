@@ -47,36 +47,11 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 | params                 | Object               |                                                                                               | -                  |
 | params.acBidders       | String[]             | An array of bidder codes to share cohorts with in certain versions of Prebid, see below       | `[]`               |
 | params.maxSegs         | Integer              | Maximum number of cohorts to be included in either the `permutive` or `p_standard` key-value. | `500`              |
+| params.enforceVendorConsent | Boolean         | When `true`, require TCF vendor consent for Permutive (vendor 361). See note below.           | `false`            |
 
-#### Context
+#### Consent
 
-Permutive is not listed as a TCF vendor as all data collection is on behalf of the publisher and based on consent the publisher has received from the user.
-Rather than through the TCF framework, this consent is provided to Permutive when the user gives the relevant permissions on the publisher website which allow the Permutive SDK to run.
-This means that if GDPR enforcement is configured _and_ the user consent isn’t given for Permutive to fire, no cohorts will populate.
-As Prebid utilizes TCF vendor consent, for the Permutive RTD module to load, Permutive needs to be labeled within the Vendor Exceptions
-
-#### Instructions
-
-1. Publisher enables rules within Prebid GDPR module
-2. Label Permutive as an exception, as shown below.
-```javascript
-[
-  {
-    purpose: 'storage',
-    enforcePurpose: true,
-    enforceVendor: true,
-    vendorExceptions: ["permutive"]
-  },
-  {
-    purpose: 'basicAds',
-    enforcePurpose: true,
-    enforceVendor: true,
-    vendorExceptions: []
-  }
-]
-```
-
-Before making any updates to this configuration, please ensure that this approach aligns with internal policies and current regulations regarding consent.
+While Permutive is listed as a TCF vendor (ID: 361), Permutive does not typically obtain vendor consent from the TCF, but instead relies on the publisher purpose consents. Publishers wishing to use TCF vendor consent instead can add 361 to their CMP and set params.enforceVendorConsent to `true`.
 
 ## Cohort Activation with Permutive RTD Module
 

@@ -178,7 +178,6 @@ describe('The smartx adapter', function () {
           2, 3, 5, 6
         ],
         startdelay: 0,
-        placement: 1,
         pos: 1
       });
 
@@ -206,10 +205,6 @@ describe('The smartx adapter', function () {
 
       expect(request.data.imp[0].video.ext).to.deep.equal({
         sdk_name: 'Prebid 1+'
-      });
-
-      expect(request.data.imp[0].video).to.contain({
-        placement: 1
       });
 
       bid.mediaTypes.video.context = 'outstream';
@@ -250,10 +245,6 @@ describe('The smartx adapter', function () {
       });
 
       expect(request.data.imp[0].video.startdelay).to.equal(1);
-
-      expect(request.data.imp[0].video).to.contain({
-        placement: 3
-      });
 
       expect(request.data.imp[0].bidfloor).to.equal(55);
 
@@ -346,15 +337,21 @@ describe('The smartx adapter', function () {
     it('should pass schain param', function () {
       var request;
 
-      bid.schain = {
-        complete: 1,
-        nodes: [
-          {
-            asi: 'indirectseller.com',
-            sid: '00001',
-            hp: 1
+      bid.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'indirectseller.com',
+                  sid: '00001',
+                  hp: 1
+                }
+              ]
+            }
           }
-        ]
+        }
       }
 
       request = spec.buildRequests([bid], bidRequestObj)[0];

@@ -3,18 +3,21 @@
    access to a publisher page from creative payloads.
  */
 
-import * as events from './events.js';
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
-import { BID_STATUS, EVENTS, MESSAGES } from './constants.js';
+import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
-import {auctionManager} from './auctionManager.js';
-import {find, includes} from './polyfill.js';
-import {handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
-import {getCreativeRendererSource} from './creativeRenderers.js';
+import {
+  deferRendering,
+  getBidToRender,
+  handleCreativeEvent,
+  handleNativeMessage,
+  handleRender,
+  markWinner
+} from './adRendering.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
+import {PbPromise} from './utils/promise.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
-
-const BID_WON = EVENTS.BID_WON;
 
 const HANDLER_MAP = {
   [REQUEST]: handleRenderRequest,
@@ -28,7 +31,9 @@ if (FEATURES.NATIVE) {
 }
 
 export function listenMessagesFromCreative() {
-  window.addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', function (ev) {
+    receiveMessage(ev);
+  }, false);
 }
 
 export function getReplier(ev) {
@@ -49,6 +54,12 @@ export function getReplier(ev) {
   }
 }
 
+function ensureAdId(adId, reply) {
+  return function (data, ...args) {
+    return reply(Object.assign({}, data, {adId}), ...args);
+  }
+}
+
 export function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
@@ -58,19 +69,19 @@ export function receiveMessage(ev) {
     return;
   }
 
-  if (data && data.adId && data.message) {
-    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
-      return bid.adId === data.adId;
-    });
-    if (HANDLER_MAP.hasOwnProperty(data.message)) {
-      HANDLER_MAP[data.message](getReplier(ev), data, adObject);
-    }
+  if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
+    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST).then(adObject => {
+      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
+    })
   }
 }
 
-function getResizer(bidResponse) {
+function getResizer(adId, bidResponse) {
+  // in some situations adId !== bidResponse.adId
+  // the first is the one that was requested and is tied to the element
+  // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
   return function (width, height) {
-    resizeRemoteCreative({...bidResponse, width, height});
+    resizeRemoteCreative({...bidResponse, width, height, adId});
   }
 }
 function handleRenderRequest(reply, message, bidResponse) {
@@ -78,10 +89,11 @@ function handleRenderRequest(reply, message, bidResponse) {
     renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(bidResponse)
+        renderer: getCreativeRendererSource(bidResponse),
+        rendererVersion: PUC_MIN_VERSION
       }, adData));
     },
-    resizeFn: getResizer(bidResponse),
+    resizeFn: getResizer(message.adId, bidResponse),
     options: message.options,
     adId: message.adId,
     bidResponse
@@ -98,21 +110,16 @@ function handleNativeRequest(reply, data, adObject) {
     logError(`Cannot find ad for x-origin event request: '${data.adId}'`);
     return;
   }
-
-  if (adObject.status !== BID_STATUS.RENDERED) {
-    auctionManager.addWinningBid(adObject);
-    events.emit(BID_WON, adObject);
-  }
-
   switch (data.action) {
     case 'assetRequest':
-      reply(getAssetMessage(data, adObject));
+      deferRendering(adObject, () => reply(getAssetMessage(data, adObject)));
       break;
     case 'allAssetRequest':
-      reply(getAllAssetsMessage(data, adObject));
+      deferRendering(adObject, () => reply(getAllAssetsMessage(data, adObject)));
       break;
     default:
-      handleNativeMessage(data, adObject, {resizeFn: getResizer(adObject)})
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)});
+      markWinner(adObject);
   }
 }
 
@@ -128,50 +135,91 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
-export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
-  function getDimension(value) {
-    return value ? value + 'px' : '100%';
-  }
-  // resize both container div + iframe
-  ['div', 'iframe'].forEach(elmType => {
-    // not select element that gets removed after dfp render
-    let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
+function getDimension(value) {
+  return value ? value + 'px' : '100%';
+}
+
+export function resizeAnchor(ins, width, height) {
+  /**
+   * Special handling for google anchor ads
+   * For anchors, the element to resize is an <ins> element that is an ancestor of the creative iframe
+   * On desktop this is sized to the creative dimensions;
+   * on mobile one dimension is fixed to 100%.
+   */
+  return new PbPromise((resolve, reject) => {
+    let tryCounter = 10;
+    // wait until GPT has set dimensions on the ins, otherwise our changes will be overridden
+    const resizer = setInterval(() => {
+      let done = false;
+      Object.entries({width, height})
+        .forEach(([dimension, newValue]) => {
+          if (/\d+px/.test(ins.style[dimension])) {
+            ins.style[dimension] = getDimension(newValue);
+            done = true;
+          }
+        })
+      if (done || (tryCounter-- === 0)) {
+        clearInterval(resizer);
+        done ? resolve() : reject(new Error('Could not resize anchor'))
+      }
+    }, 50)
+  })
+}
+
+export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+  // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
+  // be handled within it.
+  if (instl) return;
+
+  function resize(element) {
     if (element) {
-      let elementStyle = element.style;
+      const elementStyle = element.style;
       elementStyle.width = getDimension(width)
       elementStyle.height = getDimension(height);
     } else {
-      logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
+      logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
-  });
+  }
+
+  // not select element that gets removed after dfp render
+  const iframe = getElementByAdUnit('iframe:not([style*="display: none"])');
+  resize(iframe);
+  const anchorIns = iframe?.closest('ins[data-anchor-status]');
+  anchorIns ? resizeAnchor(anchorIns, width, height) : resize(iframe?.parentElement);
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    let parentDivEle = document.getElementById(id);
+    const id = getElementIdBasedOnAdServer(adId, adUnitCode);
+    const parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      return getDfpElementId(adId);
-    } else if (isApnGetTagDefined()) {
-      return getAstElementId(adUnitCode);
-    } else {
-      return adUnitCode;
+      const dfpId = getDfpElementId(adId);
+      if (dfpId) {
+        return dfpId;
+      }
     }
+    if (isApnGetTagDefined()) {
+      const apnId = getAstElementId(adUnitCode);
+      if (apnId) {
+        return apnId;
+      }
+    }
+    return adUnitCode;
   }
 
   function getDfpElementId(adId) {
-    const slot = find(window.googletag.pubads().getSlots(), slot => {
-      return find(slot.getTargetingKeys(), key => {
-        return includes(slot.getTargeting(key), adId);
+    const slot = window.googletag.pubads().getSlots().find(slot => {
+      return slot.getTargetingKeys().find(key => {
+        return slot.getTargeting(key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;
   }
 
   function getAstElementId(adUnitCode) {
-    let astTag = window.apntag.getTag(adUnitCode);
+    const astTag = window.apntag.getTag(adUnitCode);
     return astTag && astTag.targetId;
   }
 }

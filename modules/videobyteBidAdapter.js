@@ -19,6 +19,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -86,7 +87,6 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse) {
@@ -96,7 +96,7 @@ export const spec = {
     if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length === 1) {
       const bid = response.seatbid[0].bid[0]
       if (bid.adm && bid.price) {
-        let bidResponse = {
+        const bidResponse = {
           requestId: response.id,
           cpm: bid.price,
           width: bid.w,
@@ -191,16 +191,6 @@ function buildRequestData(bidRequest, bidderRequest) {
     }
   });
 
-  // Placement Inference Rules:
-  // - If no placement is defined then default to 1 (In Stream)
-  video.placement = video.placement || 2;
-
-  // - If product is instream (for instream context) then override placement to 1
-  if (params.context === 'instream') {
-    video.startdelay = video.startdelay || 0;
-    video.placement = 1;
-  }
-
   // bid floor
   const bidFloorRequest = {
     currency: bidRequest.params.cur || 'USD',
@@ -223,8 +213,8 @@ function buildRequestData(bidRequest, bidderRequest) {
         id: '1',
         video: video,
         secure: isSecure() ? 1 : 0,
-        bidfloor: floorData.floor,
-        bidfloorcur: floorData.currency
+        bidfloor: floorData?.floor,
+        bidfloorcur: floorData?.currency
       }
     ],
     site: {
@@ -261,8 +251,9 @@ function buildRequestData(bidRequest, bidderRequest) {
   }
 
   // adding schain object
-  if (bidRequest.schain) {
-    deepSetValue(openrtbRequest, 'source.ext.schain', bidRequest.schain);
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    deepSetValue(openrtbRequest, 'source.ext.schain', schain);
     openrtbRequest.source.ext.schain.nodes[0].rid = openrtbRequest.id;
   }
 

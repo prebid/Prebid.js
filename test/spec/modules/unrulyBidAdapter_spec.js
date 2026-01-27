@@ -128,7 +128,7 @@ describe('UnrulyAdapter', function () {
   let fakeRenderer;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'logError');
     sandbox.stub(Renderer, 'install');
 
@@ -388,7 +388,7 @@ describe('UnrulyAdapter', function () {
         ]
       };
 
-      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
       expect(typeof result).to.equal('object');
       expect(result.length).to.equal(2);
       expect(result[0].data.bidderRequest.bids.length).to.equal(1);
@@ -461,7 +461,7 @@ describe('UnrulyAdapter', function () {
         ]
       };
 
-      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
       expect(typeof result).to.equal('object');
       expect(result.length).to.equal(1);
       expect(result[0].data.bidderRequest.bids.length).to.equal(2);
@@ -597,7 +597,7 @@ describe('UnrulyAdapter', function () {
         }
       };
 
-      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
       expect(result[0].data).to.deep.equal(expectedResult);
     });
 
@@ -689,14 +689,16 @@ describe('UnrulyAdapter', function () {
         }
       };
 
-      let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+      const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
       expect(result[0].data).to.deep.equal(expectedResult);
     });
     describe('Protected Audience Support', function() {
       it('should return an array with 2 items and enabled protected audience', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
-          'fledgeEnabled': true,
+          'paapi': {
+            enabled: true
+          },
           'bids': [
             {
               'bidder': 'unruly',
@@ -771,7 +773,7 @@ describe('UnrulyAdapter', function () {
           ]
         };
 
-        let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+        const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
         expect(typeof result).to.equal('object');
         expect(result.length).to.equal(2);
         expect(result[0].data.bidderRequest.bids.length).to.equal(1);
@@ -782,7 +784,9 @@ describe('UnrulyAdapter', function () {
       it('should return an array with 2 items and enabled protected audience on only one unit', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
-          'fledgeEnabled': true,
+          'paapi': {
+            enabled: true
+          },
           'bids': [
             {
               'bidder': 'unruly',
@@ -855,7 +859,7 @@ describe('UnrulyAdapter', function () {
           ]
         };
 
-        let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+        const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
         expect(typeof result).to.equal('object');
         expect(result.length).to.equal(2);
         expect(result[0].data.bidderRequest.bids.length).to.equal(1);
@@ -906,7 +910,7 @@ describe('UnrulyAdapter', function () {
           ]
         };
 
-        let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+        const result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
         expect(typeof result).to.equal('object');
         expect(result.length).to.equal(1);
         expect(result[0].data.bidderRequest.bids.length).to.equal(1);
@@ -964,7 +968,7 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should return object with an array of bids and an array of auction configs when it receives a successful response from server', function () {
-      let bidId = '27a3ee1626a5c7'
+      const bidId = '27a3ee1626a5c7'
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
       const mockExchangeAuctionConfig = {};
       mockExchangeAuctionConfig[bidId] = createOutStreamExchangeAuctionConfig();
@@ -1043,7 +1047,7 @@ describe('UnrulyAdapter', function () {
             mediaType: 'video'
           }
         ],
-        'fledgeAuctionConfigs': [{
+        'paapi': [{
           'bidId': bidId,
           'config': {
             'seller': 'https://nexxen.tech',
@@ -1060,7 +1064,7 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should return object with an array of auction configs when it receives a successful response from server without bids', function () {
-      let bidId = '27a3ee1626a5c7';
+      const bidId = '27a3ee1626a5c7';
       const mockExchangeAuctionConfig = {};
       mockExchangeAuctionConfig[bidId] = createOutStreamExchangeAuctionConfig();
       const mockServerResponse = createExchangeResponse(null, mockExchangeAuctionConfig);
@@ -1107,7 +1111,7 @@ describe('UnrulyAdapter', function () {
 
       expect(adapter.interpretResponse(mockServerResponse, originalRequest)).to.deep.equal({
         'bids': [],
-        'fledgeAuctionConfigs': [{
+        'paapi': [{
           'bidId': bidId,
           'config': {
             'seller': 'https://nexxen.tech',

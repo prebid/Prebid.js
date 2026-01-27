@@ -50,14 +50,16 @@ export const pairIdSubmodule = {
     return value && Array.isArray(value) ? {'pairId': value} : undefined
   },
   /**
-   * performs action to obtain id and return a value in the callback's response argument
-   * @function
-   * @returns {id: string | undefined }
+   * Performs action to obtain ID and return a value in the callback's response argument.
+   * @function getId
+   * @param {Object} config - The configuration object.
+   * @param {Object} config.params - The parameters from the configuration.
+   * @returns {{id: string[] | undefined}} The obtained IDs or undefined if no IDs are found.
    */
   getId(config) {
     const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
     let ids = []
-    if (pairIdsString && typeof pairIdsString == 'string') {
+    if (pairIdsString && typeof pairIdsString === 'string') {
       try {
         ids = ids.concat(JSON.parse(atob(pairIdsString)))
       } catch (error) {
@@ -67,17 +69,32 @@ export const pairIdSubmodule = {
 
     const configParams = (config && config.params) || {};
     if (configParams && configParams.liveramp) {
-      let LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY
-      const liverampValue = pairIdFromLocalStorage(LRStorageLocation) || pairIdFromCookie(LRStorageLocation)
-      try {
-        const obj = JSON.parse(atob(liverampValue));
-        ids = ids.concat(obj.envelope);
-      } catch (error) {
-        logInfo(error)
+      const LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY;
+      const liverampValue = pairIdFromLocalStorage(LRStorageLocation) || pairIdFromCookie(LRStorageLocation);
+
+      if (liverampValue) {
+        try {
+          const parsedValue = atob(liverampValue);
+          if (parsedValue) {
+            const obj = JSON.parse(parsedValue);
+
+            if (obj && typeof obj === 'object' && obj.envelope) {
+              ids = ids.concat(obj.envelope);
+            } else {
+              logInfo('Pairid: Parsed object is not valid or does not contain envelope');
+            }
+          } else {
+            logInfo('Pairid: Decoded value is empty');
+          }
+        } catch (error) {
+          logInfo('Pairid: Error parsing JSON: ', error);
+        }
+      } else {
+        logInfo('Pairid: liverampValue for pairId from storage is empty or null');
       }
     }
 
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       logInfo('PairId not found.')
       return undefined;
     }

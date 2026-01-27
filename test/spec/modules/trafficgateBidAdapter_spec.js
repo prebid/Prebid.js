@@ -4,16 +4,18 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
+import 'modules/paapi.js';
+
 import {deepClone} from 'src/utils.js';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
@@ -193,9 +195,9 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
-          videoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
       describe('and request config uses both host and platform', () => {
@@ -225,7 +227,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithHostAndPlacement);
+          const videoBidWithMediaTypes = Object.assign({}, videoBidWithHostAndPlacement);
           videoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
         });
@@ -250,10 +252,10 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
-          delete videoBidWithMediaType.params;
-          videoBidWithMediaType.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaType);
+          delete invalidVideoBidWithMediaTypes.params;
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
     });
@@ -460,7 +462,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             }
           });
-          let data = request[0].data;
+          const data = request[0].data;
           expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
@@ -475,7 +477,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             }
           });
-          let data = request[0].data;
+          const data = request[0].data;
           expect(data.user.yob).to.equal(1985);
         });
 
@@ -492,7 +494,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -504,7 +506,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('pbadslot');
               } else {
@@ -521,7 +523,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data).to.have.property('pbadslot');
               expect(data.imp[0].ext.data.pbadslot).to.equal('abcd');
             });
@@ -539,7 +541,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -551,7 +553,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('adserver');
               } else {
@@ -560,7 +562,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             });
 
             it('should send', function() {
-              let adSlotValue = 'abc';
+              const adSlotValue = 'abc';
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -572,7 +574,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data.adserver.name).to.equal('GAM');
               expect(data.imp[0].ext.data.adserver.adslot).to.equal(adSlotValue);
             });
@@ -590,7 +592,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 ext: {}
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
@@ -602,7 +604,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               if (data.imp[0].ext.data) {
                 expect(data.imp[0].ext.data).to.not.have.property('other');
               } else {
@@ -619,7 +621,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                 }
               };
               const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              let data = request[0].data;
+              const data = request[0].data;
               expect(data.imp[0].ext.data.other).to.equal(1234);
             });
           });
@@ -725,15 +727,15 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             config.getConfig.restore();
           });
 
-          it('should send a signal to specify that US Privacy applies to this request', function () {
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+          it('should send a signal to specify that US Privacy applies to this request', async function () {
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs.ext.us_privacy).to.equal('1YYN');
             expect(request[1].data.regs.ext.us_privacy).to.equal('1YYN');
           });
 
-          it('should not send the regs object, when consent string is undefined', function () {
+          it('should not send the regs object, when consent string is undefined', async function () {
             delete bidderRequest.uspConsent;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs?.us_privacy).to.not.exist;
           });
         });
@@ -766,49 +768,49 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             config.getConfig.restore();
           });
 
-          it('should send a signal to specify that GDPR applies to this request', function () {
+          it('should send a signal to specify that GDPR applies to this request', async function () {
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs.ext.gdpr).to.equal(1);
             expect(request[1].data.regs.ext.gdpr).to.equal(1);
           });
 
-          it('should send the consent string', function () {
+          it('should send the consent string', async function () {
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
             expect(request[1].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
           });
 
-          it('should send the addtlConsent string', function () {
+          it('should send the addtlConsent string', async function () {
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.user.ext.ConsentedProvidersSettings.consented_providers).to.equal(bidderRequest.gdprConsent.addtlConsent);
             expect(request[1].data.user.ext.ConsentedProvidersSettings.consented_providers).to.equal(bidderRequest.gdprConsent.addtlConsent);
           });
 
-          it('should send a signal to specify that GDPR does not apply to this request', function () {
+          it('should send a signal to specify that GDPR does not apply to this request', async function () {
             bidderRequest.gdprConsent.gdprApplies = false;
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs.ext.gdpr).to.equal(0);
             expect(request[1].data.regs.ext.gdpr).to.equal(0);
           });
 
           it('when GDPR application is undefined, should not send a signal to specify whether GDPR applies to this request, ' +
-            'but can send consent data, ', function () {
+            'but can send consent data, ', async function () {
             delete bidderRequest.gdprConsent.gdprApplies;
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs?.ext?.gdpr).to.not.be.ok;
             expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
             expect(request[1].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
           });
 
-          it('when consent string is undefined, should not send the consent string, ', function () {
+          it('when consent string is undefined, should not send the consent string, ', async function () {
             delete bidderRequest.gdprConsent.consentString;
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
             expect(request[0].data.imp[0].ext.consent).to.equal(undefined);
             expect(request[1].data.imp[0].ext.consent).to.equal(undefined);
           });
@@ -816,13 +818,13 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
 
       context('coppa', function() {
-        it('when there are no coppa param settings, should not send a coppa flag', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+        it('when there are no coppa param settings, should not send a coppa flag', async function () {
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.regs?.coppa).to.be.not.ok;
         });
 
-        it('should send a coppa flag there is when there is coppa param settings in the bid requests', function () {
-          let mockConfig = {
+        it('should send a coppa flag there is when there is coppa param settings in the bid requests', async function () {
+          const mockConfig = {
             coppa: true
           };
 
@@ -830,12 +832,12 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             return utils.deepAccess(mockConfig, key);
           });
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.regs.coppa).to.equal(1);
         });
 
-        it('should send a coppa flag there is when there is coppa param settings in the bid params', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+        it('should send a coppa flag there is when there is coppa param settings in the bid params', async function () {
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           request.params = {coppa: true};
           expect(request[0].data.regs.coppa).to.equal(1);
         });
@@ -849,30 +851,30 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         let doNotTrackStub;
 
         beforeEach(function () {
-          doNotTrackStub = sinon.stub(utils, 'getDNT');
+          doNotTrackStub = sinon.stub(dnt, 'getDNT');
         });
         afterEach(function() {
           doNotTrackStub.restore();
         });
 
-        it('when there is a do not track, should send a dnt', function () {
+        it('when there is a do not track, should send a dnt', async function () {
           doNotTrackStub.returns(1);
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(1);
         });
 
-        it('when there is not do not track, don\'t send dnt', function () {
+        it('when there is not do not track, don\'t send dnt', async function () {
           doNotTrackStub.returns(0);
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(0);
         });
 
-        it('when there is no defined do not track, don\'t send dnt', function () {
+        it('when there is no defined do not track, don\'t send dnt', async function () {
           doNotTrackStub.returns(null);
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(0);
         });
       });
@@ -930,13 +932,22 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            schain: schainConfig
+            ortb2: {source: {
+              ext: {schain: schainConfig}
+            }}
           }];
+
+          // Add schain to mockBidderRequest as well
+          mockBidderRequest.ortb2 = {
+            source: {
+              ext: {schain: schainConfig}
+            }
+          };
         });
 
         it('should send a supply chain object', function () {
           const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain).to.equal(schainConfig);
+          expect(request[0].data.source.ext.schain).to.deep.equal(schainConfig);
         });
 
         it('should send the supply chain object with the right version', function () {
@@ -999,12 +1010,11 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            userIdAsEids: userIdAsEids
           }];
           // enrich bid request with userId key/value
-
+          mockBidderRequest.ortb2 = {user: {ext: {eids: userIdAsEids}}}
           const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
-          expect(request[0].data.user.ext.eids).to.equal(userIdAsEids);
+          expect(request[0].data.user.ext.eids).to.eql(userIdAsEids);
         });
 
         it(`when no user ids are available, it should not send any extended ids`, function () {
@@ -1017,7 +1027,9 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
-            fledgeEnabled: true
+            paapi: {
+              enabled: true
+            }
           });
           expect(request[0].data.imp[0].ext.ae).to.equal(2);
         });

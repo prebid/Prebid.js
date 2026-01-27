@@ -7,7 +7,8 @@ import {
   mergeDeep,
   logWarn,
   isNumber,
-  isStr
+  isStr,
+  isPlainObject
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -15,6 +16,7 @@ import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -45,13 +47,6 @@ const LOG_ERROR_MESS = {
 };
 
 const ALIAS_CONFIG = {
-  'trustx': {
-    endpoint: 'https://grid.bidswitch.net/hbjson?sp=trustx',
-    syncurl: 'https://x.bidswitch.net/sync?ssp=themediagrid',
-    bidResponseExternal: {
-      netRevenue: false
-    }
-  },
   'gridNM': {
     defaultParams: {
       multiRequest: true
@@ -64,7 +59,7 @@ let hasSynced = false;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['playwire', 'adlivetech', 'gridNM', { code: 'trustx', skipPbsAliasing: true }],
+  aliases: ['playwire', 'adlivetech', 'gridNM'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -113,7 +108,7 @@ export const spec = {
         bidderRequestId = bid.bidderRequestId;
       }
       if (!schain) {
-        schain = bid.schain;
+        schain = bid?.ortb2?.source?.ext?.schain;
       }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
@@ -130,7 +125,7 @@ export const spec = {
         content = jwTargeting.content;
       }
 
-      let impObj = {
+      const impObj = {
         id: bidId.toString(),
         tagid: (secid || uid).toString(),
         ext: {
@@ -143,7 +138,7 @@ export const spec = {
         }
 
         if (ortb2Imp.ext) {
-          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.pbadslot?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
+          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
           if (ortb2Imp.ext.data) {
             impObj.ext.data = ortb2Imp.ext.data;
           }
@@ -182,8 +177,10 @@ export const spec = {
               wrapper_version: '$prebid.version$'
             }
           };
-          if (bid.schain) {
-            reqSource.ext.schain = bid.schain;
+          // Check for schain in the new location
+          const schain = bid?.ortb2?.source?.ext?.schain;
+          if (schain) {
+            reqSource.ext.schain = schain;
           }
           const request = {
             id: bid.bidderRequestId && bid.bidderRequestId.toString(),
@@ -272,6 +269,11 @@ export const spec = {
       if (ortb2UserExtDevice) {
         userExt = userExt || {};
         userExt.device = { ...ortb2UserExtDevice };
+      }
+
+      // if present, add device data object from ortb2 to the request
+      if (bidderRequest?.ortb2?.device) {
+        request.device = bidderRequest.ortb2.device;
       }
 
       if (userIdAsEids && userIdAsEids.length) {
@@ -403,7 +405,7 @@ export const spec = {
         }
         return '';
       });
-      let currentSource = sources[i] || sp;
+      const currentSource = sources[i] || sp;
       const urlWithParams = url + (url.indexOf('?') > -1 ? '&' : '?') + 'no_mapping=1' + (currentSource ? `&sp=${currentSource}` : '');
       return {
         method: 'POST',
@@ -441,7 +443,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst, bidderCode);
+        _addBidResponse(getBidFromResponse(respItem, LOG_ERROR_MESS), bidRequest, bidResponses, RendererConst, bidderCode);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -502,7 +504,7 @@ function _getFloor (mediaTypes, bid) {
       size: bid.sizes.map(([w, h]) => ({w, h}))
     });
 
-    if (typeof floorInfo === 'object' &&
+    if (isPlainObject(floorInfo) &&
       floorInfo.currency === 'USD' &&
       !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(floor, parseFloat(floorInfo.floor));
@@ -510,17 +512,6 @@ function _getFloor (mediaTypes, bid) {
   }
 
   return floor;
-}
-
-function _getBidFromResponse(respItem) {
-  if (!respItem) {
-    logError(LOG_ERROR_MESS.emptySeatbid);
-  } else if (!respItem.bid) {
-    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
-  } else if (!respItem.bid[0]) {
-    logError(LOG_ERROR_MESS.noBid);
-  }
-  return respItem && respItem.bid && respItem.bid[0];
 }
 
 function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bidderCode) {
@@ -628,8 +619,8 @@ function createBannerRequest(bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
-  let format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
-  let result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  const format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
+  const result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
     result.format = format

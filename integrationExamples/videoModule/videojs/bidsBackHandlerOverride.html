@@ -34,6 +34,13 @@
         },
 
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
@@ -128,7 +135,7 @@
             }
 
             bidResponse.bids.forEach(bid => {
-              const videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+              const videoUrl = pbjs.adServers.gam.buildVideoUrl({
                 adUnit: videoAdUnit,
                 url: bid.vastUrl,
                 params: {

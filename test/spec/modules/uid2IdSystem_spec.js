@@ -1,19 +1,18 @@
-/* eslint-disable no-console */
-
-import {coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
-import 'src/prebid.js';
-import 'modules/consentManagement.js';
+import {requestBids} from '../../../src/prebid.js';
+import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
-import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 const clearTimersAfterEachTest = true;
 const debugOutput = () => {};
@@ -25,6 +24,7 @@ const initialToken = `initial-advertising-token`;
 const legacyToken = 'legacy-advertising-token';
 const refreshedToken = 'refreshed-advertising-token';
 const clientSideGeneratedToken = 'client-side-generated-advertising-token';
+const optoutToken = 'optout-token';
 
 const legacyConfigParams = {storage: null};
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
@@ -32,9 +32,10 @@ const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
 
 const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
+const makeUid2OptoutContainer = (token) => ({uid2: {optout: true}});
 let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
-  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug, ...extraSettings
+  userSync: { auctionDelay: extraSettings.auctionDelay ?? auctionDelayMs, ...(extraSettings.syncDelay !== undefined && {syncDelay: extraSettings.syncDelay}), userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug
 });
 const makeOriginalIdentity = (identity, salt = 1) => ({
   identity: utils.cyrb53Hash(identity, salt),
@@ -46,12 +47,26 @@ const getFromAppropriateStorage = () => {
   else return coreStorage.getCookie(moduleCookieName);
 }
 
-const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2IdentityContainer(token));
-const expectLegacyToken = (bid) => expect(bid.userId).to.deep.include(makeUid2IdentityContainer(legacyToken));
-const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
+const UID2_SOURCE = 'uidapi.com';
+function findUid2(bid) {
+  return (bid?.userIdAsEids ?? []).find(e => e.source === UID2_SOURCE);
+}
+const expectToken = (bid, token) => {
+  const eid = findUid2(bid);
+  expect(eid && eid.uids[0].id).to.equal(token);
+};
+const expectLegacyToken = (bid) => {
+  const eid = findUid2(bid);
+  expect(eid && eid.uids[0].id).to.equal(legacyToken);
+};
+const expectNoIdentity = (bid) => expect(findUid2(bid)).to.be.undefined;
+const expectOptout = (bid) => expect(findUid2(bid)).to.be.undefined;
 const expectGlobalToHaveToken = (token) => expect(getGlobal().getUserIds()).to.deep.include(makeUid2IdentityContainer(token));
 const expectGlobalToHaveNoUid2 = () => expect(getGlobal().getUserIds()).to.not.haveOwnProperty('uid2');
-const expectNoLegacyToken = (bid) => expect(bid.userId).to.not.deep.include(makeUid2IdentityContainer(legacyToken));
+const expectNoLegacyToken = (bid) => {
+  const eid = findUid2(bid);
+  if (eid) expect(eid.uids[0].id).to.not.equal(legacyToken);
+};
 const expectModuleStorageEmptyOrMissing = () => expect(getFromAppropriateStorage()).to.be.null;
 const expectModuleStorageToContain = (originalAdvertisingToken, latestAdvertisingToken, originalIdentity) => {
   const cookie = JSON.parse(getFromAppropriateStorage());
@@ -64,6 +79,7 @@ const apiUrl = 'https://prod.uidapi.com/v2/token'
 const refreshApiUrl = `${apiUrl}/refresh`;
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = (responseToken) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: responseToken } }));
+const makeOptoutResponseBody = (token) => btoa(JSON.stringify({ status: 'optout', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
 const cstgApiUrl = `${apiUrl}/client-generate`;
 
 const testCookieAndLocalStorage = (description, test, only = false) => {
@@ -86,13 +102,14 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 };
 
 describe(`UID2 module`, function () {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let suiteSandbox; let testSandbox; let timerSpy; let fullTestTitle; let restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
-    uninstallGdprEnforcement();
+    uninstallTcfControl();
+    attachIdSystem(uid2IdSubmodule);
 
-    suiteSandbox = sinon.sandbox.create();
+    suiteSandbox = sinon.createSandbox();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
     if (typeof window.crypto.subtle === 'undefined') {
@@ -120,6 +137,7 @@ describe(`UID2 module`, function () {
   const configureUid2Response = (apiUrl, httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   const configureUid2ApiSuccessResponse = (apiUrl, responseToken) => configureUid2Response(apiUrl, 200, makeSuccessResponseBody(responseToken));
   const configureUid2ApiFailResponse = (apiUrl) => configureUid2Response(apiUrl, 500, 'Error');
+  const configureUid2CstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
   const testApiSuccessAndFailure = (act, apiUrl, testDescription, failTestDescription, only = false, responseToken = refreshedToken) => {
     const testFn = only ? it.only : it;
@@ -139,14 +157,14 @@ describe(`UID2 module`, function () {
     debugOutput(`----------------- START TEST ------------------`);
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
     debugOutput(fullTestTitle);
-    testSandbox = sinon.sandbox.create();
+    testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
   });
 
   afterEach(async function() {
-    $$PREBID_GLOBAL$$.requestBids.removeAll();
+    requestBids.removeAll();
     config.resetConfig();
     testSandbox.restore();
     if (timerSpy.timers.length > 0) {
@@ -164,15 +182,17 @@ describe(`UID2 module`, function () {
   });
 
   describe('Configuration', function() {
-    it('When no baseUrl is provided in config, the module calls the production endpoint', function() {
+    it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token}));
+      await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/v2/token/refresh');
     });
 
-    it('When a baseUrl is provided in config, the module calls the provided endpoint', function() {
+    it('When a baseUrl is provided in config, the module calls the provided endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com'}));
+      await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/v2/token/refresh');
     });
   });
@@ -217,8 +237,8 @@ describe(`UID2 module`, function () {
     it('and GDPR applies, when getId is called directly it provides no identity', () => {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       const consentConfig = setGdprApplies();
-      let configObj = makePrebidConfig(legacyConfigParams);
-      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], consentConfig.consentData);
+      const configObj = makePrebidConfig(legacyConfigParams);
+      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], {gdpr: consentConfig.consentData});
       expect(result?.id).to.not.exist;
     });
 
@@ -228,23 +248,23 @@ describe(`UID2 module`, function () {
 
       const bid = await runAuction();
 
-      console.log('Storage', coreStorage.getDataFromLocalStorage(moduleCookieName));
       init(config);
       setSubmoduleRegistry([uid2IdSubmodule]);
       config.setConfig(makePrebidConfig(legacyConfigParams));
       const bid2 = await runAuction();
 
-      expect(bid.userId.uid2.id).to.equal(bid2.userId.uid2.id);
+      const first = findUid2(bid);
+      const second = findUid2(bid2);
+      expect(first && second && first.uids[0].id).to.equal(second.uids[0].id);
     });
   });
 
   // This setup runs all of the functional tests with both types of config - the full token response in params, or a server cookie with the cookie name provided
-  let scenarios = [
+  const scenarios = [
     {
       name: 'Token provided in config call',
       setConfig: (token, extraConfig = {}) => {
         const gen = makePrebidConfig({uid2Token: token}, extraConfig);
-        console.log('GENERATED CONFIG', gen.userSync.userIds[0].params);
         return config.setConfig(gen);
       },
     },
@@ -442,6 +462,15 @@ describe(`UID2 module`, function () {
           });
         });
       });
+      it('Should receive an optout response when the user has opted out.', async function() {
+        const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
+        configureUid2CstgResponse(200, makeOptoutResponseBody(optoutToken));
+        config.setConfig(makePrebidConfig({ uid2Token, ...cstgConfigParams, email: 'optout@test.com' }));
+        apiHelpers.respondAfterDelay(1, server);
+
+        const bid = await runAuction();
+        expectOptout(bid, optoutToken);
+      });
       describe(`when the response doesn't arrive before the auction timer`, function() {
         testApiSuccessAndFailure(async function() {
           config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
@@ -626,5 +655,39 @@ describe(`UID2 module`, function () {
       const bid = await runAuction();
       expectNoIdentity(bid);
     })
+  });
+  describe('eid', () => {
+    it('uid2', function() {
+      const userId = {
+        uid2: {'id': 'Sample_AD_Token'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3
+        }]
+      });
+    });
+
+    it('uid2 with ext', function() {
+      const userId = {
+        uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
   })
 });

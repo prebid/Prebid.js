@@ -1,9 +1,8 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
@@ -30,8 +29,7 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
   'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
-  'api': (value) => isArrayOfNums(value),
-};
+  'api': (value) => isArrayOfNums(value)};
 
 const ORTB_SITE_FIRST_PARTY_DATA = {
   'cat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
@@ -102,30 +100,19 @@ function buildVideo(bidRequest) {
   let w = deepAccess(bidRequest, 'mediaTypes.video.w');
   let h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
-  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
+  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
   const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
 
-  if (!w && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      w = parseInt(playerSize[0][0], 10);
-    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
-      w = parseInt(playerSize[0], 10);
-    }
-  }
-  if (!h && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      h = parseInt(playerSize[0][1], 10);
-    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
-      h = parseInt(playerSize[1], 10);
-    }
+  if (!h && !w && playerSize) {
+    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
 
-  let optionalParams = {};
+  const optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (bidRequestVideo[param] && OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
       optionalParams[param] = bidRequestVideo[param];
@@ -136,6 +123,10 @@ function buildVideo(bidRequest) {
     }
   }
 
+  if (placement && typeof placement !== 'undefined' && typeof placement === 'number') {
+    optionalParams['placement'] = placement;
+  }
+
   if (plcmt) {
     optionalParams['plcmt'] = plcmt;
   }
@@ -144,8 +135,7 @@ function buildVideo(bidRequest) {
     optionalParams['context'] = context;
   }
 
-  let videoObj = {
-    placement,
+  const videoObj = {
     mimes,
     w,
     h,
@@ -170,12 +160,76 @@ function buildImpression(bidRequest) {
     },
   }
 
+  if (bidRequest?.params?.adUnitId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.adUnitId', bidRequest.params.adUnitId);
+  }
+
+  if (bidRequest?.params?.publisherId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
+  }
+
+  const bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+
+  if (!isNaN(bidFloor)) {
+    imp.bidfloor = deepAccess(bidRequest, 'params.floor');
+    imp.bidfloorcur = 'USD';
+    const bidfloorcur = deepAccess(bidRequest, 'params.bidfloorcur')
+    if (bidfloorcur && bidfloorcur !== 'USD') {
+      delete imp.bidfloor;
+      delete imp.bidfloorcur;
+      logWarn('insticator: bidfloorcur supported by insticator is USD only. ignoring bidfloor and bidfloorcur params');
+    }
+  }
+
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     imp.banner = buildBanner(bidRequest);
   }
 
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     imp.video = buildVideo(bidRequest);
+  }
+
+  if (isFn(bidRequest.getFloor)) {
+    let moduleBidFloor;
+
+    const mediaType = deepAccess(bidRequest, 'mediaTypes.banner') ? 'banner' : deepAccess(bidRequest, 'mediaTypes.video') ? 'video' : undefined;
+
+    let _mediaType = mediaType;
+    let _size = '*';
+
+    if (mediaType && ['banner', 'video'].includes(mediaType)) {
+      if (mediaType === 'banner') {
+        const { w: width, h: height } = imp[mediaType];
+        if (width && height) {
+          _size = [width, height];
+        } else {
+          const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
+          if (sizes && sizes.length > 0) {
+            const {w: width, h: height} = sizes[0];
+            _size = [width, height];
+          }
+        }
+      } else if (mediaType === 'video') {
+        const { w: width, h: height } = imp[mediaType];
+        _mediaType = mediaType;
+        _size = [width, height];
+      }
+    }
+    try {
+      moduleBidFloor = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: _mediaType,
+        size: _size
+      });
+    } catch (err) {
+      // continue with no module floors
+      logWarn('priceFloors module call getFloor failed, error : ', err);
+    }
+
+    if (moduleBidFloor) {
+      imp.bidfloor = moduleBidFloor.floor;
+      imp.bidfloorcur = moduleBidFloor.currency;
+    }
   }
 
   return imp;
@@ -186,9 +240,9 @@ function buildDevice(bidRequest) {
   const deviceConfig = ortb2Data?.device || {}
 
   const device = {
-    w: window.innerWidth,
-    h: window.innerHeight,
-    js: true,
+    w: getWinDimensions().innerWidth,
+    h: getWinDimensions().innerHeight,
+    js: 1,
     ext: {
       localStorage: storage.localStorageIsEnabled(),
       cookies: storage.cookiesAreEnabled(),
@@ -228,7 +282,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function buildRegs(bidderRequest) {
-  let regs = {
+  const regs = {
     ext: {},
   };
   if (bidderRequest.gdprConsent) {
@@ -301,9 +355,10 @@ function buildUser(bid) {
 }
 
 function extractSchain(bids, requestId) {
-  if (!bids || bids.length === 0 || !bids[0].schain) return;
+  if (!bids || bids.length === 0) return;
 
-  const schain = bids[0].schain;
+  const schain = bids[0]?.ortb2?.source?.ext?.schain;
+  if (!schain) return;
   if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }
@@ -380,11 +435,15 @@ function buildRequest(validBidRequests, bidderRequest) {
     deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
+  if (validBidRequests[0]?.params?.publisherId) {
+    deepSetValue(req, 'site.publisher.id', validBidRequests[0].params.publisherId);
+  }
+
   return req;
 }
 
 function buildBid(bid, bidderRequest) {
-  const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
+  const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
   let meta = {}
 
   if (bid.ext && bid.ext.meta) {
@@ -399,7 +458,7 @@ function buildBid(bid, bidderRequest) {
   if (bid.adm && bid.adm.includes('<VAST')) {
     mediaType = 'video';
   }
-  let bidResponse = {
+  const bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
@@ -493,7 +552,7 @@ function validateBanner(bid) {
 function validateVideo(bid) {
   const videoParams = deepAccess(bid, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bid, 'params.video');
-  let video = {
+  const video = {
     ...videoParams,
     ...videoBidderParams // bidder specific overrides for video
   }
@@ -506,24 +565,12 @@ function validateVideo(bid) {
   let w = deepAccess(bid, 'mediaTypes.video.w');
   let h = deepAccess(bid, 'mediaTypes.video.h');
   const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  if (!w && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      w = parseInt(playerSize[0][0], 10);
-    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
-      w = parseInt(playerSize[0], 10);
-    }
+
+  if (!h && !w && playerSize) {
+    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
-  if (!h && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      h = parseInt(playerSize[0][1], 10);
-    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
-      h = parseInt(playerSize[1], 10);
-    }
-  }
-  const videoSize = [
-    w,
-    h,
-  ];
+
+  const videoSize = [w, h];
 
   if (
     !validateSize(videoSize)
@@ -536,13 +583,6 @@ function validateVideo(bid) {
 
   if (!Array.isArray(mimes) || mimes.length === 0) {
     logError('insticator: mimes not specified');
-    return false;
-  }
-
-  const placement = deepAccess(bid, 'mediaTypes.video.placement');
-
-  if (typeof placement !== 'undefined' && typeof placement !== 'number') {
-    logError('insticator: video placement is not a number');
     return false;
   }
 
@@ -567,6 +607,25 @@ function validateVideo(bid) {
   }
 
   return true;
+}
+
+function parsePlayerSizeToWidthHeight(playerSize, w, h) {
+  if (!w && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      w = parseInt(playerSize[0][0], 10);
+    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
+      w = parseInt(playerSize[0], 10);
+    }
+  }
+  if (!h && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      h = parseInt(playerSize[0][1], 10);
+    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
+      h = parseInt(playerSize[1], 10);
+    }
+  }
+
+  return { w, h };
 }
 
 export const spec = {

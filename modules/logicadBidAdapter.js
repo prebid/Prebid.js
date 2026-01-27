@@ -46,7 +46,7 @@ export const spec = {
     if (fledgeAuctionConfigs.length) {
       return {
         bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       };
     }
 
@@ -54,7 +54,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     if (serverResponses.length > 0 && serverResponses[0].body.userSync &&
-      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type == 'image') {
+      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type === 'image') {
       return [{
         type: 'image',
         url: serverResponses[0].body.userSync.url
@@ -74,7 +74,7 @@ function newBidRequest(bidRequest, bidderRequest) {
     mediaTypes: bidRequest.mediaTypes,
   }
 
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   if (fledgeEnabled) {
     const ae = deepAccess(bidRequest, 'ortb2Imp.ext.ae');
     if (ae) {
@@ -102,6 +102,11 @@ function newBidRequest(bidRequest, bidderRequest) {
   const userData = deepAccess(bidRequest, 'ortb2.user.data');
   if (userData) {
     data.userData = userData;
+  }
+
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    data.schain = schain;
   }
 
   return data;

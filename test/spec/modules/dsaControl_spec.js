@@ -6,7 +6,7 @@ import {AuctionIndex} from '../../../src/auctionIndex.js';
 describe('DSA transparency', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();
@@ -108,6 +108,5 @@ describe('DSA transparency', () => {
         })
       })
     })
-    it('should accept bids regardless of dsa when "required" any other value')
   });
 });

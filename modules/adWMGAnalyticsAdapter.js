@@ -2,6 +2,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
+import { detectDeviceType, getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
 const analyticsType = 'endpoint';
 const url = 'https://analytics.wmgroup.us/analytic/collection';
 const {
@@ -16,17 +17,17 @@ const {
 
 let timestampInit = null;
 
-let noBidArray = [];
-let noBidObject = {};
+const noBidArray = [];
+const noBidObject = {};
 
-let isBidArray = [];
-let isBidObject = {};
+const isBidArray = [];
+const isBidObject = {};
 
-let bidTimeOutArray = [];
-let bidTimeOutObject = {};
+const bidTimeOutArray = [];
+const bidTimeOutObject = {};
 
-let bidWonArray = [];
-let bidWonObject = {};
+const bidWonArray = [];
+const bidWonObject = {};
 
 let initOptions = {};
 
@@ -47,240 +48,19 @@ function handleInitTypes(adUnits) {
 }
 
 function detectDevice() {
-  if (
-    /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
-      navigator.userAgent.toLowerCase()
-    )
-  ) {
-    return 'tablet';
-  }
-  if (
-    /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
-      navigator.userAgent.toLowerCase()
-    )
-  ) {
-    return 'mobile';
-  }
-  return 'desktop';
+  const type = detectDeviceType();
+  if (type === 5) return "tablet";
+  if (type === 4) return "mobile";
+  return "desktop";
 }
 
 function detectOsAndBrowser() {
-  var module = {
-    options: [],
-    header: [navigator.platform, navigator.userAgent, navigator.appVersion, navigator.vendor, window.opera],
-    dataos: [
-      {
-        name: 'Windows Phone',
-        value: 'Windows Phone',
-        version: 'OS'
-      },
-      {
-        name: 'Windows',
-        value: 'Win',
-        version: 'NT'
-      },
-      {
-        name: 'iOS',
-        value: 'iPhone',
-        version: 'OS'
-      },
-      {
-        name: 'iOS',
-        value: 'iPad',
-        version: 'OS'
-      },
-      {
-        name: 'Kindle',
-        value: 'Silk',
-        version: 'Silk'
-      },
-      {
-        name: 'Android',
-        value: 'Android',
-        version: 'Android'
-      },
-      {
-        name: 'PlayBook',
-        value: 'PlayBook',
-        version: 'OS'
-      },
-      {
-        name: 'BlackBerry',
-        value: 'BlackBerry',
-        version: '/'
-      },
-      {
-        name: 'Macintosh',
-        value: 'Mac',
-        version: 'OS X'
-      },
-      {
-        name: 'Linux',
-        value: 'Linux',
-        version: 'rv'
-      },
-      {
-        name: 'Palm',
-        value: 'Palm',
-        version: 'PalmOS'
-      }
-    ],
-    databrowser: [
-      {
-        name: 'Yandex Browser',
-        value: 'YaBrowser',
-        version: 'YaBrowser'
-      },
-      {
-        name: 'Opera Mini',
-        value: 'Opera Mini',
-        version: 'Opera Mini'
-      },
-      {
-        name: 'Amigo',
-        value: 'Amigo',
-        version: 'Amigo'
-      },
-      {
-        name: 'Atom',
-        value: 'Atom',
-        version: 'Atom'
-      },
-      {
-        name: 'Opera',
-        value: 'OPR',
-        version: 'OPR'
-      },
-      {
-        name: 'Edge',
-        value: 'Edge',
-        version: 'Edge'
-      },
-      {
-        name: 'Internet Explorer',
-        value: 'Trident',
-        version: 'rv'
-      },
-      {
-        name: 'Chrome',
-        value: 'Chrome',
-        version: 'Chrome'
-      },
-      {
-        name: 'Firefox',
-        value: 'Firefox',
-        version: 'Firefox'
-      },
-      {
-        name: 'Safari',
-        value: 'Safari',
-        version: 'Version'
-      },
-      {
-        name: 'Internet Explorer',
-        value: 'MSIE',
-        version: 'MSIE'
-      },
-      {
-        name: 'Opera',
-        value: 'Opera',
-        version: 'Opera'
-      },
-      {
-        name: 'BlackBerry',
-        value: 'CLDC',
-        version: 'CLDC'
-      },
-      {
-        name: 'Mozilla',
-        value: 'Mozilla',
-        version: 'Mozilla'
-      }
-    ],
-    init: function () {
-      var agent = this.header.join(' ');
-      var os = this.matchItem(agent, this.dataos);
-      var browser = this.matchItem(agent, this.databrowser);
-
-      return {
-        os: os,
-        browser: browser
-      };
-    },
-
-    getVersion: function (name, version) {
-      if (name === 'Windows') {
-        switch (parseFloat(version).toFixed(1)) {
-          case '5.0':
-            return '2000';
-          case '5.1':
-            return 'XP';
-          case '5.2':
-            return 'Server 2003';
-          case '6.0':
-            return 'Vista';
-          case '6.1':
-            return '7';
-          case '6.2':
-            return '8';
-          case '6.3':
-            return '8.1';
-          default:
-            return parseInt(version) || 'other';
-        }
-      } else return parseInt(version) || 'other';
-    },
-
-    matchItem: function (string, data) {
-      var i = 0;
-      var j = 0;
-      var regex, regexv, match, matches, version;
-
-      for (i = 0; i < data.length; i += 1) {
-        regex = new RegExp(data[i].value, 'i');
-        match = regex.test(string);
-        if (match) {
-          regexv = new RegExp(data[i].version + '[- /:;]([\\d._]+)', 'i');
-          matches = string.match(regexv);
-          version = '';
-          if (matches) {
-            if (matches[1]) {
-              matches = matches[1];
-            }
-          }
-          if (matches) {
-            matches = matches.split(/[._]+/);
-            for (j = 0; j < matches.length; j += 1) {
-              if (j === 0) {
-                version += matches[j] + '.';
-              } else {
-                version += matches[j];
-              }
-            }
-          } else {
-            version = 'other';
-          }
-          return {
-            name: data[i].name,
-            version: this.getVersion(data[i].name, version)
-          };
-        }
-      }
-      return {
-        name: 'unknown',
-        version: 'other'
-      };
-    }
+  const info = getOsBrowserInfo();
+  return {
+    os: info.os.name + " " + info.os.version,
+    browser: info.browser.name + " " + info.browser.version
   };
-
-  var e = module.init();
-
-  var result = {};
-  result.os = e.os.name + ' ' + e.os.version;
-  result.browser = e.browser.name + ' ' + e.browser.version;
-  return result;
 }
-
 function handleAuctionInit(eventType, args) {
   initOptions.c_timeout = args.timeout;
   initOptions.ad_unit_size = handleInitSizes(args.adUnits);
@@ -375,7 +155,7 @@ function handleBidWon(eventType, args) {
 function handleBidRequested(args) {}
 
 function sendRequest(...objects) {
-  let obj = {
+  const obj = {
     publisher_id: initOptions.publisher_id.toString() || '',
     site: initOptions.site || '',
     ad_unit_size: initOptions.ad_unit_size || [''],
@@ -393,7 +173,7 @@ function handleAuctionEnd() {
   sendRequest(noBidObject, isBidObject, bidTimeOutObject);
 }
 
-let adWMGAnalyticsAdapter = Object.assign(adapter({
+const adWMGAnalyticsAdapter = Object.assign(adapter({
   url,
   analyticsType
 }), {

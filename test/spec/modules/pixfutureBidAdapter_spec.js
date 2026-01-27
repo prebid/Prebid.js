@@ -18,7 +18,7 @@ describe('PixFutureAdapter', function () {
     // Test of isBidRequestValid method
 
     describe('isBidRequestValid', function () {
-      let bid = {
+      const bid = {
         'bidder': 'pixfuture',
         'pageUrl': 'https://adinify.com/prebidjs/?pbjs_debug=true',
         'bidId': '236e806f760f0c',
@@ -43,19 +43,19 @@ describe('PixFutureAdapter', function () {
       });
 
       it('should return false when required params are not passed', function () {
-        let bid = Object.assign({}, bid);
-        delete bid.params;
-        bid.params = {
+        const invalidBid = Object.assign({}, bid);
+        delete invalidBid.params;
+        invalidBid.params = {
           'pix_id': 0
         };
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
+        expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
       });
     });
 
     // Test of buildRequest method
 
     describe('Test of buildRequest method', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         'labelAny': ['display'],
         'bidder': 'pixfuture',
         'params': {
@@ -139,7 +139,7 @@ describe('PixFutureAdapter', function () {
         }
       }];
 
-      let bidderRequests =
+      const bidderRequests =
                     {
                       'bidderCode': 'pixfuture',
                       'auctionId': '4cd5684b-ae2a-4d1f-84be-5f1ee66d9ff3',
@@ -243,7 +243,7 @@ describe('PixFutureAdapter', function () {
       // let bidderRequest = Object.assign({}, bidderRequests);
       const request = spec.buildRequests(validBidRequests, bidderRequests);
       // console.log(JSON.stringify(request));
-      let bidRequest = Object.assign({}, request[0]);
+      const bidRequest = Object.assign({}, request[0]);
 
       expect(bidRequest.data).to.exist;
       expect(bidRequest.data.sizes).to.deep.equal([[300, 250]]);

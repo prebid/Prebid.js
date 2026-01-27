@@ -3,9 +3,9 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {NATIVE} from '../src/mediaTypes.js';
-import {_map, deepAccess, deepSetValue, isEmpty} from '../src/utils.js';
-import {config} from '../src/config.js';
+import {_map, deepSetValue, isEmpty, setOnAny} from '../src/utils.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'finative';
 const DEFAULT_CUR = 'EUR';
@@ -64,7 +64,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const tid = bidderRequest.ortb2?.source?.tid;
-    const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
+    const cur = [getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CUR];
     let url = bidderRequest.refererInfo.referer;
 
     const imp = validBidRequests.map((bid, id) => {
@@ -157,7 +157,7 @@ export const spec = {
 
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = (typeof seatbid != 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+    const bidResponses = (typeof seatbid !== 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
       result[bid.impid - 1] = bid;
       return result;
     }, []) : [];
@@ -181,6 +181,7 @@ export const spec = {
             }
           };
         }
+        return undefined;
       })
       .filter(Boolean);
   }
@@ -191,7 +192,7 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
-  let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  const clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
 
   if (link.clicktrackers) {
     link.clicktrackers.forEach(function (clicktracker, index) {
@@ -222,15 +223,6 @@ function parseNative(bid) {
   });
 
   return result;
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

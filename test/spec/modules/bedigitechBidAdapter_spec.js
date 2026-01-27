@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bedigitechBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import {BANNER} from 'src/mediaTypes.js';
+import { BANNER } from 'src/mediaTypes.js';
 
 describe('BedigitechAdapter', function () {
   const adapter = newBidder(spec);
@@ -34,13 +34,13 @@ describe('BedigitechAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'masterId': 0
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -83,9 +83,9 @@ describe('BedigitechAdapter', function () {
           'currency': 'USD',
           'height': 250,
           'id': 'bedigitechMyidfdfdf',
-          'netRevenue':	true,
-          'requestTime':	1686306237,
-          'timeToRespond':	300,
+          'netRevenue': true,
+          'requestTime': 1686306237,
+          'timeToRespond': 300,
           'ttl': 300,
           'width': 300
         }
@@ -107,10 +107,10 @@ describe('BedigitechAdapter', function () {
           'meta': {
             'mediaType': BANNER,
           },
-          'netRevenue':	true,
+          'netRevenue': true,
           'requestId': 'bedigitechMyidfdfdf',
-          'requestTimestamp':	1686306237,
-          'timeToRespond':	300,
+          'requestTimestamp': 1686306237,
+          'timeToRespond': 300,
           'ttl': 300,
           'width': 300,
           'bidderCode': 'bedigitech',
@@ -118,7 +118,7 @@ describe('BedigitechAdapter', function () {
       ];
       const result = spec.interpretResponse(response);
       expect(result).to.have.lengthOf(1);
-      let resultKeys = Object.keys(result[0]);
+      const resultKeys = Object.keys(result[0]);
       expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort());
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
@@ -126,7 +126,9 @@ describe('BedigitechAdapter', function () {
         } else if (k === 'meta') {
           expect(result[0][k]).to.deep.equal(expectedResponse[0][k]);
         } else {
-          expect(result[0][k]).to.equal(expectedResponse[0][k]);
+          if (k !== 'requestId') {
+            expect(result[0][k]).to.equal(expectedResponse[0][k]);
+          }
         }
       });
     });

@@ -1,8 +1,9 @@
-import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
+import {dep, enrichFPD, getJsonLdKeywords, getMetaTagKeywords} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import * as activities from 'src/activities/rules.js'
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
 import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
@@ -14,7 +15,7 @@ describe('FPD enrichment', () => {
     hook.ready();
   });
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();
@@ -33,8 +34,13 @@ describe('FPD enrichment', () => {
         language: ''
       },
       document: {
-        querySelector: sinon.stub()
-      }
+        querySelector: sinon.stub(),
+        querySelectorAll: sinon.stub().callsFake((sel) => Array.from(document.querySelectorAll(sel))),
+      },
+      screen: {
+        width: 1,
+        height: 1,
+      },
     };
   }
 
@@ -55,7 +61,10 @@ describe('FPD enrichment', () => {
 
   CLIENT_SECTIONS.forEach(section => {
     describe(`${section}, when set`, () => {
-      const ORTB2 = {[section]: {ext: {}}}
+      let ortb2;
+      beforeEach(() => {
+        ortb2 = {[section]: {ext: {}}}
+      })
 
       it('sets domain and publisher.domain', () => {
         const refererInfo = {
@@ -63,7 +72,7 @@ describe('FPD enrichment', () => {
         };
         sandbox.stub(dep, 'getRefererInfo').callsFake(() => refererInfo);
         sandbox.stub(dep, 'findRootDomain').callsFake((dom) => `publisher.${dom}`);
-        return fpd(ORTB2).then(ortb2 => {
+        return fpd(ortb2).then(ortb2 => {
           sinon.assert.match(ortb2[section], {
             domain: 'example.com',
             publisher: {
@@ -72,31 +81,96 @@ describe('FPD enrichment', () => {
           });
         });
       })
-
       describe('keywords', () => {
-        let metaTag;
+        let tagsToRemove;
         beforeEach(() => {
-          metaTag = document.createElement('meta');
-          metaTag.name = 'keywords';
-          metaTag.content = 'kw1, kw2';
-          document.head.appendChild(metaTag);
+          tagsToRemove = [];
+          getMetaTagKeywords.clear();
+          getJsonLdKeywords.clear();
         });
+
         afterEach(() => {
-          document.head.removeChild(metaTag);
-        });
+          tagsToRemove.forEach(tag => document.head.removeChild(tag));
+        })
+
+        function addMetaKeywords(keywords = ['kw1', 'kw2']) {
+          const metaTag = document.createElement('meta');
+          metaTag.name = 'keywords';
+          metaTag.content = keywords.join(',')
+          document.head.appendChild(metaTag);
+          tagsToRemove.push(metaTag);
+        }
+
+        function addJsonKeywords(keywords) {
+          // add a JSON-LD script that contains keywords
+          const scriptTag = document.createElement('script');
+          scriptTag.type = 'application/ld+json';
+          scriptTag.textContent = JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            keywords: keywords.join(',')
+          });
+          document.head.appendChild(scriptTag);
+          tagsToRemove.push(scriptTag);
+        }
 
         testWindows(() => window, () => {
-          it(`sets kewwords from meta tag`, () => {
-            return fpd(ORTB2).then(ortb2 => {
+          it('should not set keywords if meta and json tags are not present', () => {
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+            });
+          });
+
+          it(`sets keywords from meta tag`, () => {
+            addMetaKeywords(['kw1', 'kw2']);
+            return fpd(ortb2).then(ortb2 => {
               expect(ortb2[section].keywords).to.eql('kw1,kw2');
             });
           });
-        });
-      });
 
-      it('should not set keywords if meta tag is not present', () => {
-        return fpd(ORTB2).then(ortb2 => {
-          expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+          it('should not use meta tag if firstPartyData.keywords.meta is false', () => {
+            config.setConfig({
+              firstPartyData: {
+                keywords: {
+                  meta: false
+                }
+              }
+            })
+            addMetaKeywords(['kw1', 'kw2']);
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.not.exist;
+            });
+          });
+
+          it('uses JSON-LD keywords when present', () => {
+            addJsonKeywords(['json1', 'json2']);
+            return fpd(ortb2).then(ortb2 => {
+              // JSON-LD should be preferred; returned format is a comma-joined string (no spaces)
+              expect(ortb2[section].keywords).to.eql('json1,json2');
+            });
+          });
+
+          it('should not pick up JSON keywords if firstPartyData.keywords.json is false', () => {
+            config.setConfig({
+              firstPartyData: {
+                keywords: {
+                  json: false
+                }
+              }
+            });
+            addJsonKeywords(['json1', 'json2']);
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.not.exist;
+            })
+          });
+
+          it('should avoid duplicates', () => {
+            addMetaKeywords(['kw1', ' kw2']);
+            addJsonKeywords(['kw2 ', 'kw3']);
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.eql('kw1,kw2,kw3');
+            })
+          })
         });
       });
     })
@@ -148,25 +222,17 @@ describe('FPD enrichment', () => {
       });
     });
 
-    it('respects config set through setConfig({site})', () => {
-      sandbox.stub(dep, 'getRefererInfo').callsFake(() => ({
-        page: 'www.example.com',
-        ref: 'referrer.com',
-      }));
-      config.setConfig({
-        site: {
-          ref: 'override.com',
-          priority: 'lower'
+    it('should pass documentElement.lang into bid request params', function () {
+      sandbox.stub(dep, 'getDocument').returns({
+        documentElement: {
+          lang: 'fr-FR'
         }
       });
-      return fpd({site: {priority: 'highest'}}).then(ortb2 => {
-        sinon.assert.match(ortb2.site, {
-          page: 'www.example.com',
-          ref: 'override.com',
-          priority: 'highest'
-        })
-      })
-    })
+      return fpd().then(ortb2 => {
+        expect(ortb2.site.ext.data.documentLang).to.equal('fr-FR');
+        expect(ortb2.site.content.language).to.equal('fr');
+      });
+    });
   });
 
   describe('device', () => {
@@ -176,28 +242,27 @@ describe('FPD enrichment', () => {
     });
     testWindows(() => win, () => {
       it('sets w/h', () => {
-        win.innerHeight = 123;
-        win.innerWidth = 321;
+        const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions');
+
+        getWinDimensionsStub.returns({screen: {width: 321, height: 123}});
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
             h: 123,
           });
+          getWinDimensionsStub.restore();
         });
       });
 
-      describe('ext.webdriver', () => {
-        it('when navigator.webdriver is available', () => {
-          win.navigator.webdriver = true;
-          return fpd().then(ortb2 => {
-            expect(ortb2.device.ext?.webdriver).to.eql(true);
+      it('sets ext.vpw/vph', () => {
+        const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions');
+        getWinDimensionsStub.returns({innerWidth: 12, innerHeight: 21, screen: {}});
+        return fpd().then(ortb2 => {
+          sinon.assert.match(ortb2.device.ext, {
+            vpw: 12,
+            vph: 21,
           });
-        });
-
-        it('when navigator.webdriver is not present', () => {
-          return fpd().then(ortb2 => {
-            expect(ortb2.device.ext?.webdriver).to.not.exist;
-          });
+          getWinDimensionsStub.restore();
         });
       });
 
@@ -214,43 +279,8 @@ describe('FPD enrichment', () => {
           expect(ortb2.device.language).to.eql('lang');
         })
       });
-
-      it('respects setConfig({device})', () => {
-        win.navigator.userAgent = 'ua';
-        win.navigator.language = 'lang';
-        config.setConfig({
-          device: {
-            language: 'override',
-            priority: 'lower'
-          }
-        });
-        return fpd({device: {priority: 'highest'}}).then(ortb2 => {
-          sinon.assert.match(ortb2.device, {
-            language: 'override',
-            priority: 'highest',
-            ua: 'ua'
-          })
-        })
-      });
     });
   });
-
-  describe('app', () => {
-    it('respects setConfig({app})', () => {
-      config.setConfig({
-        app: {
-          priority: 'lower',
-          prop: 'value'
-        }
-      });
-      return fpd({app: {priority: 'highest'}}).then(ortb2 => {
-        sinon.assert.match(ortb2.app, {
-          priority: 'highest',
-          prop: 'value'
-        })
-      })
-    })
-  })
 
   describe('regs', () => {
     describe('gpc', () => {
@@ -262,7 +292,7 @@ describe('FPD enrichment', () => {
         it('is set if globalPrivacyControl is set', () => {
           win.navigator.globalPrivacyControl = true;
           return fpd().then(ortb2 => {
-            expect(ortb2.regs.ext.gpc).to.eql(1);
+            expect(ortb2.regs.ext.gpc).to.eql('1');
           });
         });
 
@@ -329,7 +359,7 @@ describe('FPD enrichment', () => {
   });
 
   describe('privacy sandbox cookieDeprecationLabel', () => {
-    let isAllowed, cdep, shouldCleanupNav = false;
+    let isAllowed; let cdep; let shouldCleanupNav = false;
 
     before(() => {
       if (!navigator.cookieDeprecationLabel) {

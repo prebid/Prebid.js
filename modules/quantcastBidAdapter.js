@@ -3,7 +3,6 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
 
 /**
@@ -49,7 +48,6 @@ function makeVideoImp(bid) {
     maxbitrate: video.maxbitrate,
     playbackmethod: video.playbackmethod,
     delivery: video.delivery,
-    placement: video.placement,
     api: video.api,
     w: video.w,
     h: video.h
@@ -58,7 +56,7 @@ function makeVideoImp(bid) {
   return {
     video: videoCopy,
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
@@ -76,13 +74,13 @@ function makeBannerImp(bid) {
       })
     },
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
 function checkTCF(tcData) {
-  let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
-  let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
+  const restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
+  const qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
     : null;
 
@@ -91,14 +89,14 @@ function checkTCF(tcData) {
     return false;
   }
 
-  let vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
-  let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
+  const vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
+  const purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
 
   return !!(vendorConsent && purposeConsent);
 }
 
 function getQuantcastFPA() {
-  let fpa = storage.getCookie(QUANTCAST_FPA)
+  const fpa = storage.getCookie(QUANTCAST_FPA)
   return fpa || ''
 }
 
@@ -110,7 +108,7 @@ let hasUserSynced = false;
  */
 export const spec = {
   code: BIDDER_CODE,
-  GVLID: QUANTCAST_VENDOR_ID,
+  gvlid: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
 
   /**
@@ -151,7 +149,7 @@ export const spec = {
       }
     }
 
-    let bidRequestsList = [];
+    const bidRequestsList = [];
 
     bids.forEach(bid => {
       let imp;
@@ -276,7 +274,7 @@ export const spec = {
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
-      const responseWithUrl = find(serverResponses, serverResponse =>
+      const responseWithUrl = ((serverResponses) || []).find(serverResponse =>
         deepAccess(serverResponse.body, 'userSync.url')
       );
 

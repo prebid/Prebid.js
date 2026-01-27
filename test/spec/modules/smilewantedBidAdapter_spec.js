@@ -76,6 +76,55 @@ const DISPLAY_REQUEST_WITH_POSITION_TYPE = [{
   },
 }];
 
+const SCHAIN = {
+  'ver': '1.0',
+  'complete': 1,
+  'nodes': [
+    {
+      'asi': 'exchange1.com',
+      'sid': '1234',
+      'hp': 1,
+      'rid': 'bid-request-1',
+      'name': 'publisher',
+      'domain': 'publisher.com'
+    },
+    {
+      'asi': 'exchange2.com',
+      'sid': 'abcd',
+      'hp': 1,
+      'rid': 'bid-request-2',
+      'name': 'intermediary',
+      'domain': 'intermediary.com'
+    }
+  ]
+};
+
+const DISPLAY_REQUEST_WITH_SCHAIN = [{
+  adUnitCode: 'sw_300x250',
+  bidId: '12345',
+  sizes: [
+    [300, 250],
+    [300, 200]
+  ],
+  bidder: 'smilewanted',
+  params: {
+    zoneId: 1,
+  },
+  requestId: 'request_abcd1234',
+  ortb2Imp: {
+    ext: {
+      tid: 'trans_abcd1234',
+    }
+  },
+  ortb2: {
+    source: {
+      ext: {
+        schain: SCHAIN
+      }
+    }
+  },
+}];
+
 const BID_RESPONSE_DISPLAY = {
   body: {
     cpm: 3,
@@ -189,7 +238,6 @@ const NATIVE_REQUEST = [{
   ],
   mediaTypes: {
     native: {
-      sendTargetingKeys: false,
       title: {
         required: true,
         len: 140
@@ -390,12 +438,12 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent).to.have.property('eids');
     expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
     expect(requestContent.eids.length).to.greaterThan(0);
-    for (let index in requestContent.eids) {
-      let eid = requestContent.eids[index];
+    for (const index in requestContent.eids) {
+      const eid = requestContent.eids[index];
       expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
       expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
-      for (let uidsIndex in eid.uids) {
-        let uid = eid.uids[uidsIndex];
+      for (const uidsIndex in eid.uids) {
+        const uid = eid.uids[uidsIndex];
         expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
       }
     }
@@ -580,8 +628,21 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent).to.have.property('positionType').and.to.equal('infeed');
   });
 
+  it('SmileWanted - Verify if schain is well passed', function () {
+    const request = spec.buildRequests(DISPLAY_REQUEST_WITH_SCHAIN, {});
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('schain').and.to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com,');
+  });
+
+  it('SmileWanted - Verify user sync - empty data', function () {
+    const syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, null);
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('iframe');
+    expect(syncs[0].url).to.equal('https://csync.smilewanted.com');
+  });
+
   it('SmileWanted - Verify user sync', function () {
-    var syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
       consentString: 'foo'
     }, '1NYN');
     expect(syncs).to.have.lengthOf(1);

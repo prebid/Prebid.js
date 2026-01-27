@@ -301,10 +301,6 @@ describe('microadBidAdapter', () => {
         userId: {novatiq: {snowflake: 'novatiq-sample'}},
         expected: {aids: JSON.stringify([{type: 10, id: 'novatiq-sample'}])}
       },
-      'Parrable ID': {
-        userId: {parrableId: {eid: 'parrable-sample'}},
-        expected: {aids: JSON.stringify([{type: 11, id: 'parrable-sample'}])}
-      },
       'AudienceOne User ID': {
         userId: {dacId: {id: 'audience-one-sample'}},
         expected: {aids: JSON.stringify([{type: 12, id: 'audience-one-sample'}])}
@@ -413,9 +409,8 @@ describe('microadBidAdapter', () => {
           ortb2Imp: {
             ext: {
               tid: 'transaction-id',
-              data: {
-                pbadslot: '3333/4444'
-              }
+              gpid: '3333/4444',
+              data: {}
             }
           }
         });
@@ -425,7 +420,6 @@ describe('microadBidAdapter', () => {
             Object.assign({}, expectedResultTemplate, {
               cbt: request.data.cbt,
               gpid: '3333/4444',
-              pbadslot: '3333/4444'
             })
           );
         })
@@ -665,18 +659,18 @@ describe('microadBidAdapter', () => {
     const serverResponseTemplate = {
       body: {
         syncUrls: {
-          iframe: ['https://www.exmaple.com/iframe1', 'https://www.exmaple.com/iframe2'],
-          image: ['https://www.exmaple.com/image1', 'https://www.exmaple.com/image2']
+          iframe: ['https://www.example.com/iframe1', 'https://www.example.com/iframe2'],
+          image: ['https://www.example.com/image1', 'https://www.example.com/image2']
         }
       }
     };
     const expectedIframeSyncs = [
-      {type: 'iframe', url: 'https://www.exmaple.com/iframe1'},
-      {type: 'iframe', url: 'https://www.exmaple.com/iframe2'}
+      {type: 'iframe', url: 'https://www.example.com/iframe1'},
+      {type: 'iframe', url: 'https://www.example.com/iframe2'}
     ];
     const expectedImageSyncs = [
-      {type: 'image', url: 'https://www.exmaple.com/image1'},
-      {type: 'image', url: 'https://www.exmaple.com/image2'}
+      {type: 'image', url: 'https://www.example.com/image1'},
+      {type: 'image', url: 'https://www.example.com/image2'}
     ];
 
     it('should return nothing if no sync urls are set', () => {

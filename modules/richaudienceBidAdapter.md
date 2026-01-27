@@ -3,7 +3,7 @@
 ```
 Module Name: Rich Audience Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: cert@richaudience.com
+Maintainer: integrations@richaudience.com
 ```
 
 # Description

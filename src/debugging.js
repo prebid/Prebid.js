@@ -4,17 +4,23 @@ import {getGlobal} from './prebidGlobal.js';
 import {logMessage, prefixLog} from './utils.js';
 import {createBid} from './bidfactory.js';
 import {loadExternalScript} from './adloader.js';
-import {GreedyPromise} from './utils/promise.js';
+import {PbPromise} from './utils/promise.js';
+import { MODULE_TYPE_PREBID } from './activities/modules.js';
+import * as utils from './utils.js';
+import {BANNER, NATIVE, VIDEO} from './mediaTypes.js';
+import {Renderer} from './Renderer.js';
 
-export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
+import {getDistUrlBase, getGlobalVarName} from './buildOptions.js';
+
+export const DEBUG_KEY = `__${getGlobalVarName()}_debugging__`;
 
 function isDebuggingInstalled() {
   return getGlobal().installedModules.includes('debugging');
 }
 
 function loadScript(url) {
-  return new GreedyPromise((resolve) => {
-    loadExternalScript(url, 'debugging', resolve);
+  return new PbPromise((resolve) => {
+    loadExternalScript(url, MODULE_TYPE_PREBID, 'debugging', resolve);
   });
 }
 
@@ -22,17 +28,28 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
   let loading = null;
   return function () {
     if (loading == null) {
-      loading = new GreedyPromise((resolve, reject) => {
+      loading = new PbPromise((resolve, reject) => {
         // run this in a 0-delay timeout to give installedModules time to be populated
         setTimeout(() => {
           if (alreadyInstalled()) {
             resolve();
           } else {
-            const url = '$$PREBID_DIST_URL_BASE$$debugging-standalone.js';
+            const url = `${getDistUrlBase()}debugging-standalone.js`;
             logMessage(`Debugging module not installed, loading it from "${url}"...`);
             getGlobal()._installDebugging = true;
             script(url).then(() => {
-              getGlobal()._installDebugging({DEBUG_KEY, hook, config, createBid, logger: prefixLog('DEBUG:')});
+              getGlobal()._installDebugging({
+                DEBUG_KEY,
+                hook,
+                config,
+                createBid,
+                logger: prefixLog('DEBUG:'),
+                utils,
+                BANNER,
+                NATIVE,
+                VIDEO,
+                Renderer
+              });
             }).then(resolve, reject);
           }
         });
@@ -46,7 +63,7 @@ export function debuggingControls({load = debuggingModuleLoader(), hook = getHoo
   let promise = null;
   let enabled = false;
   function waitForDebugging(next, ...args) {
-    return (promise || GreedyPromise.resolve()).then(() => next.apply(this, args))
+    return (promise || PbPromise.resolve()).then(() => next.apply(this, args))
   }
   function enable() {
     if (!enabled) {
@@ -73,11 +90,12 @@ export const reset = ctl.reset;
 export function loadSession() {
   let storage = null;
   try {
+    // eslint-disable-next-line no-restricted-properties
     storage = window.sessionStorage;
   } catch (e) {}
 
   if (storage !== null) {
-    let debugging = ctl;
+    const debugging = ctl;
     let config = null;
     try {
       config = storage.getItem(DEBUG_KEY);

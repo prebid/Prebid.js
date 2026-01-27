@@ -1,17 +1,17 @@
-import { logError, deepClone, generateUUID, deepSetValue, deepAccess } from '../src/utils.js';
+import { logError, logInfo, logWarn, logMessage, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
-const MODULE_VERSION = '2.0.0';
+const MODULE_VERSION = '2.0.2';
 const ENDPOINT = 'https://t.greenbids.ai';
 
 const rtdOptions = {};
 
 function init(moduleConfig) {
-  let params = moduleConfig?.params;
+  const params = moduleConfig?.params;
   if (!params?.pbuid) {
     logError('Greenbids pbuid is not set!');
     return false;
@@ -24,8 +24,8 @@ function init(moduleConfig) {
 
 function onAuctionInitEvent(auctionDetails) {
   /* Emitting one billing event per auction */
-  let defaultId = 'default_id';
-  let greenbidsId = deepAccess(auctionDetails.adUnits[0], 'ortb2Imp.ext.greenbids.greenbidsId', defaultId);
+  const defaultId = 'default_id';
+  const greenbidsId = deepAccess(auctionDetails.adUnits[0], 'ortb2Imp.ext.greenbids.greenbidsId', defaultId);
   /* greenbids was successfully called so we emit the event */
   if (greenbidsId !== defaultId) {
     events.emit(EVENTS.BILLABLE_EVENT, {
@@ -38,14 +38,15 @@ function onAuctionInitEvent(auctionDetails) {
 }
 
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  let greenbidsId = generateUUID();
-  let promise = createPromise(reqBidsConfigObj, greenbidsId);
+  const greenbidsId = generateUUID();
+  const promise = createPromise(reqBidsConfigObj, greenbidsId);
   promise.then(callback);
 }
 
 function createPromise(reqBidsConfigObj, greenbidsId) {
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
+      logWarn('GreenbidsRtdProvider: Greenbids API timeout, skipping shaping');
       resolve(reqBidsConfigObj);
     }, rtdOptions.timeout);
     ajax(
@@ -57,27 +58,28 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
         },
         error: () => {
           clearTimeout(timeoutId);
+          logWarn('GreenbidsRtdProvider: Greenbids API response error, skipping shaping');
           resolve(reqBidsConfigObj);
         },
       },
       createPayload(reqBidsConfigObj, greenbidsId),
-      {
-        contentType: 'application/json',
-        customHeaders: {
-          'Greenbids-Pbuid': rtdOptions.pbuid
-        }
-      }
     );
   });
 }
 
 function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbidsId) {
   clearTimeout(timeoutId);
-  const responseAdUnits = JSON.parse(response);
-  updateAdUnitsBasedOnResponse(reqBidsConfigObj.adUnits, responseAdUnits, greenbidsId);
+  try {
+    const responseAdUnits = JSON.parse(response);
+    updateAdUnitsBasedOnResponse(reqBidsConfigObj.adUnits, responseAdUnits, greenbidsId);
+  } catch (e) {
+    logWarn('GreenbidsRtdProvider: Greenbids API response parsing error, skipping shaping');
+  }
 }
 
 function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
+  const isFilteringForced = getParameterByName('greenbids_force_filtering');
+  const isFilteringDisabled = getParameterByName('greenbids_disable_filtering');
   adUnits.forEach((adUnit) => {
     const matchingAdUnit = findMatchingAdUnit(responseAdUnits, adUnit.code);
     if (matchingAdUnit) {
@@ -86,7 +88,12 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
         keptInAuction: matchingAdUnit.bidders,
         isExploration: matchingAdUnit.isExploration
       });
-      if (!matchingAdUnit.isExploration) {
+      if (matchingAdUnit.isExploration || isFilteringDisabled) {
+        logMessage('Greenbids Rtd: either exploration traffic, or disabled filtering flag detected');
+      } else if (isFilteringForced) {
+        adUnit.bids = [];
+        logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
+      } else {
         removeFalseBidders(adUnit, matchingAdUnit);
       }
     }

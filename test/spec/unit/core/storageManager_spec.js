@@ -1,4 +1,5 @@
 import {
+  canSetCookie,
   deviceAccessRule,
   getCoreStorageManager,
   newStorageManager,
@@ -16,35 +17,36 @@ import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities
 import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
-  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_WRITE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
 import {activityParams} from '../../../../src/activities/activityParams.js';
+import {registerActivityControl} from '../../../../src/activities/rules.js';
 
 describe('storage manager', function() {
   before(() => {
     hook.ready();
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     resetData();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     config.resetConfig();
   })
 
-  it('should allow to set cookie for core modules without checking gdpr enforcements', function() {
+  it('should allow to set cookie for core modules without checking gdpr enforcements', function () {
     const coreStorage = getCoreStorageManager();
-    let date = new Date();
+    const date = new Date();
     date.setTime(date.getTime() + (24 * 60 * 60 * 1000));
-    let expires = date.toUTCString();
+    const expires = date.toUTCString();
     coreStorage.setCookie('hello', 'world', expires);
     expect(coreStorage.getCookie('hello')).to.equal('world');
   });
 
-  it('should add done callbacks to storageCallbacks array', function() {
-    let noop = sinon.spy();
+  it('should add done callbacks to storageCallbacks array', function () {
+    const noop = sinon.spy();
     const coreStorage = newStorageManager();
 
     coreStorage.setCookie('foo', 'bar', null, null, null, noop);
@@ -55,12 +57,16 @@ describe('storage manager', function() {
     coreStorage.getDataFromLocalStorage('foo', noop);
     coreStorage.removeDataFromLocalStorage('foo', noop);
     coreStorage.hasLocalStorage(noop);
+    coreStorage.setDataInSessionStorage('foo', 'bar', noop);
+    coreStorage.getDataFromSessionStorage('foo', noop);
+    coreStorage.removeDataFromSessionStorage('foo', noop);
+    coreStorage.hasSessionStorage(noop);
 
-    expect(storageCallbacks.length).to.equal(8);
+    expect(storageCallbacks.length).to.equal(12);
   });
 
-  it('should allow bidder to access device if gdpr enforcement module is not included', function() {
-    let deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
+  it('should allow bidder to access device if gdpr enforcement module is not included', function () {
+    const deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
     const storage = newStorageManager();
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);
@@ -87,12 +93,57 @@ describe('storage manager', function() {
       }));
     });
 
-    it('should deny access if activity is denied', () => {
-      isAllowed.returns(false);
-      const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
-      mgr.setDataInLocalStorage('testKey', 'val');
-      expect(mgr.getDataFromLocalStorage('testKey')).to.not.exist;
+    it('should pass storage key as activity param', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').getCookie('foo');
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_COOKIES,
+        [ACTIVITY_PARAM_STORAGE_KEY]: 'foo',
+      }));
     });
+
+    it('should pass write = false on reads', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').getCookie('foo');
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_STORAGE_WRITE]: false
+      }));
+    })
+
+    it('should pass write = true on writes', () => {
+      const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
+      mgr.setDataInLocalStorage('foo', 'bar')
+      try {
+        sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+          [ACTIVITY_PARAM_STORAGE_WRITE]: true
+        }));
+      } finally {
+        mgr.removeDataFromLocalStorage('foo');
+      }
+    })
+
+    it('should NOT pass storage key if advertiseKeys = false', () => {
+      newStorageManager({
+        moduleType: MODULE_TYPE_PREBID,
+        moduleName: 'mockMod',
+        advertiseKeys: false
+      }, {isAllowed}).getCookie('foo');
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.not.exist;
+    })
+
+    it('should not pass storage key when not relevant', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').cookiesAreEnabled();
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.be.undefined;
+    });
+
+    ['Local', 'Session'].forEach(type => {
+      describe(`${type} storage`, () => {
+        it('should deny access if activity is denied', () => {
+          isAllowed.returns(false);
+          const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
+          mgr[`setDataIn${type}Storage`]('testKey', 'val');
+          expect(mgr[`getDataFrom${type}Storage`]('testKey')).to.not.exist;
+        });
+      })
+    })
 
     it('should use bidder aliases when possible', () => {
       adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({})}, 'mockBidder');
@@ -103,57 +154,66 @@ describe('storage manager', function() {
         [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockAlias'
       }))
     })
-  })
+  });
 
-  describe('localstorage forbidden access in 3rd-party context', function() {
-    let errorLogSpy;
-    let originalLocalStorage;
-    const localStorageMock = { get: () => { throw Error } };
+  ['localStorage', 'sessionStorage'].forEach(storage => {
+    const Storage = storage.charAt(0).toUpperCase() + storage.substring(1);
 
-    beforeEach(function() {
-      originalLocalStorage = window.localStorage;
-      Object.defineProperty(window, 'localStorage', localStorageMock);
-      errorLogSpy = sinon.spy(utils, 'logError');
+    describe(`${storage} forbidden access in 3rd-party context`, function () {
+      let errorLogSpy;
+      let originalStorage;
+      const storageMock = {
+        get: () => {
+          throw Error
+        }
+      };
+
+      beforeEach(function () {
+        originalStorage = window[storage];
+        Object.defineProperty(window, storage, storageMock);
+        errorLogSpy = sinon.spy(utils, 'logError');
+      });
+
+      afterEach(function () {
+        Object.defineProperty(window, storage, {get: () => originalStorage});
+        errorLogSpy.restore();
+      })
+
+      it('should not throw if storage is not accessible when setting/getting/removing', function () {
+        const coreStorage = newStorageManager();
+
+        coreStorage[`setDataIn${Storage}`]('key', 'value');
+        const val = coreStorage[`getDataFrom${Storage}`]('key');
+        coreStorage[`removeDataFrom${Storage}`]('key');
+
+        expect(val).to.be.null;
+        sinon.assert.calledThrice(errorLogSpy);
+      });
     });
+  });
 
-    afterEach(function() {
-      Object.defineProperty(window, 'localStorage', { get: () => originalLocalStorage });
-      errorLogSpy.restore();
-    })
+  ['localStorage', 'sessionStorage'].forEach(storage => {
+    describe(`${storage} is enabled`, function () {
+      let store;
+      beforeEach(function () {
+        store = window[storage];
+        store.clear();
+      });
 
-    it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
-      const coreStorage = newStorageManager();
+      afterEach(function () {
+        store.clear();
+      })
 
-      coreStorage.setDataInLocalStorage('key', 'value');
-      const val = coreStorage.getDataFromLocalStorage('key');
-      coreStorage.removeDataFromLocalStorage('key');
+      it('should remove side-effect after checking', function () {
+        const storageMgr = newStorageManager();
 
-      expect(val).to.be.null;
-      sinon.assert.calledThrice(errorLogSpy);
-    })
-  })
+        store.setItem('unrelated', 'dummy');
+        const val = storageMgr[`${storage}IsEnabled`]();
 
-  describe('localstorage is enabled', function() {
-    let localStorage;
-
-    beforeEach(function() {
-      localStorage = window.localStorage;
-      localStorage.clear();
-    });
-
-    afterEach(function() {
-      localStorage.clear();
-    })
-
-    it('should remove side-effect after checking', function () {
-      const storage = newStorageManager();
-
-      localStorage.setItem('unrelated', 'dummy');
-      const val = storage.localStorageIsEnabled();
-
-      expect(val).to.be.true;
-      expect(localStorage.length).to.be.eq(1);
-      expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
+        expect(val).to.be.true;
+        expect(store.length).to.be.eq(1);
+        expect(store.getItem('unrelated')).to.be.eq('dummy');
+      });
     });
   });
 
@@ -261,3 +321,38 @@ describe('storage manager', function() {
     });
   });
 });
+
+describe('canSetCookie', () => {
+  let allow, unregisterACRule;
+  beforeEach(() => {
+    allow = true;
+    unregisterACRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => {
+      if (params.component === 'prebid.storage') {
+        return {allow};
+      }
+    })
+  });
+  afterEach(() => {
+    unregisterACRule();
+    canSetCookie.clear();
+  })
+
+  it('should return true when allowed', () => {
+    expect(canSetCookie()).to.be.true;
+  });
+  it('should not leave stray cookies', () => {
+    const previousCookies = document.cookie;
+    canSetCookie();
+    expect(previousCookies).to.eql(document.cookie);
+  });
+  it('should return false when not allowed', () => {
+    allow = false;
+    expect(canSetCookie()).to.be.false;
+  });
+
+  it('should cache results', () => {
+    expect(canSetCookie()).to.be.true;
+    allow = false;
+    expect(canSetCookie()).to.be.true;
+  })
+})

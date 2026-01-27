@@ -53,7 +53,7 @@ function getUniqId() {
   }
 
   if (uniq && isUniqFromLS) {
-    let expires = new Date();
+    const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {
@@ -70,7 +70,8 @@ function initFirstVisit() {
   let cookies;
 
   try {
-    cookies = parseCookies(document.cookie);
+    // TODO: commented out because of rule violations
+    cookies = {} // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -91,7 +92,8 @@ function initFirstVisit() {
 
   return visitDate;
 }
-
+// TODO: commented out because of rule violations
+/*
 function trim(string) {
   if (string.trim) {
     return string.trim();
@@ -130,6 +132,7 @@ function parseCookies(cookie) {
 
   return values;
 }
+*/
 
 function getRandAsStr(digits) {
   let str = '';
@@ -172,7 +175,8 @@ function initSession() {
   let isNew = false;
 
   try {
-    cookies = parseCookies(document.cookie);
+    // TODO: commented out because of rule violations
+    cookies = {} // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -263,7 +267,8 @@ function getTrackRequestLastTime() {
       );
     }
 
-    cookie = parseCookies(document.cookie);
+    // TODO: commented out because of rule violations
+    cookie = {} // parseCookies(document.cookie);
     cookie = cookie[ TRACK_TIME_KEY ];
     if (cookie) {
       return parseInt(cookie, 10);
@@ -282,9 +287,9 @@ function getAntiCacheParam() {
 
 function replaceBidder(str, bidder) {
   let _str = str;
-  _str = _str.replace(/\%bidder\%/, bidder.toLowerCase());
-  _str = _str.replace(/\%BIDDER\%/, bidder.toUpperCase());
-  _str = _str.replace(/\%Bidder\%/, bidder.charAt(0).toUpperCase() + bidder.slice(1).toLowerCase());
+  _str = _str.replace(/%bidder%/, bidder.toLowerCase());
+  _str = _str.replace(/%BIDDER%/, bidder.toUpperCase());
+  _str = _str.replace(/%Bidder%/, bidder.charAt(0).toUpperCase() + bidder.slice(1).toLowerCase());
 
   return _str;
 }

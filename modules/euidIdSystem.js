@@ -10,9 +10,14 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-// RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
-// eslint-disable-next-line prebid/validate-imports
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
@@ -75,16 +80,16 @@ export const euidIdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleConfig} [configparams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData|undefined} consentData
-   * @returns {euidId}
+   * @returns {IdResponse}
    */
   getId(config, consentData) {
-    if (consentData?.gdprApplies !== true) {
+    if (consentData?.gdpr?.gdprApplies !== true) {
       logWarn('EUID is intended for use within the EU. The module will not run when GDPR does not apply.');
       return;
     }
-    if (!hasWriteToDeviceConsent(consentData)) {
+    if (!hasWriteToDeviceConsent(consentData?.gdpr)) {
       // The module cannot operate without this permission.
       _logWarn(`Unable to use EUID module due to insufficient consent. The EUID module requires storage permission.`)
       return;
@@ -103,7 +108,6 @@ export const euidIdSubmodule = {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
-        optoutCheck: 1,
         ...extractIdentityFromParams(config?.params ?? {})
       }
     }

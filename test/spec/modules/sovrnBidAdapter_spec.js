@@ -353,6 +353,40 @@ describe('sovrnBidAdapter', function() {
       expect(regs.coppa).to.equal(1)
     })
 
+    it('should not set bcat array when ortb2 bcat is undefined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest],
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+      }
+      const {bcat} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(bcat).to.be.undefined
+    })
+
+    it('should set bcat array when valid ortb2 bcat is provided', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          bcat: ['IAB1-1', 'IAB1-2']
+        },
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest]
+      }
+      const {bcat} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(bcat).to.exist.and.to.be.a('array')
+      expect(bcat).to.deep.equal(['IAB1-1', 'IAB1-2'])
+    })
+
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
       const bidderRequest = {
         ...baseBidderRequest,
@@ -371,6 +405,31 @@ describe('sovrnBidAdapter', function() {
       expect(regs.gpp_sid).to.be.an('array')
       expect(regs.gpp_sid).to.include(8)
     })
+
+    it('should add ORTB2 device data to the request', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          device: {
+            w: 980,
+            h: 1720,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+            language: 'en',
+            devicetype: 1,
+            make: 'Apple',
+            model: 'iPhone 12 Pro Max',
+            os: 'iOS',
+            osv: '17.4',
+          },
+        },
+      };
+
+      const request = spec.buildRequests([baseBidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.device).to.deep.equal(bidderRequest.ortb2.device);
+    });
 
     it('should not send gpp info when gppConsent is not defined', function () {
       const bidderRequest = {
@@ -421,17 +480,23 @@ describe('sovrnBidAdapter', function() {
     it('should add schain if present', function() {
       const schainRequest = {
         ...baseBidRequest,
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'directseller.com',
-              sid: '00001',
-              rid: 'BidRequest1',
-              hp: 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'directseller.com',
+                    sid: '00001',
+                    rid: 'BidRequest1',
+                    hp: 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
       const schainRequests = [schainRequest, baseBidRequest]
@@ -655,7 +720,8 @@ describe('sovrnBidAdapter', function() {
       nurl: '',
       adm: '<VAST version="4.2" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.iab.com/VAST">key%3Dvalue</VAST>',
       h: 480,
-      w: 640
+      w: 640,
+      mtype: 2
     }
     const bannerBid = {
       id: 'a_403370_332fdb9b064040ddbec05891bd13ab28',
@@ -665,7 +731,8 @@ describe('sovrnBidAdapter', function() {
       nurl: '<!-- NURL -->',
       adm: '<!-- Creative -->',
       h: 90,
-      w: 728
+      w: 728,
+      mtype: 1
     }
 
     beforeEach(function () {
@@ -679,6 +746,71 @@ describe('sovrnBidAdapter', function() {
           }]
         }
       }
+    })
+
+    it('Should return the bid response of correct type when nurl is missing', function () {
+      const expectedResponse = {
+        requestId: '263c448586f5a1',
+        cpm: 0.45882675,
+        width: 728,
+        height: 90,
+        creativeId: 'creativelycreatedcreativecreative',
+        dealId: null,
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: 'banner',
+        ttl: 60000,
+        meta: { advertiserDomains: [] },
+        ad: decodeURIComponent(`<!-- Creative -->`)
+      }
+
+      response = {
+        body: {
+          id: '37386aade21a71',
+          seatbid: [{
+            bid: [{
+              ...bannerBid,
+              nurl: ''
+            }]
+          }]
+        }
+      }
+
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
+    })
+
+    it('Should return the bid response of correct type when nurl is present', function () {
+      const expectedResponse = {
+        requestId: '263c448586f5a1',
+        cpm: 0.45882675,
+        width: 728,
+        height: 90,
+        creativeId: 'creativelycreatedcreativecreative',
+        dealId: null,
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: 'banner',
+        ttl: 60000,
+        meta: { advertiserDomains: [] },
+        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
+      }
+
+      response = {
+        body: {
+          id: '37386aade21a71',
+          seatbid: [{
+            bid: [{
+              ...bannerBid
+            }]
+          }]
+        }
+      }
+
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
     })
 
     it('should get the correct bid response', function () {
@@ -812,7 +944,8 @@ describe('sovrnBidAdapter', function() {
               nurl: '',
               adm: bidAdm,
               h: 480,
-              w: 640
+              w: 640,
+              mtype: 2
             }]
           }]
         }

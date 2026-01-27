@@ -13,7 +13,7 @@ Module that connects to Rise's demand sources.
 
 The Rise adapter requires setup and approval from the Rise. Please reach out to prebid-rise-engage@risecodes.com to create an Rise account.
 
-The adapter supports Video(instream).
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video
@@ -26,8 +26,6 @@ The adapter supports Video(instream).
 | `testMode` | optional | Boolean |  This activates the test mode  | false
 | `rtbDomain` | optional | String |  Sets the seller end point  | "www.test.com"
 | `is_wrapper` | private | Boolean |  Please don't use unless your account manager asked you to  | false
-| `currency` | optional | String | 3 letters currency | "EUR"
-
 
 # Test Parameters
 ```javascript
