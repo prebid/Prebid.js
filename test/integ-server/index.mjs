@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.text({ type: 'text/plain' }));
 app.use(morgan('dev')); // used to log incoming requests
 
-app.use('/pages', express.static('pages'));
+app.use('/pages', express.static('../e2e/pages'));
 
 app.use('/pbs/auction', auction)
 
