@@ -105,6 +105,18 @@ describe('adbroBidAdapter', function () {
     });
   });
 
+  describe('buildRequests without device', function () {
+    let serverRequests = spec.buildRequests([validBid], {refererInfo: {page: 'https://test.com'}});
+
+    it('Should not fail when device is undefined', function () {
+      const serverRequest = serverRequests[0];
+      expect(serverRequest).to.exist;
+      expect(serverRequest).to.have.property('data').that.is.an('object');
+      expect(serverRequest.data).to.have.property('device').that.is.an('object');
+      expect(serverRequest.data.device).to.have.property('js', 1);
+    });
+  });
+
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const responseBid = {

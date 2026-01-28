@@ -26,6 +26,7 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
+    request.device ||= {};
     request.device.js = 1;
 
     return request;
