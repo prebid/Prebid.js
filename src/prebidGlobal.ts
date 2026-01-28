@@ -21,10 +21,6 @@ export interface PrebidJS {
    * Names of all installed modules.
    */
   installedModules: string[]
-  /**
-   * Optional scheduler used by pbYield().
-   */
-  scheduler?: { yield: () => Promise<void> }
 }
 
 // if the global already exists in global document scope, use it, if not, create the object
