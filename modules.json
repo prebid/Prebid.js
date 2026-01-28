@@ -46,6 +46,7 @@
   "sovrnBidAdapter",
   "kueezRtbBidAdapter",
   "adgridBidAdapter",
+  "optidigitalBidAdapter",
   "adpod",
   "consentManagementTcf",
   "consentManagementUsp",
