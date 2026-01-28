@@ -54,7 +54,7 @@ const parseNativeAd = function (bid) {
       }
       if (asset.data) {
         const value = asset.data.value;
-        switch (asset.data.type) {
+        switch (asset.id) {
           case 1: if (value) native.sponsored = value; break;
           case 2: if (value) native.desc = value; break;
           case 3: if (value) native.rating = value; break;
@@ -71,13 +71,13 @@ const parseNativeAd = function (bid) {
         }
       }
       if (asset.img) {
-        const { url, w = 0, h = 0, type } = asset.img;
+        const { url, w = 0, h = 0 } = asset.img;
 
-        if (type === 1 && url) {
+        if (asset.id === 13 && url) {
           native.icon = url;
           native.icon_width = w;
           native.icon_height = h;
-        } else if (type === 3 && url) {
+        } else if (asset.id === 14 && url) {
           native.image = url;
           native.image_width = w;
           native.image_height = h;
