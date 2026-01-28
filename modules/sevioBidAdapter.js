@@ -5,7 +5,7 @@ import { config } from "../src/config.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0';
+const ADAPTER_VERSION = '1.0.1'; // 12.2025
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
 });
@@ -355,8 +355,13 @@ export const spec = {
         userSyncOption: userSyncEnabled === false ? "OFF" : "BIDDERS",
         referer: getReferrerInfo(bidderRequest),
         pageReferer: document.referrer,
-        pageTitle: getPageTitle().slice(0, 300),
-        pageDescription: getPageDescription().slice(0, 300),
+        context: [{
+          source: "title",
+          text: getPageTitle().slice(0, 300)
+        }, {
+          source: "meta:description",
+          text: getPageDescription().slice(0, 300)
+        }],
         domComplexity: getDomComplexity(document),
         device: bidderRequest?.ortb2?.device || {},
         deviceWidth: screen.width,
