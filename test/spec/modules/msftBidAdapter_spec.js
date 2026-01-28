@@ -297,6 +297,7 @@ describe('msftBidAdapter', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest)[0];
         expect(request.method).to.equal('POST');
         expect(request.url).to.satisfy(url => url.startsWith(ENDPOINT_URL_NORMAL));
+        expect(request.url).to.satisfy(url => url.indexOf('member_id=123') !== -1);
         const data = request.data;
         expect(data.imp).to.have.lengthOf(1);
         expect(data.imp[0].native.request).to.equal(JSON.stringify(nativeRequest));

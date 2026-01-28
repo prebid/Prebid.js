@@ -66,6 +66,9 @@ export const spec = {
       result.push({
         method: 'POST',
         url: ENDPOINT_URL + '?placementId=' + id,
+        options: {
+          endpointCompression: true,
+        },
         data
       });
     });
