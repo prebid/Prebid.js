@@ -125,7 +125,7 @@ export const spec = {
       }
     }
 
-    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '').trim().replace(/\s+/g, '');
+    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');
     if (ortb2SiteKeywords) {
       payload.site = payload.site || {};
       payload.site.keywords = ortb2SiteKeywords;
