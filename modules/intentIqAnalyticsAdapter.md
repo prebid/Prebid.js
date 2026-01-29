@@ -21,11 +21,22 @@ No registration for this module is required.
 {: .table .table-bordered .table-striped }
 | Parameter | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
+| options.partner| Required | Number   | This is the partner ID value obtained from registering with IntentIQ.   | `1177538` |
 | options.manualWinReportEnabled | Optional | Boolean | This variable determines whether the bidWon event is triggered automatically. If set to false, the event will occur automatically, and manual reporting with reportExternalWin will be disabled. If set to true, the event will not occur automatically, allowing manual reporting through reportExternalWin. The default value is false. | `false` |
 | options.reportMethod | Optional | String | Defines the HTTP method used to send the analytics report. If set to `"POST"`, the report payload will be sent in the body of the request. If set to `"GET"` (default), the payload will be included as a query parameter in the request URL. | `"GET"` |
 | options.reportingServerAddress | Optional | String | The base URL for the IntentIQ reporting server. If parameter is provided in `configParams`, it will be used. | `"https://domain.com"` |
 | options.adUnitConfig | Optional | Number |  Determines how the `placementId` parameter is extracted in the report (default is 1). Possible values: 1 – adUnitCode first, 2 – placementId first, 3 – only adUnitCode, 4 – only placementId. | `1` |
 | options.gamPredictReporting | Optional | Boolean |  This variable controls whether the GAM prediction logic is enabled or disabled. The main purpose of this logic is to extract information from a rendered GAM slot when no Prebid bidWon event is available. In that case, we take the highest CPM from the current auction and add 0.01 to that value. | `false` |
+| options.ABTestingConfigurationSource | Optional | String | Determines how AB group will be defined. Possible values: `"IIQServer"` – group defined by IIQ server, `"percentage"` – generated group based on abPercentage, `"group"` – define group based on value provided by partner. | `IIQServer` |
+| options.abPercentage | Optional | Number | Percentage for A/B testing group. Default value is `95` | `95` |
+| options.group | Optional | String | Define group provided by partner, possible values: `"A"`, `"B"` | `"A"` |
+| options.gamObjectReference      | Optional | Object   | This is a reference to the Google Ad Manager (GAM) object, which will be used to set targeting. If this parameter is not provided, the group reporting will not be configured.| `googletag`|
+| options.browserBlackList        | Optional | String   | This is the name of a browser that can be added to a blacklist.| `"chrome"`|
+| options.domainName              | Optional | String   | Specifies the domain of the page in which the IntentIQ object is currently running and serving the impression. This domain will be used later in the revenue reporting breakdown by domain. For example, cnn.com. It identifies the primary source of requests to the IntentIQ servers, even within nested web pages.| `"currentDomain.com"`|
+| options. additionalParams | Optional | Array | This parameter allows sending additional custom key-value parameters with specific destination logic (sync, VR, winreport). Each custom parameter is defined as an object in the array. | `[ { parameterName: “abc”, parameterValue: 123, destination: [1,1,0] } ]` |
+| options. additionalParams[0].parameterName | Required | String | Name of the custom parameter. This will be sent as a query parameter. | `"abc"` |
+| options. additionalParams[0].parameterValue | Required | String / Number | Value to assign to the parameter. | `123` |
+| options. additionalParams[0].destination | Required | Array | Array of numbers either `1` or `0`. Controls where this parameter is sent `[sendWithSync, sendWithVr, winreport]`. | `[1, 0, 0]` |
 
 #### Example Configuration
 
@@ -33,10 +44,9 @@ No registration for this module is required.
 pbjs.enableAnalytics({
     provider: 'iiqAnalytics',
     options: {
-        manualWinReportEnabled: false,
-        reportMethod: "GET",
-        adUnitConfig: 1,
-        gamPredictReporting: false
+        partner: 1177538,
+        ABTestingConfigurationSource: 'IIQServer',
+        domainName: "currentDomain.com",
     }
 });
 ```
@@ -77,7 +87,9 @@ originalCpm: 1.5, // Original CPM value.
 originalCurrency: 'USD', // Original currency.
 status: 'rendered', // Auction status, e.g., 'rendered'.
 placementId: 'div-1' // ID of the ad placement.
-adType: 'banner' // Specifies the type of ad served
+adType: 'banner', // Specifies the type of ad served,
+size: '320x250', // Size of adUnit item,
+pos: 0 // The following values are defined in the ORTB 2.5 spec
 }
 ```
 
@@ -95,6 +107,8 @@ adType: 'banner' // Specifies the type of ad served
 | status              | String    | Status of the impression. Leave empty or undefined if Prebid is not the bidding platform                                                          | rendered                      | No        |
 | placementId         | String    | Unique identifier of the ad unit on the webpage that showed this ad                                                                               | div-1                         | No        |
 | adType              | String    | Specifies the type of ad served. Possible values: “banner“, “video“, “native“, “audio“.                                                           | banner                        | No        |
+| size              | String    | Size of adUnit item                                                           | '320x250'                        | No        |
+| pos              | number    | The pos field specifies the position of the adUnit on the page according to the OpenRTB 2.5 specification                                                           | 0                        | No        |
 
 To report the auction win, call the function as follows:
 

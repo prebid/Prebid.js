@@ -113,6 +113,7 @@ var sizeMap = {
   195: '600x300',
   198: '640x360',
   199: '640x200',
+  210: '1080x1920',
   213: '1030x590',
   214: '980x360',
   221: '1x1',
@@ -737,6 +738,13 @@ export const spec = {
         } else {
           bid.ad = _renderCreative(ad.script, ad.impression_id);
           [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+        }
+
+        if (ad.bid_cat && ad.bid_cat.length) {
+          bid.meta.primaryCatId = ad.bid_cat[0];
+          if (ad.bid_cat.length > 1) {
+            bid.meta.secondaryCatIds = ad.bid_cat.slice(1);
+          }
         }
 
         // add server-side targeting

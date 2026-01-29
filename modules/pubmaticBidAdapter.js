@@ -8,6 +8,7 @@ import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -98,6 +99,9 @@ const converter = ortbConverter({
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
+    imp.ext?.ae != null && delete imp.ext.ae;
+    imp.ext?.igs != null && delete imp.ext.igs;
+    imp.ext?.paapi != null && delete imp.ext.paapi;
     // check for battr data types
     ['banner', 'video', 'native'].forEach(key => {
       if (imp[key]?.battr && !Array.isArray(imp[key].battr)) {
@@ -563,12 +567,6 @@ const validateBlockedCategories = (bcats) => {
   return [...new Set(bcats.filter(item => typeof item === 'string' && item.length >= 3))];
 }
 
-const getConnectionType = () => {
-  const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
-  const types = { ethernet: 1, wifi: 2, 'slow-2g': 4, '2g': 4, '3g': 5, '4g': 6 };
-  return types[connection?.effectiveType] || 0;
-}
-
 /**
  * Optimizes the impressions array by consolidating impressions for the same ad unit and media type
  * @param {Array} imps - Array of impression objects
@@ -856,16 +854,6 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     const { bids } = converter.fromORTB({ response: response.body, request: request.data });
-    const fledgeAuctionConfigs = deepAccess(response.body, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      return {
-        bids,
-        paapi: Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => ({
-          bidId,
-          config: { auctionSignals: {}, ...cfg }
-        }))
-      };
-    }
     return bids;
   },
 

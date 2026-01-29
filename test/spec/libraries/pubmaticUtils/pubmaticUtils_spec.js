@@ -1,7 +1,7 @@
 /* globals describe, beforeEach, afterEach, it, sinon */
 import { expect } from 'chai';
 import * as sua from '../../../../src/fpd/sua.js';
-import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../../../../libraries/pubmaticUtils/pubmaticUtils.js';
+import { getBrowserType, getCurrentTimeOfDay, getUtmValue, getDayOfWeek, getHourOfDay } from '../../../../libraries/pubmaticUtils/pubmaticUtils.js';
 
 describe('pubmaticUtils', () => {
   let sandbox;
@@ -231,6 +231,58 @@ describe('pubmaticUtils', () => {
       mockUrlParams.includes.withArgs('utm_').returns(true);
 
       expect(getUtmValue()).to.equal('1');
+    });
+  });
+
+  describe('getDayOfWeek', () => {
+    let clock;
+
+    afterEach(() => {
+      if (clock) {
+        clock.restore();
+      }
+    });
+
+    it('should return the correct day of the week', () => {
+      // Sunday
+      clock = sinon.useFakeTimers(new Date('2023-01-01T12:00:00Z').getTime());
+      expect(getDayOfWeek()).to.equal('0');
+      clock.restore();
+
+      // Wednesday
+      clock = sinon.useFakeTimers(new Date('2023-01-04T12:00:00Z').getTime());
+      expect(getDayOfWeek()).to.equal('3');
+      clock.restore();
+
+      // Saturday
+      clock = sinon.useFakeTimers(new Date('2023-01-07T12:00:00Z').getTime());
+      expect(getDayOfWeek()).to.equal('6');
+    });
+  });
+
+  describe('getHourOfDay', () => {
+    let clock;
+
+    afterEach(() => {
+      if (clock) {
+        clock.restore();
+      }
+    });
+
+    it('should return the correct hour of the day', () => {
+      // Midnight (0:00)
+      clock = sinon.useFakeTimers(new Date(2023, 0, 1, 0, 0, 0).getTime());
+      expect(getHourOfDay()).to.equal('0');
+      clock.restore();
+
+      // 11:30 AM should return 11
+      clock = sinon.useFakeTimers(new Date(2023, 0, 1, 11, 30, 0).getTime());
+      expect(getHourOfDay()).to.equal('11');
+      clock.restore();
+
+      // 11:59 PM (23:59) should return 23
+      clock = sinon.useFakeTimers(new Date(2023, 0, 1, 23, 59, 59).getTime());
+      expect(getHourOfDay()).to.equal('23');
     });
   });
 });
