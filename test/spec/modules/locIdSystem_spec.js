@@ -11,6 +11,7 @@ import sinon from 'sinon';
 
 const TEST_ID = 'SYybozbTuRaZkgGqCD7L7EE0FncoNUcx-om4xTfhJt36TFIAES2tF1qPH';
 const TEST_ENDPOINT = 'https://id.example.com/locid';
+const TEST_CONNECTION_IP = '203.0.113.42';
 
 describe('LocID System', () => {
   let sandbox;
@@ -34,7 +35,7 @@ describe('LocID System', () => {
       expect(locIdSubmodule.name).to.equal('locId');
     });
 
-    it('should have gvlid set to Digital Envoy IAB TCF vendor ID', () => {
+    it('should have gvlid set for consent checks', () => {
       expect(locIdSubmodule.gvlid).to.equal(3384);
     });
 
@@ -42,13 +43,13 @@ describe('LocID System', () => {
       expect(locIdSubmodule.eids).to.be.an('object');
       expect(locIdSubmodule.eids.locId).to.be.an('object');
       expect(locIdSubmodule.eids.locId.source).to.equal('locid.com');
-      // atype 1 = device identifier per OpenRTB 2.6 Extended Identifiers spec
+      // atype 1 = AdCOM AgentTypeWeb
       expect(locIdSubmodule.eids.locId.atype).to.equal(1);
     });
 
     it('should have getValue function that extracts ID', () => {
       const getValue = locIdSubmodule.eids.locId.getValue;
-      expect(getValue('test-id')).to.equal('test-id');
+      expect(getValue('test-id')).to.be.undefined;
       expect(getValue({ id: 'id-shape' })).to.equal('id-shape');
       expect(getValue({ locId: 'test-id' })).to.equal('test-id');
       expect(getValue({ locid: 'legacy-id' })).to.equal('legacy-id');
@@ -57,29 +58,33 @@ describe('LocID System', () => {
 
   describe('decode', () => {
     it('should decode valid ID correctly', () => {
-      const result = locIdSubmodule.decode(TEST_ID);
+      const result = locIdSubmodule.decode({ id: TEST_ID, connectionIp: TEST_CONNECTION_IP });
       expect(result).to.deep.equal({ locId: TEST_ID });
     });
 
     it('should decode ID passed as object', () => {
-      const result = locIdSubmodule.decode({ id: TEST_ID });
+      const result = locIdSubmodule.decode({ id: TEST_ID, connectionIp: TEST_CONNECTION_IP });
       expect(result).to.deep.equal({ locId: TEST_ID });
     });
 
     it('should return undefined for invalid values', () => {
-      [null, undefined, '', {}, [], 123].forEach(value => {
+      [null, undefined, '', {}, [], 123, TEST_ID].forEach(value => {
         expect(locIdSubmodule.decode(value)).to.be.undefined;
       });
     });
 
+    it('should return undefined when connection_ip is missing', () => {
+      expect(locIdSubmodule.decode({ id: TEST_ID })).to.be.undefined;
+    });
+
     it('should return undefined for IDs exceeding max length', () => {
       const longId = 'a'.repeat(513);
-      expect(locIdSubmodule.decode(longId)).to.be.undefined;
+      expect(locIdSubmodule.decode({ id: longId, connectionIp: TEST_CONNECTION_IP })).to.be.undefined;
     });
 
     it('should accept ID at exactly MAX_ID_LENGTH (512 characters)', () => {
       const maxLengthId = 'a'.repeat(512);
-      const result = locIdSubmodule.decode(maxLengthId);
+      const result = locIdSubmodule.decode({ id: maxLengthId, connectionIp: TEST_CONNECTION_IP });
       expect(result).to.deep.equal({ locId: maxLengthId });
     });
   });
@@ -98,7 +103,7 @@ describe('LocID System', () => {
 
     it('should call endpoint and return tx_cloc on success', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -109,16 +114,17 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.equal(TEST_ID);
+        expect(id).to.be.an('object');
+        expect(id.id).to.equal(TEST_ID);
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
         expect(ajaxStub.calledOnce).to.be.true;
         done();
       });
     });
 
-    it('should fallback to stable_cloc when tx_cloc is missing', (done) => {
-      const stableId = 'stable-cloc-id-12345';
+    it('should return undefined when tx_cloc is missing', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        callbacks.success(JSON.stringify({ stable_cloc: stableId }));
+        callbacks.success(JSON.stringify({ stable_cloc: 'stable-cloc-id-12345', connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -129,7 +135,7 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.equal(stableId);
+        expect(id).to.be.undefined;
         done();
       });
     });
@@ -138,7 +144,8 @@ describe('LocID System', () => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         callbacks.success(JSON.stringify({
           tx_cloc: TEST_ID,
-          stable_cloc: 'stable-fallback'
+          stable_cloc: 'stable-fallback',
+          connection_ip: TEST_CONNECTION_IP
         }));
       });
 
@@ -150,7 +157,9 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.equal(TEST_ID);
+        expect(id).to.be.an('object');
+        expect(id.id).to.equal(TEST_ID);
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
         done();
       });
     });
@@ -179,15 +188,55 @@ describe('LocID System', () => {
           endpoint: TEST_ENDPOINT
         }
       };
-      const result = locIdSubmodule.getId(config, {}, 'existing-id');
-      expect(result).to.deep.equal({ id: 'existing-id' });
+      const storedId = {
+        id: 'existing-id',
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      };
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
       expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should not reuse storedId when expired', () => {
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        }
+      };
+      const storedId = {
+        id: 'expired-id',
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: 1000,
+        updatedAt: 1000,
+        expiresAt: Date.now() - 1000
+      };
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result).to.have.property('callback');
+    });
+
+    it('should not reuse storedId when connectionIp is missing', () => {
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        }
+      };
+      const storedId = {
+        id: 'existing-id',
+        createdAt: 1000,
+        updatedAt: 1000,
+        expiresAt: 2000
+      };
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result).to.have.property('callback');
     });
 
     it('should pass x-api-key header when apiKey is configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(options.customHeaders).to.deep.equal({ 'x-api-key': 'test-api-key' });
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -204,7 +253,7 @@ describe('LocID System', () => {
     it('should not include customHeaders when apiKey is not configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(options.customHeaders).to.not.exist;
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -220,7 +269,7 @@ describe('LocID System', () => {
     it('should pass withCredentials when configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(options.withCredentials).to.be.true;
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -237,7 +286,7 @@ describe('LocID System', () => {
     it('should default withCredentials to false', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(options.withCredentials).to.be.false;
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -252,7 +301,7 @@ describe('LocID System', () => {
 
     it('should use default timeout of 800ms when timeoutMs is not configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -270,7 +319,7 @@ describe('LocID System', () => {
 
     it('should use custom timeout when timeoutMs is configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -291,7 +340,7 @@ describe('LocID System', () => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(options.method).to.equal('GET');
         expect(body).to.be.null;
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -307,7 +356,7 @@ describe('LocID System', () => {
     it('should append alt_id query parameter when altId is configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(url).to.equal(TEST_ENDPOINT + '?alt_id=user123');
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -324,7 +373,7 @@ describe('LocID System', () => {
     it('should use & separator when endpoint already has query params', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(url).to.equal(TEST_ENDPOINT + '?existing=param&alt_id=user456');
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -341,7 +390,7 @@ describe('LocID System', () => {
     it('should URL-encode altId value', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(url).to.equal(TEST_ENDPOINT + '?alt_id=user%40example.com');
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -358,7 +407,7 @@ describe('LocID System', () => {
     it('should not append alt_id when altId is not configured', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(url).to.equal(TEST_ENDPOINT);
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -374,7 +423,7 @@ describe('LocID System', () => {
     it('should preserve URL fragment when appending alt_id', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(url).to.equal('https://id.example.com/locid?alt_id=user123#frag');
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -391,7 +440,7 @@ describe('LocID System', () => {
     it('should preserve URL fragment when endpoint has existing query params', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         expect(url).to.equal('https://id.example.com/locid?x=1&alt_id=user456#frag');
-        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -418,6 +467,102 @@ describe('LocID System', () => {
         expect(ajaxStub.called).to.be.false;
         done();
       });
+    });
+  });
+
+  describe('extendId', () => {
+    const config = {
+      params: {
+        endpoint: TEST_ENDPOINT
+      }
+    };
+
+    it('should return stored id when valid', () => {
+      const storedId = { id: 'existing-id', connectionIp: TEST_CONNECTION_IP };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+    });
+
+    it('should reuse storedId when refreshInSeconds is configured but not due', () => {
+      const now = Date.now();
+      const refreshInSeconds = 60;
+      const storedId = {
+        id: 'existing-id',
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: now - ((refreshInSeconds - 10) * 1000),
+        expiresAt: now + 10000
+      };
+      const refreshConfig = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        },
+        storage: {
+          refreshInSeconds
+        }
+      };
+      const result = locIdSubmodule.extendId(refreshConfig, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+    });
+
+    it('should return undefined when refreshInSeconds is due', () => {
+      const now = Date.now();
+      const refreshInSeconds = 60;
+      const storedId = {
+        id: 'existing-id',
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: now - ((refreshInSeconds + 10) * 1000),
+        expiresAt: now + 10000
+      };
+      const refreshConfig = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        },
+        storage: {
+          refreshInSeconds
+        }
+      };
+      const result = locIdSubmodule.extendId(refreshConfig, {}, storedId);
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when refreshInSeconds is configured and createdAt is missing', () => {
+      const now = Date.now();
+      const refreshInSeconds = 60;
+      const storedId = {
+        id: 'existing-id',
+        connectionIp: TEST_CONNECTION_IP,
+        expiresAt: now + 10000
+      };
+      const refreshConfig = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        },
+        storage: {
+          refreshInSeconds
+        }
+      };
+      const result = locIdSubmodule.extendId(refreshConfig, {}, storedId);
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when storedId is a string', () => {
+      const result = locIdSubmodule.extendId(config, {}, 'existing-id');
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when connectionIp is missing', () => {
+      const result = locIdSubmodule.extendId(config, {}, { id: 'existing-id' });
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when stored entry is expired', () => {
+      const storedId = {
+        id: 'existing-id',
+        connectionIp: TEST_CONNECTION_IP,
+        expiresAt: Date.now() - 1000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.be.undefined;
     });
   });
 
@@ -889,7 +1034,7 @@ describe('LocID System', () => {
   describe('response parsing', () => {
     it('should parse JSON string response', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        callbacks.success('{"tx_cloc":"parsed-id"}');
+        callbacks.success('{"tx_cloc":"parsed-id","connection_ip":"203.0.113.42"}');
       });
 
       const config = {
@@ -900,7 +1045,27 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.equal('parsed-id');
+        expect(id).to.be.an('object');
+        expect(id.id).to.equal('parsed-id');
+        expect(id.connectionIp).to.equal('203.0.113.42');
+        done();
+      });
+    });
+
+    it('should return undefined when connection_ip is missing', (done) => {
+      ajaxStub.callsFake((url, callbacks, body, options) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID }));
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.undefined;
         done();
       });
     });
@@ -925,7 +1090,7 @@ describe('LocID System', () => {
 
     it('should reject empty ID in response', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
-        callbacks.success(JSON.stringify({ tx_cloc: '' }));
+        callbacks.success(JSON.stringify({ tx_cloc: '', connection_ip: TEST_CONNECTION_IP }));
       });
 
       const config = {
@@ -941,7 +1106,7 @@ describe('LocID System', () => {
       });
     });
 
-    it('should return undefined when neither tx_cloc nor stable_cloc present', (done) => {
+    it('should return undefined when tx_cloc is missing', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         callbacks.success(JSON.stringify({ other_field: 'value' }));
       });

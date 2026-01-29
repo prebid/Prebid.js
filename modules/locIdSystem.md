@@ -49,7 +49,7 @@ The LocID Encrypt API (`GET /encrypt?ip=<IP>&alt_id=<ALT_ID>`) requires the clie
 1. Receive the request from the browser
 2. Extract the client IP from the incoming connection
 3. Forward the request to the LocID Encrypt API with the IP injected
-4. Return the response (`tx_cloc`, `stable_cloc`) to the browser
+4. Return the response with `tx_cloc` and `connection_ip` to the browser (any `stable_cloc` is ignored client-side)
 
 This architecture ensures the browser never transmits IP addresses and the LocID service receives accurate location data.
 
@@ -74,14 +74,55 @@ When using `withCredentials`, the server cannot use `Access-Control-Allow-Origin
 | `name`    | Yes      | Storage key name |
 | `expires` | No       | TTL in days      |
 
+### Stored Value Format
+
+The module stores a structured object (rather than a raw string) so it can track IP-aware metadata:
+
+```json
+{
+  "id": "<tx_cloc>",
+  "connectionIp": "203.0.113.42",
+  "createdAt": 1738147200000,
+  "updatedAt": 1738147200000,
+  "expiresAt": 1738752000000
+}
+```
+
+**Important:** String-only stored values are treated as invalid and are not emitted.
+
 ## Operation Flow
 
 1. The module checks Prebid storage for an existing LocID.
 2. If no valid ID is present, it issues a GET request to the configured endpoint.
 3. The endpoint determines the user's location server-side and returns an encrypted LocID.
-4. The module extracts `tx_cloc` from the response, falling back to `stable_cloc` if needed.
-5. The ID is cached according to the configured storage settings.
-6. The ID is included in bid requests via the EIDs array.
+4. The module extracts **only** `tx_cloc` from the response and ignores `stable_cloc`.
+5. The module stores `tx_cloc` together with `connection_ip` for IP-aware cache validation.
+6. The ID is cached according to the configured storage settings.
+7. The ID is included in bid requests via the EIDs array.
+
+## Endpoint Response Requirements
+
+The proxy must return:
+
+```json
+{
+  "tx_cloc": "<transactional locid>",
+  "connection_ip": "203.0.113.42"
+}
+```
+
+Notes:
+- `tx_cloc` is the only value the browser module will store/transmit.
+- `stable_cloc` may exist in proxy responses for server-side caching, but the client ignores it.
+
+## IP Change Refresh
+
+The module stores `connection_ip` alongside `tx_cloc` and only emits IDs when `connection_ip` is present. To refresh when a user's IP changes, use Prebid's built-in refresh triggers:
+
+- Configure `storage.refreshInSeconds` to re-run `getId()` on a cadence appropriate for your traffic.
+- Use shorter `storage.expires` values to ensure periodic refresh.
+
+When `storage.refreshInSeconds` is set, the module will reuse the cached ID until `createdAt + refreshInSeconds`; once due (or if `createdAt` is missing), `extendId()` returns `undefined` so Prebid can invoke `getId()` to mint a fresh ID.
 
 ## Consent Handling
 
@@ -141,7 +182,7 @@ When available, the LocID is exposed as:
   source: "locid.com",
   uids: [{
     id: "<locid-value>",
-    atype: 1
+    atype: 1 // AdCOM AgentTypeWeb
   }]
 }
 ```
@@ -150,8 +191,10 @@ When available, the LocID is exposed as:
 
 This module uses two numeric identifiers:
 
-- **`gvlid: 3384`** — The IAB TCF Global Vendor List ID for Digital Envoy. This identifies the vendor for consent purposes under the Transparency and Consent Framework.
-- **`atype: 1`** — The OpenRTB Extended Identifiers (EID) `atype` field indicating a device-based identifier per OpenRTB 2.6.
+- **`gvlid: 3384`** — The IAB TCF Global Vendor List ID used for consent checks (confirm the registered entity name in the GVL as needed).
+- **`atype: 1`** — The AdCOM agent type for web (`AgentTypeWeb`). This is used in EID emission.
+
+The TCF vendor ID (GVLID) is distinct from AdCOM `atype` and is not used in EID emission.
 
 ## Debugging
 

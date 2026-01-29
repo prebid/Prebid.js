@@ -19,11 +19,12 @@ const MODULE_NAME = 'locId';
 const LOG_PREFIX = 'LocID:';
 const DEFAULT_TIMEOUT_MS = 800;
 const DEFAULT_EID_SOURCE = 'locid.com';
-// OpenRTB EID atype: 1 = device identifier per OpenRTB 2.6 Extended Identifiers spec
+// EID atype: 1 = AdCOM AgentTypeWeb (agent type for web environments)
 const DEFAULT_EID_ATYPE = 1;
-// IAB TCF Global Vendor List ID for Digital Envoy
+// IAB TCF Global Vendor List ID used for consent checks (verify vendor registration details as needed).
 const GVLID = 3384;
 const MAX_ID_LENGTH = 512;
+const MAX_CONNECTION_IP_LENGTH = 64;
 
 /**
  * Normalizes privacy mode config to a boolean flag.
@@ -121,6 +122,25 @@ function hasPrivacySignals(consentData) {
 
 function isValidId(id) {
   return typeof id === 'string' && id.length > 0 && id.length <= MAX_ID_LENGTH;
+}
+
+function isValidConnectionIp(ip) {
+  return typeof ip === 'string' && ip.length > 0 && ip.length <= MAX_CONNECTION_IP_LENGTH;
+}
+
+function normalizeStoredId(storedId) {
+  if (!storedId) {
+    return null;
+  }
+  if (typeof storedId === 'string') {
+    return null;
+  }
+  if (typeof storedId === 'object') {
+    const id = storedId.id ?? storedId.tx_cloc;
+    const connectionIp = storedId.connectionIp ?? storedId.connection_ip;
+    return { ...storedId, id, connectionIp };
+  }
+  return null;
 }
 
 /**
@@ -243,32 +263,62 @@ function hasValidConsent(consentData, params) {
   return true;
 }
 
-/**
- * Extracts LocID from endpoint response.
- * Primary: tx_cloc, Fallback: stable_cloc
- */
-function extractLocIdFromResponse(response) {
-  if (!response) return null;
-
-  try {
-    const parsed = typeof response === 'string' ? JSON.parse(response) : response;
-
-    // Primary: tx_cloc
-    if (isValidId(parsed.tx_cloc)) {
-      return parsed.tx_cloc;
-    }
-
-    // Fallback: stable_cloc
-    if (isValidId(parsed.stable_cloc)) {
-      return parsed.stable_cloc;
-    }
-
-    logWarn(LOG_PREFIX, 'Could not extract valid LocID from response');
+function parseEndpointResponse(response) {
+  if (!response) {
     return null;
+  }
+  try {
+    return typeof response === 'string' ? JSON.parse(response) : response;
   } catch (e) {
     logError(LOG_PREFIX, 'Error parsing endpoint response:', e.message);
     return null;
   }
+}
+
+/**
+ * Extracts LocID from endpoint response.
+ * Only tx_cloc is accepted.
+ */
+function extractLocIdFromResponse(parsed) {
+  if (!parsed) return null;
+
+  if (isValidId(parsed.tx_cloc)) {
+    return parsed.tx_cloc;
+  }
+
+  logWarn(LOG_PREFIX, 'Could not extract valid tx_cloc from response');
+  return null;
+}
+
+function extractConnectionIp(parsed) {
+  if (!parsed) {
+    return null;
+  }
+  const connectionIp = parsed.connection_ip ?? parsed.connectionIp;
+  return isValidConnectionIp(connectionIp) ? connectionIp : null;
+}
+
+function getExpiresAt(config, nowMs) {
+  const expiresDays = config?.storage?.expires;
+  if (typeof expiresDays !== 'number' || expiresDays <= 0) {
+    return undefined;
+  }
+  return nowMs + (expiresDays * 24 * 60 * 60 * 1000);
+}
+
+function buildStoredId(id, connectionIp, config) {
+  const nowMs = Date.now();
+  return {
+    id,
+    connectionIp,
+    createdAt: nowMs,
+    updatedAt: nowMs,
+    expiresAt: getExpiresAt(config, nowMs)
+  };
+}
+
+function isExpired(storedEntry) {
+  return typeof storedEntry?.expiresAt === 'number' && Date.now() > storedEntry.expiresAt;
 }
 
 /**
@@ -332,8 +382,19 @@ function fetchLocIdFromEndpoint(config, callback) {
   };
 
   const onSuccess = (response) => {
-    const locId = extractLocIdFromResponse(response);
-    safeCallback(locId || undefined);
+    const parsed = parseEndpointResponse(response);
+    const locId = extractLocIdFromResponse(parsed);
+    if (!locId) {
+      safeCallback(undefined);
+      return;
+    }
+    const connectionIp = extractConnectionIp(parsed);
+    if (!connectionIp) {
+      logWarn(LOG_PREFIX, 'Missing or invalid connection_ip in response');
+      safeCallback(undefined);
+      return;
+    }
+    safeCallback(buildStoredId(locId, connectionIp, config));
   };
 
   const onError = (error) => {
@@ -359,8 +420,12 @@ export const locIdSubmodule = {
    * Decode stored value into userId object.
    */
   decode(value) {
-    const id = typeof value === 'object' ? value?.id : value;
-    if (isValidId(id)) {
+    if (!value || typeof value !== 'object') {
+      return undefined;
+    }
+    const id = value?.id ?? value?.tx_cloc;
+    const connectionIp = value?.connectionIp ?? value?.connection_ip;
+    if (isValidId(id) && isValidConnectionIp(connectionIp)) {
       return { locId: id };
     }
     return undefined;
@@ -379,9 +444,15 @@ export const locIdSubmodule = {
     }
 
     // Reuse valid stored ID
-    const existingId = typeof storedId === 'string' ? storedId : storedId?.id;
-    if (existingId && isValidId(existingId)) {
-      return { id: existingId };
+    const normalizedStored = normalizeStoredId(storedId);
+    const existingId = normalizedStored?.id;
+    if (
+      existingId &&
+      isValidId(existingId) &&
+      isValidConnectionIp(normalizedStored?.connectionIp) &&
+      !isExpired(normalizedStored)
+    ) {
+      return { id: normalizedStored };
     }
 
     // Return callback for async endpoint fetch
@@ -393,6 +464,34 @@ export const locIdSubmodule = {
   },
 
   /**
+   * Extend existing LocID using pure logic only (no network).
+   */
+  extendId(config, consentData, storedId) {
+    const normalizedStored = normalizeStoredId(storedId);
+    if (!normalizedStored || !isValidId(normalizedStored.id) || !isValidConnectionIp(normalizedStored.connectionIp)) {
+      return undefined;
+    }
+    if (isExpired(normalizedStored)) {
+      return undefined;
+    }
+    if (!hasValidConsent(consentData, config?.params)) {
+      return undefined;
+    }
+    const refreshInSeconds = config?.storage?.refreshInSeconds;
+    if (typeof refreshInSeconds === 'number' && refreshInSeconds > 0) {
+      const createdAt = normalizedStored.createdAt;
+      if (typeof createdAt !== 'number') {
+        return undefined;
+      }
+      const refreshAfterMs = refreshInSeconds * 1000;
+      if (Date.now() - createdAt >= refreshAfterMs) {
+        return undefined;
+      }
+    }
+    return { id: normalizedStored };
+  },
+
+  /**
    * EID configuration following standard Prebid shape.
    */
   eids: {
@@ -400,10 +499,10 @@ export const locIdSubmodule = {
       source: DEFAULT_EID_SOURCE,
       atype: DEFAULT_EID_ATYPE,
       getValue: function (data) {
-        if (typeof data === 'string') {
-          return data;
+        if (!data || typeof data !== 'object') {
+          return undefined;
         }
-        return data?.id ?? data?.locId ?? data?.locid;
+        return data?.id ?? data?.tx_cloc ?? data?.locId ?? data?.locid;
       }
     }
   }
