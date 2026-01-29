@@ -108,7 +108,8 @@ export const spec = {
     {code: 'infinety'},
     {code: 'qohere'},
     {code: 'blutonic'},
-    {code: 'appmonsta', gvlid: 1283}
+    {code: 'appmonsta', gvlid: 1283},
+    {code: 'intlscoop'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
