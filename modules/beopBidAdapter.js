@@ -197,9 +197,23 @@ function normalizeAdUnitCode(adUnitCode) {
   if (!/^div-gpt-ad[-_]/i.test(adUnitCode)) {
     return adUnitCode.toLowerCase();
   }
+
   let slot = adUnitCode;
   slot = slot.replace(/^div-gpt-ad[-_]?/i, '');
-  slot = slot.replace(/([_-])\d+([_-]\d+)?$/, '');
+
+  /**
+   * Remove only long numeric suffixes (likely auto-generated IDs).
+   * Preserve short numeric suffixes as they may be meaningful slot indices.
+   *
+   * Examples removed:
+   *   article_top_123456
+   *   sidebar-1678459238475
+   *
+   * Examples preserved:
+   *   topbanner-1
+   *   topbanner-2
+   */
+  slot = slot.replace(/([_-])\d{6,}$/, '');
 
   slot = slot.toLowerCase().trim();
 
