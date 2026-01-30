@@ -192,13 +192,11 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
-function normalizeAdUnitCode(adUnitCode){
+function normalizeAdUnitCode(adUnitCode) {
   if (!adUnitCode || typeof adUnitCode !== 'string') return undefined;
-
   if (!/^div-gpt-ad[-_]/i.test(adUnitCode)) {
     return adUnitCode.toLowerCase();
   }
-
   let slot = adUnitCode;
   slot = slot.replace(/^div-gpt-ad[-_]?/i, '');
   slot = slot.replace(/([_-])\d+([_-]\d+)?$/, '');
@@ -209,7 +207,6 @@ function normalizeAdUnitCode(adUnitCode){
 
   return slot;
 }
-
 
 function beOpRequestSlotsMaker(bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
@@ -231,10 +228,10 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
     name: deepAccess(bid, 'ortb2Imp.ext.gpid') ||
-    deepAccess(bid, 'ortb2Imp.ext.data.adslot') ||
-    deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
-    bid.ortb2Imp?.tagid ||
-    normalizeAdUnitCode(bid.adUnitCode),
+      deepAccess(bid, 'ortb2Imp.ext.data.adslot') ||
+      deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
+      bid.ortb2Imp?.tagid ||
+      normalizeAdUnitCode(bid.adUnitCode),
     tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
