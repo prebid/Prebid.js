@@ -194,10 +194,14 @@ function buildTrackingParams(data, info, value) {
 
 function normalizeAdUnitCode(adUnitCode) {
   if (!adUnitCode || typeof adUnitCode !== 'string') return undefined;
+
+  // Only normalize GPT auto-generated adUnitCodes (div-gpt-ad-*)
+  // For non-GPT codes, return original string unchanged to preserve case
   if (!/^div-gpt-ad[-_]/i.test(adUnitCode)) {
-    return adUnitCode.toLowerCase();
+    return adUnitCode;
   }
 
+  // GPT handling: strip prefix and random suffix
   let slot = adUnitCode;
   slot = slot.replace(/^div-gpt-ad[-_]?/i, '');
 
@@ -206,12 +210,12 @@ function normalizeAdUnitCode(adUnitCode) {
    * Preserve short numeric suffixes as they may be meaningful slot indices.
    *
    * Examples removed:
-   *   article_top_123456
-   *   sidebar-1678459238475
+   *   div-gpt-ad-article_top_123456 → article_top
+   *   div-gpt-ad-sidebar-1678459238475 → sidebar
    *
    * Examples preserved:
-   *   topbanner-1
-   *   topbanner-2
+   *   div-gpt-ad-topbanner-1 → topbanner-1
+   *   div-gpt-ad-topbanner-2 → topbanner-2
    */
   slot = slot.replace(/([_-])\d{6,}$/, '');
 
