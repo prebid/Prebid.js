@@ -192,6 +192,22 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
+function normalizeAdUnitCode(adUnitCode){
+  if (!adUnitCode || typeof adUnitCode !== 'string') return undefined;
+
+  let slot = adUnitCode;
+  slot = slot
+    .replace(/^div-gpt-ad[-_]?/i, '')
+    .replace(/^gpt[-_]?/i, '');
+  slot = slot.replace(/([_-])[a-z0-9]{6,}$/i, '');
+  slot = slot
+    .toLowerCase()
+    .trim();
+  if (slot.length < 3) return undefined;
+  return slot;
+}
+
+
 function beOpRequestSlotsMaker(bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
   const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
@@ -211,7 +227,11 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
     nptnid: getValue(bid.params, 'networkPartnerId'),
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
-    name: getBidIdParameter('adUnitCode', bid),
+    name: deepAccess(bid, 'ortb2Imp.ext.gpid') ||
+    deepAccess(bid, 'ortb2Imp.ext.data.adslot') ||
+    deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
+    bid.ortb2Imp?.tagid ||
+    normalizeAdUnitCode(bid.adUnitCode),
     tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
