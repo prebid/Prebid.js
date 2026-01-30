@@ -195,15 +195,18 @@ function buildTrackingParams(data, info, value) {
 function normalizeAdUnitCode(adUnitCode){
   if (!adUnitCode || typeof adUnitCode !== 'string') return undefined;
 
+  if (!/^div-gpt-ad[-_]/i.test(adUnitCode)) {
+    return adUnitCode.toLowerCase();
+  }
+
   let slot = adUnitCode;
-  slot = slot
-    .replace(/^div-gpt-ad[-_]?/i, '')
-    .replace(/^gpt[-_]?/i, '');
-  slot = slot.replace(/([_-])[a-z0-9]{6,}$/i, '');
-  slot = slot
-    .toLowerCase()
-    .trim();
+  slot = slot.replace(/^div-gpt-ad[-_]?/i, '');
+  slot = slot.replace(/([_-])\d+([_-]\d+)?$/, '');
+
+  slot = slot.toLowerCase().trim();
+
   if (slot.length < 3) return undefined;
+
   return slot;
 }
 
