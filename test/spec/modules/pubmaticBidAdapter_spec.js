@@ -3,7 +3,7 @@ import { spec, cpmAdjustment, addViewabilityToImp, shouldAddDealTargeting } from
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
@@ -53,7 +53,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      site: { domain: 'ebay.com', page: 'https://ebay.com', publisher: { id: '5670' } },
       source: {},
       user: {
         ext: {
@@ -136,7 +136,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      site: { domain: 'ebay.com', page: 'https://ebay.com', publisher: { id: '5670' } },
       source: {},
       user: {
         ext: {
@@ -195,7 +195,7 @@ describe('PubMatic adapter', () => {
       },
       'dealid': 'PUBDEAL1',
       'mtype': 2,
-      'params': {'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic'}
+      'params': { 'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic' }
     }]
   };
   firstResponse = {
@@ -255,7 +255,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: { domain: 'ebay.com', page: 'https://ebay.com' },
       source: {},
       user: {
         ext: {
@@ -287,7 +287,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: { domain: 'ebay.com', page: 'https://ebay.com' },
       source: {},
       user: {
         ext: {
@@ -795,28 +795,28 @@ describe('PubMatic adapter', () => {
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should contain string values with length greater than 3', function() {
+        it('should contain string values with length greater than 3', function () {
           validBidRequests[0].params.bcat = ['AB', 'CD', 'IAB1', 'IAB2'];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('bcat');
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should trim strings', function() {
+        it('should trim strings', function () {
           validBidRequests[0].params.bcat = ['   IAB1    ', '   IAB2   '];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('bcat');
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should pass unique strings', function() {
+        it('should pass unique strings', function () {
           validBidRequests[0].params.bcat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2'];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('bcat');
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should fail if validations are not met', function() {
+        it('should fail if validations are not met', function () {
           validBidRequests[0].params.bcat = ['', 'IA', 'IB'];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.not.have.property('bcat');
@@ -1140,7 +1140,7 @@ describe('PubMatic adapter', () => {
           ]
         };
         beforeEach(() => {
-          bidderRequest.ortb2.regs = {ext: { dsa }};
+          bidderRequest.ortb2.regs = { ext: { dsa } };
         });
 
         it('should have DSA in regs.ext', () => {
@@ -1239,7 +1239,7 @@ describe('PubMatic adapter', () => {
             currency: 'EUR',
             mediaType: 'banner',
             meta: { mediaType: 'banner' },
-            getCpmInNewCurrency: function(currency) {
+            getCpmInNewCurrency: function (currency) {
               return currency === 'EUR' ? 2.8 : this.cpm;
             }
           };
@@ -1288,6 +1288,60 @@ describe('PubMatic adapter', () => {
           expect(cpmAdjustment.adjustment[0].originalCpm).to.equal(2);
         });
       });
+    });
+  });
+
+  describe('onBidBillable', () => {
+    let triggerPixelStub;
+    let replaceAuctionPriceStub;
+
+    beforeEach(() => {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+      replaceAuctionPriceStub = sinon.stub(utils, 'replaceAuctionPrice');
+    });
+
+    afterEach(() => {
+      triggerPixelStub.restore();
+      replaceAuctionPriceStub.restore();
+    });
+
+    it('should trigger pixel when bid has burl and deferBilling is false', () => {
+      const bid = {
+        burl: 'http://example.com/burl',
+        deferBilling: false,
+        cpm: 1.5
+      };
+
+      replaceAuctionPriceStub.withArgs(bid.burl, bid.cpm).returns('http://example.com/burl_replaced');
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelStub.calledOnce).to.be.true;
+      expect(triggerPixelStub.calledWith('http://example.com/burl_replaced')).to.be.true;
+      expect(replaceAuctionPriceStub.calledWith(bid.burl, bid.cpm)).to.be.true;
+    });
+
+    it('should not trigger pixel when bid does not have burl', () => {
+      const bid = {
+        deferBilling: false,
+        cpm: 1.5
+      };
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelStub.called).to.be.false;
+    });
+
+    it('should not trigger pixel when bid has deferBilling set to true', () => {
+      const bid = {
+        burl: 'http://example.com/burl',
+        deferBilling: true,
+        cpm: 1.5
+      };
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelStub.called).to.be.false;
     });
   });
 
