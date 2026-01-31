@@ -215,19 +215,19 @@ function hasValidConsent(consentData, params) {
     return true;
   }
 
-  // A) Privacy signals ARE present - enforce existing logic exactly
+  // A) Privacy signals ARE present - enforce applicable restrictions
   //
-  // Note: We only reach this point if actual CMP artifacts exist (consentString
-  // or vendorData). gdprApplies alone does not trigger this path - see
-  // hasPrivacySignals() for rationale. This supports LI-based operation where
-  // a publisher may indicate GDPR jurisdiction without having a CMP.
+  // Note: privacy signals can come from GDPR, USP, or GPP. GDPR checks only
+  // apply when GDPR is flagged AND CMP artifacts (consentString/vendorData)
+  // are present. gdprApplies alone does not trigger GDPR enforcement.
 
   // Check GDPR - support both flat and nested shapes
   const gdprApplies = consentData?.gdprApplies === true || consentData?.gdpr?.gdprApplies === true;
   const consentString = consentData?.consentString || consentData?.gdpr?.consentString;
   const vendorData = consentData?.vendorData || consentData?.gdpr?.vendorData;
+  const gdprCmpArtifactsPresent = !!(consentString || vendorData);
 
-  if (gdprApplies) {
+  if (gdprApplies && gdprCmpArtifactsPresent) {
     // When GDPR applies AND we have CMP signals, require consentString
     if (!consentString || consentString.length === 0) {
       logWarn(LOG_PREFIX, 'GDPR framework data missing consent string');
@@ -499,6 +499,9 @@ export const locIdSubmodule = {
       source: DEFAULT_EID_SOURCE,
       atype: DEFAULT_EID_ATYPE,
       getValue: function (data) {
+        if (typeof data === 'string') {
+          return data;
+        }
         if (!data || typeof data !== 'object') {
           return undefined;
         }

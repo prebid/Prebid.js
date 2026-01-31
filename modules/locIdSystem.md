@@ -122,7 +122,7 @@ The module stores `connection_ip` alongside `tx_cloc` and only emits IDs when `c
 - Configure `storage.refreshInSeconds` to re-run `getId()` on a cadence appropriate for your traffic.
 - Use shorter `storage.expires` values to ensure periodic refresh.
 
-When `storage.refreshInSeconds` is set, the module will reuse the cached ID until `createdAt + refreshInSeconds`; once due (or if `createdAt` is missing), `extendId()` returns `undefined` so Prebid can invoke `getId()` to mint a fresh ID.
+When `storage.refreshInSeconds` is set, the module will reuse the cached ID until `createdAt + refreshInSeconds`; once due (or if `createdAt` is missing), `extendId()` returns `undefined` to indicate the cached ID should not be reused. Actual refresh depends on Prebid’s storage/refresh pipeline (for example storage expiry, `refreshUserIds()`, or core refresh triggers).
 
 ## Consent Handling
 

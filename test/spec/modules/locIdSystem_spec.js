@@ -4,6 +4,8 @@
  */
 
 import { locIdSubmodule } from 'modules/locIdSystem.js';
+import { createEidsArray } from 'modules/userId/eids.js';
+import { attachIdSystem } from 'modules/userId/index.js';
 import * as ajax from 'src/ajax.js';
 import { uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai/index.mjs';
@@ -49,7 +51,7 @@ describe('LocID System', () => {
 
     it('should have getValue function that extracts ID', () => {
       const getValue = locIdSubmodule.eids.locId.getValue;
-      expect(getValue('test-id')).to.be.undefined;
+      expect(getValue('test-id')).to.equal('test-id');
       expect(getValue({ id: 'id-shape' })).to.equal('id-shape');
       expect(getValue({ locId: 'test-id' })).to.equal('test-id');
       expect(getValue({ locid: 'legacy-id' })).to.equal('legacy-id');
@@ -712,8 +714,17 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should proceed when gdprApplies=true with empty consentString (no CMP artifact)', () => {
-      // Empty consentString is falsy, so it is treated as not present and does not count as a CMP artifact.
+    it('should proceed when gdprApplies=true and usp is present but no GDPR CMP artifacts', () => {
+      const consentData = {
+        gdprApplies: true,
+        usp: '1NN-'
+      };
+      const result = locIdSubmodule.getId(config, consentData);
+      expect(result).to.have.property('callback');
+    });
+
+    it('should proceed when gdprApplies=true and consentString is empty (treated as absent CMP artifact)', () => {
+      // Empty consentString is treated as not present, so LI-mode behavior applies.
       const consentData = {
         gdprApplies: true,
         consentString: ''
@@ -1122,6 +1133,34 @@ describe('LocID System', () => {
         expect(id).to.be.undefined;
         done();
       });
+    });
+  });
+
+  describe('EID round-trip integration', () => {
+    before(() => {
+      attachIdSystem(locIdSubmodule);
+    });
+
+    it('should produce a valid EID from decode output via createEidsArray', () => {
+      // Simulate the full Prebid pipeline:
+      // 1. decode() returns { locId: "string" }
+      // 2. Prebid extracts idObj["locId"] -> the string
+      // 3. createEidsArray({ locId: "string" }) should produce a valid EID
+      const stored = { id: TEST_ID, connectionIp: TEST_CONNECTION_IP };
+      const decoded = locIdSubmodule.decode(stored);
+      expect(decoded).to.deep.equal({ locId: TEST_ID });
+
+      const eids = createEidsArray(decoded);
+      expect(eids.length).to.equal(1);
+      expect(eids[0]).to.deep.equal({
+        source: 'locid.com',
+        uids: [{ id: TEST_ID, atype: 1 }]
+      });
+    });
+
+    it('should not produce EID when decode returns undefined', () => {
+      const decoded = locIdSubmodule.decode(null);
+      expect(decoded).to.be.undefined;
     });
   });
 });
