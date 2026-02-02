@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, deepAccess, logWarn, logError } from '../src/utils.js';
+import { deepClone, deepAccess, logWarn, logError, triggerPixel } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'revantage';
@@ -15,6 +15,11 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    // Handle null/empty bid requests
+    if (!validBidRequests || validBidRequests.length === 0) {
+      return [];
+    }
+
     // All bid requests in a batch must have the same feedId
     // If not, we log a warning and return an empty array
     const feedId = validBidRequests[0]?.params?.feedId;
@@ -89,14 +94,14 @@ export const spec = {
           // Check if this is a video bid
           const isVideo = (rtbBid.ext && rtbBid.ext.mediaType === 'video') ||
                          rtbBid.vastXml || rtbBid.vastUrl ||
-                         (originalBid.mediaTypes && originalBid.mediaTypes.video && 
+                         (originalBid.mediaTypes && originalBid.mediaTypes.video &&
                           !originalBid.mediaTypes.banner);
 
           if (isVideo) {
             bidResponse.mediaType = VIDEO;
             bidResponse.vastXml = rtbBid.vastXml || rtbBid.adm;
             bidResponse.vastUrl = rtbBid.vastUrl;
-            
+
             if (!bidResponse.vastUrl && !bidResponse.vastXml) {
               logWarn('Revantage: Video bid missing VAST content');
               return;
@@ -104,7 +109,7 @@ export const spec = {
           } else {
             bidResponse.mediaType = BANNER;
             bidResponse.ad = rtbBid.adm;
-            
+
             if (!bidResponse.ad) {
               logWarn('Revantage: Banner bid missing ad markup');
               return;
@@ -120,7 +125,7 @@ export const spec = {
         });
       }
     });
-    
+
     return bids;
   },
 
@@ -136,7 +141,7 @@ export const spec = {
         params += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString);
       }
     }
-    
+
     if (uspConsent && typeof uspConsent === 'string') {
       params += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
@@ -156,42 +161,13 @@ export const spec = {
     if (syncOptions.pixelEnabled) {
       syncs.push({ type: 'image', url: SYNC_URL + params + '&tag=img' });
     }
-    
+
     return syncs;
   },
 
   onBidWon: function(bid) {
-    try {
-      // Send server-side win notification using burl
-      if (bid.burl) {
-        if (navigator.sendBeacon) {
-          const success = navigator.sendBeacon(bid.burl);
-          
-          // Fallback to fetch if sendBeacon fails
-          if (!success) {
-            fetch(bid.burl, {
-              method: 'GET',
-              mode: 'no-cors',
-              cache: 'no-cache',
-              keepalive: true
-            }).catch(error => {
-              logError('Revantage: Win notification fetch failed', error);
-            });
-          }
-        } else {
-          // Fallback for browsers without sendBeacon
-          fetch(bid.burl, {
-            method: 'GET',
-            mode: 'no-cors',
-            cache: 'no-cache',
-            keepalive: true
-          }).catch(error => {
-            logError('Revantage: Win notification fetch failed', error);
-          });
-        }
-      }
-    } catch (error) {
-      logError('Revantage: Error in onBidWon', error);
+    if (bid.burl) {
+      triggerPixel(bid.burl);
     }
   }
 };
@@ -327,13 +303,16 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
 
 // === UTILS ===
 function getSizes(bid) {
-  if (bid.mediaTypes && bid.mediaTypes.banner && Array.isArray(bid.mediaTypes.banner.sizes)) {
+  if (bid.mediaTypes && bid.mediaTypes.banner && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
     return bid.mediaTypes.banner.sizes;
   }
-  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+  if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playerSize && bid.mediaTypes.video.playerSize.length > 0) {
     return bid.mediaTypes.video.playerSize;
   }
-  return bid.sizes || [[300, 250]];
+  if (bid.sizes && bid.sizes.length > 0) {
+    return bid.sizes;
+  }
+  return [[300, 250]];
 }
 
 function getFirstSize(bid, index, defaultVal) {
@@ -346,7 +325,7 @@ function getBidFloorEnhanced(bid) {
   if (typeof bid.getFloor === 'function') {
     const mediaType = (bid.mediaTypes && bid.mediaTypes.video) ? 'video' : 'banner';
     const sizes = getSizes(bid);
-    
+
     // Try size-specific floors first
     for (let i = 0; i < sizes.length; i++) {
       try {
