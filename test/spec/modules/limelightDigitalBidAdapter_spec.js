@@ -107,7 +107,14 @@ describe('limelightDigitalAdapter', function () {
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     mediaTypes: {
       video: {
-        playerSize: [[800, 600]]
+        context: 'instream',
+        playerSize: [[800, 600]],
+        mimes: ['video/mp4', 'application/javascript'],
+        protocols: [2, 3, 5, 6],
+        maxduration: 60,
+        minduration: 3,
+        api: [2],
+        playbackmethod: [1]
       }
     },
     ortb2Imp: {
@@ -278,6 +285,18 @@ describe('limelightDigitalAdapter', function () {
       expect(imp.banner.format[0]).to.have.property('h', 250);
     });
 
+    it('should include video object in OpenRTB request for video bid', function() {
+      const serverRequests = spec.buildRequests([bid3], bidderRequest);
+      const imp = serverRequests[0].data.imp[0];
+      if (FEATURES.VIDEO) {
+        expect(imp.video).to.exist;
+        expect(imp.video).to.be.an('object');
+        expect(imp.video.w).to.equal(800);
+        expect(imp.video.h).to.equal(600);
+      }
+      expect(deepAccess(imp, 'ext.adUnitId')).to.equal(789);
+    });
+
     it('should skip custom fields if they are undefined', function() {
       const bidWithoutCustom = { ...bid1, params: { ...bid1.params } };
       delete bidWithoutCustom.params.custom1;
@@ -392,6 +411,74 @@ describe('limelightDigitalAdapter', function () {
         }
       }
     };
+
+    it('should return array of valid video bid responses with mtype', function () {
+      const serverRequests = spec.buildRequests([bid3], bidderRequest);
+      const request = serverRequests[0];
+
+      const ortbResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              id: 'bid456',
+              impid: request.data.imp[0].id,
+              price: 0.5,
+              w: 800,
+              h: 600,
+              adm: '<VAST version="3.0"><Ad><InLine><Creatives><Creative><Linear></Linear></Creative></Creatives></InLine></Ad></VAST>',
+              crid: '456def',
+              mtype: 2,
+              adomain: ['example.com']
+            }]
+          }],
+          cur: 'USD'
+        }
+      };
+
+      const serverResponses = spec.interpretResponse(ortbResponse, request);
+
+      expect(serverResponses).to.be.an('array');
+      if (serverResponses.length > 0) {
+        const bidResponse = serverResponses[0];
+        expect(bidResponse.mediaType).to.equal('video');
+        expect(bidResponse.vastXml).to.be.a('string');
+      }
+    });
+
+    it('should return array of valid video bid responses with ext.mediaType fallback', function () {
+      const serverRequests = spec.buildRequests([bid3], bidderRequest);
+      const request = serverRequests[0];
+
+      const ortbResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              id: 'bid456',
+              impid: request.data.imp[0].id,
+              price: 0.5,
+              w: 800,
+              h: 600,
+              adm: '<VAST version="3.0"><Ad><InLine><Creatives><Creative><Linear></Linear></Creative></Creatives></InLine></Ad></VAST>',
+              crid: '456def',
+              ext: {
+                mediaType: 'video'
+              },
+              adomain: ['example.com']
+            }]
+          }],
+          cur: 'USD'
+        }
+      };
+
+      const serverResponses = spec.interpretResponse(ortbResponse, request);
+
+      expect(serverResponses).to.be.an('array');
+      if (serverResponses.length > 0) {
+        const bidResponse = serverResponses[0];
+        expect(bidResponse.mediaType).to.equal('video');
+        expect(bidResponse.vastXml).to.be.a('string');
+      }
+    });
   });
 
   describe('interpretResponse - mediaType fallback', function() {
